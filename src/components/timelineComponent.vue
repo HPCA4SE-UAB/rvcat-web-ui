@@ -757,10 +757,8 @@
     </div>
   </div>
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="The Timeline section shows the program execution over time. The iterations displayed can be
-  selected on the top-right section, as well as hiding or showing extra information and zooming in or out.
-  Hover over the grid to see basic info about the selected cell, such as the cycle, the instruction type
-  or the port it is being executed in. You can also click on timeline cells to obtain more detailed
+  text="The Timeline section shows the program execution over time. The number of loop iterations can be
+  modified, and the timeline can be zoomed in/out. Hover over the grid to see basic info about the selected cell, and click to obtain more detailed
   information."
   title="Timeline"
   @close="closeTutorial"
