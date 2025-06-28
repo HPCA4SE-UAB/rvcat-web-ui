@@ -574,12 +574,9 @@
   </div>
 
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="This section allows you to adjust the simulated processor’s configuration settings, including:
-(1) Dispatch & Retire Widths – Control the number of instructions dispatched and retired per cycle.
-(2) Cache Memory – Configure cache parameters (*Note: Setting "Number of Blocks = 0" means all data accesses will always hit in the cache*).
-(3) Execution Ports – Add or remove execution ports (up to a maximum of 10).
-   · Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution).
-   · If a port is deleted, P0 is automatically assigned to any instruction types left without a valid port."
+  text="This section allows you to adjust the simulated processor’s configuration settings, including: (1) Dispatch & Retire Widths; (2) Cache Memory (Note: Setting Number of Blocks = 0 means all data accesses will always hit in the cache);
+(3) Execution Ports (Add or remove execution ports, up to a maximum of 10). Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution); 
+If a port is deleted, P0 is automatically assigned to any instruction types left without a valid port."
   title="Processor Settings"
   @close="closeTutorial"/>
 
