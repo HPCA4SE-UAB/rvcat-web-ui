@@ -213,7 +213,7 @@
     if (list) {
       for (const opt of list.options) {
         if (opt.value === modalName.value) {
-          nameError.value = "A processor with this name already exists. Please choose another one.";
+          nameError.value = "A processor configuration file with this name already exists. Please choose another one.";
           return;
         }
       }
@@ -574,11 +574,12 @@
   </div>
 
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="In the Processor Settings section you can create new processor configurations
-     to use in simulations. Dispatch and Retire widths can be modified in Stage Width Settings,
-     and cache memory can be added or modified in the Cache settings section. Ports can be added
-     (up to a maximum of 10) and deleted in the toolbar above the table. Use the table below to change
-     instruction latencies and the ports they are assigned to."
+  text="This section allows you to adjust the simulated processor’s configuration settings, including:
+(1) Dispatch & Retire Widths – Control the number of instructions dispatched and retired per cycle.
+(2) Cache Memory – Configure cache parameters (*Note: Setting "Number of Blocks = 0" means all data accesses will always hit in the cache*).
+(3) Execution Ports – Add or remove execution ports (up to a maximum of 10).
+   · Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution).
+   · If a port is deleted, P0 is automatically assigned to any instruction types left without a valid port."
   title="Processor Settings"
   @close="closeTutorial"/>
 
