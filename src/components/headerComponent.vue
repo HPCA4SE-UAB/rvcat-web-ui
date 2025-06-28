@@ -21,10 +21,10 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
-            :class="{ active: activeView === 'procSettingsComponent' }"
-            @click="emit('requestSwitch', 'procSettingsComponent')"
+            :class="{ active: activeView === 'simulationComponent' }"
+            @click="emit('requestSwitch', 'simulationComponent')"
           >
-            Settings
+            Simulation
           </button>
         </li>
         <li>
@@ -39,19 +39,19 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
-            :class="{ active: activeView === 'simulationComponent' }"
-            @click="emit('requestSwitch', 'simulationComponent')"
+            :class="{ active: activeView === 'timelineComponent' }"
+            @click="emit('requestSwitch', 'timelineComponent')"
           >
-            Simulation
+            Timeline
           </button>
         </li>
         <li>
           <button
             class="blue-button"
-            :class="{ active: activeView === 'timelineComponent' }"
-            @click="emit('requestSwitch', 'timelineComponent')"
+            :class="{ active: activeView === 'procSettingsComponent' }"
+            @click="emit('requestSwitch', 'procSettingsComponent')"
           >
-            Timeline
+            Settings
           </button>
         </li>
         <li>
