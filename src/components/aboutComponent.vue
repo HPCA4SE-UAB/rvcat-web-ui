@@ -5,11 +5,11 @@
     </div>
 
       <p>
-          RVCAT (RISC-V Code Analysis Tool) is a simulation tool for the performance analysis of small programs from a computer architecture educational standpoint.
+          RVCAT (RISC-V Code Analysis Tool) is an educational simulation tool that demonstrates how processor architecture impacts the execution performance of program loops.
       </p>
       <p>
           RVCAT and its web interface (RVCAT-Web) have been developed on
-          the Computer Architecture and Operating Systems Department of
+          the Computer Architecture and Operating Systems (CAOS) Department of
           the Universitat Autònoma de Barcelona (UAB) by Saul Adserias,
           Quim Aguado Puig, Bern Vich Susanna, and Juan C. Moure.
       </p>
