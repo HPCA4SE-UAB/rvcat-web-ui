@@ -110,14 +110,14 @@
     <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Static Analysis</h3>
+        <h3>Static Performance Analysis</h3>
       </div>
     </div>
 
     <div class="annotations-wrapper">
       <div class="annotations-header" @click="toggleAnnotations">
         <span class="arrow">{{ showAnnotations ? '▼' : '▶' }}</span>
-        <span class="title"><b>Performance Annotations</b></span>
+        <span class="title"><b>Analysis of Performance limits: Throughput and Latency Bounds</b></span>
       </div>
 
       <Transition name="fold" appear>
@@ -129,7 +129,7 @@
         <button class="blue-button" @click="openFullScreen">
           <img src="/img/fullscreen.png" class="fs-img">
         </button>
-        <h4>Recurrent Paths Graph</h4>
+        <h4>Data Dependence Graph & Circular Dependence Paths</h4>
       </div>
       <div class="output-block" id="simulation-output"></div>
     </div>
@@ -137,18 +137,17 @@
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        <h3>Recurrent Paths Graph</h3>
+        <h3>Data Dependence Graph & Circular Dependence Paths</h3>
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
       <div class="output-block" id="simulation-output-full"></div>
     </div>
   </div>
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="The Static Analysis section shows performance and program information from a static point of view.
-  The Performance Annotations dropdown showcases the throughput and latency limits of the execution,
-  while the graph below depicts all recurrent paths in the program. Click on the fullscreen button to make
-  the graph larger in a resizeable window."
-  title="Static Analysis"
+  text="Static Performance Analysis. 
+    The graph of data dependences among instructions highlights in red colour the circular dependence paths that determine the latency-bound execution time.
+  It can be made larger by clicking on the fullscreen button. Dropdown the performance analysis tab to showcase more detailed analysis of throughput and latency performance limits."
+  title="Static Performance Analysis"
   @close="closeTutorial"/>
 </template>
 
