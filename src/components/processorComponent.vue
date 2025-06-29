@@ -52,7 +52,8 @@
 
     <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
     text="Provides graphical visualization of the processor microarchitecture (pipeline) characteristics.
-          Modify the size of the ROB (ReOrder Buffer) or select a new processor configuration file from the list."
+          Modify the size of the ROB (ReOrder Buffer) or select a new processor configuration file from the list.
+          Use the 'Settings' tab to modify the microarchitectural parameters."
     title="Processor MicroArchitecture"
     @close="closeTutorial"
     />
