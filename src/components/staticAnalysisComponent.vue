@@ -129,7 +129,7 @@
         <button class="blue-button" @click="openFullScreen">
           <img src="/img/fullscreen.png" class="fs-img">
         </button>
-        <h4>Data Dependence Graph & Circular Dependence Paths (circular paths in red)</h4>
+        <h4>Data Dependence Graph & Circular Dependence Paths (in red)</h4>
       </div>
       <div class="output-block" id="simulation-output"></div>
     </div>
@@ -137,7 +137,7 @@
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        <h3>Data Dependence Graph & Circular Dependence Paths (circular paths in red)</h3>
+        <h3>Data Dependence Graph & Circular Dependence Paths (in red)</h3>
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
       <div class="output-block" id="simulation-output-full"></div>
