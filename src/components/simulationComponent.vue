@@ -77,7 +77,7 @@
     <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Simulation</h3>
+        <h3>Overall Simulation Results</h3>
       </div>
       <div class="iters-run">
         <div class="iterations-group">
@@ -93,21 +93,21 @@
     <div id="simulation-results-info" class="results-info">
       <div class="row">
         <div class="simulation-inline-item">
-          <label for="instructions"><b>Instructions:</b></label>
+          <label for="instructions"><b>Instructions Executed:</b></label>
           <span id="instructions-output">?</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="cycles"><b>Cycles:</b></label>
+          <label for="cycles"><b>Execution Cycles (time):</b></label>
           <span id="cycles-output">?</span>
         </div>
       </div>
       <div class="row">
         <div class="simulation-inline-item">
-          <label for="cycles-per-iteration"><b>Cycles per iteration:</b></label>
+          <label for="cycles-per-iteration"><b>Cycles per iteration (average):</b></label>
           <span id="cycles-per-iteration-output">?</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="IPC"><b>IPC:</b></label>
+          <label for="IPC"><b>IPC (Instructions Per Cycle):</b></label>
           <span id="IPC-output">?</span>
         </div>
       </div>
@@ -121,7 +121,7 @@
     <div class="critical-wrapper" id="critical-path-section" style="display: none;">
       <div class="critical-header" @click="toggleCriticalPath">
         <span class="arrow">{{ showCriticalPath ? '▼' : '▶' }}</span>
-        <span class="title"><b>Critical Execution Path</b></span>
+        <span class="title"><b>Time Breakdown of Critical Execution Path among Instructions</b></span>
       </div>
 
       <Transition name="fold" appear>
@@ -132,7 +132,7 @@
     </div>
 
     <div id="graph-section" class="graph-section" style="display: none;">
-        <h4>Processor Bottlenecks</h4>
+        <h4>Usage of Processor Elements</h4>
         <div id="simulation-graph" class="simulation-img"></div>
     </div>
 
@@ -146,12 +146,9 @@
     </div>
   </div>
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="In the Simulation section, you can run simulations of the selected program and processor. The
-  number of iterations can be selected on the top-right input, and pressing the 'Run' button launches the
-  simulation. The results are displayed down below, including the instructions' percentage of the
-  Critical Execution Path and the usage of the different parts of the processor pipeline. Hover over the
-  ports to see their usage."
-  title="Simulation"
+  text="Simulate a specified number of program loop iterations and display aggregate performance metrics. 
+   Hover over processor execution ports to inspect their utilization, or open the corresponding tab to visualize the time distribution of instructions along the critical path."
+  title="Overall Simulation Results"
   @close="closeTutorial"
   />
 </template>
