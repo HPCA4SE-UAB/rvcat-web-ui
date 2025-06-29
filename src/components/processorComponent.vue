@@ -30,7 +30,7 @@
     <div class="pipeline-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Processor Pipeline</h3>
+        <h3>Processor MicroArchitecture</h3>
       </div>
       <div id="settings-div">
         <select id="processors-list" name="processor-name" onchange="reloadRvcat();">
@@ -51,9 +51,9 @@
     </div>
 
     <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-    text="This is the Processor Pipeline section. Here you can select a processor from the list,
-    change its ROB and visualize a graph of its pipeline."
-    title="Processor Pipeline"
+    text="Provides graphical visualization of the processor microarchitecture (pipeline) characteristics.
+          Modify the size of the ROB (ReOrder Buffer) or select a new processor configuration file from the list."
+    title="Processor MicroArchitecture"
     @close="closeTutorial"
     />
   </div>
