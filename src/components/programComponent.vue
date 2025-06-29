@@ -33,7 +33,7 @@
 
     const nameExists = Array.from(selectEl.options).some(opt => opt.value === name);
     if (nameExists) {
-      nameError.value = "A program with this name already exists. Please choose another one.";
+      nameError.value = "A program file with this name already exists. Please choose another name.";
       return;
     }
 
@@ -149,7 +149,7 @@
     <div class="program-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Program</h3>
+        <h3>Program Loop</h3>
       </div>
       <div id="settings-div">
         <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
@@ -176,10 +176,10 @@
   </div>
 
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="This is the Program section. Use it to select a program to simulate.
-  You can also download the selected program in JSON format, or upload new custom ones.
-  The program and information about the instructions is displayed in the main box."
-  title="Program"
+  text="The simulated program consists of a fixed-iteration loop executing a sequence of machine instructions, each described in a high-level, informal language.
+        The simulation tracks data dependencies but omits detailed architectural state: it does not model processor registers, memory states, branch outcomes, or memory dependencies (e.g., store-load interactions).
+        Programs can be uploaded or downloades in JSON format."
+  title="Program Loop"
   @close="closeTutorial"
   />
 
