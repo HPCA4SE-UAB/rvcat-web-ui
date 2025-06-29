@@ -129,7 +129,7 @@
         <button class="blue-button" @click="openFullScreen">
           <img src="/img/fullscreen.png" class="fs-img">
         </button>
-        <h4>Data Dependence Graph & Circular Dependence Paths</h4>
+        <h4>Data Dependence Graph & Circular Dependence Paths (circular paths in red)</h4>
       </div>
       <div class="output-block" id="simulation-output"></div>
     </div>
@@ -137,16 +137,15 @@
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        <h3>Data Dependence Graph & Circular Dependence Paths</h3>
+        <h3>Data Dependence Graph & Circular Dependence Paths (circular paths in red)</h3>
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
       <div class="output-block" id="simulation-output-full"></div>
     </div>
   </div>
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="Static Performance Analysis. 
-    The graph of data dependences among instructions highlights in red colour the circular dependence paths that determine the latency-bound execution time.
-  It can be made larger by clicking on the fullscreen button. Dropdown the performance analysis tab to showcase more detailed analysis of throughput and latency performance limits."
+  text="The data dependency graph highlights circular dependencies (shown in red) that determine latency-bound execution time.
+   Click the fullscreen button to enlarge the graph. Expand the performance analysis tab for a detailed breakdown of statically-determined throughput and latency bottlenecks."
   title="Static Performance Analysis"
   @close="closeTutorial"/>
 </template>
