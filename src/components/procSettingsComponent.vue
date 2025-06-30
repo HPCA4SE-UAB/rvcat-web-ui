@@ -503,7 +503,7 @@
               <div class="latency-group">
                 <button class="gray-button" @click="mPenalty = Math.max(1, mPenalty - 1)">−</button>
                 <input type="number" v-model.number="mPenalty" min="1" :max="99" class="latency-input"/>
-                <button class="gray-button" @click="mPenalty = Math.min(99, nBlocks + 1);">+</button>
+                <button class="gray-button" @click="mPenalty = Math.min(99, mPenalty + 1);">+</button>
               </div>
             </div>
 
@@ -512,7 +512,7 @@
               <div class="latency-group">
                 <button class="gray-button" @click="mIssueTime = Math.max(1, mIssueTime - 1)">−</button>
                 <input type="number" v-model.number="mIssueTime" min="1" :max="99" class="latency-input"/>
-                <button class="gray-button" @click="mIssueTime = Math.min(99, nBlocks + 1);">+</button>
+                <button class="gray-button" @click="mIssueTime = Math.min(99, mIssueTime + 1);">+</button>
               </div>
             </div>
           </div>
