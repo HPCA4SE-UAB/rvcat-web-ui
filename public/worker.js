@@ -6,7 +6,6 @@ async function initialize() {
         self.pyodide = await loadPyodide();
         await loadPackage('numpy')
         await loadPackage('rvcat-0.1-py3-none-any.whl')
-        //await loadPackage('http://0.0.0.0:8000/rvcat-0.1-py3-none-any.whl')
     }
 }
 
@@ -43,8 +42,5 @@ self.onmessage = async function(message) {
                 self.postMessage({action: 'executed', result: err.toString(), data_type: 'error'});
             }
         }
-        //let res = await self.pyodide.runPythonAsync(message.data.code);
-        //console.log('Result:', res);
-        //self.postMessage({action: 'rendered', result: res, data_type: 'png'});
     }
 }
