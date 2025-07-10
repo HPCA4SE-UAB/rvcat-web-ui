@@ -89,18 +89,6 @@ const handlers = {
 
     },
     'generate_scheduler_analysis': (data) => {
-        /*
-        {"total_iterations": 10, "total_instructions": 90, "total_cycles": 91,
-        "ipc": 0.989010989010989, "cycles_per_iteration": 9.1, "critical_path":
-        {"instructions": [{"instruction": 0, "percentage": 4.395604395604396},
-        {"instruction": 1, "percentage": 19.78021978021978}, {"instruction": 2,
-        "percentage": 4.395604395604396}, {"instruction": 3, "percentage":
-        21.978021978021978}, {"instruction": 4, "percentage":
-        43.956043956043956}, {"instruction": 5, "percentage":
-        3.2967032967032965}, {"instruction": 6, "percentage": 0.0},
-        {"instruction": 7, "percentage": 0.0}, {"instruction": 8, "percentage":
-        0.0}], "dispatch": 1.098901098901099, "retire": 1.098901098901099}}
-        */
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -116,7 +104,6 @@ const handlers = {
         document.getElementById('cycles-output').innerHTML = d["total_cycles"];
         document.getElementById('IPC-output').innerHTML = d["ipc"].toFixed(2);
         document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
-
 
         usage = {}
         usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
@@ -136,7 +123,6 @@ const handlers = {
         document.getElementById('graph-section').style.display = 'block';
         document.getElementById('critical-path-section').style.display = 'block';
         document.getElementById('run-simulation-button').disabled = false;
-
     },
     'format_timeline': (data) => {
       timelineData = data;
@@ -177,7 +163,6 @@ worker.onmessage = function(message) {
                 handlers[message.data.id](data);
             } else {
                 // TODO: remove
-
             }
         }
     }
@@ -226,7 +211,6 @@ function currentROBSize() {
   else {
     return 100;
   }
-
 }
 
 // Commands
@@ -235,7 +219,6 @@ function programShow() {
         RVCAT_HEADER() + PROG_SHOW_EXECUTION,
         'prog_show'
     )
-
 }
 
 function programShowPerfAnnotations() {
@@ -322,7 +305,6 @@ function setLoadingOverlayMessage(message) {
 function reloadRvcat() {
     programShow();
     getProcessorInformation();
-
 }
 
 function createGraphVizGraph(dotCode, targetElement, callback=null) {
@@ -365,24 +347,10 @@ function showFullProcessor(){
   createGraphVizGraph(fullGraphDotCode, document.getElementById('simulation-graph'));
 }
 
-
 function showProcessor() {
     if (processorInfo === null) {
         return;
     }
-
-    /*
-    {"name": "Baseline-2", "stages": {"dispatch": 6, "execute": 6, "retire": 8},
-    "resources": {"INT": 1, "FLOAT": 2, "FLOAT.SP.MUL": 4, "FLOAT.DP.MUL": 4,
-    "FLOAT.SP.FUSED": 5, "FLOAT.DP.FUSED": 5, "BRANCH": 1, "MEM.STORE": 2,
-    "MEM.LOAD": 4}, "ports": {"1": ["INT", "BRANCH", "FLOAT"], "2": ["MEM.LOAD",
-    "MEM.STORE"], "3": ["FLOAT", "INT"], "4": ["FLOAT", "INT"], "5":
-    ["MEM.LOAD", "MEM.STORE"]}, "rports": {"INT": ["1", "3", "4"], "BRANCH":
-    ["1"], "FLOAT": ["1", "3", "4"], "MEM.LOAD": ["2", "5"], "MEM.STORE": ["2",
-    "5"]}, "cache": null, "nBlocks": 0, "blkSize": 8, "mPenalty": 16,
-    "mIssueTime": 8}
-    */
-
     let dispatch_width = processorInfo.stages.dispatch;
     let num_ports = Object.keys(processorInfo.ports).length;
     let retire_width = processorInfo.stages.retire;
@@ -555,7 +523,6 @@ function createCriticalPathList(data) {
   border-top: 1px solid black;
   border-right: 1px solid black;
   border-left: 1px solid black;`;
-
 
   if(data['dispatch'].toFixed(1)!=0.0){
     lineColor=color[Math.floor(data['dispatch']/5)];
