@@ -1,10 +1,10 @@
   function insert_cache_annotations(cache) {
     if(cache.nBlocks>0){
       document.getElementById('cache-info').innerHTML=`
-      <b>Cache settings:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss issue time: ${cache.mIssueTime}</span>`;
+      <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
     }
     else {
-      document.getElementById('cache-info').innerHTML="<b>This processor does not have a cache memory.</b>";
+      document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
     }
   }
 
