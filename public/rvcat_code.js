@@ -9,17 +9,13 @@ rvcat._processor.list_processors_json()
 // SHOW program
 const PROG_SHOW              = 'str(rvcat._program)'
 const PROG_SHOW_DEPENDENCIES = `rvcat._program.show_dependencies()`
-//const PROG_SHOW_DEPENDENCIES_GRAPHVIZ = `rvcat._program.get_dependencies_grapviz(num_iters=3)`
 function prog_show_dependencies_graphviz(num_iters) {
     return `rvcat._program.get_dependencies_grapviz(num_iters=${num_iters})`
 }
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
-//const PROG_SHOW_ANNOTATED    = `rvcat._program.annotate_action()`
 const PROG_SHOW_EXECUTION    = `rvcat._program.annotate_execution()`
-//const PROG_SHOW_MEMORY       = `rvcat._program.show_memory_trace()`
 const PROG_SHOW_STATIC_PERFORMANCE = `rvcat._program.show_static_performance_analysis()`
 
-//const SHOW_TIMELINE = 'rvcat._scheduler.format_timeline()'
 function show_timeline(num_iters) {
     return `rvcat._scheduler.format_timeline(niters=${num_iters})`
 }
@@ -28,9 +24,6 @@ function show_timeline(num_iters) {
 const SHOW_PROCESSOR = 'rvcat._processor.json()'
 
 const GET_PROGRAM_JSON = 'rvcat._program.json()'
-
-// SHOW isa
-//const SHOW_ISA = 'str(rvcat._isa)'
 
 // RUN program
 const RUN_PROGRAM_PREAMBLE = function() {
