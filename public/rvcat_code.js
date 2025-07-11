@@ -8,10 +8,10 @@ rvcat._processor.list_processors_json()
 
 // SHOW program
 const PROG_SHOW              = 'str(rvcat._program)'
-const PROG_SHOW_DEPENDENCIES = `rvcat._program.show_dependencies()`
-function prog_show_dependencies_graphviz(num_iters) {
-    return `rvcat._program.get_dependencies_grapviz(num_iters=${num_iters})`
-}
+//const PROG_SHOW_DEPENDENCIES = `rvcat._program.show_dependencies()`
+//function prog_show_dependencies_graphviz(num_iters) {
+//    return `rvcat._program.get_dependencies_grapviz(num_iters=${num_iters})`
+//}
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
 const PROG_SHOW_EXECUTION    = `rvcat._program.annotate_execution()`
 const PROG_SHOW_STATIC_PERFORMANCE = `rvcat._program.show_static_performance_analysis()`
@@ -30,9 +30,9 @@ const RUN_PROGRAM_PREAMBLE = function() {
     let res = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
     return res;
 }
-const RUN_PROGRAM_TIMELINE = 'rvcat._scheduler.format_timeline()'
+// const RUN_PROGRAM_TIMELINE = 'rvcat._scheduler.format_timeline()'
 const RUN_PROGRAM_ANALYSIS = 'rvcat._scheduler.format_analysis_json()'
-const RUN_PROGRAM_MEMTRACE = 'rvcat._scheduler.format_memtrace()'
+// const RUN_PROGRAM_MEMTRACE = 'rvcat._scheduler.format_memtrace()'
 
 function addModifiedProcessor(config){
   let res = `rvcat._processor.import_processor_json(${JSON.stringify(config)})`;
