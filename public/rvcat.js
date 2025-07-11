@@ -56,7 +56,6 @@ const handlers = {
       }
     },
     'prog_show_annotations': (data) => {
-
       let array=data.split("Through");
       let annotations = "Through"+array[1];
       array=annotations.split("CACHE");
@@ -80,13 +79,11 @@ const handlers = {
             return;
         }
         createGraphVizGraph(data, item, callback);
-
     },
     'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
-
     },
     'generate_scheduler_analysis': (data) => {
         let d = JSON.parse(data);
@@ -335,27 +332,6 @@ function showProcessor() {
                  'mIssueTime': processorInfo.mIssueTime};
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
-
-/*
-function showDependenciesGraph() {
-    programShowPerfAnnotations();
-    let controls = document.getElementById('dependencies-controls');
-    controls.style.display = 'block';
-    let num_iters = document.getElementById('dependencies-num-iters').value;
-    if (num_iters === '') {
-        num_iters = 3;
-    }
-    if (num_iters > 10) {
-        num_iters = 10;
-        document.getElementById('dependencies-num-iters').value = 10;
-    }
-    executeCode(
-        RVCAT_HEADER() + prog_show_dependencies_graphviz(num_iters),
-        'generate_dependencies_graph'
-    )
-    lastExecutedCommand = showDependenciesGraph;
-}
-*/
 
 function showCriticalPathsGraph() {
     executeCode(
