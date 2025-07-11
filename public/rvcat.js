@@ -228,32 +228,6 @@ function programShowPerfAnnotations() {
   )
 }
 
-/*
-function programShowDependencies() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_DEPENDENCIES,
-        'print_output'
-    )
-    lastExecutedCommand = programShowDependencies;
-}
-
-function programShowExecution() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
-        'print_output'
-    )
-    lastExecutedCommand = programShowExecution;
-}
-
-function programShowMemtrace() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_MEMORY,
-        'print_output'
-    )
-    lastExecutedCommand = programShowMemtrace;
-}
-*/
-
 function programShowAnalysis() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
@@ -284,7 +258,6 @@ function initPyodide() {
 }
 
 async function executeCode(code, id=undefined){
-    // TODO: Remove
     console.log('Executing code:\n', code);
     worker.postMessage({action: 'execute', code: code, id: id});
 }
@@ -363,6 +336,7 @@ function showProcessor() {
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
 
+/*
 function showDependenciesGraph() {
     programShowPerfAnnotations();
     let controls = document.getElementById('dependencies-controls');
@@ -381,6 +355,7 @@ function showDependenciesGraph() {
     )
     lastExecutedCommand = showDependenciesGraph;
 }
+*/
 
 function showCriticalPathsGraph() {
     executeCode(
