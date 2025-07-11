@@ -228,6 +228,7 @@ function programShowPerfAnnotations() {
   )
 }
 
+/*
 function programShowDependencies() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_DEPENDENCIES,
@@ -251,6 +252,7 @@ function programShowMemtrace() {
     )
     lastExecutedCommand = programShowMemtrace;
 }
+*/
 
 function programShowAnalysis() {
     executeCode(
