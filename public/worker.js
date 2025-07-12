@@ -1,16 +1,16 @@
 importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js')
 
+async function loadPackage(pkg) {
+    await self.pyodide.loadPackage(pkg);
+}
+
 async function initialize() {
-    // console.log("Initializing Pyodide...");
+    console.log("Initializing Pyodide...");
     if (self.pyodide === undefined) {
         self.pyodide = await loadPyodide();
         await loadPackage('numpy')
         await loadPackage('rvcat-0.1-py3-none-any.whl')
     }
-}
-
-async function loadPackage(pkg) {
-    await self.pyodide.loadPackage(pkg);
 }
 
 self.onmessage = async function(message) {
