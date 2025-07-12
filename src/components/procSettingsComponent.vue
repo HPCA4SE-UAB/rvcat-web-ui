@@ -2,48 +2,48 @@
   import { ref, reactive, computed, onMounted, onUnmounted, nextTick} from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
-  const dispatch = ref(0);
-  const retire = ref(0);
-  const resources = reactive({});
-  const name = ref("");
-  const ports = ref({});
-  const nBlocks = ref(0);
-  const blkSize = ref(0);
-  const mPenalty = ref(0);
-  const mIssueTime = ref(0);
-  const showTooltip = ref(false);
+  const dispatch        = ref(0);
+  const retire          = ref(0);
+  const resources       = reactive({});
+  const name            = ref("");
+  const ports           = ref({});
+  const nBlocks         = ref(0);
+  const blkSize         = ref(0);
+  const mPenalty        = ref(0);
+  const mIssueTime      = ref(0);
+  const showTooltip     = ref(false);
   const showModalChange = ref(false);
-  const prevProcessor = ref(null);
+  const prevProcessor   = ref(null);
+  
   let prevProcessorHandler;
   let processorsListHandler;
-  let lastRequestId = 0;
+  let lastRequestId         = 0;
   let modalConfirmOperation = null;
 
-
   const originalSettings = reactive({
-    dispatch: 0,
-    retire: 0,
+    dispatch:   0,
+    retire:     0,
     resources: {},
-    name: "",
-    ports: {},
-    rports: {},
-    cache: null,
-    nBlocks: 0,
-    blkSize: 0,
-    mPenalty: 0,
+    name:      "",
+    ports:     {},
+    rports:    {},
+    cache:   null,
+    nBlocks:    0,
+    blkSize:    0,
+    mPenalty:   0,
     mIssueTime: 0,
   });
 
   // --- computed lists ---
   const availableInstructions = computed(() => Object.keys(resources));
-  const portList = computed(() => Object.keys(ports.value));
+  const portList              = computed(() => Object.keys(ports.value));
 
   // --- modal state ---
   const showModalDown = ref(false);
-  const showModalUp = ref(false);
-  const modalName = ref("");
+  const showModalUp   = ref(false);
+  const modalName     = ref("");
   const modalDownload = ref(true);
-  const nameError = ref("");
+  const nameError     = ref("");
 
   // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
@@ -53,14 +53,14 @@
       const cfg = await getProcessorJSON();
       if (thisId !== lastRequestId) return;
 
-      dispatch.value = cfg.stages.dispatch;
-      retire.value = cfg.stages.retire;
-      name.value = cfg.name;
-      ports.value = cfg.ports || {};
-      nBlocks.value = cfg.nBlocks;
-      blkSize.value = cfg.blkSize;
+      dispatch.value   = cfg.stages.dispatch;
+      retire.value     = cfg.stages.retire;
+      name.value       = cfg.name;
+      ports.value      = cfg.ports || {};
+      nBlocks.value    = cfg.nBlocks;
+      blkSize.value    = cfg.blkSize;
       mIssueTime.value = cfg.mIssueTime;
-      mPenalty.value = cfg.mPenalty;
+      mPenalty.value   = cfg.mPenalty;
 
       // refresh resources
       Object.keys(resources).forEach(k => delete resources[k]);
@@ -70,16 +70,16 @@
 
       // stash original
       Object.assign(originalSettings, {
-        dispatch: cfg.stages.dispatch,
-        retire: cfg.stages.retire,
-        name: cfg.name,
-        resources: JSON.parse(JSON.stringify(cfg.resources || {})),
-        ports: JSON.parse(JSON.stringify(cfg.ports || {})),
-        rports: JSON.parse(JSON.stringify(cfg.rports || {})),
-        cache: cfg.cache,
-        nBlocks: cfg.nBlocks,
-        blkSize: cfg.blkSize,
-        mPenalty: cfg.mPenalty,
+        dispatch:   cfg.stages.dispatch,
+        retire:     cfg.stages.retire,
+        name:       cfg.name,
+        resources:  JSON.parse(JSON.stringify(cfg.resources || {})),
+        ports:      JSON.parse(JSON.stringify(cfg.ports     || {})),
+        rports:     JSON.parse(JSON.stringify(cfg.rports    || {})),
+        cache:      cfg.cache,
+        nBlocks:    cfg.nBlocks,
+        blkSize:    cfg.blkSize,
+        mPenalty:   cfg.mPenalty,
         mIssueTime: cfg.mIssueTime,
       });
     } catch(e) {
@@ -114,7 +114,6 @@
     const list = document.getElementById("processors-list");
     if (list && processorsListHandler) {
       list.removeEventListener("change", processorsListHandler);
-
     }
     list.removeEventListener("focus", prevProcessorHandler);
   });
@@ -151,14 +150,14 @@
     return true;
   }
   const isModified = computed(() => {
-    if (dispatch.value !== originalSettings.dispatch) return true;
-    if (retire.value   !== originalSettings.retire)   return true;
-    if (nBlocks.value   !== originalSettings.nBlocks)   return true;
-    if (blkSize.value   !== originalSettings.blkSize)   return true;
-    if (mPenalty.value   !== originalSettings.mPenalty)   return true;
-    if (mIssueTime.value   !== originalSettings.mIssueTime)   return true;
+    if (dispatch.value   !== originalSettings.dispatch)    return true;
+    if (retire.value     !== originalSettings.retire)      return true;
+    if (nBlocks.value    !== originalSettings.nBlocks)     return true;
+    if (blkSize.value    !== originalSettings.blkSize)     return true;
+    if (mPenalty.value   !== originalSettings.mPenalty)    return true;
+    if (mIssueTime.value !== originalSettings.mIssueTime)  return true;
     if (!shallowEq(resources, originalSettings.resources)) return true;
-    if (!portsEq(ports.value, originalSettings.ports)) return true;
+    if (!portsEq  (ports.value, originalSettings.ports)  ) return true;
     return false;
   });
 
@@ -181,30 +180,30 @@
       name: modalName.value,
       stages: {
         dispatch: dispatch.value,
-        execute:Object.keys(ports.value).length,
-        retire: retire.value,
+        execute:  Object.keys(ports.value).length,
+        retire:   retire.value,
       },
-      resources: { ...resources },
-      ports: ports.value,
-      rports: rports,
-      cache: originalSettings.cache,
-      nBlocks: nBlocks.value,
-      blkSize: blkSize.value,
-      mPenalty: mPenalty.value,
+      resources:  { ...resources },
+      ports:      ports.value,
+      rports:     rports,
+      cache:      originalSettings.cache,
+      nBlocks:    nBlocks.value,
+      blkSize:    blkSize.value,
+      mPenalty:   mPenalty.value,
       mIssueTime: mIssueTime.value,
     };
   }
 
   function openModal() {
-    modalName.value = name.value + "*";
+    modalName.value     = name.value + "*";
     modalDownload.value = true;
-    nameError.value = "";
+    nameError.value     = "";
     showModalDown.value = true;
   }
 
   function closeModal() {
     showModalDown.value = false;
-    showModalUp.value = false;
+    showModalUp.value   = false;
   }
 
 
@@ -213,7 +212,7 @@
     if (list) {
       for (const opt of list.options) {
         if (opt.value === modalName.value) {
-          nameError.value = "A processor configuration file with this name already exists. Please choose another one.";
+          nameError.value = "A processor configuration file with this name already exists. Please, choose another one.";
           return;
         }
       }
@@ -222,17 +221,17 @@
     await saveModifiedProcessor(data);
 
     Object.assign(originalSettings, {
-      dispatch: data.stages.dispatch,
-      retire:   data.stages.retire,
-      name:     data.name,
-      resources: JSON.parse(JSON.stringify(data.resources)),
-      ports:     JSON.parse(JSON.stringify(data.ports)),
-      rports:    JSON.parse(JSON.stringify(data.rports)),
-      cache:     data.cache,
-      nBlocks:   data.nBlocks,
-      blkSize:   data.blkSize,
-      mPenalty:  data.mPenalty,
-      mIssueTime:data.mIssueTime,
+      dispatch:   data.stages.dispatch,
+      retire:     data.stages.retire,
+      name:       data.name,
+      resources:  JSON.parse(JSON.stringify(data.resources)),
+      ports:      JSON.parse(JSON.stringify(data.ports)),
+      rports:     JSON.parse(JSON.stringify(data.rports)),
+      cache:      data.cache,
+      nBlocks:    data.nBlocks,
+      blkSize:    data.blkSize,
+      mPenalty:   data.mPenalty,
+      mIssueTime: data.mIssueTime,
     });
 
     //download JSON file
@@ -245,7 +244,7 @@
           suggestedName: `${modalName.value}.json`,
           types: [{
             description: 'JSON files',
-            accept: { 'application/json': ['.json'] }
+            accept:      { 'application/json': ['.json'] }
           }],
         });
         const writable = await handle.createWritable();
@@ -256,7 +255,7 @@
         const blob = new Blob([jsonText], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.href = url;
+        a.href     = url;
         a.download = `${modalName.value}.json`;
         document.body.appendChild(a);
         a.click();
@@ -264,12 +263,12 @@
         URL.revokeObjectURL(url);
       }
     }
-    name.value = modalName.value;
+    name.value          = modalName.value;
     showModalDown.value = false;
-    showModalUp.value = false;
+    showModalUp.value   = false;
 
     setTimeout(()=>{
-      list.value=modalName.value;
+      list.value = modalName.value;
       reloadRvcat();
     },100);
   }
@@ -277,7 +276,7 @@
   // --- port add/delete ---
   function addPort() {
     const existing = portList.value.map(n => parseInt(n,10)).sort((a,b)=>a-b);
-    let next = 0;
+    let next       = 0;
     for (; existing.includes(next); next++);
     ports.value[next] = [];
   }
@@ -314,16 +313,15 @@
     const reader = new FileReader();
     reader.onload = e => {
       try {
-
         const data = JSON.parse(e.target.result);
         // === apply JSON to your reactive state ===
-        dispatch.value = data.stages?.dispatch ?? dispatch.value;
-        retire.value   = data.stages?.retire   ?? retire.value;
-        name.value     = data.name             ?? name.value;
-        nBlocks.value = data.nBlocks;
-        blkSize.value = data.blkSize;
+        dispatch.value   = data.stages?.dispatch ?? dispatch.value;
+        retire.value     = data.stages?.retire   ?? retire.value;
+        name.value       = data.name             ?? name.value;
+        nBlocks.value    = data.nBlocks;
+        blkSize.value    = data.blkSize;
         mIssueTime.value = data.mIssueTime;
-        mPenalty.value = data.mPenalty;
+        mPenalty.value   = data.mPenalty;
 
         // update resources
         Object.keys(resources).forEach(k => delete resources[k]);
@@ -336,25 +334,25 @@
 
         // stash originalSettings if needed...
         Object.assign(originalSettings, {
-          dispatch: data.stages?.dispatch ?? 0,
-          retire:   data.stages?.retire   ?? 0,
-          name:     data.name             ?? "",
-          resources: JSON.parse(JSON.stringify(data.resources||{})),
-          ports:     JSON.parse(JSON.stringify(data.ports||{})),
-          rports:    JSON.parse(JSON.stringify(data.rports||{})),
-          cache:     data.cache,
-          nBlocks:   data.nBlocks,
-          blkSize:   data.blkSize,
-          mPenalty:  data.mPenalty,
-          mIssueTime:data.mIssueTime,
+          dispatch:   data.stages?.dispatch ?? 0,
+          retire:     data.stages?.retire   ?? 0,
+          name:       data.name             ?? "",
+          resources:  JSON.parse(JSON.stringify(data.resources||{})),
+          ports:      JSON.parse(JSON.stringify(data.ports||{})),
+          rports:     JSON.parse(JSON.stringify(data.rports||{})),
+          cache:      data.cache,
+          nBlocks:    data.nBlocks,
+          blkSize:    data.blkSize,
+          mPenalty:   data.mPenalty,
+          mIssueTime: data.mIssueTime,
         });
 
         // === now pop up the Save‐As dialog ===
         // strip extension from filename for default
-        modalName.value = file.name.replace(/\.[^.]+$/, "");
+        modalName.value     = file.name.replace(/\.[^.]+$/, "");
         modalDownload.value = false;
-        nameError.value = "";
-        showModalUp.value = true;
+        nameError.value     = "";
+        showModalUp.value   = true;
 
       } catch (err) {
         console.error("Invalid JSON:", err);
@@ -368,26 +366,23 @@
   function noPortAssigned(instr) {
     if (!portList.value.some(p => ports.value[p]?.includes(instr))) {
       ports.value[0].push(instr)
-
       showTooltip.value = true
       setTimeout(() => { showTooltip.value = false }, 2000)
     }
     return !portList.value.some(p => ports.value[p]?.includes(instr))
   }
 
-  function confirmLeave(){
+  function confirmLeave() {
     showModalChange.value = false;
     if(modalConfirmOperation=='upload') {
       document.getElementById('file-upload').click();
     }
     else if(modalConfirmOperation=='change') {
-
       updateProcessorSettings();
-
     }
   }
 
-  function cancelLeave(){
+  function cancelLeave() {
     if(modalConfirmOperation=='change') {
       document.getElementById('processors-list').value = prevProcessor.value;
       reloadRvcat();
@@ -395,22 +390,19 @@
     showModalChange.value = false;
   }
 
-
   function openUploadModal() {
-    if(isModified.value){
-
+    if(isModified.value) {
       showModalChange.value = true;
       modalConfirmOperation = 'upload';
     }
-    else{
+    else {
       document.getElementById('file-upload').click();
     }
-
   }
 
-  const showTutorial = ref(false)
+  const showTutorial     = ref(false)
   const tutorialPosition = ref({ top: '50%', left: '50%' })
-  const infoIcon = ref(null)
+  const infoIcon         = ref(null)
 
   function openTutorial() {
     nextTick(() => {
@@ -418,7 +410,7 @@
       if (el) {
         const r = el.getBoundingClientRect()
         tutorialPosition.value = {
-          top: `${r.bottom}px`,
+          top:  `${r.bottom}px`,
           left: `${r.right}px`
         }
         showTutorial.value = true
@@ -449,7 +441,6 @@
     </div>
     <br/>
     <div>
-
       <div class="settings-sections">
         <!-- Stage Widths Group -->
         <div class="settings-group">
@@ -463,7 +454,7 @@
                 <button class="gray-button" @click="dispatch = Math.min(99, dispatch + 1);">+</button>
               </div>
             </div>
-
+            
             <div class="width-group">
               <span>Retire:</span>
               <div class="latency-group">
@@ -496,7 +487,6 @@
                 <button class="gray-button" @click="blkSize = Math.min(2048, blkSize*2);">+</button>
               </div>
             </div>
-
 
             <div class="width-group">
               <span>Miss Penalty:</span>
@@ -554,6 +544,7 @@
                 <button type="button" class="gray-button" @click="resources[instr] = Math.min(99, resources[instr] + 1);">+</button>
               </div>
             </td>
+
             <td v-for="port in portList" :key="port" class="port-checkbox">
               <label class="port-label">
                 <input
@@ -585,7 +576,7 @@ If a port is deleted, P0 is automatically assigned to any instruction types left
     <div class="modal">
       <h4>Save Configuration As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName"/>
+      <input id ="config-name" type="text" v-model="modalName"/>
       <div v-if="nameError" class="error">{{ nameError }}</div>
 
       <label class="download-checkbox">
@@ -623,8 +614,8 @@ If a port is deleted, P0 is automatically assigned to any instruction types left
   <div v-if="showModalChange" class="modal-overlay">
     <div class="modal">
       <p>
-        Your processor settings have been modified. They will not be saved if
-        you change the selected processor or upload a new one.
+        The processor settings have been modified, but not saved. Changes will be lost if
+        you select or upload a new processor configuration.
       </p>
       <p><b>Do you want to continue?</b></p>
       <div class="modal-actions">
@@ -635,7 +626,7 @@ If a port is deleted, P0 is automatically assigned to any instruction types left
   </div>
 
   <span id="auto-tooltip" ref="tooltip" class="auto-tooltip" :class="{ 'slide-in': showTooltip }">
-    Each instruction must have at least one assigned port. Defaulting to P0.
+    Each instruction type must have at least one assigned execution port; default is P0.
   </span>
 </template>
 
