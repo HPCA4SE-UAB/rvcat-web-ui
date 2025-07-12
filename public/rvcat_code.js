@@ -2,7 +2,7 @@ const SHOW_PROCESSOR                    = 'rvcat._processor.json()'
 const PROG_SHOW                         = 'rvcat._program'
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
 const PROG_SHOW_EXECUTION               = `rvcat._program.annotate_execution()`
-const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.show_small_perf_analysis()`
+const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.annotate_execution()`
 const GET_PROGRAM_JSON                  = 'rvcat._program.json()'
 const RUN_PROGRAM_ANALYSIS              = 'rvcat._scheduler.format_analysis_json()'
 
