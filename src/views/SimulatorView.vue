@@ -60,7 +60,7 @@ function cancelLeave() {
 onMounted(() => {
   nextTick(() => {
     if (typeof openLoadingOverlay === 'function') openLoadingOverlay();
-    if (typeof initPyodide === 'function')        initPyodide();
+    if (typeof initPyodide        === 'function') initPyodide();
   });
 });
 </script>
@@ -95,8 +95,7 @@ onMounted(() => {
       <div v-if="showLeaveModal" class="modal-overlay">
         <div class="modal">
           <p>
-            Your processor settings have been modified. They will not be saved if
-            you leave this page without applying your changes.
+            You should apply (save) the changes on the processor settings before leaving this page.
           </p>
           <p><b>Do you want to continue?</b></p>
           <div class="modal-actions">
