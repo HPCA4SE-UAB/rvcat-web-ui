@@ -46,12 +46,8 @@ const handlers = {
     },
   
     'prog_show_annotations': (data) => {
-      let array        = data.split("Through");
-      let annotations  = "Through"+array[1];
-      array=annotations.split("CACHE");
-      annotations      = array[0];
       let item         = document.getElementById('performance-annotations');
-      item.textContent = annotations;
+      item.textContent = data;
     },
   
     'get_proc_settings': (data) => {
@@ -219,18 +215,19 @@ function programShow() {
 
 function programShowPerfAnnotations() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
+        RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
         'prog_show_annotations'
     )
 }
 
-function programShowAnalysis() {
+/* function programShowAnalysis() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
         'print_output'
     )
     lastExecutedCommand = programShowAnalysis;
 }
+*/
 
 async function getProcessorJSON() {
   await executeCode(
