@@ -393,7 +393,6 @@ async function getTimeline() {
 }
 
 async function saveModifiedProcessor(config) {
-
   await executeCode(
     RVCAT_HEADER() + addModifiedProcessor(config),
     'save_modified_processor'
@@ -418,14 +417,12 @@ async function getProgramJSON(){
         handlers['get_program_json'] = original;
       }
     };
-
     // fire off the code to the worker
     executeCode(GET_PROGRAM_JSON, 'get_program_json');
   });
 }
 
 async function saveNewProgram(config) {
-
   await executeCode(
     RVCAT_HEADER() + addNewProgram(config),
     'add_new_program'
