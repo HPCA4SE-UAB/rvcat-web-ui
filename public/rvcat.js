@@ -10,7 +10,7 @@ const MAX_ROB_SIZE           = 500;
 const handlers = {
     'get_programs': (data) => {
         let programs = JSON.parse(data);
-        document.getElementById('programs-list').innerHTML="";
+        document.getElementById('programs-list').innerHTML="XXX";
         // TODO: Check for errors ?
         for (let program of programs) {
             let option       = document.createElement('option');
@@ -21,7 +21,7 @@ const handlers = {
     },
     'get_processors': (data) => {
         let processors = JSON.parse(data);
-        document.getElementById('processors-list').innerHTML='';
+        document.getElementById('processors-list').innerHTML="YYY";
         // TODO: Check for errors ?
         for (let processor of processors) {
             let option       = document.createElement('option');
