@@ -8,7 +8,7 @@ rvcat._processor.list_processors_json()
 
 const PROG_SHOW              = 'str(rvcat._program)'
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
-const PROG_SHOW_EXECUTION    = `rvcat._program.annotate_execution()`
+const PROG_SHOW_EXECUTION    = `rvcat.show_program_execution()`
 const PROG_SHOW_STATIC_PERFORMANCE = `rvcat._program.show_static_performance_analysis()`
 
 function show_timeline(num_iters) {
