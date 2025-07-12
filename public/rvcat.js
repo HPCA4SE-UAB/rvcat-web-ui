@@ -46,7 +46,7 @@ const handlers = {
     },
   
     'prog_show_annotations': (data) => {
-      let item         = document.getElementById('performance-annotations');
+      const item       = document.getElementById('performance-annotations');
       item.textContent = data;
     },
   
@@ -220,14 +220,13 @@ function programShowPerfAnnotations() {
     )
 }
 
-/* function programShowAnalysis() {
+function programShowAnalysis() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
         'print_output'
     )
     lastExecutedCommand = programShowAnalysis;
 }
-*/
 
 async function getProcessorJSON() {
   await executeCode(
