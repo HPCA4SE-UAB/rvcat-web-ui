@@ -1,11 +1,11 @@
 // Save the last executed command to be able to re-run it when the selected program change
 var lastExecutedCommand = null;
-var processorInfo = null;
-var timelineData = null;
-var programData = null;
+var processorInfo       = null;
+var timelineData        = null;
+var programData         = null;
 
 const MAX_PROGRAM_ITERATIONS = 3000;
-const MAX_ROB_SIZE = 500;
+const MAX_ROB_SIZE           = 500;
 
 const handlers = {
     'get_programs': (data) => {
@@ -13,8 +13,8 @@ const handlers = {
         document.getElementById('programs-list').innerHTML="";
         // TODO: Check for errors ?
         for (let program of programs) {
-            let option = document.createElement('option');
-            option.value = program;
+            let option       = document.createElement('option');
+            option.value     = program;
             option.innerHTML = program;
             document.getElementById('programs-list').appendChild(option);
         }
@@ -24,8 +24,8 @@ const handlers = {
         document.getElementById('processors-list').innerHTML='';
         // TODO: Check for errors ?
         for (let processor of processors) {
-            let option = document.createElement('option');
-            option.value = processor;
+            let option       = document.createElement('option');
+            option.value     = processor;
             option.innerHTML = processor;
             document.getElementById('processors-list').appendChild(option);
         }
@@ -36,19 +36,19 @@ const handlers = {
     },
     'prog_show': (data) => {
       let array = data.split("Through");
-      let prog = array[0];
+      let prog  = array[0];
 
       // Split into lines
       let lines = prog.split("\n");
 
       // Remove leading/trailing empty lines
-      while (lines.length && lines[0].trim() === "") lines.shift();
+      while (lines.length && lines[0].trim() === "")                lines.shift();
       while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
 
       // Join cleaned lines
       const cleanedProg = lines.join("\n");
 
-      const item = document.getElementById('rvcat-asm-code');
+      const item       = document.getElementById('rvcat-asm-code');
       item.textContent = cleanedProg;
 
       if (lastExecutedCommand !== null) {
@@ -56,11 +56,11 @@ const handlers = {
       }
     },
     'prog_show_annotations': (data) => {
-      let array=data.split("Through");
-      let annotations = "Through"+array[1];
+      let array        = data.split("Through");
+      let annotations  = "Through"+array[1];
       array=annotations.split("CACHE");
-      annotations = array[0];
-      let item = document.getElementById('performance-annotations');
+      annotations      = array[0];
+      let item         = document.getElementById('performance-annotations');
       item.textContent = annotations;
     },
     'get_proc_settings': (data) => {
@@ -74,7 +74,6 @@ const handlers = {
     'generate_dependencies_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
-        // get svg element
         let callback = () => {
             return;
         }
@@ -90,22 +89,21 @@ const handlers = {
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
             document.getElementById('run-simulation-spinner').style.display = 'none';
-            document.getElementById('simulation-running').style.display = 'none';
-            document.getElementById('graph-section').style.display = 'block';
-            document.getElementById('critical-path-section').style.display = 'block';
-            document.getElementById('run-simulation-button').disabled = false;
+            document.getElementById('simulation-running').style.display     = 'none';
+            document.getElementById('graph-section').style.display          = 'block';
+            document.getElementById('critical-path-section').style.display  = 'block';
+            document.getElementById('run-simulation-button').disabled       = false;
             return;
         }
 
-        document.getElementById('instructions-output').innerHTML = d["total_instructions"];
-        document.getElementById('cycles-output').innerHTML = d["total_cycles"];
-        document.getElementById('IPC-output').innerHTML = d["ipc"].toFixed(2);
+        document.getElementById('instructions-output').innerHTML         = d["total_instructions"];
+        document.getElementById('cycles-output').innerHTML               = d["total_cycles"];
+        document.getElementById('IPC-output').innerHTML                  = d["ipc"].toFixed(2);
         document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
 
         usage = {}
         usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
-        usage['execute'] = (d["ipc"] / processorInfo.stages.execute) * 100;
-        usage['retire'] = (d["ipc"] / processorInfo.stages.retire) * 100;
+        usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
         usage.ports = {}
         let i = 0;
         let keys = Object.keys(processorInfo.ports);
@@ -116,10 +114,10 @@ const handlers = {
         createProcessorSimulationGraph(processorInfo.stages.dispatch, Object.keys(processorInfo.ports).length, processorInfo.stages.retire, usage);
         createCriticalPathList(d['critical_path'])
         document.getElementById('run-simulation-spinner').style.display = 'none';
-        document.getElementById('simulation-running').style.display = 'none';
-        document.getElementById('graph-section').style.display = 'block';
-        document.getElementById('critical-path-section').style.display = 'block';
-        document.getElementById('run-simulation-button').disabled = false;
+        document.getElementById('simulation-running').style.display     = 'none';
+        document.getElementById('graph-section').style.display          = 'block';
+        document.getElementById('critical-path-section').style.display  = 'block';
+        document.getElementById('run-simulation-button').disabled       = false;
     },
     'format_timeline': (data) => {
       timelineData = data;
