@@ -9,7 +9,7 @@ rvcat._processor.list_processors_json()
 const PROG_SHOW              = 'str(rvcat._program)'
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
 const PROG_SHOW_EXECUTION    = `rvcat.show_program_execution()`
-const PROG_SHOW_STATIC_PERFORMANCE = `rvcat._program.show_static_performance_analysis()`
+const PROG_SHOW_STATIC_PERFORMANCE = `rvcat.show_program_performance()`
 
 function show_timeline(num_iters) {
     return `rvcat._scheduler.format_timeline(niters=${num_iters})`
@@ -39,11 +39,10 @@ const RVCAT_HEADER = function() {
     let prog = currentProgram();
     let res = `import rvcat\n`;
     if (proc !== undefined) {
-      res += `rvcat._processor.load_processor('${currentProcessor()}')\n`
-
+      res += `rvcat.load_processor('${currentProcessor()}')\n`
     }
     if (prog !== undefined) {
-    res += `rvcat._program.load_program('${currentProgram()}')\n`
+    res += `rvcat.load_program('${currentProgram()}')\n`
     res += RUN_PROGRAM_PREAMBLE();
     }
     return res;
