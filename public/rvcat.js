@@ -440,46 +440,30 @@ async function showCellInfo(instrID, cycle) {
 
 function createCriticalPathList(data) {
   const color = [
-    "#ffffff",
-    "#fff3f3",
-    "#ffe7e7",
-    "#ffdbdb",
-    "#ffcece",
-    "#ffc2c2",
-    "#ffb6b6",
-    "#ffaaaa",
-    "#ff9e9e",
-    "#ff9292",
-    "#ff8686",
-    "#ff7979",
-    "#ff6d6d",
-    "#ff6161",
-    "#ff5555",
-    "#ff4949",
-    "#ff3d3d",
-    "#ff3131",
-    "#ff2424",
-    "#ff1818",
-    "#ff0c0c",
-    "#ff0000"
+    "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb",
+    "#ffcece", "#ffc2c2", "#ffb6b6", "#ffaaaa", 
+    "#ff9e9e", "#ff9292", "#ff8686", "#ff7979", 
+    "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", 
+    "#ff3d3d", "#ff3131", "#ff2424", "#ff1818", 
+    "#ff0c0c", "#ff0000"
   ];
 
-  let out="<list>";
   let lineColor;
-  const style = `display:flex;
-  flex-wrap: nowrap;
-  align-items: center;
+  let out        = "<list>";
+  const style    = `display:flex;
+  flex-wrap:       nowrap;
+  align-items:     center;
   justify-content: space-between;
-  padding: 2px;
-  border-top: 1px solid black;
-  border-right: 1px solid black;
-  border-left: 1px solid black;`;
+  padding:         2px;
+  border-top:      1px solid black;
+  border-right:    1px solid black;
+  border-left:     1px solid black;`;
 
-  if(data['dispatch'].toFixed(1)!=0.0){
-    lineColor=color[Math.floor(data['dispatch']/5)];
+  if (data['dispatch'].toFixed(1)!=0.0) {
+    lineColor = color[Math.floor(data['dispatch']/5)];
   }
-  else{
-    lineColor='white';
+  else {
+    lineColor = 'white';
   }
   out += `<li style="background-color:${lineColor}; list-style-type: none;">
     <div class="critical-path-el" style="${style}">
@@ -487,12 +471,12 @@ function createCriticalPathList(data) {
     </div>
   </li>`;
 
-  for(let i in data['instructions']){
-    if(data['instructions'][i]['percentage'].toFixed(1)!=0.0){
-      lineColor=color[Math.floor(data['instructions'][i]['percentage']/5)]
+  for (let i in data['instructions']) {
+    if (data['instructions'][i]['percentage'].toFixed(1)!=0.0) {
+      lineColor = color[Math.floor(data['instructions'][i]['percentage']/5)]
     }
-    else{
-      lineColor='white';
+    else {
+      lineColor = 'white';
     }
     out += `<li style="background-color:${lineColor}; list-style-type: none;">
       <div class="critical-path-el" style="${style}">
@@ -501,14 +485,14 @@ function createCriticalPathList(data) {
     </li>`;
   }
 
-  if(data['retire'].toFixed(1)!=0.0){
-    lineColor=color[Math.floor(data['retire']/5)];
+  if (data['retire'].toFixed(1)!=0.0) {
+    lineColor = color[Math.floor(data['retire']/5)];
   }
-  else{
+  else {
     lineColor = 'white';
   }
 
-  out+=`<li style="background-color:${lineColor}; list-style-type: none;">
+  out += `<li style="background-color:${lineColor}; list-style-type: none;">
     <div class="critical-path-el" style="${style} border-bottom: 1px solid black;">
       <div><b>${data['retire'].toFixed(1)}%  </b></div><div>RETIRE</div>
     </div>
