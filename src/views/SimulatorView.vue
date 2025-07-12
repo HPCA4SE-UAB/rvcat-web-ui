@@ -60,7 +60,7 @@ function cancelLeave() {
 onMounted(() => {
   nextTick(() => {
     if (typeof openLoadingOverlay === 'function') openLoadingOverlay();
-    if (typeof initPyodide === 'function') initPyodide();
+    if (typeof initPyodide === 'function')        initPyodide();
   });
 });
 </script>
@@ -109,8 +109,6 @@ onMounted(() => {
   </body>
 </template>
 
-
-
 <style scoped>
 .container {
   position:relative;
@@ -134,7 +132,5 @@ onMounted(() => {
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
 .results   { grid-column: 2; grid-row: 1 / 3; width: 99%; max-width: 99%; padding-bottom: 25px; }
-
-
 
 </style>
