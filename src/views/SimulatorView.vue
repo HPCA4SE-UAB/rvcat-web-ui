@@ -1,14 +1,14 @@
 <script setup>
 import { ref, shallowRef, onMounted, nextTick } from 'vue';
-import headerComponent from '@/components/headerComponent.vue';
-import loadingComponent from '@/components/loadingComponent.vue';
-import processorComponent from '@/components/processorComponent.vue';
-import programComponent from '@/components/programComponent.vue';
-import timelineComponent from '@/components/timelineComponent.vue';
-import aboutComponent from '@/components/aboutComponent.vue';
+import headerComponent         from '@/components/headerComponent.vue';
+import loadingComponent        from '@/components/loadingComponent.vue';
+import processorComponent      from '@/components/processorComponent.vue';
+import programComponent        from '@/components/programComponent.vue';
+import timelineComponent       from '@/components/timelineComponent.vue';
+import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
-import procSettingsComponent from '@/components/procSettingsComponent.vue';
-import simulationComponent from '@/components/simulationComponent.vue';
+import procSettingsComponent   from '@/components/procSettingsComponent.vue';
+import simulationComponent     from '@/components/simulationComponent.vue';
 
 // Modal & navigation state
 const showLeaveModal    = ref(false);
