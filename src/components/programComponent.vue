@@ -14,6 +14,7 @@
       reloadRvcat();
     });
   });
+
   onUnmounted(() => {
     const list = document.getElementById("processors-list");
     if (list && processorsListHandler) {
@@ -23,21 +24,20 @@
 
   // Modal logic
   const showModalUp = ref(false);
-  const modalName = ref("");
-  const nameError = ref("");
+  const modalName   = ref("");
+  const nameError   = ref("");
   let uploadedProgramObject = null;
 
   async function confirmModal() {
-    const name = modalName.value.trim();
-    const selectEl = document.getElementById("programs-list");
-
+    const name       = modalName.value.trim();
+    const selectEl   = document.getElementById("programs-list");
     const nameExists = Array.from(selectEl.options).some(opt => opt.value === name);
     if (nameExists) {
-      nameError.value = "A program file with this name already exists. Please choose another name.";
+      nameError.value = "A program file with this name already exists. Please, choose another name.";
       return;
     }
 
-    nameError.value = "";
+    nameError.value   = "";
     showModalUp.value = false;
 
     uploadedProgramObject.name = name;
@@ -57,14 +57,14 @@
   }
 
   function cancelModal() {
-    showModalUp.value = false;
-    modalName.value = "";
-    nameError.value = "";
+    showModalUp.value     = false;
+    modalName.value       = "";
+    nameError.value       = "";
     uploadedProgramObject = null;
   }
 
   async function downloadProgram() {
-    let data = await getProgramJSON();
+    let data       = await getProgramJSON();
     const jsonText = JSON.stringify(data, null, 2);
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
@@ -79,9 +79,9 @@
       await writable.close();
     } else {
       const blob = new Blob([jsonText], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
       a.download = `${document.getElementById('programs-list').value}.json`;
       document.body.appendChild(a);
       a.click();
@@ -91,15 +91,15 @@
   }
 
   function uploadProgram() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json";
+    const input         = document.createElement("input");
+    input.type          = "file";
+    input.accept        = "application/json";
     input.style.display = "none";
-    input.onchange = async (e) => {
+    input.onchange      = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       try {
-        const text = await file.text();
+        const text   = await file.text();
         const parsed = JSON.parse(text);
 
         if (!parsed.name) {
@@ -108,8 +108,8 @@
         }
 
         uploadedProgramObject = parsed;
-        modalName.value = parsed.name;
-        showModalUp.value = true;
+        modalName.value       = parsed.name;
+        showModalUp.value     = true;
       } catch (err) {
         console.error("Failed to parse JSON file:", err);
         alert("Could not load program file.");
@@ -120,9 +120,9 @@
     input.remove();
   }
 
-  const showTutorial = ref(false)
+  const showTutorial     = ref(false)
   const tutorialPosition = ref({ top: '50%', left: '50%' })
-  const infoIcon = ref(null)
+  const infoIcon         = ref(null)
 
   function openTutorial() {
     nextTick(() => {
@@ -130,7 +130,7 @@
       if (el) {
         const r = el.getBoundingClientRect()
         tutorialPosition.value = {
-          top: `${r.bottom}px`,
+          top:  `${r.bottom}px`,
           left: `${r.right}px`
         }
         showTutorial.value = true
@@ -153,8 +153,8 @@
       </div>
       <div id="settings-div">
         <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
-        <button id="upload-button" class="blue-button" @click="uploadProgram">Upload</button>
-        <select id="programs-list" name="assembly-code" onchange="reloadRvcat();">
+        <button id="upload-button"   class="blue-button" @click="uploadProgram">Upload</button>
+        <select id="programs-list"   name="assembly-code" onchange="reloadRvcat();">
         </select>
       </div>
     </div>
@@ -166,7 +166,7 @@
     <div class="modal">
       <h4>Load Program As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName" />
+      <input id ="config-name" type="text" v-model="modalName" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
         <button class="blue-button" @click="confirmModal">Load</button>
@@ -183,7 +183,6 @@
   title="Program Loop"
   @close="closeTutorial"
   />
-
 
 </template>
 
