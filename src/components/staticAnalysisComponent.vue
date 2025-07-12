@@ -4,11 +4,11 @@
 
   let processorsListHandler;
   let programsListHandler;
-  const showAnnotations = ref(false);
-  const showFullScreen = ref(false);
-  const showTutorial = ref(false);
+  const showAnnotations  = ref(false);
+  const showFullScreen   = ref(false);
+  const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
-  const infoIcon = ref(null);
+  const infoIcon         = ref(null);
 
   function openTutorial() {
     nextTick(() => {
@@ -16,7 +16,7 @@
       if (el) {
         const r = el.getBoundingClientRect()
         tutorialPosition.value = {
-          top: `${r.bottom}px`,
+          top:  `${r.bottom}px`,
           left: `${r.right}px`
         }
         showTutorial.value = true
@@ -303,7 +303,5 @@
     width: 100% !important;
     height: 100% !important;
   }
-
-
 
 </style>
