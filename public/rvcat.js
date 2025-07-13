@@ -215,17 +215,9 @@ function programShow() {
 
 function programShowPerfAnnotations() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
+        RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
         'prog_show_annotations'
     )
-}
-
-function programShowAnalysis() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-        'print_output'
-    )
-    lastExecutedCommand = programShowAnalysis;
 }
 
 async function getProcessorJSON() {
