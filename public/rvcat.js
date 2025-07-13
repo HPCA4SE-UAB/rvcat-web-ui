@@ -8,7 +8,6 @@ const MAX_PROGRAM_ITERATIONS = 3000;
 const MAX_ROB_SIZE           = 500;
 
 const handlers = {
-  
     'get_programs': (data) => {
         let programs = JSON.parse(data);
         document.getElementById('programs-list').innerHTML="";
@@ -20,10 +19,9 @@ const handlers = {
             document.getElementById('programs-list').appendChild(option);
         }
     },
-  
     'get_processors': (data) => {
         let processors = JSON.parse(data);
-        document.getElementById('processors-list').innerHTML="";
+        document.getElementById('processors-list').innerHTML='';
         // TODO: Check for errors ?
         for (let processor of processors) {
             let option       = document.createElement('option');
@@ -36,30 +34,43 @@ const handlers = {
         getProcessorInformation();
         closeLoadingOverlay();
     },
-  
     'prog_show': (data) => {
+      let array = data.split("Through");
+      let prog  = array[0];
+
+      // Split into lines
+      let lines = prog.split("\n");
+
+      // Remove leading/trailing empty lines
+      while (lines.length && lines[0].trim() === "")                lines.shift();
+      while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
+
+      // Join cleaned lines
+      const cleanedProg = lines.join("\n");
+
       const item       = document.getElementById('rvcat-asm-code');
-      item.textContent = data;
+      item.textContent = cleanedProg;
+
       if (lastExecutedCommand !== null) {
         lastExecutedCommand();
       }
     },
-  
     'prog_show_annotations': (data) => {
-      const item       = document.getElementById('performance-annotations');
-      item.textContent = data;
+      let array        = data.split("Through");
+      let annotations  = "Through"+array[1];
+      array=annotations.split("CACHE");
+      annotations      = array[0];
+      let item         = document.getElementById('performance-annotations');
+      item.textContent = annotations;
     },
-  
     'get_proc_settings': (data) => {
       processorInfo = JSON.parse(data);
     },
-  
     'save_processor_info': (data) => {
         processorInfo = JSON.parse(data);
         showProcessor();
         getSchedulerAnalysis();
     },
-  
     'generate_dependencies_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
@@ -68,13 +79,11 @@ const handlers = {
         }
         createGraphVizGraph(data, item, callback);
     },
-  
     'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
     },
-  
     'generate_scheduler_analysis': (data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
@@ -86,6 +95,7 @@ const handlers = {
             document.getElementById('run-simulation-button').disabled       = false;
             return;
         }
+
         document.getElementById('instructions-output').innerHTML         = d["total_instructions"];
         document.getElementById('cycles-output').innerHTML               = d["total_cycles"];
         document.getElementById('IPC-output').innerHTML                  = d["ipc"].toFixed(2);
@@ -109,24 +119,19 @@ const handlers = {
         document.getElementById('critical-path-section').style.display  = 'block';
         document.getElementById('run-simulation-button').disabled       = false;
     },
-  
     'format_timeline': (data) => {
       timelineData = data;
     },
-  
     'print_output': (data) => {
         let out = data.replace(/\n/g, '<br>');
         console.log(out);
     },
-  
     'save_modified_processor': (data) => {
       console.log("Processor settings saved");
     },
-  
     'get_program_json': (data) => {
       programData = JSON.parse(data);
     },
-  
     'add_new_program': (data) => {
       console.log("New program saved");
     }
@@ -136,14 +141,12 @@ const worker = new Worker('./worker.js');
 worker.onmessage = function(message) {
     console.log('Message received from worker', message);
     if (message.data.action === 'initialized') {
-        executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
+        executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
         executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
     }
-  
     if (message.data.action === 'loadedPackage') {
         // TODO
     }
-
     if (message.data.action === 'executed') {
         if (message.data.data_type == 'error') {
             console.log('Error:', message.data.result);
@@ -214,10 +217,10 @@ function programShow() {
 }
 
 function programShowPerfAnnotations() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
-        'prog_show_annotations'
-    )
+  executeCode(
+    RVCAT_HEADER() + PROG_SHOW_EXECUTION,
+    'prog_show_annotations'
+  )
 }
 
 function programShowAnalysis() {
@@ -230,8 +233,8 @@ function programShowAnalysis() {
 
 async function getProcessorJSON() {
   await executeCode(
-      RVCAT_HEADER() + SHOW_PROCESSOR,
-      'get_proc_settings'
+    RVCAT_HEADER() + SHOW_PROCESSOR,
+    'get_proc_settings'
   )
   return processorInfo;
 }
@@ -256,12 +259,12 @@ async function executeCode(code, id=undefined){
 
 // UI stuff
 function openLoadingOverlay() {
-  document.getElementById('loading-overlay').style.display   = 'block';
+  document.getElementById('loading-overlay').style.display = 'block';
   document.getElementById('blur-overlay-item').style.display = 'block';
 }
 
 function closeLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display   = 'none';
+    document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('blur-overlay-item').style.display = 'none';
 }
 
@@ -319,11 +322,11 @@ function showProcessor() {
         return;
     }
     let dispatch_width = processorInfo.stages.dispatch;
-    let num_ports      = Object.keys(processorInfo.ports).length;
-    let retire_width   = processorInfo.stages.retire;
-    let cache = {'nBlocks':    processorInfo.nBlocks,
-                 'blkSize':    processorInfo.blkSize,
-                 'mPenalty':   processorInfo.mPenalty,
+    let num_ports = Object.keys(processorInfo.ports).length;
+    let retire_width = processorInfo.stages.retire;
+    let cache = {'nBlocks': processorInfo.nBlocks,
+                 'blkSize': processorInfo.blkSize,
+                 'mPenalty': processorInfo.mPenalty,
                  'mIssueTime': processorInfo.mIssueTime};
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
@@ -339,17 +342,16 @@ function showCriticalPathsGraph() {
 function getSchedulerAnalysis() {
     showProcessor();
 
-    document.getElementById('instructions-output').innerHTML         = '?';
-    document.getElementById('cycles-output').innerHTML               = '?';
-    document.getElementById('IPC-output').innerHTML                  = '?';
+    document.getElementById('instructions-output').innerHTML = '?';
+    document.getElementById('cycles-output').innerHTML = '?';
+    document.getElementById('IPC-output').innerHTML = '?';
     document.getElementById('cycles-per-iteration-output').innerHTML = '?';
 
     document.getElementById('run-simulation-spinner').style.display = 'block';
-    document.getElementById('simulation-running').style.display     = 'block';
-    document.getElementById('graph-section').style.display          = 'none';
-    document.getElementById('critical-path-section').style.display  = 'none';
-    document.getElementById('run-simulation-button').disabled       = true;
-  
+    document.getElementById('simulation-running').style.display = 'block';
+    document.getElementById('graph-section').style.display = 'none';
+    document.getElementById('critical-path-section').style.display = 'none';
+    document.getElementById('run-simulation-button').disabled = true;
     executeCode(
         RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
         'generate_scheduler_analysis'
@@ -357,9 +359,9 @@ function getSchedulerAnalysis() {
 }
 
 async function getTimeline() {
-    let controls  = document.getElementById('dependencies-controls');
-    let num_iters = document.getElementById('dependencies-num-iters').value;
+    let controls = document.getElementById('dependencies-controls');
     controls.style.display = 'block';
+    let num_iters = document.getElementById('dependencies-num-iters').value;
     if (num_iters === '') {
         num_iters = 3;
     }
@@ -370,6 +372,7 @@ async function getTimeline() {
 
     return new Promise((resolve, reject)=>{
       const original = handlers['format_timeline'];
+
       handlers['format_timeline'] = (data) => {
         try {
           timelineData = data;
@@ -390,36 +393,39 @@ async function getTimeline() {
 }
 
 async function saveModifiedProcessor(config) {
-    await executeCode(
-       RVCAT_HEADER() + addModifiedProcessor(config),
-       'save_modified_processor'
-     );
-     await executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+
+  await executeCode(
+    RVCAT_HEADER() + addModifiedProcessor(config),
+    'save_modified_processor'
+  );
+  await executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
 }
 
 async function getProgramJSON(){
-     return new Promise((resolve, reject) => {
-       // Temporarily override the handler for this one request:
-       const original = handlers['get_program_json'];
+  return new Promise((resolve, reject) => {
+    // Temporarily override the handler for this one request:
+    const original = handlers['get_program_json'];
 
-       handlers['get_program_json'] = (data) => {
-         try {
-           const obj = JSON.parse(data);
-           programData = obj;
-           resolve(obj);
-         } catch (err) {
-           reject(err);
-         } finally {
-           // restore the old handler
-           handlers['get_program_json'] = original;
-         }
+    handlers['get_program_json'] = (data) => {
+      try {
+        const obj = JSON.parse(data);
+        programData = obj;
+        resolve(obj);
+      } catch (err) {
+        reject(err);
+      } finally {
+        // restore the old handler
+        handlers['get_program_json'] = original;
+      }
     };
+
     // fire off the code to the worker
     executeCode(GET_PROGRAM_JSON, 'get_program_json');
   });
 }
 
 async function saveNewProgram(config) {
+
   await executeCode(
     RVCAT_HEADER() + addNewProgram(config),
     'add_new_program'
@@ -434,6 +440,31 @@ async function showCellInfo(instrID, cycle) {
 
 function createCriticalPathList(data) {
   const color = [
+    "#ffffff",
+    "#fff3f3",
+    "#ffe7e7",
+    "#ffdbdb",
+    "#ffcece",
+    "#ffc2c2",
+    "#ffb6b6",
+    "#ffaaaa",
+    "#ff9e9e",
+    "#ff9292",
+    "#ff8686",
+    "#ff7979",
+    "#ff6d6d",
+    "#ff6161",
+    "#ff5555",
+    "#ff4949",
+    "#ff3d3d",
+    "#ff3131",
+    "#ff2424",
+    "#ff1818",
+    "#ff0c0c",
+    "#ff0000"
+  ];
+
+/* const color = [
     "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb",
     "#ffcece", "#ffc2c2", "#ffb6b6", "#ffaaaa", 
     "#ff9e9e", "#ff9292", "#ff8686", "#ff7979", 
@@ -441,23 +472,24 @@ function createCriticalPathList(data) {
     "#ff3d3d", "#ff3131", "#ff2424", "#ff1818", 
     "#ff0c0c", "#ff0000"
   ];
+*/
 
+  let out="<list>";
   let lineColor;
-  let out        = "<list>";
-  const style    = `display:flex;
-  flex-wrap:       nowrap;
-  align-items:     center;
+  const style = `display:flex;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: space-between;
-  padding:         2px;
-  border-top:      1px solid black;
-  border-right:    1px solid black;
-  border-left:     1px solid black;`;
+  padding: 2px;
+  border-top: 1px solid black;
+  border-right: 1px solid black;
+  border-left: 1px solid black;`;
 
-  if (data['dispatch'].toFixed(1)!=0.0) {
-    lineColor = color[Math.floor(data['dispatch']/5)];
+  if(data['dispatch'].toFixed(1)!=0.0){
+    lineColor=color[Math.floor(data['dispatch']/5)];
   }
-  else {
-    lineColor = 'white';
+  else{
+    lineColor='white';
   }
   out += `<li style="background-color:${lineColor}; list-style-type: none;">
     <div class="critical-path-el" style="${style}">
@@ -465,12 +497,12 @@ function createCriticalPathList(data) {
     </div>
   </li>`;
 
-  for (let i in data['instructions']) {
-    if (data['instructions'][i]['percentage'].toFixed(1)!=0.0) {
-      lineColor = color[Math.floor(data['instructions'][i]['percentage']/5)]
+  for(let i in data['instructions']){
+    if(data['instructions'][i]['percentage'].toFixed(1)!=0.0){
+      lineColor=color[Math.floor(data['instructions'][i]['percentage']/5)]
     }
-    else {
-      lineColor = 'white';
+    else{
+      lineColor='white';
     }
     out += `<li style="background-color:${lineColor}; list-style-type: none;">
       <div class="critical-path-el" style="${style}">
@@ -479,14 +511,14 @@ function createCriticalPathList(data) {
     </li>`;
   }
 
-  if (data['retire'].toFixed(1)!=0.0) {
-    lineColor = color[Math.floor(data['retire']/5)];
+  if(data['retire'].toFixed(1)!=0.0){
+    lineColor=color[Math.floor(data['retire']/5)];
   }
-  else {
+  else{
     lineColor = 'white';
   }
 
-  out += `<li style="background-color:${lineColor}; list-style-type: none;">
+  out+=`<li style="background-color:${lineColor}; list-style-type: none;">
     <div class="critical-path-el" style="${style} border-bottom: 1px solid black;">
       <div><b>${data['retire'].toFixed(1)}%  </b></div><div>RETIRE</div>
     </div>
