@@ -215,7 +215,7 @@ function programShow() {
 
 function programShowPerfAnnotations() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
+        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
         'prog_show_annotations'
     )
 }
