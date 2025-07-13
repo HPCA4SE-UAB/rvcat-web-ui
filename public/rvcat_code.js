@@ -1,7 +1,7 @@
 const PROG_SHOW                         = 'str(rvcat._program)'
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
 const PROG_SHOW_EXECUTION               = `rvcat._program.annotate_execution()`
-const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.show_dependencies()`
+const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.annotate_action()`
 const SHOW_PROCESSOR                    = 'rvcat._processor.json()'
 const GET_PROGRAM_JSON                  = 'rvcat._program.json()'
 const RUN_PROGRAM_ANALYSIS              = 'rvcat._scheduler.format_analysis_json()'
@@ -41,7 +41,8 @@ const RVCAT_HEADER = function() {
     }
     if (prog !== undefined) {
       res += `rvcat.load_program('${currentProgram()}')\n`
-      res += RUN_PROGRAM_PREAMBLE();
+      let res2 = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
+      res += res2;
     }
     return res;
 }
