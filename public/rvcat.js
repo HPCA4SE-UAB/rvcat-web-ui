@@ -60,7 +60,7 @@ const handlers = {
         getSchedulerAnalysis();
     },
   
-    'generate_dependencies_graph': (data) => {
+/*    'generate_dependencies_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
         let callback = () => {
@@ -68,6 +68,7 @@ const handlers = {
         }
         createGraphVizGraph(data, item, callback);
     },
+  */
   
     'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
