@@ -1,7 +1,7 @@
 const PROG_SHOW                         = 'str(rvcat._program)'
 const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
 const PROG_SHOW_EXECUTION               = `rvcat._program.annotate_execution()`
-const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.annotate_action()`
+const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.show_small_perf_analysis()`
 const SHOW_PROCESSOR                    = 'rvcat._processor.json()'
 const GET_PROGRAM_JSON                  = 'rvcat._program.json()'
 const RUN_PROGRAM_ANALYSIS              = 'rvcat._scheduler.format_analysis_json()'
@@ -25,11 +25,6 @@ function addModifiedProcessor(config){
 function addNewProgram(config){
   let res = `rvcat._program.import_program_json(${config})`;
   return res;
-}
-
-const RUN_PROGRAM_PREAMBLE = function() {
-    let res = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
-    return res;
 }
 
 const RVCAT_HEADER = function() {
