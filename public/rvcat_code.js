@@ -32,8 +32,8 @@ const RVCAT_HEADER = function() {
       res += `rvcat._processor.load_processor('${currentProcessor()}')\n`
     }
     if (prog !== undefined) {
-      res += `rvcat._program.load_program('${currentProgram()}')\n` ;
-      res += `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n` ;
+      res += `rvcat._program.load_program('${currentProgram()}')\n`
+      res += `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
     }
     return res;
 }
