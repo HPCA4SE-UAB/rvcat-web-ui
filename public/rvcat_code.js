@@ -32,10 +32,10 @@ const RVCAT_HEADER = function() {
     let prog = currentProgram();
     let res  = `import rvcat\n`;
     if (proc !== undefined) {
-      res += `rvcat.load_processor('${currentProcessor()}')\n`
+      res += `rvcat._processor.load_processor('${currentProcessor()}')\n`
     }
     if (prog !== undefined) {
-      res += `rvcat.load_program('${currentProgram()}')\n`
+      res += `rvcat._program.load_program('${currentProgram()}')\n`
       let res2 = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
       res += res2;
     }
