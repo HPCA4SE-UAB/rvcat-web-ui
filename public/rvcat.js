@@ -59,17 +59,7 @@ const handlers = {
         showProcessor();
         getSchedulerAnalysis();
     },
-  
-/*    'generate_dependencies_graph': (data) => {
-        let item = document.getElementById('simulation-output');
-        item.innerHTML = '';
-        let callback = () => {
-            return;
-        }
-        createGraphVizGraph(data, item, callback);
-    },
-  */
-  
+   
     'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
@@ -152,11 +142,7 @@ worker.onmessage = function(message) {
         }
         data = message.data.result;
         if (message.data.id !== undefined) {
-            if (message.data.id !== undefined) {
-                handlers[message.data.id](data);
-            } else {
-                // TODO: remove
-            }
+           handlers[message.data.id](data);
         }
     }
 }
