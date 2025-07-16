@@ -45,7 +45,7 @@ const handlers = {
       }
     },
   
-    'prog_show_performance': (data) => {
+    'prog_show_annotations': (data) => {
       const item       = document.getElementById('performance-annotations');
       item.textContent = data;
     },
@@ -60,13 +60,13 @@ const handlers = {
         getSchedulerAnalysis();
     },
    
-    'generate_cyclic_paths_graph': (data) => {
+    'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
     },
   
-    'generate_performance_analysis': (data) => {
+    'generate_scheduler_analysis': (data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -195,15 +195,15 @@ function currentROBSize() {
 // Commands
 function programShow() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_PROGRAM,
+        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
         'prog_show'
     )
 }
 
-function programShowPerformance() {
+function programShowPerfAnnotations() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-        'prog_show_performance'
+        'prog_show_annotations'
     )
 }
 
@@ -307,12 +307,12 @@ function showProcessor() {
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
 
-function showCyclicPathsGraph() {
+function showCriticalPathsGraph() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_CYCLIC_PATHS_GRAPHVIZ,
-        'generate_cyclic_paths_graph'
+        RVCAT_HEADER() + PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ,
+        'generate_critical_paths_graph'
     )
-    lastExecutedCommand = showCyclicPathsGraph;
+    lastExecutedCommand = showCriticalPathsGraph;
 }
 
 function getSchedulerAnalysis() {
@@ -331,7 +331,7 @@ function getSchedulerAnalysis() {
   
     executeCode(
         RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
-        'generate_performance_analysis'
+        'generate_scheduler_analysis'
     );
 }
 
