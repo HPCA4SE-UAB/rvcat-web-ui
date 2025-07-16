@@ -57,7 +57,7 @@ const handlers = {
     'save_processor_info': (data) => {
         processorInfo = JSON.parse(data);
         showProcessor();
-        getPerformanceAnalysis();
+        getSchedulerAnalysis();
     },
    
     'generate_cyclic_paths_graph': (data) => {
