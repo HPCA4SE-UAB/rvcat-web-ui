@@ -1,6 +1,6 @@
 const PROG_SHOW                       = 'str(rvcat._program)'
 const PROG_SHOW_CYCLIC_PATHS_GRAPHVIZ = `rvcat._program.recurrent_paths_graphviz()`
-const PROG_SHOW_EXECUTION             = `rvcat._program.show_program()`
+const PROG_SHOW_PROGRAM               = `rvcat._program.show_program()`
 const PROG_SHOW_STATIC_PERFORMANCE    = `rvcat._program.show_performance_analysis()`
 const SHOW_PROCESSOR                  = 'rvcat._processor.json()'
 const GET_PROGRAM_JSON                = 'rvcat._program.json()'
