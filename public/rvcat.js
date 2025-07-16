@@ -45,7 +45,7 @@ const handlers = {
       }
     },
   
-    'prog_show_annotations': (data) => {
+    'prog_show_performance': (data) => {
       const item       = document.getElementById('performance-annotations');
       item.textContent = data;
     },
@@ -57,16 +57,16 @@ const handlers = {
     'save_processor_info': (data) => {
         processorInfo = JSON.parse(data);
         showProcessor();
-        getSchedulerAnalysis();
+        getPerformanceAnalysis();
     },
    
-    'generate_critical_paths_graph': (data) => {
+    'generate_cyclic_paths_graph': (data) => {
         let item = document.getElementById('simulation-output');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
     },
   
-    'generate_scheduler_analysis': (data) => {
+    'generate_performance_analysis': (data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -200,10 +200,10 @@ function programShow() {
     )
 }
 
-function programShowPerfAnnotations() {
+function programShowPerformance() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-        'prog_show_annotations'
+        'prog_show_performance'
     )
 }
 
@@ -307,15 +307,15 @@ function showProcessor() {
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
 
-function showCriticalPathsGraph() {
+function showCyclicPathsGraph() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ,
-        'generate_critical_paths_graph'
+        RVCAT_HEADER() + PROG_SHOW_CYCLIC_PATHS_GRAPHVIZ,
+        'generate_cyclic_paths_graph'
     )
-    lastExecutedCommand = showCriticalPathsGraph;
+    lastExecutedCommand = showCyclicPathsGraph;
 }
 
-function getSchedulerAnalysis() {
+function getPerformanceAnalysis() {
     showProcessor();
 
     document.getElementById('instructions-output').innerHTML         = '?';
@@ -331,7 +331,7 @@ function getSchedulerAnalysis() {
   
     executeCode(
         RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
-        'generate_scheduler_analysis'
+        'generate_performance_analysis'
     );
 }
 
