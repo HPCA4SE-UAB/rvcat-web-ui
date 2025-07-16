@@ -1,10 +1,10 @@
-const PROG_SHOW                       = 'str(rvcat._program)'
-const PROG_SHOW_CYCLIC_PATHS_GRAPHVIZ = `rvcat._program.recurrent_paths_graphviz()`
-const PROG_SHOW_PROGRAM               = `rvcat._program.show_program()`
-const PROG_SHOW_STATIC_PERFORMANCE    = `rvcat._program.show_performance_analysis()`
-const SHOW_PROCESSOR                  = 'rvcat._processor.json()'
-const GET_PROGRAM_JSON                = 'rvcat._program.json()'
-const RUN_PROGRAM_ANALYSIS            = 'rvcat._scheduler.format_analysis_json()'
+const PROG_SHOW                         = 'str(rvcat._program)'
+const PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ = `rvcat._program.get_recurrent_paths_graphviz()`
+const PROG_SHOW_EXECUTION               = `rvcat._program.annotate_execution()`
+const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.show_small_perf_analysis()`
+const SHOW_PROCESSOR                    = 'rvcat._processor.json()'
+const GET_PROGRAM_JSON                  = 'rvcat._program.json()'
+const RUN_PROGRAM_ANALYSIS              = 'rvcat._scheduler.format_analysis_json()'
 
 const GET_AVAIL_PROGRAMS = `import rvcat
 rvcat._program.list_programs_json()
