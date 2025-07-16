@@ -86,7 +86,7 @@
           <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="3000" v-model.number="iterations">
           <button type="button" class="gray-button" @click="changeIterations(1)">+</button>
         </div>
-        <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
+        <button id="run-simulation-button" class="blue-button" onclick="getPerformanceAnalysis();">Run</button>
       </div>
     </div>
 
