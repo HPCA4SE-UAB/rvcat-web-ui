@@ -49,12 +49,12 @@
     showAnnotations.value = !showAnnotations.value;
 
     if (showAnnotations.value) {
-      if (typeof programShowPerfAnnotations === "function") {
+      if (typeof programShowPerformance === "function") {
         nextTick(() => {
-          programShowPerfAnnotations();
+          programShowPerformance();
         });
       } else {
-        console.error("programShowPerfAnnotations function not found.");
+        console.error("programShowPerformance function not found.");
       }
     }
   }
@@ -65,8 +65,8 @@
       if (processorsList) {
         processorsListHandler = () => {
           setTimeout(() => {
-            if (showAnnotations.value && typeof programShowPerfAnnotations === "function") {
-              programShowPerfAnnotations();
+            if (showAnnotations.value && typeof programShowPerformance === "function") {
+              programShowPerformance();
             }
           }, 100);
         };
@@ -76,16 +76,16 @@
       if (programsList) {
         programsListHandler = () => {
           setTimeout(() => {
-            if (showAnnotations.value && typeof programShowPerfAnnotations === "function") {
-              programShowPerfAnnotations();
+            if (showAnnotations.value && typeof programShowPerformance === "function") {
+              programShowPerformance();
             }
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
       }
 
-      if (typeof showCriticalPathsGraph === "function") {
-        showCriticalPathsGraph();
+      if (typeof showCyclicPathsGraph === "function") {
+        showCyclicPathsGraph();
       } else {
         console.error("simulation-output element not found.");
       }
