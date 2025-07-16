@@ -315,7 +315,7 @@ function showCyclicPathsGraph() {
     lastExecutedCommand = showCyclicPathsGraph;
 }
 
-function getPerformanceAnalysis() {
+function getSchedulerAnalysis() {
     showProcessor();
 
     document.getElementById('instructions-output').innerHTML         = '?';
