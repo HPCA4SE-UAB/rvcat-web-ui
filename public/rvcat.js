@@ -195,7 +195,7 @@ function currentROBSize() {
 // Commands
 function programShow() {
     executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
+        RVCAT_HEADER() + PROG_SHOW_PROGRAM,
         'prog_show'
     )
 }
