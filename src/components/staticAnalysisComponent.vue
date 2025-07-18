@@ -119,7 +119,15 @@
         <span class="arrow">{{ showAnnotations ? '▼' : '▶' }}</span>
         <span class="title"><b>Analysis of Performance limits: Throughput and Latency Bounds</b></span>
       </div>
-
+      <Transition name="fold" appear>
+        <pre v-show="showAnnotations" id="performance-annotations" class="annotations-box"></pre>
+      </Transition>
+    </div>
+    <div class="annotations-wrapper">
+      <div class="annotations-header" @click="toggleAnnotations">
+        <span class="arrow">{{ showAnnotations ? '▼' : '▶' }}</span>
+        <span class="title"><b>Analysis of Performance limits: Throughput and Latency Bounds</b></span>
+      </div>
       <Transition name="fold" appear>
         <pre v-show="showAnnotations" id="performance-annotations" class="annotations-box"></pre>
       </Transition>
