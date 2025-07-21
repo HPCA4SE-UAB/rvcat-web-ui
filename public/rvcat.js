@@ -49,6 +49,11 @@ const handlers = {
       const item       = document.getElementById('performance-annotations');
       item.textContent = data;
     },
+
+    'prog_show_annotations2': (data) => {
+      const item       = document.getElementById('performance-annotations2');
+      item.textContent = data;
+    },
   
     'get_proc_settings': (data) => {
       processorInfo = JSON.parse(data);
@@ -204,6 +209,13 @@ function programShowPerfAnnotations() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
         'prog_show_annotations'
+    )
+}
+
+function programShowPerfAnnotations2() {
+    executeCode(
+        RVCAT_HEADER() + PROG_SHOW_CRITICAL_PATHS_GRAPHVIZ,
+        'prog_show_annotations2'
     )
 }
 
