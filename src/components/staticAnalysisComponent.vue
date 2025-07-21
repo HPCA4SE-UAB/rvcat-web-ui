@@ -5,6 +5,7 @@
   let processorsListHandler;
   let programsListHandler;
   const showAnnotations  = ref(false);
+  const showAnnotations2 = ref(false);
   const showFullScreen   = ref(false);
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
@@ -59,6 +60,20 @@
     }
   }
 
+  function toggleAnnotations2() {
+    showAnnotations2.value = !showAnnotations2.value;
+
+    if (showAnnotations2.value) {
+      if (typeof programShowPerfAnnotations2 === "function") {
+        nextTick(() => {
+          programShowPerfAnnotations2();
+        });
+      } else {
+        console.error("programShowPerfAnnotations2 function not found.");
+      }
+    }
+  }
+
   onMounted(() => {
     nextTick(() => {
       const processorsList = document.getElementById("processors-list");
@@ -67,6 +82,9 @@
           setTimeout(() => {
             if (showAnnotations.value && typeof programShowPerfAnnotations === "function") {
               programShowPerfAnnotations();
+            }
+            if (showAnnotations2.value && typeof programShowPerfAnnotations2 === "function") {
+              programShowPerfAnnotations2();
             }
           }, 100);
         };
@@ -78,6 +96,9 @@
           setTimeout(() => {
             if (showAnnotations.value && typeof programShowPerfAnnotations === "function") {
               programShowPerfAnnotations();
+            }
+            if (showAnnotations2.value && typeof programShowPerfAnnotations2 === "function") {
+              programShowPerfAnnotations2();
             }
           }, 100);
         };
@@ -117,19 +138,19 @@
     <div class="annotations-wrapper">
       <div class="annotations-header" @click="toggleAnnotations">
         <span class="arrow">{{ showAnnotations ? '▼' : '▶' }}</span>
-        <span class="title"><b>Analysis of Performance limits: Throughput and Latency Bounds</b></span>
+        <span class="title"><b>Analysis of Performance limits: Throughput Bounds</b></span>
       </div>
       <Transition name="fold" appear>
         <pre v-show="showAnnotations" id="performance-annotations" class="annotations-box"></pre>
       </Transition>
     </div>
-    <div class="annotations-wrapper">
-      <div class="annotations-header" @click="toggleAnnotations">
-        <span class="arrow">{{ showAnnotations ? '▼' : '▶' }}</span>
-        <span class="title"><b>Analysis of Performance limits: Throughput and Latency Bounds</b></span>
+    <div class="annotations-wrapper2">
+      <div class="annotations-header2" @click="toggleAnnotations2">
+        <span class="arrow">{{ showAnnotations2 ? '▼' : '▶' }}</span>
+        <span class="title"><b>Analysis of Performance limits: Latency Bounds</b></span>
       </div>
       <Transition name="fold" appear>
-        <pre v-show="showAnnotations" id="performance-annotations" class="annotations-box"></pre>
+        <pre v-show="showAnnotations2" id="performance-annotations2" class="annotations-box"></pre>
       </Transition>
     </div>
     <div class="output-block-wrapper" id="simulation-output-container">
