@@ -38,7 +38,8 @@ const RVCAT_HEADER = function() {
     }
     if (prog !== undefined) {
       res += `rvcat._program.load_program('${currentProgram()}')\n`
-      let res2 = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
+      rs2 = "";
+      // let res2 = `rvcat._scheduler.load_program(rvcat._program, iterations=${currentIterations()}, window_size=${currentROBSize()})\n`
       res += res2;
     }
     return res;
