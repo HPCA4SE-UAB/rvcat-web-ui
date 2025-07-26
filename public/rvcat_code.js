@@ -4,7 +4,9 @@ const PROG_SHOW_EXECUTION               = `rvcat._program.show_code()`
 const PROG_SHOW_STATIC_PERFORMANCE      = `rvcat._program.show_performance_analysis()`
 const SHOW_PROCESSOR                    = 'rvcat._processor.json()'
 const GET_PROGRAM_JSON                  = 'rvcat._program.json()'
-const RUN_PROGRAM_ANALYSIS              = 'rvcat._scheduler.format_analysis_json()'
+const RUN_PROGRAM_ANALYSIS              = ''
+
+// 'rvcat._scheduler.format_analysis_json()'
 
 const GET_AVAIL_PROGRAMS = `import rvcat
 rvcat._program.list_programs_json()
