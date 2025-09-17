@@ -46,7 +46,7 @@
     )}; max-age=${maxAge}; path=/`;
   }
 
-  const iterations = ref(parseInt(getCookie("simulationIterations")) || 200);
+  const iterations = ref(parseInt(getCookie("simulationIterations")) || 1);
   watch(iterations, (v) => setCookie("simulationIterations", v));
 
 
@@ -62,7 +62,7 @@
 
   function changeIterations(delta) {
     const min = 1;
-    const max = 3000;
+    const max = 20;
     let v = iterations.value + delta;
     if (v < min) v = min;
     if (v > max) v = max;
@@ -81,7 +81,7 @@
         <div class="iterations-group">
           Iterations:
           <button type="button" class="gray-button" @click="changeIterations(-1)">−</button>
-          <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="2000" v-model.number="iterations">
+          <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="20" v-model.number="iterations">
           <button type="button" class="gray-button" @click="changeIterations(1)">+</button>
         </div>
         <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
