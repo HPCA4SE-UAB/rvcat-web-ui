@@ -19,9 +19,9 @@ const settingsCompInst  = ref(null);
 const components = {
   // timelineComponent,
   // staticAnalysisComponent,
+  // procSettingsComponent,
   aboutComponent,
-  simulationComponent,
-  procSettingsComponent
+  simulationComponent
 };
 
 // Current view key & component
