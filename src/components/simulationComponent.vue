@@ -62,7 +62,7 @@
 
   function changeIterations(delta) {
     const min = 1;
-    const max = 20;
+    const max = 2000;
     let v = iterations.value + delta;
     if (v < min) v = min;
     if (v > max) v = max;
@@ -81,7 +81,7 @@
         <div class="iterations-group">
           Iterations:
           <button type="button" class="gray-button" @click="changeIterations(-1)">−</button>
-          <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="20" v-model.number="iterations">
+          <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="20000" v-model.number="iterations">
           <button type="button" class="gray-button" @click="changeIterations(1)">+</button>
         </div>
         <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
@@ -124,7 +124,6 @@
 
       <Transition name="fold" appear>
         <div v-show="showCriticalPath" id="critical-path" class="critical-box">
-
         </div>
       </Transition>
     </div>
