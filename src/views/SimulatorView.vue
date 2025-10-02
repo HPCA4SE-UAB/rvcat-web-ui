@@ -17,7 +17,7 @@ const settingsCompInst  = ref(null);
 
 // Map of component keys -> component definitions
 const components = {
-  // timelineComponent,
+  timelineComponent,
   staticAnalysisComponent,
   // procSettingsComponent,
   aboutComponent,
