@@ -294,7 +294,7 @@
         if (closeBracket !== -1) {
           const pre = line.slice(0, firstBracket);
           const core = line.slice(firstBracket, closeBracket + 1);
-          const post = line.slice(closeBracket + 2);
+          const post = line.slice(closeBracket + 1);
           line = core + pre + post;
         }
       }
@@ -389,7 +389,7 @@
           labelPart.slice(0, idxBracket + 1) +
           labelPart.slice(idxBracket + 2);
       }
-      return labelPart + " " + collapsed + " " + comment;
+      return labelPart + collapsed + " " + comment;
     }
 
     // Case D: Anything else
