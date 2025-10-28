@@ -294,7 +294,7 @@
         if (closeBracket !== -1) {
           const pre = line.slice(0, firstBracket);
           const core = line.slice(firstBracket, closeBracket + 1);
-          const post = line.slice(closeBracket + 1);
+          const post = line.slice(closeBracket + 2);
           line = core + pre + post;
         }
       }
