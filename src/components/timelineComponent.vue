@@ -253,18 +253,6 @@
   function collapseLine(origLine, headerStart, headerLen, headerMask) {
     let line = origLine;
 
-    // Reposition [] labels to start of line
-    const firstBracket = line.indexOf('[');
-    if (firstBracket !== -1) {
-      const closeBracket = line.indexOf(']', firstBracket);
-      if (closeBracket !== -1) {
-        const pre = line.slice(0, firstBracket);
-        const core = line.slice(firstBracket, closeBracket + 1);
-        const post = line.slice(closeBracket + 1);
-        line = core + pre + post;
-      }
-    }
-
     // Case A: Header line (remove spaces in between digits)
     const headerMatch = line.match(/^(\s*)([0-9 ]+)(\s*)$/);
     if (headerMatch) {
@@ -294,9 +282,23 @@
       return labelPart + collapsed;
     }
 
+    
     // Case C: Instruction line (remove spaces in same positions as header(ignoring ANSI labels))
     const instrMatch = line.match(/^(\s*\[[^\]]+\]\s*)(.*)$/);
     if (instrMatch) {
+
+      // Reposition [] labels to start of line
+      const firstBracket = line.indexOf('[');
+      if (firstBracket !== -1) {
+        const closeBracket = line.indexOf(']', firstBracket);
+        if (closeBracket !== -1) {
+          const pre = line.slice(0, firstBracket);
+          const core = line.slice(firstBracket, closeBracket + 1);
+          const post = line.slice(closeBracket + 1);
+          line = core + pre + post;
+        }
+      }
+
       let labelPart = line.slice(0, headerStart);
       let rest = line.slice(headerStart);
       if (rest.length < headerLen) {
