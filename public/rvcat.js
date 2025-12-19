@@ -279,7 +279,7 @@ function createGraphVizGraph(dotCode, targetElement, callback=null) {
   const viz = new Viz();
 
   // Render the graph
-  viz.renderSVGElement(dotCode)
+  viz.renderSVGElement(dotCode, { engine: "dot" })
     .then(function(element) {
         // Append the SVG element to the container
         // Remove any existing SVG elements
