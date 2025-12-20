@@ -111,6 +111,16 @@
     { immediate: true }
   )
 
+  function updateGraph() {
+    showCriticalPathsGraph(
+      iters.value,
+      showConst.value,
+      showRdOnly.value,
+      showIntern.value,
+      showLaten.value
+    )
+  }
+
   function openFullScreen() {
     showFullScreen.value = true;
     nextTick(() => {
@@ -145,7 +155,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            //// updateGraph()
+            updateGraph()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -157,7 +167,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            /// updateGraph()
+            updateGraph()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
