@@ -195,32 +195,31 @@
 <template>
   <div class="main">
     <div class="header">
-
-<div class="section-title-and-info">
-  <!-- Título -->
-  <span ref="infoIcon" class="info-icon" @click="openTutorial">
-    <img src="/img/info.png" class="info-img">
-  </span>
-  <span class="header-title">Performance Analysis</span>
-
-  <!-- Iteraciones -->
-  <div class="iters-group">
-    <span class="iters-label">Iters</span>
-    <button class="gray-button" @click="changeIters(-1)">−</button>
-    <input type="number" min="1" max="10" v-model.number="iters">
-    <button class="gray-button" @click="changeIters(1)">+</button>
-  </div>
-
-  <!-- Flags -->
-  <div class="flags-group">
-
-    <button class="blue-button" :class="{ active: showConst }" :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
-    <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly">ReadOnly </button>
-    <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern">Internal </button>
-    <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"> Latencies</button>
-  </div>
-</div>
-
+      <div class="section-title-and-info">
+        
+        <!-- Título -->
+        <span ref="infoIcon" class="info-icon" @click="openTutorial">
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Performance Analysis</span>
+        
+        <!-- Iteraciones -->
+        <div class="iters-group">
+          <span class="iters-label">Iters</span>
+          <button class="gray-button" @click="changeIters(-1)">−</button>
+          <input type="number" min="1" max="10" v-model.number="iters">
+          <button class="gray-button" @click="changeIters(1)">+</button>
+        </div>
+        
+        <!-- Flags -->
+        <div class="flags-group">
+          <button class="blue-button" :class="{ active: showConst }" :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
+          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly">ReadOnly </button>
+          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern">Internal </button>
+          <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"> Latencies</button>
+        </div>
+      </div>
+    </div>
     <div class="annotations-wrapper">
       <div class="annotations-header" @click="toggleAnnotations">
         <span class="arrow">{{ showPerformance ? '▼' : '▶' }}</span>
