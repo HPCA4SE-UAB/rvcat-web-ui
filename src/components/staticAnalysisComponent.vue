@@ -172,7 +172,6 @@
         };
         programsList.addEventListener("change", programsListHandler);
       }
-      /// updateGraph()
     });
   });
 
@@ -198,7 +197,7 @@
         <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
         <input type="number" min="1" max="10" v-model.number="iters">
         <button type="button" class="gray-button" @click="changeIters(1)">+</button>
-        <button @click="toggleConst"  class="blue-button">Constants</button>
+        <button @click="toggleConst"  class="blue-button">{showConst.value?'Show Const' : 'Hide Const'}</button>
         <button @click="toggleRdOnly" class="blue-button">ReadOnly</button>
         <button @click="toggleIntern" class="blue-button">Internal</button>
         <button @click="toggleLaten"  class="blue-button">Latencies</button>
