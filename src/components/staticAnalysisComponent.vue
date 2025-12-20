@@ -75,6 +75,14 @@
   function toggleLaten() {
     showLaten.value = !showLaten.value
   }
+  
+  watch(
+    [iters, showConst, showRdOnly, showIntern, showLaten],
+    ([i, c, r, n, l]) => {
+      showCriticalPathsGraph(i, c, r, n, l)
+    },
+    { immediate: true }
+  )
 
   function updateGraph() {
     showCriticalPathsGraph(
@@ -85,7 +93,6 @@
       showLaten.value
     )
   }
-
 
 /* ------------------------------------------------------------------ 
  * Fullscreen graph 
