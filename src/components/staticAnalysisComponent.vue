@@ -9,6 +9,11 @@
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
   const infoIcon         = ref(null);
+  const iters      = ref(1)
+  const showConst  = ref(false)
+  const showRdOnly = ref(false)
+  const showIntern = ref(true)
+  const showLaten  = ref(false)
 
   function openTutorial() {
     nextTick(() => {
@@ -59,50 +64,55 @@
       setCookie(key, v ? '1' : '0');
     });
 
-    return val;
+    return val;  
   }
 
+  function updateGraph() {
+    showCriticalPathsGraph(
+      iters.value,
+      showConst.value,
+      showRdOnly.value,
+      showIntern.value,
+      showLaten.value
+    )
+  }
+  
   // const iters = ref(parseInt(getCookie("graphIterations")) || 1);
   // watch(iters, (v) => setCookie("graphIterations", v));
 
-  let iters = 1
-  let showConst  = false
   // useBooleanCookie('showConst', true);
-  let showRdOnly = false
   // useBooleanCookie('showRdOnly', true);
-  let showIntern = true
   // useBooleanCookie('showIntern', true);
-  let showLaten  = false
   // useBooleanCookie('showLaten', true);
-  
+
   function changeIters(delta) {
-    let v = iters + delta;
-    if (v < 1) v = 1;
-    if (v > 10) v = 10;
-    iters = v;
-    showCriticalPathsGraph(v, showConst, showRdOnly, showIntern, showLaten);
+    let v = iters.value + delta
+    if (v < 1) v = 1
+    if (v > 10) v = 10
+    iters.value = v
+    updateGraph()
   }
-  
+
   function toggleConst() {
-    showConst = !showConst;
-    showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+    showConst.value = !showConst.value
+    updateGraph()
   }
 
   function toggleRdOnly() {
-    showRdOnly = !showRdOnly;
-    showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+    showRdOnly.value = !showRdOnly.value
+    updateGraph()
   }
 
   function toggleIntern() {
-    showIntern = !showIntern;
-    showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+    showIntern.value = !showIntern.value
+    updateGraph()
   }
 
   function toggleLaten() {
-    showLaten = !showLaten;
-    showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+    showLaten.value = !showLaten.value
+    updateGraph()
   }
-  
+
   function openFullScreen() {
     showFullScreen.value = true;
     nextTick(() => {
@@ -137,7 +147,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+            updateGraph()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -149,12 +159,12 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+            updateGraph()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
       }
-    showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
+      updateGraph()
     });
   });
 
