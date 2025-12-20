@@ -1,130 +1,141 @@
 <script setup>
-import {
-  ref,
-  reactive,
-  watchEffect,
-  watch,
-  onMounted,
-  onUnmounted,
-  nextTick
-} from "vue";
+  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
+  import TutorialComponent                         from '@/components/tutorialComponent.vue';
 
-import TutorialComponent from "@/components/tutorialComponent.vue";
+  let processorsListHandler;
+  let programsListHandler;
+  const showPerformance  = ref(false);
+  const showFullScreen   = ref(false);
+  const showTutorial     = ref(false);
+  const tutorialPosition = ref({ top: '50%', left: '50%' });
+  const infoIcon         = ref(null);
+  const iters            = ref(1)
 
-const isMounted = ref(false);
-
-onMounted(() => {
-  isMounted.value = true;
-});
-  
-/* ------------------------------------------------------------------
- * UI state
- * ------------------------------------------------------------------ */
-const showPerformance  = ref(false);
-const showFullScreen   = ref(false);
-const showTutorial     = ref(false);
-const tutorialPosition = ref({ top: "50%", left: "50%" });
-const infoIcon         = ref(null);
-
-let processorsListHandler;
-let programsListHandler;
-
-/* ------------------------------------------------------------------
- * Graph options (grouped & persisted)
- * ------------------------------------------------------------------ */
-const options = reactive({
-  iters: 1,
-  showConst:  false,
-  showRdOnly: false,
-  showIntern: true,
-  showLaten:  false
-});
-
-const STORAGE_KEY = "graphOptions";
-
-/* ------------------------------------------------------------------
- * Load / save options from localStorage
- * ------------------------------------------------------------------ */
-onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      Object.assign(options, JSON.parse(saved));
-    } catch (_) {
-      /* ignore corrupted data */
-    }
-  }
-});
-
-watch(
-  options,
-  (v) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
-  },
-  { deep: true }
-);
-
-
-/* ------------------------------------------------------------------
- * Automatic graph update (debounced)
- * ------------------------------------------------------------------ */
-let graphTimeout;
-
-watchEffect(() => {
-  if (!isMounted.value) return;
-
-  clearTimeout(graphTimeout);
-
-  graphTimeout = setTimeout(() => {
-    showCriticalPathsGraph(
-      options.iters,
-      options.showConst,
-      options.showRdOnly,
-      options.showIntern,
-      options.showLaten
-    );
-  }, 75);
-});
-  
-/* ------------------------------------------------------------------
- * UI actions
- * ------------------------------------------------------------------ */
-  function changeIters(delta) {
-    let v = options.iters + delta;
-    if (v < 1) v = 1;
-    if (v > 10) v = 10;
-    options.iters = v;
-  }
-
-  function toggleConst()  { options.showConst  = !options.showConst; }
-  function toggleRdOnly() { options.showRdOnly = !options.showRdOnly; }
-  function toggleIntern() { options.showIntern = !options.showIntern; }
-  function toggleLaten()  { options.showLaten  = !options.showLaten; }
-
-/* ------------------------------------------------------------------
- * Tutorial
- * ------------------------------------------------------------------ */
-  
   function openTutorial() {
     nextTick(() => {
-      const el = infoIcon.value;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      tutorialPosition.value = {
-        top:  `${r.bottom}px`,
-        left: `${r.right}px`
-      };
-      showTutorial.value = true;
-    });
+      const el = infoIcon.value
+      if (el) {
+        const r = el.getBoundingClientRect()
+        tutorialPosition.value = {
+          top: `${r.bottom}px`,
+          left: `${r.right}px`
+        }
+        showTutorial.value = true
+      }
+    })
   }
 
   function closeTutorial() {
-    showTutorial.value = false;
+    showTutorial.value = false
+  }
+  
+  function getCookie(name) {
+    const re = new RegExp(
+      "(?:^|; )" +
+        name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") +
+        "=([^;]*)"
+    );
+    const match = document.cookie.match(re);
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
-/* ------------------------------------------------------------------
- * Performance annotations
- * ------------------------------------------------------------------ */
+  function setCookie(name, value, days = 30) {
+    const maxAge = days * 24 * 60 * 60;
+    document.cookie = `${name}=${encodeURIComponent(
+      value
+    )}; max-age=${maxAge}; path=/`;
+  }
+
+  function useBooleanCookie(key, defaultValue = false) {
+    const val = ref(defaultValue);
+
+    onMounted(() => {
+      const c = getCookie(key);
+      if (c !== null) {
+        val.value = c === '1';
+      }
+    });
+
+    watch(val, (v) => {
+      setCookie(key, v ? '1' : '0');
+    });
+
+    return val;  
+  }
+
+  onMounted(() => {
+    const c = getCookie("graphIterations")
+    if (c !== null) {
+      const v = parseInt(c)
+      if (!isNaN(v)) iters.value = v
+    }
+  })
+
+  watch(iters, (v) => {
+    setCookie("graphIterations", v)
+  })
+
+  const showConst  = useBooleanCookie('showConst', false)
+  const showRdOnly = useBooleanCookie('showRdOnly', false)
+  const showIntern = useBooleanCookie('showIntern', true)
+  const showLaten  = useBooleanCookie('showLaten', false)
+
+  function changeIters(delta) {
+    let v = iters.value + delta
+    if (v < 1) v = 1
+    if (v > 10) v = 10
+    iters.value = v
+  }
+
+  function toggleConst() {
+    showConst.value = !showConst.value
+  }
+
+  function toggleRdOnly() {
+    showRdOnly.value = !showRdOnly.value
+  }
+
+  function toggleIntern() {
+    showIntern.value = !showIntern.value
+  }
+
+  function toggleLaten() {
+    showLaten.value = !showLaten.value
+  }
+
+  watch(
+    [iters, showConst, showRdOnly, showIntern, showLaten],
+    ([i, c, r, n, l]) => {
+      showCriticalPathsGraph(i, c, r, n, l)
+    },
+    { immediate: true }
+  )
+
+  function updateGraph() {
+    showCriticalPathsGraph(
+      iters.value,
+      showConst.value,
+      showRdOnly.value,
+      showIntern.value,
+      showLaten.value
+    )
+  }
+
+  function openFullScreen() {
+    showFullScreen.value = true;
+    nextTick(() => {
+      const src = document.getElementById("dependence-graph");
+      const dst = document.getElementById("dependence-graph-full");
+      if (src && dst) {
+        dst.innerHTML = "";
+        dst.appendChild(src.querySelector("svg").cloneNode(true));
+      }
+    });
+  }
+
+  function closeFullScreen() {
+    showFullScreen.value = false;
+  }
 
   function toggleAnnotations() {
     showPerformance.value = !showPerformance.value;
@@ -135,33 +146,6 @@ watchEffect(() => {
     }
   }
 
-/* ------------------------------------------------------------------
- * Fullscreen graph
- * ------------------------------------------------------------------ */
-  function openFullScreen() {
-    showFullScreen.value = true;
-
-    nextTick(() => {
-      const src = document.getElementById("dependence-graph");
-      const dst = document.getElementById("dependence-graph-full");
-
-      if (src && dst) {
-        dst.innerHTML = "";
-        const svg = src.querySelector("svg");
-        if (svg) {
-          dst.appendChild(svg.cloneNode(true));
-        }
-      }
-    });
-  }
-
-  function closeFullScreen() {
-    showFullScreen.value = false;
-  }
-
-/* ------------------------------------------------------------------
- * External selectors listeners
- * ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
       const processorsList = document.getElementById("processors-list");
@@ -171,11 +155,11 @@ watchEffect(() => {
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
+            updateGraph()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
       }
-
       const programsList = document.getElementById("programs-list");
       if (programsList) {
         programsListHandler = () => {
@@ -183,6 +167,7 @@ watchEffect(() => {
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
+            updateGraph()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
@@ -195,7 +180,6 @@ watchEffect(() => {
     if (processorsList && processorsListHandler) {
       processorsList.removeEventListener("change", processorsListHandler);
     }
-
     const programsList = document.getElementById("programs-list");
     if (programsList && programsListHandler) {
       programsList.removeEventListener("change", programsListHandler);
