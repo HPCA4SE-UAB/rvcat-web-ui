@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
+  import { ref, onMounted, nextTick, onUnmounted, watch, watchEffect } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
 /* ------------------------------------------------------------------ 
@@ -55,6 +55,17 @@
   function toggleIntern() { options.showIntern = !options.showIntern }
   function toggleLaten()  { options.showLaten  = !options.showLaten }
 
+  watchEffect(() => {
+    showCriticalPathsGraph(
+      options.iters,
+      options.showConst,
+      options.showRdOnly,
+      options.showIntern,
+      options.showLaten
+    )
+  })
+
+  /*
   watch(
     options,
     () => {
@@ -68,7 +79,8 @@
     },
     { deep: true } 
   )
-
+  */
+  
   function updateGraph() {
      showCriticalPathsGraph(
         options.iters,
@@ -122,7 +134,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            updateGraph()
+            /* updateGraph() */
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -134,7 +146,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            updateGraph()
+            /* updateGraph() */
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
