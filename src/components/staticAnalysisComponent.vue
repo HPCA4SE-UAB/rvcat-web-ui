@@ -190,56 +190,36 @@
   function closeTutorial() {
     showTutorial.value = false
   }
-  
 </script>
 
 <template>
   <div class="main">
     <div class="header">
-      <div class="section-title-and-info">
-        <span
-          ref="infoIcon"
-          class="info-icon"
-          @click="openTutorial"
-          title="Show help">
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Performance Analysis</span>
-        <span class="iters-label">Iters</span>
-        <button class="gray-button" @click="changeIters(-1)">−</button>
-        <input type="number" min="1" max="10" v-model.number="iters">
-        <button class="gray-button" @click="changeIters(1)">+</button>
-        <button
-          class="blue-button"
-          :class="{ active: showConst }"
-          :aria-pressed="showConst"
-          @click="toggleConst"
-        >
-          Const
-        </button>
-        <button
-          class="blue-button"
-          :class="{ active: showRdOnly }"
-          @click="toggleRdOnly"
-        >
-          ReadOnly
-        </button>
-        <button
-          class="blue-button"
-          :class="{ active: showIntern }"
-          @click="toggleIntern"
-        >
-          Internal
-        </button>
-        <button
-          class="blue-button"
-          :class="{ active: showLaten }"
-          @click="toggleLaten"
-        >
-          Latencies
-        </button>
-      </div>
-    </div>
+
+<div class="section-title-and-info">
+  <!-- Título -->
+  <span ref="infoIcon" class="info-icon" @click="openTutorial">
+    <img src="/img/info.png" class="info-img">
+  </span>
+  <span class="header-title">Performance Analysis</span>
+
+  <!-- Iteraciones -->
+  <div class="iters-group">
+    <span class="iters-label">Iters</span>
+    <button class="gray-button" @click="changeIters(-1)">−</button>
+    <input type="number" min="1" max="10" v-model.number="iters">
+    <button class="gray-button" @click="changeIters(1)">+</button>
+  </div>
+
+  <!-- Flags -->
+  <div class="flags-group">
+
+    <button class="blue-button" :class="{ active: showConst }" :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
+    <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly">ReadOnly </button>
+    <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern">Internal </button>
+    <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"> Latencies</button>
+  </div>
+</div>
 
     <div class="annotations-wrapper">
       <div class="annotations-header" @click="toggleAnnotations">
@@ -284,6 +264,31 @@
     overflow: auto;
     padding: 5px;
     border-radius: 10px;
+    font-size: 14px;
+  }
+  .header {
+    position: sticky;
+    top: -5px;
+    left:0;
+    background: white;
+    width: 100%;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+    padding: 6px 8px;
+    z-index: 10;
+  }
+  .title {
+    font-size: 2.5vh;
+  }
+  .section-title-and-info button,
+  .section-title-and-info input {
+    height: 2em;
+    line-height: 1;
+    font-size: 0.95rem;
+  }
+  .section-title-and-info input[type="number"] {
+    width: 3.5em;
+    text-align: center;
+    font-size: inherit;
   }
   .section-title-and-info {
     display: flex;
@@ -292,17 +297,18 @@
     flex-wrap: wrap;          /* evita desbordes */
   }
   .header-title {
-    font-weight: 600;
+    font-size: 1.1rem;
     margin-right: 0.75rem;
+  }
+  .iters-group,
+  .flags-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
   }
   .iters-label {
     margin-left: 0.5rem;
     font-weight: 500;
-  }
-  .section-title-and-info input[type="number"] {
-    width: 3.5em;
-    text-align: center;
-    font-size: inherit;
   }
   .gray-button {
     font-size: inherit;
@@ -313,12 +319,14 @@
     background: #e6f0ff;
     color: #1a4fb3;
     border: 1px solid #7aa2e3;
+    transition: background 0.15s ease, color 0.15s ease;
     cursor: pointer;
   }
   /* estado activado */
   .blue-button.active {
     background: #1a4fb3;
     color: white;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
     border-color: #1a4fb3;
   }
   /* feedback al pulsar */
@@ -334,18 +342,6 @@
     height: 1em;
     width: 1em;
   }
-  .header {
-    position: sticky;
-    padding-top:2px;
-    padding-bottom:5px;
-    top: -5px;
-    left:0;
-    background: white;
-    width: 100%;
-  }
-  h3 {
-    margin: 0;
-  }
   .annotations-wrapper {
     margin-top: 5px;
   }
@@ -356,7 +352,8 @@
     border-radius: 5px 5px 0 0;
     display: flex;
     align-items: center;
-    font-size: 14px;
+    font-size: 0.95rem;
+    user-select: none;
   }
   .annotations-header .arrow {
     margin-right: 5px;
@@ -367,7 +364,7 @@
     padding: 10px;
     border-radius: 0 0 5px 5px;
     margin-top: 0;
-    font-size: 2.5vh;
+    font-size: 0.9rem;
   }
   .fs-img {
     height:2.5vh;
@@ -383,7 +380,6 @@
     justify-content: center;
     z-index: 1000;
   }
-
   .fullscreen-content {
     background: white;
     margin: 10px;
@@ -402,7 +398,6 @@
     flex-direction: column;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   }
-
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
@@ -411,40 +406,46 @@
     cursor: pointer;
     margin-bottom: 8px;
   }
-
   .output-block {
-    flex: 1;
+    flex: 1 1 auto;
+    position: relative;
     overflow: hidden;
   }
-
   .output-block svg {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
   }
-
+  .output-block-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 90%;
+  }
   .graph-header {
     display: inline-flex;
     align-items: center;
     gap: 0.5em; /* space between button and title */
+    padding: 4px 0;
+    flex: 0 0 auto;
   }
-
+  .graph-header h4 {
+    margin: 0;
+    font-weight: 500;
+    font-size: 1rem;
+  }
   .fullscreen-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
   }
-
   .fullscreen-title {
     margin: 0;
     font-size: 1.2em;
     font-weight: 500;
   }
-
-  .title {
-    font-size: 2.5vh;
-  }
-
   .close-btn {
     background: none;
     border: none;
@@ -452,29 +453,5 @@
     line-height: 1;
     cursor: pointer;
     padding: 4px;
-  }
-
-  .output-block-wrapper {
-    display: flex;
-    flex-direction: column;
-    height: 90%;
-  }
-
-  .graph-header {
-    flex: 0 0 auto;
-  }
-
-  .output-block {
-    flex: 1 1 auto;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .output-block svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
   }
 </style>
