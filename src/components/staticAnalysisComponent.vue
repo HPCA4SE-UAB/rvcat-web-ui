@@ -213,10 +213,10 @@
         
         <!-- Flags -->
         <div class="flags-group">
-          <button class="blue-button" :class="{ active: showConst }" :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
-          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly">ReadOnly </button>
-          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern">Internal </button>
-          <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"> Latencies</button>
+          <button class="blue-button" :class="{ active: showConst }"  :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
+          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly"><span v-if="showRdOnly">✔ </span>ReadOnly</button>
+          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
+          <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"><span v-if="showLaten">✔ </span>Latencies</button>
         </div>
       </div>
     </div>
