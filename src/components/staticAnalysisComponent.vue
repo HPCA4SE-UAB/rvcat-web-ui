@@ -464,31 +464,32 @@
   opacity: 0.7;
 }
 .icon-button {
-  background: none;
+  background: #f0f0f0;     /* color de fondo por defecto */
   border: none;
   cursor: pointer;
-  padding: 6px;             /* un poco más grande */
+  padding: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s;
 }
 .icon-button img,
 .icon-button svg {
-  width: 1.5em;             /* más visible */
+  width: 1.5em;
   height: 1.5em;
 }
 .icon-button:hover {
-  background: rgba(0,0,0,0.1);  /* ligeramente más oscuro para notar el hover */
-  border-radius: 6px;           /* suaviza la esquina */
-  transition: background 0.2s;
+  background: #e0e0e0;      /* más oscuro al hover */
+}
+.icon-button:active {
+  background: #d0d0d0;      /* aún más oscuro al pulsar */
 }
 .icon-button:focus {
   outline: 2px solid #1a4fb3;  /* para teclado */
   outline-offset: 2px;
 }
-.icon-button:active {
-  transform: scale(0.95);  /* sensación de pulsación */
-}
+
 .fold-enter-active,
 .fold-leave-active {
   transition: max-height 0.25s ease, opacity 0.2s ease;
