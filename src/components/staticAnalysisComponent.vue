@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
-  import TutorialComponent                         from '@/components/tutorialComponent.vue';
+  import TutorialComponent from '@/components/tutorialComponent.vue';
 
 /* ------------------------------------------------------------------ 
  * UI state 
@@ -8,11 +8,11 @@
   let processorsListHandler;
   let programsListHandler;
   
-  const showPerformance  = ref(false);
-  const showFullScreen   = ref(false);
-  const showTutorial     = ref(false);
+  const showPerformance = ref(false);
+  const showFullScreen  = ref(false);
+  const showTutorial    = ref(false);
+  const infoIcon        = ref(null);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
-  const infoIcon   = ref(null);
   
 /* ------------------------------------------------------------------ 
  * Graph options (grouped & persisted) 
@@ -68,13 +68,13 @@
   )
 
   function updateGraph() {
-    showCriticalPathsGraph(
-      iters.value,
-      showConst.value,
-      showRdOnly.value,
-      showIntern.value,
-      showLaten.value
-    )
+     showCriticalPathsGraph(
+        options.iters,
+        options.showConst,
+        options.showRdOnly,
+        options.showIntern,
+        options.showLaten
+     )
   }
 
 /* ------------------------------------------------------------------ 
