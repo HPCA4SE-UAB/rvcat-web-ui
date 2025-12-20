@@ -2,11 +2,18 @@
   import { ref, onMounted, nextTick, onUnmounted, watch, watchEffect } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
+/* Safe solution */
+  const isMounted = ref(false)
+  onMounted(() => {
+    isMounted.value = true
+  })
+  
 /* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
   let processorsListHandler;
   let programsListHandler;
+  let graphTimeout = null
   
   const showPerformance = ref(false);
   const showFullScreen  = ref(false);
@@ -23,6 +30,8 @@
   const showIntern = ref(true)
   const showLaten  = ref(false)
 
+
+  
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
@@ -65,11 +74,26 @@
   function toggleRdOnly() { showRdOnly.value = !showRdOnly.value }
   function toggleIntern() { showIntern.value = !showIntern.value }
   function toggleLaten()  { showLaten.value  = !showLaten.value  }
-
+/*
   watch(
     [iters, showConst, showRdOnly, showIntern, showLaten],
     ([i, c, r, n, l]) => {
       showCriticalPathsGraph(i, c, r, n, l)
+    },
+    { immediate: true }
+  )
+*/
+  
+  watch(
+    [iters, showConst, showRdOnly, showIntern, showLaten],
+    ([i, c, r, n, l]) => {
+      if (!isMounted.value) return
+
+      clearTimeout(graphTimeout)
+
+      graphTimeout = setTimeout(() => {
+        showCriticalPathsGraph(i, c, r, n, l)
+      }, 75)
     },
     { immediate: true }
   )
