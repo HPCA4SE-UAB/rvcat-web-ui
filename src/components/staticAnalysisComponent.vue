@@ -56,150 +56,137 @@ watchEffect(() => {
 /* ------------------------------------------------------------------
  * Automatic graph update (debounced)
  * ------------------------------------------------------------------ */
-let graphTimeout;
+  let graphTimeout;
 
-watchEffect(() => {
-  clearTimeout(graphTimeout);
+  watchEffect(() => {
+    clearTimeout(graphTimeout);
 
-  graphTimeout = setTimeout(() => {
-    showCriticalPathsGraph(
-      options.iters,
-      options.showConst,
-      options.showRdOnly,
-      options.showIntern,
-      options.showLaten
-    );
-  }, 75); // debounce (ms)
-});
-
-function updateGraph() {
-  showCriticalPathsGraph(
-      options.iters,
-      options.showConst,
-      options.showRdOnly,
-      options.showIntern,
-      options.showLaten
-  )
-}
+    graphTimeout = setTimeout(() => {
+      showCriticalPathsGraph(
+        options.iters,
+        options.showConst,
+        options.showRdOnly,
+        options.showIntern,
+        options.showLaten
+      );
+    }, 75); // debounce (ms)
+  });
 
 /* ------------------------------------------------------------------
  * UI actions
  * ------------------------------------------------------------------ */
-function changeIters(delta) {
-  let v = options.iters + delta;
-  if (v < 1) v = 1;
-  if (v > 10) v = 10;
-  options.iters = v;
-}
+  function changeIters(delta) {
+    let v = options.iters + delta;
+    if (v < 1) v = 1;
+    if (v > 10) v = 10;
+    options.iters = v;
+  }
 
-function toggleConst()  { options.showConst  = !options.showConst; }
-function toggleRdOnly() { options.showRdOnly = !options.showRdOnly; }
-function toggleIntern() { options.showIntern = !options.showIntern; }
-function toggleLaten()  { options.showLaten  = !options.showLaten; }
+  function toggleConst()  { options.showConst  = !options.showConst; }
+  function toggleRdOnly() { options.showRdOnly = !options.showRdOnly; }
+  function toggleIntern() { options.showIntern = !options.showIntern; }
+  function toggleLaten()  { options.showLaten  = !options.showLaten; }
 
 /* ------------------------------------------------------------------
  * Tutorial
  * ------------------------------------------------------------------ */
   
-function openTutorial() {
-  nextTick(() => {
-    const el = infoIcon.value;
-    if (!el) return;
+  function openTutorial() {
+    nextTick(() => {
+      const el = infoIcon.value;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      tutorialPosition.value = {
+        top:  `${r.bottom}px`,
+        left: `${r.right}px`
+      };
+      showTutorial.value = true;
+    });
+  }
 
-    const r = el.getBoundingClientRect();
-    tutorialPosition.value = {
-      top:  `${r.bottom}px`,
-      left: `${r.right}px`
-    };
-    showTutorial.value = true;
-  });
-}
-
-function closeTutorial() {
-  showTutorial.value = false;
-}
+  function closeTutorial() {
+    showTutorial.value = false;
+  }
 
 /* ------------------------------------------------------------------
  * Performance annotations
  * ------------------------------------------------------------------ */
-function toggleAnnotations() {
-  showPerformance.value = !showPerformance.value;
 
-  if (showPerformance.value) {
-    nextTick(() => {
-      programShowPerformanceLimits();
-    });
+  function toggleAnnotations() {
+    showPerformance.value = !showPerformance.value;
+    if (showPerformance.value) {
+      nextTick(() => {
+        programShowPerformanceLimits();
+      });
+    }
   }
-}
 
 /* ------------------------------------------------------------------
  * Fullscreen graph
  * ------------------------------------------------------------------ */
-function openFullScreen() {
-  showFullScreen.value = true;
+  function openFullScreen() {
+    showFullScreen.value = true;
 
-  nextTick(() => {
-    const src = document.getElementById("dependence-graph");
-    const dst = document.getElementById("dependence-graph-full");
+    nextTick(() => {
+      const src = document.getElementById("dependence-graph");
+      const dst = document.getElementById("dependence-graph-full");
 
-    if (src && dst) {
-      dst.innerHTML = "";
-      const svg = src.querySelector("svg");
-      if (svg) {
-        dst.appendChild(svg.cloneNode(true));
+      if (src && dst) {
+        dst.innerHTML = "";
+        const svg = src.querySelector("svg");
+        if (svg) {
+          dst.appendChild(svg.cloneNode(true));
+        }
       }
-    }
-  });
-}
+    });
+  }
 
-function closeFullScreen() {
-  showFullScreen.value = false;
-}
+  function closeFullScreen() {
+    showFullScreen.value = false;
+  }
 
 /* ------------------------------------------------------------------
  * External selectors listeners
  * ------------------------------------------------------------------ */
-onMounted(() => {
-  nextTick(() => {
+  onMounted(() => {
+    nextTick(() => {
+      const processorsList = document.getElementById("processors-list");
+      if (processorsList) {
+        processorsListHandler = () => {
+          setTimeout(() => {
+            if (showPerformance.value) {
+              programShowPerformanceLimits();
+            }
+          }, 100);
+        };
+        processorsList.addEventListener("change", processorsListHandler);
+      }
+
+      const programsList = document.getElementById("programs-list");
+      if (programsList) {
+        programsListHandler = () => {
+          setTimeout(() => {
+            if (showPerformance.value) {
+              programShowPerformanceLimits();
+            }
+          }, 100);
+        };
+        programsList.addEventListener("change", programsListHandler);
+      }
+    });
+  });
+
+  onUnmounted(() => {
     const processorsList = document.getElementById("processors-list");
-    if (processorsList) {
-      processorsListHandler = () => {
-        setTimeout(() => {
-          if (showPerformance.value) {
-            programShowPerformanceLimits();
-          }
-          updateGraph()
-        }, 100);
-      };
-      processorsList.addEventListener("change", processorsListHandler);
+    if (processorsList && processorsListHandler) {
+      processorsList.removeEventListener("change", processorsListHandler);
     }
 
     const programsList = document.getElementById("programs-list");
-    if (programsList) {
-      programsListHandler = () => {
-        setTimeout(() => {
-          if (showPerformance.value) {
-            programShowPerformanceLimits();
-          }
-          updateGraph()
-        }, 100);
-      };
-      programsList.addEventListener("change", programsListHandler);
+    if (programsList && programsListHandler) {
+      programsList.removeEventListener("change", programsListHandler);
     }
   });
-});
-
-onUnmounted(() => {
-  const processorsList = document.getElementById("processors-list");
-  if (processorsList && processorsListHandler) {
-    processorsList.removeEventListener("change", processorsListHandler);
-  }
-
-  const programsList = document.getElementById("programs-list");
-  if (programsList && programsListHandler) {
-    programsList.removeEventListener("change", programsListHandler);
-  }
-});
 </script>
 
 <template>
