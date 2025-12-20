@@ -17,78 +17,71 @@
 /* ------------------------------------------------------------------ 
  * Graph options (grouped & persisted) 
  * ------------------------------------------------------------------ */
-  const options = reactive({
-    iters: 1,
-    showConst:  false,
-    showRdOnly: false,
-    showIntern: true,
-    showLaten:  false
-  })
-  
+  const iters      = ref(1)
+  const showConst  = ref(false)
+  const showRdOnly = ref(false)
+  const showIntern = ref(true)
+  const showLaten  = ref(false)
+
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
-  /*
   onMounted(() => {
-    const saved = localStorage.getItem("graphOptions")
-    if (saved) Object.assign(options, JSON.parse(saved))
-  })
+    const v = localStorage.getItem("showConst");
+    if (v !== null) showConst.value = v === "1";
 
-  watch(
-    options,
-    v => localStorage.setItem("graphOptions", JSON.stringify(v)),
-    { deep: true }
-  )
-  */
+    const r = localStorage.getItem("showRdOnly");
+    if (r !== null) showRdOnly.value = r === "1";
+
+    const i = localStorage.getItem("showIntern");
+    if (i !== null) showIntern.value = i === "1";
+
+    const l = localStorage.getItem("showLaten");
+    if (l !== null) showLaten.value = l === "1";
+  });
+  
+  onMounted(() => {
+    const v = localStorage.getItem("graphIterations");
+    if (v !== null) iters.value = parseInt(v);
+  });
+
+  watch(showConst,  v => localStorage.setItem("showConst",  v ? "1" : "0"));
+  watch(showRdOnly, v => localStorage.setItem("showRdOnly", v ? "1" : "0"));
+  watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
+  watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
+  watch(iters, v => localStorage.setItem("graphIterations", v));
   
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
   function changeIters(delta) {
-    let v = options.iters + delta
+    let v = iters.value + delta
     if (v < 1) v = 1
     if (v > 10) v = 10
-    options.iters = v
+    iters.value = v
   }
-  function toggleConst()  { options.showConst  = !options.showConst }
-  function toggleRdOnly() { options.showRdOnly = !options.showRdOnly }
-  function toggleIntern() { options.showIntern = !options.showIntern }
-  function toggleLaten()  { options.showLaten  = !options.showLaten }
 
-  watchEffect(() => {
-    showCriticalPathsGraph(
-      options.iters,
-      options.showConst,
-      options.showRdOnly,
-      options.showIntern,
-      options.showLaten
-    )
-  })
+  function toggleConst()  { showConst.value  = !showConst.value  }
+  function toggleRdOnly() { showRdOnly.value = !showRdOnly.value }
+  function toggleIntern() { showIntern.value = !showIntern.value }
+  function toggleLaten()  { showLaten.value  = !showLaten.value  }
 
-  /*
   watch(
-    options,
-    () => {
-      showCriticalPathsGraph(
-        options.iters,
-        options.showConst,
-        options.showRdOnly,
-        options.showIntern,
-        options.showLaten
-      )
+    [iters, showConst, showRdOnly, showIntern, showLaten],
+    ([i, c, r, n, l]) => {
+      showCriticalPathsGraph(i, c, r, n, l)
     },
-    { deep: true } 
+    { immediate: true }
   )
-  */
-  
+
   function updateGraph() {
-     showCriticalPathsGraph(
-        options.iters,
-        options.showConst,
-        options.showRdOnly,
-        options.showIntern,
-        options.showLaten
-     )
+    showCriticalPathsGraph(
+      iters.value,
+      showConst.value,
+      showRdOnly.value,
+      showIntern.value,
+      showLaten.value
+    )
   }
 
 /* ------------------------------------------------------------------ 
@@ -134,7 +127,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            /* updateGraph() */
+            updateGraph()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -146,7 +139,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            /* updateGraph() */
+            updateGraph()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
@@ -196,7 +189,7 @@
         <h3>Performance Analysis </h3>
         <span class="title"><b>   Iters</b></span>
         <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
-        <input type="number" min="1" max="10" v-model.number="options.iters">
+        <input type="number" min="1" max="10" v-model.number="iters">
         <button type="button" class="gray-button" @click="changeIters(1)">+</button>
         <button @click="toggleConst"  class="blue-button">Const</button>
         <button @click="toggleRdOnly" class="blue-button">ReadOnly</button>
