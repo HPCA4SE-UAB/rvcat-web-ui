@@ -10,6 +10,12 @@ import {
 
 import TutorialComponent from "@/components/tutorialComponent.vue";
 
+const isMounted = ref(false);
+
+onMounted(() => {
+  isMounted.value = true;
+});
+  
 /* ------------------------------------------------------------------
  * UI state
  * ------------------------------------------------------------------ */
@@ -56,22 +62,24 @@ watchEffect(() => {
 /* ------------------------------------------------------------------
  * Automatic graph update (debounced)
  * ------------------------------------------------------------------ */
-  let graphTimeout;
+let graphTimeout;
 
-  watchEffect(() => {
-    clearTimeout(graphTimeout);
+watchEffect(() => {
+  if (!isMounted.value) return;
 
-    graphTimeout = setTimeout(() => {
-      showCriticalPathsGraph(
-        options.iters,
-        options.showConst,
-        options.showRdOnly,
-        options.showIntern,
-        options.showLaten
-      );
-    }, 75); // debounce (ms)
-  });
+  clearTimeout(graphTimeout);
 
+  graphTimeout = setTimeout(() => {
+    showCriticalPathsGraph(
+      options.iters,
+      options.showConst,
+      options.showRdOnly,
+      options.showIntern,
+      options.showLaten
+    );
+  }, 75);
+});
+  
 /* ------------------------------------------------------------------
  * UI actions
  * ------------------------------------------------------------------ */
