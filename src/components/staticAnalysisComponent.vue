@@ -209,10 +209,35 @@
         <button class="gray-button" @click="changeIters(-1)">−</button>
         <input type="number" min="1" max="10" v-model.number="iters">
         <button class="gray-button" @click="changeIters(1)">+</button>
-        <button class="blue-button" @click="toggleConst">Const</button>
-        <button class="blue-button" @click="toggleRdOnly">ReadOnly</button>
-        <button class="blue-button" @click="toggleIntern">Internal</button>
-        <button class="blue-button" @click="toggleLaten">Latencies</button>
+        <button
+          class="blue-button"
+          :class="{ active: showConst }"
+          :aria-pressed="showConst"
+          @click="toggleConst"
+        >
+          Const
+        </button>
+        <button
+          class="blue-button"
+          :class="{ active: showRdOnly }"
+          @click="toggleRdOnly"
+        >
+          ReadOnly
+        </button>
+        <button
+          class="blue-button"
+          :class="{ active: showIntern }"
+          @click="toggleIntern"
+        >
+          Internal
+        </button>
+        <button
+          class="blue-button"
+          :class="{ active: showLaten }"
+          @click="toggleLaten"
+        >
+          Latencies
+        </button>
       </div>
     </div>
 
@@ -279,11 +304,26 @@
     text-align: center;
     font-size: inherit;
   }
-  .gray-button,
-  .blue-button {
+  .gray-button {
     font-size: inherit;
     height: 1.8em;
     padding: 0 0.6em;
+  }
+  .blue-button {
+    background: #e6f0ff;
+    color: #1a4fb3;
+    border: 1px solid #7aa2e3;
+    cursor: pointer;
+  }
+  /* estado activado */
+  .blue-button.active {
+    background: #1a4fb3;
+    color: white;
+    border-color: #1a4fb3;
+  }
+  /* feedback al pulsar */
+  .blue-button:active {
+    transform: translateY(1px);
   }
   .info-icon {
     display: inline-flex;
