@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted } from "vue";
+  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
   import TutorialComponent                         from '@/components/tutorialComponent.vue';
 
   let processorsListHandler;
@@ -67,51 +67,53 @@
     return val;  
   }
 
-  function updateGraph() {
-    showCriticalPathsGraph(
-      iters.value,
-      showConst.value,
-      showRdOnly.value,
-      showIntern.value,
-      showLaten.value
-    )
-  }
-  
-  // const iters = ref(parseInt(getCookie("graphIterations")) || 1);
-  // watch(iters, (v) => setCookie("graphIterations", v));
+  onMounted(() => {
+    const c = getCookie("graphIterations")
+    if (c !== null) {
+      const v = parseInt(c)
+      if (!isNaN(v)) iters.value = v
+    }
+  })
 
-  // useBooleanCookie('showConst', true);
-  // useBooleanCookie('showRdOnly', true);
-  // useBooleanCookie('showIntern', true);
-  // useBooleanCookie('showLaten', true);
+  watch(iters, (v) => {
+    setCookie("graphIterations", v)
+  })
+
+  const showConst  = useBooleanCookie('showConst', false)
+  const showRdOnly = useBooleanCookie('showRdOnly', false)
+  const showIntern = useBooleanCookie('showIntern', true)
+  const showLaten  = useBooleanCookie('showLaten', false)
 
   function changeIters(delta) {
     let v = iters.value + delta
     if (v < 1) v = 1
     if (v > 10) v = 10
     iters.value = v
-    updateGraph()
   }
 
   function toggleConst() {
     showConst.value = !showConst.value
-    updateGraph()
   }
 
   function toggleRdOnly() {
     showRdOnly.value = !showRdOnly.value
-    updateGraph()
   }
 
   function toggleIntern() {
     showIntern.value = !showIntern.value
-    updateGraph()
   }
 
   function toggleLaten() {
     showLaten.value = !showLaten.value
-    updateGraph()
   }
+
+  watch(
+    [iters, showConst, showRdOnly, showIntern, showLaten],
+    ([i, c, r, n, l]) => {
+      showCriticalPathsGraph(i, c, r, n, l)
+    },
+    { immediate: true }
+  )
 
   function openFullScreen() {
     showFullScreen.value = true;
@@ -147,7 +149,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            updateGraph()
+            //// updateGraph()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -159,12 +161,12 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
-            updateGraph()
+            /// updateGraph()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
       }
-      updateGraph()
+      /// updateGraph()
     });
   });
 
@@ -188,7 +190,7 @@
         <h3>Performance Analysis </h3>
         <span class="title"><b> Iters</b></span>
         <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
-        <input type="number" id="num-iters" class="iter-input" name="iters" min="1" max="10" v-model.number="iters">
+        <input type="number" min="1" max="10" v-model.number="iters">
         <button type="button" class="gray-button" @click="changeIters(1)">+</button>
         <button @click="toggleConst"  class="blue-button">Constants</button>
         <button @click="toggleRdOnly" class="blue-button">ReadOnly</button>
