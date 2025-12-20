@@ -175,7 +175,7 @@
     <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Static Performance Analysis </h3>
+        <h3>Performance Analysis </h3>
         <span class="title"><b> Iters</b></span>
         <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
         <input type="number" id="num-iters" class="iter-input" name="iters" min="1" max="10" v-model.number="iters">
@@ -339,7 +339,7 @@
   }
 
   .title {
-    font-size: 2.75vh;
+    font-size: 2.5vh;
   }
 
   .close-btn {
