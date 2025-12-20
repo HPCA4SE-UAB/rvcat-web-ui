@@ -467,29 +467,42 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;             /* un poco más grande */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-button img,
+.icon-button svg {
+  width: 1.5em;             /* más visible */
+  height: 1.5em;
 }
 .icon-button:hover {
-  background: rgba(0,0,0,0.05);
-  border-radius: 4px;
+  background: rgba(0,0,0,0.1);  /* ligeramente más oscuro para notar el hover */
+  border-radius: 6px;           /* suaviza la esquina */
+  transition: background 0.2s;
+}
+.icon-button:focus {
+  outline: 2px solid #1a4fb3;  /* para teclado */
+  outline-offset: 2px;
+}
+.icon-button:active {
+  transform: scale(0.95);  /* sensación de pulsación */
 }
 .fold-enter-active,
 .fold-leave-active {
   transition: max-height 0.25s ease, opacity 0.2s ease;
 }
-
 .fold-enter-from,
 .fold-leave-to {
   max-height: 0;
   opacity: 0;
 }
-
 .fold-enter-to,
 .fold-leave-from {
   max-height: 500px;
   opacity: 1;
 }
-
   .fullscreen-header {
     display: flex;
     justify-content: space-between;
