@@ -30,8 +30,6 @@
   const showIntern = ref(true)
   const showLaten  = ref(false)
 
-
-  
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
@@ -74,23 +72,13 @@
   function toggleRdOnly() { showRdOnly.value = !showRdOnly.value }
   function toggleIntern() { showIntern.value = !showIntern.value }
   function toggleLaten()  { showLaten.value  = !showLaten.value  }
-/*
-  watch(
-    [iters, showConst, showRdOnly, showIntern, showLaten],
-    ([i, c, r, n, l]) => {
-      showCriticalPathsGraph(i, c, r, n, l)
-    },
-    { immediate: true }
-  )
-*/
-  
+
   watch(
     [iters, showConst, showRdOnly, showIntern, showLaten],
     ([i, c, r, n, l]) => {
       if (!isMounted.value) return
 
       clearTimeout(graphTimeout)
-
       graphTimeout = setTimeout(() => {
         showCriticalPathsGraph(i, c, r, n, l)
       }, 75)
@@ -209,16 +197,22 @@
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Performance Analysis </h3>
-        <span class="title"><b>   Iters</b></span>
-        <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
+        <span
+          ref="infoIcon"
+          class="info-icon"
+          @click="openTutorial"
+          title="Show help">
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Performance Analysis</span>
+        <span class="iters-label">Iters</span>
+        <button class="gray-button" @click="changeIters(-1)">−</button>
         <input type="number" min="1" max="10" v-model.number="iters">
-        <button type="button" class="gray-button" @click="changeIters(1)">+</button>
-        <button @click="toggleConst"  class="blue-button">Const</button>
-        <button @click="toggleRdOnly" class="blue-button">ReadOnly</button>
-        <button @click="toggleIntern" class="blue-button">Internal</button>
-        <button @click="toggleLaten"  class="blue-button">Latencies</button>
+        <button class="gray-button" @click="changeIters(1)">+</button>
+        <button class="blue-button" @click="toggleConst">Const</button>
+        <button class="blue-button" @click="toggleRdOnly">ReadOnly</button>
+        <button class="blue-button" @click="toggleIntern">Internal</button>
+        <button class="blue-button" @click="toggleLaten">Latencies</button>
       </div>
     </div>
 
@@ -265,6 +259,40 @@
     overflow: auto;
     padding: 5px;
     border-radius: 10px;
+  }
+  .section-title-and-info {
+    display: flex;
+    align-items: center;      /* alineación vertical */
+    gap: 0.5rem;              /* espacio uniforme */
+    flex-wrap: wrap;          /* evita desbordes */
+  }
+  .header-title {
+    font-weight: 600;
+    margin-right: 0.75rem;
+  }
+  .iters-label {
+    margin-left: 0.5rem;
+    font-weight: 500;
+  }
+  .section-title-and-info input[type="number"] {
+    width: 3.5em;
+    text-align: center;
+    font-size: inherit;
+  }
+  .gray-button,
+  .blue-button {
+    font-size: inherit;
+    height: 1.8em;
+    padding: 0 0.6em;
+  }
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  .info-img {
+    height: 1em;
+    width: 1em;
   }
   .header {
     position: sticky;
