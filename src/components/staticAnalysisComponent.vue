@@ -28,6 +28,7 @@
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
+  /*
   onMounted(() => {
     const saved = localStorage.getItem("graphOptions")
     if (saved) Object.assign(options, JSON.parse(saved))
@@ -38,7 +39,8 @@
     v => localStorage.setItem("graphOptions", JSON.stringify(v)),
     { deep: true }
   )
-
+  */
+  
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
