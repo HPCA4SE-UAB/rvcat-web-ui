@@ -14,74 +14,57 @@
   const tutorialPosition = ref({ top: '50%', left: '50%' });
   const infoIcon   = ref(null);
   
-  const iters      = ref(1)
-  const showConst  = ref(false)
-  const showRdOnly = ref(false)
-  const showIntern = ref(true)
-  const showLaten  = ref(false)
-  
 /* ------------------------------------------------------------------ 
  * Graph options (grouped & persisted) 
  * ------------------------------------------------------------------ */
-
+  const options = reactive({
+    iters: 1,
+    showConst:  false,
+    showRdOnly: false,
+    showIntern: true,
+    showLaten:  false
+  })
+  
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
   onMounted(() => {
-    const g = localStorage.getItem("graphIterations");
-    if (g !== null) iters.value = parseInt(g);
+    const saved = localStorage.getItem("graphOptions")
+    if (saved) Object.assign(options, JSON.parse(saved))
+  })
 
-    const v = localStorage.getItem("showConst");
-    if (v !== null) showConst.value = v === "1";
-
-    const r = localStorage.getItem("showRdOnly");
-    if (r !== null) showRdOnly.value = r === "1";
-
-    const i = localStorage.getItem("showIntern");
-    if (i !== null) showIntern.value = i === "1";
-
-    const l = localStorage.getItem("showLaten");
-    if (l !== null) showLaten.value = l === "1";
-  });
-  
-  watch(showConst,  v => localStorage.setItem("showConst",  v ? "1" : "0"));
-  watch(showRdOnly, v => localStorage.setItem("showRdOnly", v ? "1" : "0"));
-  watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
-  watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
-  watch(iters,      v => localStorage.setItem("graphIterations", v));
+  watch(
+    options,
+    v => localStorage.setItem("graphOptions", JSON.stringify(v)),
+    { deep: true }
+  )
 
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
   function changeIters(delta) {
-    let v = iters.value + delta
+    let v = options.iters + delta
     if (v < 1) v = 1
     if (v > 10) v = 10
-    iters.value = v
+    options.iters = v
   }
+  function toggleConst()  { options.showConst  = !options.showConst }
+  function toggleRdOnly() { options.showRdOnly = !options.showRdOnly }
+  function toggleIntern() { options.showIntern = !options.showIntern }
+  function toggleLaten()  { options.showLaten  = !options.showLaten }
 
-  function toggleConst() {
-    showConst.value = !showConst.value
-  }
-
-  function toggleRdOnly() {
-    showRdOnly.value = !showRdOnly.value
-  }
-
-  function toggleIntern() {
-    showIntern.value = !showIntern.value
-  }
-
-  function toggleLaten() {
-    showLaten.value = !showLaten.value
-  }
-  
   watch(
-    [iters, showConst, showRdOnly, showIntern, showLaten],
-    ([i, c, r, n, l]) => {
-      showCriticalPathsGraph(i, c, r, n, l)
+    options,
+    () => {
+      showCriticalPathsGraph(
+        options.iters,
+        options.showConst,
+        options.showRdOnly,
+        options.showIntern,
+        options.showLaten
+      )
     },
-    { immediate: true }
+    { deep: true } 
   )
 
   function updateGraph() {
@@ -199,9 +182,9 @@
         <h3>Performance Analysis </h3>
         <span class="title"><b> Iters</b></span>
         <button type="button" class="gray-button" @click="changeIters(-1)">−</button>
-        <input type="number" min="1" max="10" v-model.number="iters">
+        <input type="number" min="1" max="10" v-model.number="options.iters">
         <button type="button" class="gray-button" @click="changeIters(1)">+</button>
-        <button @click="toggleConst"  class="blue-button">{{showConst.value?'Show Const' : 'Hide Const'}}</button>
+        <button @click="toggleConst"  class="blue-button">{{options.showConst?'Show Const' : 'Hide Const'}}</button>
         <button @click="toggleRdOnly" class="blue-button">ReadOnly</button>
         <button @click="toggleIntern" class="blue-button">Internal</button>
         <button @click="toggleLaten"  class="blue-button">Latencies</button>
