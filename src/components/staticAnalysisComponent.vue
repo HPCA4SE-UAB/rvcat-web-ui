@@ -3,6 +3,7 @@ import {
   ref,
   reactive,
   watchEffect,
+  watch,
   onMounted,
   onUnmounted,
   nextTick
@@ -55,9 +56,14 @@ onMounted(() => {
   }
 });
 
-watchEffect(() => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
-});
+watch(
+  options,
+  (v) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
+  },
+  { deep: true }
+);
+
 
 /* ------------------------------------------------------------------
  * Automatic graph update (debounced)
