@@ -9,11 +9,7 @@
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
   const infoIcon         = ref(null);
-  const iters      = ref(1)
-  const showConst  = ref(false)
-  const showRdOnly = ref(false)
-  const showIntern = ref(true)
-  const showLaten  = ref(false)
+  const iters            = ref(1)
 
   function openTutorial() {
     nextTick(() => {
