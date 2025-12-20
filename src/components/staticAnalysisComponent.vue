@@ -220,21 +220,33 @@
         </div>
       </div>
     </div>
+
     <div class="annotations-wrapper">
-      <div class="annotations-header" @click="toggleAnnotations">
-        <span class="arrow">{{ showPerformance ? '▼' : '▶' }}</span>
-        <span class="title"><b>Analysis of Performance limits</b></span>
-      </div>
+      <button class="annotations-header" @click="toggleAnnotations" :aria-expanded="showPerformance">
+        <span class="arrow" aria-hidden="true">
+          {{ showPerformance ? '▼' : '▶' }}
+        </span>
+        <span class="annotations-title">
+          Analysis of Performance Limits
+        </span>
+      </button>
       <Transition name="fold" appear>
         <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
       </Transition>
     </div>
+
+    
     <div class="output-block-wrapper" id="simulation-output-container">
-      <div class="graph-header">
-        <button class="blue-button" @click="openFullScreen">
+      <div class="graph-toolbar">
+        <h4 class="graph-title">
+          Data Dependence Graph
+          <span class="graph-subtitle">
+            (Circular paths in red)
+          </span>
+        </h4>
+        <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
           <img src="/img/fullscreen.png" class="fs-img">
         </button>
-        <h4>Data Dependence Graph & Circular Dependence Paths (in red)</h4>
       </div>
       <div class="output-block" id="dependence-graph"></div>
     </div>
@@ -344,19 +356,6 @@
   .annotations-wrapper {
     margin-top: 5px;
   }
-  .annotations-header {
-    cursor: pointer;
-    background-color: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 5px 5px 0 0;
-    display: flex;
-    align-items: center;
-    font-size: 0.95rem;
-    user-select: none;
-  }
-  .annotations-header .arrow {
-    margin-right: 5px;
-  }
   .annotations-box {
     white-space: pre-wrap;
     background: #f0f0f0;
@@ -364,6 +363,31 @@
     border-radius: 0 0 5px 5px;
     margin-top: 0;
     font-size: 0.9rem;
+    line-height: 1.4;
+    font-family: monospace;
+  }
+  .annotations-header {
+    all: unset;                    /* reset de botón */
+    width: 100%;
+    cursor: pointer;
+    background: #f3f3f3;
+    padding: 6px 10px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .annotations-header:hover {
+    background: #eaeaea;
+  }
+  .annotations-title {
+    flex: 1;
+  }
+  .arrow {
+    font-size: 0.85em;
+    opacity: 0.8;
   }
   .fs-img {
     height:2.5vh;
@@ -409,6 +433,8 @@
     flex: 1 1 auto;
     position: relative;
     overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
   }
   .output-block svg {
     position: absolute;
@@ -422,18 +448,48 @@
     flex-direction: column;
     height: 90%;
   }
-  .graph-header {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em; /* space between button and title */
-    padding: 4px 0;
-    flex: 0 0 auto;
-  }
-  .graph-header h4 {
-    margin: 0;
-    font-weight: 500;
-    font-size: 1rem;
-  }
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+}
+.graph-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.graph-subtitle {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.icon-button:hover {
+  background: rgba(0,0,0,0.05);
+  border-radius: 4px;
+}
+.fold-enter-active,
+.fold-leave-active {
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.fold-enter-from,
+.fold-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.fold-enter-to,
+.fold-leave-from {
+  max-height: 500px;
+  opacity: 1;
+}
+
   .fullscreen-header {
     display: flex;
     justify-content: space-between;
