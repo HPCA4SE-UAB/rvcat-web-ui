@@ -137,6 +137,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
+            showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -148,6 +149,7 @@
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
+            showCriticalPathsGraph(iters, showConst, showRdOnly, showIntern, showLaten);
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
@@ -161,7 +163,6 @@
     if (processorsList && processorsListHandler) {
       processorsList.removeEventListener("change", processorsListHandler);
     }
-
     const programsList = document.getElementById("programs-list");
     if (programsList && programsListHandler) {
       programsList.removeEventListener("change", programsListHandler);
