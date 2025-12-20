@@ -2,84 +2,57 @@
   import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
   import TutorialComponent                         from '@/components/tutorialComponent.vue';
 
+/* ------------------------------------------------------------------ 
+ * UI state 
+ * ------------------------------------------------------------------ */
   let processorsListHandler;
   let programsListHandler;
+  
   const showPerformance  = ref(false);
   const showFullScreen   = ref(false);
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
-  const infoIcon         = ref(null);
-  const iters            = ref(1)
-
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
-        showTutorial.value = true
-      }
-    })
-  }
-
-  function closeTutorial() {
-    showTutorial.value = false
-  }
+  const infoIcon   = ref(null);
   
-  function getCookie(name) {
-    const re = new RegExp(
-      "(?:^|; )" +
-        name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") +
-        "=([^;]*)"
-    );
-    const match = document.cookie.match(re);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
+  const iters      = ref(1)
+  const showConst  = ref(false)
+  const showRdOnly = ref(false)
+  const showIntern = ref(true)
+  const showLaten  = ref(false)
+  
+/* ------------------------------------------------------------------ 
+ * Graph options (grouped & persisted) 
+ * ------------------------------------------------------------------ */
 
-  function setCookie(name, value, days = 30) {
-    const maxAge = days * 24 * 60 * 60;
-    document.cookie = `${name}=${encodeURIComponent(
-      value
-    )}; max-age=${maxAge}; path=/`;
-  }
-
-  function useBooleanCookie(key, defaultValue = false) {
-    const val = ref(defaultValue);
-
-    onMounted(() => {
-      const c = getCookie(key);
-      if (c !== null) {
-        val.value = c === '1';
-      }
-    });
-
-    watch(val, (v) => {
-      setCookie(key, v ? '1' : '0');
-    });
-
-    return val;  
-  }
-
+/* ------------------------------------------------------------------ 
+ * Load / save options from localStorage 
+ * ------------------------------------------------------------------ */
   onMounted(() => {
-    const c = getCookie("graphIterations")
-    if (c !== null) {
-      const v = parseInt(c)
-      if (!isNaN(v)) iters.value = v
-    }
-  })
+    const g = localStorage.getItem("graphIterations");
+    if (g !== null) iters.value = parseInt(g);
 
-  watch(iters, (v) => {
-    setCookie("graphIterations", v)
-  })
+    const v = localStorage.getItem("showConst");
+    if (v !== null) showConst.value = v === "1";
 
-  const showConst  = useBooleanCookie('showConst', false)
-  const showRdOnly = useBooleanCookie('showRdOnly', false)
-  const showIntern = useBooleanCookie('showIntern', true)
-  const showLaten  = useBooleanCookie('showLaten', false)
+    const r = localStorage.getItem("showRdOnly");
+    if (r !== null) showRdOnly.value = r === "1";
 
+    const i = localStorage.getItem("showIntern");
+    if (i !== null) showIntern.value = i === "1";
+
+    const l = localStorage.getItem("showLaten");
+    if (l !== null) showLaten.value = l === "1";
+  });
+  
+  watch(showConst,  v => localStorage.setItem("showConst",  v ? "1" : "0"));
+  watch(showRdOnly, v => localStorage.setItem("showRdOnly", v ? "1" : "0"));
+  watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
+  watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
+  watch(iters,      v => localStorage.setItem("graphIterations", v));
+
+/* ------------------------------------------------------------------ 
+* UI actions 
+* ------------------------------------------------------------------ */
   function changeIters(delta) {
     let v = iters.value + delta
     if (v < 1) v = 1
@@ -103,14 +76,6 @@
     showLaten.value = !showLaten.value
   }
 
-  watch(
-    [iters, showConst, showRdOnly, showIntern, showLaten],
-    ([i, c, r, n, l]) => {
-      showCriticalPathsGraph(i, c, r, n, l)
-    },
-    { immediate: true }
-  )
-
   function updateGraph() {
     showCriticalPathsGraph(
       iters.value,
@@ -121,6 +86,10 @@
     )
   }
 
+
+/* ------------------------------------------------------------------ 
+ * Fullscreen graph 
+ * ------------------------------------------------------------------ */  
   function openFullScreen() {
     showFullScreen.value = true;
     nextTick(() => {
@@ -137,6 +106,9 @@
     showFullScreen.value = false;
   }
 
+/* ------------------------------------------------------------------ 
+ * Performance annotations 
+ * ------------------------------------------------------------------ */
   function toggleAnnotations() {
     showPerformance.value = !showPerformance.value;
     if (showPerformance.value) {
@@ -146,6 +118,9 @@
     }
   }
 
+/* ------------------------------------------------------------------ 
+ * External selectors listeners 
+* ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
       const processorsList = document.getElementById("processors-list");
@@ -185,6 +160,28 @@
       programsList.removeEventListener("change", programsListHandler);
     }
   });
+
+/* ------------------------------------------------------------------ 
+ * Tutorial 
+ * ------------------------------------------------------------------ */
+  function openTutorial() {
+    nextTick(() => {
+      const el = infoIcon.value
+      if (el) {
+        const r = el.getBoundingClientRect()
+        tutorialPosition.value = {
+          top: `${r.bottom}px`,
+          left: `${r.right}px`
+        }
+        showTutorial.value = true
+      }
+    })
+  }
+
+  function closeTutorial() {
+    showTutorial.value = false
+  }
+  
 </script>
 
 <template>
