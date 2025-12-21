@@ -252,7 +252,7 @@
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        <h3>Data Dependence Graph & Circular Dependence Paths (in red)</h3>
+        <h3>Data Dependence Graph (circular paths in red)</h3>
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
       <div class="output-block" id="dependence-graph-full"></div>
@@ -501,12 +501,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
   .fullscreen-title {
     margin: 0;
-    font-size: 1.2em;
-    font-weight: 500;
   }
   .close-btn {
     background: none;
