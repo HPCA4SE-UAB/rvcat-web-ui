@@ -25,26 +25,26 @@
  * Graph options (persistent in localStorage)
  * ------------------------------------------------------------------ */
   const iters      = ref(1)
-  const showConst  = ref(false)
-  const showRdOnly = ref(false)
   const showIntern = ref(true)
   const showLaten  = ref(false)
+  const showSmall  = ref(false)
+  const showFull   = ref(false)
 
 /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
   onMounted(() => {
-    const v = localStorage.getItem("showConst");
-    if (v !== null) showConst.value = v === "1";
-
-    const r = localStorage.getItem("showRdOnly");
-    if (r !== null) showRdOnly.value = r === "1";
-
     const i = localStorage.getItem("showIntern");
     if (i !== null) showIntern.value = i === "1";
 
     const l = localStorage.getItem("showLaten");
     if (l !== null) showLaten.value = l === "1";
+
+    const v = localStorage.getItem("showSmall");
+    if (v !== null) showSmall.value = v === "1";
+
+    const r = localStorage.getItem("showFull");
+    if (r !== null) showFull.value = r === "1";
   });
   
   onMounted(() => {
@@ -52,11 +52,11 @@
     if (v !== null) iters.value = parseInt(v);
   });
 
-  watch(showConst,  v => localStorage.setItem("showConst",  v ? "1" : "0"));
-  watch(showRdOnly, v => localStorage.setItem("showRdOnly", v ? "1" : "0"));
+  watch(iters, v => localStorage.setItem("graphIterations", v));
   watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
   watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
-  watch(iters, v => localStorage.setItem("graphIterations", v));
+  watch(showSmall,  v => localStorage.setItem("showSmall",  v ? "1" : "0"));
+  watch(showFull,   v => localStorage.setItem("showFull",   v ? "1" : "0"));
   
 /* ------------------------------------------------------------------ 
 * UI actions 
@@ -68,13 +68,13 @@
     iters.value = v
   }
 
-  function toggleConst()  { showConst.value  = !showConst.value  }
-  function toggleRdOnly() { showRdOnly.value = !showRdOnly.value }
   function toggleIntern() { showIntern.value = !showIntern.value }
   function toggleLaten()  { showLaten.value  = !showLaten.value  }
+  function toggleSmall()  { showSmall.value  = !showSmall.value  }
+  function toggleFull()   { showFull.value   = !showFull.value }
 
   watch(
-    [iters, showConst, showRdOnly, showIntern, showLaten],
+    [iters, showIntern, showLaten, showSmall, showFull],
     ([i, c, r, n, l]) => {
       if (!isMounted.value) return
 
@@ -89,10 +89,10 @@
   function updateGraph() {
     showCriticalPathsGraph(
       iters.value,
-      showConst.value,
-      showRdOnly.value,
       showIntern.value,
-      showLaten.value
+      showLaten.value,
+      showSmall.value,
+      showFull.value
     )
   }
 
@@ -213,9 +213,9 @@
         <!-- Flags -->
         <div class="flags-group">
           <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
-          <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"><span v-if="showLaten">✔ </span>Latencies</button>
-          <button class="blue-button" :class="{ active: showConst }"  :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
-          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly"><span v-if="showRdOnly">✔ </span>ReadOnly</button>
+          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
+          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
+          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
         </div>
       </div>
     </div>
