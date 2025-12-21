@@ -156,6 +156,7 @@
         };
         programsList.addEventListener("change", programsListHandler);
       }
+      updateGraph()
     });
   });
 
@@ -464,7 +465,7 @@
   opacity: 0.7;
 }
 .icon-button {
-  background: #f0f0f0;     /* color de fondo por defecto */
+  background: #d0d0d0;     /* color de fondo por defecto */
   border: none;
   cursor: pointer;
   padding: 6px;
@@ -480,10 +481,10 @@
   height: 1.5em;
 }
 .icon-button:hover {
-  background: #e0e0e0;      /* más oscuro al hover */
+  background: #c0c0c0;      /* más oscuro al hover */
 }
 .icon-button:active {
-  background: #d0d0d0;      /* aún más oscuro al pulsar */
+  background: #b0b0b0;      /* aún más oscuro al pulsar */
 }
 .icon-button:focus {
   outline: 2px solid #1a4fb3;  /* para teclado */
