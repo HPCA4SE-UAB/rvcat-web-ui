@@ -22,7 +22,7 @@
   const tutorialPosition = ref({ top: '50%', left: '50%' });
   
 /* ------------------------------------------------------------------ 
- * Graph options (grouped & persisted) 
+ * Graph options (persistent in localStorage)
  * ------------------------------------------------------------------ */
   const iters      = ref(1)
   const showConst  = ref(false)
@@ -198,26 +198,24 @@
     <div class="header">
       <div class="section-title-and-info">
         
-        <!-- Título -->
+        <!-- Title -->
         <span ref="infoIcon" class="info-icon" @click="openTutorial">
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Performance Analysis</span>
         
-        <!-- Iteraciones -->
+        <!-- Iterations -->
         <div class="iters-group">
-          <span class="iters-label">Iters</span>
-          <button class="gray-button" @click="changeIters(-1)">−</button>
-          <input type="number" min="1" max="10" v-model.number="iters">
-          <button class="gray-button" @click="changeIters(1)">+</button>
+          <span class="iters-label">Iters:</span>
+          <input type="number" min="1" max="7" v-model.number="iters">
         </div>
         
         <!-- Flags -->
         <div class="flags-group">
-          <button class="blue-button" :class="{ active: showConst }"  :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
-          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly"><span v-if="showRdOnly">✔ </span>ReadOnly</button>
           <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
           <button class="blue-button" :class="{ active: showLaten }"  :aria-pressed="showLaten"  @click="toggleLaten"><span v-if="showLaten">✔ </span>Latencies</button>
+          <button class="blue-button" :class="{ active: showConst }"  :aria-pressed="showConst"  @click="toggleConst"><span v-if="showConst">✔ </span>Const</button>
+          <button class="blue-button" :class="{ active: showRdOnly }" :aria-pressed="showRdOnly" @click="toggleRdOnly"><span v-if="showRdOnly">✔ </span>ReadOnly</button>
         </div>
       </div>
     </div>
@@ -235,7 +233,6 @@
         <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
       </Transition>
     </div>
-
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
@@ -304,9 +301,9 @@
   }
   .section-title-and-info {
     display: flex;
-    align-items: center;      /* alineación vertical */
-    gap: 0.5rem;              /* espacio uniforme */
-    flex-wrap: wrap;          /* evita desbordes */
+    align-items: center;
+    gap: 0.5rem;              /* uniform space */
+    flex-wrap: wrap;          /* avoid overflow */
   }
   .header-title {
     font-size: 1.1rem;
@@ -321,11 +318,6 @@
   .iters-label {
     margin-left: 0.5rem;
     font-weight: 500;
-  }
-  .gray-button {
-    font-size: inherit;
-    height: 1.8em;
-    padding: 0 0.6em;
   }
   .blue-button {
     background: #e6f0ff;
@@ -368,7 +360,7 @@
     font-family: monospace;
   }
   .annotations-header {
-    all: unset;                    /* reset de botón */
+    all: unset;                    /* button reset */
     width: 100%;
     cursor: pointer;
     background: #f3f3f3;
@@ -465,7 +457,7 @@
   opacity: 0.7;
 }
 .icon-button {
-  background: #d0d0d0;     /* color de fondo por defecto */
+  background: #b0b0b0;     /* default backgorund color */
   border: none;
   cursor: pointer;
   padding: 6px;
@@ -481,13 +473,13 @@
   height: 1.5em;
 }
 .icon-button:hover {
-  background: #c0c0c0;      /* más oscuro al hover */
+  background: #a0a0a0;      /* darker at hover */
 }
 .icon-button:active {
-  background: #b0b0b0;      /* aún más oscuro al pulsar */
+  background: #909090;      /* still darker */
 }
 .icon-button:focus {
-  outline: 2px solid #1a4fb3;  /* para teclado */
+  outline: 2px solid #1a4fb3;  /* keypad */
   outline-offset: 2px;
 }
 
