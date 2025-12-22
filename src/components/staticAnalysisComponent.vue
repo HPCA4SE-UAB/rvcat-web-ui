@@ -196,7 +196,7 @@
         <span ref="infoIcon1" class="info-icon" @click="openTutorial1">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Performance Analysis</span>
+        <span class="header-title">Static Performance Analysis</span>
       </div>
     </div>
 
@@ -265,16 +265,15 @@
   title="Static Performance Analysis"
   @close="closeTutorial1"/>
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Expand the Performance Analysis tab to view a detailed static performance breakdown. Performance may be limited by the maximum throughput of a hardware resource, 
-    such as dispatch width or a set of execution ports required to execute a particular subset of instructions. 
-    Alternatively, performance may be limited by the latency of a circular chain of data dependencies among instructions."
-  title="Detailed Performance Analysis"
+  text="Performance may be limited by the maximum throughput of a hardware resource, 
+       such as dispatch width or a set of execution ports required to execute a particular subset of instructions."
+  title="Throughput-bound execution time"
   @close="closeTutorial2"/>
   <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
-  text="The data dependence graph highlights circular dependencies (shown in red) that determine latency-bound execution time. 
+  text="The data dependence graph highlights circular dependencies (shown in red) that determine latency-bound execution time (cycles per loop iteration).
       You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
       Click the fullscreen button to enlarge the graph."
-  title="Dependence Graph and Latency-bound execution time"
+  title="Latency-bound execution time"
   @close="closeTutorial3"/>
 </template>
 
