@@ -197,20 +197,6 @@
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Performance Analysis</span>
-        
-        <!-- Iterations -->
-        <div class="iters-group">
-          <span class="iters-label">Iters:</span>
-          <input type="number" min="1" max="7" v-model.number="iters">
-        </div>
-        
-        <!-- Flags -->
-        <div class="flags-group">
-          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
-          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
-          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
-          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
-        </div>
       </div>
     </div>
 
@@ -241,6 +227,20 @@
           <span class="graph-subtitle">
             (Circular paths in red)
           </span>
+        
+        <!-- Iterations -->
+        <div class="iters-group">
+          <span class="iters-label">Iters:</span>
+          <input type="number" min="1" max="7" v-model.number="iters">
+        </div>
+        
+        <!-- Flags -->
+        <div class="flags-group">
+          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
+          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
+          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
+          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
+        </div>
         </h4>
         <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
           <img src="/img/fullscreen.png" class="fs-img">
@@ -259,20 +259,22 @@
     </div>
   </div>
   <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
-  text="Presents the statically-determined throughput and latency bottlenecks. The minimum execution time (time per loop iteration) can be latency-bound, i.e. limited by the data dependences among instructions,
-      or throughput-bound, i.e. limited by the dispatch/execution/retire capacities of the processor for a certain subet of instructions. Expand the performance analysis tab for a detailed breakdown."
+  text="Statically determined throughput and latency bottlenecks. The minimum execution time per loop iteration may be throughput-bound, 
+    meaning it is limited by the processor’s instruction dispatch, execution, or retirement capacity for a given subset of instructions. 
+    Alternatively, it may be latency-bound, meaning it is constrained by a loop-carried chain of data dependencies that forms a critical path across iterations"
   title="Static Performance Analysis"
   @close="closeTutorial1"/>
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Provides detailed static performance analysis. Performance can be limited by the latencies of a circular chain of data dependences between instructions. 
-        Alternatively, performance can be limited by the maximum thorughput of some hardware resource, like dispatch with, or some set of execution ports that necessarily need to execute a certain subset of instructions."
+  text="Expand the Performance Analysis tab to view a detailed static performance breakdown. Performance may be limited by the maximum throughput of a hardware resource, 
+    such as dispatch width or a set of execution ports required to execute a particular subset of instructions. 
+    Alternatively, performance may be limited by the latency of a circular chain of data dependencies among instructions."
   title="Detailed Performance Analysis"
   @close="closeTutorial2"/>
   <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
-  text="The data dependence graph highlights circular dependences (shown in red) that determine latency-bound execution time. 
-    You can show/hide the internal dependences, the execution latencies, the instruction details, and the (full) input dependences on constant and read-only values. 
-    Click the fullscreen button to enlarge the graph."
-  title="Detailed Performance Analysis"
+  text="The data dependence graph highlights circular dependencies (shown in red) that determine latency-bound execution time. 
+      You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
+      Click the fullscreen button to enlarge the graph."
+  title="Dependence Graph and Latency-bound execution time"
   @close="closeTutorial3"/>
 </template>
 
