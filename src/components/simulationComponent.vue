@@ -57,6 +57,8 @@
 
 </script>
 
+        /* <class="iterations-input" name="iterations"> */
+
 <template>
   <div class="main">
     <div class="header">
@@ -71,7 +73,6 @@
           <span class="iters-label">Iterations:</span>
           <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
         </div>
-        /* <class="iterations-input" name="iterations"> */
         <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
       </div>
     </div>
