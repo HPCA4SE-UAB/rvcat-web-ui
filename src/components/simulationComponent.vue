@@ -143,10 +143,11 @@
   text="Simulate a specified number of program loop iterations and display aggregate performance metrics.
    Hover over processor execution ports to inspect their utilization, or open the corresponding tab to visualize the time distribution of instructions along the critical path."
   title="Overall Simulation Results"
-  @close="closeTutorial1"
+  @close="closeTutorial1"/>
     
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Percentage of time devoted by each instruction and dispatch/retire stages on critical path."
+  text="Percentage of time devoted by each instruction and dispatch/retire stages on critical execution path."
+  title="Critical execution path breakdown"
   @close="closeTutorial2"/>
   
 </template>
