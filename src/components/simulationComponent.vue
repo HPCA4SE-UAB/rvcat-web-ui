@@ -191,7 +191,7 @@
     gap: 0.4rem;
   }
   .iters-group input[type="number"] {
-    width: 4ch;
+    width: 8ch;
     text-align: center;
   }
   .iters-label {
