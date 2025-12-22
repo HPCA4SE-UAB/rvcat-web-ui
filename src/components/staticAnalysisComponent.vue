@@ -229,7 +229,7 @@
 
         <!-- Iterations -->
         <div class="iters-group">
-          <span class="iters-label">Iters:</span>
+          <span class="iters-label">Iterations:</span>
           <input type="number" min="1" max="7" v-model.number="iters">
         </div>
         
