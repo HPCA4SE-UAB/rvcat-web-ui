@@ -65,13 +65,6 @@
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
-  function changeIters(delta) {
-    let v = iters.value + delta
-    if (v < 1) v = 1
-    if (v > 10) v = 10
-    iters.value = v
-  }
-
   function toggleIntern() { showIntern.value = !showIntern.value }
   function toggleLaten()  { showLaten.value  = !showLaten.value  }
   function toggleSmall()  { showSmall.value  = !showSmall.value  }
