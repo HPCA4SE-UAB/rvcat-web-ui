@@ -57,8 +57,6 @@
 
 </script>
 
-        /* <class="iterations-input" name="iterations"> */
-
 <template>
   <div class="main">
     <div class="header">
