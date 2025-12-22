@@ -17,11 +17,13 @@
   
   const showPerformance = ref(false);
   const showFullScreen  = ref(false);
-  const showTutorial    = ref(false);
+  const showTutorial1   = ref(false);
   const showTutorial2   = ref(false);
+  const showTutorial3   = ref(false);
   const infoIcon1       = ref(null);
   const infoIcon2       = ref(null);
-  const tutorialPosition= ref({ top: '5%', left: '5%' });
+  const infoIcon3       = ref(null);
+  const tutorialPosition= ref({ top: '0%', left: '0%' });
   
 /* ------------------------------------------------------------------ 
  * Graph options (persistent in localStorage)
@@ -176,11 +178,13 @@
 /* ------------------------------------------------------------------ 
  * Tutorial 
  * ------------------------------------------------------------------ */
-  function openTutorial()  { nextTick(() => {  showTutorial.value = true }) }
+  function openTutorial1() { nextTick(() => { showTutorial1.value = true }) }
   function openTutorial2() { nextTick(() => { showTutorial2.value = true }) }
+  function openTutorial3() { nextTick(() => { showTutorial3.value = true }) }
   
-  function closeTutorial()  { showTutorial.value  = false }
+  function closeTutorial1() { showTutorial1.value  = false }
   function closeTutorial2() { showTutorial2.value = false }
+  function closeTutorial3() { showTutorial3.value = false }
 </script>
 
 <template>
@@ -189,7 +193,7 @@
       <div class="section-title-and-info">
         
         <!-- Title -->
-        <span ref="infoIcon" class="info-icon" @click="openTutorial">
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1">
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Performance Analysis</span>
@@ -211,7 +215,7 @@
     </div>
 
     <div class="annotations-wrapper">
-      <span ref="infoIcon2" class="info-icon2" @click="openTutorial2">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
          <img src="/img/info.png" class="info-img">
       </span>
       <button class="annotations-header" @click="toggleAnnotations" :aria-expanded="showPerformance">
@@ -229,6 +233,9 @@
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
+        <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
+          <img src="/img/info.png" class="info-img">
+        </span>
         <h4 class="graph-title">
           Data Dependence Graph
           <span class="graph-subtitle">
@@ -251,16 +258,22 @@
       <div class="output-block" id="dependence-graph-full"></div>
     </div>
   </div>
-  <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="The data dependency graph highlights circular dependencies (shown in red) that determine latency-bound execution time.
-   Click the fullscreen button to enlarge the graph. Expand the performance analysis tab for a detailed breakdown of statically-determined throughput and latency bottlenecks."
+  <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
+  text="Presents the statically-determined throughput and latency bottlenecks. The minimum execution time (time per loop iteration) can be latency-bound, i.e. limited by the data dependences among instructions,
+      or throughput-bound, i.e. limited by the dispatch/execution/retire capacities of the processor for a certain subet of instructions. Expand the performance analysis tab for a detailed breakdown."
   title="Static Performance Analysis"
-  @close="closeTutorial"/>
+  @close="closeTutorial1"/>
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
   text="Provides detailed static performance analysis. Performance can be limited by the latencies of a circular chain of data dependences between instructions. 
-        Alternatively, performance can be limited by the maximum thorughput of some hardware resource, like dispatch with, or some set of execution ports that necessarily need to execute a certain amount of instructions."
+        Alternatively, performance can be limited by the maximum thorughput of some hardware resource, like dispatch with, or some set of execution ports that necessarily need to execute a certain subset of instructions."
   title="Detailed Performance Analysis"
   @close="closeTutorial2"/>
+  <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
+  text="The data dependence graph highlights circular dependences (shown in red) that determine latency-bound execution time. 
+    You can show/hide the internal dependences, the execution latencies, the instruction details, and the (full) input dependences on constant and read-only values. 
+    Click the fullscreen button to enlarge the graph."
+  title="Detailed Performance Analysis"
+  @close="closeTutorial3"/>
 </template>
 
 <style scoped>
