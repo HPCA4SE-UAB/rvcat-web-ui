@@ -222,12 +222,11 @@
         <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
           <img src="/img/info.png" class="info-img">
         </span>
+        
         <h4 class="graph-title">
           Data Dependence Graph
-          <span class="graph-subtitle">
-            (Circular paths in red)
-          </span>
-        
+        </h4>
+
         <!-- Iterations -->
         <div class="iters-group">
           <span class="iters-label">Iters:</span>
@@ -241,10 +240,11 @@
           <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
           <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
         </div>
-        </h4>
+
         <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
           <img src="/img/fullscreen.png" class="fs-img">
         </button>
+        
       </div>
       <div class="output-block" id="dependence-graph"></div>
     </div>
@@ -329,7 +329,7 @@
     gap: 0.4rem;
   }
   .iters-group input[type="number"] {
-    width: 2ch;
+    width: 4ch;
     text-align: center;
   }
   .iters-label {
