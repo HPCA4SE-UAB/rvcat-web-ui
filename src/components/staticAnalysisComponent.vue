@@ -20,7 +20,7 @@
   const showTutorial    = ref(false);
   const showTutorial2   = ref(false);
   const infoIcon        = ref(null);
-  const tutorialPosition = ref({ top: '50%', left: '50%' });
+  const tutorialPosition= ref({ top: '5%', left: '5%' });
   
 /* ------------------------------------------------------------------ 
  * Graph options (persistent in localStorage)
@@ -175,31 +175,11 @@
 /* ------------------------------------------------------------------ 
  * Tutorial 
  * ------------------------------------------------------------------ */
-  function openTutorial() {
-    nextTick(() => {  showTutorial.value = true
-      /* const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
-        showTutorial.value = true
-      }*/
-    })
-  }
-
-  function openTutorial2() {
-    nextTick(() => { showTutorial2.value = true })
-  }
+  function openTutorial()  { nextTick(() => {  showTutorial.value = true }) }
+  function openTutorial2() { nextTick(() => { showTutorial2.value = true }) }
   
-  function closeTutorial() {
-    showTutorial.value = false
-  }
-
-  function closeTutorial2() {
-    showTutorial2.value = false
-  }
+  function closeTutorial()  { showTutorial.value  = false }
+  function closeTutorial2() { showTutorial2.value = false }
 </script>
 
 <template>
@@ -230,15 +210,15 @@
     </div>
 
     <div class="annotations-wrapper">
+      <span ref="infoIcon" class="info-icon" @click="openTutorial2">
+         <img src="/img/info.png" class="info-img">
+      </span>
       <button class="annotations-header" @click="toggleAnnotations" :aria-expanded="showPerformance">
         <span class="arrow" aria-hidden="true">
           {{ showPerformance ? '▼' : '▶' }}
         </span>
         <span class="annotations-title">
           Analysis of Performance Limits
-        </span>
-        <span ref="infoIcon" class="info-icon" @click="openTutorial2">
-          <img src="/img/info.png" class="info-img">
         </span>
       </button>
       <Transition name="fold" appear>
@@ -276,7 +256,8 @@
   title="Static Performance Analysis"
   @close="closeTutorial"/>
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Bla, bla."
+  text="Provides detailed static performance analysis. Performance can be limited by the latencies of a circular chain of data dependences between instructions. 
+        Alternatively, performance can be limited by the maximum thorughput of some hardware resource, like dispatch with, or some set of execution ports that necessarily need to execute a certain amount of instructions."
   title="Detailed Performance Analysis"
   @close="closeTutorial2"/>
 </template>
