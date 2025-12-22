@@ -1,55 +1,50 @@
 <script setup>
-  import { onMounted, nextTick, ref, watch } from "vue";
-  import TutorialComponent                   from '@/components/tutorialComponent.vue';
+  import { ref, onMounted, nextTick, onUnmounted, ref, watch } from "vue";
+  import TutorialComponent from '@/components/tutorialComponent.vue';
+
+  /* Safe solution */
+  const isMounted = ref(false)
+  onMounted(() => {
+    isMounted.value = true
+  })
+
+  /* ------------------------------------------------------------------ 
+ * UI state 
+ * ------------------------------------------------------------------ */
+  let graphTimeout = null
 
   const showCriticalPath = ref(false);
+  const tutorialPosition = ref({ top: '0%', left: '0%' });
   const showTutorial     = ref(false);
-  const tutorialPosition = ref({ top: '50%', left: '50%' });
   const infoIcon         = ref(null);
+  const iters            = ref(1)
 
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
-        showTutorial.value = true
-      }
-    })
-  }
+/* ------------------------------------------------------------------ 
+ * Tutorial 
+ * ------------------------------------------------------------------ */
+  function openTutorial()  { nextTick(() => { showTutorial.value = true }) }  
+  function closeTutorial() { showTutorial.value  = false }
 
-  function closeTutorial() {
-    showTutorial.value = false
-  }
-
+/* ------------------------------------------------------------------ 
+ * Critical Path Statistics 
+ * ------------------------------------------------------------------ */
   function toggleCriticalPath() {
     showCriticalPath.value = !showCriticalPath.value;
   }
 
-  function getCookie(name) {
-    const re = new RegExp(
-      "(?:^|; )" +
-        name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") +
-        "=([^;]*)"
-    );
-    const match = document.cookie.match(re);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
+ /* ------------------------------------------------------------------ 
+ * Load / save options from localStorage 
+ * ------------------------------------------------------------------ */
+  onMounted(() => {
+    const v = localStorage.getItem("ExecutionIterations");
+    if (v !== null) iters.value = parseInt(v);
+  });
 
-  function setCookie(name, value, days = 30) {
-    const maxAge = days * 24 * 60 * 60;
-    document.cookie = `${name}=${encodeURIComponent(
-      value
-    )}; max-age=${maxAge}; path=/`;
-  }
+  watch(iters, v => localStorage.setItem("ExecutionIterations", v));
 
-  const iterations = ref(parseInt(getCookie("simulationIterations")) || 1);
-  watch(iterations, (v) => setCookie("simulationIterations", v));
-
-
+/* ------------------------------------------------------------------ 
+* UI actions 
+* ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
       if (typeof reloadRvcat === "function") {
@@ -60,30 +55,23 @@
     });
   });
 
-  function changeIterations(delta) {
-    const min = 1;
-    const max = 2000;
-    let v = iterations.value + delta;
-    if (v < min) v = min;
-    if (v > max) v = max;
-    iterations.value = v;
-  }
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Simulation</h3>
+        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help">
+           <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Simulation of the Execution of the Program</span>
       </div>
       <div class="iters-run">
-        <div class="iterations-group">
-          Iterations:
-          <button type="button" class="gray-button" @click="changeIterations(-1)">−</button>
-          <input type="number" id="num-iters" class="iterations-input" name="iterations" min="1" max="20000" v-model.number="iterations">
-          <button type="button" class="gray-button" @click="changeIterations(1)">+</button>
+        <div class="iters-group">
+          <span class="iters-label">Iterations:</span>
+          <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
         </div>
+        /* <class="iterations-input" name="iterations"> */
         <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
       </div>
     </div>
@@ -165,13 +153,6 @@
     cursor:pointer;
     left: 3px;
   }
-  h3 {
-    margin: 0;
-  }
-  h4 {
-    text-align: center;
-    width: 100%;
-  }
   .header{
     position:sticky;
     padding-top:2px;
@@ -184,12 +165,68 @@
     justify-content: space-between;
     align-items: center;
   }
-  .iters-run{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap:5px;
+  .section-title-and-info button,
+  .section-title-and-info input {
+    height: 2em;
+    line-height: 1;
+    font-size: 0.95rem;
   }
+  .section-title-and-info input[type="number"] {
+    width: 3.5em;
+    text-align: center;
+    font-size: inherit;
+  }
+  .section-title-and-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;              /* uniform space */
+    flex-wrap: wrap;          /* avoid overflow */
+  }
+  .header-title {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+  }
+  .iters-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .iters-group input[type="number"] {
+    width: 4ch;
+    text-align: center;
+  }
+  .iters-label {
+    margin-left: 0.5rem;
+    font-weight: 500;
+  }
+  .blue-button {
+    background: #e6f0ff;
+    color: #1a4fb3;
+    border: 1px solid #7aa2e3;
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+  }
+  /* estado activado */
+  .blue-button.active {
+    background: #1a4fb3;
+    color: white;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    border-color: #1a4fb3;
+  }
+  /* feedback al pulsar */
+  .blue-button:active {
+    transform: translateY(1px);
+  }
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  .info-img {
+    height: 1em;
+    width: 1em;
+  }
+
   .graph-section{
     display: flex;
     justify-content: center;
@@ -256,25 +293,6 @@
     margin-top: 10px;
     font-size: 2.75vh;
   }
-
-  .iterations-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .iterations-input {
-    width: 8vh;
-    padding: 2px;
-    text-align: center;
-    -moz-appearance: textfield;
-  }
-  .iterations-input::-webkit-outer-spin-button,
-  .iterations-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
   .results-info {
     width: 100%;
     margin-top: 10px;
