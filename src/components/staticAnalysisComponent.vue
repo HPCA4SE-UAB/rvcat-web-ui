@@ -328,6 +328,10 @@
     align-items: center;
     gap: 0.4rem;
   }
+  .iters-group input[type="number"] {
+    width: 2ch;
+    text-align: center;
+  }
   .iters-label {
     margin-left: 0.5rem;
     font-weight: 500;
