@@ -18,6 +18,7 @@
   const showPerformance = ref(false);
   const showFullScreen  = ref(false);
   const showTutorial    = ref(false);
+  const showTutorial2   = ref(false);
   const infoIcon        = ref(null);
   const tutorialPosition = ref({ top: '50%', left: '50%' });
   
@@ -188,8 +189,26 @@
     })
   }
 
+  function openTutorial2() {
+    nextTick(() => {
+      const el = infoIcon.value
+      if (el) {
+        const r = el.getBoundingClientRect()
+        tutorialPosition.value = {
+          top: `${r.bottom}px`,
+          left: `${r.right}px`
+        }
+        showTutorial2.value = true
+      }
+    })
+  }
+  
   function closeTutorial() {
     showTutorial.value = false
+  }
+
+  function closeTutorial2() {
+    showTutorial2.value = false
   }
 </script>
 
@@ -228,6 +247,9 @@
         <span class="annotations-title">
           Analysis of Performance Limits
         </span>
+        <span ref="infoIcon" class="info-icon" @click="openTutorial2">
+          <img src="/img/info.png" class="info-img">
+        </span>
       </button>
       <Transition name="fold" appear>
         <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
@@ -263,6 +285,10 @@
    Click the fullscreen button to enlarge the graph. Expand the performance analysis tab for a detailed breakdown of statically-determined throughput and latency bottlenecks."
   title="Static Performance Analysis"
   @close="closeTutorial"/>
+  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+  text="Bla, bla."
+  title="Detailed Performance Analysis"
+  @close="closeTutorial2"/>
 </template>
 
 <style scoped>
