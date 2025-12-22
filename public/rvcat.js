@@ -326,17 +326,17 @@ function showProcessor() {
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
 }
 
-function showCriticalPathsGraph(n,c,r,i,l) {
-    let constant = "True";
-    let read_only= "True";
+function showCriticalPathsGraph(n,i,l,s,f) {
     let internal = "True";
     let latency  = "True";
-    if (!c) {constant = "False"}
-    if (!r) {read_only= "False"}
+    let small    = "True";
+    let full     = "True";
     if (!i) {internal = "False"}
     if (!l) {latency  = "False"}
+    if (!s) {small    = "False"}
+    if (!f) {full     = "False"}
     executeCode(
-        RVCAT_HEADER() + get_graph(n, constant, read_only, internal, latency),
+        RVCAT_HEADER() + get_graph(n, internal, latency, small, full),
         'generate_critical_paths_graph'
     )
     lastExecutedCommand = showCriticalPathsGraph;
