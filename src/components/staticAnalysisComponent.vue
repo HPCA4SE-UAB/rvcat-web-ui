@@ -19,7 +19,8 @@
   const showFullScreen  = ref(false);
   const showTutorial    = ref(false);
   const showTutorial2   = ref(false);
-  const infoIcon        = ref(null);
+  const infoIcon1       = ref(null);
+  const infoIcon2       = ref(null);
   const tutorialPosition= ref({ top: '5%', left: '5%' });
   
 /* ------------------------------------------------------------------ 
@@ -210,7 +211,7 @@
     </div>
 
     <div class="annotations-wrapper">
-      <span ref="infoIcon" class="info-icon" @click="openTutorial2">
+      <span ref="infoIcon2" class="info-icon2" @click="openTutorial2">
          <img src="/img/info.png" class="info-img">
       </span>
       <button class="annotations-header" @click="toggleAnnotations" :aria-expanded="showPerformance">
