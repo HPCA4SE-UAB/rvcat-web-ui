@@ -209,7 +209,7 @@
           {{ showPerformance ? '▼' : '▶' }}
         </span>
         <span class="annotations-title">
-          Analysis of Performance Limits
+          Throughput-bound Limits
         </span>
       </button>
       <Transition name="fold" appear>
