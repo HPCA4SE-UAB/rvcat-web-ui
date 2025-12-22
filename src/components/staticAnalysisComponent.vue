@@ -176,8 +176,8 @@
  * Tutorial 
  * ------------------------------------------------------------------ */
   function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
+    nextTick(() => {  showTutorial.value = true
+      /* const el = infoIcon.value
       if (el) {
         const r = el.getBoundingClientRect()
         tutorialPosition.value = {
@@ -185,22 +185,12 @@
           left: `${r.right}px`
         }
         showTutorial.value = true
-      }
+      }*/
     })
   }
 
   function openTutorial2() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
-        showTutorial2.value = true
-      }
-    })
+    nextTick(() => { showTutorial2.value = true })
   }
   
   function closeTutorial() {
