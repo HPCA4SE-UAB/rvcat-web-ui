@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, ref, watch } from "vue";
+  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
   /* Safe solution */
