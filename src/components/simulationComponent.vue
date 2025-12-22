@@ -15,15 +15,19 @@
 
   const showCriticalPath = ref(false);
   const tutorialPosition = ref({ top: '0%', left: '0%' });
-  const showTutorial     = ref(false);
-  const infoIcon         = ref(null);
+  const showTutorial1    = ref(false);
+  const infoIcon1        = ref(null);
+  const showTutorial2    = ref(false);
+  const infoIcon2        = ref(null);
   const iters            = ref(1)
 
 /* ------------------------------------------------------------------ 
  * Tutorial 
  * ------------------------------------------------------------------ */
-  function openTutorial()  { nextTick(() => { showTutorial.value = true }) }  
-  function closeTutorial() { showTutorial.value  = false }
+  function openTutorial1()  { nextTick(() => { showTutorial1.value = true }) }  
+  function closeTutorial1() { showTutorial1.value  = false }
+  function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }  
+  function closeTutorial2() { showTutorial2.value  = false }
 
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
@@ -61,7 +65,7 @@
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help">
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Simulation of the Execution of the Program</span>
@@ -103,20 +107,25 @@
         <div id="simulation-running"><p>Simulation on course...</p></div>
       </div>
     </div>
-    <div class="critical-wrapper" id="critical-path-section" style="display: none;">
-      <div class="critical-header" @click="toggleCriticalPath">
-        <span class="arrow">{{ showCriticalPath ? '▼' : '▶' }}</span>
-        <span class="title"><b>Critical Execution Path</b></span>
-      </div>
-
+    <div class="critical-wrapper">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
+         <img src="/img/info.png" class="info-img">
+      </span>
+      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
+        <span class="arrow" aria-hidden="true">
+          {{ showCriticalPath ? '▼' : '▶' }}
+        </span>
+        <span class="critical-title">
+          Critical Execution Path
+        </span>
+      </button>
       <Transition name="fold" appear>
-        <div v-show="showCriticalPath" id="critical-path" class="critical-box">
-        </div>
+        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
       </Transition>
     </div>
 
     <div id="graph-section" class="graph-section" style="display: none;">
-        <h4>Processor Bottlenecks</h4>
+        <span class="header-title">Processor Bottlenecks</span>
         <div id="simulation-graph" class="simulation-img"></div>
     </div>
 
@@ -129,12 +138,17 @@
       </div>
     </div>
   </div>
-  <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
+  
+  <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
   text="Simulate a specified number of program loop iterations and display aggregate performance metrics.
    Hover over processor execution ports to inspect their utilization, or open the corresponding tab to visualize the time distribution of instructions along the critical path."
   title="Overall Simulation Results"
-  @close="closeTutorial"
-  />
+  @close="closeTutorial1"
+    
+  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+  text="Percentage of time devoted by each instruction and dispatch/retire stages on critical path."
+  @close="closeTutorial2"/>
+  
 </template>
 
 <style scoped>
@@ -146,11 +160,6 @@
     padding: 5px;
     border-radius: 10px;
     position: relative;
-  }
-  #run-button{
-    display:block;
-    cursor:pointer;
-    left: 3px;
   }
   .header{
     position:sticky;
@@ -330,12 +339,20 @@
     margin-top: 5px;
   }
   .critical-header {
-    display: flex;
-    align-items: center;
+    all: unset;                    /* button reset */
+    width: 100%;
     cursor: pointer;
+    background: #f3f3f3;
     padding: 6px 10px;
     border-radius: 6px 6px 0 0;
-    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .critical-header:hover {
+    background: #eaeaea;
   }
   .critical-header .arrow {
     margin-right: 8px;
@@ -344,12 +361,19 @@
   .critical-header .title {
     font-size: 1em;
   }
+  .critical-title {
+    flex: 1;
+  }
 
   /* content box */
   .critical-box {
-    overflow: hidden;
+    white-space: pre-wrap;
+    background: #f0f0f0;
     padding: 10px;
-    background:  #f0f0f0;
-    border-radius: 0 0 6px 6px;
+    border-radius: 0 0 5px 5px;
+    margin-top: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    font-family: monospace;
   }
 </style>
