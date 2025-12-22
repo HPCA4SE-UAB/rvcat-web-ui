@@ -209,28 +209,12 @@ function programShowPerformanceLimits() {
   )
 }
 
-function programShowDependencies() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_DEPENDENCIES,
-        'print_output'
-    )
-    lastExecutedCommand = programShowDependencies;
-}
-
 function programShowMemtrace() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_MEMORY,
         'print_output'
     )
     lastExecutedCommand = programShowMemtrace;
-}
-
-function programShowAnalysis() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-        'print_output'
-    )
-    lastExecutedCommand = programShowAnalysis;
 }
 
 async function getProcessorJSON() {
