@@ -349,7 +349,7 @@
   }
   .critical-header {
     all: unset;                    /* button reset */
-    /* width: 100%; */
+    width: 100%;
     cursor: pointer;
     background: #f3f3f3;
     padding: 6px 10px;
