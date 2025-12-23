@@ -49,8 +49,9 @@
       : "white"
   }
 
-  /*
+  
   const criticalPathRows = computed(() => {
+    data = document.getElementById('critical-path');
     if (!data.value) return []
 
     return [
@@ -68,7 +69,7 @@
       }
     ]
   })
-  */
+  
 
  /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
@@ -94,23 +95,6 @@
   });
 
 
-/*
-    <ul id="critical-path" class="critical-path-list">
-      <li
-        v-for="(row, idx) in criticalPathRows"
-        :key="idx"
-        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
-      >
-        <div
-          class="critical-path-el"
-          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
-        >
-          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
-          <div>{{ row.label }}</div>
-        </div>
-      </li>
-    </ul>   
-*/
 
 
   
@@ -181,6 +165,24 @@
         <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
       </Transition>
     </div>
+
+
+    <ul id="critical-path" class="critical-path-list">
+      <li
+        v-for="(row, idx) in criticalPathRows"
+        :key="idx"
+        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
+      >
+        <div
+          class="critical-path-el"
+          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
+        >
+          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
+          <div>{{ row.label }}</div>
+        </div>
+      </li>
+    </ul>  
+
     
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
