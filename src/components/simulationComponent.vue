@@ -107,7 +107,7 @@
         <div id="simulation-running"><p>Simulation on course...</p></div>
       </div>
     </div>
-    <div class="critical-wrapper" id="critical-path-section" style="display: none;">
+    <div class="critical-wrapper" id="critical-path-section">
       <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
          <img src="/img/info.png" class="info-img">
       </span>
@@ -341,8 +341,17 @@
   }
 
   .critical-wrapper {
-    border-radius: 6px;
+    /* border-radius: 6px;*/
     margin-top: 5px;
+  }
+  .critical-box {
+    white-space: pre-wrap;
+    overflow: hidden;
+    line-height: 1.4;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 0 0 5px 5px;
+    font-family: monospace;
   }
   .critical-header {
     all: unset;                    /* button reset */
@@ -360,20 +369,11 @@
   .critical-header:hover {
     background: #eaeaea;
   }
-  .critical-header .arrow {
-    margin-right: 8px;
-    font-size: 0.9em;
+  .critical-title {
+    flex: 1;
   }
-  .critical-header .title {
-    font-size: 1em;
-  }
-
-  /* content box */
-  .critical-box {
-    overflow: hidden;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 0 0 5px 5px;
-    font-family: monospace;
+  .arrow {
+    opacity: 0.8;
+    font-size: 0.85em;
   }
 </style>
