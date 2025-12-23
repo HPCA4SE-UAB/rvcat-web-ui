@@ -121,10 +121,11 @@
           Critical Execution Path
         </span>
       </button>
-      <Transition name="fold" appear>
-        <prev v-show="showCriticalPath" id="critical-path"></prev>
-      </Transition>
     </div>
+      
+    <Transition name="fold" appear>
+      <prev v-show="showCriticalPath" id="critical-path"></prev>
+    </Transition>
 
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
