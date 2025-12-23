@@ -433,25 +433,40 @@ function createCriticalPathList(data) {
     "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
   ]
 
-  const getColor = p =>
+  const baseStyle = `
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    padding:         2px;
+    border-top:      1px solid black;
+    border-left:     1px solid black;
+    border-right:    1px solid black;
+  `
+  const getColor = (p) =>
     p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
 
   const row = (label, percentage, isLast = false) => `
-    <li class="critical-path-row"
-        style="background-color:${getColor(percentage)}">
-      <div class="critical-path-el ${isLast ? "last" : ""}">
+    <li style="background-color:${getColor(percentage)}; list-style:none;">
+      <div class="critical-path-el"
+           style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
         <div><b>${percentage.toFixed(1)}%</b></div>
         <div>${label}</div>
       </div>
     </li>
   `
-  return `
-    <list class="critical-path-list">
-      ${row("DISPATCH", data.dispatch)}
-      ${data.instructions.map(i =>
-        row(i.instruction, i.percentage)
-      ).join("")}
-      ${row("RETIRE", data.retire, true)}
-    </list>
-  `
+  let out = "<list>"
+
+  // DISPATCH
+  out += row("DISPATCH", data.dispatch)
+
+  // INSTRUCTIONS
+  out += data.instructions
+    .map(i => row(i.instruction, i.percentage))
+    .join("")
+
+  // RETIRE
+  out += row("RETIRE", data.retire, true)
+
+  out += "</list>"
+  return out
 }
