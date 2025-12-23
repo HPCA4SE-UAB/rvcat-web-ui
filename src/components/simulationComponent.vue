@@ -35,6 +35,25 @@
   function toggleCriticalPath() {
     showCriticalPath.value = !showCriticalPath.value;
   }
+  
+  const criticalPathRows = computed(() => {
+    if (!data.value) return []
+
+    return [
+      {
+        label: "DISPATCH",
+        percentage: data.value.dispatch
+      },
+      ...data.value.instructions.map(i => ({
+        label: i.instruction,
+        percentage: i.percentage
+      })),
+      {
+        label: "RETIRE",
+        percentage: data.value.retire
+      }
+    ]
+  })
 
  /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
@@ -59,7 +78,30 @@
     });
   });
 
+
+
+
+/*
+    <div class="critical-wrapper" id="critical-path-section">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
+         <img src="/img/info.png" class="info-img">
+      </span>
+      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
+        <span class="arrow" aria-hidden="true">
+          {{ showCriticalPath ? '▼' : '▶' }}
+        </span>
+        <span class="critical-title">
+          Critical Execution Path
+        </span>
+      </button>
+      <Transition name="fold" appear>
+        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
+      </Transition>
+    </div>
+*/
+
 </script>
+
 
 <template>
   <div class="main">
@@ -107,22 +149,23 @@
         <div id="simulation-running"><p>Simulation on course...</p></div>
       </div>
     </div>
-    <div class="critical-wrapper" id="critical-path-section">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
-         <img src="/img/info.png" class="info-img">
-      </span>
-      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
-        <span class="arrow" aria-hidden="true">
-          {{ showCriticalPath ? '▼' : '▶' }}
-        </span>
-        <span class="critical-title">
-          Critical Execution Path
-        </span>
-      </button>
-      <Transition name="fold" appear>
-        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
-      </Transition>
-    </div>
+
+    <!--- Critical Path Breakdown (percentages) --->
+    <ul id="critical-path" class="critical-path-list">
+      <li
+        v-for="(row, idx) in criticalPathRows"
+        :key="idx"
+        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
+      >
+        <div
+          class="critical-path-el"
+          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
+        >
+          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
+          <div>{{ row.label }}</div>
+        </div>
+      </li>
+    </ul>
 
     <div id="graph-section" class="graph-section" style="display: none;">
         <span class="header-title">Processor Bottlenecks</span>
@@ -370,4 +413,26 @@
     opacity: 0.8;
     font-size: 0.85em;
   }
+
+.critical-path-list {
+  padding: 0;
+  margin: 0;
+}
+.critical-path-list li {
+  list-style: none;
+}
+.critical-path-el {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  border-top: 1px solid black;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+}
+.critical-path-el.last-row {
+  border-bottom: 1px solid black;
+}
+  
 </style>
