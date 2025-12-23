@@ -373,13 +373,16 @@
     opacity: 0.8;
     font-size: 0.85em;
   }
-
+  
 .critical-path-list {
-  padding: 0;
+  list-style: none;   /* quita bullets */
+  padding: 0;         /* quita indentación */
   margin: 0;
 }
 .critical-path-row {
-  list-style: none;
+  list-style: none;   /* redundante pero seguro */
+  margin: 0;
+  padding: 0;
 }
 .critical-path-el {
   display: flex;
@@ -390,6 +393,8 @@
   border-top: 1px solid black;
   border-left: 1px solid black;
   border-right: 1px solid black;
+  width: 100%;
+  box-sizing: border-box;
 }
 .critical-path-el.last {
   border-bottom: 1px solid black;
