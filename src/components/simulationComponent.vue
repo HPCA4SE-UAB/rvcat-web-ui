@@ -365,36 +365,11 @@
     opacity: 0.8;
     font-size: 0.85em;
   }
-
-.critical-path-list {
-  list-style: none;   /* quita bullets */
-  padding: 0;         /* quita indentación */
-  margin: 0;
-      overflow: hidden;
-    line-height: 1.4;
-    background: #f0f0f0;
+  /* content box */
+  .critical-box {
+    overflow: hidden;
+    padding: 10px;
+    background:  #f0f0f0;
     border-radius: 0 0 6px 6px;
-    font-family: monospace;
-}
-.critical-path-row {
-  list-style: none;   /* redundante pero seguro */
-  margin: 0;
-  padding: 0;
-}
-.critical-path-el {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px;
-  border-top: 1px solid black;
-  border-left: 1px solid black;
-  border-right: 1px solid black;
-  width: 100%;
-  box-sizing: border-box;
-}
-.critical-path-el.last {
-  border-bottom: 1px solid black;
-}
-  
+  }
 </style>
