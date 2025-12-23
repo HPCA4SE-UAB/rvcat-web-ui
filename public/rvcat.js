@@ -449,8 +449,8 @@ function createCriticalPathList(data) {
   const row = (label, percentage, isLast = false) => `
     <li style="background-color:${getColor(percentage)}; list-style:none; margin:0; padding:0">
       <div style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
-         <div style="min-width:3ch; text-align:center;">
-           <b>${percentage.toFixed(1)}%</b>     <···············································>      ${label}
+         <div style="width:100%; text-align:center;">
+            ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b> 
         </div>
       </div>
     </li>
