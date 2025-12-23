@@ -157,7 +157,8 @@
   @close="closeTutorial1"/>
     
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Open tab to visualize the time distribution of instructions, as well as the dispatch and retire stages, along the critical execution path."
+  text="Open this tab to visualize the time distribution of instructions, as well as the dispatch and retire stages, along the critical execution path. 
+        You can also inspect the critical execution path in a detailed timeline view for a limited number of loop iterations in the 'Timeline' tab."
   title="Critical execution path breakdown"
   @close="closeTutorial2"/>
 
