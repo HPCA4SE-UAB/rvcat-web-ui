@@ -289,7 +289,6 @@
     text-align: center;
     display:block;
   }
-
   .color-scale {
     width: 100%;
     height: 10px;
@@ -311,14 +310,12 @@
     width: 100%;
     margin-top: 10px;
   }
-
   .results-info .row {
     display: flex;
     justify-content: space-between;
     gap: 20px;
     margin-bottom: 5px;
   }
-
   .simulation-inline-item {
     flex: 1;
     display: flex;
@@ -328,12 +325,10 @@
     background: #f0f0f0;
     border-radius: 6px;
   }
-
   .simulation-inline-item label {
     flex: 1;
     margin-right: 10px;
   }
-
   .simulation-inline-item span {
     text-align: right;
     flex-shrink: 0;
@@ -346,7 +341,7 @@
   }
   .critical-box {
     white-space: pre-wrap;
-    overflow: hidden;
+    /* overflow: hidden; */
     line-height: 1.4;
     background: #f0f0f0;
     padding: 10px;
