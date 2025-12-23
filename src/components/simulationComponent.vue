@@ -373,13 +373,11 @@
 
   /* content box */
   .critical-box {
-    white-space: pre-wrap;
+    overflow: hidden;
     background: #f0f0f0;
     padding: 10px;
     border-radius: 0 0 5px 5px;
-    margin-top: 0;
-    font-size: 0.9rem;
-    line-height: 1.4;
+    white-space: pre-wrap;
     font-family: monospace;
   }
 </style>
