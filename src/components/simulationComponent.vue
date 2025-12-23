@@ -161,10 +161,10 @@
   title="Critical execution path breakdown"
   @close="closeTutorial2"/>
 
-  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+  <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
   text="Graphical view of processor utilization: hover over the execution ports to inspect their individual utilization."
   title="Processor Utilization"
-  @close="closeTutorial2"/>
+  @close="closeTutorial3"/>
   
 </template>
 
