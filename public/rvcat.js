@@ -446,12 +446,12 @@ function createCriticalPathList(data) {
     </li>
   `
   return `
-    <ul class="critical-path-list">
+    <list class="critical-path-list">
       ${row("DISPATCH", data.dispatch)}
       ${data.instructions.map(i =>
         row(i.instruction, i.percentage)
       ).join("")}
       ${row("RETIRE", data.retire, true)}
-    </ul>
+    </list>
   `
 }
