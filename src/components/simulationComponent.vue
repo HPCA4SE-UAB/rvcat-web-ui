@@ -340,7 +340,7 @@
     margin-top: 5px;
   }
   .critical-box {
-    white-space: pre-wrap;
+    /* white-space: pre-wrap; */
     /* overflow: hidden; */
     line-height: 1.4;
     background: #f0f0f0;
