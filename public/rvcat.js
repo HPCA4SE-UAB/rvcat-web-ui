@@ -425,19 +425,55 @@ async function showCellInfo(instrID, cycle) {
   return 'TO DO'
 }
 
- const COLORS = [
+function createCriticalPathList(data) {
+  const COLORS = [
     "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
     "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
     "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
     "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
-  ]  
+  ]
 
-function colorFromPercentage(p) {
-  return p && p !== 0
-    ? COLORS[Math.floor(p / 5)]
-    : "white"
+  const baseStyle = `
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px;
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+  `
+
+  const getColor = (p) =>
+    p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
+
+  const row = (label, percentage, isLast = false) => `
+    <li style="background-color:${getColor(percentage)}; list-style:none;">
+      <div class="critical-path-el"
+           style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
+        <div><b>${percentage.toFixed(1)}%</b></div>
+        <div>${label}</div>
+      </div>
+    </li>
+  `
+
+  let out = "<list>"
+
+  // DISPATCH
+  out += row("DISPATCH", data.dispatch)
+
+  // INSTRUCTIONS
+  out += data.instructions
+    .map(i => row(i.instruction, i.percentage))
+    .join("")
+
+  // RETIRE
+  out += row("RETIRE", data.retire, true)
+
+  out += "</list>"
+  return out
 }
 
+/*
 function createCriticalPathList(data) {
   const color = [
     "#ffffff",    "#fff3f3",    "#ffe7e7",    "#ffdbdb",    "#ffcece",    "#ffc2c2",    "#ffb6b6",    "#ffaaaa",
@@ -496,4 +532,4 @@ function createCriticalPathList(data) {
   </li></list>`;
   
   return out;
-}
+} */
