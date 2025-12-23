@@ -73,6 +73,7 @@ const handlers = {
             return;
         }
 
+        document.getElementById('critical-path').innerHTML       = d["critical-path"];
         document.getElementById('instructions-output').innerHTML = d["total_instructions"];
         document.getElementById('cycles-output').innerHTML       = d["total_cycles"];
         document.getElementById('IPC-output').innerHTML          = d["ipc"].toFixed(2);
@@ -89,7 +90,7 @@ const handlers = {
             i++;
         }
         createProcessorSimulationGraph(processorInfo.stages.dispatch, Object.keys(processorInfo.ports).length, processorInfo.stages.retire, usage);
-        createCriticalPathList(d['critical_path'])
+        /* createCriticalPathList(d['critical_path']) */
       
         document.getElementById('run-simulation-spinner').style.display = 'none';
         document.getElementById('simulation-running').style.display     = 'none';
