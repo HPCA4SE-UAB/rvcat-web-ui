@@ -235,9 +235,9 @@
     transform: translateY(1px);
   }
   .info-icon {
-    display: inline-flex;
+    display:     flex;
     align-items: center;
-    cursor: pointer;
+    cursor:      pointer;
   }
   .info-img {
     height: 1em;
@@ -339,8 +339,11 @@
   }
 
   .critical-wrapper {
-    /* border-radius: 6px;*/
-    margin-top: 5px;
+    display:       flex;
+    align-items:   center;
+    gap:           0.5rem;
+    margin-top:    5px;
+    margin-bottom: 5px;
   }
   .critical-header {
     all: unset;                    /* button reset */
@@ -348,12 +351,10 @@
     cursor: pointer;
     background: #f3f3f3;
     padding: 6px 10px;
-    /* border-radius: 6px 6px 0 0;*/
-    display: flex;
+    display:     inline-flex;
     align-items: center;
     gap: 0.4rem;
     font-size: 0.95rem;
-    /* font-weight: 500; */
   }
   .critical-header:hover {
     background: #eaeaea;
