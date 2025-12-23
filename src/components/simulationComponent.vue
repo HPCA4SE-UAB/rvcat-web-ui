@@ -36,41 +36,6 @@
     showCriticalPath.value = !showCriticalPath.value;
   }
   
-  const COLORS = [
-    "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
-    "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
-    "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
-    "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
-  ]
-
-  function colorFromPercentage(p) {
-    return p && p !== 0
-      ? COLORS[Math.floor(p / 5)]
-      : "white"
-  }
-
-  
-  const criticalPathRows = computed(() => {
-    data = document.getElementById('critical-path');
-    if (!data.value) return []
-
-    return [
-      {
-        label: "DISPATCH",
-        percentage: data.value.dispatch
-      },
-      ...data.value.instructions.map(i => ({
-        label: i.instruction,
-        percentage: i.percentage
-      })),
-      {
-        label: "RETIRE",
-        percentage: data.value.retire
-      }
-    ]
-  })
-  
-
  /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
@@ -93,11 +58,6 @@
       }
     });
   });
-
-
-
-
-  
 </script>
 
 
@@ -166,24 +126,6 @@
       </Transition>
     </div>
 
-
-    <ul id="critical-path" class="critical-path-list">
-      <li
-        v-for="(row, idx) in criticalPathRows"
-        :key="idx"
-        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
-      >
-        <div
-          class="critical-path-el"
-          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
-        >
-          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
-          <div>{{ row.label }}</div>
-        </div>
-      </li>
-    </ul>  
-
-    
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
         <span class="header-title">Processor Bottlenecks</span>
