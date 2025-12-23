@@ -365,21 +365,17 @@
     opacity: 0.8;
     font-size: 0.85em;
   }
-/*
-.critical-box {
-    overflow: hidden;
-    line-height: 1.4;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 0 0 6px 6px;
-    font-family: monospace;
- }*/
+
 .critical-path-list {
   list-style: none;   /* quita bullets */
   padding: 0;         /* quita indentación */
   margin: 0;
+      overflow: hidden;
+    line-height: 1.4;
+    background: #f0f0f0;
+    border-radius: 0 0 6px 6px;
+    font-family: monospace;
 }
-
 .critical-path-row {
   list-style: none;   /* redundante pero seguro */
   margin: 0;
