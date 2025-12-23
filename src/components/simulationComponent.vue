@@ -122,7 +122,7 @@
         </span>
       </button>
       <Transition name="fold" appear>
-        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
+        <prev v-show="showCriticalPath" id="critical-path"></prev>
       </Transition>
     </div>
 
@@ -342,14 +342,6 @@
     /* border-radius: 6px;*/
     margin-top: 5px;
   }
-  .critical-box {
-    overflow: hidden;
-    line-height: 1.4;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 0 0 6px 6px;
-    font-family: monospace;
-  }
   .critical-header {
     all: unset;                    /* button reset */
     width: 90%;
@@ -373,12 +365,21 @@
     opacity: 0.8;
     font-size: 0.85em;
   }
-  
+/*
+.critical-box {
+    overflow: hidden;
+    line-height: 1.4;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 0 0 6px 6px;
+    font-family: monospace;
+ }*/
 .critical-path-list {
   list-style: none;   /* quita bullets */
   padding: 0;         /* quita indentación */
   margin: 0;
 }
+
 .critical-path-row {
   list-style: none;   /* redundante pero seguro */
   margin: 0;
