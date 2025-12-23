@@ -48,7 +48,8 @@
       ? COLORS[Math.floor(p / 5)]
       : "white"
   }
-  
+
+  /*
   const criticalPathRows = computed(() => {
     if (!data.value) return []
 
@@ -67,6 +68,7 @@
       }
     ]
   })
+  */
 
  /* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
@@ -91,25 +93,6 @@
     });
   });
 
-
-/*
-    <div class="critical-wrapper" id="critical-path-section">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
-         <img src="/img/info.png" class="info-img">
-      </span>
-      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
-        <span class="arrow" aria-hidden="true">
-          {{ showCriticalPath ? '▼' : '▶' }}
-        </span>
-        <span class="critical-title">
-          Critical Execution Path
-        </span>
-      </button>
-      <Transition name="fold" appear>
-        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
-      </Transition>
-    </div>
-*/
 
 /*
     <ul id="critical-path" class="critical-path-list">
@@ -182,7 +165,24 @@
     </div>
 
     <!--- Critical Path Breakdown (percentages) ---->
-    <!--    <div>ROWS: {{ criticalPathRows.length }}</div>  -->
+    <div class="critical-wrapper" id="critical-path-section">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
+         <img src="/img/info.png" class="info-img">
+      </span>
+      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
+        <span class="arrow" aria-hidden="true">
+          {{ showCriticalPath ? '▼' : '▶' }}
+        </span>
+        <span class="critical-title">
+          Critical Execution Path
+        </span>
+      </button>
+      <Transition name="fold" appear>
+        <prev v-show="showCriticalPath" id="critical-path" class="critical-box"></prev>
+      </Transition>
+    </div>
+    
+    <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
         <span class="header-title">Processor Bottlenecks</span>
         <div id="simulation-graph" class="simulation-img"></div>
