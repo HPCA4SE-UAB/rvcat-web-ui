@@ -349,16 +349,16 @@
   }
   .critical-header {
     all: unset;                    /* button reset */
-    width: 100%;
+    /* width: 100%; */
     cursor: pointer;
     background: #f3f3f3;
     padding: 6px 10px;
-    border-radius: 6px 6px 0 0;
+    /* border-radius: 6px 6px 0 0;*/
     display: flex;
     align-items: center;
     gap: 0.4rem;
     font-size: 0.95rem;
-    font-weight: 500;
+    /* font-weight: 500; */
   }
   .critical-header:hover {
     background: #eaeaea;
