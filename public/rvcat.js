@@ -73,12 +73,12 @@ const handlers = {
             return;
         }
 
-        document.getElementById('critical-path').innerHTML       = d["critical-path"];
         document.getElementById('instructions-output').innerHTML = d["total_instructions"];
         document.getElementById('cycles-output').innerHTML       = d["total_cycles"];
         document.getElementById('IPC-output').innerHTML          = d["ipc"].toFixed(2);
         document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
-
+        document.getElementById('critical-path').innerHTML       = createCriticalPathList(d['critical_path']);
+      
         usage = {}
         usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
         usage['retire']   = (d["ipc"] / processorInfo.stages.retire) * 100;
@@ -90,8 +90,7 @@ const handlers = {
             i++;
         }
         createProcessorSimulationGraph(processorInfo.stages.dispatch, Object.keys(processorInfo.ports).length, processorInfo.stages.retire, usage);
-        /* createCriticalPathList(d['critical_path']) */
-      
+
         document.getElementById('run-simulation-spinner').style.display = 'none';
         document.getElementById('simulation-running').style.display     = 'none';
         document.getElementById('graph-section').style.display          = 'block';
@@ -426,6 +425,19 @@ async function showCellInfo(instrID, cycle) {
   return 'TO DO'
 }
 
+ const COLORS = [
+    "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
+    "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
+    "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
+    "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
+  ]  
+
+function colorFromPercentage(p) {
+  return p && p !== 0
+    ? COLORS[Math.floor(p / 5)]
+    : "white"
+}
+
 function createCriticalPathList(data) {
   const color = [
     "#ffffff",    "#fff3f3",    "#ffe7e7",    "#ffdbdb",    "#ffcece",    "#ffc2c2",    "#ffb6b6",    "#ffaaaa",
@@ -482,6 +494,6 @@ function createCriticalPathList(data) {
       <div><b>${data['retire'].toFixed(1)}%  </b></div><div>RETIRE</div>
     </div>
   </li></list>`;
-
-  document.getElementById('critical-path').innerHTML = out;
+  
+  return out;
 }
