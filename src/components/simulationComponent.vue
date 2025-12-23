@@ -378,7 +378,7 @@
   padding: 0;
   margin: 0;
 }
-.critical-path-list li {
+.critical-path-row {
   list-style: none;
 }
 .critical-path-el {
@@ -391,7 +391,7 @@
   border-left: 1px solid black;
   border-right: 1px solid black;
 }
-.critical-path-el.last-row {
+.critical-path-el.last {
   border-bottom: 1px solid black;
 }
   
