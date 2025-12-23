@@ -82,21 +82,21 @@
     <div id="simulation-results-info" class="results-info">
       <div class="row">
         <div class="simulation-inline-item">
-          <label for="instructions"><b>Instructions:</b></label>
+          <label for="instructions">Instructions:</label>
           <span id="instructions-output">?</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="cycles"><b>Cycles:</b></label>
+          <label for="cycles">Cycles:</label>
           <span id="cycles-output">?</span>
+        </div>
+        <div class="simulation-inline-item">
+          <label for="cycles-per-iteration">Cycles per iteration:</label>
+          <span id="cycles-per-iteration-output">?</span>
         </div>
       </div>
       <div class="row">
         <div class="simulation-inline-item">
-          <label for="cycles-per-iteration"><b>Cycles per iteration:</b></label>
-          <span id="cycles-per-iteration-output">?</span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="IPC"><b>IPC:</b></label>
+          <label for="IPC">IPC:</label>
           <span id="IPC-output">?</span>
         </div>
       </div>
@@ -107,7 +107,7 @@
         <div id="simulation-running"><p>Simulation on course...</p></div>
       </div>
     </div>
-    <div class="critical-wrapper">
+    <div class="critical-wrapper" id="critical-path-section" style="display: none;">
       <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
          <img src="/img/info.png" class="info-img">
       </span>
@@ -161,6 +161,11 @@
     padding: 5px;
     border-radius: 10px;
     position: relative;
+  }
+  #run-button{
+    display:block;
+    cursor:pointer;
+    left: 3px;
   }
   .header{
     position:sticky;
