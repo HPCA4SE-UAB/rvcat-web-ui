@@ -19,6 +19,8 @@
   const infoIcon1        = ref(null);
   const showTutorial2    = ref(false);
   const infoIcon2        = ref(null);
+  const showTutorial3    = ref(false);
+  const infoIcon3        = ref(null);
   const iters            = ref(1)
 
 /* ------------------------------------------------------------------ 
@@ -28,6 +30,8 @@
   function closeTutorial1() { showTutorial1.value  = false }
   function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }  
   function closeTutorial2() { showTutorial2.value  = false }
+  function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
+  function closeTutorial3() { showTutorial3.value  = false }
 
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
@@ -129,8 +133,11 @@
 
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
-        <span class="header-title">Processor Bottlenecks</span>
-        <div id="simulation-graph" class="simulation-img"></div>
+       <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
+          <img src="/img/info.png" class="info-img">
+       </span>
+       <span class="header-title">Processor Bottlenecks</span>
+       <div id="simulation-graph" class="simulation-img"></div>
     </div>
 
     <div class="scale-container">
@@ -144,14 +151,19 @@
   </div>
   
   <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
-  text="Simulate a specified number of program loop iterations and display aggregate performance metrics.
-   Hover over processor execution ports to inspect their utilization, or open the corresponding tab to visualize the time distribution of instructions along the critical path."
+  text="Simulate a specified number of program loop iterations and display aggregate performance metrics: instructions executed, total clock cycles, cycles per loop iteration and Instructions per Cycle (IPC).
+   Be sure you are simulating the execution of a representative number of loop iterations. Below you can inspect statistics of the critical execution path and the usage of the fundamental processor resources."
   title="Overall Simulation Results"
   @close="closeTutorial1"/>
     
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Percentage of time devoted by each instruction and dispatch/retire stages on critical execution path."
+  text="Open tab to visualize the time distribution of instructions (and dispatch/retire stages) along the critical execution path."
   title="Critical execution path breakdown"
+  @close="closeTutorial2"/>
+
+  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+  text="Graphical representation of processor utilization: hover over processor execution ports to inspect their utilization."
+  title="Processor Utilization"
   @close="closeTutorial2"/>
   
 </template>
