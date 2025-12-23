@@ -235,9 +235,10 @@
     transform: translateY(1px);
   }
   .info-icon {
-    display:     flex;
-    align-items: center;
-    cursor:      pointer;
+    display:      inline-flex;
+    align-items:  center;
+    margin-right: 0.5rem;
+    cursor:       pointer;
   }
   .info-img {
     height: 1em;
@@ -341,20 +342,21 @@
   .critical-wrapper {
     display:       flex;
     align-items:   center;
+    flex-wrap:     nowrap;
     gap:           0.5rem;
     margin-top:    5px;
     margin-bottom: 5px;
   }
   .critical-header {
-    all: unset;                    /* button reset */
-    width: 90%;
-    cursor: pointer;
-    background: #f3f3f3;
-    padding: 6px 10px;
+    all:         unset;                    /* button reset */
+    width:       auto;
+    cursor:      pointer;
+    background:  #f3f3f3;
+    padding:     6px 10px;
     display:     inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.95rem;
+    gap:         0.4rem;
+    font-size:   0.95rem;
   }
   .critical-header:hover {
     background: #eaeaea;
