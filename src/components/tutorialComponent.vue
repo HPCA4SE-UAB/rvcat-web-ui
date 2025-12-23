@@ -21,8 +21,8 @@
 
   const positionStyle = computed(() => ({
     position: 'absolute',
-    top: props.position.top,
-    left: props.position.left,
+    top:      props.position.top,
+    left:     props.position.left,
   }));
 
   function close() {
@@ -56,26 +56,37 @@
   }
 
   .tutorial-dialog {
-    background: #fff;
-    padding: 20px;
-    border-radius: 0 8px 8px 8px;
-    position: relative;
-    max-width: 30%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    background: #ffffff;
+    padding:    24px 28px;
+    position:   relative;
+    max-width:  32rem;
+    width:      100%;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   .close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: transparent;
-    border: none;
-    font-size: 3vh;
-    cursor: pointer;
+    position:   absolute;
+    top:        12px;
+    right:      12px;
+    background: none;
+    border:     none;
+    font-size:  1.2rem;
+    color:      #666;
+    cursor:     pointer;
   }
-
+  
+  .close-button:hover {
+    color: #000;
+  }
+  
   .dialog-content {
-    margin-top: 10px;
-    text-align: justify;
+    margin-top: 12px;
+    font-size: 0.95rem;
+    line-height: 1.6;            /* 👈 CLAVE */
+    text-align: left;            /* 👈 evita justify */
+    color: #333;
   }
 </style>
