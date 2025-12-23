@@ -182,7 +182,7 @@
     </div>
 
     <!--- Critical Path Breakdown (percentages) ---->
-    <div>ROWS: {{ criticalPathRows.length }}</div>
+    <!--    <div>ROWS: {{ criticalPathRows.length }}</div>
     <div id="graph-section" class="graph-section" style="display: none;">
         <span class="header-title">Processor Bottlenecks</span>
         <div id="simulation-graph" class="simulation-img"></div>
