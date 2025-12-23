@@ -111,6 +111,26 @@
     </div>
 */
 
+/*
+    <ul id="critical-path" class="critical-path-list">
+      <li
+        v-for="(row, idx) in criticalPathRows"
+        :key="idx"
+        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
+      >
+        <div
+          class="critical-path-el"
+          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
+        >
+          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
+          <div>{{ row.label }}</div>
+        </div>
+      </li>
+    </ul>   
+*/
+
+
+  
 </script>
 
 
@@ -161,23 +181,8 @@
       </div>
     </div>
 
-    <!--- Critical Path Breakdown (percentages) --->
-    <ul id="critical-path" class="critical-path-list">
-      <li
-        v-for="(row, idx) in criticalPathRows"
-        :key="idx"
-        :style="{ backgroundColor: colorFromPercentage(row.percentage) }"
-      >
-        <div
-          class="critical-path-el"
-          :class="{ 'last-row': idx === criticalPathRows.length - 1 }"
-        >
-          <div><b>{{ row.percentage.toFixed(1) }}%</b></div>
-          <div>{{ row.label }}</div>
-        </div>
-      </li>
-    </ul>
-
+    <!--- Critical Path Breakdown (percentages) ---->
+    <div>ROWS: {{ criticalPathRows.length }}</div>
     <div id="graph-section" class="graph-section" style="display: none;">
         <span class="header-title">Processor Bottlenecks</span>
         <div id="simulation-graph" class="simulation-img"></div>
