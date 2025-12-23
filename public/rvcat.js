@@ -425,6 +425,19 @@ async function showCellInfo(instrID, cycle) {
   return 'TO DO'
 }
 
+const COLORS = [
+  "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
+  "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
+  "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
+  "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
+]
+
+function colorFromPercentage(p) {
+  return p && p !== 0
+    ? COLORS[Math.floor(p / 5)]
+    : "white"
+}
+
 function createCriticalPathList(data) {
   const color = [
     "#ffffff",    "#fff3f3",    "#ffe7e7",    "#ffdbdb",    "#ffcece",    "#ffc2c2",    "#ffb6b6",    "#ffaaaa",
