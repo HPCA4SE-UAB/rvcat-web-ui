@@ -367,9 +367,6 @@
   .critical-header .title {
     font-size: 1em;
   }
-  .critical-title {
-    flex: 1;
-  }
 
   /* content box */
   .critical-box {
@@ -377,7 +374,6 @@
     background: #f0f0f0;
     padding: 10px;
     border-radius: 0 0 5px 5px;
-    white-space: pre-wrap;
     font-family: monospace;
   }
 </style>
