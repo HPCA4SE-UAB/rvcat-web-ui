@@ -433,103 +433,25 @@ function createCriticalPathList(data) {
     "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
   ]
 
-  const baseStyle = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px;
-    border-top: 1px solid black;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-  `
-
-  const getColor = (p) =>
+  const getColor = p =>
     p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
 
   const row = (label, percentage, isLast = false) => `
-    <li style="background-color:${getColor(percentage)}; list-style:none;">
-      <div class="critical-path-el"
-           style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
+    <li class="critical-path-row"
+        style="background-color:${getColor(percentage)}">
+      <div class="critical-path-el ${isLast ? "last" : ""}">
         <div><b>${percentage.toFixed(1)}%</b></div>
         <div>${label}</div>
       </div>
     </li>
   `
-
-  let out = "<list>"
-
-  // DISPATCH
-  out += row("DISPATCH", data.dispatch)
-
-  // INSTRUCTIONS
-  out += data.instructions
-    .map(i => row(i.instruction, i.percentage))
-    .join("")
-
-  // RETIRE
-  out += row("RETIRE", data.retire, true)
-
-  out += "</list>"
-  return out
+  return `
+    <ul class="critical-path-list">
+      ${row("DISPATCH", data.dispatch)}
+      ${data.instructions.map(i =>
+        row(i.instruction, i.percentage)
+      ).join("")}
+      ${row("RETIRE", data.retire, true)}
+    </ul>
+  `
 }
-
-/*
-function createCriticalPathList(data) {
-  const color = [
-    "#ffffff",    "#fff3f3",    "#ffe7e7",    "#ffdbdb",    "#ffcece",    "#ffc2c2",    "#ffb6b6",    "#ffaaaa",
-    "#ff9e9e",    "#ff9292",    "#ff8686",    "#ff7979",    "#ff6d6d",    "#ff6161",    "#ff5555",    "#ff4949",
-    "#ff3d3d",    "#ff3131",    "#ff2424",    "#ff1818",    "#ff0c0c",    "#ff0000"
-  ];
-
-  let out="<list>";
-  let lineColor;
-  const style = `display:flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px;
-  border-top: 1px solid black;
-  border-right: 1px solid black;
-  border-left: 1px solid black;`;
-
-  if(data['dispatch'].toFixed(1)!=0.0){
-    lineColor=color[Math.floor(data['dispatch']/5)];
-  }
-  else{
-    lineColor='white';
-  }
-  out += `<li style="background-color:${lineColor}; list-style-type: none;">
-    <div class="critical-path-el" style="${style}">
-      <div><b>${data['dispatch'].toFixed(1)}%  </b></div><div>DISPATCH</div>
-    </div>
-  </li>`;
-
-  for(let i in data['instructions']){
-    if(data['instructions'][i]['percentage'].toFixed(1)!=0.0){
-      lineColor=color[Math.floor(data['instructions'][i]['percentage']/5)]
-    }
-    else{
-      lineColor='white';
-    }
-    out += `<li style="background-color:${lineColor}; list-style-type: none;">
-      <div class="critical-path-el" style="${style}">
-        <div><b>${data['instructions'][i]['percentage'].toFixed(1)}%  </b></div><div>${data['instructions'][i]['instruction']}</div>
-      </div>
-    </li>`;
-  }
-
-  if(data['retire'].toFixed(1)!=0.0){
-    lineColor=color[Math.floor(data['retire']/5)];
-  }
-  else{
-    lineColor = 'white';
-  }
-
-  out+=`<li style="background-color:${lineColor}; list-style-type: none;">
-    <div class="critical-path-el" style="${style} border-bottom: 1px solid black;">
-      <div><b>${data['retire'].toFixed(1)}%  </b></div><div>RETIRE</div>
-    </div>
-  </li></list>`;
-  
-  return out;
-} */
