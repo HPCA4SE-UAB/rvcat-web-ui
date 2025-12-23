@@ -252,20 +252,20 @@
     </div>
   </div>
   <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
-  text="Statically determined throughput and latency bottlenecks. The minimum execution time per loop iteration may be throughput-bound, 
-    meaning it is limited by the processor’s instruction dispatch, execution, or retirement capacity for a given subset of instructions. 
-    Alternatively, it may be latency-bound, meaning it is constrained by a loop-carried chain of data dependencies that forms a critical path across iterations"
+  text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
+    meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
+    <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
   title="Static Performance Analysis"
   @close="closeTutorial1"/>
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Performance may be limited by the maximum throughput of a hardware resource, 
-       such as dispatch width or a set of execution ports required to execute a particular subset of instructions."
+  text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
+       such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
   title="Throughput-bound execution time"
   @close="closeTutorial2"/>
   <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
-  text="The data dependence graph highlights circular dependencies (shown in red) that determine latency-bound execution time (cycles per loop iteration).
-      You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
-      Click the fullscreen button to enlarge the graph."
+  text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
+      <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
+      Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
   title="Latency-bound execution time"
   @close="closeTutorial3"/>
 </template>
