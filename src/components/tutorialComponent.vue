@@ -36,7 +36,7 @@
     <div class="tutorial-dialog" :style="positionStyle">
       <b>Help - {{title}}</b>
       <button class="close-button" @click="close">x</button>
-      <div class="dialog-content">{{ text }}</div>
+      <div class="dialog-content" v-html="text"></div>
     </div>
   </div>
 </template>
