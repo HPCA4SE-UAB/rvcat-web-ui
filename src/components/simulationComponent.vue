@@ -371,9 +371,10 @@
   }
   /* content box */
   .critical-box {
-    overflow: hidden;
-    padding: 10px;
-    background:  #f0f0f0;
+    width:         60%;
+    overflow:      hidden;
+    padding:       10px;
+    background:    #f0f0f0;
     border-radius: 0 0 6px 6px;
   }
 </style>
