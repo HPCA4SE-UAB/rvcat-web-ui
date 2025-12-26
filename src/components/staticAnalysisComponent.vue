@@ -351,6 +351,7 @@
     display:     inline-flex;
     align-items: center;
     cursor:      pointer;
+    margin-right: 0.9rem;
   }
   .info-img {
     height: 1em;
