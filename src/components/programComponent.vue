@@ -121,7 +121,7 @@
   }
 
   const showTutorial     = ref(false)
-  const tutorialPosition = ref({ top: '50%', left: '50%' })
+  const tutorialPosition = ref({ top: '0%', left: '40%' })
   const infoIcon         = ref(null)
 
   function openTutorial() {
@@ -129,10 +129,6 @@
       const el = infoIcon.value
       if (el) {
         const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
         showTutorial.value = true
       }
     })
@@ -148,7 +144,7 @@
     <div class="program-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        Program
+        <b>Program</b>
       </div>
       <div id="settings-div">
         <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
