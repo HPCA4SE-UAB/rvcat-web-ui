@@ -144,7 +144,7 @@
     <div class="program-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <b>Program</b>
+        <span class="header-title">Program</span>
       </div>
       <div id="settings-div">
         <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
@@ -189,6 +189,11 @@
   padding:5px;
   border-radius: 10px;
 }
+.header-title {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    font-weight: 600
+ }
 .program-header {
   display: flex;
   justify-content: space-between;
