@@ -20,10 +20,6 @@
       const el = infoIcon.value
       if (el) {
         const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top:  `${r.bottom}px`,
-          left: `${r.right}px`
-        }
         showTutorial.value = true
       }
     })
@@ -707,7 +703,7 @@
     <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Timeline</h3>
+        <span class="header-title">Execution Timeline</span>
       </div>
       <div class="timeline-controls">
         <div class="simulation-results-controls-item">
@@ -715,9 +711,7 @@
             Iterations:
           </label>
           <div class="iterations-group">
-            <button type="button" class="gray-button" @click="changeIterations(-1)">-</button>
             <input class="input-simulation-result iterations-input" type="number" id="dependencies-num-iters" name="dependencies-num-iters" min="1" max="50" @change="getTimelineAndDraw" v-model.number="iterations"/>
-            <button type="button" class="gray-button" @click="changeIterations(1)">+</button>
           </div>
         </div>
         <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25"><img src="/img/zoom-out.png"></button>
@@ -755,7 +749,7 @@
   <div v-if="clickedCellInfo" class="modal-overlay" @click.self="clickedCellInfo = null">
     <div class="modal">
       <div class="modal-header">
-        <h3>Cell Info</h3>
+        <Cell Info
         <button class="close-btn" @click="clickedCellInfo = null">x</button>
       </div>
       <p><strong>Instruction:</strong> {{ clickedCellInfo.instrID }}</p>
@@ -783,9 +777,6 @@
     left:0;
     padding-bottom:5px;
   }
-  h3 {
-  margin: 0;
-  }
   .tooltip {
     position: fixed;
     background: #f9f9f9;
@@ -807,7 +798,11 @@
     justify-content: space-between;
     align-items: center;
   }
-
+  .header-title {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    font-weight: 600
+  }
   .timeline-controls {
     display:flex;
     gap:5px;
