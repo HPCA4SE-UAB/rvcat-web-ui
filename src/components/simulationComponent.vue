@@ -258,7 +258,7 @@
   .info-icon {
     display:      inline-flex;
     align-items:  center;
-    margin-right: 0.5rem;
+    margin-right: 0.9rem;
     cursor:       pointer;
   }
   .info-img {
