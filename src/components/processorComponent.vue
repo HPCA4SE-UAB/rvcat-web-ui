@@ -26,7 +26,7 @@
     <div class="pipeline-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <b>Processor Pipeline</b>
+        <span class="header-title">Processor Pipeline</span>
       </div>
       <div id="settings-div">
         <select id="processors-list" name="processor-name" onchange="reloadRvcat();">
@@ -55,6 +55,11 @@
 </template>
 
 <style scoped>
+  .header-title {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    font-weight: 600
+  }
   .pipeline-display {
     height: 100%;
     width: 100%;
