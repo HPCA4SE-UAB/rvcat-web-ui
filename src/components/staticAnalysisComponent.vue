@@ -267,131 +267,23 @@
 </template>
 
 <style scoped>
-  .main {
-    font-size:  14px;
-    height:     100%;
-    width:      100%;
-    background: white;
-    overflow:   auto;
-    padding:    5px;
-    border-radius: 10px;
-  }
   .header {
-    position: sticky;
-    top:      -5px;
-    left:     0;
-    width:    100%;
     padding:  6px 8px;
     z-index:  10;
-    background: white;
     box-shadow: 0 1px 0 rgba(0,0,0,0.08);
   }
   .title {
     font-size:   2.5vh;
   }
-  .section-title-and-info button,
-  .section-title-and-info input {
-    height:      2em;
-    line-height: 1;
-    font-size:   0.95rem;
-  }
-  .section-title-and-info input[type="number"] {
-    width:      3.5em;
-    text-align: center;
-    font-size:  inherit;
-  }
-  .section-title-and-info {
-    display:     flex;
-    align-items: center;
-    gap:         0.5rem;     /* uniform space */
-    flex-wrap:   wrap;       /* avoid overflow */
-  }
-  .header-title {
-    font-size:    1.1rem;
-    margin-right: 0.75rem;
-    font-weight:  600
-  }
-  .iters-group,
-  .flags-group {
-    display:     inline-flex;
-    align-items: center;
-    gap:         0.4rem;
-  }
+
   .iters-group input[type="number"] {
     width:      4ch;
-    text-align: center;
   }
-  .iters-label {
-    margin-left: 0.5rem;
-    font-weight: 500;
-  }
-  .blue-button {
-    background: #e6f0ff;
-    color:      #1a4fb3;
-    border:     1px solid #7aa2e3;
-    transition: background 0.15s ease, color 0.15s ease;
-    cursor:     pointer;
-  }
-  /* estado activado */
-  .blue-button.active {
-    background:   #1a4fb3;
-    color:        white;
-    box-shadow:   inset 0 0 0 1px rgba(255,255,255,0.4);
-    border-color: #1a4fb3;
-  }
-  /* feedback al pulsar */
-  .blue-button:active {
-    transform: translateY(1px);
-  }
-  .info-icon {
-    display:     inline-flex;
-    align-items: center;
-    cursor:      pointer;
-    margin-left: 0.9rem;
-    margin-right: 0.9rem;
-  }
-  .info-img {
-    height: 1em;
-    width:  1em;
-  }
-  .annotations-wrapper {
-    margin-top: 5px;
-  }
-  .annotations-box {
-    white-space: pre-wrap;
-    background:  #f0f0f0;
-    padding:     10px;
-    border-radius: 0 0 5px 5px;
-    margin-top:  0;
-    font-size:   0.9rem;
-    line-height: 1.4;
-    font-family: monospace;
-  }
-  .annotations-header {
-    all:         unset;  /* button reset */
-    width:       auto;
-    cursor:      pointer;
-    background:  #f3f3f3;
-    padding:     6px 10px;
-    display:     inline-flex;
-    align-items: center;
-    gap:         0.4rem;
-    font-size:   0.95rem;
-  }
-  .annotations-header:hover {
-    background: #eaeaea;
-  }
-  .annotations-title {
-    flex: 1;
-  }
-  .arrow {
-    font-size: 0.85em;
-    opacity: 0.8;
-  }
+
   .fs-img {
     height:2.5vh;
   }
-  /* The full-screen overlay */
+  
   .fullscreen-overlay {
     position: fixed;
     top:      0; 
@@ -429,6 +321,7 @@
     cursor:     pointer;
     margin-bottom: 8px;
   }
+  
   .output-block {
     flex:     1 1 auto;
     position: relative;
@@ -448,6 +341,7 @@
     flex-direction: column;
     height:         90%;
   }
+  
 .graph-toolbar {
   display:         flex;
   align-items:     center;
@@ -463,8 +357,9 @@
   font-size: 0.85em;
   opacity:   0.7;
 }
+  
 .icon-button {
-  background: #b0b0b0;     /* default backgorund color */
+  background: #b0b0b0;     /* default background color */
   border: none;
   cursor: pointer;
   padding: 6px;
@@ -476,7 +371,7 @@
 }
 .icon-button img,
 .icon-button svg {
-  width: 1.5em;
+  width:  1.5em;
   height: 1.5em;
 }
 .icon-button:hover {
@@ -486,7 +381,7 @@
   background: #909090;      /* still darker */
 }
 .icon-button:focus {
-  outline: 2px solid #1a4fb3;  /* keypad */
+  outline:        2px solid #1a4fb3;  /* keypad */
   outline-offset: 2px;
 }
 
@@ -497,28 +392,28 @@
 .fold-enter-from,
 .fold-leave-to {
   max-height: 0;
-  opacity: 0;
+  opacity:    0;
 }
 .fold-enter-to,
 .fold-leave-from {
   max-height: 500px;
-  opacity: 1;
+  opacity:    1;
 }
   .fullscreen-header {
-    display: flex;
+    display:         flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+    align-items:     center;
+    margin-bottom:   10px;
   }
   .fullscreen-title {
     margin: 0;
   }
   .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.5em;
+    background:  none;
+    border:      none;
+    font-size:   1.5em;
     line-height: 1;
-    cursor: pointer;
-    padding: 4px;
+    cursor:      pointer;
+    padding:     4px;
   }
 </style>
