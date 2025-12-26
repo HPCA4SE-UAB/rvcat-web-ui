@@ -30,7 +30,7 @@
     <div class="pipeline-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Processor Pipeline</h3>
+        Processor Pipeline
       </div>
       <div id="settings-div">
         <select id="processors-list" name="processor-name" onchange="reloadRvcat();">
@@ -39,7 +39,6 @@
           <label for="rob-size"> ROB: </label>
           <input type="number" id="rob-size" name="rob-size" min="1" max="1000" value="100" onchange="reloadRvcat();">
         </div>
-        <!-- added info icon -->
       </div>
     </div>
     <div class="content">
@@ -50,9 +49,9 @@
     </div>
 
     <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-    text="Provides graphical visualization of the processor microarchitecture (pipeline) characteristics.
-          Modify the size of the ROB (ReOrder Buffer) or select a new processor configuration file from the list.
-          Use the 'Settings' tab to modify the microarchitectural parameters."
+    text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
+          <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
+          Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
     title="Processor MicroArchitecture"
     @close="closeTutorial"
     />
