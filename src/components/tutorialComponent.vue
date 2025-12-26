@@ -43,16 +43,16 @@
 
 <style scoped>
   .tutorial-overlay {
-    position: fixed;
-    top: 0;
+    top:  0;
     left: 0;
-    width: 100vw;
+    width:  100vw;
     height: 100vh;
+    position: fixed;
+    display:  flex;
+    z-index:  1000;
     background: rgba(0,0,0,0.5);
-    display: flex;
     justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    align-items:     center;
   }
 
   .tutorial-dialog {
@@ -83,10 +83,10 @@
   }
   
   .dialog-content {
-    margin-top: 12px;
-    font-size: 0.95rem;
+    margin-top:  12px;
+    font-size:   0.9rem;
     line-height: 1.6;
-    text-align: left; 
-    color: #333;
+    text-align:  left; 
+    color:       #333;
   }
 </style>
