@@ -51,7 +51,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
             :class="{ active: activeView === 'procSettingsComponent' }"
             @click="emit('requestSwitch', 'procSettingsComponent')"
           >
-            Settings
+            Processor
           </button>
         </li>
         <li>
