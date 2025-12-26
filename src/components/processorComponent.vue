@@ -29,11 +29,10 @@
         <span class="header-title">Processor Pipeline</span>
       </div>
       <div id="settings-div">
-        <select id="processors-list" name="processor-name" onchange="reloadRvcat();">
-        </select>
+        <select id="processors-list" name="processor-name" onchange="reloadRvcat();"></select>
         <div>
           <label for="rob-size"> ROB: </label>
-          <input type="number" id="rob-size" name="rob-size" min="1" max="1000" value="100" onchange="reloadRvcat();">
+          <input type="number" id="rob-size" name="rob-size" min="1" max="200" value="100" onchange="reloadRvcat();">
         </div>
       </div>
     </div>
@@ -118,12 +117,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 4px 10px;
-    background: #f0f0f0;
+    background: #808080;
     border-radius: 6px;
     margin-top: 5px;
-    font-size: 2vh;
+    font-size: 1.1rem;
   }
   .content {
-    height: 70%;
+    height: 90%;
   }
 </style>
