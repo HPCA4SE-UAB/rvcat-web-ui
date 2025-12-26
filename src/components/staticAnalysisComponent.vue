@@ -347,6 +347,7 @@
     display:     inline-flex;
     align-items: center;
     cursor:      pointer;
+    margin-left: 0.9rem;
     margin-right: 0.9rem;
   }
   .info-img {
