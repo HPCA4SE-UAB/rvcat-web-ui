@@ -3,7 +3,7 @@
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
   const showTutorial     = ref(false);
-  const tutorialPosition = ref({ top: '50%', left: '50%' });
+  const tutorialPosition = ref({ top: '0%', left: '40%' });
   const infoIcon         = ref(null);
 
   function openTutorial() {
@@ -11,10 +11,6 @@
       const el = infoIcon.value
       if (el) {
         const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
         showTutorial.value = true
       }
     })
@@ -30,7 +26,7 @@
     <div class="pipeline-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        Processor Pipeline
+        <b>Processor Pipeline</b>
       </div>
       <div id="settings-div">
         <select id="processors-list" name="processor-name" onchange="reloadRvcat();">
@@ -68,7 +64,6 @@
     border-radius: 10px;
     position: relative;
   }
-
   /* Header Flexbox */
   .pipeline-header {
     display: flex;
@@ -76,21 +71,17 @@
     align-items: center;
     width: 100%;
   }
-
   .processor-info {
     display: flex;
     justify-content: center;
   }
-
   #processors-list {
     font-size: 2.2vh;
   }
-
   #rob-size {
     max-width: 50%;
     font-size: 2.2vh;
   }
-
   table{
     display:none;
   }
@@ -112,7 +103,6 @@
     gap: 5px;
     font-size: 2.5vh;
   }
-
   .pipeline-img{
     margin: 0 auto;
     margin-top: 10%;
