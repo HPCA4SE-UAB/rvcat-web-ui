@@ -215,7 +215,7 @@
         <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Data Dependence Graph</span>
+        <span class="annotations-title">Data Dependence Graph</span>
         <!-- Iterations -->
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
