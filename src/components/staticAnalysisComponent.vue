@@ -313,6 +313,7 @@
   .header-title {
     font-size: 1.1rem;
     margin-right: 0.75rem;
+    font-weight: 600
   }
   .iters-group,
   .flags-group {
