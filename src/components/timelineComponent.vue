@@ -739,7 +739,6 @@
      v-if="showTutorial" 
      :position="tutorialPosition"
      title="Timeline"
-
     text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
               The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
            <p>Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
@@ -769,13 +768,22 @@
     border-radius: 10px;
   }
   .header{
-    position:sticky;
-    padding-top:2px;
-    top:-5px;
-    background:white;
-    width:100%;
-    left:0;
-    padding-bottom:5px;
+    display:     flex;
+    position:    sticky;
+    align-items: center;
+    top:        -5px;
+    background: white;
+    width:      100%;
+    left:       0;
+    padding-top:     2px;
+    padding-bottom:  5px;
+    justify-content: space-between;
+  }
+  .header-title {
+    font-size:    1.1rem;
+    margin-right: 0.75rem;
+    margin-left:  0.75rem;
+    font-weight:  600
   }
   .tooltip {
     position: fixed;
@@ -789,20 +797,7 @@
     width: 10%;
   }
 
-  .header{
-    position:sticky;
-    top:-5px;
-    background:white;
-    width:100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .header-title {
-    font-size: 1.1rem;
-    margin-right: 0.75rem;
-    font-weight: 600
-  }
+
   .timeline-controls {
     display:flex;
     gap:5px;
