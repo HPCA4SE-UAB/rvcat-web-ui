@@ -85,8 +85,8 @@
   .dialog-content {
     margin-top: 12px;
     font-size: 0.95rem;
-    line-height: 1.6;            /* 👈 CLAVE */
-    text-align: left;            /* 👈 evita justify */
+    line-height: 1.6;
+    text-align: left; 
     color: #333;
   }
 </style>
