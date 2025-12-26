@@ -45,7 +45,8 @@
     flex-wrap:   wrap;     /* avoid overflow */
   }
 
-  .iters-group {
+  .iters-group,
+  .flags-group {
     display:     inline-flex;
     align-items: center;
     gap:         0.4rem;
@@ -84,8 +85,8 @@
   .info-icon {
     display:      inline-flex;
     align-items:  center;
-    margin-right: 0.5rem;
-    margin-leftt: 0.5rem;
+    margin-right: 0.8rem;
+    margin-leftt: 0.8rem;
     cursor:       pointer;
   }
   .info-img {
@@ -193,7 +194,8 @@
     min-width:   60px;
   }
 
-  .critical-wrapper {
+  .critical-wrapper,
+  .annotations-wrapper {
     display:       flex;
     align-items:   center;
     flex-wrap:     nowrap;
@@ -212,10 +214,12 @@
     gap:         0.4rem;
     font-size:   0.95rem;
   }
-  .critical-header:hover {
+  .critical-header:hover,
+  .annotations-header:hover {
     background: #eaeaea;
   }
-  .critical-title {
+  .critical-title,
+  .annotations-title {
     flex: 1;
   }
   .critical-box {
@@ -225,4 +229,28 @@
     background:    #f0f0f0;
     border-radius: 0 0 6px 6px;
   }
+
+  .annotations-box {
+    white-space: pre-wrap;
+    background:  #f0f0f0;
+    padding:     10px;
+    border-radius: 0 0 5px 5px;
+    margin-top:  0;
+    font-size:   0.9rem;
+    line-height: 1.4;
+    font-family: monospace;
+  }
+
+  .annotations-header {
+    all:         unset;  /* button reset */
+    width:       auto;
+    cursor:      pointer;
+    background:  #f3f3f3;
+    padding:     6px 10px;
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.4rem;
+    font-size:   0.95rem;
+  }
+  
 </style>
