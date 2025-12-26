@@ -205,10 +205,10 @@
           Throughput-bound Limits
         </span>
       </button>
-      <Transition name="fold" appear>
-        <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
-      </Transition>
     </div>
+    <Transition name="fold" appear>
+      <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
+    </Transition>
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
@@ -371,16 +371,14 @@
   }
   .annotations-header {
     all:         unset;  /* button reset */
-    width:       95%;
+    width:       auto;
     cursor:      pointer;
     background:  #f3f3f3;
     padding:     6px 10px;
-    display:     flex;
+    display:     inline-flex;
     align-items: center;
     gap:         0.4rem;
-    font-size:   0.9rem;
-    font-weight: 600;
-    border-radius: 6px 6px 0 0;
+    font-size:   0.95rem;
   }
   .annotations-header:hover {
     background: #eaeaea;
