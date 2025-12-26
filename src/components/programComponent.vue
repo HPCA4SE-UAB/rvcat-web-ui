@@ -120,9 +120,9 @@
     input.remove();
   }
 
-  const showTutorial = ref(false)
+  const showTutorial     = ref(false)
   const tutorialPosition = ref({ top: '50%', left: '50%' })
-  const infoIcon = ref(null)
+  const infoIcon         = ref(null)
 
   function openTutorial() {
     nextTick(() => {
@@ -148,13 +148,12 @@
     <div class="program-header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Program</h3>
+        Program
       </div>
       <div id="settings-div">
         <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   class="blue-button" @click="uploadProgram">Upload</button>
-        <select id="programs-list" name="assembly-code" onchange="reloadRvcat();">
-        </select>
+        <select id="programs-list" name="assembly-code" onchange="reloadRvcat();"></select>
       </div>
     </div>
     <section class="main-box code-block">
@@ -175,9 +174,10 @@
   </div>
 
   <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="The simulated program consists of a fixed-iteration loop executing a sequence of machine instructions, each described in a high-level, informal language.
-        The simulation tracks data dependencies but omits detailed architectural state: it does not model processor registers, memory states, branch outcomes, or memory dependencies (e.g., store-load interactions).
-        The type, execution latency and eligible execution ports are shown for each instruction.
+  text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level, 
+       informal language. The <em>type</em>, execution <em>latency</em> and eligible <em>execution ports</em> are shown for each instruction.
+        <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states, 
+    branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
         Programs can be uploaded or downloaded in JSON format."
   title="Program Loop"
   @close="closeTutorial"
@@ -214,9 +214,7 @@
   display:flex;
   gap:5px;
 }
-
 #programs-list{
   font-size:2.2vh;
 }
-
 </style>
