@@ -171,7 +171,7 @@
 
   <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
   text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
-    to inspect their individual <em>utilization</em>."
+    to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
   title="Processor Utilization"
   @close="closeTutorial3"/>
   
