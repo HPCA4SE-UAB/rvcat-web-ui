@@ -259,6 +259,7 @@
     display:      inline-flex;
     align-items:  center;
     margin-right: 0.9rem;
+    margin-left: 0.9rem;
     cursor:       pointer;
   }
   .info-img {
