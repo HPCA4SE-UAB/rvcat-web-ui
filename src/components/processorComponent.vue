@@ -15,7 +15,6 @@
       }
     })
   }
-
   function closeTutorial() {
     showTutorial.value = false
   }
@@ -55,20 +54,19 @@
 
 <style scoped>
   .header-title {
-    font-size: 1.1rem;
+    font-size:    1.1rem;
     margin-right: 0.75rem;
-    font-weight: 600
+    font-weight:  600
   }
   .pipeline-display {
-    height: 100%;
-    width: 100%;
+    height:     100%;
+    width:      100%;
     background: white;
-    overflow: auto;
-    padding: 5px;
+    overflow:   auto;
+    padding:    5px;
+    position:   relative;
     border-radius: 10px;
-    position: relative;
   }
-  /* Header Flexbox */
   .pipeline-header {
     display: flex;
     justify-content: space-between;
@@ -94,33 +92,33 @@
     justify-content: center; /* Center horizontally */
   }
   .color-scale {
-    width: 30%;
-    height: 10px;
+    width:      30%;
+    height:     10px;
     background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
+    position:   relative;
     border-radius: 5px;
-    position: relative;
   }
   #settings-div{
-    display: flex;
     justify-content: center;
+    display:     flex;
     align-items: center;
-    gap: 5px;
-    font-size: 2.5vh;
+    gap:         5px;
+    font-size:   2.5vh;
   }
   .pipeline-img{
-    margin: 0 auto;
+    margin:     0 auto;
     margin-top: 10%;
   }
   .cache-info {
-    flex: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 10px;
-    background: #808080;
+    flex:          1;
+    display:       flex;
+    align-items:   center;
+    padding:       4px 10px;
+    background:    #f8f8f8;
     border-radius: 6px;
-    margin-top: 5px;
-    font-size: 1.1rem;
+    margin-top:    5px;
+    font-size:     0.9rem;
+    justify-content: space-between;
   }
   .content {
     height: 90%;
