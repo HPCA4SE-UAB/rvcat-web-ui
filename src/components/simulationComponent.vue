@@ -121,9 +121,7 @@
         <span class="arrow" aria-hidden="true">
           {{ showCriticalPath ? '▼' : '▶' }}
         </span>
-        <span class="critical-title">
-          Critical Execution Path
-        </span>
+        <span class="critical-title">Critical Execution Path</span>
       </button>
     </div>
       
@@ -136,7 +134,7 @@
        <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
           <img src="/img/info.png" class="info-img">
        </span>
-       <span class="header-title">Processor Bottlenecks</span>
+       <span class="critical-title">Processor Bottlenecks</span>
        <div id="simulation-graph" class="simulation-img"></div>
     </div>
 
