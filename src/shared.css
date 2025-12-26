@@ -1,126 +1,131 @@
 <style scoped>
   .main{
     height: 100%;
-    width: 100%;
-    background: white;
+    width:  100%;
     overflow: auto;
-    padding: 5px;
-    border-radius: 10px;
+    padding:  5px;
     position: relative;
+    background:    white;
+    border-radius: 10px;
   }
-  #run-button{
-    display:block;
-    cursor:pointer;
-    left: 3px;
-  }
+
   .header{
-    position:sticky;
-    padding-top:2px;
-    padding-bottom:5px;
-    top:-5px;
-    left:0;
-    background:white;
-    width:100%;
-    display: flex;
+    top:   -5px;
+    left:  0;
+    width:  100%;
+    display:   flex;
+    position:  sticky;
+    padding-top:    2px;
+    padding-bottom: 5px;
+    background:     white;
+    align-items:    center;
     justify-content: space-between;
-    align-items: center;
-  }
-  .section-title-and-info button,
-  .section-title-and-info input {
-    height: 2em;
-    line-height: 1;
-    font-size: 0.95rem;
-  }
-  .section-title-and-info input[type="number"] {
-    width: 3.5em;
-    text-align: center;
-    font-size: inherit;
-  }
-  .section-title-and-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;              /* uniform space */
-    flex-wrap: wrap;          /* avoid overflow */
   }
   .header-title {
-    font-size: 1.1rem;
-    margin-right: 0.75rem;
-    font-weight: 600
+    font-size:    1.1rem;
+    margin-right: 0.8rem;
+    font-weight:  600
   }
-  .iters-group {
-    display: inline-flex;
+
+  .section-title-and-info button,
+  .section-title-and-info input {
+    height:      2em;
+    line-height: 1;
+    font-size:   0.95rem;
+  }
+  .section-title-and-info input[type="number"] {
+    width:      3.5em;
+    text-align: center;
+    font-size:  inherit;
+  }
+  .section-title-and-info {
+    display:     flex;
     align-items: center;
-    gap: 0.4rem;
+    gap:         0.5rem;   /* uniform space */
+    flex-wrap:   wrap;     /* avoid overflow */
+  }
+
+  .iters-group {
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.4rem;
   }
   .iters-group input[type="number"] {
-    width: 8ch;
+    width:      8ch;
     text-align: center;
   }
   .iters-label {
     margin-left: 0.5rem;
     font-weight: 500;
   }
+
+  #run-button{
+    display: block;
+    cursor:  pointer;
+    left:    3px;
+  }
   .blue-button {
     background: #e6f0ff;
-    color: #1a4fb3;
-    border: 1px solid #7aa2e3;
+    color:      #1a4fb3;
+    border:     1px solid #7aa2e3;
     transition: background 0.15s ease, color 0.15s ease;
-    cursor: pointer;
-  }
-  /* estado activado */
+    cursor:     pointer;
+  } 
   .blue-button.active {
-    background: #1a4fb3;
-    color: white;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    background:   #1a4fb3;
     border-color: #1a4fb3;
+    color:        white;
+    box-shadow:  inset 0 0 0 1px rgba(255,255,255,0.4);
   }
-  /* feedback al pulsar */
   .blue-button:active {
     transform: translateY(1px);
   }
+
   .info-icon {
     display:      inline-flex;
     align-items:  center;
     margin-right: 0.5rem;
+    margin-leftt: 0.5rem;
     cursor:       pointer;
   }
   .info-img {
     height: 1em;
-    width: 1em;
+    width:  1em;
   }
 
-  .graph-section{
-    display: flex;
+  .graph-section {
+    display:         flex;
     justify-content: center;
-    align-items: center;
+    align-items:     center;
   }
+
   .sim-running-msg {
     display: flex;
+    width:   100%;
+    align-items:     center;
     justify-content: center;
-    align-items: center;
-    width: 100%;
   }
-  .simulation-graph{
-    display:block;
-    width:70%;
-    margin:auto;
+  .simulation-graph {
+    display: block;
+    width:   70%;
+    margin:  auto;
   }
-  .running-group{
-    display:flex;
-    gap:10px;
-  }
-  .spinner {
-    border: 8px solid #f0f0f0;
-    border-top: 8px solid #0085dd;
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    animation: spin 1s linear infinite;
-    margin: auto;
-    width: 5vh;
-    height: 5vh;
+  .running-group {
+    display: flex;
+    gap:     10px;
   }
 
+  .spinner {
+    width:  15px;
+    height: 15px;
+    width:  5vh;
+    height: 5vh;
+    margin: auto; 
+    animation:  spin 1s linear infinite;
+    border:     8px solid #f0f0f0;
+    border-top: 8px solid #0085dd;
+    border-radius: 50%;
+  }
   @keyframes spin {
       0% {
           transform: rotate(0deg);
@@ -130,57 +135,62 @@
       }
   }
 
-  .scale-container {
-    width: 50%;
-    margin: 0 auto;
-    margin-top: 2%;
-    text-align: center;
-    display:block;
-  }
-  .color-scale {
-    width: 100%;
-    height: 10px;
-    background: linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
-    border-radius: 5px;
-    border: 1px solid black;
-    position: relative;
+  .arrow {
+    opacity:   0.8;
+    font-size: 0.85em;
   }
 
-/* Optional labels for the scale */
-  .scale-labels {
-    width:100%;
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 2.75vh;
+  .scale-container {
+    width:      50%;
+    margin:     0 auto;
+    margin-top: 2%;
+    text-align: center;
+    display:    block;
   }
+  .scale-labels {
+    width:      100%;
+    display:    flex;
+    margin-top: 10px;
+    font-size:  2.75vh;
+    justify-content: space-between;
+  }
+  .color-scale {
+    width:   100%;
+    height:  10px;
+    border:  1px solid black;
+    position: relative;
+    background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
+    border-radius: 5px;
+  }
+
   .results-info {
-    width: 100%;
+    width:      100%;
     margin-top: 10px;
   }
   .results-info .row {
+    gap:     20px;
     display: flex;
     justify-content: space-between;
-    gap: 20px;
     margin-bottom: 5px;
   }
+
   .simulation-inline-item {
-    flex: 1;
+    flex:    1;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 4px 10px;
-    background: #f0f0f0;
-    border-radius: 6px;
+    justify-content: space-between;
+    align-items:     center;
+    background:      #f0f0f0;
+    border-radius:   6px;
   }
   .simulation-inline-item label {
-    flex: 1;
+    flex:         1;
     margin-right: 10px;
   }
   .simulation-inline-item span {
-    text-align: right;
+    text-align:  right;
     flex-shrink: 0;
-    min-width: 60px;
+    min-width:   60px;
   }
 
   .critical-wrapper {
@@ -192,7 +202,7 @@
     margin-bottom: 5px;
   }
   .critical-header {
-    all:         unset;                    /* button reset */
+    all:         unset;  /* button reset */
     width:       auto;
     cursor:      pointer;
     background:  #f3f3f3;
@@ -208,11 +218,6 @@
   .critical-title {
     flex: 1;
   }
-  .arrow {
-    opacity: 0.8;
-    font-size: 0.85em;
-  }
-  /* content box */
   .critical-box {
     width:         60%;
     overflow:      hidden;
