@@ -272,57 +272,57 @@
 
 <style scoped>
   .main {
-    height: 100%;
-    width: 100%;
+    font-size:  14px;
+    height:     100%;
+    width:      100%;
     background: white;
-    overflow: auto;
-    padding: 5px;
+    overflow:   auto;
+    padding:    5px;
     border-radius: 10px;
-    font-size: 14px;
   }
   .header {
     position: sticky;
-    top: -5px;
-    left:0;
+    top:      -5px;
+    left:     0;
+    width:    100%;
+    padding:  6px 8px;
+    z-index:  10;
     background: white;
-    width: 100%;
     box-shadow: 0 1px 0 rgba(0,0,0,0.08);
-    padding: 6px 8px;
-    z-index: 10;
   }
   .title {
-    font-size: 2.5vh;
+    font-size:   2.5vh;
   }
   .section-title-and-info button,
   .section-title-and-info input {
-    height: 2em;
+    height:      2em;
     line-height: 1;
-    font-size: 0.95rem;
+    font-size:   0.95rem;
   }
   .section-title-and-info input[type="number"] {
-    width: 3.5em;
+    width:      3.5em;
     text-align: center;
-    font-size: inherit;
+    font-size:  inherit;
   }
   .section-title-and-info {
-    display: flex;
+    display:     flex;
     align-items: center;
-    gap: 0.5rem;              /* uniform space */
-    flex-wrap: wrap;          /* avoid overflow */
+    gap:         0.5rem;     /* uniform space */
+    flex-wrap:   wrap;       /* avoid overflow */
   }
   .header-title {
-    font-size: 1.1rem;
+    font-size:    1.1rem;
     margin-right: 0.75rem;
-    font-weight: 600
+    font-weight:  600
   }
   .iters-group,
   .flags-group {
-    display: inline-flex;
+    display:     inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap:         0.4rem;
   }
   .iters-group input[type="number"] {
-    width: 4ch;
+    width:      4ch;
     text-align: center;
   }
   .iters-label {
@@ -331,16 +331,16 @@
   }
   .blue-button {
     background: #e6f0ff;
-    color: #1a4fb3;
-    border: 1px solid #7aa2e3;
+    color:      #1a4fb3;
+    border:     1px solid #7aa2e3;
     transition: background 0.15s ease, color 0.15s ease;
-    cursor: pointer;
+    cursor:     pointer;
   }
   /* estado activado */
   .blue-button.active {
-    background: #1a4fb3;
-    color: white;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    background:   #1a4fb3;
+    color:        white;
+    box-shadow:   inset 0 0 0 1px rgba(255,255,255,0.4);
     border-color: #1a4fb3;
   }
   /* feedback al pulsar */
@@ -348,39 +348,39 @@
     transform: translateY(1px);
   }
   .info-icon {
-    display: inline-flex;
+    display:     inline-flex;
     align-items: center;
-    cursor: pointer;
+    cursor:      pointer;
   }
   .info-img {
     height: 1em;
-    width: 1em;
+    width:  1em;
   }
   .annotations-wrapper {
     margin-top: 5px;
   }
   .annotations-box {
     white-space: pre-wrap;
-    background: #f0f0f0;
-    padding: 10px;
+    background:  #f0f0f0;
+    padding:     10px;
     border-radius: 0 0 5px 5px;
-    margin-top: 0;
-    font-size: 0.9rem;
+    margin-top:  0;
+    font-size:   0.9rem;
     line-height: 1.4;
     font-family: monospace;
   }
   .annotations-header {
-    all: unset;                    /* button reset */
-    width: 95%;
-    cursor: pointer;
-    background: #f3f3f3;
-    padding: 6px 10px;
-    border-radius: 6px 6px 0 0;
-    display: flex;
+    all:         unset;  /* button reset */
+    width:       95%;
+    cursor:      pointer;
+    background:  #f3f3f3;
+    padding:     6px 10px;
+    display:     flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.95rem;
-    font-weight: 500;
+    gap:         0.4rem;
+    font-size:   0.9rem;
+    font-weight: 600;
+    border-radius: 6px 6px 0 0;
   }
   .annotations-header:hover {
     background: #eaeaea;
@@ -398,73 +398,74 @@
   /* The full-screen overlay */
   .fullscreen-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.4);
-    display: flex;
+    top:      0; 
+    left:     0;
+    width:    100vw; height: 100vh;
+    display:  flex;
+    z-index:  1000;
     align-items: center;
+    background:  rgba(0,0,0,0.4);
     justify-content: center;
-    z-index: 1000;
   }
   .fullscreen-content {
     background: white;
-    margin: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
+    margin:    10px;
+    padding:   10px;
+    border:    1px solid #ccc;
     border-radius: 8px;
-    width: 90%;
-    height: 90%;
-    resize: both;
+    width:    90%;
+    height:   90%;
+    resize:   both;
     overflow: auto;
     min-width: 300px;
     min-height: 200px;
-    max-width:99%;
-    max-height:99%;
-    display: flex;
+    max-width:  99%;
+    max-height: 99%;
+    display:    flex;
     flex-direction: column;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   }
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
-    border: none;
-    font-size: 3vh;
-    cursor: pointer;
+    border:     none;
+    font-size:  3vh;
+    cursor:     pointer;
     margin-bottom: 8px;
   }
   .output-block {
-    flex: 1 1 auto;
+    flex:     1 1 auto;
     position: relative;
     overflow: hidden;
     border-radius: 6px;
-    border: 1px solid #e0e0e0;
+    border:        1px solid #e0e0e0;
   }
   .output-block svg {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
+    top:      0;
+    left:     0;
+    width:    100% !important;
+    height:   100% !important;
   }
   .output-block-wrapper {
-    display: flex;
+    display:        flex;
     flex-direction: column;
-    height: 90%;
+    height:         90%;
   }
 .graph-toolbar {
-  display: flex;
-  align-items: center;
+  display:         flex;
+  align-items:     center;
   justify-content: space-between;
-  padding: 4px 6px;
+  padding:         4px 6px;
 }
 .graph-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 500;
+  margin:      0;
+  font-size:   0.9rem;
+  font-weight: 600;
 }
 .graph-subtitle {
   font-size: 0.85em;
-  opacity: 0.7;
+  opacity:   0.7;
 }
 .icon-button {
   background: #b0b0b0;     /* default backgorund color */
