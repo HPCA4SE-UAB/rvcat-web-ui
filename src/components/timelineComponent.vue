@@ -749,7 +749,7 @@
   <div v-if="clickedCellInfo" class="modal-overlay" @click.self="clickedCellInfo = null">
     <div class="modal">
       <div class="modal-header">
-        <Cell Info
+        Cell Info
         <button class="close-btn" @click="clickedCellInfo = null">x</button>
       </div>
       <p><strong>Instruction:</strong> {{ clickedCellInfo.instrID }}</p>
