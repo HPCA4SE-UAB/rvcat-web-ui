@@ -272,4 +272,40 @@
 
 <style scoped>
   .iters-group input[type="number"] { width: 4ch; }
+  
+  .icon-button {
+    border:    none;
+    cursor:    pointer;
+    padding:   6px;
+    display:   inline-flex;
+    align-items: center;
+    background:  #b0b0b0;
+    transition:  background 0.2s;
+    justify-content: center;
+    border-radius:   6px;
+  }
+  .icon-button img,
+  .icon-button svg {
+    width:  1.2em;
+    height: 1.2em;
+  }
+  .icon-button:hover {
+    background: #a0a0a0;      /* darker at hover */  
+  }
+  .icon-button:active {
+    background: #909090;      /* still darker */
+  }
+  .icon-button:focus {
+    outline:        2px solid #1a4fb3;  /* keypad */
+    outline-offset: 2px;
+  }
+  .close-btn {
+    background:  none;
+    border:      none;
+    font-size:   1.5em;
+    line-height: 1;
+    cursor:      pointer;
+    padding:     4px;
+  }
+
 </style>
