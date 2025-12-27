@@ -15,9 +15,9 @@
   .header{
     display:     flex;
     align-items: center;
+    padding:     8px 12px;
+    font-size:   14px;
     justify-content: space-between;
-    padding:   8px 12px;
-    font-size:14px;
   }
 
   .section-title-and-info {
@@ -27,30 +27,17 @@
     flex-wrap:   wrap;
   }
 
-  /*
-  .section-title-and-info button,
-  .section-title-and-info input {
-    height:      2em;
-    line-height: 1;
-    font-size:   0.95rem;
-  }
-  .section-title-and-info input[type="number"] {
-    width:      3.5em;
-    text-align: center;
-  }
-*/
-
   .header-title {
     font-size:    16px;
     font-weight:  600
   }
 
-.output-block-wrapper {
+  .output-block-wrapper {
     display:        flex;
     flex-direction: column;
     height:         100vh;
-}
-.output-block {
+  }
+  .output-block {
     flex:       1;
     position:   relative;
     overflow:   hidden;
@@ -91,6 +78,7 @@
     cursor:  pointer;
     left:    3px;
   }
+
   .blue-button {
     background: #e6f0ff;
     color:      #1a4fb3;
