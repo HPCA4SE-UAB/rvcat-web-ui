@@ -33,6 +33,8 @@
   function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
   function closeTutorial3() { showTutorial3.value  = false }
 
+  function RunSimulation()  { getSchedulerAnalysis() }
+  
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
  * ------------------------------------------------------------------ */
@@ -50,6 +52,8 @@
 
   watch(iters, v => localStorage.setItem("ExecutionIterations", v));
 
+
+  
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
@@ -79,7 +83,7 @@
           <span class="iters-label">Iterations:</span>
           <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="getSchedulerAnalysis()">Run</button>
+        <button id="run-simulation-button" class="blue-button" @click="RunSimulation">Run</button>
       </div>
     </div>
 
@@ -119,10 +123,10 @@
 
     <!--- Critical Path Breakdown (percentages) ---->
     <div class="critical-wrapper" id="critical-path-section">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath">
+      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath" title="Show Critical % Info">
         <span class="arrow" aria-hidden="true">
           {{ showCriticalPath ? '▼' : '▶' }}
         </span>
@@ -136,7 +140,7 @@
 
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
-       <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
+       <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show help">
           <img src="/img/info.png" class="info-img">
        </span>
        <span class="critical-title">Processor Bottlenecks</span>
