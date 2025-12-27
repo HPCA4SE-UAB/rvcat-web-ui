@@ -13,23 +13,21 @@
   }
 
   .header{
-    top:   -5px;
-    left:  0;
-    width:  100%;
-    display:   flex;
-    position:  sticky;
-    padding-top:    2px;
-    padding-bottom: 5px;
-    background:     white;
-    align-items:    center;
+    display:     flex;
+    align-items: center;
     justify-content: space-between;
-  }
-  .header-title {
-    font-size:    1.1rem;
-    margin-right: 0.8rem;
-    font-weight:  600
+    padding:   8px 12px;
+    font-size:14px;
   }
 
+  .section-title-and-info {
+    display:     flex;
+    align-items: center;
+    gap:         8px; 
+    flex-wrap:   wrap;
+  }
+
+  /*
   .section-title-and-info button,
   .section-title-and-info input {
     height:      2em;
@@ -39,13 +37,12 @@
   .section-title-and-info input[type="number"] {
     width:      3.5em;
     text-align: center;
-    font-size:  inherit;
   }
-  .section-title-and-info {
-    display:     flex;
-    align-items: center;
-    gap:         0.5rem;   /* uniform space */
-    flex-wrap:   wrap;     /* avoid overflow */
+*/
+
+  .header-title {
+    font-size:    16px;
+    font-weight:  600
   }
 
 .output-block-wrapper {
@@ -71,17 +68,22 @@
 
   .iters-group,
   .flags-group {
-    display:     inline-flex;
+    display:     iflex;
     align-items: center;
-    gap:         0.4rem;
+    gap:         6px;
   }
   .iters-group input[type="number"] {
     width:      8ch;
     text-align: center;
   }
   .iters-label {
-    margin-left: 0.5rem;
+    font_size:   15px;
     font-weight: 500;
+  }
+
+  #num-iters {
+    width: 6ch;
+    font-size: 14px;
   }
 
   #run-button{
@@ -109,13 +111,13 @@
   .info-icon {
     display:      inline-flex;
     align-items:  center;
-    margin-right: 0.5rem;
-    margin-leftt: 0.5rem;
+    margin-right: 9px;
+    margin-leftt: 9px;
     cursor:       pointer;
   }
   .info-img {
-    height: 1.1em;
-    width:  1.2em;
+    height: 16px;
+    width:  16px;
   }
 
   .graph-section {
