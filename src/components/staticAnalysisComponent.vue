@@ -238,6 +238,7 @@
       <div class="output-block" id="dependence-graph"></div>
     </div>
   </div>
+  
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
@@ -247,6 +248,7 @@
       <div class="output-block" id="dependence-graph-full"></div>
     </div>
   </div>
+  
   <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
   text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
     meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
