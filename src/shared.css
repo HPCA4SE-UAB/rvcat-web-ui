@@ -1,4 +1,4 @@
-<style scoped>
+<style>
   .main{
     height: 100%;
     width:  100%;
@@ -328,41 +328,6 @@
   .graph-subtitle {
     font-size: 0.95em;
     opacity:   0.7;
-  }
-
-  .icon-button {
-    border:    none;
-    cursor:    pointer;
-    padding:   6px;
-    display:   inline-flex;
-    align-items: center;
-    background:  #b0b0b0;
-    transition:  background 0.2s;
-    justify-content: center;
-    border-radius:   6px;
-  }
-  .icon-button img,
-  .icon-button svg {
-    width:  1.2em;
-    height: 1.2em;
-  }
-  .icon-button:hover {
-    background: #a0a0a0;      /* darker at hover */  
-  }
-  .icon-button:active {
-    background: #909090;      /* still darker */
-  }
-  .icon-button:focus {
-    outline:        2px solid #1a4fb3;  /* keypad */
-    outline-offset: 2px;
-  }
-  .close-btn {
-    background:  none;
-    border:      none;
-    font-size:   1.5em;
-    line-height: 1;
-    cursor:      pointer;
-    padding:     4px;
   }
 
   .fold-enter-active,
