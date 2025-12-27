@@ -2,7 +2,7 @@
 
   .iters-group,
   .flags-group {
-    display:     iflex;
+    display:     inline-flex;
     align-items: center;
     gap:         6px;
   }
@@ -11,7 +11,7 @@
     text-align: center;
   }
   .iters-label {
-    font_size:   15px;
+    font-size:   15px;
     font-weight: 500;
   }
 
