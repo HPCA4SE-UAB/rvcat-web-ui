@@ -79,7 +79,7 @@
           <span class="iters-label">Iterations:</span>
           <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
         </div>
-        <button id="run-simulation-button" class="blue-button" onclick="getSchedulerAnalysis();">Run</button>
+        <button id="run-simulation-button" class="blue-button" @click="getSchedulerAnalysis">Run</button>
       </div>
     </div>
 
@@ -174,3 +174,11 @@
   @close="closeTutorial3"/>
   
 </template>
+
+<style scoped>
+.iters-run {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* separación input / botón */
+}
+</style>
