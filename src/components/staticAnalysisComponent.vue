@@ -324,21 +324,21 @@
   }
   .fullscreen-content {
     background: white;
-    margin:    10px;
-    padding:   10px;
-    border:    1px solid #ccc;
-    border-radius: 8px;
-    width:    90%;
-    height:   90%;
-    resize:   both;
-    overflow: auto;
-    min-width: 300px;
+    margin:     10px;
+    padding:    10px;
+    border:     1px solid #ccc;
+    width:      95%;
+    height:     95%;
+    resize:     both;
+    overflow:   auto;
+    min-width:  300px;
     min-height: 200px;
     max-width:  99%;
     max-height: 99%;
     display:    flex;
+    border-radius:  8px;
     flex-direction: column;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow:     0 4px 12px rgba(0,0,0,0.25);
   }
   .fullscreen-content .close-btn {
     align-self: flex-end;
@@ -355,7 +355,9 @@
     margin-bottom:   10px;
   }
   .fullscreen-title {
-    margin: 0;
+    font-size:   1.2rem;
+    font-weight: 600;
+    margin:      0;
   }
 
 </style>
