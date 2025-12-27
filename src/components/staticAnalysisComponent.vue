@@ -231,7 +231,7 @@
         </div>
 
         <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
-           <img src="/img/fullscreen.png" class="fs-img">
+           <img src="/img/fullscreen.png" class="bt-img">
         </button>        
       </div>
       
@@ -244,7 +244,7 @@
   <div v-if="showFullScreen" class="fullscreen-overlay">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        <h3>Data Dependence Graph (circular paths in red)</h3>
+        Data Dependence Graph (circular paths in red)
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
       <div class="output-block" id="dependence-graph-full"></div>
@@ -306,6 +306,56 @@
     line-height: 1;
     cursor:      pointer;
     padding:     4px;
+  }
+  .btn-img {
+    height:2.5vh;
+  }
+
+ .fullscreen-overlay {
+    position: fixed;
+    top:      0; 
+    left:     0;
+    width:    100vw; height: 100vh;
+    display:  flex;
+    z-index:  1000;
+    align-items: center;
+    background:  rgba(0,0,0,0.4);
+    justify-content: center;
+  }
+  .fullscreen-content {
+    background: white;
+    margin:    10px;
+    padding:   10px;
+    border:    1px solid #ccc;
+    border-radius: 8px;
+    width:    90%;
+    height:   90%;
+    resize:   both;
+    overflow: auto;
+    min-width: 300px;
+    min-height: 200px;
+    max-width:  99%;
+    max-height: 99%;
+    display:    flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .fullscreen-content .close-btn {
+    align-self: flex-end;
+    background: none;
+    border:     none;
+    font-size:  3vh;
+    cursor:     pointer;
+    margin-bottom: 8px;
+  }
+  .fullscreen-header {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    margin-bottom:   10px;
+  }
+  .fullscreen-title {
+    margin: 0;
   }
 
 </style>
