@@ -79,7 +79,7 @@
           <span class="iters-label">Iterations:</span>
           <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="getSchedulerAnalysis">Run</button>
+        <button id="run-simulation-button" class="blue-button" @click="getSchedulerAnalysis()">Run</button>
       </div>
     </div>
 
@@ -103,8 +103,13 @@
           <label for="IPC">IPC:</label>
           <span id="IPC-output">?</span>
         </div>
+        <div class="simulation-inline-item">
+          <label for="Loads">Loads:</label>
+          <span id="Loads-output">?</span>
+        </div>
       </div>
     </div>
+    
     <div class="sim-running-msg">
       <div class="running-group">
         <div id="run-simulation-spinner" class="spinner" style="display: none;"></div>
@@ -176,9 +181,104 @@
 </template>
 
 <style scoped>
-.iters-run {
-  display: flex;
-  align-items: center;
-  gap: 12px; /* separación input / botón */
-}
+  .iters-run {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* separación input / botón */
+  }
+
+  .results-info {
+    width:      100%;
+    margin-top: 10px;
+  }
+  .results-info .row {
+    gap:     20px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .simulation-inline-item {
+    flex:    1;
+    display: flex;
+    padding: 4px 10px;
+    justify-content: space-between;
+    align-items:     center;
+    background:      #f0f0f0;
+    border-radius:   6px;
+  }
+  .simulation-inline-item label {
+    flex:         1;
+    margin-right: 10px;
+  }
+  .simulation-inline-item span {
+    text-align:  right;
+    flex-shrink: 0;
+    min-width:   60px;
+  }
+
+  .sim-running-msg {
+    display: flex;
+    width:   100%;
+    align-items:     center;
+    justify-content: center;
+  }
+  .running-group {
+    display: flex;
+    gap:     10px;
+  }
+  .spinner {
+    width:  15px;
+    height: 15px;
+    width:  5vh;
+    height: 5vh;
+    margin: auto; 
+    animation:  spin 1s linear infinite;
+    border:     8px solid #f0f0f0;
+    border-top: 8px solid #0085dd;
+    border-radius: 50%;
+  }
+  @keyframes spin {
+      0% {
+          transform: rotate(0deg);
+      }
+      100% {
+          transform: rotate(360deg);
+      }
+  }
+
+  .graph-section {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+  }
+  .simulation-graph {
+    display: block;
+    width:   70%;
+    margin:  auto;
+  }
+
+  .scale-container {
+    width:      50%;
+    margin:     0 auto;
+    margin-top: 2%;
+    text-align: center;
+    display:    block;
+  }
+  .scale-labels {
+    width:      100%;
+    display:    flex;
+    margin-top: 10px;
+    font-size:  2.75vh;
+    justify-content: space-between;
+  }
+  .color-scale {
+    width:   100%;
+    height:  10px;
+    border:  1px solid black;
+    position: relative;
+    background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
+    border-radius: 5px;
+  }
+  
 </style>
