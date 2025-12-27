@@ -81,9 +81,11 @@
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" id="num-iters" min="1" max="20000" v-model.number="iters">
+          <input type="number" id="num-iters" min="1" max="20000" @change="RunSimulation" v-model.number="iters">
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="RunSimulation">Run</button>
+        <button id="run-simulation-button" class="blue-button" @click="RunSimulation" title="Run Simulation">
+           Run
+        </button>
       </div>
     </div>
 
