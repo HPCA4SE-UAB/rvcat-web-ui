@@ -230,12 +230,10 @@
           <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
         </div>
 
-        <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
-          <img src="/img/fullscreen.png" class="fs-img">
-        </button>
-        
+        <button class="icon-button" @click="openFullScreen" title="Open fullscreen"></button>        
       </div>
       <div class="output-block" id="dependence-graph"></div>
+      <img src="/img/fullscreen.png" class="fs-img">
     </div>
   </div>
   
