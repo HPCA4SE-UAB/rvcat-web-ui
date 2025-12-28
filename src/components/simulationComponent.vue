@@ -52,8 +52,6 @@
 
   watch(iters, v => localStorage.setItem("ExecutionIterations", v));
 
-
-  
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
@@ -68,7 +66,6 @@
   });
 </script>
 
-
 <template>
   <div class="main">
     <div class="header">
@@ -81,7 +78,8 @@
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" id="num-iters" min="1" max="20000" @change="RunSimulation" v-model.number="iters">
+          <input type="number" id="num-iters" min="1" max="20000" @change="RunSimulation" 
+             v-model.number="iters" title="# loop iterations">
         </div>
         <button id="run-simulation-button" class="blue-button" @click="RunSimulation" title="Run Simulation">
            Run
