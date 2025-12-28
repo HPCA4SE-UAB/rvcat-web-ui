@@ -122,15 +122,15 @@
     </div>
 
     <!--- Critical Path Breakdown (percentages) ---->
-    <div class="critical-wrapper" id="critical-path-section">
+    <div class="dropdown-wrapper" id="critical-path-section">
       <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="critical-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath" title="Show Critical % Info">
+      <button class="dropdown-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath" title="Show Critical % Info">
         <span class="arrow" aria-hidden="true">
           {{ showCriticalPath ? '▼' : '▶' }}
         </span>
-        <span class="critical-title">Critical Execution Path</span>
+        <span class="dropdown-title">Critical Execution Path</span>
       </button>
     </div>
       
@@ -143,7 +143,7 @@
        <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show help">
           <img src="/img/info.png" class="info-img">
        </span>
-       <span class="critical-title">Processor Bottlenecks</span>
+       <span class="dropdown-title">Processor Bottlenecks</span>
        <div id="simulation-graph" class="simulation-img"></div>
     </div>
 
@@ -186,9 +186,9 @@
 
 <style scoped>
   .iters-run {
-    display: flex;
+    display:     flex;
     align-items: center;
-    gap: 12px; /* separación input / botón */
+    gap:         12px;
   }
 
   .results-info {
