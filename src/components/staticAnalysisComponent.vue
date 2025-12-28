@@ -290,6 +290,7 @@
     display:     flex;
     align-items: center;
     gap:         8px;
+    margin-left: auto;
     flex:        1 1 auto;
     min-width:   0;
   }
