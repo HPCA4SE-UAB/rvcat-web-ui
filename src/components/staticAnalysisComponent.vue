@@ -216,31 +216,29 @@
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="dropdown-title">Data Dependence Graph</span>
-        <!-- Iterations -->
-        <div class="iters-group">
-          <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="7" title="# loop iterations" v-model.number="iters">
-        </div>
-        
-        <!-- Flags -->
-        <div class="flags-group">
-          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" 
-              title="Show/Hide Internal Dependencies" @click="toggleIntern"> <span v-if="showIntern">✔ </span>Internal</button>
-          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  
-              title="Show/Hide Execution Latencies" @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
-          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  
-              title="Show/Hide Instruction Text" @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
-          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly"
-              title="Show/Hide All Info" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
-        </div>
 
-        <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
-           <img src="/img/fullscreen.png" class="bt-img">
-        </button>        
+        <div class="controls">
+          <div class="iters-group">
+            <span class="iters-label">Iterations:</span>
+            <input type="number" min="1" max="7" title="# loop iterations" v-model.number="iters">
+          </div>
+          <div class="iters-group">
+            <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" 
+              title="Show/Hide Internal Dependencies" @click="toggleIntern"> <span v-if="showIntern">✔ </span>Internal</button>
+            <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  
+              title="Show/Hide Execution Latencies" @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
+            <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  
+              title="Show/Hide Instruction Text" @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
+            <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly"
+              title="Show/Hide All Info" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
+          </div>
+          <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
+             <img src="/img/fullscreen.png" class="bt-img">
+          </button>
+        </div>
       </div>
       
-      <div class="output-block" id="dependence-graph">
-      </div>
+      <div class="output-block" id="dependence-graph"></div>
 
     </div>
   </div>
@@ -261,21 +259,30 @@
     <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
   title="Static Performance Analysis"
   @close="closeTutorial1"/>
+  
   <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
   text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
        such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
   title="Throughput-bound execution time"
   @close="closeTutorial2"/>
+  
   <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
   text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
       <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
       Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
   title="Latency-bound execution time"
   @close="closeTutorial3"/>
+  
 </template>
 
 <style scoped>
   .iters-group input[type="number"] { width: 4ch; }
+
+  .controls {
+    display:     flex;
+    align-items: center;
+    gap:         16px;
+  }
   
   .icon-button {
     border:    none;
@@ -287,6 +294,7 @@
     transition:  background 0.2s;
     justify-content: center;
     border-radius:   6px;
+    margin-left:     auto;
   }
   .icon-button img,
   .icon-button svg {
@@ -373,4 +381,5 @@
     line-height: 1.2;
     border-radius: 0 0 5px 5px;
   }
+  
 </style>
