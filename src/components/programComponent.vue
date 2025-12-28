@@ -150,9 +150,9 @@
       </div>
       
       <div id="settings-div">
-        <button id="download-button" title="Load new Program"     class="blue-button" @click="downloadProgram">Download</button>
-        <button id="upload-button"   title="Save current Program" class="blue-button" @click="uploadProgram">Upload</button>
-        <select id="programs-list" name="assembly-code" onchange="reloadRvcat();"></select>
+        <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
+        <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
+        <select id="programs-list"   title="Select Program"   name="assembly-code" onchange="reloadRvcat();"></select>
       </div>
     </div>
     
