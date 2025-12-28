@@ -135,23 +135,6 @@
     font-weight: 500;
   }
  
-  .graph-toolbar {
-    display:   flex;
-    gap:       12px;
-    align-items:     center;
-    justify-content: space-between;
-    padding:         4px 6px;
-  }
-  .graph-title {
-    margin:      0;
-    font-size:   0.9rem;
-    font-weight: 600;
-  }
-  .graph-subtitle {
-    font-size: 0.95em;
-    opacity:   0.7;
-  }
-  
   .blue-button {
     background: #e6f0ff;
     color:      #1a4fb3;
