@@ -387,7 +387,6 @@
     flex-direction: column;
     width:          100%;
     max-width:      100vw;
-    overflow:       hidden;
   }
   .output-block {
     position:   relative;
