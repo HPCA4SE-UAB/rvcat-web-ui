@@ -68,6 +68,33 @@
     font-weight:  600
   }
 
+  .dropdown-wrapper {
+    display:       flex;
+    align-items:   center;
+    flex-wrap:     nowrap;
+    gap:           0.4rem;
+    margin-top:    5px;
+    margin-bottom: 5px;
+  }
+  .dropdown-header {
+    all:         unset;  /* button reset */
+    width:       auto;
+    cursor:      pointer;
+    background:  #f3f3f3;
+    padding:     6px 10px;
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.4rem;
+    font-size:   1.1rem;
+  }
+  .dropdown-header:hover {
+    background: #eaeaea;
+  }
+  .dropdown-title {
+    flex:      1;
+    font-size: 1.1rem;
+  }
+
   .output-block-wrapper {
     display:        flex;
     flex-direction: column;
