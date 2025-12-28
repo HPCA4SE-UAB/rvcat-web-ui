@@ -21,6 +21,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
+            title="Simulate Program's execution"
             :class="{ active: activeView === 'simulationComponent' }"
             @click="emit('requestSwitch', 'simulationComponent')"
           >
@@ -30,6 +31,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
+            title="Static Performance Analysis"
             :class="{ active: activeView === 'staticAnalysisComponent' }"
             @click="emit('requestSwitch', 'staticAnalysisComponent')"
           >
@@ -39,6 +41,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
+            title="Detailed Timeline of Program's execution"
             :class="{ active: activeView === 'timelineComponent' }"
             @click="emit('requestSwitch', 'timelineComponent')"
           >
@@ -48,6 +51,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
+            title="Configure Processor's settings"
             :class="{ active: activeView === 'procSettingsComponent' }"
             @click="emit('requestSwitch', 'procSettingsComponent')"
           >
@@ -57,6 +61,7 @@ const emit = defineEmits([ 'requestSwitch' ]);
         <li>
           <button
             class="blue-button"
+            title="Information about this tool"
             :class="{ active: activeView === 'aboutComponent' }"
             @click="emit('requestSwitch', 'aboutComponent')"
           >
