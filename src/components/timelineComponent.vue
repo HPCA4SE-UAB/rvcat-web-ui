@@ -717,7 +717,7 @@
         <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25"><img src="/img/zoom-out.png"></button>
         <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2"><img src="/img/zoom-in.png"></button>
         <button @click="toggleInstructions" class="blue-button">{{ showInstructions ? 'Hide' : 'Show' }} Instructions</button>
-        <button @click="togglePorts" class="blue-button">{{ showPorts ? 'Hide' : 'Show' }} Ports</button>
+        <button @click="togglePorts"        class="blue-button">{{ showPorts ? 'Hide' : 'Show' }} Ports</button>
       </div>
 
     </div>
@@ -735,6 +735,7 @@
       </div>
     </div>
   </div>
+  
   <TutorialComponent 
      v-if="showTutorial" 
      :position="tutorialPosition"
@@ -759,32 +760,12 @@
 </template>
 
 <style scoped>
-  .main{
-    height:100%;
-    width:100%;
-    background: white;
-    overflow:auto;
-    padding:5px;
-    border-radius: 10px;
+  .output-block-wrapper {
+    display:        flex;
+    flex-direction: column;
+    height:         auto;
   }
-  .header{
-    display:     flex;
-    position:    sticky;
-    align-items: center;
-    top:        -5px;
-    background: white;
-    width:      100%;
-    left:       0;
-    padding-top:     2px;
-    padding-bottom:  5px;
-    justify-content: space-between;
-  }
-  .header-title {
-    font-size:    1.1rem;
-    margin-right: 0.75rem;
-    margin-left:  0.75rem;
-    font-weight:  600
-  }
+  
   .tooltip {
     position: fixed;
     background: #f9f9f9;
@@ -796,7 +777,6 @@
     font-size: 2vh;
     width: 10%;
   }
-
 
   .timeline-controls {
     display:flex;
