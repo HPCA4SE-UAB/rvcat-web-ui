@@ -359,9 +359,18 @@
     margin-bottom:   10px;
   }
   .fullscreen-title {
-    font-size:   1.2rem;
+    font-size:   1.5rem;
     font-weight: 600;
     margin:      0;
   }
-
+  
+  .annotations-box {
+    white-space: pre-wrap;
+    background:  #f3f3f3;
+    padding:     10px;
+    margin-top:  0;
+    font-size:   0.8rem;
+    line-height: 1.2;
+    border-radius: 0 0 5px 5px;
+  }
 </style>
