@@ -101,9 +101,9 @@
     height:         100vh;
   }
   .output-block {
-    flex:       1;
     position:   relative;
     overflow:   hidden;
+    flex:       0 0 auto;
     border:     1px solid #e0e0e0;
     border-radius: 6px;
   } 
