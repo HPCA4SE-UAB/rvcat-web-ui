@@ -142,8 +142,7 @@
     font-size: 0.85em;
   }
 
-  .iters-group,
-  .flags-group {
+  .iters-group {
     display:     inline-flex;
     align-items: center;
     gap:         6px;
