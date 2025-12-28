@@ -386,6 +386,7 @@
     display:        flex;
     flex-direction: column;
     height:         auto;
+    width:          auto;  
   }
   .output-block {
     position:   relative;
