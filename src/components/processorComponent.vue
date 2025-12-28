@@ -27,14 +27,16 @@
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Processor Pipeline</span>
       </div>
+      
       <div id="settings-div">
         <select id="processors-list" name="processor-name" onchange="reloadRvcat();"></select>
         <div>
           <label for="rob-size"> ROB: </label>
-          <input type="number" id="rob-size" name="rob-size" min="1" max="200" value="100" onchange="reloadRvcat();">
+          <input type="number" title="ROB size" id="rob-size" name="rob-size" min="1" max="200" value="100" onchange="reloadRvcat();">
         </div>
       </div>
     </div>
+    
     <div class="content">
       <div class="cache-info" id="cache-info"></div>
       <div class="processor-info">
@@ -47,17 +49,12 @@
           <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
           Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
     title="Processor MicroArchitecture"
-    @close="closeTutorial"
-    />
+    @close="closeTutorial" />
+    
   </div>
 </template>
 
 <style scoped>
-  .header-title {
-    font-size:    1.1rem;
-    margin-right: 0.75rem;
-    font-weight:  600
-  }
   .pipeline-display {
     height:     100%;
     width:      100%;
@@ -68,20 +65,20 @@
     border-radius: 10px;
   }
   .pipeline-header {
-    display: flex;
-    justify-content: space-between;
+    display:     flex;
     align-items: center;
-    width: 100%;
+    width:       100%;
+    justify-content: space-between;
   }
   .processor-info {
-    display: flex;
+    display:         flex;
     justify-content: center;
   }
   #processors-list {
     font-size: 2.2vh;
   }
   #rob-size {
-    max-width: 50%;
+    max-width: 60%;
     font-size: 2.2vh;
   }
   table{
