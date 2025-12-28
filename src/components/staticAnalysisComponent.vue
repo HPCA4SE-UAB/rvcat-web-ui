@@ -279,18 +279,20 @@
   .iters-group input[type="number"] { width: 4ch; }
 
   .graph-toolbar {
-    display: flex;
+    display:     flex;
     align-items: center;
-    gap: 12px;
-
+    gap:         8px;
+    width:       100%;
+    box-sizing:  border-box;
     white-space: nowrap;
-    overflow: hidden;
+    overflow:    hidden;
+    min-width:   0;
   }
 
   .controls {
     display:     flex;
     align-items: center;
-    gap:         16px;
+    gap:         8px;
     flex:        1;
     min-width:   0;
   }
@@ -398,6 +400,7 @@
     flex-direction: column;
     overflow:       hidden;
     width:          100%;
+    min-width:      0;
   }
   .output-block {
     position:   relative;
