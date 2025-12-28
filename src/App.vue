@@ -92,7 +92,7 @@
   }
   .dropdown-title {
     flex:      1;
-    font-size: 1.1rem;
+    font-size: 1.0rem;
   }
 
   .output-block-wrapper {
@@ -135,6 +135,11 @@
     display: block;
     cursor:  pointer;
     left:    3px;
+  }
+
+  .arrow {
+    opacity:   0.8;
+    font-size: 0.85em;
   }
 
   .blue-button {
