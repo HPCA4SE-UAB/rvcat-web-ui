@@ -158,7 +158,8 @@
   }
  
   .graph-toolbar {
-    display:         flex;
+    display:   flex;
+    gap:       12px;
     align-items:     center;
     justify-content: space-between;
     padding:         4px 6px;
