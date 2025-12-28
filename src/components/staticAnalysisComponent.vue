@@ -239,7 +239,6 @@
       </div>
       
       <div class="output-block" id="dependence-graph"></div>
-
     </div>
   </div>
   
@@ -284,18 +283,42 @@
     gap:         8px;
     width:       100%;
     box-sizing:  border-box;
-    white-space: nowrap;
     overflow:    hidden;
     min-width:   0;
   }
-
   .controls {
     display:     flex;
     align-items: center;
     gap:         8px;
-    flex:        1;
+    flex:        1 1 auto;
     min-width:   0;
   }
+  .output-block-wrapper {
+    display:        flex;
+    flex-direction: column;
+    overflow:       hidden;
+    width:          100%;
+    min-width:      0;
+  }
+  .output-block {
+    position:   relative;
+    flex:       1;
+    width:      100%;
+    min-width:  0;
+    overflow:   hidden;
+    border:     1px solid #e0e0e0;
+    border-radius: 6px;
+  } 
+  .output-block svg {
+    position: absolute;
+    inset:    0;
+    width:    100%;
+    height:   100%;
+    max-width:  100%;
+    max-height: 100%; 
+    display:    block;
+  }
+
 
   .icon-button {
     border:    none;
@@ -395,30 +418,4 @@
     border-radius: 0 0 5px 5px;
   }
   
-  .output-block-wrapper {
-    display:        flex;
-    flex-direction: column;
-    overflow:       hidden;
-    width:          100%;
-    min-width:      0;
-  }
-  .output-block {
-    position:   relative;
-    flex:       1;
-    width:      100%;
-    min-width:  0;
-    overflow:   hidden;
-    border:     1px solid #e0e0e0;
-    border-radius: 6px;
-  } 
-  .output-block svg {
-    position: absolute;
-    inset:    0;
-    width:    100%;
-    height:   100%;
-    max-width:  100%;
-    max-height: 100%; 
-    display:    block;
-  }
-
 </style>
