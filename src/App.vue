@@ -93,6 +93,9 @@
   .dropdown-title {
     flex:      1;
     font-size: 1.0rem;
+    overflow:  hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .pipeline-img svg {
@@ -144,7 +147,9 @@
     line-height:   1.2;
     border-radius: 6px;
     cursor:        pointer;
-    font-weight: 600;
+    font-weight:   600;
+    white-space:   nowrap;
+    flex-shrink:   1;
 
     transition: 
       background 0.15s ease, 
