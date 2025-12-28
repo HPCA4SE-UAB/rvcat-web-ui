@@ -186,22 +186,22 @@
       <div class="section-title-and-info">
         
         <!-- Title -->
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1">
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Static Performance Analysis</span>
       </div>
     </div>
 
-    <div class="annotations-wrapper">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2">
+    <div class="dropdown-wrapper">
+      <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show Help" >
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="annotations-header" @click="toggleAnnotations" :aria-expanded="showPerformance">
+      <button class="dropdown-header" @click="toggleAnnotations" title="Show Throughput limits" :aria-expanded="showPerformance">
         <span class="arrow" aria-hidden="true">
           {{ showPerformance ? '▼' : '▶' }}
         </span>
-        <span class="annotations-title">
+        <span class="dropdown-title">
           Throughput-bound Limits
         </span>
       </button>
@@ -212,22 +212,26 @@
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
-        <span ref="infoIcon3" class="info-icon" @click="openTutorial3">
+        <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show Help">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="annotations-title">Data Dependence Graph</span>
+        <span class="dropdown-title">Data Dependence Graph</span>
         <!-- Iterations -->
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="7" v-model.number="iters">
+          <input type="number" min="1" max="7" title="# loop iterations" v-model.number="iters">
         </div>
         
         <!-- Flags -->
         <div class="flags-group">
-          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" @click="toggleIntern"><span v-if="showIntern">✔ </span>Internal</button>
-          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
-          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
-          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
+          <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" 
+              title="Show/Hide Internal Dependencies" @click="toggleIntern"> <span v-if="showIntern">✔ </span>Internal</button>
+          <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  
+              title="Show/Hide Execution Latencies" @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
+          <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  
+              title="Show/Hide Instruction Text" @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
+          <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly"
+              title="Show/Hide All Info" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
         </div>
 
         <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
