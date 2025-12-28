@@ -95,27 +95,6 @@
     font-size: 1.0rem;
   }
 
-  .output-block-wrapper {
-    display:        flex;
-    flex-direction: column;
-    height:         100vh;
-  }
-  .output-block {
-    position:   relative;
-    overflow:   hidden;
-    flex:       0 0 auto;
-    border:     1px solid #e0e0e0;
-    border-radius: 6px;
-  } 
-  .output-block svg {
-    position: absolute;
-    top:      0;
-    left:     0;
-    width:    100% !important;
-    height:   100% !important;
-    display:  block;
-  }
-
   .pipeline-img svg {
     width:  100%;
     height: auto;
