@@ -29,7 +29,7 @@
       </div>
       
       <div id="settings-div">
-        <select id="processors-list" name="processor-name" onchange="reloadRvcat();"></select>
+        <select id="processors-list" name="processor-name" title="Select Processor" onchange="reloadRvcat();"></select>
         <div>
           <label for="rob-size"> ROB: </label>
           <input type="number" title="ROB size" id="rob-size" name="rob-size" min="1" max="200" value="100" onchange="reloadRvcat();">
@@ -78,7 +78,7 @@
     font-size: 2.2vh;
   }
   #rob-size {
-    max-width: 60%;
+    max-width: 40%;
     font-size: 2.2vh;
   }
   table{
