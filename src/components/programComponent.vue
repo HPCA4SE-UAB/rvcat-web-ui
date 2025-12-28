@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick } from "vue";
-  import TutorialComponent                         from '@/components/tutorialComponent.vue';
+  import TutorialComponent  from '@/components/tutorialComponent.vue';
 
   let processorsListHandler = null;
 
@@ -143,19 +143,24 @@
   <div class="program_info">
     <div class="program-header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"> 
+            <img src="/img/info.png" class="info-img">
+        </span>
         <span class="header-title">Program</span>
       </div>
+      
       <div id="settings-div">
-        <button id="download-button" class="blue-button" @click="downloadProgram">Download</button>
-        <button id="upload-button"   class="blue-button" @click="uploadProgram">Upload</button>
+        <button id="download-button" title="Load new Program"     class="blue-button" @click="downloadProgram">Download</button>
+        <button id="upload-button"   title="Save current Program" class="blue-button" @click="uploadProgram">Upload</button>
         <select id="programs-list" name="assembly-code" onchange="reloadRvcat();"></select>
       </div>
     </div>
+    
     <section class="main-box code-block">
         <pre><code id="rvcat-asm-code">LOADING ...</code></pre>
     </section>
   </div>
+  
   <div v-if="showModalUp" class="modal-overlay">
     <div class="modal">
       <h4>Load Program As</h4>
@@ -163,8 +168,8 @@
       <input id="config-name" type="text" v-model="modalName" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" @click="confirmModal">Load</button>
-        <button class="blue-button" @click="cancelModal">Cancel</button>
+        <button class="blue-button" title="Accept Load" @click="confirmModal">Load</button>
+        <button class="blue-button" title="Cancel Load" @click="cancelModal">Cancel</button>
       </div>
     </div>
   </div>
@@ -175,47 +180,43 @@
         <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states, 
     branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
         Programs can be uploaded or downloaded in JSON format."
-  title="Program Loop"
+    title="Program Loop"
   @close="closeTutorial"
+    
   />
 </template>
 
 <style scoped>
 .program_info{
-  height:100%;
-  width:100%;
+  height:     100%;
+  width:      100%;
   background: white;
-  overflow:hidden;
-  padding:5px;
+  overflow:   hidden;
+  padding:    5px;
   border-radius: 10px;
 }
-.header-title {
-    font-size: 1.1rem;
-    margin-right: 0.75rem;
-    font-weight: 600
- }
 .program-header {
-  display: flex;
-  justify-content: space-between;
+  display:     flex;
   align-items: center;
-  width: 100%;
-  position:sticky;
-  left:0;
+  width:       100%;
+  position:    sticky;
+  left:        0;
+  justify-content: space-between;
 }
 .main-box{
-  overflow:auto;
-  max-height:70%;
-  margin-top:5px;
-  background: #f0f0f0;
-  border-radius:10px;
-  padding:5px;
-  font-size:2.2vh;
+  overflow:    auto;
+  max-height:  70%;
+  margin-top:  5px;
+  background:  #f0f0f0;
+  padding:     5px;
+  font-size:   2.2vh;
+  border-radius:  10px;
 }
 #settings-div{
-  display:flex;
-  gap:5px;
+  display: flex;
+  gap:     5px;
 }
-#programs-list{
+#programs-list {
   font-size:2.2vh;
 }
 </style>
