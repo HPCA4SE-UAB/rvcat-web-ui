@@ -385,8 +385,6 @@
   .output-block-wrapper {
     display:        flex;
     flex-direction: column;
-    width:          100%;
-    max-width:      100vw;
   }
   .output-block {
     position:   relative;
@@ -404,7 +402,7 @@
     height:   100%;
     max-width:  100%;
     max-height: 100%; 
-    display:  block;
+    display:    block;
   }
 
 </style>
