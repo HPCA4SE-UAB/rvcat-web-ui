@@ -40,12 +40,12 @@
     width:    100%;
     overflow: auto;
     padding:  5px;
+    padding:  6px 8px;
+    z-index:  10;
     position: relative;
     background:    white;
     border-radius: 10px;
-    padding:  6px 8px;
-    z-index:  10;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+    box-shadow:    0 1px 0 rgba(0,0,0,0.08);
   }
   
   .header{
@@ -114,8 +114,18 @@
     background: #e6f0ff;
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
-    transition: background 0.15s ease, color 0.15s ease;
-    cursor:     pointer;
+    padding:    6px 14px;
+    font-size:  14px;
+    line-height:   1.2;
+    border-radius: 6px;
+    cursor:        pointer;
+    font-weight: 600;
+
+    transition: 
+      background 0.15s ease, 
+      color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.05s ease;  
   } 
   .blue-button.active {
     background:   #1a4fb3;
@@ -128,6 +138,7 @@
   }
   .blue-button:hover {
     background: #006fb9;
+    color:      white;
   }
   .blue-button[disabled] {
     opacity: 0.5;
