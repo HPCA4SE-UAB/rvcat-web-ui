@@ -382,4 +382,25 @@
     border-radius: 0 0 5px 5px;
   }
   
+  .output-block-wrapper {
+    display:        flex;
+    flex-direction: column;
+    height:         auto;
+  }
+  .output-block {
+    position:   relative;
+    overflow:   hidden;
+    flex:       1;
+    border:     1px solid #e0e0e0;
+    border-radius: 6px;
+  } 
+  .output-block svg {
+    position: absolute;
+    top:      0;
+    left:     0;
+    width:    100% !important;
+    height:   100% !important;
+    display:  block;
+  }
+
 </style>
