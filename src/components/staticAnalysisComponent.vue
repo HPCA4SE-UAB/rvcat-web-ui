@@ -385,6 +385,7 @@
   .output-block-wrapper {
     display:        flex;
     flex-direction: column;
+    overflow:       hidden;
   }
   .output-block {
     position:   relative;
