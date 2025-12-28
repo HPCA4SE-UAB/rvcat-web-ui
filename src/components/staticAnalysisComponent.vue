@@ -385,22 +385,26 @@
   .output-block-wrapper {
     display:        flex;
     flex-direction: column;
-    height:         auto;
-    width:          auto;  
+    width:          100%;
+    max-width:      100vw;
+    overflow:       hidden;
   }
   .output-block {
     position:   relative;
-    overflow:   hidden;
     flex:       1;
+    width:      100%
+    min-width:  0;
+    overflow:   hidden;
     border:     1px solid #e0e0e0;
     border-radius: 6px;
   } 
   .output-block svg {
     position: absolute;
-    top:      0;
-    left:     0;
-    width:    100% !important;
-    height:   100% !important;
+    inset:    0;
+    width:    100%;
+    height:   100%;
+    max-width:  100%;
+    max-height: 100%; 
     display:  block;
   }
 
