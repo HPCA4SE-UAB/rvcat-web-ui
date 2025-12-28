@@ -278,12 +278,23 @@
 <style scoped>
   .iters-group input[type="number"] { width: 4ch; }
 
+  .graph-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
   .controls {
     display:     flex;
     align-items: center;
     gap:         16px;
+    flex:        1;
+    min-width:   0;
   }
-  
+
   .icon-button {
     border:    none;
     cursor:    pointer;
