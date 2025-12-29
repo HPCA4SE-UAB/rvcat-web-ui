@@ -48,7 +48,7 @@
  * Timeline options (persistent in localStorage)
  * ------------------------------------------------------------------ */
   const iterations = ref(1)
-  const zoomlevel  = ref(1)
+  const zoomLevel  = ref(1)
   const showPorts  = ref(true);
   const showInstr  = ref(true);
   
