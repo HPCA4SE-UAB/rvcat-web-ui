@@ -70,40 +70,6 @@
     align-items:     flex-start;
     justify-content: stretch;
   }
-  /*
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
-  */
-  
-  #processors-list {
-    font-size: 2.2vh;
-  }
-  #rob-size {
-    max-width: 40%;
-    font-size: 2.2vh;
-  }
-  table{
-    display:none;
-  }
-  .scale-container {
-    display: flex;
-    justify-content: center; /* Center horizontally */
-  }
-  .color-scale {
-    width:      30%;
-    height:     10px;
-    background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
-    position:   relative;
-    border-radius: 5px;
-  }
-  #settings-div{
-    justify-content: center;
-    display:     flex;
-    align-items: center;
-    gap:         5px;
-    font-size:   2.5vh;
-  }
   .pipeline-img {
     flex:   1;
     width:  100%;
@@ -135,4 +101,39 @@
     font-size:     0.9rem;
     justify-content: space-between;
   }
+  /*
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+  */
+  
+  #processors-list {
+    font-size: 2.2vh;
+  }
+  #rob-size {
+    max-width: 40%;
+    font-size: 2.2vh;
+  }
+  table{
+    display:none;
+  }
+  .scale-container {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+  }
+  .color-scale {
+    width:      30%;
+    height:     10px;
+    background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
+    position:   relative;
+    border-radius: 5px;
+  }
+  #settings-div {
+    justify-content: center;
+    display:     flex;
+    align-items: center;
+    gap:         5px;
+    font-size:   2.5vh;
+  }
+
 </style>
