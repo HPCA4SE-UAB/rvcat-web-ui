@@ -110,7 +110,7 @@ onMounted(() => {
 .container {
   position: relative;
   display:  grid;
-  grid-template-columns: 35% 64%;
+  grid-template-columns: 34% 64%;
   grid-auto-rows:        50% 50%;
   gap:            2vh;
   width:        100vw;
