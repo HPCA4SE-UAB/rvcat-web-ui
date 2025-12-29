@@ -715,30 +715,31 @@
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help">
+          <img src="/img/info.png" class="info-img">
+        </span>
         <span class="header-title">Execution Timeline</span>
       </div>
       
       <div class="timeline-controls">
-          <div class="iters-group">
+         <div class="iters-group">
             <span class="iters-label">Iterations:</span>
             <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iters">
-          </div>
-          <div class="iters-group">
-             <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25">
-                 <img src="/img/zoom-out.png">
-             </button>
-             <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2">
-                 <img src="/img/zoom-in.png">
-             </button>
-          </div>
-          <div class="iters-group">
-            <button class="blue-button" :class="{ active: showPorts }" :aria-pressed="showPorts" 
+         </div>
+         <div class="iters-group">
+            <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25">
+                <img src="/img/zoom-out.png">
+            </button>
+            <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2">
+                <img src="/img/zoom-in.png">
+            </button>
+         </div>
+         <div class="iters-group">
+           <button class="blue-button" :class="{ active: showPorts }" :aria-pressed="showPorts" 
               title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="showPorts">✔ </span>Port Usage</button>
-            <button class="blue-button" :class="{ active: showInstr }" :aria-pressed="showInstr"  
+           <button class="blue-button" :class="{ active: showInstr }" :aria-pressed="showInstr"  
               title="Show/Hide Instructions" @click="toggleInstr"> <span v-if="showInstr">✔ </span>Instructions</button>
-          </div>
-        </div>
+         </div>
       </div>
     </div>
     
