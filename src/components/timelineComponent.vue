@@ -103,7 +103,7 @@
 
       clearTimeout(canvasTimeout)
       canvasTimeout = setTimeout(() => {
-        if (timelineData.value) {
+        if (timelineData.value) 
           drawTimeline(timelineData.value);
       }, 75)
     },
