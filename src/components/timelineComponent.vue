@@ -1,89 +1,124 @@
 <script setup>
   import { ref, onMounted, nextTick, onUnmounted, watch} from 'vue';
-  import TutorialComponent                               from '@/components/tutorialComponent.vue';
+  import TutorialComponent  from '@/components/tutorialComponent.vue';
 
+  /* Safe solution */
+  const isMounted = ref(false)
+  onMounted(() => {
+    isMounted.value = true
+  })
+  
+/* ------------------------------------------------------------------ 
+ * UI state 
+ * ------------------------------------------------------------------ */
   let processorsListHandler;
   let programsListHandler;
+  let canvasTimeout = null
+
   const canvasWidth    = 1200;
   const canvasHeight   = 10000;
   const hoverInfo      = ref(null);
   const timelineCanvas = ref(null);
   const tooltipRef     = ref(null);
-  let timelineData     = ref(null);
-  const showTutorial   = ref(false);
-  const tutorialPosition = ref({ top: '50%', left: '50%' });
+  let   timelineData   = ref(null);
+
   const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
+  
+  const showTutorial1   = ref(false);
+  const showTutorial2   = ref(false);
+  const showTutorial3   = ref(false);
+  const infoIcon1       = ref(null);
+  const infoIcon2       = ref(null);
+  const infoIcon3       = ref(null);
+  const tutorialPosition= ref({ top: '0%', left: '0%' });
 
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        showTutorial.value = true
-      }
-    })
-  }
+/* ------------------------------------------------------------------ 
+ * Tutorial 
+ * ------------------------------------------------------------------ */
+  function openTutorial1() { nextTick(() => { showTutorial1.value = true }) }
+  function openTutorial2() { nextTick(() => { showTutorial2.value = true }) }
+  function openTutorial3() { nextTick(() => { showTutorial3.value = true }) }
+  
+  function closeTutorial1() { showTutorial1.value  = false }
+  function closeTutorial2() { showTutorial2.value = false }
+  function closeTutorial3() { showTutorial3.value = false }
 
-  function closeTutorial() {
-    showTutorial.value = false
-  }
+/* ------------------------------------------------------------------ 
+ * Timeline options (persistent in localStorage)
+ * ------------------------------------------------------------------ */
+  const iterations = ref(1)
+  const zoomlevel  = ref(1)
+  const showPorts  = ref(true);
+  const showInstr  = ref(true);
+  
+/* ------------------------------------------------------------------ 
+ * Load / save options from localStorage 
+ * ------------------------------------------------------------------ */
+  onMounted(() => {
+    const i = localStorage.getItem("showPorts");
+    if (i !== null) showPorts.value = i === "1";
 
-  function getCookie(name) {
-    const re = new RegExp(
-      "(?:^|; )" +
-        name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") +
-        "=([^;]*)"
-    );
-    const match = document.cookie.match(re);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-
-  function setCookie(name, value, days = 30) {
-    const maxAge = days * 24 * 60 * 60;
-    document.cookie = `${name}=${encodeURIComponent(
-      value
-    )}; max-age=${maxAge}; path=/`;
-  }
-
-  function useBooleanCookie(key, defaultValue = false) {
-    const val = ref(defaultValue);
-
-    onMounted(() => {
-      const c = getCookie(key);
-      if (c !== null) {
-        val.value = c === '1';
-      }
-    });
-
-    watch(val, (v) => {
-      setCookie(key, v ? '1' : '0');
-    });
-
-    return val;
-  }
-
-  const iterations = ref(parseInt(getCookie("timelineIterations")) || 1);
-  watch(iterations, (v) => setCookie("timelineIterations", v));
-
-  const zoomLevel = ref(parseInt(getCookie("timelineZoom")) || 1);
-  watch(zoomLevel, (v) => {
-    if (timelineData.value) {
-      drawTimeline(timelineData.value);
-    }
-    setCookie("timelineZoom", v);
+    const l = localStorage.getItem("showInstr");
+    if (l !== null) showInstr.value = l === "1";
+  });
+  
+  onMounted(() => {
+    const v = localStorage.getItem("timelineIterations");
+    if (v !== null) iterations.value = parseInt(v);
+    const v = localStorage.getItem("timelineZoom");
+    if (v !== null) zoomLevel.value = parseInt(v);
   });
 
-  const showPorts        = useBooleanCookie('showPorts', true);
-  const showInstructions = useBooleanCookie('showInstructions', true);
+  watch(iterations, v => localStorage.setItem("timelineIterations", v) )
+  watch(zoomLevel,  v => localStorage.setItem("timelineZoom", v)       )
+  watch(showPorts,  v => localStorage.setItem("showPorts", v ? "1" : "0"));
+  watch(showInstr,  v => localStorage.setItem("showInstr", v ? "1" : "0"));
 
+/* ------------------------------------------------------------------ 
+* UI actions 
+* ------------------------------------------------------------------ */
+  function togglePorts() { showPorts.value = !showPorts.value }
+  function toggleInstr() { showInstr.value = !showInstr.value }
+
+  watch(
+    [iterations]
+    ([i]) => {
+      if (!isMounted.value) return
+
+      clearTimeout(canvasTimeout)
+      canvasTimeout = setTimeout(() => {
+        getTimelineAndDraw(i)
+      }, 75)
+    },
+    { immediate: true }
+  )
+
+  watch(
+    [zoomLevel, showPorts, showInstr]
+    ([z, p, s]) => {
+      if (!isMounted.value) return
+
+      clearTimeout(canvasTimeout)
+      canvasTimeout = setTimeout(() => {
+        if (timelineData.value) {
+          drawTimeline(timelineData.value);
+      }, 75)
+    },
+    { immediate: true }
+  )
+
+/* ------------------------------------------------------------------ 
+ * External selectors listeners 
+ * ------------------------------------------------------------------ */
+ 
   onMounted(() => {
     nextTick(async () => {
       const processorsList = document.getElementById("processors-list");
       if (processorsList) {
         processorsListHandler = () => {
           setTimeout(async () => {
-            getTimelineAndDraw()
+            getTimelineAndDraw(iterations.value)
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -92,47 +127,39 @@
       if (programsList) {
         programsListHandler = () => {
           setTimeout(async () => {
-            getTimelineAndDraw()
+            getTimelineAndDraw(iterations.value)
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
       }
-      getTimelineAndDraw()
+      getTimelineAndDraw(iterations.value)
     });
   });
 
-   function changeIterations(delta) {
-    const input  = document.getElementById("dependencies-num-iters");
-    const newVal = Math.min(Math.max(iterations.value + delta, 1), 50);
-    iterations.value = newVal;
-    input.value      = newVal;
-
-    getTimelineAndDraw();
-  }
-
-  function toggleInstructions() {
-    showInstructions.value = !showInstructions.value;
-    if (timelineData.value) {
-      drawTimeline(timelineData.value);
+  onUnmounted(() => {
+    const processorsList = document.getElementById("processors-list");
+    if (processorsList && processorsListHandler) {
+      processorsList.removeEventListener("change", processorsListHandler);
     }
-  }
-
-  function togglePorts() {
-    showPorts.value = !showPorts.value;
-    if (timelineData.value) {
-      drawTimeline(timelineData.value);
+    const programsList = document.getElementById("programs-list");
+    if (programsList && programsListHandler) {
+      programsList.removeEventListener("change", programsListHandler);
     }
-  }
+  });
+
+/* ------------------------------------------------------------------ 
+ * CANVAS: timeline
+ * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
-    const canvas  = timelineCanvas.value;
-    const ctx     = canvas.getContext('2d');
-    const cellW   = 14 * zoomLevel.value;
-    const cellH   = 20 * zoomLevel.value;
-    const padX    = 20 * zoomLevel.value;
-    const padY    = 10 * zoomLevel.value;
-    const fontSize = 14 * zoomLevel.value;
-    const fontYOffset = 3 * zoomLevel.value;
+    const canvas      = timelineCanvas.value;
+    const ctx         = canvas.getContext('2d');
+    const cellW       = 14 * zoomLevel.value;
+    const cellH       = 20 * zoomLevel.value;
+    const padX        = 20 * zoomLevel.value;
+    const padY        = 10 * zoomLevel.value;
+    const fontSize    = 14 * zoomLevel.value;
+    const fontYOffset =  3 * zoomLevel.value;
 
     // Split raw lines and extract port info
     const rawLines = data.split('\n');
@@ -155,7 +182,7 @@
     const visibleRows = filterVisibleRows(processed, rowPorts, showPorts.value);
 
     // Measure & resize canvas based on visibleRows and zoomLevel and show/hide instructions
-    const measured = measureLines(visibleRows, showInstructions.value);
+    const measured = measureLines(visibleRows, showInstr.value);
     canvas.width  = padX * 2 + measured.maxCols * cellW;
     canvas.height = padY * 2 + visibleRows.length * cellH;
 
@@ -177,7 +204,7 @@
       padX, padY, cellW, cellH,
       headerStart, cycleCount,
       fontYOffset,
-      showInstructions: showInstructions.value,
+      showInstructions: showInstr.value,
       interactiveCells
     });
   });
@@ -196,12 +223,12 @@
       const instrID = idMatch ? idMatch[1] : null;
 
       // Get port and instruction type
-      const m = line.match(/\(P\.(\d+)\)(?:\s*([A-Za-z0-9_.]+))?/);
-      let portNumber = m ? m[1] : null;
-      let type = (m && m[2]) ? m[2] : null;
+      const m          = line.match(/\(P\.(\d+)\)(?:\s*([A-Za-z0-9_.]+))?/);
+      let   portNumber = m ? m[1] : null;
+      let   type       = (m && m[2]) ? m[2] : null;
 
       if(line.trim().startsWith("P")){
-        const m = line.match(/^P\.?(\d+)/);
+        const    m = line.match(/^P\.?(\d+)/);
         portNumber = parseInt(m[1]);
       }
 
@@ -244,7 +271,6 @@
     };
   }
 
-
   // Collapse lines to delete single whitespaces and align graph
   function collapseLine(origLine, headerStart, headerLen, headerMask) {
     let line = origLine;
@@ -261,11 +287,11 @@
     // Case B: Port‐usage line (remove spaces in same positions as header)
     if (line.trim().startsWith("P") || line.trim().startsWith("MM")) {
       let labelPart = line.slice(0, headerStart);
-      let rest = line.slice(headerStart);
+      let rest      = line.slice(headerStart);
       if (rest.length < headerLen) {
         rest += " ".repeat(headerLen - rest.length);
       }
-      labelPart = labelPart.replace(/\bP\.(\d)\b/, "P$1 ");
+      labelPart     = labelPart.replace(/\bP\.(\d)\b/, "P$1 ");
       let collapsed = "";
       for (let i = 0; i < headerLen; i++) {
         if (headerMask[i]) {
@@ -278,7 +304,6 @@
       return labelPart + collapsed;
     }
 
-    
     // Case C: Instruction line (remove spaces in same positions as header(ignoring ANSI labels))
     const instrMatch = line.match(/^(\s*\[[^\]]+\]\s*)(.*)$/);
     if (instrMatch) {
@@ -288,7 +313,7 @@
       if (firstBracket !== -1) {
         const closeBracket = line.indexOf(']', firstBracket);
         if (closeBracket !== -1) {
-          const pre = line.slice(0, firstBracket);
+          const pre  = line.slice(0, firstBracket);
           const core = line.slice(firstBracket, closeBracket + 1);
           const post = line.slice(closeBracket + 1);
           line = core + pre + post;
@@ -296,7 +321,7 @@
       }
 
       let labelPart = line.slice(0, headerStart);
-      let rest = line.slice(headerStart);
+      let rest      = line.slice(headerStart);
       if (rest.length < headerLen) {
         rest += " ".repeat(headerLen - rest.length);
       }
@@ -316,8 +341,8 @@
       let comment = rest.slice(afterRetire).replace(/^\s*/, " ");
 
       // Collect exactly headerLen visible chars, tracking red ANSI
-      const chars = [];
-      const isRed = [];
+      const chars   = [];
+      const isRed   = [];
       let idx       = 0;
       let currColor = null;
       while (idx < timelineRaw.length && chars.length < headerLen) {
@@ -342,8 +367,8 @@
 
       // Determine how many false‐columns to drop under headerMask=false
       const falseCount = headerMask.reduce((s, keep) => s + (keep ? 0 : 1), 0);
-      const keepFlags = new Array(headerLen).fill(true);
-      let toRemove = falseCount;
+      const keepFlags  = new Array(headerLen).fill(true);
+      let   toRemove   = falseCount;
       for (let i = 0; i < headerLen && toRemove > 0; i++) {
         if (!headerMask[i] && chars[i] === " ") {
           keepFlags[i] = false;
@@ -603,7 +628,7 @@
         state: hitCell.state ?? "N/A",
         type:  instrType ?? "N/A",
         instr: instrID ?? "N/A",
-        kind: hitCell.kind,
+        kind:  hitCell.kind,
       };
 
       canvas.onclick = e => {
@@ -663,14 +688,14 @@
   function charToState(ch) {
     let msg="";
     switch (ch) {
-      case "E": msg += "Execution";    break;
-      case "R": msg += "Retire";       break;
-      case "D": msg += "Dispatch";     break;
+      case "E": msg += "Execution";         break;
+      case "R": msg += "Retire";            break;
+      case "D": msg += "Dispatch";          break;
       case "-": msg += "Waiting to retire"; break;
-      case "W": msg += "Write back";   break;
-      case ".": msg += "Waiting to execute due to dependencies"; break;
-      case "*": msg += "Waiting to execute due to occupied ports"; break;
-      case "!": msg += "Cache miss";   break;
+      case "W": msg += "Write back";        break;
+      case ".": msg += "Waiting due to dependencies";   break;
+      case "*": msg += "Waiting tdue to port collision"; break;
+      case "!": msg += "Cache miss";           break;
       case "2": msg += "Secondary cache miss"; break;
       default:  msg = "N/A";                   break;
     }
@@ -684,47 +709,45 @@
     }
   }
 
-  onUnmounted(() => {
-    const processorsList = document.getElementById("processors-list");
-    if (processorsList && processorsListHandler) {
-      processorsList.removeEventListener("change", processorsListHandler);
-    }
-
-    const programsList = document.getElementById("programs-list");
-    if (programsList && programsListHandler) {
-      programsList.removeEventListener("change", programsListHandler);
-    }
-  });
-
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Execution Timeline</span>
       </div>
+      
       <div class="timeline-controls">
-        <div class="simulation-results-controls-item">
-          <label for="dependencies-num-iters" style="margin-right: 2px;">
-            Iterations:
-          </label>
-          <div class="iterations-group">
-            <input class="input-simulation-result iterations-input" type="number" id="dependencies-num-iters" name="dependencies-num-iters" min="1" max="50" @change="getTimelineAndDraw" v-model.number="iterations"/>
+          <div class="iters-group">
+            <span class="iters-label">Iterations:</span>
+            <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iters">
+          </div>
+          <div class="iters-group">
+             <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25">
+                 <img src="/img/zoom-out.png">
+             </button>
+             <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2">
+                 <img src="/img/zoom-in.png">
+             </button>
+          </div>
+          <div class="iters-group">
+            <button class="blue-button" :class="{ active: showPorts }" :aria-pressed="showPorts" 
+              title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="showPorts">✔ </span>Port Usage</button>
+            <button class="blue-button" :class="{ active: showInstr }" :aria-pressed="showInstr"  
+              title="Show/Hide Instructions" @click="toggleInstr"> <span v-if="showInstr">✔ </span>Instructions</button>
           </div>
         </div>
-        <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25"><img src="/img/zoom-out.png"></button>
-        <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2"><img src="/img/zoom-in.png"></button>
-        <button @click="toggleInstructions" class="blue-button">{{ showInstructions ? 'Hide' : 'Show' }} Instructions</button>
-        <button @click="togglePorts"        class="blue-button">{{ showPorts ? 'Hide' : 'Show' }} Ports</button>
       </div>
-
     </div>
+    
     <div class="output-block-wrapper" id="simulation-output-container">
-      <section class="simulation-results-controls" id="dependencies-controls">
-      </section>
+      
+      <section class="simulation-results-controls" id="dependencies-controls"></section>
+      
       <canvas ref="timelineCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+      
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
         <div v-if="hoverInfo.instr!='N/A'"><strong>Instruction:</strong> {{ hoverInfo.instr }}</div>
@@ -740,7 +763,7 @@
      v-if="showTutorial" 
      :position="tutorialPosition"
      title="Timeline"
-    text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
+     text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
               The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
            <p>Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
      @close="closeTutorial"
@@ -757,6 +780,7 @@
       <p>{{ clickedCellInfo.text }}</p>
     </div>
   </div>
+  
 </template>
 
 <style scoped>
@@ -779,27 +803,22 @@
   }
 
   .timeline-controls {
-    display:flex;
-    gap:5px;
-  }
-
-  .iterations-group {
-    display: inline-flex;
+    display:     flex;
     align-items: center;
-    gap: 4px;
-    margin-right:5px;
+    gap:         8px;
+    margin-left: auto;
+    min-width:   0;
   }
+  .iters-group input[type="number"] { width: 4ch; }
 
-  .iterations-input {
-    width: 5vh;
-    padding: 2px;
-    text-align: center;
-    -moz-appearance: textfield;
-  }
-  .iterations-input::-webkit-outer-spin-button,
-  .iterations-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  .graph-toolbar {
+    display:     flex;
+    align-items: center;
+    gap:         8px;
+    width:       100%;
+    box-sizing:  border-box;
+    overflow:    hidden;
+    min-width:   0;
   }
 
   .modal-header {
