@@ -11,7 +11,7 @@
     font-family: 'Trebuchet MS', sans-serif;
     font-size:  2.5vh;
     height:     100%;
-    margin:     3px;
+    margin:     0;
     padding:    0;
     overflow:   hidden;
     background: #e3e3e3;
@@ -38,14 +38,14 @@
   .main {
     height:   100%;
     width:    100%;
-    overflow: auto;      /* Hidden? */
+    overflow: auto;
     padding:  5px;
     padding:  6px 8px;
     z-index:  10;       
     position: relative;
     background:    white;
     border-radius: 10px;
-    box-shadow:    0 1px 0 rgba(0,0,0,0.08);   /* ? */
+    box-shadow:    0 1px 0 rgba(0,0,0,0.08);
   }
   
   .header {
