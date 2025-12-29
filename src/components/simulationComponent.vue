@@ -261,6 +261,10 @@
     width:   70%;
     margin:  auto;
   }
+  .simulation-img svg {
+    width:      100%;
+    max-height: 50%;
+  }
 
   .scale-container {
     width:      50%;
