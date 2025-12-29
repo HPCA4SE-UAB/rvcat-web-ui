@@ -37,12 +37,9 @@
       </div>
     </div>
 
-    <div class="cache-info" id="cache-info"></div>
-    
-    <div class="processor-info">
-      <div class="pipeline-img" id="pipeline-graph"></div>
-    </div>
-    
+    <div class="cache-info" id="cache-info"></div>  
+    <div class="pipeline-img" id="pipeline-graph"></div>
+  
     <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
           <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
@@ -63,19 +60,19 @@
     position:   relative;
     border-radius: 10px;
   }
-  .processor-info {
-    width:   100%;
-    height:  100%;
+  .pipeline-graph {
     display: flex;
-    align-items:     flex-start;
-    justify-content: stretch;
+    width:   70%;
+    margin:  auto;
   }
   .pipeline-img {
     flex:   1;
     width:  100%;
     height: 100%;
     overflow: hidden;
-    display:  block;
+    display:  flex;
+    align-items:     flex-start;
+    justify-content: stretch;
     position: relative;
     margin:   0 auto;
     margin-top: 10%;
@@ -87,7 +84,6 @@
     left:   0;
     max-width:  100%;
     max-height: 50%;
-    display:    block;
     position:   absolute;
   }
   .cache-info {
