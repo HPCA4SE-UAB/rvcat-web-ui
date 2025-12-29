@@ -84,7 +84,7 @@
   function zoomIncrease () { z = zoomLevel.value - 1; zoomLevel.value = z>0 ? z: 1; }
 
   watch(
-    [iterations]
+    [iterations,
     ([i]) => {
       if (!isMounted.value) return
 
@@ -97,7 +97,7 @@
   )
 
   watch(
-    [zoomLevel, showPorts, showInstr]
+    [zoomLevel, showPorts, showInstr,
     ([z, p, s]) => {
       if (!isMounted.value) return
 
@@ -705,7 +705,7 @@
     return msg;
   }
 
-  async function getTimelineAndDraw() {
+  async function getTimelineAndDraw(iterations) {
     if (typeof getTimeline === "function") {
       timelineData.value = await getTimeline();
       drawTimeline(timelineData.value);
