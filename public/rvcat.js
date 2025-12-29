@@ -258,6 +258,7 @@ function setLoadingOverlayMessage(message) {
     document.getElementById('loading-overlay-message').innerHTML = message;
 }
 
+/*
 function createGraphVizGraph(dotCode, targetElement, callback=null) {
   // Create an instance of Viz.js
   const viz = new Viz();
@@ -278,7 +279,42 @@ function createGraphVizGraph(dotCode, targetElement, callback=null) {
         // Handle any errors
         console.error("Error rendering graph:", error);
     });
+} */
+
+function createGraphVizGraph(dotCode, targetElement, callback = null) {
+  const viz = new Viz()
+
+  viz.renderSVGElement(dotCode, { engine: "dot" })
+    .then(svg => {
+      // Clear container
+      targetElement.innerHTML = ''
+
+      // 🔧 Make SVG responsive
+      const width  = svg.getAttribute("width")
+      const height = svg.getAttribute("height")
+
+      if (!svg.getAttribute("viewBox") && width && height) {
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+      }
+
+      svg.removeAttribute("width")
+      svg.removeAttribute("height")
+
+      svg.style.width  = "100%"
+      svg.style.height = "100%"
+      svg.style.maxWidth = "100%"
+      svg.style.maxHeight = "100%"
+      svg.style.display = "block"
+
+      targetElement.appendChild(svg)
+
+      if (callback) callback()
+    })
+    .catch(error => {
+      console.error("Error rendering graph:", error)
+    })
 }
+
 
 function createProcessorGraph(dispatch, execute, retire, cache) {
     const dotCode = construct_reduced_processor_dot(dispatch, execute, retire, cache);
