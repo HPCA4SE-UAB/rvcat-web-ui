@@ -70,6 +70,12 @@
     align-items:     flex-start;
     justify-content: stretch;
   }
+  /*
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+  */
+  
   #processors-list {
     font-size: 2.2vh;
   }
@@ -114,7 +120,7 @@
     top:    0;
     left:   0;
     max-width:  100%;
-    max-height: 100%;
+    max-height: 50%;
     display:    block;
     position:   absolute;
   }
