@@ -4,16 +4,16 @@
 
 <style>
   body {
-    width: 100vf;
-    height: 100vh;
-    max-width: 100vf;
+    width:      100vf;
+    height:     100vh;
+    max-width:  100vf;
     max-height: 100vh;
     font-family: 'Trebuchet MS', sans-serif;
-    font-size: 2.5vh;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+    font-size:  2.5vh;
+    height:     100%;
+    margin:     3px;
+    padding:    0;
+    overflow:   hidden;
     background: #e3e3e3;
   }
   ::-webkit-scrollbar {
@@ -51,7 +51,7 @@
   .header {
     display:     flex;
     align-items: center;
-    padding:     8px 12px;
+    padding:     8px 8px;
     font-size:   14px;
     justify-content: space-between;
   }
