@@ -187,22 +187,6 @@
 </template>
 
 <style scoped>
-.program_info{
-  height:     100%;
-  width:      100%;
-  background: white;
-  overflow:   hidden;
-  padding:    5px;
-  border-radius: 10px;
-}
-.program-header {
-  display:     flex;
-  align-items: center;
-  width:       100%;
-  position:    sticky;
-  left:        0;
-  justify-content: space-between;
-}
 .main-box{
   overflow:    auto;
   max-height:  70%;
