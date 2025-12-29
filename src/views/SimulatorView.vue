@@ -97,8 +97,8 @@ onMounted(() => {
           <p>You should apply (save) the changes on the processor settings before leaving this page.</p>
           <p><b>Do you want to continue?</b></p>
           <div class="modal-actions">
-            <button @click="confirmLeave" class="blue-button">OK</button>
-            <button @click="cancelLeave"  class="blue-button">Cancel</button>
+            <button @click="confirmLeave" title="Leave" class="blue-button">OK</button>
+            <button @click="cancelLeave"  title="Cancel" class="blue-button">Cancel</button>
           </div>
         </div>
       </div>
@@ -110,11 +110,11 @@ onMounted(() => {
 .container {
   position: relative;
   display:  grid;
-  grid-template-columns: 35% 65%;
+  grid-template-columns: 35% 64%;
   grid-auto-rows:        50% 50%;
-  gap:      2vh;
-  width:  100vw;
-  height:  94vh;
+  gap:            2vh;
+  width:        100vw;
+  height:        94vh;
   margin-top:   0.5vh;
   margin-right: 0.5vh;
   background:   #e3e3e3;
