@@ -144,7 +144,7 @@
           <img src="/img/info.png" class="info-img">
        </span>
        <span class="dropdown-title">Processor Bottlenecks</span>
-       <div id="simulation-graph" class="simulation-img"></div>
+       <div class="simulation-img" id="simulation-graph"> </div>
     </div>
 
     <div class="scale-container">
@@ -256,16 +256,16 @@
     justify-content: center;
     align-items:     center;
   }
+  .simulation-img svg {
+    width:      100%;
+    max-height: 50%;
+  }
   .simulation-graph {
     display: block;
     width:   70%;
     margin:  auto;
   }
-  .simulation-img svg {
-    width:      100%;
-    max-height: 50%;
-  }
-
+  
   .scale-container {
     width:      50%;
     margin:     0 auto;
