@@ -58,8 +58,8 @@
   .pipeline-display {
     height:     100%;
     width:      100%;
+    overflow:   hidden;
     background: white;
-    overflow:   auto;
     padding:    5px;
     position:   relative;
     border-radius: 10px;
@@ -71,6 +71,8 @@
     justify-content: space-between;
   }
   .processor-info {
+    width:   100%;
+    height:  100%;
     display:         flex;
     justify-content: center;
   }
@@ -103,7 +105,12 @@
     font-size:   2.5vh;
   }
   .pipeline-img{
-    margin:     0 auto;
+    flex:   1;
+    width:  100%;
+    height: 100%;
+    display:  block;
+    position: relative;
+    margin:   0 auto;
     margin-top: 10%;
   }
   .cache-info {
