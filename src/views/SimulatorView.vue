@@ -108,25 +108,25 @@ onMounted(() => {
 
 <style scoped>
 .container {
-  position:relative;
-  display: grid;
-  grid-template-columns: 35% 64%;
-  grid-auto-rows: 50%;
-  width: 100vw;
-  height: 94vh;
-  grid-gap: 2vh;
-  margin-top: 0.5vh;
+  position: relative;
+  display:  grid;
+  grid-template-columns: 35% 65%;
+  grid-auto-rows:        50% 50%;
+  gap:      2vh;
+  width:  100vw;
+  height:  94vh;
+  margin-top:   0.5vh;
   margin-right: 0.5vh;
-  background: #e3e3e3;
-  overflow: hidden;
-  box-sizing: border-box;
+  background:   #e3e3e3;
+  overflow:     hidden;
+  box-sizing:   border-box;
 }
 .grid-item {
-  position: relative;
-  background: white;
+  position:      relative;
+  background:    white;
   border-radius: 10px;
 }
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
-.results   { grid-column: 2; grid-row: 1 / 3; width: 99%; max-width: 99%; padding-bottom: 25px; }
+.results   { grid-column: 2; grid-row: 1 / 3; } /* width: 99%; max-width: 99%; padding-bottom: 25px; */
 </style>
