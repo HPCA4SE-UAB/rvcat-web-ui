@@ -21,7 +21,7 @@
 </script>
 
 <template>
-  <div class="pipeline-display">
+  <div class="main">
     <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
@@ -51,40 +51,27 @@
 </template>
 
 <style scoped>
-  .pipeline-display {
-    height:     100%;
-    width:      100%;
-    overflow:   hidden;
-    background: white;
-    padding:    5px;
-    position:   relative;
-    border-radius: 10px;
-  }
-  .pipeline-graph {
-    display: flex;
-    width:   70%;
-    margin:  auto;
-  }
   .pipeline-img {
-    flex:   1;
-    width:  100%;
-    height: 100%;
-    overflow: hidden;
-    display:  flex;
-    align-items:     flex-start;
-    justify-content: stretch;
-    position: relative;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    /* position: relative;
     margin:   0 auto;
-    margin-top: 10%;
+    margin-top: 10%; */
   }
   .pipeline-img svg {
     width:  100%;
+    max-height: 50%;
+/*    position:   absolute;
     height: auto;
     top:    0;
     left:   0;
-    max-width:  100%;
-    max-height: 50%;
-    position:   absolute;
+    max-width:  100%; */
+  }
+  .pipeline-graph {
+    display: block;
+    width:   70%;
+    margin:  auto;
   }
   .cache-info {
     flex:          1;
@@ -97,11 +84,6 @@
     font-size:     0.9rem;
     justify-content: space-between;
   }
-  /*
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
-  */
   
   #processors-list {
     font-size: 2.2vh;
