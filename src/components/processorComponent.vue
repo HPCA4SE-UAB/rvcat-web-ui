@@ -22,7 +22,7 @@
 
 <template>
   <div class="pipeline-display">
-    <div class="pipeline-header">
+    <div class="header">
       <div class="section-title-and-info">
         <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Processor Pipeline</span>
@@ -36,14 +36,13 @@
         </div>
       </div>
     </div>
-    
-    <div class="content">
-      <div class="cache-info" id="cache-info"></div>
-      <div class="processor-info">
-        <div class="pipeline-img" id="pipeline-graph"></div>
-      </div>
-    </div>
 
+    <div class="cache-info" id="cache-info"></div>
+    
+    <div class="processor-info">
+      <div class="pipeline-img" id="pipeline-graph"></div>
+    </div>
+    
     <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
           <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
@@ -63,12 +62,6 @@
     padding:    5px;
     position:   relative;
     border-radius: 10px;
-  }
-  .pipeline-header {
-    display:     flex;
-    align-items: center;
-    width:       100%;
-    justify-content: space-between;
   }
   .processor-info {
     width:   100%;
@@ -117,7 +110,7 @@
   }
   .pipeline-img svg {
     width:  100%;
-    height: 100%;
+    height: auto;
     top:    0;
     left:   0;
     max-width:  100%;
@@ -135,8 +128,5 @@
     margin-top:    5px;
     font-size:     0.9rem;
     justify-content: space-between;
-  }
-  .content {
-    height: 90%;
   }
 </style>
