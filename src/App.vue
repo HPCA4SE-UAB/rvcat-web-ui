@@ -98,16 +98,6 @@
     text-overflow: ellipsis;
   }
 
-  .pipeline-img svg {
-    width:  100%;
-    height: auto;
-  }
-
-  .simulation-img svg {
-    width:      100%;
-    max-height: 50%;
-  }
-
   #num-iters {
     width:     6ch;
     font-size: 14px;
