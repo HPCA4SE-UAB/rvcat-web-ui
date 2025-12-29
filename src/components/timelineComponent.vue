@@ -64,10 +64,10 @@
   });
   
   onMounted(() => {
-    const v = localStorage.getItem("timelineIterations");
-    if (v !== null) iterations.value = parseInt(v);
-    const v = localStorage.getItem("timelineZoom");
-    if (v !== null) zoomLevel.value = parseInt(v);
+    const v1 = localStorage.getItem("timelineIterations");
+    if (v1 !== null) iterations.value = parseInt(v1);
+    const v2 = localStorage.getItem("timelineZoom");
+    if (v2 !== null) zoomLevel.value = parseInt(v2);
   });
 
   watch(iterations, v => localStorage.setItem("timelineIterations", v) )
@@ -80,6 +80,8 @@
 * ------------------------------------------------------------------ */
   function togglePorts() { showPorts.value = !showPorts.value }
   function toggleInstr() { showInstr.value = !showInstr.value }
+  function zoomReduce   () { z = zoomLevel.value + 1; zoomLevel.value = z>7 ? 7: z; }
+  function zoomIncrease () { z = zoomLevel.value - 1; zoomLevel.value = z>0 ? z: 1; }
 
   watch(
     [iterations]
@@ -152,14 +154,15 @@
  * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
+    const Zoom        = 0.25 * zoomLevel.value;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
-    const cellW       = 14 * zoomLevel.value;
-    const cellH       = 20 * zoomLevel.value;
-    const padX        = 20 * zoomLevel.value;
-    const padY        = 10 * zoomLevel.value;
-    const fontSize    = 14 * zoomLevel.value;
-    const fontYOffset =  3 * zoomLevel.value;
+    const cellW       = 14 * Zoom;
+    const cellH       = 20 * Zoom;
+    const padX        = 20 * Zoom;
+    const padY        = 10 * Zoom;
+    const fontSize    = 14 * Zoom;
+    const fontYOffset =  3 * Zoom;
 
     // Split raw lines and extract port info
     const rawLines = data.split('\n');
@@ -727,11 +730,13 @@
             <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iters">
          </div>
          <div class="iters-group">
-            <button class="blue-button" @click="zoomLevel = Math.max(0.25, zoomLevel - 0.25)" :disabled="zoomLevel==0.25">
+            <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
+                title="Zoom Out" @click="ZoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
-            <button class="blue-button" @click="zoomLevel = Math.min(2, zoomLevel + 0.25)" :disabled="zoomLevel==2">
-                <img src="/img/zoom-in.png">
+            <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
+                title="Zoom In" @click="ZoomIncrease">
+                <img src="/img/zoom-out.png">
             </button>
          </div>
          <div class="iters-group">
