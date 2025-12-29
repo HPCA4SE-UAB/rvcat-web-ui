@@ -358,17 +358,9 @@ function getSchedulerAnalysis() {
     );
 }
 
-async function getTimeline() {
+async function getTimeline(num_iters) {
     let controls = document.getElementById('dependencies-controls');
     controls.style.display = 'block';
-    let num_iters = document.getElementById('dependencies-num-iters').value;
-    if (num_iters === '') {
-        num_iters = 3;
-    }
-    if (num_iters > 50) {
-        num_iters = 50;
-        document.getElementById('dependencies-num-iters').value = 50;
-    }
 
     return new Promise((resolve, reject)=>{
       const original = handlers['format_timeline'];
