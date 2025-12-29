@@ -35,20 +35,20 @@
     background: #8b8b8b;
   }
 
-  .main{
+  .main {
     height:   100%;
     width:    100%;
-    overflow: auto;
+    overflow: auto;      /* Hidden? */
     padding:  5px;
     padding:  6px 8px;
-    z-index:  10;
+    z-index:  10;       
     position: relative;
     background:    white;
     border-radius: 10px;
-    box-shadow:    0 1px 0 rgba(0,0,0,0.08);
+    box-shadow:    0 1px 0 rgba(0,0,0,0.08);   /* ? */
   }
   
-  .header{
+  .header {
     display:     flex;
     align-items: center;
     padding:     8px 12px;
