@@ -55,18 +55,13 @@
     display:         flex;
     align-items:     center;
     justify-content: center;
-    /* position: relative;
+    position: relative;
     margin:   0 auto;
-    margin-top: 10%; */
+    margin-top: 10%;
   }
   .pipeline-img svg {
     width:  100%;
     max-height: 50%;
-/*    position:   absolute;
-    height: auto;
-    top:    0;
-    left:   0;
-    max-width:  100%; */
   }
   .pipeline-graph {
     display: block;
