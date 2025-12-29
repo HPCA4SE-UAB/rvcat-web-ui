@@ -128,5 +128,5 @@ onMounted(() => {
 }
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
-.results   { grid-column: 2; grid-row: 1 / 3; } /* width: 99%; max-width: 99%; padding-bottom: 25px; */
+.results   { grid-column: 2; grid-row: 1 / 3; }
 </style>
