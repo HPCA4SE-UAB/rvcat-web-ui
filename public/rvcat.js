@@ -258,32 +258,9 @@ function setLoadingOverlayMessage(message) {
     document.getElementById('loading-overlay-message').innerHTML = message;
 }
 
-/*
-function createGraphVizGraph(dotCode, targetElement, callback=null) {
-  // Create an instance of Viz.js
-  const viz = new Viz();
-
-  // Render the graph
-  viz.renderSVGElement(dotCode, { engine: "dot" })
-    .then(function(element) {
-        // Append the SVG element to the container
-        // Remove any existing SVG elements
-        targetElement.innerHTML = '';
-        targetElement.appendChild(element);
-
-        if (callback !== null) {
-            callback();
-        }
-    })
-    .catch(error => {
-        // Handle any errors
-        console.error("Error rendering graph:", error);
-    });
-} */
-
 function createGraphVizGraph(dotCode, targetElement, callback = null) {
   const viz = new Viz()
-
+  
   viz.renderSVGElement(dotCode, { engine: "dot" })
     .then(svg => {
       // Clear container
