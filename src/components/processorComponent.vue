@@ -73,8 +73,9 @@
   .processor-info {
     width:   100%;
     height:  100%;
-    display:         flex;
-    justify-content: center;
+    display: flex;
+    align-items:     flex-start;
+    justify-content: stretch;
   }
   #processors-list {
     font-size: 2.2vh;
@@ -104,14 +105,25 @@
     gap:         5px;
     font-size:   2.5vh;
   }
-  .pipeline-img{
+  .pipeline-img {
     flex:   1;
     width:  100%;
     height: 100%;
+    overflow: hidden;
     display:  block;
     position: relative;
     margin:   0 auto;
     margin-top: 10%;
+  }
+  .pipeline-img svg {
+    width:  100%;
+    height: 100%;
+    top:    0;
+    left:   0;
+    max-width:  100%;
+    max-height: 100%;
+    display:    block;
+    position:   absolute;
   }
   .cache-info {
     flex:          1;
