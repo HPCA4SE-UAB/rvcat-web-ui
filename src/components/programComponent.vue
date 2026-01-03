@@ -174,16 +174,16 @@
     </div>
   </div>
 
-  <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-  text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level, 
+  <Teleport to="body">
+    <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
+    text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level, 
        informal language. The <em>type</em>, execution <em>latency</em> and eligible <em>execution ports</em> are shown for each instruction.
         <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states, 
-    branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
+      branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
         Programs can be uploaded or downloaded in JSON format."
-    title="Program Loop"
-  @close="closeTutorial"
-    
-  />
+      title="Program Loop"
+    @close="closeTutorial"  />
+  </Teleport>
 </template>
 
 <style scoped>
