@@ -39,14 +39,16 @@
 
     <div class="cache-info" id="cache-info"></div>  
     <div class="pipeline-img" id="pipeline-graph"></div>
-  
-    <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
-    text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
+
+    <Teleport to="body">
+      <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
+      text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
           <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
           Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
-    title="Processor MicroArchitecture"
-    @close="closeTutorial" />
-  </div>
+      title="Processor MicroArchitecture"
+      @close="closeTutorial" />
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
