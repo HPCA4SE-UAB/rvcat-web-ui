@@ -126,7 +126,6 @@ onMounted(() => {
   background:    white;
   border-radius: 10px;
   min-width:     0;
-  overflow-x:    auto;
 }
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
