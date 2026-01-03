@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, nextTick, Teleport } from 'vue'
+  import { ref, nextTick } from 'vue'
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
   const showTutorial     = ref(false);
