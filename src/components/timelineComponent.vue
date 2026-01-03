@@ -707,7 +707,7 @@
 
   async function getTimelineAndDraw(iterations) {
     if (typeof getTimeline === "function") {
-      timelineData.value = await getTimeline();
+      timelineData.value = await getTimeline(iterations);
       drawTimeline(timelineData.value);
     }
   }
