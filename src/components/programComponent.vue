@@ -188,13 +188,16 @@
 
 <style scoped>
 .main-box {
-  /* overflow:      auto; */
-  max-height:    70%;
+  overflow:      auto;
+  scroll-behavior: smooth;
   margin-top:    5px;
   background:    #f0f0f0;
   padding:       5px;
   font-size:     2.2vh;
   border-radius: 10px;
+}
+::-webkit-scrollbar {
+  width: 8px;
 }
 #settings-div {
   display: flex;
