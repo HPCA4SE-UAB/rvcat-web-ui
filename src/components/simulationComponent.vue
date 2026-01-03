@@ -156,32 +156,37 @@
       </div>
     </div>
   </div>
-  
-  <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
-  text="<strong>Simulate</strong> the execution of a specified number of program 
-    loop iterations and view aggregate performance metrics, including the total number of executed 
-    <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-    and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure that you simulate a representative 
-    number of loop iterations. 
-    <p>The sections below provide detailed statistics on the critical execution path and 
-    the utilization of core processor resources.</p>"
-  title="Overall Simulation Results"
-  @close="closeTutorial1"/>
-    
-  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Open this tab to visualize the <strong>time distribution of instructions</strong>,
-    along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>. 
-    <p>You can also explore the critical execution path in a detailed timeline view for a limited number 
-    of loop iterations in the <strong>Timeline</strong> tab.</p>"
-  title="Critical execution path breakdown"
-  @close="closeTutorial2"/>
 
-  <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
-  text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
-    to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
-  title="Processor Utilization"
-  @close="closeTutorial3"/>
+  <Teleport to="body">
+    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
+    text="<strong>Simulate</strong> the execution of a specified number of program 
+      loop iterations and view aggregate performance metrics, including the total number of executed 
+      <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
+      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure that you simulate a representative 
+      number of loop iterations. 
+      <p>The sections below provide detailed statistics on the critical execution path and 
+      the utilization of core processor resources.</p>"
+    title="Overall Simulation Results"
+    @close="closeTutorial1"/>
+  </Teleport>
   
+  <Teleport to="body">    
+    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+    text="Open this tab to visualize the <strong>time distribution of instructions</strong>,
+      along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>. 
+      <p>You can also explore the critical execution path in a detailed timeline view for a limited number 
+      of loop iterations in the <strong>Timeline</strong> tab.</p>"
+    title="Critical execution path breakdown"
+    @close="closeTutorial2"/>
+  </Teleport>
+
+  <Teleport to="body">
+    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
+    text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
+      to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
+    title="Processor Utilization"
+    @close="closeTutorial3"/>
+  </Teleport>
 </template>
 
 <style scoped>
