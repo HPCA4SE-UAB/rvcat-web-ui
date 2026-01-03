@@ -43,13 +43,14 @@
 
 <style scoped>
   .tutorial-overlay {
-    top:  0;
-    left: 0;
+    top:    0;
+    left:   0;
+    inset:  0;
     width:  100vw;
     height: 100vh;
     position: fixed;
     display:  flex;
-    z-index:  1000;
+    z-index:  10000;
     background: rgba(0,0,0,0.5);
     justify-content: center;
     align-items:     center;
