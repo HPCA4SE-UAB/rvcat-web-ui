@@ -766,15 +766,11 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent 
-       v-if="showTutorial" 
-       :position="tutorialPosition"
-       title="Timeline"
+    <TutorialComponent v-if="showTutorial" :position="tutorialPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
                 The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
              <p>Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
-       @close="closeTutorial"
-    />
+       @close="closeTutorial" />
   </Teleport>
   
   <div v-if="clickedCellInfo" class="modal-overlay" @click.self="clickedCellInfo = null">
