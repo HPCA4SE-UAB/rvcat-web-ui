@@ -790,9 +790,6 @@
 
 <style scoped>
   .output-block-wrapper {
-    display: inline-block;
-    display: flex;
-    align-items: flex-start;   /* NO stretch */
     overflow-x: auto;
     overflow-y: auto;   /* opcional */
     width:      100%;
@@ -800,10 +797,10 @@
     position:   relative;
   }
   .output-block-wrapper canvas {
-    display: inline-block;
-    width: auto;
-    height: auto;
-    max-width: none;
+    display:    inline-block;
+    width:      auto;
+    height:     auto;
+    max-width:  none;
     max-height: none;
   }
 
