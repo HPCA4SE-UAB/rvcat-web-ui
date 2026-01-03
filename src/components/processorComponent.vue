@@ -46,7 +46,6 @@
           Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
     title="Processor MicroArchitecture"
     @close="closeTutorial" />
-    
   </div>
 </template>
 
@@ -102,11 +101,8 @@
     border-radius: 5px;
   }
   #settings-div {
-    justify-content: center;
     display:     flex;
-    align-items: center;
     gap:         5px;
-    font-size:   2.5vh;
   }
 
 </style>
