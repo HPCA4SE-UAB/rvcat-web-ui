@@ -804,6 +804,16 @@
     max-height: none;
   }
 
+  .grid-item {
+    min-width: 0;
+  }
+
+  .results {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+
   .tooltip {
     position: fixed;
     background: #f9f9f9;
