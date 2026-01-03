@@ -125,8 +125,10 @@ onMounted(() => {
   position:      relative;
   background:    white;
   border-radius: 10px;
+  min-width:     0;
+  overflow-x:    auto;
 }
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
-.results   { grid-column: 2; grid-row: 1 / 3; }
+.results   { grid-column: 2; grid-row: 1 / 3; min-width: 0; overflow-x: auto;}
 </style>
