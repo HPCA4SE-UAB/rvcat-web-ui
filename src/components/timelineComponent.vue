@@ -78,11 +78,11 @@
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
-  function togglePorts() { showPorts.value = !showPorts.value }
-  function toggleInstr() { showInstr.value = !showInstr.value }
-  function zoomReduce   () { z = zoomLevel.value + 1; zoomLevel.value = z>7 ? 7: z; }
-  function zoomIncrease () { z = zoomLevel.value - 1; zoomLevel.value = z>0 ? z: 1; }
-
+  function togglePorts()  { showPorts.value = !showPorts.value }
+  function toggleInstr()  { showInstr.value = !showInstr.value }
+  function zoomReduce()   { zoomLevel.value = Math.min(zoomLevel.value + 1, 7) }
+  function zoomIncrease() { zoomLevel.value = Math.max(zoomLevel.value - 1, 1) }
+  
   watch(
     [iterations],
     ([i]) => {
