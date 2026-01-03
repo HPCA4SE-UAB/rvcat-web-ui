@@ -790,15 +790,23 @@
 
 <style scoped>
   .output-block-wrapper {
-    width: auto;
-    height: auto;
     display: inline-block;
-    max-width: none;
-    max-height: none;
     display: flex;
     align-items: flex-start;   /* NO stretch */
+    overflow-x: auto;
+    overflow-y: auto;   /* opcional */
+    width:      100%;
+    height:     100%;
+    position:   relative;
   }
-  
+  .output-block-wrapper canvas {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+  }
+
   .tooltip {
     position: fixed;
     background: #f9f9f9;
