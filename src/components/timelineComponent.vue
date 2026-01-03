@@ -790,6 +790,9 @@
 <style scoped>
   .output-block-wrapper {
     display:        flex;
+    position:       relative;
+    width:          100%;
+    height:         100%;
     flex-direction: column;
     height:         auto;
   }
