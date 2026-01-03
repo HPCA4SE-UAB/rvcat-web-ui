@@ -727,7 +727,7 @@
       <div class="timeline-controls">
          <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iters">
+            <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iterations">
          </div>
          <div class="iters-group">
             <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
@@ -736,7 +736,7 @@
             </button>
             <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
                 title="Zoom In" @click="ZoomIncrease">
-                <img src="/img/zoom-out.png">
+                <img src="/img/zoom-in.png">
             </button>
          </div>
          <div class="iters-group">
@@ -766,7 +766,7 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial" :position="tutorialPosition" title="Timeline"
+    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
                 The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
              <p>Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
