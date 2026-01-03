@@ -90,7 +90,7 @@
 
       clearTimeout(canvasTimeout)
       canvasTimeout = setTimeout(() => {
-        getTimelineAndDraw(i)
+        getTimelineAndDraw()
       }, 75)
     },
     { immediate: true }
@@ -120,7 +120,7 @@
       if (processorsList) {
         processorsListHandler = () => {
           setTimeout(async () => {
-            getTimelineAndDraw(iterations.value)
+            getTimelineAndDraw()
           }, 100);
         };
         processorsList.addEventListener("change", processorsListHandler);
@@ -129,12 +129,12 @@
       if (programsList) {
         programsListHandler = () => {
           setTimeout(async () => {
-            getTimelineAndDraw(iterations.value)
+            getTimelineAndDraw()
           }, 100);
         };
         programsList.addEventListener("change", programsListHandler);
       }
-      getTimelineAndDraw(iterations.value)
+      getTimelineAndDraw()
     });
   });
 
@@ -705,9 +705,10 @@
     return msg;
   }
 
-  async function getTimelineAndDraw(iterations) {
+  async function getTimelineAndDraw() {
     if (typeof getTimeline === "function") {
-      timelineData.value = await getTimeline(iterations);
+      iterations.value = Math.min(iterations.value, 9);
+      timelineData.value = await getTimeline(iterations.value);
       drawTimeline(timelineData.value);
     }
   }
