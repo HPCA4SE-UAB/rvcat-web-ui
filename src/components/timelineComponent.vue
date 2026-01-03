@@ -770,7 +770,7 @@
     <TutorialComponent v-if="showTutorial1" :position="tutorialPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
                 The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
-             <p>Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
+             <p><strong>Click</strong> on the timeline to activate it, then use the <strong>arrow keys</strong> to move left/right and up/down. Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
        @close="closeTutorial" />
   </Teleport>
   
