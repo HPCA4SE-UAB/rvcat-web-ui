@@ -154,7 +154,7 @@
  * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
-    const Zoom        = 0.25 * zoomLevel.value;
+    const Zoom        = zoomLevel.value;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
     const cellW       = 14 * Zoom;
