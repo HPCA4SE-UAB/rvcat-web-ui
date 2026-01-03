@@ -789,12 +789,13 @@
 
 <style scoped>
   .output-block-wrapper {
-    display:        flex;
-    position:       relative;
-    width:          100%;
-    height:         100%;
-    flex-direction: column;
-    height:         auto;
+    width: auto;
+    height: auto;
+    display: inline-block;
+    max-width: none;
+    max-height: none;
+    display: flex;
+    align-items: flex-start;   /* NO stretch */
   }
   
   .tooltip {
