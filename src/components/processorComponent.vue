@@ -47,8 +47,8 @@
           Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
       title="Processor MicroArchitecture"
       @close="closeTutorial" />
-    </div>
-  </Teleport>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
