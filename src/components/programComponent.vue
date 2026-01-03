@@ -187,16 +187,16 @@
 </template>
 
 <style scoped>
-.main-box{
-  overflow:    auto;
-  max-height:  70%;
-  margin-top:  5px;
-  background:  #f0f0f0;
-  padding:     5px;
-  font-size:   2.2vh;
-  border-radius:  10px;
+.main-box {
+  /* overflow:      auto; */
+  max-height:    70%;
+  margin-top:    5px;
+  background:    #f0f0f0;
+  padding:       5px;
+  font-size:     2.2vh;
+  border-radius: 10px;
 }
-#settings-div{
+#settings-div {
   display: flex;
   gap:     5px;
 }
