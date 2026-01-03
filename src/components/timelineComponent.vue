@@ -697,7 +697,7 @@
       case "-": msg += "Waiting to retire"; break;
       case "W": msg += "Write back";        break;
       case ".": msg += "Waiting due to dependencies";   break;
-      case "*": msg += "Waiting tdue to port collision"; break;
+      case "*": msg += "Waiting due to port collision"; break;
       case "!": msg += "Cache miss";           break;
       case "2": msg += "Secondary cache miss"; break;
       default:  msg = "N/A";                   break;
