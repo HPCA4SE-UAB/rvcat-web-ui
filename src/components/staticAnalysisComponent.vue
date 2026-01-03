@@ -252,26 +252,31 @@
     </div>
   </div>
   
-  <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
-  text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
-    meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
-    <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
-  title="Static Performance Analysis"
-  @close="closeTutorial1"/>
+  <Teleport to="body">
+    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
+    text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
+      meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
+      <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
+    title="Static Performance Analysis"
+    @close="closeTutorial1"/>
+  </Teleport>
   
-  <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
-  text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
-       such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
-  title="Throughput-bound execution time"
-  @close="closeTutorial2"/>
+  <Teleport to="body">
+    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+    text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
+         such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
+    title="Throughput-bound execution time"
+    @close="closeTutorial2"/>
+  </Teleport>
   
-  <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
-  text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
+  <Teleport to="body">  
+    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
+    text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
       <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
       Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
-  title="Latency-bound execution time"
-  @close="closeTutorial3"/>
-  
+    title="Latency-bound execution time"
+    @close="closeTutorial3"/>
+    </Teleport>
 </template>
 
 <style scoped>
