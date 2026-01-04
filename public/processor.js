@@ -50,36 +50,37 @@
     if (num_ports >= 4) {
       shown_ports = [0, 1, 2, num_ports - 1];
 
-      dot_code += `P${num_ports - 1} [label="P${num_ports - 1}"];\n`;
+      dot_code += `P${num_ports - 1} [label="P${num_ports - 1}",tooltip="Execution Port: one instruction per cycle"];\n`;
       if (num_ports > 4) {
-        dot_code += `"..." [label="..."];\n`;
+        dot_code += `"..." [label="...", tooltip="Remaining execution ports: one instruction per cycle and port"];\n`;
       }
-      dot_code += `P2 [label="P2"];\n`;
-      dot_code += `P1 [label="P1"];\n`;
-      dot_code += `P0 [label="P0"];\n`;
+      dot_code += `P2 [label="P2", tooltip="Execution Port: one instruction per cycle"];\n`;
+      dot_code += `P1 [label="P1", tooltip="Execution Port: one instruction per cycle"];\n`;
+      dot_code += `P0 [label="P0", tooltip="Execution Port: one instruction per cycle"];\n`;
     } else {
       for (let i = num_ports - 1; i >= 0; i--) {
         shown_ports.push(i);
-        dot_code += `P${i} [label="P${i}"];\n`;
+        dot_code += `P${i} [label="P${i}", tooltip="Execution Port: one instruction per cycle"];\n`;
       }
     }
 
     dot_code += `}\n`;
 
     for (let idx = 0; idx < shown_ports.length; idx++) {
-      dot_code += `"Waiting Buffer" -> P${shown_ports[idx]};\n`;
+      dot_code += `"Waiting Buffer" -> P${shown_ports[idx]}[tooltip="One instruction per cycle and port"];\n`;
     }
     if (num_ports>4) {
       dot_code += `"Waiting Buffer" -> "..." [style=invis];\n`;
     }
     // REGISTERS
-    dot_code += `Registers [shape=box, height=1, width=1, fixedsize=true];\n`;
+    dot_code += `Registers [shape=box, height=1, width=1, fixedsize=true, tooltip="Architectural state: updated on instruction retirement"];\n`;
 
     dot_code += `
     {
       rank=same;
       Fetch;
       "Waiting Buffer";
+      tooltip="Instructions wait for input data and available port"
     `;
 
     if (num_ports >= 4) {
@@ -98,7 +99,7 @@
     dot_code += `Registers;\n  }\n`;
 
     // --- ROB ---
-    dot_code += `ROB [label="ROB: ${document.getElementById('rob-size').value} entries", shape=box, height=0.6, width=5, fixedsize=true];\n`;
+    dot_code += `ROB [label="ROB: ${document.getElementById('rob-size').value} entries", tooltip="Reorder Buffer: maintains sequential program order", shape=box, height=0.6, width=5, fixedsize=true];\n`;
     dot_code += `{ rank=sink; ROB; }\n\n`;
 
     dot_code += `Fetch -> ROB;\n`;
@@ -108,6 +109,7 @@
     dot_code += `
       ROB -> Registers [
         label="Retire = ${retire_width}",
+        tooltip="Instructions update registers in program order"
         fontsize=14, fontname="Arial"
       ];
     `;
@@ -125,29 +127,9 @@ function construct_full_processor_dot(dispatch_width, num_ports, retire_width, u
   `;
 
   // Colorscale from white to red
-  const color = [
-    "#ffffff",
-    "#eaffea",
-    "#d5ffd5",
-    "#c0ffc0",
-    "#aaffaa",
-    "#95ff95",
-    "#80ff80",
-    "#7ffb6e",
-    "#86f55d",
-    "#96ee4d",
-    "#abe63d",
-    "#bfde2d",
-    "#d4d51e",
-    "#e6ca11",
-    "#f2bb07",
-    "#f8a800",
-    "#f18c00",
-    "#ea7000",
-    "#e35400",
-    "#dc3800",
-    "#d51c00",
-    "#ce0000"
+  const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
+                  "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
+                  "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
   ];
 
   let dispatch_color = color[Math.floor(usage.dispatch/5)];
@@ -172,7 +154,7 @@ function construct_full_processor_dot(dispatch_width, num_ports, retire_width, u
   `;
 
   // --- WAITING BUFFER ---
-  dot_code += `  "Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1.2, width=1.2, fixedsize=true];\n`;
+  dot_code += `  "Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1.2, width=1.2, tooltip="Instructions wait for input data and port availability", fixedsize=true];\n`;
 
   dot_code += `subgraph cluster_execute {
       rankdir="TB";
@@ -192,7 +174,7 @@ function construct_full_processor_dot(dispatch_width, num_ports, retire_width, u
   fontsize=12;
   }\n`
 
-  dot_code += `  Registers [shape=box, height=1.2, width=1.2, fixedsize=true];\n`;
+  dot_code += `  Registers [shape=box, height=1.2, width=1.2, fixedsize=true,tooltip="Architectural state: updated on instruction retirement"];\n`;
 
   // Align top row
   dot_code += `
@@ -207,7 +189,7 @@ function construct_full_processor_dot(dispatch_width, num_ports, retire_width, u
 
   // --- ROB ---
   dot_code += `
-    ROB [label="ROB: ${document.getElementById('rob-size').value} entries", shape=box, height=0.6, width=5, fixedsize=true];
+    ROB [label="ROB: ${document.getElementById('rob-size').value} entries", tooltip="Reorder Buffer: maintains program order", shape=box, height=0.6, width=5, fixedsize=true];
     {
       rank=sink;
       ROB;
