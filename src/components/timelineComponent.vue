@@ -712,11 +712,8 @@
       drawTimeline(timelineData.value);
     }
   }
-     /* <section class="simulation-results-controls" id="dependencies-controls"></section> */
 
 </script>
-
-
  
 <template>
   <div class="main">
@@ -753,7 +750,7 @@
     </div>
     
     <div class="output-block-wrapper" id="simulation-output-container">
-      
+      <section class="simulation-results-controls" id="dependencies-controls"></section>
       <canvas ref="timelineCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
       
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
