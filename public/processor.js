@@ -11,7 +11,7 @@
   function construct_reduced_processor_dot(dispatch_width, num_ports, retire_width, cache) {
     insert_cache_annotations(cache)
     let dot_code = `
-    digraph "Processor Pipeline Graph" {
+    digraph "Processor Pipeline" {
       rankdir=TB;
       node [fontsize=14, fontname="Arial"];
 
@@ -48,17 +48,17 @@
     if (num_ports >= 4) {
       shown_ports = [0, 1, 2, num_ports - 1];
 
-      dot_code += `P${num_ports - 1} [label="P${num_ports - 1}"];\n`;
+      dot_code += `P${num_ports - 1} [label="Execution Port P${num_ports - 1}"];\n`;
       if (num_ports > 4) {
-        dot_code += `"..." [label="..."];\n`;
+        dot_code += `"..." [label="more execution ports"];\n`;
       }
-      dot_code += `P2 [label="P2"];\n`;
-      dot_code += `P1 [label="P1"];\n`;
-      dot_code += `P0 [label="P0"];\n`;
+      dot_code += `P2 [label="Execution Port P2"];\n`;
+      dot_code += `P1 [label="Execution Port P1"];\n`;
+      dot_code += `P0 [label="Execution Port P0"];\n`;
     } else {
       for (let i = num_ports - 1; i >= 0; i--) {
         shown_ports.push(i);
-        dot_code += `P${i} [label="P${i}"];\n`;
+        dot_code += `P${i} [label="Execution Port P${i}"];\n`;
       }
     }
 
@@ -117,7 +117,7 @@
 
 function construct_full_processor_dot(dispatch_width, num_ports, retire_width, usage = null) {
   let dot_code = `
-  digraph "Processor Pipeline Graph"{
+  digraph "Processor Pipeline"{
     rankdir=TB;
     node [fontsize=14, fontname="Arial"];
   `;
