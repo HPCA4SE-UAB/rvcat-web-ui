@@ -31,34 +31,36 @@
     dot_code += `
       Fetch -> "Waiting Buffer" [
         label="Dispatch = ${dispatch_width}",
+        tooltip="Dispath Width: instructions per cycle",
         fontsize=14, fontname="Arial"
       ];
     `;
 
     // --- WAITING BUFFER ---
-    dot_code += `"Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1, width=1, fixedsize=true];\n`;
+    dot_code += `"Waiting Buffer" [label="Waiting\\nBuffer", tooltip="Instructions wait for execution", shape=box, height=1, width=1, fixedsize=true];\n`;
 
     // --- EXECUTE PORTS ---
     dot_code += `subgraph cluster_execute {
         rankdir=TB;
         node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
+        tooltip="Execution Ports: one instruction per cycle, per port";
     `;
 
     let shown_ports = [];
     if (num_ports >= 4) {
       shown_ports = [0, 1, 2, num_ports - 1];
 
-      dot_code += `P${num_ports - 1} [label="Execution Port P${num_ports - 1}"];\n`;
+      dot_code += `P${num_ports - 1} [label="P${num_ports - 1}"];\n`;
       if (num_ports > 4) {
-        dot_code += `"..." [label="more execution ports"];\n`;
+        dot_code += `"..." [label="..."];\n`;
       }
-      dot_code += `P2 [label="Execution Port P2"];\n`;
-      dot_code += `P1 [label="Execution Port P1"];\n`;
-      dot_code += `P0 [label="Execution Port P0"];\n`;
+      dot_code += `P2 [label="P2"];\n`;
+      dot_code += `P1 [label="P1"];\n`;
+      dot_code += `P0 [label="P0"];\n`;
     } else {
       for (let i = num_ports - 1; i >= 0; i--) {
         shown_ports.push(i);
-        dot_code += `P${i} [label="Execution Port P${i}"];\n`;
+        dot_code += `P${i} [label="P${i}"];\n`;
       }
     }
 
@@ -117,7 +119,7 @@
 
 function construct_full_processor_dot(dispatch_width, num_ports, retire_width, usage = null) {
   let dot_code = `
-  digraph "Processor Pipeline"{
+  digraph "Usage of Processor Pipeline"{
     rankdir=TB;
     node [fontsize=14, fontname="Arial"];
   `;
