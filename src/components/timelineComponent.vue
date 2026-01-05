@@ -11,8 +11,9 @@
 /* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
-  let processorsListHandler;
+  /* let processorsListHandler;
   let programsListHandler;
+  */
   let canvasTimeout = null
 
   const canvasWidth    = 1200;
@@ -115,30 +116,20 @@
  * ------------------------------------------------------------------ */
  
   onMounted(() => {
-    nextTick(async () => {
-      const processorsList = document.getElementById("processors-list");
-      if (processorsList) {
-        processorsListHandler = () => {
-          setTimeout(async () => {
-            getTimelineAndDraw()
-          }, 100);
-        };
-        processorsList.addEventListener("change", processorsListHandler);
-      }
-      const programsList = document.getElementById("programs-list");
-      if (programsList) {
-        programsListHandler = () => {
-          setTimeout(async () => {
-            getTimelineAndDraw()
-          }, 100);
-        };
-        programsList.addEventListener("change", programsListHandler);
-      }
-      getTimelineAndDraw()
+    nextTick(() => {
+      document.addEventListener("change", (e) => {
+        if (
+          e.target?.id == "processors-list" ||
+          e.target?.id == "programs-list"
+        )  {
+          setTimeout(getTimelineAndDraw, 100);
+        }
+      });
+      getTimelineDraw();
     });
   });
 
-  onUnmounted(() => {
+  /*onUnmounted(() => {
     const processorsList = document.getElementById("processors-list");
     if (processorsList && processorsListHandler) {
       processorsList.removeEventListener("change", processorsListHandler);
@@ -147,7 +138,7 @@
     if (programsList && programsListHandler) {
       programsList.removeEventListener("change", programsListHandler);
     }
-  });
+  }); */
 
 /* ------------------------------------------------------------------ 
  * CANVAS: timeline
