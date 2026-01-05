@@ -19,7 +19,7 @@ const settingsCompInst  = ref(null);
 const components = {
   timelineComponent,
   staticAnalysisComponent,
-  // procSettingsComponent,
+  procSettingsComponent,
   aboutComponent,
   simulationComponent
 };
