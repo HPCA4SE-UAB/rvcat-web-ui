@@ -62,11 +62,10 @@
 
     const l = localStorage.getItem("showInstr");
     if (l !== null) showInstr.value = l === "1";
-  });
-  
-  onMounted(() => {
+
     const v1 = localStorage.getItem("timelineIterations");
     if (v1 !== null) iterations.value = parseInt(v1);
+
     const v2 = localStorage.getItem("timelineZoom");
     if (v2 !== null) zoomLevel.value = parseInt(v2);
   });
@@ -128,17 +127,6 @@
       getTimelineAndDraw();
     });
   });
-
-  /*onUnmounted(() => {
-    const processorsList = document.getElementById("processors-list");
-    if (processorsList && processorsListHandler) {
-      processorsList.removeEventListener("change", processorsListHandler);
-    }
-    const programsList = document.getElementById("programs-list");
-    if (programsList && programsListHandler) {
-      programsList.removeEventListener("change", programsListHandler);
-    }
-  }); */
 
 /* ------------------------------------------------------------------ 
  * CANVAS: timeline
