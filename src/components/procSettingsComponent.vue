@@ -45,6 +45,15 @@
   const modalDownload = ref(true);
   const nameError     = ref("");
 
+  // --- tutorial state ---
+  const showTutorial1   = ref(false);
+  const showTutorial2   = ref(false);
+  const showTutorial3   = ref(false);
+  const infoIcon1       = ref(null);
+  const infoIcon2       = ref(null);
+  const infoIcon3       = ref(null);
+  const tutorialPosition= ref({ top: '0%', left: '0%' });
+
   // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
     const thisId = ++lastRequestId;
@@ -114,7 +123,6 @@
     const list = document.getElementById("processors-list");
     if (list && processorsListHandler) {
       list.removeEventListener("change", processorsListHandler);
-
     }
     list.removeEventListener("focus", prevProcessorHandler);
   });
@@ -403,36 +411,29 @@
     }
   }
 
-  const showTutorial     = ref(false)
-  const tutorialPosition = ref({ top: '50%', left: '50%' })
-  const infoIcon         = ref(null)
-
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        tutorialPosition.value = {
-          top: `${r.bottom}px`,
-          left: `${r.right}px`
-        }
-        showTutorial.value = true
-      }
-    })
-  }
-
-  function closeTutorial() {
-    showTutorial.value = false
-  }
+/* ------------------------------------------------------------------ 
+ * Tutorial 
+ * ------------------------------------------------------------------ */
+  function openTutorial1()  { nextTick(() => { showTutorial1.value = true }) }
+  function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }
+  function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }
+  
+  function closeTutorial1() { showTutorial1.value  = false }
+  function closeTutorial2() { showTutorial2.value = false }
+  function closeTutorial3() { showTutorial3.value = false }
 
 </script>
+
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <h3>Processor Settings - {{ name }}</h3>
+        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show Help" >
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Processor Settings - {{ name }}</span>
       </div>
+
       <div class="buttons">
         <button class="blue-button" @click="openModal" :disabled="!isModified">
           Apply Changes
@@ -566,12 +567,14 @@
   </div>
   
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial" :position="tutorialPosition" 
-    text="This section allows you to adjust the simulated processor’s configuration settings, including: (1) Dispatch & Retire Widths; (2) Cache Memory (Note: Setting Number of Blocks = 0 means all data accesses will always hit in the cache);
-(3) Execution Ports (Add or remove execution ports, up to a maximum of 10). Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution); 
-If a port is deleted, P0 is automatically assigned to any instruction types left without a valid port."
+    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition" 
+    text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
+      (2) <em>Cache Memory</em> (Note: Setting Number of Blocks = 0 means all data accesses will always hit in the cache);
+      (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10). 
+      <p>Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution); 
+         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Processor Settings"
-    @close="closeTutorial"/>
+    @close="closeTutorial1"/>
   </Teleport>
   
   <!-- Modal Dialog -->
