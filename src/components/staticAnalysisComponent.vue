@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch, watchEffect } from "vue";
+  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
 /* Safe solution */
@@ -11,10 +11,6 @@
 /* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
-  let processorsListHandler;
-  let programsListHandler;
-  let graphTimeout = null
-  
   const showPerformance = ref(false);
   const showFullScreen  = ref(false);
   const showTutorial1   = ref(false);
@@ -24,6 +20,7 @@
   const infoIcon2       = ref(null);
   const infoIcon3       = ref(null);
   const tutorialPosition= ref({ top: '0%', left: '0%' });
+  let   graphTimeout    = null;
   
 /* ------------------------------------------------------------------ 
  * Graph options (persistent in localStorage)
@@ -56,7 +53,7 @@
     if (v !== null) iters.value = parseInt(v);
   });
 
-  watch(iters, v => localStorage.setItem("graphIterations", v));
+  watch(iters,      v => localStorage.setItem("graphIterations", v));
   watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
   watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
   watch(showSmall,  v => localStorage.setItem("showSmall",  v ? "1" : "0"));
@@ -126,14 +123,13 @@
 
 /* ------------------------------------------------------------------ 
  * External selectors listeners 
-* ------------------------------------------------------------------ */
+ * ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
       document.addEventListener("change", (e) => {
         if (
           e.target?.id == "processors-list" ||
-          e.target?.id == "programs-list" ||
-          e.target?.id == "rob-size"
+          e.target?.id == "programs-list"
         )  {
          setTimeout(() => {
             if (showPerformance.value) {
