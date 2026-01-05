@@ -119,8 +119,7 @@
           e.target?.id == "programs-list" ||
           e.target?.id == "rob-size"
         )  {
-          /* setTimeout(getTimelineAndDraw, 100); */
-          getTimelineAndDraw();
+          setTimeout(getTimelineAndDraw, 100);
         }
       });
       getTimelineAndDraw();
