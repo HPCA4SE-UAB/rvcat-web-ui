@@ -11,9 +11,6 @@
 /* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
-  /* let processorsListHandler;
-  let programsListHandler;
-  */
   let canvasTimeout = null
 
   const canvasWidth    = 1200;
@@ -122,10 +119,10 @@
           e.target?.id == "programs-list" ||
           e.target?.id == "rob-size"
         )  {
-          setTimeout(getTimelineAndDraw, 100);
+          /* setTimeout(getTimelineAndDraw, 100); */
+          getTimelineAndDraw();
         }
       });
-      getTimelineAndDraw();
     });
   });
 
