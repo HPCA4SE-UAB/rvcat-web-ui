@@ -682,12 +682,10 @@
     return msg;
   }
 
-  async function getTimelineAndDraw() {
-    if (typeof getTimeline === "function") {
-      iterations.value = Math.min(iterations.value, 9);
-      timelineData.value = await getTimeline(iterations.value);
-      drawTimeline(timelineData.value);
-    }
+  /*async */function getTimelineAndDraw() {
+    iterations.value = Math.min(iterations.value, 9);
+    timelineData.value = await getTimeline(iterations.value);
+    drawTimeline(timelineData.value);
   }
 
 </script>
