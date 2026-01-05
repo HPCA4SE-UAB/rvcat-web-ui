@@ -633,27 +633,6 @@
 </template>
 
 <style scoped>
-  .main {
-    height: 100%;
-    width: 100%;
-    background: white;
-    overflow: auto;
-    padding: 5px;
-    border-radius: 10px;
-    position: relative;
-  }
-  .header {
-    position: sticky;
-    padding-top:2px;
-    padding-bottom:5px;
-    top: -5px;
-    left:0;
-    background: white;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
   .buttons {
     display:flex;
     gap:5px;
@@ -701,11 +680,7 @@
     display: block;
     margin-top: 10px;
   }
-  h4{
-    margin:5px;
-    margin-left:0;
-    font-size: 3vh;
-  }
+
   .latency-group {
     display: inline-flex;
     align-items: center;
