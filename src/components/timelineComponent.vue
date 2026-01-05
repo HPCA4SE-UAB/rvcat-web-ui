@@ -125,7 +125,7 @@
           setTimeout(getTimelineAndDraw, 100);
         }
       });
-      getTimelineDraw();
+      getTimelineAndDraw();
     });
   });
 
