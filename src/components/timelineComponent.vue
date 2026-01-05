@@ -119,7 +119,8 @@
       document.addEventListener("change", (e) => {
         if (
           e.target?.id == "processors-list" ||
-          e.target?.id == "programs-list"
+          e.target?.id == "programs-list" ||
+          e.target?.id == "rob-size"
         )  {
           setTimeout(getTimelineAndDraw, 100);
         }
