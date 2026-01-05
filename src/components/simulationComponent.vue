@@ -47,14 +47,9 @@
  /* ------------------------------------------------------------------ 
   * UI actions 
   * ------------------------------------------------------------------ */
-  onMounted(() => {
-    nextTick(() => {
-      if (typeof reloadRvcat === "function") {
-        reloadRvcat();
-      } else {
-        console.error("simulation-graph element not found.");
-      }
-    });
+  onMounted(async () => {
+    await nextTick();
+    reloadRvcat();
   });
 </script>
 
