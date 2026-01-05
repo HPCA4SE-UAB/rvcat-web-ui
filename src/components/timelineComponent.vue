@@ -123,6 +123,7 @@
           getTimelineAndDraw();
         }
       });
+      getTimelineAndDraw();
     });
   });
 
