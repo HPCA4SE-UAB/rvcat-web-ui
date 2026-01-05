@@ -129,44 +129,24 @@
 * ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
-      const processorsList = document.getElementById("processors-list");
-      if (processorsList) {
-        processorsListHandler = () => {
-          setTimeout(() => {
+      document.addEventListener("change", (e) => {
+        if (
+          e.target?.id == "processors-list" ||
+          e.target?.id == "programs-list" ||
+          e.target?.id == "rob-size"
+        )  {
+         setTimeout(() => {
             if (showPerformance.value) {
               programShowPerformanceLimits();
             }
             updateGraph()
           }, 100);
-        };
-        processorsList.addEventListener("change", processorsListHandler);
-      }
-      const programsList = document.getElementById("programs-list");
-      if (programsList) {
-        programsListHandler = () => {
-          setTimeout(() => {
-            if (showPerformance.value) {
-              programShowPerformanceLimits();
-            }
-            updateGraph()
-          }, 100);
-        };
-        programsList.addEventListener("change", programsListHandler);
-      }
+        }
+      });
       updateGraph()
     });
   });
 
-  onUnmounted(() => {
-    const processorsList = document.getElementById("processors-list");
-    if (processorsList && processorsListHandler) {
-      processorsList.removeEventListener("change", processorsListHandler);
-    }
-    const programsList = document.getElementById("programs-list");
-    if (programsList && programsListHandler) {
-      programsList.removeEventListener("change", programsListHandler);
-    }
-  });
 
 /* ------------------------------------------------------------------ 
  * Tutorial 
