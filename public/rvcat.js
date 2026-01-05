@@ -30,6 +30,7 @@ const handlers = {
         }
         // Once the processors and programs are loaded show the program in the UI
         reloadRvcat();
+        // programShow(); getProcessorInformation();
         closeLoadingOverlay();
     },
   
@@ -52,6 +53,7 @@ const handlers = {
   
     'save_processor_info': (data) => {
         processorInfo = JSON.parse(data);
+        // showProcessor();
         getSchedulerAnalysis();
     },
    
@@ -418,8 +420,9 @@ async function getProgramJSON(){
 }
 
 async function saveNewProgram(config) {
+  const payload = typeof config === 'string' ? JSON.parse(config) : config;
   await executeCode(
-    RVCAT_HEADER() + addNewProgram(config),
+    RVCAT_HEADER() + addNewProgram(payload),
     'add_new_program'
   );
   await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
