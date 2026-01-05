@@ -2,17 +2,9 @@
   import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
-  /* Safe solution */
-  const isMounted = ref(false)
-  onMounted(() => {
-    isMounted.value = true
-  })
-
-  /* ------------------------------------------------------------------ 
+/* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
-  let graphTimeout = null
-
   const showCriticalPath = ref(false);
   const tutorialPosition = ref({ top: '0%', left: '0%' });
   const showTutorial1    = ref(false);
@@ -42,7 +34,7 @@
     showCriticalPath.value = !showCriticalPath.value;
   }
   
- /* ------------------------------------------------------------------ 
+/* ------------------------------------------------------------------ 
  * Load / save options from localStorage 
  * ------------------------------------------------------------------ */
   onMounted(() => {
@@ -52,9 +44,9 @@
 
   watch(iters, v => localStorage.setItem("ExecutionIterations", v));
 
-/* ------------------------------------------------------------------ 
-* UI actions 
-* ------------------------------------------------------------------ */
+ /* ------------------------------------------------------------------ 
+  * UI actions 
+  * ------------------------------------------------------------------ */
   onMounted(() => {
     nextTick(() => {
       if (typeof reloadRvcat === "function") {
