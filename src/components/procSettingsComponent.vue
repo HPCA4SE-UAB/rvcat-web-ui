@@ -455,19 +455,14 @@
           <div class="widths">
             <div class="iters-group">
               <span>Dispatch:</span>
-              <div class="latency-group">
-                <input type="number" v-model.number="dispatch" min="1" max="9" 
-                       title="max. number of instructions dispatched per cycle"/>
-              </div>
+              <input type="number" v-model.number="dispatch" min="1" max="9" 
+                    title="max. number of instructions dispatched per cycle"/>
             </div>
 
-            <div class="width-group">
+            <div class="iters-group">
               <span>Retire:</span>
-              <div class="latency-group">
-                <button class="gray-button" @click="retire = Math.max(1, retire - 1)">−</button>
-                <input type="number" v-model.number="retire" min="1" max="99" class="latency-input"/>
-                <button class="gray-button" @click="retire = Math.min(99, retire + 1);">+</button>
-              </div>
+              <input type="number" v-model.number="retire" min="1" max="9" 
+                     title="max. number of instructions retired per cycle"/>
             </div>
             
           </div>
@@ -475,18 +470,15 @@
 
         <!-- Cache Settings Group -->
         <div class="settings-group">
-          <h4 class="section-title">Cache Settings</h4>
+          <span class="iters-label">Cache Memory Settings</span>
           <div class="widths">
-            
-            <div class="width-group">
-              <span>Number of Blocks:</span>
-              <div class="latency-group">
-                <button class="gray-button" @click="nBlocks = Math.max(0, nBlocks - 1)">−</button>
-                <input type="number" v-model.number="nBlocks" min="0" max="99" class="latency-input"/>
-                <button class="gray-button" @click="nBlocks = Math.min(99, nBlocks + 1);">+</button>
-              </div>
-            </div>
 
+            <div class="iters-group">
+              <span>Number of Blocks:</span>
+              <input type="number" v-model.number="nBlocks" min="0" max="32" 
+                    title="Memory blocks stored into cache (0 => no cache)"/>
+            </div>
+            
             <div class="width-group">
               <span>Block Size:</span>
               <div class="latency-group">
@@ -496,22 +488,16 @@
               </div>
             </div>
 
-            <div class="width-group">
+            <div class="iters-group">
               <span>Miss Penalty:</span>
-              <div class="latency-group">
-                <button class="gray-button" @click="mPenalty = Math.max(1, mPenalty - 1)">−</button>
-                <input type="number" v-model.number="mPenalty" min="1" :max="99" class="latency-input"/>
-                <button class="gray-button" @click="mPenalty = Math.min(99, mPenalty + 1);">+</button>
-              </div>
+              <input type="number" v-model.number="mPenalty" min="1" max="99" 
+                    title="Extra latency due to cache miss"/>
             </div>
-
-            <div class="width-group">
+    
+            <div class="iters-group">
               <span>Miss Issue Time:</span>
-              <div class="latency-group">
-                <button class="gray-button" @click="mIssueTime = Math.max(1, mIssueTime - 1)">−</button>
-                <input type="number" v-model.number="mIssueTime" min="1" :max="99" class="latency-input"/>
-                <button class="gray-button" @click="mIssueTime = Math.min(99, mIssueTime + 1);">+</button>
-              </div>
+              <input type="number" v-model.number="mIssueTime" min="1" max="99" 
+                    title="Minimum time between Memory accesses"/>
             </div>
           </div>
         </div>
