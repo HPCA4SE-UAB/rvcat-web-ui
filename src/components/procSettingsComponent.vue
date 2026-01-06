@@ -449,15 +449,16 @@
       
       <!-- Widths Group -->
       <div class="settings-group">
-        <span class="iters-label">Stage Width Settings</span>
+        <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show Help" >
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Stage Width Settings</span>
         
         <div class="iters-group">
           <span>Dispatch:</span>
           <input type="number" v-model.number="dispatch" min="1" max="9" 
                  title="max. number of instructions dispatched per cycle"/>
-        </div>
-          
-        <div class="iters-group">
+        
           <span>Retire:</span>
           <input type="number" v-model.number="retire" min="1" max="9" 
                    title="max. number of instructions retired per cycle"/>
@@ -466,31 +467,24 @@
 
       <!-- Cache Settings Group -->
       <div class="settings-group">
-        <span class="iters-label">Cache Memory Settings</span>
+        <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show Help" >
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Cache Memory Settings</span>
           
         <div class="iters-group">
           <span>Number of Blocks:</span>
           <input type="number" v-model.number="nBlocks" min="0" max="32" 
                  title="Memory blocks stored into cache (0 => no cache)"/>
-        </div>
-            
-        <div class="iters-group">
+        
           <span>Block Size:</span>
-          <div class="latency-group">
-              <button class="gray-button" @click="blkSize = Math.max(1, Math.floor(blkSize / 2))">−</button>
-              <input type="number" v-model.number="blkSize" min="1" max="2048" readonly class="latency-input"
-                     title="Size of Memory block: must be a power of two"/>
-              <button class="gray-button" @click="blkSize = Math.min(2048, blkSize*2);">+</button>
-          </div>
-        </div>
-
-        <div class="iters-group">
+          <input type="number" v-model.number="blkSize" min="1" max="2048"
+                 title="Size of Memory block: must be a power of two"/>
+ 
           <span>Miss Penalty:</span>
           <input type="number" v-model.number="mPenalty" min="1" max="99" 
                  title="Extra latency due to cache miss"/>
-        </div>
-    
-        <div class="iters-group">
+
           <span>Miss Issue Time:</span>
           <input type="number" v-model.number="mIssueTime" min="1" max="99" 
                  title="Minimum time between Memory accesses"/>
@@ -499,7 +493,7 @@
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
-        <span class="iters-label">Instruction Latencies and Execution Ports</span>
+        <span>Instruction Latencies and Execution Ports</span>
         <!-- Ports toolbar: show existing ports and add/delete -->
         <div class="ports-toolbar">
           <span v-for="port in portList" :key="port" class="port-tag">
@@ -559,6 +553,22 @@
          If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Processor Settings"
     @close="closeTutorial1"/>
+
+    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition" 
+    text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths. 
+       They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
+      <p>They may impose a throughput-bound performace limit.</p>"
+    title="Dispatch/Retire Width Settings"
+    @close="closeTutorial2"/>
+
+    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition" 
+    text="Modify the <strong>Cache Memory</strong> settings. Setting a Number of Blocks = 0 means all data accesses 
+      will always hit in the cache, and, therefore, the latency of memory loads and stores will always be the same.
+      <p>The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
+      The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory. 
+      It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
+    title="Cache Memory Settings"
+    @close="closeTutorial3"/>
   </Teleport>
   
   <!-- Modal Dialog -->
@@ -619,8 +629,8 @@
 <style scoped>
 
   .settings-sections {
-    display:        flex;
-    flex-direction: column;
+    display:         flex;
+    flex-direction:  column;
     justify-content: down;
     gap:             5px;
     width:           100%;
@@ -628,11 +638,11 @@
   
   .settings-group {
     display:        flex;  /**/
-    flex-direction: row;
-    border:        1px solid #ccc;
-    border-radius: 8px;
-    padding:       1rem; /* 10px */
-    background: #fafafa; /**/
+    flex-direction: column;
+    border:         1px solid #ccc;
+    border-radius:  8px;
+    padding:        1rem; /* 10px */
+    background:     #fafafa;
   }
 
   .iters-group input[type="number"] { width: 4ch; }
