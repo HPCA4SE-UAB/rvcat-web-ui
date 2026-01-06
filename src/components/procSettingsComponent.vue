@@ -486,7 +486,7 @@
                  title="Memory blocks stored into cache (0 => no cache)"/>
         
           <span>Block Size:</span>
-          <input type="number" v-model.number="blkSize" min="1" max="2048"
+          <input type="number" v-model.number="blkSize" min="1" max="128"
                  title="Size of Memory block: must be a power of two"/>
  
           <span>Miss Penalty:</span>
@@ -511,7 +511,7 @@
         <div class="ports-toolbar">
           <span v-for="port in portList" :key="port" class="port-tag">
             P{{ port }}
-            <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove P${port}`">
+            <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove port P${port}`">
               <img src="/img/delete.png" class="delete-icon" width="16px">
             </button>
           </span>
@@ -534,13 +534,15 @@
               <td>{{ instr }}</td>
               <td>
                 <div class="latency-group">
-                  <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"/>
+                  <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
+                         title="execution latency in clock cycles for the corresponding instruction type"/>
                 </div>
               </td>
               <td v-for="port in portList" :key="port" class="port-checkbox">
                 <label class="port-label">
                   <input
                     type="checkbox"
+                    title="indicates if this port can execute the corresponding instruction type"
                     :checked="
                       (ports[port] || []).includes(instr)
                       || (port === portList[0] && noPortAssigned(instr))
