@@ -545,7 +545,7 @@
             </tr>
           </tbody>
         </table>
-      </div> <!--- Lantency & Port Settings Group -->
+      </div> <!--- Latency & Port Settings Group -->
     
     </div>
   </div>
