@@ -689,8 +689,7 @@
     width:      5ch;
     padding:    2px;
     margin:     0 4px;
-    text-align: center;
-    /* font-size:  2.5vh; */
+    text-align: right;
   }
 
   /* Firefox */
@@ -701,8 +700,7 @@
     width:      5ch;
     padding:    2px;
     margin:     0 4px;
-    text-align: center;
-    /* font-size:  2.5vh; */
+    text-align: right;
   }
 
   
