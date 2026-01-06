@@ -486,9 +486,14 @@
                  title="Memory blocks stored into cache (0 => no cache)"/>
         
           <span>Block Size:</span>
-          <input type="number" v-model.number="blkSize" min="1" max="128"
-                 title="Size of Memory block: must be a power of two"/>
- 
+          <div class="latency-group">
+            <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
+            <input type="number" v-model.number="blkSize" readonly
+                   title="Size of Memory block: must be a power of two"
+             />
+            <button @click="blkSize = Math.min(128, blkSize * 2)">+</button>
+          </div>
+
           <span>Miss Penalty:</span>
           <input type="number" v-model.number="mPenalty" min="1" max="99" 
                  title="Extra latency due to cache miss"/>
