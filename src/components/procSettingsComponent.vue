@@ -690,23 +690,21 @@
   input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: auto;
     width:      5ch;
-    padding:    2px;
-    margin:     0 4px;
+    padding:    1px;
+    margin:     0 2px;
     text-align: right;
   }
 
   /* Firefox */
   input[type=number] {
-    margin: 0;
-    appearence: auto;
+    appearance: auto;
     -moz-appearance: number-input;
     width:      5ch;
-    padding:    2px;
-    margin:     0 4px;
+    padding:    1px;
+    margin:     0 2px;
     text-align: right;
   }
 
-  
   .ports-toolbar {
     margin: 8px 0;
   }
