@@ -21,16 +21,16 @@
   let modalConfirmOperation = null;
 
   const originalSettings = reactive({
-    dispatch: 0,
-    retire: 0,
-    resources: {},
-    name: "",
-    ports: {},
-    rports: {},
-    cache: null,
-    nBlocks: 0,
-    blkSize: 0,
-    mPenalty: 0,
+    dispatch:   0,
+    retire:     0,
+    resources:  {},
+    name:       "",
+    ports:      {},
+    rports:     {},
+    cache:      null,
+    nBlocks:    0,
+    blkSize:    0,
+    mPenalty:   0,
     mIssueTime: 0,
   });
 
@@ -439,23 +439,25 @@
           Apply Changes
         </button>
         <input id="file-upload" type="file" accept=".json" @change="uploadProcessorConfig" style="display: none;"/>
-        <button class="blue-button" @click="openUploadModal">Upload</button>
+        <button class="blue-button" @click="openUploadModal">
+          Upload
+        </button>
       </div>
     </div>
-    <br/>
+    
+    <!-- <br/> -->
+    
     <div>
       <div class="settings-sections">
-        <!-- Stage Widths Group -->
+        <!-- Widths Group -->
         <div class="settings-group">
-          <h4 class="section-title">Stage Width Settings</h4>
+          <span class="iters-label">Stage Width Settings</span>
           <div class="widths">
-            
-            <div class="width-group">
+            <div class="iters-group">
               <span>Dispatch:</span>
               <div class="latency-group">
-                <button class="gray-button" @click="dispatch = Math.max(1, dispatch - 1)">−</button>
-                <input type="number" v-model.number="dispatch" min="1" max="99" class="latency-input"/>
-                <button class="gray-button" @click="dispatch = Math.min(99, dispatch + 1);">+</button>
+                <input type="number" v-model.number="dispatch" min="1" max="9" 
+                       title="max. number of instructions dispatched per cycle"/>
               </div>
             </div>
 
@@ -467,6 +469,7 @@
                 <button class="gray-button" @click="retire = Math.min(99, retire + 1);">+</button>
               </div>
             </div>
+            
           </div>
         </div>
 
@@ -633,10 +636,8 @@
 </template>
 
 <style scoped>
-  .buttons {
-    display:flex;
-    gap:5px;
-  }
+  .iters-group input[type="number"] { width: 3ch; }
+
   .ports-toolbar {
     margin: 8px 0;
   }
