@@ -114,7 +114,7 @@
             setTimeout( ()=> { updateProcessorSettings();},100);
           }
         }
-        list.addEventListener("focus", prevProcessorHandler);
+        list.addEventListener("focus",  prevProcessorHandler);
         list.addEventListener("change", processorsListHandler);
       }
       updateProcessorSettings();
@@ -141,7 +141,9 @@
   
   function portsEq(a, b) {
     const ka = Object.keys(a), kb = Object.keys(b);
+    
     if (ka.length !== kb.length) return false;
+    
     for (let k of ka) {
       const arrA = a[k] || [], arrB = b[k] || [];
       if (arrA.length !== arrB.length) return false;
@@ -320,13 +322,14 @@
 
   function uploadProcessorConfig(event) {
     const inputEl = event.target;
-    const file = event.target.files[0];
+    const file    = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = e => {
       try {
         const data = JSON.parse(e.target.result);
+        
         // === apply JSON to your reactive state ===
         dispatch.value   = data.stages?.dispatch ?? dispatch.value;
         retire.value     = data.stages?.retire   ?? retire.value;
@@ -621,8 +624,8 @@
       </label>
 
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I will lose the current changes" @click="confirmModal">Apply</button>
-        <button class="blue-button" title="No, I do not want to lose the current changes" @click="closeModal">Cancel</button>
+        <button class="blue-button" title="Yes, I will save the current changes" @click="confirmModal">Apply</button>
+        <button class="blue-button" title="No, I do not want to save the current changes" @click="closeModal">Cancel</button>
       </div>
     </div>
   </div>
@@ -679,9 +682,6 @@
   .button-group {
     display:     inline-flex;
     align-items: center;
-    appearance:  none;
-    width:       4ch;
-    text-align:  center;
   }
   
   /* Chrome, Safari, Edge, Opera */
