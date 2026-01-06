@@ -686,11 +686,11 @@
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: auto;
-    width:      5vh;
+    width:      5ch;
     padding:    2px;
     margin:     0 4px;
     text-align: center;
-    font-size:  2.5vh;
+    /* font-size:  2.5vh; */
   }
 
   /* Firefox */
@@ -698,11 +698,11 @@
     margin: 0;
     appearence: auto;
     -moz-appearance: number-input;
-    width:      5vh;
+    width:      5ch;
     padding:    2px;
     margin:     0 4px;
     text-align: center;
-    font-size:  2.5vh;
+    /* font-size:  2.5vh; */
   }
 
   
@@ -749,8 +749,6 @@
     display:    block;
     margin-top: 10px;
   }
-
-
   
   strong{
     margin:0;
