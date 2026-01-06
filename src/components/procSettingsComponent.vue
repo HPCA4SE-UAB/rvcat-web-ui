@@ -464,8 +464,6 @@
         </div>  
       </div> <!--- Widths Group -->
 
-      <br>
-
       <!-- Cache Settings Group -->
       <div class="settings-group">
         <span class="iters-label">Cache Memory Settings</span>
@@ -498,8 +496,6 @@
                  title="Minimum time between Memory accesses"/>
         </div>
       </div> <!--- Cache Settings Group -->
-      
-      <br>
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
