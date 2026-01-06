@@ -486,7 +486,7 @@
                  title="Memory blocks stored into cache (0 => no cache)"/>
         
           <span>Block Size:</span>
-          <div class="latency-group">
+          <div class="button-group">
             <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
             <input type="number" v-model.number="blkSize" readonly
                    title="Size of Memory block: must be a power of two"
@@ -675,8 +675,37 @@
     background:     #fafafa;
   }
 
-  .iters-group input[type="number"] { width: 4ch; }
+  .button-group {
+    display:     inline-flex;
+    align-items: center;
+  }
 
+  /* .iters-group input[type="number"] { width: 4ch; } */
+  
+  /* Chrome, Safari, Edge, Opera */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: auto;
+    width:      5vh;
+    padding:    2px;
+    margin:     0 4px;
+    text-align: center;
+    font-size:  2.5vh;
+  }
+
+  /* Firefox */
+  input[type=number] {
+    margin: 0;
+    appearence: auto;
+    -moz-appearance: number-input;
+    width:      5vh;
+    padding:    2px;
+    margin:     0 4px;
+    text-align: center;
+    font-size:  2.5vh;
+  }
+
+  
   .ports-toolbar {
     margin: 8px 0;
   }
@@ -721,31 +750,8 @@
     margin-top: 10px;
   }
 
-  .latency-group {
-    display:     inline-flex;
-    align-items: center;
-  }
 
-  .latency-input {
-    width:      5vh;
-    padding:    2px;
-    margin:     0 4px;
-    text-align: center;
-    font-size:  2.5vh;
-  }
-
-  /* Chrome, Safari, Edge, Opera */
-  input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button {
-    -webkit-appearance: auto;
-    margin: 0;
-  }
-
-  /* Firefox */
-  input[type=number] {
-    appearence: auto;
-    -moz-appearance: number-input;
-  }
+  
   strong{
     margin:0;
   }
