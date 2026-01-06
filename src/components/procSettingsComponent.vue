@@ -507,10 +507,11 @@
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
         <div class="section-title-and-info">
-        <span ref="infoIcon4" class="info-icon" @click="openTutorial4" title="Show Help" >
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Instruction Latencies and Execution Ports</span>
+          <span ref="infoIcon4" class="info-icon" @click="openTutorial4" title="Show Help" >
+            <img src="/img/info.png" class="info-img">
+          </span>
+          <span class="header-title">Instruction Latencies and Execution Ports</span>
+        </div>
           
         <!-- Ports toolbar: show existing ports and add/delete -->
         <div class="ports-toolbar">
