@@ -619,18 +619,22 @@
 <style scoped>
 
   .settings-sections {
-    display:         flex;
+    display:        flex;
+    flex-direction: column;
     justify-content: down;
     gap:             5px;
     width:           100%;
   }
-
+  
   .settings-group {
+    display:        flex;  /**/
+    flex-direction: column; /**/
     border:        1px solid #ccc;
     border-radius: 8px;
-    padding:       1rem;
+    padding:       1rem; /* 10px */
+    background: #fafafa; /**/
   }
-  
+
   .iters-group input[type="number"] { width: 4ch; }
 
   .ports-toolbar {
