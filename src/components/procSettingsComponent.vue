@@ -628,7 +628,7 @@
   
   .settings-group {
     display:        flex;  /**/
-    flex-direction: column; /**/
+    flex-direction: row;
     border:        1px solid #ccc;
     border-radius: 8px;
     padding:       1rem; /* 10px */
