@@ -693,17 +693,18 @@
     text-align: center;
     font-size:  2.5vh;
   }
- 
+
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
+    -webkit-appearance: auto;
     margin: 0;
   }
 
   /* Firefox */
   input[type=number] {
-    -moz-appearance: textfield;
+    appearence: auto;
+    -moz-appearance: number-input;
   }
   strong{
     margin:0;
