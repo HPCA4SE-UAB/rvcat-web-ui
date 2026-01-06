@@ -624,7 +624,7 @@
 
   .settings-sections {
     display:         flex;
-    justify-content: left;
+    justify-content: down;
     gap:             5px;
     width:           100%;
   }
