@@ -488,7 +488,7 @@
           <span>Block Size:</span>
           <div class="button-group">
             <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
-            <input type="number" v-model.number="blkSize" readonly
+            <input type="number" v-model.number="blkSize" readonly class="input-fixed"
                    title="Size of Memory block: must be a power of two"
              />
             <button @click="blkSize = Math.min(128, blkSize * 2)">+</button>
@@ -680,8 +680,11 @@
     align-items: center;
   }
 
-  /* .iters-group input[type="number"] { width: 4ch; } */
-  
+  .input-fixed {
+    appearance: none;
+    width:      4ch;
+    text-align: center;
+  }
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
