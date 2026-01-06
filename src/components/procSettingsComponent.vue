@@ -445,70 +445,62 @@
       </div>
     </div>
     
-    <!-- <br/> -->
-    
-    <div>
-      <div class="settings-sections">
-        <!-- Widths Group -->
-        <div class="settings-group">
-          <span class="iters-label">Stage Width Settings</span>
-          <div class="widths">
-            <div class="width-group">
-            <div class="iters-group">
-              <span>Dispatch:</span>
-              <input type="number" v-model.number="dispatch" min="1" max="9" 
-                    title="max. number of instructions dispatched per cycle"/>
-            </div>
-            </div>
-              
-            <div class="width-group">
-            <div class="iters-group">
-              <span>Retire:</span>
-              <input type="number" v-model.number="retire" min="1" max="9" 
-                     title="max. number of instructions retired per cycle"/>
-            </div>
-            </div>
-            
-          </div>
+    <div class="settings-sections">
+      
+      <!-- Widths Group -->
+      <div class="settings-group">
+        <span class="iters-label">Stage Width Settings</span>
+        
+        <div class="iters-group">
+          <span>Dispatch:</span>
+          <input type="number" v-model.number="dispatch" min="1" max="9" 
+                 title="max. number of instructions dispatched per cycle"/>
         </div>
-
-        <!-- Cache Settings Group -->
-        <div class="settings-group">
-          <span class="iters-label">Cache Memory Settings</span>
-          <div class="widths">
-
-            <div class="iters-group">
-              <span>Number of Blocks:</span>
-              <input type="number" v-model.number="nBlocks" min="0" max="32" 
-                    title="Memory blocks stored into cache (0 => no cache)"/>
-            </div>
-            
-            <div class="width-group">
-              <span>Block Size:</span>
-              <div class="latency-group">
-                <button class="gray-button" @click="blkSize = Math.max(1, Math.floor(blkSize / 2))">−</button>
-                <input type="number" v-model.number="blkSize" min="1" max="2048" readonly class="latency-input"/>
-                <button class="gray-button" @click="blkSize = Math.min(2048, blkSize*2);">+</button>
-              </div>
-            </div>
-
-            <div class="iters-group">
-              <span>Miss Penalty:</span>
-              <input type="number" v-model.number="mPenalty" min="1" max="99" 
-                    title="Extra latency due to cache miss"/>
-            </div>
-    
-            <div class="iters-group">
-              <span>Miss Issue Time:</span>
-              <input type="number" v-model.number="mIssueTime" min="1" max="99" 
-                    title="Minimum time between Memory accesses"/>
-            </div>
-          </div>
-        </div>
-      </div>
+          
+        <div class="iters-group">
+          <span>Retire:</span>
+          <input type="number" v-model.number="retire" min="1" max="9" 
+                   title="max. number of instructions retired per cycle"/>
+        </div>  
+      </div> <!--- Widths Group -->
 
       <br>
-      <h4>Instruction Latencies & Execution Ports</h4>
+
+      <!-- Cache Settings Group -->
+      <div class="settings-group">
+        <span class="iters-label">Cache Memory Settings</span>
+          
+        <div class="iters-group">
+          <span>Number of Blocks:</span>
+          <input type="number" v-model.number="nBlocks" min="0" max="32" 
+                 title="Memory blocks stored into cache (0 => no cache)"/>
+        </div>
+            
+        <div class="iters-group">
+          <span>Block Size:</span>
+          <div class="latency-group">
+              <button class="gray-button" @click="blkSize = Math.max(1, Math.floor(blkSize / 2))">−</button>
+              <input type="number" v-model.number="blkSize" min="1" max="2048" readonly class="latency-input"/>
+              <button class="gray-button" @click="blkSize = Math.min(2048, blkSize*2);">+</button>
+          </div>
+        </div>
+
+        <div class="iters-group">
+          <span>Miss Penalty:</span>
+          <input type="number" v-model.number="mPenalty" min="1" max="99" 
+                 title="Extra latency due to cache miss"/>
+        </div>
+    
+        <div class="iters-group">
+          <span>Miss Issue Time:</span>
+          <input type="number" v-model.number="mIssueTime" min="1" max="99" 
+                 title="Minimum time between Memory accesses"/>
+        </div>
+      </div> <!--- Cache Settings Group -->
+      
+      <br>
+      
+      <span class="iters-label">Instruction Latencies & Execution Ports</span>
       <!-- Ports toolbar: show existing ports and add/delete -->
       <div class="ports-toolbar">
         <span v-for="port in portList" :key="port" class="port-tag">
@@ -536,9 +528,7 @@
             <td>{{ instr }}</td>
             <td>
               <div class="latency-group">
-                <button type="button" class="gray-button" @click="resources[instr] = Math.max(1, resources[instr] - 1);">−</button>
                 <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"/>
-                <button type="button" class="gray-button" @click="resources[instr] = Math.min(99, resources[instr] + 1);">+</button>
               </div>
             </td>
             <td v-for="port in portList" :key="port" class="port-checkbox">
@@ -685,35 +675,17 @@
     font-size:  2.5vh;
   }
 
-  .widths {
-    display:      flex;
-    justify-content: space-between;
-    gap:          2rem;
-    align-items:  flex-end;
-  }
-
   .width-group {
-    display: flex;
+    display:        flex;
     flex-direction: column;
-    align-items: center;
-  }
+    align-items:    center;
+    gap:            0.5rem;
+  } 
 
   .width-group span {
     margin-bottom: 2px;
   }
-
-  .width-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .cache-setting {
-    display: inline-flex;
-    align-items: center;
-    margin-right: 8px;
-  }
-
+  
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
