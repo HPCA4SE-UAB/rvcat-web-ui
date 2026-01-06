@@ -393,8 +393,8 @@
     }
   }
 
-  function cancelLeave(){
-    if(modalConfirmOperation=='change') {
+  function cancelLeave() {
+    if (modalConfirmOperation=='change') {
       document.getElementById('processors-list').value = prevProcessor.value;
       reloadRvcat();
     }
@@ -402,11 +402,11 @@
   }
 
   function openUploadModal() {
-    if(isModified.value){
+    if (isModified.value) {
       showModalChange.value = true;
       modalConfirmOperation = 'upload';
     }
-    else{
+    else {
       document.getElementById('file-upload').click();
     }
   }
