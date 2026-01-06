@@ -480,7 +480,8 @@
           <span>Block Size:</span>
           <div class="latency-group">
               <button class="gray-button" @click="blkSize = Math.max(1, Math.floor(blkSize / 2))">−</button>
-              <input type="number" v-model.number="blkSize" min="1" max="2048" readonly class="latency-input"/>
+              <input type="number" v-model.number="blkSize" min="1" max="2048" readonly class="latency-input"
+                     title="Size of Memory block: must be a power of two"/>
               <button class="gray-button" @click="blkSize = Math.min(2048, blkSize*2);">+</button>
           </div>
         </div>
@@ -500,52 +501,56 @@
       
       <br>
       
-      <span class="iters-label">Instruction Latencies & Execution Ports</span>
-      <!-- Ports toolbar: show existing ports and add/delete -->
-      <div class="ports-toolbar">
-        <span v-for="port in portList" :key="port" class="port-tag">
-          P{{ port }}
-          <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove P${port}`">
-            <img src="/img/delete.png" class="delete-icon" width="16px">
+      <!-- Latency and Port Settings Group -->
+      <div class="settings-group">
+        <span class="iters-label">Instruction Latencies and Execution Ports</span>
+        <!-- Ports toolbar: show existing ports and add/delete -->
+        <div class="ports-toolbar">
+          <span v-for="port in portList" :key="port" class="port-tag">
+            P{{ port }}
+            <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove P${port}`">
+              <img src="/img/delete.png" class="delete-icon" width="16px">
+            </button>
+          </span>
+          <button v-if="portList.length < 10" class="add-port" @click="addPort">
+            + Add Port
           </button>
-        </span>
-        <button v-if="portList.length < 10" class="add-port" @click="addPort">
-          + Add Port
-        </button>
-      </div>
+        </div>
 
-      <table class="instr-table" v-if="availableInstructions.length">
-        <thead>
-          <tr>
-            <th>TYPE</th>
-            <th>LATENCY</th>
-            <!-- one TH per port -->
-            <th v-for="port in portList" :key="port">P{{ port }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="instr in availableInstructions" :key="instr">
-            <td>{{ instr }}</td>
-            <td>
-              <div class="latency-group">
-                <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"/>
-              </div>
-            </td>
-            <td v-for="port in portList" :key="port" class="port-checkbox">
-              <label class="port-label">
-                <input
-                  type="checkbox"
-                  :checked="
-                    (ports[port] || []).includes(instr)
-                    || (port === portList[0] && noPortAssigned(instr))
-                  "
-                  @change="togglePortInstruction(port, instr, $event.target.checked)"
-                />
-              </label>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="instr-table" v-if="availableInstructions.length">
+          <thead>
+            <tr>
+              <th>TYPE</th>
+              <th>LATENCY</th>
+              <!-- one TH per port -->
+              <th v-for="port in portList" :key="port">P{{ port }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="instr in availableInstructions" :key="instr">
+              <td>{{ instr }}</td>
+              <td>
+                <div class="latency-group">
+                  <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"/>
+                </div>
+              </td>
+              <td v-for="port in portList" :key="port" class="port-checkbox">
+                <label class="port-label">
+                  <input
+                    type="checkbox"
+                    :checked="
+                      (ports[port] || []).includes(instr)
+                      || (port === portList[0] && noPortAssigned(instr))
+                    "
+                    @change="togglePortInstruction(port, instr, $event.target.checked)"
+                  />
+                </label>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div> <!--- Lantency & Port Settings Group -->
+    
     </div>
   </div>
   
@@ -616,7 +621,21 @@
 </template>
 
 <style scoped>
-  .iters-group input[type="number"] { width: 3ch; }
+
+  .settings-sections {
+    display:         flex;
+    justify-content: left;
+    gap:             5px;
+    width:           100%;
+  }
+
+  .settings-group {
+    border:        1px solid #ccc;
+    border-radius: 8px;
+    padding:       1rem;
+  }
+  
+  .iters-group input[type="number"] { width: 4ch; }
 
   .ports-toolbar {
     margin: 8px 0;
@@ -646,8 +665,8 @@
     font-size:     0.9em;
   }
   .instr-table {
-    width:      100%;
-    margin-top: 10px;
+    width:           100%;
+    margin-top:      10px;
     border-collapse: collapse;
   }
   .instr-table th,
@@ -663,7 +682,7 @@
   }
 
   .latency-group {
-    display: inline-flex;
+    display:     inline-flex;
     align-items: center;
   }
 
@@ -674,18 +693,7 @@
     text-align: center;
     font-size:  2.5vh;
   }
-
-  .width-group {
-    display:        flex;
-    flex-direction: column;
-    align-items:    center;
-    gap:            0.5rem;
-  } 
-
-  .width-group span {
-    margin-bottom: 2px;
-  }
-  
+ 
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
@@ -708,39 +716,26 @@
 
   .tooltip-text {
     visibility: hidden;
-    width: 240px;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #fff;
+    width:      240px;
+    color:      #fff;
     text-align: left;
+    padding:    8px;
+    font-size:  0.85em;
+    position:   absolute;
+    top:        50%;
+    left:       100%;
+    transform:  translate(8px, -50%);
+    z-index:    10;
+    opacity:    0;
+    white-space:   normal;
     border-radius: 4px;
-    padding: 8px;
-    font-size: 0.85em;
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translate(8px, -50%);
-    white-space: normal;
-    z-index: 10;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
+    transition:    opacity 0.2s ease-in-out;
+    background-color: rgba(0, 0, 0, 0.7);
   }
 
   .warning-wrapper:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
-  }
-
-  .settings-sections {
-    display:         flex;
-    justify-content: left;
-    gap:   5px;
-    width: 100%;
-  }
-
-  .settings-group {
-    border:        1px solid #ccc;
-    border-radius: 8px;
-    padding:       1rem;
   }
 
   .auto-tooltip {
