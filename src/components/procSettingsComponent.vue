@@ -453,16 +453,20 @@
         <div class="settings-group">
           <span class="iters-label">Stage Width Settings</span>
           <div class="widths">
+            <div class="width-group">
             <div class="iters-group">
               <span>Dispatch:</span>
               <input type="number" v-model.number="dispatch" min="1" max="9" 
                     title="max. number of instructions dispatched per cycle"/>
             </div>
-
+            </div>
+              
+            <div class="width-group">
             <div class="iters-group">
               <span>Retire:</span>
               <input type="number" v-model.number="retire" min="1" max="9" 
                      title="max. number of instructions retired per cycle"/>
+            </div>
             </div>
             
           </div>
@@ -628,43 +632,43 @@
     margin: 8px 0;
   }
   .port-tag {
-    display: inline-block;
-    background: #e3e3e3;
+    display:       inline-block;
+    background:    #e3e3e3;
     border-radius: 4px;
-    padding: 2px;
-    margin-right: 5px;
+    padding:       2px;
+    margin-right:  5px;
     margin-bottom: 5px;
-    font-size: 0.9em;
+    font-size:     0.9em;
   }
   .delete-port {
-    background: none;
-    border: none;
-    cursor: pointer;
+    background:  none;
+    border:      none;
+    cursor:      pointer;
     font-weight: bold;
   }
   .add-port {
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 4px 8px;
+    background:    #4caf50;
+    color:         white;
+    border:        none;
+    padding:       4px 8px;
     border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
+    cursor:        pointer;
+    font-size:     0.9em;
   }
   .instr-table {
-    width: 100%;
-    border-collapse: collapse;
+    width:      100%;
     margin-top: 10px;
+    border-collapse: collapse;
   }
   .instr-table th,
   .instr-table td {
-    border: 1px solid #ccc;
-    padding: 5px;
+    border:     1px solid #ccc;
+    padding:    5px;
     text-align: center;
   }
 
   .download-checkbox {
-    display: block;
+    display:    block;
     margin-top: 10px;
   }
 
@@ -674,18 +678,18 @@
   }
 
   .latency-input {
-    width: 5vh;
-    padding: 2px;
-    margin: 0 4px;
+    width:      5vh;
+    padding:    2px;
+    margin:     0 4px;
     text-align: center;
-    font-size: 2.5vh;
+    font-size:  2.5vh;
   }
 
   .widths {
-    display: flex;
+    display:      flex;
     justify-content: space-between;
-    gap: 2rem;
-    align-items: flex-end;
+    gap:          2rem;
+    align-items:  flex-end;
   }
 
   .width-group {
@@ -755,21 +759,16 @@
   }
 
   .settings-sections {
-    display: flex;
+    display:         flex;
     justify-content: left;
-    gap: 5px;
+    gap:   5px;
     width: 100%;
   }
 
   .settings-group {
-    border: 1px solid #ccc;
+    border:        1px solid #ccc;
     border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .section-title {
-    text-align: center;
-    margin-bottom: 5px;
+    padding:       1rem;
   }
 
   .auto-tooltip {
