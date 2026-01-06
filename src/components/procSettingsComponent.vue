@@ -49,9 +49,11 @@
   const showTutorial1   = ref(false);
   const showTutorial2   = ref(false);
   const showTutorial3   = ref(false);
+  const showTutorial4   = ref(false);
   const infoIcon1       = ref(null);
   const infoIcon2       = ref(null);
   const infoIcon3       = ref(null);
+  const infoIcon4       = ref(null);
   const tutorialPosition= ref({ top: '0%', left: '0%' });
 
   // --- load & update processor settings ---
@@ -417,10 +419,12 @@
   function openTutorial1()  { nextTick(() => { showTutorial1.value = true }) }
   function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }
   function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }
+  function openTutorial4()  { nextTick(() => { showTutorial4.value = true }) }
   
-  function closeTutorial1() { showTutorial1.value  = false }
+  function closeTutorial1() { showTutorial1.value = false }
   function closeTutorial2() { showTutorial2.value = false }
   function closeTutorial3() { showTutorial3.value = false }
+  function closeTutorial4() { showTutorial4.value = false }
 
 </script>
 
@@ -449,10 +453,12 @@
       
       <!-- Widths Group -->
       <div class="settings-group">
+        <div class="section-title-and-info">
         <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Stage Width Settings</span>
+        </div>
         
         <div class="iters-group">
           <span>Dispatch:</span>
@@ -467,11 +473,13 @@
 
       <!-- Cache Settings Group -->
       <div class="settings-group">
+        <div class="section-title-and-info">
         <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Cache Memory Settings</span>
-          
+        </div>
+        
         <div class="iters-group">
           <span>Number of Blocks:</span>
           <input type="number" v-model.number="nBlocks" min="0" max="32" 
@@ -493,7 +501,12 @@
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
-        <span>Instruction Latencies and Execution Ports</span>
+        <div class="section-title-and-info">
+        <span ref="infoIcon4" class="info-icon" @click="openTutorial4" title="Show Help" >
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Instruction Latencies and Execution Ports</span>
+          
         <!-- Ports toolbar: show existing ports and add/delete -->
         <div class="ports-toolbar">
           <span v-for="port in portList" :key="port" class="port-tag">
@@ -569,6 +582,14 @@
       It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
     title="Cache Memory Settings"
     @close="closeTutorial3"/>
+
+  <TutorialComponent v-if="showTutorial4" :position="tutorialPosition" 
+    text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Thorughput</strong> of instruction types.
+      <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports 
+         (only one is used for execution each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
+        If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
+    title="Instruction Latency and Throughput Settings"
+    @close="closeTutorial4"/>
   </Teleport>
   
   <!-- Modal Dialog -->
