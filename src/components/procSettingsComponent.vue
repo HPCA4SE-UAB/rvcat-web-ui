@@ -597,6 +597,7 @@
         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Instruction Latency and Throughput Settings"
     @close="closeTutorial4"/>
+    
   </Teleport>
   
   <!-- Modal Dialog -->
