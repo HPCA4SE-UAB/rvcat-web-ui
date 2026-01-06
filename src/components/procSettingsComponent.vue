@@ -488,7 +488,7 @@
           <span>Block Size:</span>
           <div class="button-group">
             <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
-            <input type="number" v-model.number="blkSize" readonly class="input-fixed"
+            <input type="number" v-model.number="blkSize" readonly
                    title="Size of Memory block: must be a power of two"
              />
             <button @click="blkSize = Math.min(128, blkSize * 2)">+</button>
@@ -606,7 +606,7 @@
     <div class="modal">
       <h4>Save Configuration As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName"/>
+      <input id="config-name" type="text" title="file name of new processor configuration" v-model="modalName"/>
       <div v-if="nameError" class="error">{{ nameError }}</div>
 
       <label class="download-checkbox">
@@ -621,8 +621,8 @@
       </label>
 
       <div class="modal-actions">
-        <button class="blue-button" @click="confirmModal">Apply</button>
-        <button class="blue-button" @click="closeModal">Cancel</button>
+        <button class="blue-button" title="Yes, I will lose the current changes" @click="confirmModal">Apply</button>
+        <button class="blue-button" title="No, I do not want to lose the current changes" @click="closeModal">Cancel</button>
       </div>
     </div>
   </div>
@@ -631,22 +631,23 @@
     <div class="modal">
       <h4>Load Configuration As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName"/>
+      <input id="config-name" type="text" title="name of loaded processor configuration" v-model="modalName"/>
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" @click="confirmModal">Load</button>
-        <button class="blue-button" @click="closeModal">Cancel</button>
+        <button class="blue-button" title="Yes, I want to load" @click="confirmModal">Load</button>
+        <button class="blue-button" title="No, I want to cancel"  @click="closeModal">Cancel</button>
       </div>
     </div>
   </div>
 
   <div v-if="showModalChange" class="modal-overlay">
     <div class="modal">
-      <p>The processor settings have been modified, but not saved. Changes will be lost if you select or upload a new processor configuration.</p>
+      <p>The processor settings have been modified, but not saved. 
+         Changes will be lost if you select or upload a new processor configuration.</p>
       <p><b>Do you want to continue?</b></p>
       <div class="modal-actions">
-        <button class="blue-button" @click="confirmLeave">OK</button>
-        <button class="blue-button" @click="cancelLeave">Cancel</button>
+        <button class="blue-button" title="Yes, I want to continue" @click="confirmLeave">OK</button>
+        <button class="blue-button" title="No, I want to cancel" @click="cancelLeave">Cancel</button>
       </div>
     </div>
   </div>
@@ -678,13 +679,11 @@
   .button-group {
     display:     inline-flex;
     align-items: center;
+    appearance:  none;
+    width:       4ch;
+    text-align:  center;
   }
-
-  .input-fixed {
-    appearance: none;
-    width:      4ch;
-    text-align: center;
-  }
+  
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
