@@ -12,6 +12,7 @@ const MAX_PROGRAM_ITERATIONS = 2000;
 const MAX_ROB_SIZE           =  500;
 
 /* THIS should be reactive state ****/
+const robState = inject('robState')
 
 // Get selected values (program, processor... etc)
 function currentProgram() {
@@ -42,7 +43,7 @@ function currentIterations() {
 }
 
 function currentROBSize() {
-  return 10; // robState.ROBsize;
+  return robState.ROBsize;
 }
 
 /*
