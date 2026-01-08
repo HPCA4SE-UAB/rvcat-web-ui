@@ -5,67 +5,22 @@
 function readPythonProgramsAndProcessors() {
   executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
   executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors');
-  // closeLoadingOverlay();
 }
 
 function programShow() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=  'rvcat._scheduler.init(100, 10); rvcat._program.show_code()'
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_code()'
     executeCode( res, 'program_show' )
 }
 
 function getProcessorInformation() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=  'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
     executeCode( res, 'processor_show' )
 }
 
-function reloadRvcat() {
-    programShow();
-    getProcessorInformation();
-}
-
-function programShowPerformanceLimits() {
-  executeCode(
-    RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-    'prog_show_performance'
-  )
-}
-
-function programShowMemtrace() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_MEMORY,
-        'print_output'
-    )
-    lastExecutedCommand = programShowMemtrace;
-}
-
-async function getProcessorJSON() {
-  await executeCode(
-    RVCAT_HEADER() + SHOW_PROCESSOR,
-    'get_proc_settings'
-  )
-  return processorInfo;
-}
-
-function showCriticalPathsGraph(n,i,l,s,f) {
-    let internal = "True";
-    let latency  = "True";
-    let small    = "True";
-    let full     = "True";
-    if (!i) {internal = "False"}
-    if (!l) {latency  = "False"}
-    if (!s) {small    = "False"}
-    if (!f) {full     = "False"}
-    executeCode(
-        RVCAT_HEADER() + get_graph(n, internal, latency, small, full),
-        'generate_critical_paths_graph'
-    )
-    lastExecutedCommand = showCriticalPathsGraph;
-}
-
 function getSchedulerAnalysis() {
-    showProcessor();
+    // showProcessor();
 
     document.getElementById('instructions-output').innerHTML = '?';
     document.getElementById('cycles-output').innerHTML       = '?';
@@ -77,10 +32,38 @@ function getSchedulerAnalysis() {
     document.getElementById('graph-section').style.display          = 'none';
     document.getElementById('critical-path-section').style.display  = 'none';
     document.getElementById('run-simulation-button').disabled       = true;
-    executeCode(
-        RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
-        'generate_scheduler_analysis'
+
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()'
+    executeCode( res, 'generate_simulation_results' )
     );
+}
+
+function reloadRvcat() {
+    programShow();
+    getProcessorInformation();
+}
+
+function programShowPerformanceLimits() {
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+    res +=    'rvcat._program.show_performance_analysis()'
+    executeCode( res, 'prog_show_performance' )
+}
+
+function showCriticalPathsGraph(n,i,l,s,f) {
+    let internal = "True";
+    let latency  = "True";
+    let small    = "True";
+    let full     = "True";
+    if (!i) {internal = "False"}
+    if (!l) {latency  = "False"}
+    if (!s) {small    = "False"}
+    if (!f) {full     = "False"}
+  
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+    res +=    `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
+    executeCode( res, 'generate_critical_paths_graph' )
+    lastExecutedCommand = showCriticalPathsGraph;
 }
 
 async function getTimeline(num_iters) {
@@ -102,21 +85,26 @@ async function getTimeline(num_iters) {
         }
       };
 
-      // fire off the code to the worker
-      executeCode(
-        RVCAT_HEADER() + show_timeline(num_iters), 
-        'format_timeline'
-      );
+      let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+      res +=    'rvcat._scheduler.init(100, 10);'
+      res +=    `rvcat._scheduler.format_timeline(niters=${num_iters})`
+      executeCode( res, 'format_timeline');
       lastExecutedCommand = getTimeline;
     });
 }
 
+async function getProcessorJSON() {
+   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+   res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
+   await executeCode( res, 'get_proc_settings' )
+   return processorInfo;
+}
+
 async function saveModifiedProcessor(config) {
-  await executeCode(
-    RVCAT_HEADER() + addModifiedProcessor(config),
-    'save_modified_processor'
-  );
-  await executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+   res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.save(${JSON.stringify(config)})`
+   await executeCode( res, 'save_modified_processor' )
+   await executeCode('import rvcat; rvcat.files.list_json(True)', 'get_processors')
 }
 
 async function getProgramJSON(){
@@ -149,6 +137,15 @@ async function saveNewProgram(config) {
     'add_new_program'
   );
   await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
+}
+
+
+function programShowMemtrace() {
+    executeCode(
+        RVCAT_HEADER() + PROG_SHOW_MEMORY,
+        'print_output'
+    )
+    lastExecutedCommand = programShowMemtrace;
 }
 
 
@@ -215,6 +212,7 @@ function currentIterations() {
  *  Message Handling from Pyodide Worker
  *************************************************************/
 const handlers = {
+  
     'get_programs': (data) => {
         let programs = JSON.parse(data);
         document.getElementById('programs-list').innerHTML="";
@@ -248,28 +246,13 @@ const handlers = {
       }
     },
   
-    'prog_show_performance': (data) => {
-      let item         = document.getElementById('performance-limits');
-      item.textContent = data;
-    },
-  
-    'get_proc_settings': (data) => {
-      processorInfo = JSON.parse(data);
-    },
-  
     'processor_show': (data) => {
         processorInfo = JSON.parse(data);
         showProcessor();
-        getSchedulerAnalysis();
+        // getSchedulerAnalysis();
     },
-   
-    'generate_critical_paths_graph': (data) => {
-        let item = document.getElementById('dependence-graph');
-        item.innerHTML = '';
-        createGraphVizGraph(data, item);
-    },
-  
-    'generate_scheduler_analysis': (data) => {
+
+    'generate_simulation_results': (data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -305,14 +288,24 @@ const handlers = {
         document.getElementById('critical-path-section').style.display  = 'block';
         document.getElementById('run-simulation-button').disabled       = false;
     },
-  
+ 
+    'prog_show_performance': (data) => {
+      let item         = document.getElementById('performance-limits');
+      item.textContent = data;
+    },
+      
+    'generate_critical_paths_graph': (data) => {
+        let item = document.getElementById('dependence-graph');
+        item.innerHTML = '';
+        createGraphVizGraph(data, item);
+    },
+ 
     'format_timeline': (data) => {
       timelineData = data;
     },
-  
-    'print_output': (data) => {
-        let out = data.replace(/\n/g, '<br>');
-        console.log(out);
+
+    'get_proc_settings': (data) => {
+      processorInfo = JSON.parse(data);
     },
   
     'save_modified_processor': (data) => {
@@ -325,6 +318,11 @@ const handlers = {
   
     'add_new_program': (data) => {
       console.log("New program saved");
+    },
+  
+    'print_output': (data) => {
+        let out = data.replace(/\n/g, '<br>');
+        console.log(out);
     }
 }
 
