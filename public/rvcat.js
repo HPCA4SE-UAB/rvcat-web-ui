@@ -77,6 +77,50 @@ function setLoadingOverlayMessage(message) {
     document.getElementById('loading-overlay-message').innerHTML = message;
 }
 
+// WORKER definition 
+/* Typical Usage Flow:
+ 1. Main thread creates worker: new Worker('worker.js')
+ 2. Main thread sends {action: 'initialize'}
+ 3. Worker initializes Pyodide, responds {action: 'initialized'}
+ 4. Main thread sends {action: 'execute', code: 'print("Hello")', id: 1}
+ 5. Worker runs Python, sends back result or error
+ 6. Main thread receives response and handles it based on id and data_type
+ */
+const worker     = new Worker('./worker.js');
+worker.onmessage = function(message) {
+    console.log('Message received from worker', message);
+    if (message.data.action === 'initialized') {
+      readPythonProgramsAndProcessors();
+    }
+    if (message.data.action === 'loadedPackage') {
+      // Handles confirmation when packages are loaded
+      // Could be extended to trigger dependent actions
+    }
+    if (message.data.action === 'executed') {
+        if (message.data.data_type == 'error') {
+            console.log('Error executing Python code:', message.data.result);
+            return;
+        }
+        data = message.data.result;
+        if (message.data.id !== undefined) {
+          handlers[message.data.id](data);
+        } 
+        // else { }  // No handler specified
+    }
+}
+
+// Pyodide stuff
+function initPyodide() {  // Main thread sends initialization request
+    setLoadingOverlayMessage('Loading RVCAT');
+    worker.postMessage({action: 'initialize'});
+}
+
+async function executeCode(code, id=undefined){
+    console.log('Executing code:\n', code);
+    worker.postMessage({action: 'execute', code: code, id: id});
+}
+
+
 /*********************************************************
  *  Message Handling from Pyodide Worker
  *************************************************************/
