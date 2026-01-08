@@ -232,10 +232,12 @@ const handlers = {
     }
 }
 
+///////////////////////////////////////////////////////////////////////
+/////////// Functions calling PYTHON RVCAT  ///////////////////////////
+///////////////////////////////////////////////////////////////////////
 
-// High-Level calls to Python RVCAT
 function readPythonProgramsAndProcessors() {
-  executeCode(GET_AVAIL_PROGRAMS,   'get_programs'  );
+  executeCode(`import rvcat rvcat.files.list_json(False)`,   'get_programs'  );
   executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
   // closeLoadingOverlay();
 }
