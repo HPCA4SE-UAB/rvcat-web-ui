@@ -19,12 +19,12 @@ worker.onmessage = function(message) {
     }
     if (message.data.action === 'executed') {
         if (message.data.data_type == 'error') {
-            console.log('Error:', message.data.result);
+            console.log('Error executing Python code:', message.data.result);
             return;
         }
         data = message.data.result;
         if (message.data.id !== undefined) {
-            handlers[message.data.id](data);
+          handlers[message.data.id](data);
         } 
         // else { }  // No handler specified
     }
