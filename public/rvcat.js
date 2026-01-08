@@ -4,18 +4,18 @@
 
 function readPythonProgramsAndProcessors() {
   executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
-  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors');
+  executeCode('rvcat.files.list_json(True)',   'get_processors');
 }
 
 function programShow() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_code()';
+    res +=    'rvcat._program.show_code()';
     executeCode( res, 'program_show' );
 }
 
 function getProcessorInformation() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()';
+    res +=    'rvcat._processor.json()';
     executeCode( res, 'processor_show' );
 }
 
@@ -94,14 +94,14 @@ async function getTimeline(num_iters) {
 
 async function getProcessorJSON() {
    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-   res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
+   res +=    'rvcat._processor.json()'
    await executeCode( res, 'get_proc_settings' )
    return processorInfo;
 }
 
 async function saveModifiedProcessor(config) {
    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-   res +=    `rvcat._scheduler.init(100, 10); rvcat._processor.save(${JSON.stringify(config)})`
+   res +=    `rvcat._processor.save(${JSON.stringify(config)})`
    await executeCode( res, 'save_modified_processor' )
    await executeCode('import rvcat; rvcat.files.list_json(True)', 'get_processors')
 }
@@ -125,17 +125,17 @@ async function getProgramJSON(){
     };
 
     // fire off the code to the worker
-    executeCode(GET_PROGRAM_JSON, 'get_program_json');
+    let res = 'rvcat._program.json()';
+    executeCode( res, 'get_program_json');
   });
 }
 
 async function saveNewProgram(config) {
   const payload = typeof config === 'string' ? JSON.parse(config) : config;
-  await executeCode(
-    RVCAT_HEADER() + addNewProgram(payload),
-    'add_new_program'
-  );
-  await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
+  let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+  res +=    `rvcat._program.save(${JSON.stringify(payload)})`
+  await executeCode( res, 'add_new_program' )
+  await executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
 }
 
 function programShowMemtrace() {
