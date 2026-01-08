@@ -3,20 +3,20 @@
 ///////////////////////////////////////////////////////////////////////
 
 function readPythonProgramsAndProcessors() {
-  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  )
-  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors')
+  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
+  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors');
 }
 
 function programShow() {
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_code()'
-    executeCode( res, 'program_show' )
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_code()';
+    executeCode( res, 'program_show' );
 }
 
 function getProcessorInformation() {
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
-    executeCode( res, 'processor_show' )
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.json()';
+    executeCode( res, 'processor_show' );
 }
 
 function getSchedulerAnalysis() {
@@ -33,8 +33,8 @@ function getSchedulerAnalysis() {
     document.getElementById('critical-path-section').style.display  = 'none';
     document.getElementById('run-simulation-button').disabled       = true;
 
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()'
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+    res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()';
     executeCode( res, 'generate_simulation_results' )
 }
 
