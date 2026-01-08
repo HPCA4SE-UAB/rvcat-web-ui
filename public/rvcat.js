@@ -3,28 +3,26 @@
 ///////////////////////////////////////////////////////////////////////
 
 function readPythonProgramsAndProcessors() {
-  executeCode('import rvcat; rvcat.files.list_json(False)',   'get_programs'  );
-  executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
+  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors');
   // closeLoadingOverlay();
+}
+
+function programShow() {
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+    res +=  'rvcat._scheduler.init(100, 10); rvcat._program.show_code();'
+    executeCode( res, 'prog_show' )
+}
+
+function getProcessorInformation() {
+    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
+    res +=  'rvcat._scheduler.init(100, 10); rvcat._processor.json();'
+    executeCode( res, 'save_processor_info' )
 }
 
 function reloadRvcat() {
     programShow();
     getProcessorInformation();
-}
-
-function programShow() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
-        'prog_show'
-    )
-}
-
-function getProcessorInformation() {
-    executeCode(
-        RVCAT_HEADER() + SHOW_PROCESSOR,
-        'save_processor_info'
-    )
 }
 
 function programShowPerformanceLimits() {
@@ -211,64 +209,6 @@ function currentIterations() {
     return 100;
   }
 } */
-
-// UI stuff
-function openLoadingOverlay() { 
-  document.getElementById('loading-overlay').style.display   = 'block';
-  document.getElementById('blur-overlay-item').style.display = 'block';
-}
-
-function closeLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display   = 'none';
-    document.getElementById('blur-overlay-item').style.display = 'none';
-}
-
-function setLoadingOverlayMessage(message) {
-    document.getElementById('loading-overlay-message').innerHTML = message;
-}
-
-// WORKER definition 
-/* Typical Usage Flow:
- 1. Main thread creates worker: new Worker('worker.js')
- 2. Main thread sends {action: 'initialize'}
- 3. Worker initializes Pyodide, responds {action: 'initialized'}
- 4. Main thread sends {action: 'execute', code: 'print("Hello")', id: 1}
- 5. Worker runs Python, sends back result or error
- 6. Main thread receives response and handles it based on id and data_type
- */
-const worker     = new Worker('./worker.js');
-worker.onmessage = function(message) {
-    console.log('Message received from worker', message);
-    if (message.data.action === 'initialized') {
-      readPythonProgramsAndProcessors();
-    }
-    if (message.data.action === 'loadedPackage') {
-      // Handles confirmation when packages are loaded
-      // Could be extended to trigger dependent actions
-    }
-    if (message.data.action === 'executed') {
-        if (message.data.data_type == 'error') {
-            console.log('Error executing Python code:', message.data.result);
-            return;
-        }
-        data = message.data.result;
-        if (message.data.id !== undefined) {
-          handlers[message.data.id](data);
-        } 
-        // else { }  // No handler specified
-    }
-}
-
-// Pyodide stuff
-function initPyodide() {  // Main thread sends initialization request
-    setLoadingOverlayMessage('Loading RVCAT');
-    worker.postMessage({action: 'initialize'});
-}
-
-async function executeCode(code, id=undefined){
-    console.log('Executing code:\n', code);
-    worker.postMessage({action: 'execute', code: code, id: id});
-}
 
 
 /*********************************************************
@@ -506,4 +446,62 @@ function createCriticalPathList(data) {
 
   out += "</list>"
   return out
+}
+
+// UI stuff
+function openLoadingOverlay() { 
+  document.getElementById('loading-overlay').style.display   = 'block';
+  document.getElementById('blur-overlay-item').style.display = 'block';
+}
+
+function closeLoadingOverlay() {
+    document.getElementById('loading-overlay').style.display   = 'none';
+    document.getElementById('blur-overlay-item').style.display = 'none';
+}
+
+function setLoadingOverlayMessage(message) {
+    document.getElementById('loading-overlay-message').innerHTML = message;
+}
+
+// WORKER definition 
+/* Typical Usage Flow:
+ 1. Main thread creates worker: new Worker('worker.js')
+ 2. Main thread sends {action: 'initialize'}
+ 3. Worker initializes Pyodide, responds {action: 'initialized'}
+ 4. Main thread sends {action: 'execute', code: 'print("Hello")', id: 1}
+ 5. Worker runs Python, sends back result or error
+ 6. Main thread receives response and handles it based on id and data_type
+ */
+const worker     = new Worker('./worker.js');
+worker.onmessage = function(message) {
+    console.log('Message received from worker', message);
+    if (message.data.action === 'initialized') {
+      readPythonProgramsAndProcessors();
+    }
+    if (message.data.action === 'loadedPackage') {
+      // Handles confirmation when packages are loaded
+      // Could be extended to trigger dependent actions
+    }
+    if (message.data.action === 'executed') {
+        if (message.data.data_type == 'error') {
+            console.log('Error executing Python code:', message.data.result);
+            return;
+        }
+        data = message.data.result;
+        if (message.data.id !== undefined) {
+          handlers[message.data.id](data);
+        } 
+        // else { }  // No handler specified
+    }
+}
+
+// Pyodide stuff
+function initPyodide() {  // Main thread sends initialization request
+    setLoadingOverlayMessage('Loading RVCAT');
+    worker.postMessage({action: 'initialize'});
+}
+
+async function executeCode(code, id=undefined){
+    console.log('Executing code:\n', code);
+    worker.postMessage({action: 'execute', code: code, id: id});
 }
