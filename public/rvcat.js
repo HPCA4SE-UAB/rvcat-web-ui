@@ -3,8 +3,8 @@
 ///////////////////////////////////////////////////////////////////////
 
 function readPythonProgramsAndProcessors() {
-  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
-  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors');
+  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  )
+  executeCode('import rvcat; rvcat.files.list_json(True)',   'get_processors')
 }
 
 function programShow() {
@@ -36,7 +36,6 @@ function getSchedulerAnalysis() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
     res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()'
     executeCode( res, 'generate_simulation_results' )
-    );
 }
 
 function reloadRvcat() {
