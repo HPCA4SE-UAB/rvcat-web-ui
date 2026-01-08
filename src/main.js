@@ -7,7 +7,6 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-
 app.use({
   install(app) {
     const robState = Vue.reactive({
@@ -19,7 +18,5 @@ app.use({
     app.provide('robState', robState);
   }
 });
-
-app.mount('#app');
 
 app.mount('#app')
