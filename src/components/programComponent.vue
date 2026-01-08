@@ -1,7 +1,20 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick } from "vue";
+  import { ref, onMounted, onUnmounted, nextTick, inject, watch } from "vue";
   import TutorialComponent  from '@/components/tutorialComponent.vue';
 
+  const robState = inject('robState');
+
+  // Watch for changes to ROBsize
+  watch(() => robState.ROBsize, (newValue, oldValue) => {
+    reloadProgram()
+  })
+
+  // Define the function that should be called
+  const reloadProgram = () => {
+    console.log('Reloading RVCAT with ROBsize:', robState.ROBsize)
+    reloadRvcat(robState.ROBsize)
+  }
+  
   let processorsListHandler = null;
 
   onMounted(() => {
@@ -11,7 +24,7 @@
         processorsListHandler = () => setTimeout(() => { programShow(); }, 100);
         list.addEventListener("change", processorsListHandler);
       }
-      reloadRvcat();
+      reloadRvcat(robState.ROBsize);
     });
   });
   onUnmounted(() => {
@@ -48,12 +61,12 @@
       const justAdded = Array.from(selectEl.options).some(opt => opt.value === name);
       if (justAdded) {
         selectEl.value = name;
-        reloadRvcat();
+        reloadRvcat(robState.ROBsize);
         obs.disconnect();
       }
     });
     observer.observe(selectEl, { childList: true });
-    reloadRvcat();
+    reloadRvcat(robState.ROBsize);
   }
 
   function cancelModal() {
@@ -152,7 +165,7 @@
       <div id="settings-div">
         <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
-        <select id="programs-list"   title="Select Program"   name="assembly-code" onchange="reloadRvcat();"></select>
+        <select id="programs-list"   title="Select Program"   name="assembly-code"   @change="reloadProgram"></select>
       </div>
     </div>
     
