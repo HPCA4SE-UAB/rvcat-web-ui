@@ -10,8 +10,8 @@ const worker     = new Worker('./worker.js');
 worker.onmessage = function(message) {
     console.log('Message received from worker', message);
     if (message.data.action === 'initialized') {
-        executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
-        executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+        // executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
+        // executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
