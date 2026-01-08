@@ -11,9 +11,6 @@ var programData         = null;
 const MAX_PROGRAM_ITERATIONS = 2000;
 const MAX_ROB_SIZE           =  500;
 
-/* THIS should be reactive state ****/
-const robState = inject('robState')
-
 // Get selected values (program, processor... etc)
 function currentProgram() {
     let p = document.getElementById('programs-list').value;
@@ -40,10 +37,6 @@ function currentIterations() {
   else {
     return 200;
   }
-}
-
-function currentROBSize() {
-  return robState.ROBsize;
 }
 
 /*
@@ -200,7 +193,7 @@ const handlers = {
       
         usage = {}
         usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
-        usage['retire']   = (d["ipc"] / processorInfo.stages.retire) * 100;
+        usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
         usage.ports       = {}
         let i = 0;
         let keys = Object.keys(processorInfo.ports);
