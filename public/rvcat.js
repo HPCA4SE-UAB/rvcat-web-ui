@@ -10,8 +10,7 @@ const worker     = new Worker('./worker.js');
 worker.onmessage = function(message) {
     console.log('Message received from worker', message);
     if (message.data.action === 'initialized') {
-        // executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
-        // executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+      readPythonProgramsAndProcessors();
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
@@ -101,6 +100,21 @@ function currentROBSize() {
   }
 }
 
+// UI stuff
+function openLoadingOverlay() { 
+  document.getElementById('loading-overlay').style.display   = 'block';
+  document.getElementById('blur-overlay-item').style.display = 'block';
+}
+
+function closeLoadingOverlay() {
+    document.getElementById('loading-overlay').style.display   = 'none';
+    document.getElementById('blur-overlay-item').style.display = 'none';
+}
+
+function setLoadingOverlayMessage(message) {
+    document.getElementById('loading-overlay-message').innerHTML = message;
+}
+
 /*********************************************************
  *  Message Handling from Pyodide Worker
  *************************************************************/
@@ -125,9 +139,8 @@ const handlers = {
             option.innerHTML = processor;
             document.getElementById('processors-list').appendChild(option);
         }
-        // Once the processors and programs are loaded show the program in the UI
+       // Once the processors and programs are loaded show the program in the UI
         reloadRvcat();
-        // programShow(); getProcessorInformation();
         closeLoadingOverlay();
     },
   
@@ -220,7 +233,13 @@ const handlers = {
 }
 
 
-// Commands
+// High-Level calls to Python RVCAT
+function readPythonProgramsAndProcessors() {
+  executeCode(GET_AVAIL_PROGRAMS,   'get_programs'  );
+  executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+  // closeLoadingOverlay();
+}
+
 function reloadRvcat() {
     programShow();
     getProcessorInformation();
@@ -230,6 +249,13 @@ function programShow() {
     executeCode(
         RVCAT_HEADER() + PROG_SHOW_EXECUTION,
         'prog_show'
+    )
+}
+
+function getProcessorInformation() {
+    executeCode(
+        RVCAT_HEADER() + SHOW_PROCESSOR,
+        'save_processor_info'
     )
 }
 
@@ -256,27 +282,7 @@ async function getProcessorJSON() {
   return processorInfo;
 }
 
-function getProcessorInformation() {
-    executeCode(
-        RVCAT_HEADER() + SHOW_PROCESSOR,
-        'save_processor_info'
-    )
-}
 
-// UI stuff
-function openLoadingOverlay() { 
-  document.getElementById('loading-overlay').style.display  = 'block';
-  document.getElementById('blur-overlay-item').style.display = 'block';
-}
-
-function closeLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display   = 'none';
-    document.getElementById('blur-overlay-item').style.display = 'none';
-}
-
-function setLoadingOverlayMessage(message) {
-    document.getElementById('loading-overlay-message').innerHTML = message;
-}
 
 function createGraphVizGraph(dotCode, targetElement, callback = null) {
   const viz = new Viz()
