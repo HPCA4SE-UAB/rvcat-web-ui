@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, nextTick, inject } from 'vue'
+  import { ref, nextTick, inject, watch } from 'vue'
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
   const robState = inject('robState');
@@ -12,7 +12,7 @@
   // Define the function that should be called
   const reloadProcessor = () => {
     console.log('Reloading RVCAT with ROBsize:', robState.ROBsize)
-    reloadRvcat()
+    reloadRvcat(robState.ROBsize)
   }
  
   const showTutorial     = ref(false);
