@@ -2,13 +2,21 @@
  *  MAIN Simulation Model STATE
  *************************************************************/
 
-import {reactive} from 'vue';
-
-// Shared reactive object
-export const sharedState = reactive({
-  ROBsize:          100, // Default value
-  otherSharedValue: 'default'
-});
+const robPlugin = {
+  install(app) {
+    // Create reactive state
+    const state = Vue.reactive({
+      ROBsize: 10,
+      otherValue: 'default'
+    });
+    
+    // Add to app's global properties
+    app.config.globalProperties.$robState = state;
+    
+    // Or provide it (cleaner)
+    app.provide('robState', state);
+  }
+};
 
 // Save the last executed command to be able to re-run it when the selected program changes
 var lastExecutedCommand = null;
@@ -50,7 +58,7 @@ function currentIterations() {
 }
 
 function currentROBSize() {
-  return sharedState.ROBsize;
+  return $rob.ROBsize;
 }
 
 /*
