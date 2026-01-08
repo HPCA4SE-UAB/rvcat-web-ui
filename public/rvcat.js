@@ -35,7 +35,7 @@ function getSchedulerAnalysis() {
 
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
     res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()';
-    executeCode( res, 'generate_simulation_results' )
+    executeCode( res, 'generate_simulation_results' );
 }
 
 function reloadRvcat() {
@@ -100,8 +100,8 @@ async function getProcessorJSON() {
 }
 
 async function saveModifiedProcessor(config) {
-   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-   res +=    'rvcat._scheduler.init(100, 10); rvcat._processor.save(${JSON.stringify(config)})`
+   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+   res +=    `rvcat._scheduler.init(100, 10); rvcat._processor.save(${JSON.stringify(config)})`
    await executeCode( res, 'save_modified_processor' )
    await executeCode('import rvcat; rvcat.files.list_json(True)', 'get_processors')
 }
@@ -138,13 +138,11 @@ async function saveNewProgram(config) {
   await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
 }
 
-
 function programShowMemtrace() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_MEMORY,
-        'print_output'
-    )
-    lastExecutedCommand = programShowMemtrace;
+   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
+   res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_memory_trace()'
+   executeCode( res, 'print_output' )
+   lastExecutedCommand = programShowMemtrace;
 }
 
 
