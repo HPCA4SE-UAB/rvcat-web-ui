@@ -10,10 +10,10 @@ const robState = reactive({
   ROBsize: 10
 })
 
-// Provide it to all components
-//app.provide('robState', robState)
-
 app.use(createPinia())
 app.use(router)
+
+// Provide reactive state to all components
+app.provide('robState', robState)
 
 app.mount('#app')
