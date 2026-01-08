@@ -1,4 +1,51 @@
-// Save the last executed command to be able to re-run it when the selected program change
+/* Typical Usage Flow:
+ 1. Main thread creates worker: new Worker('worker.js')
+ 2. Main thread sends {action: 'initialize'}
+ 3. Worker initializes Pyodide, responds {action: 'initialized'}
+ 4. Main thread sends {action: 'execute', code: 'print("Hello")', id: 1}
+ 5. Worker runs Python, sends back result or error
+ 6. Main thread receives response and handles it based on id and data_type
+ */
+const worker     = new Worker('./worker.js');
+worker.onmessage = function(message) {
+    console.log('Message received from worker', message);
+    if (message.data.action === 'initialized') {
+        executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
+        executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+    }
+    if (message.data.action === 'loadedPackage') {
+    }
+    if (message.data.action === 'executed') {
+        if (message.data.data_type == 'error') {
+            console.log('Error:', message.data.result);
+            return;
+        }
+        data = message.data.result;
+        if (message.data.id !== undefined) {
+            if (message.data.id !== undefined) {
+                handlers[message.data.id](data);
+            } else {
+            }
+        }
+    }
+}
+
+// Pyodide stuff
+function initPyodide() {
+    setLoadingOverlayMessage('Loading RVCAT');
+    worker.postMessage({action: 'initialize'});
+}
+
+async function executeCode(code, id=undefined){
+    console.log('Executing code:\n', code);
+    worker.postMessage({action: 'execute', code: code, id: id});
+}
+
+/*********************************************************
+ *  MAIN Simulation Model STATE
+ *************************************************************/
+
+// Save the last executed command to be able to re-run it when the selected program changes
 var lastExecutedCommand = null;
 var processorInfo       = null;
 var timelineData        = null;
@@ -7,6 +54,56 @@ var programData         = null;
 const MAX_PROGRAM_ITERATIONS = 2000;
 const MAX_ROB_SIZE           =  500;
 
+/* THIS should be reactive state ****/
+
+// Get selected values (program, processor... etc)
+function currentProgram() {
+    let p = document.getElementById('programs-list').value;
+    return p;
+}
+
+function currentProcessor() {
+    let p = document.getElementById('processors-list').value;
+    return p;
+}
+
+function currentIterations() {
+  if (document.getElementById("num-iters")){
+    let elem = document.getElementById('num-iters');
+    let i = elem.value;
+    if (i === '') {
+        elem.value = 100;
+    }
+    if (i > MAX_PROGRAM_ITERATIONS) {
+        elem.value = MAX_PROGRAM_ITERATIONS;
+    }
+    return elem.value;
+  }
+  else {
+    return 200;
+  }
+}
+
+function currentROBSize() {
+  if (document.getElementById("rob-size")){
+    let elem = document.getElementById('rob-size');
+    let rs = elem.value;
+    if (rs === '') {
+        elem.value = rs;
+    }
+    if (rs > MAX_ROB_SIZE) {
+        elem.value = rs;
+    }
+    return elem.value;
+  }
+  else {
+    return 100;
+  }
+}
+
+/*********************************************************
+ *  Message Handling from Pyodide Worker
+ *************************************************************/
 const handlers = {
     'get_programs': (data) => {
         let programs = JSON.parse(data);
@@ -122,74 +219,6 @@ const handlers = {
     }
 }
 
-const worker     = new Worker('./worker.js');
-worker.onmessage = function(message) {
-    console.log('Message received from worker', message);
-    if (message.data.action === 'initialized') {
-        executeCode(GET_AVAIL_PROGRAMS,   'get_programs');
-        executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
-    }
-    if (message.data.action === 'loadedPackage') {
-    }
-    if (message.data.action === 'executed') {
-        if (message.data.data_type == 'error') {
-            console.log('Error:', message.data.result);
-            return;
-        }
-        data = message.data.result;
-        if (message.data.id !== undefined) {
-            if (message.data.id !== undefined) {
-                handlers[message.data.id](data);
-            } else {
-            }
-        }
-    }
-}
-
-// Get selected values (program, processor... etc)
-function currentProgram() {
-    let p = document.getElementById('programs-list').value;
-    return p;
-}
-
-function currentProcessor() {
-    let p = document.getElementById('processors-list').value;
-    return p;
-}
-
-function currentIterations() {
-  if (document.getElementById("num-iters")){
-    let elem = document.getElementById('num-iters');
-    let i = elem.value;
-    if (i === '') {
-        elem.value = 100;
-    }
-    if (i > MAX_PROGRAM_ITERATIONS) {
-        elem.value = MAX_PROGRAM_ITERATIONS;
-    }
-    return elem.value;
-  }
-  else {
-    return 200;
-  }
-}
-
-function currentROBSize() {
-  if (document.getElementById("rob-size")){
-    let elem = document.getElementById('rob-size');
-    let rs = elem.value;
-    if (rs === '') {
-        elem.value = rs;
-    }
-    if (rs > MAX_ROB_SIZE) {
-        elem.value = rs;
-    }
-    return elem.value;
-  }
-  else {
-    return 100;
-  }
-}
 
 // Commands
 function reloadRvcat() {
@@ -232,17 +261,6 @@ function getProcessorInformation() {
         RVCAT_HEADER() + SHOW_PROCESSOR,
         'save_processor_info'
     )
-}
-
-// Pyodide stuff
-function initPyodide() {
-    setLoadingOverlayMessage('Loading RVCAT');
-    worker.postMessage({action: 'initialize'});
-}
-
-async function executeCode(code, id=undefined){
-    console.log('Executing code:\n', code);
-    worker.postMessage({action: 'execute', code: code, id: id});
 }
 
 // UI stuff
