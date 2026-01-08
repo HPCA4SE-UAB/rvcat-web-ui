@@ -2,7 +2,19 @@
   import { ref, nextTick, inject } from 'vue'
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
-  const robState = inject('robState')
+  const robState = inject('robState');
+
+  // Watch for changes to ROBsize
+  watch(() => robState.ROBsize, (newValue, oldValue) => {
+    reloadProcessor()
+  })
+
+  // Define the function that should be called
+  const reloadProcessor = () => {
+    console.log('Reloading RVCAT with ROBsize:', robState.ROBsize)
+    reloadRvcat()
+  }
+ 
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '0%', left: '40%' });
   const infoIcon         = ref(null);
@@ -30,13 +42,15 @@
       </div>
       
       <div id="settings-div">
-        <select id="processors-list" name="processor-name" title="Select Processor" onchange="reloadRvcat();"></select>
+        <select id="processors-list" name="processor-name" title="Select Processor" @change="reloadProcessor">
+                    <!-- Options should be added here with v-for -->
+        </select>
         <span class="iters-label">ROB size: </span>
-        <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200" value="100" 
-               v-model.number="robState.ROBsize" onchange="reloadRvcat();">
+        <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
+               v-model.number="robState.ROBsize" @change="reloadProcessor">
       </div>
     </div>
-
+    
     <div class="cache-info" id="cache-info"></div>  
     <div class="pipeline-img" id="pipeline-graph"></div>
 
