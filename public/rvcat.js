@@ -42,7 +42,7 @@ function currentIterations() {
 }
 
 function currentROBSize() {
-  return robState.ROBsize;
+  return 10; // robState.ROBsize;
 }
 
 /*
