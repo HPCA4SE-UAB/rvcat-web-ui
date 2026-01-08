@@ -1,7 +1,8 @@
 <script setup>
-  import { ref, nextTick } from 'vue'
+  import { ref, nextTick, inject } from 'vue'
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
+  const robState = inject('robState')
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '0%', left: '40%' });
   const infoIcon         = ref(null);
@@ -30,10 +31,9 @@
       
       <div id="settings-div">
         <select id="processors-list" name="processor-name" title="Select Processor" onchange="reloadRvcat();"></select>
-        <div>
-          <label for="rob-size"> ROB: </label>
-          <input type="number" title="ROB size" id="rob-size" name="rob-size" min="1" max="200" value="100" onchange="reloadRvcat();">
-        </div>
+        <span class="iters-label">ROB size: </span>
+        <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200" value="100" 
+               v-model.number="robState.ROBsize" onchange="reloadRvcat();">
       </div>
     </div>
 
