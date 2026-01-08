@@ -2,6 +2,14 @@
  *  MAIN Simulation Model STATE
  *************************************************************/
 
+import {reactive} from 'vue';
+
+// Shared reactive object
+export const sharedState = reactive({
+  ROBsize:          100, // Default value
+  otherSharedValue: 'default'
+});
+
 // Save the last executed command to be able to re-run it when the selected program changes
 var lastExecutedCommand = null;
 var processorInfo       = null;
@@ -42,6 +50,10 @@ function currentIterations() {
 }
 
 function currentROBSize() {
+  return sharedState.ROBsize;
+}
+
+/*
   if (document.getElementById("rob-size")){
     let elem = document.getElementById('rob-size');
     let rs = elem.value;
@@ -56,7 +68,7 @@ function currentROBSize() {
   else {
     return 100;
   }
-}
+} */
 
 // UI stuff
 function openLoadingOverlay() { 
