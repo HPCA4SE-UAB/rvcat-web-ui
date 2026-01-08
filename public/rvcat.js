@@ -105,7 +105,7 @@ function currentROBSize() {
  *  Message Handling from Pyodide Worker
  *************************************************************/
 const handlers = {
-    'get_programs': function(data) => {
+    'get_programs': (data) => {
         let programs = JSON.parse(data);
         document.getElementById('programs-list').innerHTML="";
         for (let program of programs) {
@@ -116,7 +116,7 @@ const handlers = {
         }
     },
   
-    'get_processors': function(data) => {
+    'get_processors': (data) => {
         let processors = JSON.parse(data);
         document.getElementById('processors-list').innerHTML='';
         for (let processor of processors) {
@@ -131,7 +131,7 @@ const handlers = {
         closeLoadingOverlay();
     },
   
-    'prog_show': function(data) => {
+    'prog_show': (data) => {
       const item       = document.getElementById('rvcat-asm-code');
       item.textContent = data;
       if (lastExecutedCommand !== null) {
@@ -139,28 +139,28 @@ const handlers = {
       }
     },
   
-    'prog_show_performance': function(data) => {
+    'prog_show_performance': (data) => {
       let item         = document.getElementById('performance-limits');
       item.textContent = data;
     },
   
-    'get_proc_settings': function(data) => {
+    'get_proc_settings': (data) => {
       processorInfo = JSON.parse(data);
     },
   
-    'save_processor_info': function(data) => {
+    'save_processor_info': (data) => {
         processorInfo = JSON.parse(data);
         // showProcessor();
         getSchedulerAnalysis();
     },
    
-    'generate_critical_paths_graph': function(data) => {
+    'generate_critical_paths_graph': (data) => {
         let item = document.getElementById('dependence-graph');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
     },
   
-    'generate_scheduler_analysis': function(data) => {
+    'generate_scheduler_analysis': (data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -197,24 +197,24 @@ const handlers = {
         document.getElementById('run-simulation-button').disabled       = false;
     },
   
-    'format_timeline': function(data) => {
+    'format_timeline': (data) => {
       timelineData = data;
     },
   
-    'print_output': function(data) => {
+    'print_output': (data) => {
         let out = data.replace(/\n/g, '<br>');
         console.log(out);
     },
   
-    'save_modified_processor': function(data) => {
+    'save_modified_processor': (data) => {
       console.log("Processor settings saved");
     },
   
-    'get_program_json': function(data) => {
+    'get_program_json': (data) => {
       programData = JSON.parse(data);
     },
   
-    'add_new_program': function(data) => {
+    'add_new_program': (data) => {
       console.log("New program saved");
     }
 }
