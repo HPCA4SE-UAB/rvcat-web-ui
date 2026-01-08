@@ -1,3 +1,159 @@
+///////////////////////////////////////////////////////////////////////
+/////////// Functions calling PYTHON RVCAT  ///////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+function readPythonProgramsAndProcessors() {
+  executeCode('import rvcat; rvcat.files.list_json(False)',   'get_programs'  );
+  executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+  // closeLoadingOverlay();
+}
+
+function reloadRvcat() {
+    programShow();
+    getProcessorInformation();
+}
+
+function programShow() {
+    executeCode(
+        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
+        'prog_show'
+    )
+}
+
+function getProcessorInformation() {
+    executeCode(
+        RVCAT_HEADER() + SHOW_PROCESSOR,
+        'save_processor_info'
+    )
+}
+
+function programShowPerformanceLimits() {
+  executeCode(
+    RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
+    'prog_show_performance'
+  )
+}
+
+function programShowMemtrace() {
+    executeCode(
+        RVCAT_HEADER() + PROG_SHOW_MEMORY,
+        'print_output'
+    )
+    lastExecutedCommand = programShowMemtrace;
+}
+
+async function getProcessorJSON() {
+  await executeCode(
+    RVCAT_HEADER() + SHOW_PROCESSOR,
+    'get_proc_settings'
+  )
+  return processorInfo;
+}
+
+function showCriticalPathsGraph(n,i,l,s,f) {
+    let internal = "True";
+    let latency  = "True";
+    let small    = "True";
+    let full     = "True";
+    if (!i) {internal = "False"}
+    if (!l) {latency  = "False"}
+    if (!s) {small    = "False"}
+    if (!f) {full     = "False"}
+    executeCode(
+        RVCAT_HEADER() + get_graph(n, internal, latency, small, full),
+        'generate_critical_paths_graph'
+    )
+    lastExecutedCommand = showCriticalPathsGraph;
+}
+
+function getSchedulerAnalysis() {
+    showProcessor();
+
+    document.getElementById('instructions-output').innerHTML = '?';
+    document.getElementById('cycles-output').innerHTML       = '?';
+    document.getElementById('IPC-output').innerHTML          = '?';
+    document.getElementById('cycles-per-iteration-output').innerHTML = '?';
+
+    document.getElementById('run-simulation-spinner').style.display = 'block';
+    document.getElementById('simulation-running').style.display     = 'block';
+    document.getElementById('graph-section').style.display          = 'none';
+    document.getElementById('critical-path-section').style.display  = 'none';
+    document.getElementById('run-simulation-button').disabled       = true;
+    executeCode(
+        RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
+        'generate_scheduler_analysis'
+    );
+}
+
+async function getTimeline(num_iters) {
+    let controls = document.getElementById('dependencies-controls');
+    controls.style.display = 'block';
+
+    return new Promise((resolve, reject)=>{
+      const original = handlers['format_timeline'];
+
+      handlers['format_timeline'] = (data) => {
+        try {
+          timelineData = data;
+          resolve(data);
+        } catch (err) {
+          reject(err);
+        } finally {
+          // restore the old handler
+          handlers['format_timeline'] = original;
+        }
+      };
+
+      // fire off the code to the worker
+      executeCode(
+        RVCAT_HEADER() + show_timeline(num_iters), 
+        'format_timeline'
+      );
+      lastExecutedCommand = getTimeline;
+    });
+}
+
+async function saveModifiedProcessor(config) {
+  await executeCode(
+    RVCAT_HEADER() + addModifiedProcessor(config),
+    'save_modified_processor'
+  );
+  await executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
+}
+
+async function getProgramJSON(){
+  return new Promise((resolve, reject) => {
+    // Temporarily override the handler for this one request:
+    const original = handlers['get_program_json'];
+
+    handlers['get_program_json'] = (data) => {
+      try {
+        const obj = JSON.parse(data);
+        programData = obj;
+        resolve(obj);
+      } catch (err) {
+        reject(err);
+      } finally {
+        // restore the old handler
+        handlers['get_program_json'] = original;
+      }
+    };
+
+    // fire off the code to the worker
+    executeCode(GET_PROGRAM_JSON, 'get_program_json');
+  });
+}
+
+async function saveNewProgram(config) {
+  const payload = typeof config === 'string' ? JSON.parse(config) : config;
+  await executeCode(
+    RVCAT_HEADER() + addNewProgram(payload),
+    'add_new_program'
+  );
+  await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
+}
+
+
 /*********************************************************
  *  MAIN Simulation Model STATE
  *************************************************************/
@@ -232,59 +388,9 @@ const handlers = {
     }
 }
 
-///////////////////////////////////////////////////////////////////////
-/////////// Functions calling PYTHON RVCAT  ///////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-function readPythonProgramsAndProcessors() {
-  executeCode(`import rvcat rvcat.files.list_json(False)`,   'get_programs'  );
-  executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
-  // closeLoadingOverlay();
-}
-
-function reloadRvcat() {
-    programShow();
-    getProcessorInformation();
-}
-
-function programShow() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_EXECUTION,
-        'prog_show'
-    )
-}
-
-function getProcessorInformation() {
-    executeCode(
-        RVCAT_HEADER() + SHOW_PROCESSOR,
-        'save_processor_info'
-    )
-}
-
-function programShowPerformanceLimits() {
-  executeCode(
-    RVCAT_HEADER() + PROG_SHOW_STATIC_PERFORMANCE,
-    'prog_show_performance'
-  )
-}
-
-function programShowMemtrace() {
-    executeCode(
-        RVCAT_HEADER() + PROG_SHOW_MEMORY,
-        'print_output'
-    )
-    lastExecutedCommand = programShowMemtrace;
-}
-
-async function getProcessorJSON() {
-  await executeCode(
-    RVCAT_HEADER() + SHOW_PROCESSOR,
-    'get_proc_settings'
-  )
-  return processorInfo;
-}
-
-
+////////////////////////////////////////
+////  Helping functions  ///////////////
+////////////////////////////////////////
 
 function createGraphVizGraph(dotCode, targetElement, callback = null) {
   const viz = new Viz()
@@ -320,7 +426,6 @@ function createGraphVizGraph(dotCode, targetElement, callback = null) {
     })
 }
 
-
 function createProcessorGraph(dispatch, execute, retire, cache) {
     const dotCode = construct_reduced_processor_dot(dispatch, execute, retire, cache);
     createGraphVizGraph(dotCode, document.getElementById('pipeline-graph'));
@@ -349,109 +454,6 @@ function showProcessor() {
                  'mPenalty':   processorInfo.mPenalty,
                  'mIssueTime': processorInfo.mIssueTime};
     createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
-}
-
-function showCriticalPathsGraph(n,i,l,s,f) {
-    let internal = "True";
-    let latency  = "True";
-    let small    = "True";
-    let full     = "True";
-    if (!i) {internal = "False"}
-    if (!l) {latency  = "False"}
-    if (!s) {small    = "False"}
-    if (!f) {full     = "False"}
-    executeCode(
-        RVCAT_HEADER() + get_graph(n, internal, latency, small, full),
-        'generate_critical_paths_graph'
-    )
-    lastExecutedCommand = showCriticalPathsGraph;
-}
-
-function getSchedulerAnalysis() {
-    showProcessor();
-
-    document.getElementById('instructions-output').innerHTML = '?';
-    document.getElementById('cycles-output').innerHTML       = '?';
-    document.getElementById('IPC-output').innerHTML          = '?';
-    document.getElementById('cycles-per-iteration-output').innerHTML = '?';
-
-    document.getElementById('run-simulation-spinner').style.display = 'block';
-    document.getElementById('simulation-running').style.display     = 'block';
-    document.getElementById('graph-section').style.display          = 'none';
-    document.getElementById('critical-path-section').style.display  = 'none';
-    document.getElementById('run-simulation-button').disabled       = true;
-    executeCode(
-        RVCAT_HEADER() + RUN_PROGRAM_ANALYSIS,
-        'generate_scheduler_analysis'
-    );
-}
-
-async function getTimeline(num_iters) {
-    let controls = document.getElementById('dependencies-controls');
-    controls.style.display = 'block';
-
-    return new Promise((resolve, reject)=>{
-      const original = handlers['format_timeline'];
-
-      handlers['format_timeline'] = (data) => {
-        try {
-          timelineData = data;
-          resolve(data);
-        } catch (err) {
-          reject(err);
-        } finally {
-          // restore the old handler
-          handlers['format_timeline'] = original;
-        }
-      };
-
-      // fire off the code to the worker
-      executeCode(
-        RVCAT_HEADER() + show_timeline(num_iters), 
-        'format_timeline'
-      );
-      lastExecutedCommand = getTimeline;
-    });
-}
-
-async function saveModifiedProcessor(config) {
-  await executeCode(
-    RVCAT_HEADER() + addModifiedProcessor(config),
-    'save_modified_processor'
-  );
-  await executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
-}
-
-async function getProgramJSON(){
-  return new Promise((resolve, reject) => {
-    // Temporarily override the handler for this one request:
-    const original = handlers['get_program_json'];
-
-    handlers['get_program_json'] = (data) => {
-      try {
-        const obj = JSON.parse(data);
-        programData = obj;
-        resolve(obj);
-      } catch (err) {
-        reject(err);
-      } finally {
-        // restore the old handler
-        handlers['get_program_json'] = original;
-      }
-    };
-
-    // fire off the code to the worker
-    executeCode(GET_PROGRAM_JSON, 'get_program_json');
-  });
-}
-
-async function saveNewProgram(config) {
-  const payload = typeof config === 'string' ? JSON.parse(config) : config;
-  await executeCode(
-    RVCAT_HEADER() + addNewProgram(payload),
-    'add_new_program'
-  );
-  await executeCode(GET_AVAIL_PROGRAMS, 'get_programs');
 }
 
 async function showCellInfo(instrID, cycle) {
