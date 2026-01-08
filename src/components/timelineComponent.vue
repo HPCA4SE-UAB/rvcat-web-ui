@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch} from 'vue';
+  import { ref, onMounted, nextTick, onUnmounted, watch, inject} from 'vue';
   import TutorialComponent  from '@/components/tutorialComponent.vue';
 
   /* Safe solution */
@@ -11,6 +11,9 @@
 /* ------------------------------------------------------------------ 
  * UI state 
  * ------------------------------------------------------------------ */
+
+  const robState = inject('robState')
+  
   let canvasTimeout = null
 
   const canvasWidth    = 1200;
@@ -116,8 +119,7 @@
       document.addEventListener("change", (e) => {
         if (
           e.target?.id == "processors-list" ||
-          e.target?.id == "programs-list" ||
-          e.target?.id == "rob-size"
+          e.target?.id == "programs-list"
         )  {
           setTimeout(getTimelineAndDraw, 100);
         }
@@ -683,7 +685,7 @@
   }
 
   async function getTimelineAndDraw() {
-    iterations.value = Math.min(iterations.value, 9);
+    iterations.value   = Math.min(iterations.value, 9);
     timelineData.value = await getTimeline(iterations.value);
     drawTimeline(timelineData.value);
   }
