@@ -10,14 +10,14 @@ function readPythonProgramsAndProcessors() {
 
 function programShow() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=  'rvcat._scheduler.init(100, 10); rvcat._program.show_code();'
-    executeCode( res, 'prog_show' )
+    res +=  'rvcat._scheduler.init(100, 10); rvcat._program.show_code()'
+    executeCode( res, 'program_show' )
 }
 
 function getProcessorInformation() {
     let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=  'rvcat._scheduler.init(100, 10); rvcat._processor.json();'
-    executeCode( res, 'save_processor_info' )
+    res +=  'rvcat._scheduler.init(100, 10); rvcat._processor.json()'
+    executeCode( res, 'processor_show' )
 }
 
 function reloadRvcat() {
@@ -240,7 +240,7 @@ const handlers = {
         closeLoadingOverlay();
     },
   
-    'prog_show': (data) => {
+    'program_show': (data) => {
       const item       = document.getElementById('rvcat-asm-code');
       item.textContent = data;
       if (lastExecutedCommand !== null) {
@@ -257,9 +257,9 @@ const handlers = {
       processorInfo = JSON.parse(data);
     },
   
-    'save_processor_info': (data) => {
+    'processor_show': (data) => {
         processorInfo = JSON.parse(data);
-        // showProcessor();
+        showProcessor();
         getSchedulerAnalysis();
     },
    
