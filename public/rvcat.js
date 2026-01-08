@@ -14,6 +14,8 @@ worker.onmessage = function(message) {
         executeCode(GET_AVAIL_PROCESSORS, 'get_processors');
     }
     if (message.data.action === 'loadedPackage') {
+      // Handles confirmation when packages are loaded
+      // Could be extended to trigger dependent actions
     }
     if (message.data.action === 'executed') {
         if (message.data.data_type == 'error') {
@@ -22,16 +24,14 @@ worker.onmessage = function(message) {
         }
         data = message.data.result;
         if (message.data.id !== undefined) {
-            if (message.data.id !== undefined) {
-                handlers[message.data.id](data);
-            } else {
-            }
-        }
+            handlers[message.data.id](data);
+        } 
+        // else { }  // No handler specified
     }
 }
 
 // Pyodide stuff
-function initPyodide() {
+function initPyodide() {  // Main thread sends initialization request
     setLoadingOverlayMessage('Loading RVCAT');
     worker.postMessage({action: 'initialize'});
 }
@@ -105,7 +105,7 @@ function currentROBSize() {
  *  Message Handling from Pyodide Worker
  *************************************************************/
 const handlers = {
-    'get_programs': (data) => {
+    'get_programs': function(data) => {
         let programs = JSON.parse(data);
         document.getElementById('programs-list').innerHTML="";
         for (let program of programs) {
@@ -116,7 +116,7 @@ const handlers = {
         }
     },
   
-    'get_processors': (data) => {
+    'get_processors': function(data) => {
         let processors = JSON.parse(data);
         document.getElementById('processors-list').innerHTML='';
         for (let processor of processors) {
@@ -131,7 +131,7 @@ const handlers = {
         closeLoadingOverlay();
     },
   
-    'prog_show': (data) => {
+    'prog_show': function(data) => {
       const item       = document.getElementById('rvcat-asm-code');
       item.textContent = data;
       if (lastExecutedCommand !== null) {
@@ -139,28 +139,28 @@ const handlers = {
       }
     },
   
-    'prog_show_performance': (data) => {
+    'prog_show_performance': function(data) => {
       let item         = document.getElementById('performance-limits');
       item.textContent = data;
     },
   
-    'get_proc_settings': (data) => {
+    'get_proc_settings': function(data) => {
       processorInfo = JSON.parse(data);
     },
   
-    'save_processor_info': (data) => {
+    'save_processor_info': function(data) => {
         processorInfo = JSON.parse(data);
         // showProcessor();
         getSchedulerAnalysis();
     },
    
-    'generate_critical_paths_graph': (data) => {
+    'generate_critical_paths_graph': function(data) => {
         let item = document.getElementById('dependence-graph');
         item.innerHTML = '';
         createGraphVizGraph(data, item);
     },
   
-    'generate_scheduler_analysis': (data) => {
+    'generate_scheduler_analysis': function(data) => {
         let d = JSON.parse(data);
         if (d['data_type'] === 'error') {
             alert('Error running simulation');
@@ -197,24 +197,24 @@ const handlers = {
         document.getElementById('run-simulation-button').disabled       = false;
     },
   
-    'format_timeline': (data) => {
+    'format_timeline': function(data) => {
       timelineData = data;
     },
   
-    'print_output': (data) => {
+    'print_output': function(data) => {
         let out = data.replace(/\n/g, '<br>');
         console.log(out);
     },
   
-    'save_modified_processor': (data) => {
+    'save_modified_processor': function(data) => {
       console.log("Processor settings saved");
     },
   
-    'get_program_json': (data) => {
+    'get_program_json': function(data) => {
       programData = JSON.parse(data);
     },
   
-    'add_new_program': (data) => {
+    'add_new_program': function(data) => {
       console.log("New program saved");
     }
 }
