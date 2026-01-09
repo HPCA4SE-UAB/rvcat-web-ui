@@ -12,7 +12,7 @@
  * UI state 
  * ------------------------------------------------------------------ */
 
-  const robState = inject('robState')
+  const simState = inject('simulationState')
   
   let canvasTimeout = null
 
@@ -686,7 +686,7 @@
 
   async function getTimelineAndDraw() {
     iterations.value   = Math.min(iterations.value, 9);
-    timelineData.value = await getTimeline(iterations.value, 100 /* ROB SIZE */ );
+    timelineData.value = await getTimeline(iterations.value, simState.ROBsize );
     drawTimeline(timelineData.value);
   }
 
