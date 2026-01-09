@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
+  import { ref, onMounted, watch, inject } from "vue";
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
 /* ------------------------------------------------------------------ 
@@ -15,6 +15,19 @@
   const infoIcon3        = ref(null);
   const iters            = ref(1)
 
+  const simState = inject('simulationState');
+
+  // Watch for changes to ROBsize
+  watch(() => simState.ROBsize, (newValue, oldValue) => {
+    recomputeAnalysis() 
+  })
+
+  // Define the function that should be called
+  const recomputeAnalysis = () => {
+    console.log('Reloading RVCAT with ROBsize:', simState.ROBsize)
+    getSchedulerAnalysis(iters,simState.ROBsize) 
+  }
+  
 /* ------------------------------------------------------------------ 
  * Tutorial 
  * ------------------------------------------------------------------ */
@@ -25,7 +38,7 @@
   function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
   function closeTutorial3() { showTutorial3.value  = false }
 
-  function RunSimulation()  { getSchedulerAnalysis(1000,100) }
+  function RunSimulation()  { getSchedulerAnalysis(iters,simState.ROBsize) }
   
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
@@ -43,14 +56,6 @@
   });
 
   watch(iters, v => localStorage.setItem("ExecutionIterations", v));
-
- /* ------------------------------------------------------------------ 
-  * UI actions 
-  * ------------------------------------------------------------------ */
-  onMounted(async () => {
-    await nextTick();
-    reloadRvcat();
-  });
 </script>
 
 <template>
