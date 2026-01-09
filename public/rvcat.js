@@ -250,7 +250,6 @@ const handlers = {
     'processor_show': (data) => {
         processorInfo = JSON.parse(data);
         showProcessor();
-        // getSchedulerAnalysis();
     },
 
     'generate_simulation_results': (data) => {
