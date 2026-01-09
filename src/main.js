@@ -6,7 +6,7 @@ import router          from './router'
 const app = createApp(App)
 
 // Create reactive state BEFORE mounting
-const robState = reactive({
+const SimulationState = reactive({
   ROBsize:            100,
   selectedProcessor:   '',
   availableProcessors: [],
@@ -18,6 +18,6 @@ app.use(createPinia())
 app.use(router)
 
 // Provide reactive state to all components
-app.provide('robState', robState)
+app.provide('simulationState', SimulationState)
 
 app.mount('#app')
