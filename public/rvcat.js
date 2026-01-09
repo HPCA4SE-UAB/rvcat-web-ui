@@ -204,6 +204,7 @@ const handlers = {
   
     'import_rvcat': (data) => {
       // set a flag ?
+      closeLoadingOverlay();
     },
 
     'set_processor': (data) => {
@@ -212,7 +213,6 @@ const handlers = {
   
     'set_program': (data) => {
         // Once the processor and program is set, show the program in the UI
-        closeLoadingOverlay();
     },
   
     'get_programs': (data) => {
@@ -477,6 +477,7 @@ worker.onmessage = function(message) {
       setProgram();
       programShow();
       getProcessorInformation();
+      getSchedulerAnalysis();
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
