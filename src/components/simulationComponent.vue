@@ -25,7 +25,7 @@
   function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
   function closeTutorial3() { showTutorial3.value  = false }
 
-  function RunSimulation()  { getSchedulerAnalysis() }
+  function RunSimulation()  { getSchedulerAnalysis(1000,100) }
   
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
