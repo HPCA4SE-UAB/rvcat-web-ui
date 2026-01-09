@@ -3,20 +3,26 @@
 ///////////////////////////////////////////////////////////////////////
 
 function readPythonProgramsAndProcessors() {
-  executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
+  executeCode('import rvcat',                  'import_rvcat'  );
+  executeCode('rvcat.files.list_json(False)',  'get_programs'  );
   executeCode('rvcat.files.list_json(True)',   'get_processors');
 }
 
+function setProcessor() {
+    executeCode( 'rvcat._processor.load("base1");', 'set_processor' );
+}
+
+function setProgram() {
+    let res = 'rvcat._program.load("baseline");';
+    executeCode( res, 'set_program' );
+}
+
 function programShow() {
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-    res +=    'rvcat._program.show_code()';
-    executeCode( res, 'program_show' );
+    executeCode( 'rvcat._program.show_code()', 'program_show' );
 }
 
 function getProcessorInformation() {
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-    res +=    'rvcat._processor.json()';
-    executeCode( res, 'processor_show' );
+    executeCode( 'rvcat._processor.json()', 'processor_show' );
 }
 
 function getSchedulerAnalysis() {
@@ -33,8 +39,7 @@ function getSchedulerAnalysis() {
     document.getElementById('critical-path-section').style.display  = 'none';
     document.getElementById('run-simulation-button').disabled       = true;
 
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-    res +=    'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()';
+    let res = 'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()';
     executeCode( res, 'generate_simulation_results' );
 }
 
@@ -44,9 +49,7 @@ function reloadRvcat() {
 }
 
 function programShowPerformanceLimits() {
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=    'rvcat._program.show_performance_analysis()'
-    executeCode( res, 'prog_show_performance' )
+    executeCode( 'rvcat._program.show_performance_analysis()', 'prog_show_performance' )
 }
 
 function showCriticalPathsGraph(n,i,l,s,f) {
@@ -59,8 +62,7 @@ function showCriticalPathsGraph(n,i,l,s,f) {
     if (!s) {small    = "False"}
     if (!f) {full     = "False"}
   
-    let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-    res +=    `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
+    let res = `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
     executeCode( res, 'generate_critical_paths_graph' )
     lastExecutedCommand = showCriticalPathsGraph;
 }
@@ -84,8 +86,7 @@ async function getTimeline(num_iters) {
         }
       };
 
-      let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-      res +=    'rvcat._scheduler.init(100, 10);'
+      let res = 'rvcat._scheduler.init(100, 10);'
       res +=    `rvcat._scheduler.format_timeline(niters=${num_iters})`
       executeCode( res, 'format_timeline');
       lastExecutedCommand = getTimeline;
@@ -93,17 +94,14 @@ async function getTimeline(num_iters) {
 }
 
 async function getProcessorJSON() {
-   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");'
-   res +=    'rvcat._processor.json()'
-   await executeCode( res, 'get_proc_settings' )
+   await executeCode( 'rvcat._processor.json()', 'get_proc_settings' )
    return processorInfo;
 }
 
 async function saveModifiedProcessor(config) {
-   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-   res +=    `rvcat._processor.save(${JSON.stringify(config)})`
+   let res = `rvcat._processor.save(${JSON.stringify(config)})`
    await executeCode( res, 'save_modified_processor' )
-   await executeCode('import rvcat; rvcat.files.list_json(True)', 'get_processors')
+   await executeCode('rvcat.files.list_json(True)', 'get_processors')
 }
 
 async function getProgramJSON(){
@@ -124,23 +122,19 @@ async function getProgramJSON(){
       }
     };
 
-    // fire off the code to the worker
-    let res = 'rvcat._program.json()';
-    executeCode( res, 'get_program_json');
+    executeCode( 'rvcat._program.json()', 'get_program_json');
   });
 }
 
 async function saveNewProgram(config) {
   const payload = typeof config === 'string' ? JSON.parse(config) : config;
-  let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-  res +=    `rvcat._program.save(${JSON.stringify(payload)})`
+  let res = `rvcat._program.save(${JSON.stringify(payload)})`
   await executeCode( res, 'add_new_program' )
-  await executeCode('import rvcat; rvcat.files.list_json(False)',  'get_programs'  );
+  await executeCode('rvcat.files.list_json(False)',  'get_programs'  );
 }
 
 function programShowMemtrace() {
-   let res = 'import rvcat; rvcat._processor.load("base1"); rvcat._program.load("baseline");';
-   res +=    'rvcat._scheduler.init(100, 10); rvcat._program.show_memory_trace()'
+   let res = 'rvcat._scheduler.init(100, 10); rvcat._program.show_memory_trace()'
    executeCode( res, 'print_output' )
    lastExecutedCommand = programShowMemtrace;
 }
@@ -210,6 +204,19 @@ function currentIterations() {
  *************************************************************/
 const handlers = {
   
+    'import_rvcat': (data) => {
+      // set a flag ?
+    },
+
+    'set_processor': (data) => {
+      // ok
+    },
+  
+    'set_program': (data) => {
+        // Once the processor and program is set, show the program in the UI
+        closeLoadingOverlay();
+    },
+  
     'get_programs': (data) => {
         let programs = JSON.parse(data);
         document.getElementById('programs-list').innerHTML="";
@@ -230,9 +237,6 @@ const handlers = {
             option.innerHTML = processor;
             document.getElementById('processors-list').appendChild(option);
         }
-       // Once the processors and programs are loaded show the program in the UI
-        reloadRvcat();
-        closeLoadingOverlay();
     },
   
     'program_show': (data) => {
@@ -472,6 +476,8 @@ worker.onmessage = function(message) {
     console.log('Message received from worker', message);
     if (message.data.action === 'initialized') {
       readPythonProgramsAndProcessors();
+      setProcessor();
+      setProgram();
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
