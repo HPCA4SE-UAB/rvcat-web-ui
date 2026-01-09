@@ -26,8 +26,6 @@ function getProcessorInformation() {
 }
 
 function getSchedulerAnalysis() {
-    // showProcessor();
-
     document.getElementById('instructions-output').innerHTML = '?';
     document.getElementById('cycles-output').innerHTML       = '?';
     document.getElementById('IPC-output').innerHTML          = '?';
@@ -477,6 +475,8 @@ worker.onmessage = function(message) {
       readPythonProgramsAndProcessors();
       setProcessor();
       setProgram();
+      programShow();
+      getProcessorInformation();
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
