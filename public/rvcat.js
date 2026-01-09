@@ -9,12 +9,12 @@ function readPythonProgramsAndProcessors() {
 }
 
 function setProcessor( name ) {
-    let res = `rvcat._processor.load(${name})`
+    let res = `rvcat._processor.load("${name}")`
     executeCode( res, 'set_processor' );
 }
 
 function setProgram( name ) {
-    let res = `rvcat._program.load(${name})`
+    let res = `rvcat._program.load("${name}")`
     executeCode( res, 'set_program' );
 }
 
