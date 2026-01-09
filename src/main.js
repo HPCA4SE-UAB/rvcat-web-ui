@@ -7,7 +7,11 @@ const app = createApp(App)
 
 // Create reactive state BEFORE mounting
 const robState = reactive({
-  ROBsize: 10
+  ROBsize:            100,
+  selectedProcessor:   '',
+  availableProcessors: [],
+  selectedProgram:     '',
+  availablePrograms:   []
 })
 
 app.use(createPinia())
