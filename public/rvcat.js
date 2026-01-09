@@ -8,12 +8,13 @@ function readPythonProgramsAndProcessors() {
   executeCode('rvcat.files.list_json(True)',   'get_processors');
 }
 
-function setProcessor() {
-    executeCode( 'rvcat._processor.load("base1");', 'set_processor' );
+function setProcessor( name ) {
+    let res = `rvcat._processor.load(${name})`
+    executeCode( res, 'set_processor' );
 }
 
-function setProgram() {
-    let res = 'rvcat._program.load("baseline");';
+function setProgram( name ) {
+    let res = `rvcat._program.load(${name})`
     executeCode( res, 'set_program' );
 }
 
@@ -473,8 +474,8 @@ worker.onmessage = function(message) {
     console.log('Message received from worker', message);
     if (message.data.action === 'initialized') {
       readPythonProgramsAndProcessors();
-      setProcessor();
-      setProgram();
+      setProcessor("base1");
+      setProgram("baseline");
       programShow();
       getProcessorInformation();
       getSchedulerAnalysis();
