@@ -25,7 +25,7 @@
   // Define the function that should be called
   const recomputeAnalysis = () => {
     console.log('Reloading RVCAT with ROBsize:', simState.ROBsize)
-    getSchedulerAnalysis(iters,simState.ROBsize) 
+    getSchedulerAnalysis( iters.value, simState.ROBsize ) 
   }
   
 /* ------------------------------------------------------------------ 
@@ -38,7 +38,7 @@
   function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
   function closeTutorial3() { showTutorial3.value  = false }
 
-  function RunSimulation()  { getSchedulerAnalysis(iters,simState.ROBsize) }
+  function RunSimulation()  { getSchedulerAnalysis( iters.value, simState.ROBsize ) }
   
 /* ------------------------------------------------------------------ 
  * Critical Path Statistics 
