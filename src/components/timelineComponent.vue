@@ -110,6 +110,17 @@
     { immediate: true }
   )
 
+  // Watch for changes to ROBsize
+  watch(() => simState.ROBsize, (newValue, oldValue) => {
+    recomputeTimeline() 
+  })
+
+  // Define the function that should be called
+  const recomputeTimeline = () => {
+    console.log('Recompute Timeline with new ROBsize:', simState.ROBsize)
+    getTimelineAndDraw()
+  }
+  
 /* ------------------------------------------------------------------ 
  * External selectors listeners 
  * ------------------------------------------------------------------ */
