@@ -686,7 +686,7 @@
 
   async function getTimelineAndDraw() {
     iterations.value   = Math.min(iterations.value, 9);
-    timelineData.value = await getTimeline(iterations.value);
+    timelineData.value = await getTimeline(iterations.value, 100 /* ROB SIZE */ );
     drawTimeline(timelineData.value);
   }
 
