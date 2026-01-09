@@ -3,17 +3,6 @@
   import TutorialComponent from '@/components/tutorialComponent.vue';
 
   const simState = inject('simulationState');
-
-  // Watch for changes to ROBsize
-  watch(() => simState.ROBsize, (newValue, oldValue) => {
-    reloadProcessor()
-  })
-
-  // Define the function that should be called
-  const reloadProcessor = () => {
-    console.log('Reloading RVCAT with ROBsize:', simState.ROBsize)
-    reloadRvcat()
-  }
  
   const showTutorial     = ref(false);
   const tutorialPosition = ref({ top: '0%', left: '40%' });
@@ -47,7 +36,7 @@
         </select>
         <span class="iters-label">ROB size: </span>
         <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
-               v-model.number="simState.ROBsize" @change="reloadProcessor">
+               v-model.number="simState.ROBsize">
       </div>
     </div>
     
