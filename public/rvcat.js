@@ -26,7 +26,7 @@ function getProcessorInformation() {
     executeCode( 'rvcat._processor.json()', 'processor_show' );
 }
 
-function getSchedulerAnalysis() {
+function getSchedulerAnalysis(n_iters, rob_size) {
     document.getElementById('instructions-output').innerHTML = '?';
     document.getElementById('cycles-output').innerHTML       = '?';
     document.getElementById('IPC-output').innerHTML          = '?';
@@ -38,7 +38,8 @@ function getSchedulerAnalysis() {
     document.getElementById('critical-path-section').style.display  = 'none';
     document.getElementById('run-simulation-button').disabled       = true;
 
-    let res = 'rvcat._scheduler.init(100, 10); rvcat._scheduler.format_analysis_json()';
+    let res = `rvcat._scheduler.init(${n_iters}, ${rob_size}); `
+    res    += 'rvcat._scheduler.format_analysis_json()';
     executeCode( res, 'generate_simulation_results' );
 }
 
@@ -66,7 +67,7 @@ function showCriticalPathsGraph(n,i,l,s,f) {
     lastExecutedCommand = showCriticalPathsGraph;
 }
 
-async function getTimeline(num_iters) {
+async function getTimeline(num_iters, rob_size) {
     let controls = document.getElementById('dependencies-controls');
     controls.style.display = 'block';
 
@@ -85,8 +86,8 @@ async function getTimeline(num_iters) {
         }
       };
 
-      let res = 'rvcat._scheduler.init(100, 10);'
-      res +=    `rvcat._scheduler.format_timeline(niters=${num_iters})`
+      let res = `rvcat._scheduler.init(${num_iters}, ${rob_size}); `
+      res    += `rvcat._scheduler.format_timeline(niters=${num_iters})`
       executeCode( res, 'format_timeline');
       lastExecutedCommand = getTimeline;
     });
@@ -132,8 +133,8 @@ async function saveNewProgram(config) {
   await executeCode('rvcat.files.list_json(False)',  'get_programs'  );
 }
 
-function programShowMemtrace() {
-   let res = 'rvcat._scheduler.init(100, 10); rvcat._program.show_memory_trace()'
+function programShowMemtrace(n_iters) {
+   let res = `rvcat._scheduler.init(${n_iters}, 10); rvcat._program.show_memory_trace()`
    executeCode( res, 'print_output' )
    lastExecutedCommand = programShowMemtrace;
 }
@@ -151,51 +152,6 @@ var programData         = null;
 
 const MAX_PROGRAM_ITERATIONS = 2000;
 const MAX_ROB_SIZE           =  500;
-
-// Get selected values (program, processor... etc)
-function currentProgram() {
-    let p = document.getElementById('programs-list').value;
-    return p;
-}
-
-function currentProcessor() {
-    let p = document.getElementById('processors-list').value;
-    return p;
-}
-
-function currentIterations() {
-  if (document.getElementById("num-iters")){
-    let elem = document.getElementById('num-iters');
-    let i = elem.value;
-    if (i === '') {
-        elem.value = 100;
-    }
-    if (i > MAX_PROGRAM_ITERATIONS) {
-        elem.value = MAX_PROGRAM_ITERATIONS;
-    }
-    return elem.value;
-  }
-  else {
-    return 200;
-  }
-}
-
-/*
-  if (document.getElementById("rob-size")){
-    let elem = document.getElementById('rob-size');
-    let rs = elem.value;
-    if (rs === '') {
-        elem.value = rs;
-    }
-    if (rs > MAX_ROB_SIZE) {
-        elem.value = rs;
-    }
-    return elem.value;
-  }
-  else {
-    return 100;
-  }
-} */
 
 
 /*********************************************************
@@ -478,7 +434,7 @@ worker.onmessage = function(message) {
       setProgram("baseline");
       programShow();
       getProcessorInformation();
-      getSchedulerAnalysis();
+      getSchedulerAnalysis(1000,100);
     }
     if (message.data.action === 'loadedPackage') {
       // Handles confirmation when packages are loaded
