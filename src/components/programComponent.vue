@@ -2,19 +2,9 @@
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from "vue";
   import TutorialComponent  from '@/components/tutorialComponent.vue';
 
-  const robState = inject('robState');
+  const simState = inject('simulationState');
 
-  // Watch for changes to ROBsize
-  watch(() => robState.ROBsize, (newValue, oldValue) => {
-    reloadProgram()
-  })
-
-  // Define the function that should be called
-  const reloadProgram = () => {
-    console.log('Reloading RVCAT with ROBsize:', robState.ROBsize)
-    reloadRvcat(robState.ROBsize)
-  }
-  
+   
   let processorsListHandler = null;
 
   onMounted(() => {
@@ -24,7 +14,6 @@
         processorsListHandler = () => setTimeout(() => { programShow(); }, 100);
         list.addEventListener("change", processorsListHandler);
       }
-      reloadRvcat(robState.ROBsize);
     });
   });
   onUnmounted(() => {
