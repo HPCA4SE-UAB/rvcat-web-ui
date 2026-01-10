@@ -69,7 +69,10 @@ const handleRVCAT = (data, dataType) => {
     console.error('Failed to load rvcat:', data);
     return;
   }
-  console.log('RVCAT LOADED!', data);
+  console.log('RVCAT LOADED!');
+  setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
+  executePython('rvcat.files.list_json(False)',  'get_programs'  );
+  executePython('rvcat.files.list_json(True)',   'get_processors');
 };
 
 onMounted(() => {
@@ -89,9 +92,7 @@ onUnmounted(() => {
 watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
-      executePython('import rvcat', 'import_rvcat', (result) => {
-        setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-      });
+      executePython('import rvcat', 'import_rvcat');
   }
 })
  
