@@ -82,8 +82,8 @@
           </option>
         </select>
         <!-- Display current selection -->
-        <div v-if="selectedProcessor">
-          Selected: {{ selectedProcessor }}
+        <div v-if="simState.selectedProcessor">
+          Selected: {{ simState.selectedProcessor }}
         </div>
         
         <span class="iters-label">ROB size: </span>
