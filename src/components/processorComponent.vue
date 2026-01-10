@@ -32,7 +32,8 @@
        processor: simState.selectedProcessor.value,
        processorsCount: simState.availableProcessors.value.length
      })
-     window.reloadRvcat()
+     // Call Python RVCAT to load new processor configuration
+     setProcessor( simState.selectedProcessor.value )
   }
 }
   
@@ -58,7 +59,6 @@
       <div id="settings-div">
         <select 
           v-model="simState.selectedProcessor"
-          name="processor-name" 
           title="Select Processor" 
           @change="reloadProcessor"
         >
