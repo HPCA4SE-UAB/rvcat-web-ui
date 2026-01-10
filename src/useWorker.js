@@ -1,5 +1,5 @@
 // Vue composable
-import { WorkerManager }    from '@/public/workerManager';
+import { WorkerManager }    from './public/workerManager';
 import { ref, onUnmounted } from 'vue';
 
 // Singleton worker manager
@@ -56,3 +56,4 @@ export function useWorker() {
   };
 
 }
+
