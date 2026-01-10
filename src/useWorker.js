@@ -37,7 +37,7 @@ export function useWorker() {
   
   // Public methods
   const executePython = (code, id, callback) => {
-    return safeExecute(() => workerManager.execute(code, id, callback));
+    return workerManager.executeWhenReady(code, id, callback);
   };
   
   const loadPackage = (pkg) => {
@@ -73,4 +73,5 @@ export function useWorker() {
     waitForReady: () => workerManager.waitForReady()
   };
 }
+
 
