@@ -230,7 +230,7 @@ watch(isReady, (ready) => {
     font-size: 2.5vh;
 }
 
-/* Spinner animation */
+// Spinner animation 
 .spinner {
     border:     12px solid #f3f3f3;
     border-top: 12px solid #007bff;
