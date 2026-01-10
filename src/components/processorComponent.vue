@@ -10,7 +10,7 @@
   const simState = inject('simulationState');
  
   // Handler for 'get_processors' message
-  const handleProcessors = (data) => {
+  const handleProcessors = (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to get list of processors:', data);
       return;
