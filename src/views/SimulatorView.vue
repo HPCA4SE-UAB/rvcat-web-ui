@@ -89,13 +89,13 @@ watch(isReady, (ready) => {
       />
     </header>
 
-    <div class="blur-overlay" v-show="showOverlay"></div>
-    <div class="overlay"      v-show="showOverlay">
+    <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
+    <div class="overlay"      :style="{ display: showOverlay ? 'block' : 'none' }">
       <div class="spinner"></div>
-        <p>{{ loadingMessage }}</p>
-        <p>Please wait. Loading can take several seconds</p>
+      <p>{{ loadingMessage }}</p>
+      <p>Please wait. Loading can take several seconds</p>
     </div>
-
+    
     <main class="container">
       <div class="grid-item processor">
         <processorComponent />
@@ -153,13 +153,13 @@ watch(isReady, (ready) => {
   
 .blur-overlay {
     position: fixed;
-    display: none;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    display:  none;
+    width:    100%;
+    height:   100%;
+    top:      0;
+    left:     0;
+    right:    0;
+    bottom:   0;
     background-color: rgb(65, 65, 65, 0.5);
     z-index: 1000;
     backdrop-filter: blur(5px);
@@ -168,11 +168,11 @@ watch(isReady, (ready) => {
     position: fixed;
     display: none;
     margin: auto;
-    width: fit-content;
+    width:  fit-content;
     height: fit-content;
-    top: 0;
-    left: 0;
-    right: 0;
+    top:    0;
+    left:   0;
+    right:  0;
     bottom: 0;
     background-color: rgba(255, 255, 255, 0.4);
     z-index: 100;
@@ -192,13 +192,13 @@ watch(isReady, (ready) => {
 
 /* Spinner animation */
 .spinner {
-    border: 12px solid #f3f3f3;
+    border:     12px solid #f3f3f3;
     border-top: 12px solid #007bff;
     border-radius: 50%;
-    width: 80px;
-    height: 80px;
+    width:     80px;
+    height:    80px;
     animation: spin 1s linear infinite;
-    margin: auto;
+    margin:    auto;
     margin-bottom: 20px;
 }
 
