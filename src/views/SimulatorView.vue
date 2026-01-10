@@ -10,7 +10,7 @@ import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
 
 // Inject worker
-const { isReady, executePython } = inject('worker');
+const { isReady, registerHandler, executePython } = inject('worker');
 
 // Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
@@ -62,19 +62,38 @@ function cancelLeave() {
 }
 
 function closeLoadingOverlay() { showOverlay.value = false }
- 
+
+// Handler for 'import_rvcat' message
+const handleRVCAT = (data, dataType) => {
+  if (dataType === 'error') {
+    console.error('Failed to load rvcat:', data);
+    return;
+  }
+  
+  console.log('RVCAT LOADED!', data);
+  }
+};
+
 onMounted(() => {
   nextTick(() => {
       loadingMessage.value = 'Loading RVCAT';
       showOverlay.value    = true
   });
+  
+  // Register processors handler
+  const cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
 });
 
+onUnmounted(() => {
+  cleanupRVCAT();
+});
+  
 watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
-      setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-      executePython('import rvcat', 'import_rvcat' );
+      executePython('import rvcat', 'import_rvcat', (result) => {
+        setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
+      });
   }
 })
  
@@ -152,26 +171,26 @@ watch(isReady, (ready) => {
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
 .blur-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top:    0;
+  left:   0;
+  width:  100%;
   height: 100%;
+  z-index: 1000;
+  position: fixed;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
-  z-index: 1000;
 }
 
 .overlay {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  top:   50%;
+  left:  50%;
   z-index: 1001;
+  position:   fixed;
+  transform:  translate(-50%, -50%);
+  background: white;
+  padding:    2rem;
+  border-radius: 8px;
+  box-shadow:    0 4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   min-width: 300px;
 }
@@ -180,8 +199,8 @@ watch(isReady, (ready) => {
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #3498db;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width:    40px;
+  height:   40px;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
 }
@@ -189,76 +208,4 @@ watch(isReady, (ready) => {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/*
-.blur-overlay {
-    position: fixed;
-    display:  none;
-    width:    100%;
-    height:   100%;
-    top:      0;
-    left:     0;
-    right:    0;
-    bottom:   0;
-    background-color: rgb(65, 65, 65, 0.5);
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
-.overlay {
-    position: fixed;
-    display: none;
-    margin: auto;
-    width:  fit-content;
-    height: fit-content;
-    top:    0;
-    left:   0;
-    right:  0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.4);
-    z-index: 100;
-    border-radius: 15px;
-    border: 2px solid #506c8666;
-    padding: 2%;
-    padding-right: 5%;
-    padding-left: 5%;
-}
-
-#loading-overlay p {
-    margin: auto;
-    font-weight: bold;
-    text-align: center;
-    font-size: 2.5vh;
-}
-
-// Spinner animation 
-.spinner {
-    border:     12px solid #f3f3f3;
-    border-top: 12px solid #007bff;
-    border-radius: 50%;
-    width:     80px;
-    height:    80px;
-    animation: spin 1s linear infinite;
-    margin:    auto;
-    margin-bottom: 20px;
-}
-
-.spinner-small {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #868686;
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    animation: spin 1s linear infinite;
-    margin: auto;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-*/
 </style>
