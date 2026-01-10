@@ -59,28 +59,21 @@ function cancelLeave() {
   showLeaveModal.value = false;
   pendingKey.value       = null;
 }
-  
-/**** Overlay *********/
-function openLoadingOverlay(message) {
-  loadingMessage.value = message
-  showOverlay.value = true
-}
 
-function closeLoadingOverlay() {
-  showOverlay.value = false
-}
+function closeLoadingOverlay() { showOverlay.value = false }
  
 onMounted(() => {
   nextTick(() => {
-    openLoadingOverlay('Loading RVCAT');
+      loadingMessage.value = 'Loading RVCAT';
+      showOverlay.value    = true
   });
 });
 
 watch(isReady, (ready) => {
   if (ready) {
-    setLoadingOverlayMessage('Loading complete!')
-    setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-    // loadInitialData();
+      loadingMessage.value = 'Loading complete!';
+      setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
+      // loadInitialData();
   }
 })
  
