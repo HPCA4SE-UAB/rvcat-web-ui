@@ -5,7 +5,8 @@ import router          from './router'
 
 const app = createApp(App)
 
-// Create reactive state BEFORE mounting
+// Create reactive state:
+//    data that must be shared between components and changes may provoke reactions
 const SimulationState = reactive({
   ROBsize:            100,
   selectedProcessor:   '',
