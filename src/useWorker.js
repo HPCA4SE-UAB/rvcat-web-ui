@@ -45,7 +45,11 @@ export function useWorker() {
   };
   
   const registerHandler = (id, handler) => {
-    return workerManager.registerHandler(id, handler);
+    workerManager.registerHandler(id, handler);
+    // Return cleanup function
+    return () => {
+      workerManager.unregisterHandler(id);
+    };
   };
   
   // Cleanup
@@ -69,3 +73,4 @@ export function useWorker() {
     waitForReady: () => workerManager.waitForReady()
   };
 }
+
