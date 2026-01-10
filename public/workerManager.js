@@ -52,6 +52,20 @@ export class WorkerManager {
     delete this.globalHandlers[id];
   }
 
+  // Execute code with callback
+  execute(code, id, callback) {
+    if (callback) {
+      this.messageCallbacks.set(id, callback);
+    }
+    
+    this.worker.postMessage({
+      action: 'execute',
+      code: code,
+      id: id
+    });
+  }
+
+  
   // Wait for initialization
   async waitForReady() {
     if (this.isReady) return true;
@@ -83,3 +97,4 @@ export class WorkerManager {
   }
 
 }
+
