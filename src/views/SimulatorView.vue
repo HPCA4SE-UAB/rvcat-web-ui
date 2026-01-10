@@ -18,8 +18,6 @@ const pendingKey        = ref(null);
 const settingsCompInst  = ref(null);
 const showOverlay       = ref(true);
 const loadingMessage    = ref('Initializing');
-const currentKey        = ref('simulationComponent');
-const currentComponent  = shallowRef(components[currentKey.value]);
 
 // Map of component keys -> component definitions
 const components = {
@@ -30,6 +28,9 @@ const components = {
   simulationComponent
 };
 
+const currentKey        = ref('simulationComponent');
+const currentComponent  = shallowRef(components[currentKey.value]);
+  
 // Handle requests from header
 function onRequestSwitch(key) {
   const nextComp = components[key];
