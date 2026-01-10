@@ -35,7 +35,6 @@
      // Call Python RVCAT to load new processor configuration
      setProcessor( simState.selectedProcessor.value )
   }
-}
   
 /* ------------------------------------------------------------------ 
  * Help support 
