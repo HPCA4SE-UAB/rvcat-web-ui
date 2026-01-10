@@ -153,6 +153,7 @@ var programData         = null;
 const MAX_PROGRAM_ITERATIONS = 2000;
 const MAX_ROB_SIZE           =  500;
 
+const simState = inject('simulationState');
 
 /*********************************************************
  *  Message Handling from Pyodide Worker
@@ -182,7 +183,20 @@ const handlers = {
             document.getElementById('programs-list').appendChild(option);
         }
     },
-  
+
+    'get_processors': (data) => {
+      try {
+        const processors = JSON.parse(data)
+        simState.availableProcessors.value = processors
+        // Auto-select first processor if none selected
+        if (!simState.selectedProcessor.value && processors.length > 0) {
+          simState.selectedProcessor.value = processors[0]
+        }
+      } catch (error) {
+        console.error('Failed to parse processors:', error)
+      }
+    }
+
     'program_show': (data) => {
       const item       = document.getElementById('rvcat-asm-code');
       item.textContent = data;
