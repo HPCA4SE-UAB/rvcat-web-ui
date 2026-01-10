@@ -10,16 +10,6 @@ function readPythonProgramsAndProcessors() {
       getSchedulerAnalysis(1000,100);
 }
 
-function initPyodide() {  // Main thread sends initialization request
-    setLoadingOverlayMessage('Loading RVCAT');
-    worker.postMessage({action: 'initialize'});
-}
-
-async function executeCode(code, id=undefined){
-    console.log('Executing code:\n', code);
-    worker.postMessage({action: 'execute', code: code, id: id});
-}
-
 function readPythonProgramsAndProcessors() {
   executeCode('import rvcat',                  'import_rvcat'  );
   executeCode('rvcat.files.list_json(False)',  'get_programs'  );
