@@ -22,7 +22,7 @@
     
       // Auto-select first processor if none selected
       if (!simState.selectedProcessor.value && processors.length > 0) {
-        simState.selectedProcessor.value = processors[0]
+        simState.selectedProcessor.value = processors[0][0]
       }
     } catch (error) {
       console.error('Failed to parse processors:', error)
