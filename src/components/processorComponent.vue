@@ -9,7 +9,7 @@
  * Help support 
  * ------------------------------------------------------------------ */
   const showHelp     = ref(false);
-  const helpPosition = ref({ top: '0%', left: '50%' });
+  const helpPosition = ref({ top: '0%', left: '40%' });
   const helpIcon     = ref(null);
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
