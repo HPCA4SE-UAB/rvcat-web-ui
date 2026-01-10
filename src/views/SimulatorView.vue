@@ -11,7 +11,7 @@ import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
 
 // Inject worker
-const { registerHandler, executePython, loadPackage } = inject('worker');
+const { isReady, executePython } = inject('worker');
 
 // Modal & navigation state
 const showLeaveModal    = ref(false);
@@ -66,6 +66,30 @@ onMounted(() => {
     setLoadingOverlayMessage('Loading RVCAT');
   });
 });
+
+watch(isReady, (ready) => {
+  if (ready) {
+    // loadInitialData();
+    closeLoadingOverlay();
+  }
+});
+
+
+// UI stuff
+function openLoadingOverlay() { 
+  document.getElementById('loading-overlay').style.display   = 'block';
+  document.getElementById('blur-overlay-item').style.display = 'block';
+}
+
+function closeLoadingOverlay() {
+    document.getElementById('loading-overlay').style.display   = 'none';
+    document.getElementById('blur-overlay-item').style.display = 'none';
+}
+
+function setLoadingOverlayMessage(message) {
+    document.getElementById('loading-overlay-message').innerHTML = message;
+}
+  
 </script>
 
 <template>
