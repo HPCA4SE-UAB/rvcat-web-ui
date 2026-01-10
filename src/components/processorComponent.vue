@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, nextTick, inject, watch } from 'vue'
+  import { ref, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
   import HelpComponent from '@/components/tutorialComponent.vue';
 
 /* ------------------------------------------------------------------ 
