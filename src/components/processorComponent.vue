@@ -5,29 +5,36 @@
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
  * ------------------------------------------------------------------ */
-  const simState = inject('simulationState');
 
-  // Function to load processors (call this when data arrives)
-  const loadProcessors = (processorsData) => {
-    simState.availableProcessors.value = processorsData
-    // Set first processor as a default selection
-    if (processorsData.length > 0 && !simState.selectedProcessor.value) {
-      simState.selectedProcessor.value = processorsData[0]
+  // Get your worker handlers
+  const handlers = inject('handlers', {})
+  const simState = inject('simulationState');
+ 
+  // Define the handler for when processors data arrives
+  const processorsHandler = (data) => {
+    try {
+      const processors = JSON.parse(data)
+      simState.availableProcessors.value = processors
+    
+      // Auto-select first processor if none selected
+      if (!simState.selectedProcessor.value && processors.length > 0) {
+        simState.selectedProcessor.value = processors[0]
+      }
+    } catch (error) {
+      console.error('Failed to parse processors:', error)
     }
   }
 
-  // Your reload function
-  const reloadProcessor = () => {
-    console.log('Processor changed to:', simState.selectedProcessor.value)
-    // Your reload logic here
-  }
+  handlers['get_processors'] = processorsHandler
 
-  // If loading from an API or worker
-  onMounted(async () => {
-    // Example: Load from worker
-    // const processors = await worker.getProcessors()
-    // loadProcessors(processors)
-  })
+  const reloadProcessor = () => {
+     console.log('Reloading with:', {
+       processor: simState.selectedProcessor.value,
+       processorsCount: simState.availableProcessors.value.length
+     })
+     window.reloadRvcat()
+  }
+}
   
 /* ------------------------------------------------------------------ 
  * Help support 
