@@ -1,12 +1,12 @@
-import { createApp, reactive }   from 'vue'
-import { createPinia } from 'pinia'
-import App             from './App.vue'
-import router          from './router'
+import { createApp, reactive } from 'vue'
+import { createPinia }         from 'pinia'
+import App                     from './App.vue'
+import router                  from './router'
+import { useWorker }           from './useWorker'
 
 const app = createApp(App)
 
-// Create reactive state:
-//    data that must be shared between components and changes may provoke reactions
+// Create reactive state: data shared between components; changes provoke reactions
 const SimulationState = reactive({
   ROBsize:            100,
   selectedProcessor:   '',
@@ -18,7 +18,8 @@ const SimulationState = reactive({
 app.use(createPinia())
 app.use(router)
 
-// Provide reactive state to all components
+// Provide reactive state and worker to all components
 app.provide('simulationState', SimulationState)
+app.provide('worker', useWorker())
 
 app.mount('#app')
