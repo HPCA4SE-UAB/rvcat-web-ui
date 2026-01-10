@@ -15,8 +15,9 @@
       console.error('Failed to get list of processors:', data);
       return;
     }
+    let processors = JSON.parse(data);
+    console.log('Processor List:', processors)
     try {
-      let processors = JSON.parse(data);
       simState.availableProcessors.value = processors
     
       // Auto-select first processor if none selected
