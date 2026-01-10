@@ -1,32 +1,26 @@
 <script setup>
   import { ref, nextTick, inject, watch } from 'vue'
-  import TutorialComponent from '@/components/tutorialComponent.vue';
+  import HelpComponent from '@/components/tutorialComponent.vue';
 
   const simState = inject('simulationState');
- 
-  const showTutorial     = ref(false);
-  const tutorialPosition = ref({ top: '0%', left: '40%' });
-  const infoIcon         = ref(null);
+  
+  
+/* ------------------------------------------------------------------ 
+ * Help support 
+ * ------------------------------------------------------------------ */
+  const showHelp     = ref(false);
+  const helpPosition = ref({ top: '0%', left: '50%' });
+  const helpIcon     = ref(null);
 
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        showTutorial.value = true
-      }
-    })
-  }
-  function closeTutorial() {
-    showTutorial.value = false
-  }
+  function openHelp()  { nextTick(() => { showHelp.value = true }) }
+  function closeHelp() { showHelp.value  = false }
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Processor Pipeline</span>
       </div>
       
@@ -44,12 +38,12 @@
     <div class="pipeline-img" id="pipeline-graph"></div>
 
     <Teleport to="body">
-      <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
+      <HelpComponent v-if="showHelp" :position="helpPosition"
       text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
           <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
           Use the <strong>Processor</strong> tab to modify the microarchitectural parameters.</p>"
       title="Processor MicroArchitecture"
-      @close="closeTutorial" />
+      @close="closeHelp" />
     </Teleport>
   </div>
 </template>
@@ -91,7 +85,7 @@
     max-width: 40%;
     font-size: 2.2vh;
   }
-  table{
+  table {
     display:none;
   }
   .scale-container {
