@@ -89,8 +89,8 @@ watch(isReady, (ready) => {
       />
     </header>
 
-    <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
-    <div class="overlay" :style="{ display: showOverlay ? 'block' : 'none' }">
+    <div class="blur-overlay" v-show="showOverlay"></div>
+    <div class="overlay"      v-show="showOverlay">
       <div class="spinner"></div>
         <p>{{ loadingMessage }}</p>
         <p>Please wait. Loading can take several seconds</p>
@@ -153,13 +153,13 @@ watch(isReady, (ready) => {
   
 .blur-overlay {
     position: fixed;
-    /* display: none; */
+    display: none;
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
-    /* right: 0;
-    bottom: 0; */
+    right: 0;
+    bottom: 0;
     background-color: rgb(65, 65, 65, 0.5);
     z-index: 1000;
     backdrop-filter: blur(5px);
