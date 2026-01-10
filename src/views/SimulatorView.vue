@@ -1,5 +1,5 @@
 <script setup>
-import { ref, shallowRef, onMounted, nextTick } from 'vue';
+import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick } from 'vue';
 import headerComponent         from '@/components/headerComponent.vue';
 import loadingComponent        from '@/components/loadingComponent.vue';
 import processorComponent      from '@/components/processorComponent.vue';
@@ -9,6 +9,9 @@ import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
+
+// Inject worker
+const { registerHandler, executePython, loadPackage } = inject('worker');
 
 // Modal & navigation state
 const showLeaveModal    = ref(false);
@@ -27,7 +30,7 @@ const components = {
 // Current view key & component
 const currentKey       = ref('simulationComponent');
 const currentComponent = shallowRef(components[currentKey.value]);
-
+ 
 // Handle requests from header
 function onRequestSwitch(key) {
   const nextComp = components[key];
@@ -59,8 +62,10 @@ function cancelLeave() {
 
 onMounted(() => {
   nextTick(() => {
-    if (typeof openLoadingOverlay === 'function') openLoadingOverlay();
-    if (typeof initPyodide        === 'function') initPyodide();
+    openLoadingOverlay();
+    setLoadingOverlayMessage('Loading RVCAT');
+    initialize();
+    loadPackage();
   });
 });
 </script>
