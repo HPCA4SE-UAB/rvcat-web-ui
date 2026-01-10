@@ -16,7 +16,7 @@
       return;
     }
     try {
-      let processors = JSON.parse(data, dataType);
+      let processors = JSON.parse(data);
       simState.availableProcessors.value = processors
     
       // Auto-select first processor if none selected
