@@ -64,8 +64,6 @@ onMounted(() => {
   nextTick(() => {
     openLoadingOverlay();
     setLoadingOverlayMessage('Loading RVCAT');
-    initialize();
-    loadPackage();
   });
 });
 </script>
