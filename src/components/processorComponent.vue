@@ -2,8 +2,32 @@
   import { ref, nextTick, inject, watch } from 'vue'
   import HelpComponent from '@/components/tutorialComponent.vue';
 
+/* ------------------------------------------------------------------ 
+ * Processor selection and ROB size specification
+ * ------------------------------------------------------------------ */
   const simState = inject('simulationState');
-  
+
+  // Function to load processors (call this when data arrives)
+  const loadProcessors = (processorsData) => {
+    simState.availableProcessors.value = processorsData
+    // Set first processor as a default selection
+    if (processorsData.length > 0 && !simState.selectedProcessor.value) {
+      simState.selectedProcessor.value = processorsData[0]
+    }
+  }
+
+  // Your reload function
+  const reloadProcessor = () => {
+    console.log('Processor changed to:', simState.selectedProcessor.value)
+    // Your reload logic here
+  }
+
+  // If loading from an API or worker
+  onMounted(async () => {
+    // Example: Load from worker
+    // const processors = await worker.getProcessors()
+    // loadProcessors(processors)
+  })
   
 /* ------------------------------------------------------------------ 
  * Help support 
@@ -25,9 +49,26 @@
       </div>
       
       <div id="settings-div">
-        <select id="processors-list" name="processor-name" title="Select Processor" @change="reloadProcessor">
-                    <!-- Options should be added here with v-for -->
+        <select 
+          v-model="simState.selectedProcessor"
+          name="processor-name" 
+          title="Select Processor" 
+          @change="reloadProcessor"
+        >
+          <option value="" disabled>Select a processor</option>
+          <option 
+            v-for="processor in simState.availableProcessors" 
+            :key="processor"
+            :value="processor"
+          >
+            {{ processor }}
+          </option>
         </select>
+        <!-- Display current selection -->
+        <div v-if="selectedProcessor">
+          Selected: {{ selectedProcessor }}
+        </div>
+        
         <span class="iters-label">ROB size: </span>
         <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
                v-model.number="simState.ROBsize">
