@@ -183,17 +183,6 @@ const handlers = {
         }
     },
   
-    'get_processors': (data) => {
-        let processors = JSON.parse(data);
-        document.getElementById('processors-list').innerHTML='';
-        for (let processor of processors) {
-            let option       = document.createElement('option');
-            option.value     = processor;
-            option.innerHTML = processor;
-            document.getElementById('processors-list').appendChild(option);
-        }
-    },
-  
     'program_show': (data) => {
       const item       = document.getElementById('rvcat-asm-code');
       item.textContent = data;
