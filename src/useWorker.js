@@ -1,60 +1,71 @@
 // Vue composable
-import { WorkerManager }    from '../public/workerManager';
 import { ref, onUnmounted } from 'vue';
+import { WorkerManager }    from '../public/workerManager';
 
 // Singleton worker manager
 let workerManager = null;
 
 export function useWorker() {
-  // Create singleton instance
+  // State
+  const isReady   = ref(false);
+  const isLoading = ref(true);
+  const error     = ref(null);
+  
+  // Initialize if needed
   if (!workerManager) {
     workerManager = new WorkerManager();
-    workerManager.initialize();
+
+    // Set up ready tracking
+    workerManager.waitForReady()
+      .then(() => {
+        isReady.value   = true;
+        isLoading.value = false;
+      })
+      .catch(err => {
+        error.value     = err;
+        isLoading.value = false;
+      });
   }
-
-  const isReady = ref(false);
   
-  // Function to register a Vue component handler
-  const registerHandler = (id, handler) => {
-    if (workerManager) {
-      workerManager.registerHandler(id, handler);
-      
-      // Return cleanup function
-      return () => {
-        workerManager.unregisterHandler(id);
-      };
+  // Safe execution (waits for ready automatically)
+  const safeExecute = async (fn) => {
+    if (!isReady.value) {
+      await workerManager.waitForReady();
     }
+    return fn();
   };
-
-  // Execute Python code
+  
+  // Public methods
   const executePython = (code, id, callback) => {
-    if (workerManager) {
-      workerManager.execute(code, id, callback);
-    }
+    return safeExecute(() => workerManager.execute(code, id, callback));
   };
-
-  // Load Python package
+  
   const loadPackage = (pkg) => {
-    if (workerManager) {
-      workerManager.loadPackage(pkg);
-    }
+    return safeExecute(() => workerManager.loadPackage(pkg));
   };
-
-  // Cleanup on app unmount
+  
+  const registerHandler = (id, handler) => {
+    return workerManager.registerHandler(id, handler);
+  };
+  
+  // Cleanup
   onUnmounted(() => {
     if (workerManager) {
       workerManager.worker.terminate();
       workerManager = null;
     }
   });
-
+  
   return {
+    // State
     isReady,
-    registerHandler,
+    isLoading,
+    error,
+    
+    // Methods
     executePython,
-    loadPackage
+    loadPackage,
+    registerHandler,
+    waitForReady: () => workerManager.waitForReady()
   };
-
 }
-
-
