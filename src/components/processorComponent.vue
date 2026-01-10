@@ -6,14 +6,17 @@
  * Processor selection and ROB size specification
  * ------------------------------------------------------------------ */
 
-  // Get your worker handlers
-  const handlers = inject('handlers', {})
+  const { registerHandler, executePython } = inject('worker');
   const simState = inject('simulationState');
  
-  // Define the handler for when processors data arrives
-  const processorsHandler = (data) => {
+  // Handler for 'get_processors' message
+  const handleProcessors = (data) => {
+    if (dataType === 'error') {
+      console.error('Failed to get list of processors:', data);
+      return;
+    }
     try {
-      const processors = JSON.parse(data)
+      let processors = JSON.parse(data, dataType);
       simState.availableProcessors.value = processors
     
       // Auto-select first processor if none selected
@@ -25,8 +28,15 @@
     }
   }
 
-  handlers['get_processors'] = processorsHandler
+  onMounted(() => {
+    // Register processors handler
+    const cleanupHandle = registerHandler('get_processors', handleProcessors);
+  });
 
+  onUnmounted(() => {
+    cleanupHandle();
+  });
+  
   const reloadProcessor = () => {
      console.log('Reloading with:', {
        processor: simState.selectedProcessor.value,
