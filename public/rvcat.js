@@ -195,7 +195,7 @@ const handlers = {
       } catch (error) {
         console.error('Failed to parse processors:', error)
       }
-    }
+    },
 
     'program_show': (data) => {
       const item       = document.getElementById('rvcat-asm-code');
