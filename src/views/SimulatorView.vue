@@ -74,7 +74,7 @@ watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
       setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-      // loadInitialData();
+      executePython('import rvcat', 'import_rvcat' );
   }
 })
  
