@@ -1,6 +1,24 @@
 ///////////////////////////////////////////////////////////////////////
 /////////// Functions calling PYTHON RVCAT  ///////////////////////////
 ///////////////////////////////////////////////////////////////////////
+function readPythonProgramsAndProcessors() {
+      readPythonProgramsAndProcessors();
+      setProcessor("base1");
+      setProgram("baseline");
+      programShow();
+      getProcessorInformation();
+      getSchedulerAnalysis(1000,100);
+}
+
+function initPyodide() {  // Main thread sends initialization request
+    setLoadingOverlayMessage('Loading RVCAT');
+    worker.postMessage({action: 'initialize'});
+}
+
+async function executeCode(code, id=undefined){
+    console.log('Executing code:\n', code);
+    worker.postMessage({action: 'execute', code: code, id: id});
+}
 
 function readPythonProgramsAndProcessors() {
   executeCode('import rvcat',                  'import_rvcat'  );
@@ -139,151 +157,6 @@ function programShowMemtrace(n_iters) {
    lastExecutedCommand = programShowMemtrace;
 }
 
-
-/*********************************************************
- *  MAIN Simulation Model STATE
- *************************************************************/
-
-// Save the last executed command to be able to re-run it when the selected program changes
-var lastExecutedCommand = null;
-var processorInfo       = null;
-var timelineData        = null;
-var programData         = null;
-
-const MAX_PROGRAM_ITERATIONS = 2000;
-const MAX_ROB_SIZE           =  500;
-
-const simState = inject('simulationState');
-
-/*********************************************************
- *  Message Handling from Pyodide Worker
- *************************************************************/
-const handlers = {
-  
-    'import_rvcat': (data) => {
-      // set a flag ?
-      closeLoadingOverlay();
-    },
-
-    'set_processor': (data) => {
-      // ok
-    },
-  
-    'set_program': (data) => {
-        // Once the processor and program is set, show the program in the UI
-    },
-  
-    'get_programs': (data) => {
-        let programs = JSON.parse(data);
-        document.getElementById('programs-list').innerHTML="";
-        for (let program of programs) {
-            let option       = document.createElement('option');
-            option.value     = program;
-            option.innerHTML = program;
-            document.getElementById('programs-list').appendChild(option);
-        }
-    },
-
-    'get_processors': (data) => {
-      try {
-        const processors = JSON.parse(data)
-        simState.availableProcessors.value = processors
-        // Auto-select first processor if none selected
-        if (!simState.selectedProcessor.value && processors.length > 0) {
-          simState.selectedProcessor.value = processors[0]
-        }
-      } catch (error) {
-        console.error('Failed to parse processors:', error)
-      }
-    },
-
-    'program_show': (data) => {
-      const item       = document.getElementById('rvcat-asm-code');
-      item.textContent = data;
-      if (lastExecutedCommand !== null) {
-        lastExecutedCommand();
-      }
-    },
-  
-    'processor_show': (data) => {
-        processorInfo = JSON.parse(data);
-        showProcessor();
-    },
-
-    'generate_simulation_results': (data) => {
-        let d = JSON.parse(data);
-        if (d['data_type'] === 'error') {
-            alert('Error running simulation');
-            document.getElementById('run-simulation-spinner').style.display = 'none';
-            document.getElementById('simulation-running').style.display     = 'none';
-            document.getElementById('graph-section').style.display          = 'block';
-            document.getElementById('critical-path-section').style.display  = 'block';
-            document.getElementById('run-simulation-button').disabled       = false;
-            return;
-        }
-
-        document.getElementById('instructions-output').innerHTML = d["total_instructions"];
-        document.getElementById('cycles-output').innerHTML       = d["total_cycles"];
-        document.getElementById('IPC-output').innerHTML          = d["ipc"].toFixed(2);
-        document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
-        document.getElementById('critical-path').innerHTML       = createCriticalPathList(d['critical_path']);
-      
-        usage = {}
-        usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
-        usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
-        usage.ports       = {}
-        let i = 0;
-        let keys = Object.keys(processorInfo.ports);
-        for (let key of keys) {
-            usage.ports[i] = d.ports[key];
-            i++;
-        }
-        createProcessorSimulationGraph(processorInfo.stages.dispatch, Object.keys(processorInfo.ports).length, processorInfo.stages.retire, usage);
-
-        document.getElementById('run-simulation-spinner').style.display = 'none';
-        document.getElementById('simulation-running').style.display     = 'none';
-        document.getElementById('graph-section').style.display          = 'block';
-        document.getElementById('critical-path-section').style.display  = 'block';
-        document.getElementById('run-simulation-button').disabled       = false;
-    },
- 
-    'prog_show_performance': (data) => {
-      let item         = document.getElementById('performance-limits');
-      item.textContent = data;
-    },
-      
-    'generate_critical_paths_graph': (data) => {
-        let item = document.getElementById('dependence-graph');
-        item.innerHTML = '';
-        createGraphVizGraph(data, item);
-    },
- 
-    'format_timeline': (data) => {
-      timelineData = data;
-    },
-
-    'get_proc_settings': (data) => {
-      processorInfo = JSON.parse(data);
-    },
-  
-    'save_modified_processor': (data) => {
-      console.log("Processor settings saved");
-    },
-  
-    'get_program_json': (data) => {
-      programData = JSON.parse(data);
-    },
-  
-    'add_new_program': (data) => {
-      console.log("New program saved");
-    },
-  
-    'print_output': (data) => {
-        let out = data.replace(/\n/g, '<br>');
-        console.log(out);
-    }
-}
-
 ////////////////////////////////////////
 ////  Helping functions  ///////////////
 ////////////////////////////////////////
@@ -417,52 +290,4 @@ function closeLoadingOverlay() {
 
 function setLoadingOverlayMessage(message) {
     document.getElementById('loading-overlay-message').innerHTML = message;
-}
-
-// WORKER definition 
-/* Typical Usage Flow:
- 1. Main thread creates worker: new Worker('worker.js')
- 2. Main thread sends {action: 'initialize'}
- 3. Worker initializes Pyodide, responds {action: 'initialized'}
- 4. Main thread sends {action: 'execute', code: 'print("Hello")', id: 1}
- 5. Worker runs Python, sends back result or error
- 6. Main thread receives response and handles it based on id and data_type
- */
-const worker     = new Worker('./worker.js');
-worker.onmessage = function(message) {
-    console.log('Message received from worker', message);
-    if (message.data.action === 'initialized') {
-      readPythonProgramsAndProcessors();
-      setProcessor("base1");
-      setProgram("baseline");
-      programShow();
-      getProcessorInformation();
-      getSchedulerAnalysis(1000,100);
-    }
-    if (message.data.action === 'loadedPackage') {
-      // Handles confirmation when packages are loaded
-      // Could be extended to trigger dependent actions
-    }
-    if (message.data.action === 'executed') {
-        if (message.data.data_type == 'error') {
-            console.log('Error executing Python code:', message.data.result);
-            return;
-        }
-        data = message.data.result;
-        if (message.data.id !== undefined) {
-          handlers[message.data.id](data);
-        } 
-        // else { }  // No handler specified
-    }
-}
-
-// Pyodide stuff
-function initPyodide() {  // Main thread sends initialization request
-    setLoadingOverlayMessage('Loading RVCAT');
-    worker.postMessage({action: 'initialize'});
-}
-
-async function executeCode(code, id=undefined){
-    console.log('Executing code:\n', code);
-    worker.postMessage({action: 'execute', code: code, id: id});
 }
