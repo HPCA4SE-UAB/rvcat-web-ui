@@ -12,10 +12,14 @@ import simulationComponent     from '@/components/simulationComponent.vue';
 // Inject worker
 const { isReady, executePython } = inject('worker');
 
-// Modal & navigation state
+// Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
 const pendingKey        = ref(null);
 const settingsCompInst  = ref(null);
+const showOverlay       = ref(true);
+const loadingMessage    = ref('Initializing');
+const currentKey        = ref('simulationComponent');
+const currentComponent  = shallowRef(components[currentKey.value]);
 
 // Map of component keys -> component definitions
 const components = {
@@ -26,10 +30,6 @@ const components = {
   simulationComponent
 };
 
-// Current view key & component
-const currentKey       = ref('simulationComponent');
-const currentComponent = shallowRef(components[currentKey.value]);
- 
 // Handle requests from header
 function onRequestSwitch(key) {
   const nextComp = components[key];
@@ -54,41 +54,36 @@ function confirmLeave() {
     pendingKey.value       = null;
   }
 }
+  
 function cancelLeave() {
   showLeaveModal.value = false;
   pendingKey.value       = null;
 }
+  
+/**** Overlay *********/
+function openLoadingOverlay(message) {
+  loadingMessage.value = message
+  showOverlay.value = true
+}
 
+function closeLoadingOverlay() {
+  showOverlay.value = false
+}
+ 
 onMounted(() => {
   nextTick(() => {
-    openLoadingOverlay();
-    setLoadingOverlayMessage('Loading RVCAT');
+    openLoadingOverlay('Loading RVCAT');
   });
 });
 
 watch(isReady, (ready) => {
   if (ready) {
+    setLoadingOverlayMessage('Loading complete!')
+    setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
     // loadInitialData();
-    closeLoadingOverlay();
   }
-});
-
-
-// UI stuff
-function openLoadingOverlay() { 
-  document.getElementById('loading-overlay').style.display   = 'block';
-  document.getElementById('blur-overlay-item').style.display = 'block';
-}
-
-function closeLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display   = 'none';
-    document.getElementById('blur-overlay-item').style.display = 'none';
-}
-
-function setLoadingOverlayMessage(message) {
-    document.getElementById('loading-overlay-message').innerHTML = message;
-}
-  
+})
+ 
 </script>
 
 <template>
@@ -100,10 +95,10 @@ function setLoadingOverlayMessage(message) {
       />
     </header>
 
-    <div class="blur-overlay" id="blur-overlay-item"></div>
-      <div class="overlay" id="loading-overlay">
-        <div class="spinner"></div>
-        <p id="loading-overlay-message">Initializing</p>
+    <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
+    <div class="overlay" :style="{ display: showOverlay ? 'block' : 'none' }">
+      <div class="spinner"></div>
+        <p>{{ loadingMessage }}</p>
         <p>Please wait. Loading can take several seconds</p>
     </div>
 
@@ -164,15 +159,15 @@ function setLoadingOverlayMessage(message) {
   
 .blur-overlay {
     position: fixed;
-    display: none;
+    /* display: none; */
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    /* right: 0;
+    bottom: 0; */
     background-color: rgb(65, 65, 65, 0.5);
-    z-index: 10;
+    z-index: 1000;
     backdrop-filter: blur(5px);
 }
 .overlay {
