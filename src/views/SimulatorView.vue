@@ -69,9 +69,7 @@ const handleRVCAT = (data, dataType) => {
     console.error('Failed to load rvcat:', data);
     return;
   }
-  
   console.log('RVCAT LOADED!', data);
-  }
 };
 
 onMounted(() => {
