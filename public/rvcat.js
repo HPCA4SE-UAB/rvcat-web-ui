@@ -266,18 +266,3 @@ function createCriticalPathList(data) {
   out += "</list>"
   return out
 }
-
-// UI stuff
-function openLoadingOverlay() { 
-  document.getElementById('loading-overlay').style.display   = 'block';
-  document.getElementById('blur-overlay-item').style.display = 'block';
-}
-
-function closeLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display   = 'none';
-    document.getElementById('blur-overlay-item').style.display = 'none';
-}
-
-function setLoadingOverlayMessage(message) {
-    document.getElementById('loading-overlay-message').innerHTML = message;
-}
