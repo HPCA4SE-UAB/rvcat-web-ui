@@ -113,9 +113,8 @@
       </div>
     </div>
     
-    <div class="cache-info" id="cache-info"></div>  
-    <div class="pipeline-img" id="pipeline-graph">
-      <!-- v-html renders the SVG string as HTML -->
+    <!-- <div class="cache-info" id="cache-info"></div>   -->
+    <div class="pipeline-img">
       <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
     </div>
 
@@ -135,19 +134,22 @@
     display:         flex;
     align-items:     center;
     justify-content: center;
-    position: relative;
-    margin:   0 auto;
-    margin-top: 10%;
+    position:        relative;
+    margin:          0 auto;
+    margin-top:      10%;
+    /* overflow: hidden; */
   }
-  .pipeline-img svg {
-    width:  100%;
-    max-height: 50%;
+  .pipeline-img :deep(svg) {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Keeps aspect ratio */
   }
-  .pipeline-graph {
-    display: block;
-    width:   90%;
-    margin:  auto;
+  .pipeline-img :deep(svg) g {
+    transform-box: fill-box;
   }
+
   .cache-info {
     flex:          1;
     display:       flex;
