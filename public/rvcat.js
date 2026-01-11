@@ -10,6 +10,21 @@ function programShow() {
     executeCode( 'rvcat._program.show_code()', 'program_show' );
 }
 
+function getProcessorGraph(processorInfo) {
+    const dotCode = construct_reduced_processor_dot(
+       processorInfo.stages.dispatch,
+       Object.keys(processorInfo.ports).length, 
+       processorInfo.stages.retire,  
+       {
+          'nBlocks':    processorInfo.nBlocks,
+          'blkSize':    processorInfo.blkSize,
+          'mPenalty':   processorInfo.mPenalty,
+          'mIssueTime': processorInfo.mIssueTime
+       }
+    );
+    return createGraphVizGraph(dotCode);  // svg
+}
+
 function getSchedulerAnalysis(n_iters, rob_size) {
     document.getElementById('instructions-output').innerHTML = '?';
     document.getElementById('cycles-output').innerHTML       = '?';
@@ -165,24 +180,6 @@ function createProcessorSimulationGraph(dispatch, execute, retire, usage=null) {
 function showFullProcessor(){
    svg = createGraphVizGraph(fullGraphDotCode);
    document.getElementById('simulation-graph').appendChild(svg)
-}
-
-function showProcessor(processorInfo) {
-    const dotCode = construct_reduced_processor_dot(
-       processorInfo.stages.dispatch,
-       Object.keys(processorInfo.ports).length, 
-       processorInfo.stages.retire,  
-       {
-          'nBlocks':    processorInfo.nBlocks,
-          'blkSize':    processorInfo.blkSize,
-          'mPenalty':   processorInfo.mPenalty,
-          'mIssueTime': processorInfo.mIssueTime
-       }
-    );
-  
-    svg = createGraphVizGraph(dotCode);
-    // document.getElementById('pipeline-graph').appendChild(svg);
-    return svg;
 }
 
 async function showCellInfo(instrID, cycle) {
