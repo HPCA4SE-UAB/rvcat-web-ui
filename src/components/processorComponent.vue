@@ -51,7 +51,7 @@
       let processorInfo = JSON.parse(data);
       console.log('Processor Info:', processorInfo)
       //   insert_cache_annotations(cache)
-      svg = await getProcessorGraph(processorInfo);
+      const svg = await getProcessorGraph(processorInfo);
       pipelineSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('Failed to set processor:', error)
