@@ -19,7 +19,7 @@
     }
   });
   
-  // Handler for 'get_processors' message
+  // Handler for 'get_processors' message (fired from parent component)
   const handleProcessors = (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to get list of processors:', data);
@@ -38,17 +38,35 @@
     }
   }
 
+  // Handler for 'set_processor' message (fired by this component)
+  const handleSetProcessor = (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to set processor:', data);
+      return;
+    }
+    try {
+      let processorInfo = JSON.parse(data);
+
+      console.log('Processor Info:', processorInfo)
+    } catch (error) {
+      console.error('Failed to set processor:', error)
+    }
+  }
+
+  
   onMounted(() => {
-    const cleanupHandle = registerHandler('get_processors', handleProcessors);
+    const cleanupHandleGet = registerHandler('get_processors', handleProcessors);
+    const cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
   });
 
   onUnmounted(() => {
-    cleanupHandle();
+    cleanupHandleGet();
+    cleanupHandleSet();
   });
 
   const reloadProcessor = () => {
     console.log('Reloading with:', simState.selectedProcessor);
-    // Call Python RVCAT to load new processor configuration
+    // Call Python RVCAT to load new processor configuration --> 'set-processor'
     setProcessor( simState.selectedProcessor )
   }
   
