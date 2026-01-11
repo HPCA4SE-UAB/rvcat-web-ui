@@ -3,9 +3,9 @@
   import HelpComponent  from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProgram }      = useRVCAT_Api();
-  const { registerHandler } = inject('worker');
-  const simState            = inject('simulationState');
+  const { setProgram, showProgram} = useRVCAT_Api();
+  const { registerHandler }        = inject('worker');
+  const simState                   = inject('simulationState');
   
   // Reactive SVG string
   const programText = ref('LOADING ...');
@@ -47,13 +47,28 @@
       console.error('Failed to set program:', data);
       return;
     }
+    try {    
+      let programInfo = JSON.parse(data);
+      console.log('Program Info:', programInfo);
+      // copy programInfo into JSON variable for edition & load/save
+
+      // obtain text
+      showProgram( simState.selectedProgram );
+    } catch (error) {
+      console.error('Failed to set program:', error)
+      programText.value = 'Failed to get program description';
+    }
+  }
+
+   // Handler for 'show_program' message (fired by this component)
+  const handleShowProgram = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to show program:', data);
+      return;
+    }
     try {
-      console.log('Program Info:', data)
+      console.log('Program Shown:', data)
       programText.value = data;
-      
-      //let programInfo = JSON.parse(data);
-      // const svg = await getProcessorGraph(processorInfo);
-      //pipelineSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to get program description';
@@ -63,11 +78,13 @@
   onMounted(() => {
     const cleanupHandleGet = registerHandler('get_programs', handlePrograms);
     const cleanupHandleSet = registerHandler('set_program',  handleSetProgram);
+    const cleanupHandleShow= registerHandler('show_program', handleShowProgram);
   });
 
   onUnmounted(() => {
     cleanupHandleGet();
     cleanupHandleSet();
+    cleanupHandleShow();
   });
 
   const reloadProgram = () => {
@@ -199,7 +216,7 @@
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
         <select id="programs-list"   title="Select Program"   name="assembly-code"   @change="reloadProgram"></select>
         <select v-model="simState.selectedProgram" title="Select Program">
-          <option value="" disabled>Select a program</option>
+          <option value="" disabled>Select</option>
           <option 
             v-for="program in simState.availablePrograms" 
             :key="program"
