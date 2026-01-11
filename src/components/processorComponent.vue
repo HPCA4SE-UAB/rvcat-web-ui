@@ -15,14 +15,13 @@
       console.error('Failed to get list of processors:', data);
       return;
     }
-    let processors = JSON.parse(data);
-    console.log('Processor List:', processors)
     try {
-      simState.availableProcessors.value = processors
-    
+      let processors = JSON.parse(data);
+      console.log('Processor List:', processors)
+      simState.availableProcessors = processors
       // Auto-select first processor if none selected
-      if (!simState.selectedProcessor.value && processors.length > 0) {
-        simState.selectedProcessor.value = processors[0][0]
+      if (!simState.selectedProcessor && processors.length > 0) {
+        simState.selectedProcessor = processors[0][0]
       }
     } catch (error) {
       console.error('Failed to parse processors:', error)
