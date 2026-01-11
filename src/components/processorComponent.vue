@@ -1,16 +1,18 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
   import HelpComponent from '@/components/tutorialComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
+  // import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProcessor, setROBSize, isReady } = useRVCAT_Api();
- 
+  // const { setProcessor, setROBSize, isReady } = useRVCAT_Api();
+
+  const { setProcessor } = inject('rvcat');
+  const { registerHandler, executePython } = inject('worker');
+  const simState = inject('simulationState');
+
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
  * ------------------------------------------------------------------ */
 
-  const { registerHandler, executePython } = inject('worker');
-  const simState = inject('simulationState');
 
   // Watch for processor changes
   watch(() => simState.selectedProcessor, (newProcessor, oldProcessor) => {
