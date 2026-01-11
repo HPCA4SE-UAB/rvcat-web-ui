@@ -50,7 +50,7 @@
   const reloadProcessor = () => {
     console.log('Reloading with:', simState.selectedProcessor);
     // Call Python RVCAT to load new processor configuration
-    await setProcessor( simState.selectedProcessor )
+    setProcessor( simState.selectedProcessor )
   }
   
 /* ------------------------------------------------------------------ 
