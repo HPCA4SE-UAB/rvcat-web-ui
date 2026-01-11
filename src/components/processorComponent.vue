@@ -112,10 +112,12 @@
                v-model.number="simState.ROBsize">
       </div>
     </div>
-    
-    <!-- <div class="cache-info" id="cache-info"></div>   -->
-    <div class="pipeline-img">
-      <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+
+    <div class="pipeline-container">
+      <!-- <div class="cache-info" id="cache-info"></div>   -->
+      <div class="pipeline-img">
+        <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+      </div>
     </div>
 
     <Teleport to="body">
@@ -136,19 +138,18 @@
     padding: 20px;
   }
   .pipeline-img {
-    display:         flex;
-    align-items:     center;
-    justify-content: center;
-    position:        relative;
-    margin:          10px auto;
-    margin-top:      10%;
     width:           100%;
-    height:          250px;
-    /* min-height:      200px; /* Fixed height or use min-height */
+    height:          300px;
     border:          2px solid #e0e0e0;
     border-radius:   8px;
     background:      #f8f9fa;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
     overflow:        hidden;
+    position:        relative;
+    margin:          2px auto;
+    margin-top:      5%;
   }
   .pipeline-img :deep(svg) {
     width:      100% !important;
