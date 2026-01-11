@@ -8,7 +8,15 @@
 
   const { registerHandler, executePython } = inject('worker');
   const simState = inject('simulationState');
- 
+
+  // Watch for processor changes
+  watch(() => simState.selectedProcessor, (newProcessor, oldProcessor) => {
+    console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
+    if (newProcessor && newProcessor !== oldProcessor) {
+      reloadProcessor();
+    }
+  });
+  
   // Handler for 'get_processors' message
   const handleProcessors = (data, dataType) => {
     if (dataType === 'error') {
@@ -29,19 +37,15 @@
   }
 
   onMounted(() => {
-    // Register processors handler
     const cleanupHandle = registerHandler('get_processors', handleProcessors);
   });
 
   onUnmounted(() => {
     cleanupHandle();
   });
-  
+
   const reloadProcessor = () => {
-     console.log('Reloading with:', {
-       processor: simState.selectedProcessor,
-       processorsCount: simState.availableProcessors.length
-     })
+     console.log('Reloading with:', simState.selectedProcessor);
      // Call Python RVCAT to load new processor configuration
      setProcessor( simState.selectedProcessor )
   }
@@ -66,11 +70,7 @@
       </div>
       
       <div id="settings-div">
-        <select 
-          v-model="simState.selectedProcessor"
-          title="Select Processor" 
-          @change="reloadProcessor"
-        >
+        <select v-model="simState.selectedProcessor" title="Select Processor" class="processor-select">
           <option value="" disabled>Select a processor</option>
           <option 
             v-for="processor in simState.availableProcessors" 
@@ -102,6 +102,13 @@
 </template>
 
 <style scoped>
+  .processor-select {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    min-width: 200px;
+  }
   .pipeline-img {
     display:         flex;
     align-items:     center;
@@ -131,9 +138,6 @@
     justify-content: space-between;
   }
   
-  #processors-list {
-    font-size: 2.2vh;
-  }
   #rob-size {
     max-width: 40%;
     font-size: 2.2vh;
