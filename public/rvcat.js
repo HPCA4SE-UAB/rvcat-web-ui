@@ -18,7 +18,7 @@ function readPythonProgramsAndProcessors() {
 
 function setProcessor( name ) {
     let res = `rvcat._processor.load(\"${name}\")`
-    executeCode( res, 'set_processor' );
+    executePython( res, 'set_processor' );
 }
 
 function setProgram( name ) {
