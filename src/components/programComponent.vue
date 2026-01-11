@@ -213,23 +213,16 @@
       <div id="settings-div">
         <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
-        <select id="programs-list"   title="Select Program"   name="assembly-code"   @change="reloadProgram"></select>
         <select v-model="simState.selectedProgram" title="Select Program">
           <option value="" disabled>Select</option>
-          <option 
-            v-for="program in simState.availablePrograms" 
-            :key="program"
-            :value="program"
-          >
+          <option v-for="program in simState.availablePrograms" :key="program" :value="program">
             {{ program }}
           </option>
         </select>
       </div>
     </div>
     
-    <section class="main-box code-block">
-        <pre><code id="rvcat-asm-code">{{ programText }}</code></pre>
-    </section>
+    <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
   </div>
   
   <div v-if="showModalUp" class="modal-overlay">
