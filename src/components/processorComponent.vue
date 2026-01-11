@@ -97,7 +97,7 @@
       
       <div id="settings-div">
         <select v-model="simState.selectedProcessor" title="Select Processor">
-          <option value="" disabled>Select a processor</option>
+          <option value="" disabled>Select</option>
           <option 
             v-for="processor in simState.availableProcessors" 
             :key="processor"
