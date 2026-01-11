@@ -73,7 +73,7 @@
   const reloadProgram = () => {
     console.log('Reloading with:', simState.selectedProgram);
     // Call Python RVCAT to load new program --> 'set-program'
-    setProcessor( simState.selectedProcessor )
+    setProgram( simState.selectedProgram )
   }
   
   // Modal logic
