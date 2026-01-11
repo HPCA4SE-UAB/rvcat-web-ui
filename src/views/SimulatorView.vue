@@ -10,7 +10,7 @@ import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
 import { useRVCAT_Api }        from '@/rvcatAPI';
 
-const { isReady, registerHandler, executePython } = inject('worker');
+const { isReady, registerHandler } = inject('worker');
 const { importRVCAT }  = useRVCAT_Api();
 
 // Modal & navigation state, Current view key & component
@@ -67,13 +67,12 @@ function closeLoadingOverlay() { showOverlay.value = false }
 // Handler for 'import_rvcat' message
 const handleRVCAT = (data, dataType) => {
   if (dataType === 'error') {
-    console.error('Failed to load rvcat:', data);
+    console.error('Failed to load RVCAT:', data);
     return;
   }
-  console.log('RVCAT LOADED!');
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  executePython('rvcat.files.list_json(False)',  'get_programs'  );
-  executePython('rvcat.files.list_json(True)',   'get_processors');
+  getProcessors();
+  getPrograms();
 };
 
 onMounted(() => {
