@@ -1,28 +1,81 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from "vue";
-  import TutorialComponent  from '@/components/tutorialComponent.vue';
+  import HelpComponent  from '@/components/tutorialComponent.vue';
+  import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const simState = inject('simulationState');
+  const { setProcessor }    = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
+  
+  // Reactive SVG string
+  const programText = ref('LOADING ...');
 
-   
-  let processorsListHandler = null;
+/* ------------------------------------------------------------------ 
+ * Program selection and Program setting
+ * ------------------------------------------------------------------ */
 
-  onMounted(() => {
-    nextTick(() => {
-      const list = document.getElementById("processors-list");
-      if (list) {
-        processorsListHandler = () => setTimeout(() => { programShow(); }, 100);
-        list.addEventListener("change", processorsListHandler);
-      }
-    });
-  });
-  onUnmounted(() => {
-    const list = document.getElementById("processors-list");
-    if (list && processorsListHandler) {
-      list.removeEventListener("change", processorsListHandler);
+  // Watch for program changes
+  watch(() => simState.selectedProgram, (newProgram, oldProgram) => {
+    console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
+    if (newProgram && newProgram !== oldProgram) {
+      reloadProgram();
     }
   });
+  
+  // Handler for 'get_programs' message (fired from parent component)
+  const handlePrograms = (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to get list of programs:', data);
+      return;
+    }
+    try {
+      let programs = JSON.parse(data);
+      console.log('Program List:', programs)
+      simState.availablePrograms = programs
+      // Auto-select first program if none selected
+      if (!simState.selectedProgram && programs.length > 0) {
+        simState.selectedProgram = programs[0]
+      }
+    } catch (error) {
+      console.error('Failed to parse programs:', error)
+    }
+  }
 
+  // Handler for 'set_program' message (fired by this component)
+  const handleSetProgram = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to set program:', data);
+      return;
+    }
+    try {
+      console.log('Program Info:', data)
+      programText.value = data;
+      
+      //let programInfo = JSON.parse(data);
+      // const svg = await getProcessorGraph(processorInfo);
+      //pipelineSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('Failed to set program:', error)
+      programText.value = 'Failed to get program description';
+    }
+  }
+  
+  onMounted(() => {
+    const cleanupHandleGet = registerHandler('get_programs', handlePrograms);
+    const cleanupHandleSet = registerHandler('set_program',  handleSetProgram);
+  });
+
+  onUnmounted(() => {
+    cleanupHandleGet();
+    cleanupHandleSet();
+  });
+
+  const reloadProgram = () => {
+    console.log('Reloading with:', simState.selectedProgram);
+    // Call Python RVCAT to load new program --> 'set-program'
+    setProcessor( simState.selectedProcessor )
+  }
+  
   // Modal logic
   const showModalUp = ref(false);
   const modalName   = ref("");
@@ -122,32 +175,22 @@
     input.remove();
   }
 
-  const showTutorial     = ref(false)
-  const tutorialPosition = ref({ top: '0%', left: '40%' })
-  const infoIcon         = ref(null)
+/* ------------------------------------------------------------------ 
+ * Help support 
+ * ------------------------------------------------------------------ */
+  const showHelp     = ref(false);
+  const helpPosition = ref({ top: '0%', left: '40%' });
+  const helpIcon     = ref(null);
 
-  function openTutorial() {
-    nextTick(() => {
-      const el = infoIcon.value
-      if (el) {
-        const r = el.getBoundingClientRect()
-        showTutorial.value = true
-      }
-    })
-  }
-
-  function closeTutorial() {
-    showTutorial.value = false
-  }
+  function openHelp()  { nextTick(() => { showHelp.value = true }) }
+  function closeHelp() { showHelp.value  = false }
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon" class="info-icon" @click="openTutorial" title="Show help"> 
-            <img src="/img/info.png" class="info-img">
-        </span>
+        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Program</span>
       </div>
       
@@ -155,11 +198,21 @@
         <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
         <select id="programs-list"   title="Select Program"   name="assembly-code"   @change="reloadProgram"></select>
+        <select v-model="simState.selectedProgram" title="Select Program">
+          <option value="" disabled>Select a program</option>
+          <option 
+            v-for="program in simState.availablePrograms" 
+            :key="program"
+            :value="program"
+          >
+            {{ program }}
+          </option>
+        </select>
       </div>
     </div>
     
     <section class="main-box code-block">
-        <pre><code id="rvcat-asm-code">LOADING ...</code></pre>
+        <pre><code id="rvcat-asm-code">{{ programText }}</code></pre>
     </section>
   </div>
   
@@ -177,14 +230,14 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial" :position="tutorialPosition"
+    <TutorialComponent v-if="showHelp" :position="helpPosition"
     text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level, 
        informal language. The <em>type</em>, execution <em>latency</em> and eligible <em>execution ports</em> are shown for each instruction.
         <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states, 
       branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
         Programs can be uploaded or downloaded in JSON format."
       title="Program Loop"
-    @close="closeTutorial"  />
+    @close="closeHelp"  />
   </Teleport>
 </template>
 
