@@ -8,9 +8,10 @@ import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
+import { useRVCAT_Api }        from '@/rvcatAPI';
 
-// Inject worker
 const { isReady, registerHandler, executePython } = inject('worker');
+const { importRVCAT }  = useRVCAT_Api();
 
 // Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
@@ -92,7 +93,7 @@ onUnmounted(() => {
 watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
-      executePython('import rvcat', 'import_rvcat');
+      importRVCAT();
   }
 })
  
