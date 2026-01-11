@@ -143,17 +143,18 @@
     margin:          10px auto;
     margin-top:      10%;
     width:           100%;
-    min-height: 500px; /* Fixed height or use min-height */
+    height:          250px;
+    /* min-height:      200px; /* Fixed height or use min-height */
     border:          2px solid #e0e0e0;
     border-radius:   8px;
     background:      #f8f9fa;
     overflow:        hidden;
   }
   .pipeline-img :deep(svg) {
-    width:      100%;
-    height:     100%;
-    max-width:  100%;
-    max-height: 100%;
+    width:      100% !important;
+    height:     100% !important;
+    max-width:  100% !important;
+    max-height: 100% !important;
     object-fit: contain; /* Keeps aspect ratio */
     display:    block;
   }
@@ -163,13 +164,13 @@
   
   /* Make GraphViz elements more visible */
   .pipeline-img svg text {
-    font-size:   12px;
-    font-family: Arial, sans-serif;
+    font-size:   12px !important;
+    font-family: Arial, sans-serif !important;
   }
 
   .pipeline-img svg polygon,
   .pipeline-img svg path {
-    stroke-width: 2px;
+    stroke-width: 2px !important;
   }
 
   .cache-info {
