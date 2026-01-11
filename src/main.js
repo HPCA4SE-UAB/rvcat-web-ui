@@ -2,7 +2,6 @@ import { createApp, reactive } from 'vue'
 import App                     from './App.vue'
 import router                  from './router'
 import { useWorker }           from './useWorker'
-import { useRVCAT_Api }        from './rvcatAPI';
 
 const app = createApp(App)
 
@@ -19,6 +18,5 @@ app.use(router)
 
 app.provide('simulationState', SimulationState)
 app.provide('worker', useWorker())
-app.provide('rvcat',  useRVCAT_Api())
 
 app.mount('#app')
