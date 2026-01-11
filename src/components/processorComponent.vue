@@ -131,8 +131,8 @@
 
 <style scoped> 
   .pipeline-container {
-    width: 100%;
-    height: 100%;
+    width:   100%;
+    height:  100%;
     padding: 20px;
   }
   .pipeline-img {
@@ -142,17 +142,17 @@
     position:        relative;
     margin:          0 auto;
     margin-top:      10%;
-    width:         100%;
-    /* height: 500px; /* Fixed height or use min-height */
-    border:        2px solid #e0e0e0;
-    border-radius: 8px;
-    background:    #f8f9fa;
-    overflow:      hidden;
+    width:           100%;
+    min-height: 500px; /* Fixed height or use min-height */
+    border:          2px solid #e0e0e0;
+    border-radius:   8px;
+    background:      #f8f9fa;
+    overflow:        hidden;
   }
   .pipeline-img :deep(svg) {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
+    width:      100%;
+    height:     100%;
+    max-width:  100%;
     max-height: 100%;
     object-fit: contain; /* Keeps aspect ratio */
   }
