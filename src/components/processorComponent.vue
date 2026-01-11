@@ -42,7 +42,7 @@
   }
 
   // Handler for 'set_processor' message (fired by this component)
-  const handleSetProcessor = (data, dataType) => {
+  const handleSetProcessor = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to set processor:', data);
       return;
