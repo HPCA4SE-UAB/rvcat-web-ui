@@ -50,9 +50,12 @@
     try {
       let processorInfo = JSON.parse(data);
       console.log('Processor Info:', processorInfo)
-      pipelineSvg.value = getProcessorGraph(processorInfo);
+      //   insert_cache_annotations(cache)
+      svg =  getProcessorGraph(processorInfo);
+      pipelineSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('Failed to set processor:', error)
+      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
 
@@ -154,11 +157,10 @@
     margin:  auto;
   }
   .placeholder {
-    display: flex;
-    align-items: center;
+    display:         flex;
+    align-items:     center;
     justify-content: center;
-    height: 300px;
-    color: #666;
+    color:      #666;
     font-style: italic;
   }
   .cache-info {
