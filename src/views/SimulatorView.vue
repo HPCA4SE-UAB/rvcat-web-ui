@@ -10,8 +10,8 @@ import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
 import { useRVCAT_Api }        from '@/rvcatAPI';
 
-const { isReady, registerHandler } = inject('worker');
-const { importRVCAT }  = useRVCAT_Api();
+const { isReady, registerHandler }                = inject('worker');
+const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 
 // Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
@@ -71,8 +71,8 @@ const handleRVCAT = (data, dataType) => {
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  getProcessors();
-  getPrograms();
+  getProcessors();  // from RVCAT API
+  getPrograms();    // from RVCAT API
 };
 
 onMounted(() => {
@@ -92,7 +92,7 @@ onUnmounted(() => {
 watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
-      importRVCAT();
+      importRVCAT();  // from RVCAT API
   }
 })
  
