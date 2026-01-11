@@ -3,7 +3,7 @@
   import HelpComponent  from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProcessor }    = useRVCAT_Api();
+  const { setProgram }      = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
   
