@@ -168,18 +168,21 @@ function showFullProcessor(){
 }
 
 function showProcessor(processorInfo) {
-    let dispatch_width = processorInfo.stages.dispatch;
-    let num_ports      = Object.keys(processorInfo.ports).length;
-    let retire_width   = processorInfo.stages.retire;
-    let cache = {'nBlocks':    processorInfo.nBlocks,
-                 'blkSize':    processorInfo.blkSize,
-                 'mPenalty':   processorInfo.mPenalty,
-                 'mIssueTime': processorInfo.mIssueTime};
-  
-    const dotCode = construct_reduced_processor_dot(dispatch_width, num_ports, retire_width, cache);
+    const dotCode = construct_reduced_processor_dot(
+       processorInfo.stages.dispatch,
+       Object.keys(processorInfo.ports).length, 
+       processorInfo.stages.retire,  
+       {
+          'nBlocks':    processorInfo.nBlocks,
+          'blkSize':    processorInfo.blkSize,
+          'mPenalty':   processorInfo.mPenalty,
+          'mIssueTime': processorInfo.mIssueTime
+       }
+    );
   
     svg = createGraphVizGraph(dotCode);
-    document.getElementById('pipeline-graph').appendChild(svg);
+    // document.getElementById('pipeline-graph').appendChild(svg);
+    return svg;
 }
 
 async function showCellInfo(instrID, cycle) {
