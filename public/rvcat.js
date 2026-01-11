@@ -1,3 +1,40 @@
+import { inject } from 'vue';
+
+export function useRVCAT_Api() {
+  const { executePython, isReady } = inject('worker');
+  
+  const safeExecute = async (code, id) => {
+    if (!isReady.value) {
+      throw new Error('Worker not ready');
+    }
+    return executePython(code, id);
+  };
+  
+  const setProcessor = async (name) => {
+    try {
+      const code = `rvcat._processor.load("${name}")`;
+      const result = await safeExecute(code, 'set_processor');
+      console.log('Processor set successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to set processor:', error);
+      throw error;
+    }
+  };
+  
+  const setROBSize = async (size) => {
+    const code = `rvcat.set_rob_size(${size})`;
+    return safeExecute(code, `set_rob_size_${Date.now()}`);
+  };
+  
+  // Return all functions
+  return {
+    setProcessor,
+    setROBSize,
+    isReady
+  };
+}
+
 ///////////////////////////////////////////////////////////////////////
 /////////// Functions calling PYTHON RVCAT  ///////////////////////////
 ///////////////////////////////////////////////////////////////////////
@@ -16,10 +53,6 @@ function readPythonProgramsAndProcessors() {
   executeCode('rvcat.files.list_json(True)',   'get_processors');
 }
 
-function setProcessor( name ) {
-    let res = `rvcat._processor.load(\"${name}\")`
-    executePython( res, 'set_processor' );
-}
 
 function setProgram( name ) {
     let res = `rvcat._program.load(\"${name}\")`
