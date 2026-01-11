@@ -126,6 +126,9 @@
   .iters-label {
     font-size:   15px;
     font-weight: 500;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
   }
  
   .blue-button {
