@@ -69,6 +69,18 @@ export function useRVCAT_Api() {
       throw error;
     }
   };
+
+  const showProgram = async (name) => {
+    try {
+      const code = 'rvcat._program.show_code()';
+      const result = await safeExecute(code, 'program_show');
+      console.log('Program shown:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to show program:', error);
+      throw error;
+    }
+  };
   
   const setROBSize = async (size) => {
     const code = `rvcat.set_rob_size(${size})`;
@@ -82,6 +94,7 @@ export function useRVCAT_Api() {
     getPrograms,
     setProcessor,
     setProgram,
+    showProgram,
     setROBSize
   };
 }
