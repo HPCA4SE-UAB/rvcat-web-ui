@@ -21,7 +21,7 @@
       simState.availableProcessors = processors
       // Auto-select first processor if none selected
       if (!simState.selectedProcessor && processors.length > 0) {
-        simState.selectedProcessor = processors[0][0]
+        simState.selectedProcessor = processors[0]
       }
     } catch (error) {
       console.error('Failed to parse processors:', error)
@@ -39,11 +39,11 @@
   
   const reloadProcessor = () => {
      console.log('Reloading with:', {
-       processor: simState.selectedProcessor.value,
-       processorsCount: simState.availableProcessors.value.length
+       processor: simState.selectedProcessor,
+       processorsCount: simState.availableProcessors.length
      })
      // Call Python RVCAT to load new processor configuration
-     setProcessor( simState.selectedProcessor.value )
+     setProcessor( simState.selectedProcessor )
   }
   
 /* ------------------------------------------------------------------ 
@@ -80,10 +80,6 @@
             {{ processor }}
           </option>
         </select>
-        <!-- Display current selection -->
-        <div v-if="simState.selectedProcessor">
-          Selected: {{ simState.selectedProcessor }}
-        </div>
         
         <span class="iters-label">ROB size: </span>
         <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
