@@ -85,3 +85,52 @@ export function useRVCAT_Api() {
     setROBSize
   };
 }
+
+export function getProcessorGraph(processorInfo) {
+  try {
+    const dotCode = construct_reduced_processor_dot(
+       processorInfo.stages.dispatch,
+       Object.keys(processorInfo.ports).length, 
+       processorInfo.stages.retire,  
+       {
+          'nBlocks':    processorInfo.nBlocks,
+          'blkSize':    processorInfo.blkSize,
+          'mPenalty':   processorInfo.mPenalty,
+          'mIssueTime': processorInfo.mIssueTime
+       }
+    );
+    const svg = await createGraphVizGraph(dotCode);  
+    return svg;
+    
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function createGraphVizGraph(dotCode) {
+  try {
+    const viz = new Viz();
+    const svg = await viz.renderSVGElement(dotCode, { engine: "dot" })
+
+    // 🔧 Make SVG responsive
+    const width  = svg.getAttribute("width")
+    const height = svg.getAttribute("height")
+
+    if (!svg.getAttribute("viewBox") && width && height) {
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+    }
+
+    svg.removeAttribute("width")
+    svg.removeAttribute("height")
+    svg.style.width  = "100%"
+    svg.style.height = "100%"
+    svg.style.maxWidth = "100%"
+    svg.style.maxHeight = "100%"
+    svg.style.display = "block"
+  
+    return svg;
+    } catch(error) {
+      console.error("Error rendering graph:", error);
+      throw error;
+    }
+}
