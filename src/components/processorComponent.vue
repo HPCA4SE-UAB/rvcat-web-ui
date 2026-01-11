@@ -7,6 +7,9 @@
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
+  // Reactive SVG string
+  const pipelineSvg = ref('');
+
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
  * ------------------------------------------------------------------ */
@@ -46,8 +49,8 @@
     }
     try {
       let processorInfo = JSON.parse(data);
-
       console.log('Processor Info:', processorInfo)
+      pipelineSvg.value = getProcessorGraph(processorInfo);
     } catch (error) {
       console.error('Failed to set processor:', error)
     }
@@ -108,7 +111,11 @@
     </div>
     
     <div class="cache-info" id="cache-info"></div>  
-    <div class="pipeline-img" id="pipeline-graph"></div>
+    <div class="pipeline-img" id="pipeline-graph">
+      <!-- v-html renders the SVG string as HTML -->
+      <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+      <div v-else class="placeholder">No processor selected</div>
+    </div>
 
     <Teleport to="body">
       <HelpComponent v-if="showHelp" :position="helpPosition"
@@ -145,6 +152,14 @@
     display: block;
     width:   70%;
     margin:  auto;
+  }
+  .placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #666;
+    font-style: italic;
   }
   .cache-info {
     flex:          1;
