@@ -140,7 +140,7 @@
     align-items:     center;
     justify-content: center;
     position:        relative;
-    margin:          0 auto;
+    margin:          10px auto;
     margin-top:      10%;
     width:           100%;
     min-height: 500px; /* Fixed height or use min-height */
@@ -155,9 +155,21 @@
     max-width:  100%;
     max-height: 100%;
     object-fit: contain; /* Keeps aspect ratio */
+    display:    block;
   }
   .pipeline-img :deep(svg) g {
     transform-box: fill-box;
+  }
+  
+  /* Make GraphViz elements more visible */
+  .pipeline-img svg text {
+    font-size:   12px;
+    font-family: Arial, sans-serif;
+  }
+
+  .pipeline-img svg polygon,
+  .pipeline-img svg path {
+    stroke-width: 2px;
   }
 
   .cache-info {
