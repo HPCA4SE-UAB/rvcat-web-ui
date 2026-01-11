@@ -96,7 +96,7 @@
       </div>
       
       <div id="settings-div">
-        <select v-model="simState.selectedProcessor" title="Select Processor" class="processor-select">
+        <select v-model="simState.selectedProcessor" title="Select Processor">
           <option value="" disabled>Select a processor</option>
           <option 
             v-for="processor in simState.availableProcessors" 
@@ -117,7 +117,6 @@
     <div class="pipeline-img" id="pipeline-graph">
       <!-- v-html renders the SVG string as HTML -->
       <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
-      <div v-else class="placeholder">No processor selected</div>
     </div>
 
     <Teleport to="body">
@@ -132,13 +131,15 @@
 </template>
 
 <style scoped>
+  /*
   .processor-select {
-    padding: 8px 12px;
+    padding:   8px 12px;
     font-size: 16px;
-    border: 2px solid #ccc;
+    border:    2px solid #ccc;
     border-radius: 4px;
     min-width: 200px;
-  }
+  } */
+  
   .pipeline-img {
     display:         flex;
     align-items:     center;
@@ -155,13 +156,6 @@
     display: block;
     width:   70%;
     margin:  auto;
-  }
-  .placeholder {
-    display:         flex;
-    align-items:     center;
-    justify-content: center;
-    color:      #666;
-    font-style: italic;
   }
   .cache-info {
     flex:          1;
