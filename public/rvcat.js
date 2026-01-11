@@ -17,7 +17,7 @@ function insert_cache_annotations(cache) {
   }
 }
 
-function getProcessorGraph(processorInfo) {
+export function getProcessorGraph(processorInfo) {
   try {
     const dotCode = construct_reduced_processor_dot(
        processorInfo.stages.dispatch,
