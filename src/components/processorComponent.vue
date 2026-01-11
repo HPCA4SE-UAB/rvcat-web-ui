@@ -114,7 +114,7 @@
     </div>
 
     <div class="pipeline-container">
-      <!-- <div class="cache-info" id="cache-info"></div>   -->
+      <div class="cache-info" id="cache-info"></div>
       <div class="pipeline-img">
         <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
       </div>
@@ -184,7 +184,7 @@
   }
   
   #rob-size {
-    max-width: 40%;
+    max-width: 30%;
     font-size: 2.2vh;
   }
   table {
