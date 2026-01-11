@@ -1,7 +1,10 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
   import HelpComponent from '@/components/tutorialComponent.vue';
+  import { useRvcatApi } from 'rvcat';
 
+  const { setProcessor, setROBSize, isReady } = useRvcatApi();
+ 
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
  * ------------------------------------------------------------------ */
@@ -45,9 +48,9 @@
   });
 
   const reloadProcessor = () => {
-     console.log('Reloading with:', simState.selectedProcessor);
-     // Call Python RVCAT to load new processor configuration
-     setProcessor( simState.selectedProcessor )
+    console.log('Reloading with:', simState.selectedProcessor);
+    // Call Python RVCAT to load new processor configuration
+    await setProcessor( simState.selectedProcessor )
   }
   
 /* ------------------------------------------------------------------ 
