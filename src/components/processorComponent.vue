@@ -130,16 +130,7 @@
   </div>
 </template>
 
-<style scoped>
-  /*
-  .processor-select {
-    padding:   8px 12px;
-    font-size: 16px;
-    border:    2px solid #ccc;
-    border-radius: 4px;
-    min-width: 200px;
-  } */
-  
+<style scoped> 
   .pipeline-img {
     display:         flex;
     align-items:     center;
@@ -154,7 +145,7 @@
   }
   .pipeline-graph {
     display: block;
-    width:   70%;
+    width:   90%;
     margin:  auto;
   }
   .cache-info {
