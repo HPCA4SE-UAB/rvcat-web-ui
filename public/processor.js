@@ -1,15 +1,4 @@
-  function insert_cache_annotations(cache) {
-    if(cache.nBlocks>0){
-      document.getElementById('cache-info').innerHTML=`
-      <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
-    }
-    else {
-      document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
-    }
-  }
-
-  function construct_reduced_processor_dot(dispatch_width, num_ports, retire_width, cache) {
-    insert_cache_annotations(cache)
+function construct_reduced_processor_dot(dispatch_width, num_ports, retire_width, cache) {
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
