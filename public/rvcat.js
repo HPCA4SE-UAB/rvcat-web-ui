@@ -10,7 +10,18 @@ function programShow() {
     executeCode( 'rvcat._program.show_code()', 'program_show' );
 }
 
+function insert_cache_annotations(cache) {
+    if(cache.nBlocks>0){
+      document.getElementById('cache-info').innerHTML=`
+      <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
+    }
+    else {
+      document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
+    }
+  }
+
 function getProcessorGraph(processorInfo) {
+  try {
     const dotCode = construct_reduced_processor_dot(
        processorInfo.stages.dispatch,
        Object.keys(processorInfo.ports).length, 
@@ -22,7 +33,12 @@ function getProcessorGraph(processorInfo) {
           'mIssueTime': processorInfo.mIssueTime
        }
     );
-    return createGraphVizGraph(dotCode);  // svg
+    const svg = await createGraphVizGraph(dotCode);  
+    return svg;
+    
+  } catch (error) {
+    throw error;
+  }
 }
 
 function getSchedulerAnalysis(n_iters, rob_size) {
@@ -137,36 +153,32 @@ function programShowMemtrace(n_iters) {
 ////  Helping functions  ///////////////
 ////////////////////////////////////////
 
-function createGraphVizGraph(dotCode, callback = null) {
-  const viz = new Viz()
+async function createGraphVizGraph(dotCode) {
+  try {
+    const viz = new Viz();
+    const svg = await viz.renderSVGElement(dotCode, { engine: "dot" })
+
+    // 🔧 Make SVG responsive
+    const width  = svg.getAttribute("width")
+    const height = svg.getAttribute("height")
+
+    if (!svg.getAttribute("viewBox") && width && height) {
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+    }
+
+    svg.removeAttribute("width")
+    svg.removeAttribute("height")
+    svg.style.width  = "100%"
+    svg.style.height = "100%"
+    svg.style.maxWidth = "100%"
+    svg.style.maxHeight = "100%"
+    svg.style.display = "block"
   
-  viz.renderSVGElement(dotCode, { engine: "dot" })
-    .then(svg => {
-
-      // 🔧 Make SVG responsive
-      const width  = svg.getAttribute("width")
-      const height = svg.getAttribute("height")
-
-      if (!svg.getAttribute("viewBox") && width && height) {
-        svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
-      }
-
-      svg.removeAttribute("width")
-      svg.removeAttribute("height")
-
-      svg.style.width  = "100%"
-      svg.style.height = "100%"
-      svg.style.maxWidth = "100%"
-      svg.style.maxHeight = "100%"
-      svg.style.display = "block"
-
-      if (callback) callback()
-    })
-    .catch(error => {
-      console.error("Error rendering graph:", error)
-    })
-  
-  return svg;
+    return svg;
+    } catch(error) {
+      console.error("Error rendering graph:", error);
+      throw error;
+    }
 }
 
 let fullGraphDotCode;
