@@ -10,6 +10,18 @@ export function useRVCAT_Api() {
     return executePython(code, id);
   };
   
+  const importRVCAT = async () => {
+    try {
+      const code = 'import rvcat';
+      const result = await safeExecute(code, 'import_rvcat');
+      console.log('RVCAT imported successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to import RVCAT:', error);
+      throw error;
+    }
+  };
+  
   const setProcessor = async (name) => {
     try {
       const code = `rvcat._processor.load("${name}")`;
@@ -29,8 +41,8 @@ export function useRVCAT_Api() {
   
   // Return all functions
   return {
+    importRVCAT,
     setProcessor,
-    setROBSize,
-    isReady
+    setROBSize
   };
 }
