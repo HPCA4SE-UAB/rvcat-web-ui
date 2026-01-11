@@ -73,7 +73,7 @@ export function useRVCAT_Api() {
   const showProgram = async (name) => {
     try {
       const code = 'rvcat._program.show_code()';
-      const result = await safeExecute(code, 'program_show');
+      const result = await safeExecute(code, 'show_program');
       console.log('Program shown:', result);
       return result;
     } catch (error) {
