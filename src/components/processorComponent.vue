@@ -3,9 +3,9 @@
   import HelpComponent    from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProcessor, setROBSize, isReady } = useRVCAT_Api();
-  const { registerHandler, executePython } = inject('worker');
-  const simState = inject('simulationState');
+  const { setProcessor }    = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
 
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
