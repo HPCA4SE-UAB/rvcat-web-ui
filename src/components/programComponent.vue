@@ -3,9 +3,9 @@
   import HelpComponent  from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProgram, showProgram} = useRVCAT_Api();
-  const { registerHandler }        = inject('worker');
-  const simState                   = inject('simulationState');
+  const { setProgram, showProgram } = useRVCAT_Api();
+  const { registerHandler }         = inject('worker');
+  const simState                    = inject('simulationState');
   
   // Reactive SVG string
   const programText = ref('LOADING ...');
@@ -52,7 +52,7 @@
       console.log('Program Info:', programInfo);
       // copy programInfo into JSON variable for edition & load/save
 
-      // obtain text
+      // obtain text from RVCAT API
       showProgram( simState.selectedProgram );
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -67,11 +67,10 @@
       return;
     }
     try {
-      console.log('Program Shown:', data)
       programText.value = data;
     } catch (error) {
-      console.error('Failed to set program:', error)
-      programText.value = 'Failed to get program description';
+      console.error('Failed to show program:', error)
+      programText.value = 'Failed to show program';
     }
   }
   
