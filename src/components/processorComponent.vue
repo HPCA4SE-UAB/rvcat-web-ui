@@ -135,14 +135,11 @@
   .pipeline-container {
     width:   100%;
     height:  100%;
-    padding: 20px;
+    padding: 2px;
   }
   .pipeline-img {
     width:           100%;
-    height:          300px;
-    border:          2px solid #e0e0e0;
-    border-radius:   8px;
-    background:      #f8f9fa;
+    height:          400px;
     display:         flex;
     align-items:     center;
     justify-content: center;
