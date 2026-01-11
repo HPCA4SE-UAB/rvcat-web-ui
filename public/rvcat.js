@@ -3,16 +3,11 @@
 ///////////////////////////////////////////////////////////////////////
 function readPythonProgramsAndProcessors() {
       programShow();
-      getProcessorInformation();
       getSchedulerAnalysis(1000,100);
 }
 
 function programShow() {
     executeCode( 'rvcat._program.show_code()', 'program_show' );
-}
-
-function getProcessorInformation() {
-    executeCode( 'rvcat._processor.json()', 'processor_show' );
 }
 
 function getSchedulerAnalysis(n_iters, rob_size) {
@@ -82,11 +77,6 @@ async function getTimeline(num_iters, rob_size) {
     });
 }
 
-async function getProcessorJSON() {
-   await executeCode( 'rvcat._processor.json()', 'get_proc_settings' )
-   return processorInfo;
-}
-
 async function saveModifiedProcessor(config) {
    let res = `rvcat._processor.save(${JSON.stringify(config)})`
    await executeCode( res, 'save_modified_processor' )
@@ -132,13 +122,11 @@ function programShowMemtrace(n_iters) {
 ////  Helping functions  ///////////////
 ////////////////////////////////////////
 
-function createGraphVizGraph(dotCode, targetElement, callback = null) {
+function createGraphVizGraph(dotCode, callback = null) {
   const viz = new Viz()
   
   viz.renderSVGElement(dotCode, { engine: "dot" })
     .then(svg => {
-      // Clear container
-      targetElement.innerHTML = ''
 
       // 🔧 Make SVG responsive
       const width  = svg.getAttribute("width")
@@ -157,35 +145,29 @@ function createGraphVizGraph(dotCode, targetElement, callback = null) {
       svg.style.maxHeight = "100%"
       svg.style.display = "block"
 
-      targetElement.appendChild(svg)
-
       if (callback) callback()
     })
     .catch(error => {
       console.error("Error rendering graph:", error)
     })
-}
-
-function createProcessorGraph(dispatch, execute, retire, cache) {
-    const dotCode = construct_reduced_processor_dot(dispatch, execute, retire, cache);
-    createGraphVizGraph(dotCode, document.getElementById('pipeline-graph'));
+  
+  return svg;
 }
 
 let fullGraphDotCode;
 
 function createProcessorSimulationGraph(dispatch, execute, retire, usage=null) {
   fullGraphDotCode = construct_full_processor_dot(dispatch, execute, retire, usage);
-  createGraphVizGraph(fullGraphDotCode, document.getElementById('simulation-graph'));
+  svg = createGraphVizGraph(fullGraphDotCode);
+  document.getElementById('simulation-graph').appendChild(svg)
 }
 
 function showFullProcessor(){
-  createGraphVizGraph(fullGraphDotCode, document.getElementById('simulation-graph'));
+   svg = createGraphVizGraph(fullGraphDotCode);
+   document.getElementById('simulation-graph').appendChild(svg)
 }
 
-function showProcessor() {
-    if (processorInfo === null) {
-        return;
-    }
+function showProcessor(processorInfo) {
     let dispatch_width = processorInfo.stages.dispatch;
     let num_ports      = Object.keys(processorInfo.ports).length;
     let retire_width   = processorInfo.stages.retire;
@@ -193,7 +175,11 @@ function showProcessor() {
                  'blkSize':    processorInfo.blkSize,
                  'mPenalty':   processorInfo.mPenalty,
                  'mIssueTime': processorInfo.mIssueTime};
-    createProcessorGraph(dispatch_width, num_ports, retire_width, cache);
+  
+    const dotCode = construct_reduced_processor_dot(dispatch_width, num_ports, retire_width, cache);
+  
+    svg = createGraphVizGraph(dotCode);
+    document.getElementById('pipeline-graph').appendChild(svg);
 }
 
 async function showCellInfo(instrID, cycle) {
