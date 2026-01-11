@@ -2,24 +2,9 @@
 /////////// Functions calling PYTHON RVCAT  ///////////////////////////
 ///////////////////////////////////////////////////////////////////////
 function readPythonProgramsAndProcessors() {
-      readPythonProgramsAndProcessors();
-      setProcessor("base1");
-      setProgram("baseline");
       programShow();
       getProcessorInformation();
       getSchedulerAnalysis(1000,100);
-}
-
-function readPythonProgramsAndProcessors() {
-  executeCode('import rvcat',                  'import_rvcat'  );
-  executeCode('rvcat.files.list_json(False)',  'get_programs'  );
-  executeCode('rvcat.files.list_json(True)',   'get_processors');
-}
-
-
-function setProgram( name ) {
-    let res = `rvcat._program.load(\"${name}\")`
-    executeCode( res, 'set_program' );
 }
 
 function programShow() {
