@@ -1,8 +1,8 @@
 import { createApp, reactive } from 'vue'
-// import { createPinia }         from 'pinia'
 import App                     from './App.vue'
 import router                  from './router'
 import { useWorker }           from './useWorker'
+import { useRVCAT_Api }        from './rvcatAPI';
 
 const app = createApp(App)
 
@@ -15,11 +15,10 @@ const SimulationState = reactive({
   availablePrograms:   []
 })
 
-//app.use(createPinia())
 app.use(router)
 
-// Provide reactive state and worker to all components
 app.provide('simulationState', SimulationState)
 app.provide('worker', useWorker())
+app.provide('rvcat',  useRVCAT_Api())
 
 app.mount('#app')
