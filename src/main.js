@@ -1,5 +1,5 @@
 import { createApp, reactive } from 'vue'
-import { createPinia }         from 'pinia'
+// import { createPinia }         from 'pinia'
 import App                     from './App.vue'
 import router                  from './router'
 import { useWorker }           from './useWorker'
@@ -15,7 +15,7 @@ const SimulationState = reactive({
   availablePrograms:   []
 })
 
-app.use(createPinia())
+//app.use(createPinia())
 app.use(router)
 
 // Provide reactive state and worker to all components
