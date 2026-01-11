@@ -1,9 +1,9 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
   import HelpComponent from '@/components/tutorialComponent.vue';
-  import { useRvcatApi } from 'rvcat';
+  // import { useRvcatApi } from 'rvcat';
 
-  const { setProcessor, setROBSize, isReady } = useRvcatApi();
+  const { setProcessor, setROBSize, isReady } = useRVCAT_Api();
  
 /* ------------------------------------------------------------------ 
  * Processor selection and ROB size specification
