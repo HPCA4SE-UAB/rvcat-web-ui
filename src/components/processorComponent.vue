@@ -139,7 +139,7 @@
   }
   .pipeline-img {
     width:           100%;
-    height:          200px;
+    height:          300px;
     display:         flex;
     align-items:     center;
     justify-content: center;
@@ -184,7 +184,7 @@
   }
   
   #rob-size {
-    max-width: 30%;
+    max-width: 20%;
     font-size: 2.2vh;
   }
   table {
