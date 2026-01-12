@@ -71,6 +71,9 @@ const handleRVCAT = (data, dataType) => {
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
+
+  // Look in localStorage for processors & programs, 
+  // if not found, get from distribution folders
   getProcessors();  // from RVCAT API
   getPrograms();    // from RVCAT API
 };
