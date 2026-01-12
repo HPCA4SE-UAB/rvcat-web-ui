@@ -1,95 +1,113 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch } from "vue";
-  import TutorialComponent from '@/components/tutorialComponent.vue';
+  import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
+  import HelpComponent    from '@/components/tutorialComponent.vue';
+  import { useRVCAT_Api } from '@/rvcatAPI';
+  import { debounce }     from 'lodash-es'  // Add debouncing to prevent too many writes to loaclStorage
 
-/* Safe solution */
-  const isMounted = ref(false)
+  const { getDependenceGraph } = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
+
+  /* ------------------------------------------------------------------ 
+   * Dependence Graph options (persistent in localStorage)
+   * ------------------------------------------------------------------ */
+  const dependenceGraphOptions = reactive({
+    iters:      1,
+    showIntern: true,
+    showLaten:  false,
+    showSmall:  false,
+    showFull:   false
+  })
+
+  // Reactive SVG string
+  const dependenceGraphSvg = ref('');
+  const isMounted          = ref(false)
+  let   graphTimeout       = null;
+  
+  // Load / save options from localStorage
+  const STORAGE_KEY = 'dependentGraphOptions'
+
+  // Load from localStorage
   onMounted(() => {
     isMounted.value = true
+
+    // Load from localStorage
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        Object.assign(dependenceGraphOptions, parsed)
+        console.log('Loaded graph options:', dependenceGraphOptions)
+      }
+    } catch (error) {
+      console.error('Failed to load dependence graph options:', error)
+    }
+    const cleanupHandleGraph = registerHandler('get_dependence_graph', handleGraph);
+  });
+
+ /* ------------------------------------------------------------------ 
+  * Dependence Graph options: UI actions 
+  * ------------------------------------------------------------------ */
+  function toggleIntern() { dependenceGraphOptions.showIntern = !dependenceGraphOptions.showIntern }
+  function toggleLaten()  { dependenceGraphOptions.showLaten  = !dependenceGraphOptions.showLaten  }
+  function toggleSmall()  { dependenceGraphOptions.showSmall  = !dependenceGraphOptions.showSmall  }
+  function toggleFull()   { dependenceGraphOptions.showFull   = !dependenceGraphOptions.showFull }
+
+  const debouncedShowGraphAndSave = debounce(() => {
+    if (!isMounted.value) return
+    getDependenceGraph(
+        dependenceGraphOptions.iters,
+        dependenceGraphOptions.showIntern,
+        dependenceGraphOptions.showLaten,
+        dependenceGraphOptions.showSmall,
+        dependenceGraphOptions.showFull
+      )
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(options))
+    console.log('Saved dependence graph options:', options)
+  }, 75)
+
+  // Watch all options with a single debounced handler
+  watch(dependenceGraphOptions, debouncedShowGraphAndSave, { deep: true })
+
+  // Clean up on unmount
+  onUnmounted(() => {
+    debouncedShowGraphAndSave.cancel()
+    cleanupHandleGraph();
   })
-  
+
+  // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
+  const handleGraph = (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to get dependence graph:', data);
+      return;
+    }
+    try {
+       const svg = await createGraphVizGraph(data);  
+       dependenceGraphSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('Failed to generate SVG for graphviz Dependence Graph:', error)
+      dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+ 
 /* ------------------------------------------------------------------ 
- * UI state 
+ * Show Performance: UI state 
  * ------------------------------------------------------------------ */
   const showPerformance = ref(false);
   const showFullScreen  = ref(false);
-  const showTutorial1   = ref(false);
-  const showTutorial2   = ref(false);
-  const showTutorial3   = ref(false);
-  const infoIcon1       = ref(null);
-  const infoIcon2       = ref(null);
-  const infoIcon3       = ref(null);
-  const tutorialPosition= ref({ top: '0%', left: '0%' });
-  let   graphTimeout    = null;
-  
-/* ------------------------------------------------------------------ 
- * Graph options (persistent in localStorage)
- * ------------------------------------------------------------------ */
-  const iters      = ref(1)
-  const showIntern = ref(true)
-  const showLaten  = ref(false)
-  const showSmall  = ref(false)
-  const showFull   = ref(false)
-
-/* ------------------------------------------------------------------ 
- * Load / save options from localStorage 
- * ------------------------------------------------------------------ */
-  onMounted(() => {
-    const i = localStorage.getItem("showIntern");
-    if (i !== null) showIntern.value = i === "1";
-
-    const l = localStorage.getItem("showLaten");
-    if (l !== null) showLaten.value = l === "1";
-
-    const v = localStorage.getItem("showSmall");
-    if (v !== null) showSmall.value = v === "1";
-
-    const r = localStorage.getItem("showFull");
-    if (r !== null) showFull.value = r === "1";
-  });
-  
-  onMounted(() => {
-    const v = localStorage.getItem("graphIterations");
-    if (v !== null) iters.value = parseInt(v);
-  });
-
-  watch(iters,      v => localStorage.setItem("graphIterations", v));
-  watch(showIntern, v => localStorage.setItem("showIntern", v ? "1" : "0"));
-  watch(showLaten,  v => localStorage.setItem("showLaten",  v ? "1" : "0"));
-  watch(showSmall,  v => localStorage.setItem("showSmall",  v ? "1" : "0"));
-  watch(showFull,   v => localStorage.setItem("showFull",   v ? "1" : "0"));
-  
-/* ------------------------------------------------------------------ 
-* UI actions 
-* ------------------------------------------------------------------ */
-  function toggleIntern() { showIntern.value = !showIntern.value }
-  function toggleLaten()  { showLaten.value  = !showLaten.value  }
-  function toggleSmall()  { showSmall.value  = !showSmall.value  }
-  function toggleFull()   { showFull.value   = !showFull.value }
-
-  watch(
-    [iters, showIntern, showLaten, showSmall, showFull],
-    ([i, c, r, n, l]) => {
-      if (!isMounted.value) return
-
-      clearTimeout(graphTimeout)
-      graphTimeout = setTimeout(() => {
-        showCriticalPathsGraph(i, c, r, n, l)
-      }, 75)
+/*       
+    'prog_show_performance': (data) => {
+      let item         = document.getElementById('performance-limits');
+      item.textContent = data;
+      document.getElementById('pipeline-graph')
     },
-    { immediate: true }
-  )
-
-  function updateGraph() {
-    showCriticalPathsGraph(
-      iters.value,
-      showIntern.value,
-      showLaten.value,
-      showSmall.value,
-      showFull.value
-    )
+  */    
+/*
+  function programShowPerformanceLimits() {
+    executeCode( 'rvcat._program.show_performance_analysis()', 'prog_show_performance' )
   }
-
+*/
+  
 /* ------------------------------------------------------------------ 
  * Fullscreen graph 
  * ------------------------------------------------------------------ */  
@@ -122,38 +140,31 @@
   }
 
 /* ------------------------------------------------------------------ 
- * External selectors listeners 
+ * External selectors listeners: changes on program or processor
  * ------------------------------------------------------------------ */
-  onMounted(() => {
-    nextTick(() => {
-      document.addEventListener("change", (e) => {
-        if (
-          e.target?.id == "processors-list" ||
-          e.target?.id == "programs-list"
-        )  {
-         setTimeout(() => {
-            if (showPerformance.value) {
-              programShowPerformanceLimits();
-            }
-            updateGraph()
-          }, 100);
-        }
-      });
-      updateGraph()
-    });
-  });
-
+ //            if (showPerformance.value) {
+ //             programShowPerformanceLimits();
+ //           }
+ //           updateGraph()
 
 /* ------------------------------------------------------------------ 
- * Tutorial 
+ * Help support 
  * ------------------------------------------------------------------ */
-  function openTutorial1() { nextTick(() => { showTutorial1.value = true }) }
-  function openTutorial2() { nextTick(() => { showTutorial2.value = true }) }
-  function openTutorial3() { nextTick(() => { showTutorial3.value = true }) }
-  
-  function closeTutorial1() { showTutorial1.value  = false }
-  function closeTutorial2() { showTutorial2.value = false }
-  function closeTutorial3() { showTutorial3.value = false }
+  const showHelp1    = ref(false);
+  const showHelp2    = ref(false);
+  const showHelp3    = ref(false);
+  const helpIcon1    = ref(null);
+  const helpIcon2    = ref(null);
+  const helpIcon3    = ref(null);
+  const helpPosition = ref({ top: '0%', left: '0%' });
+
+  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
+  function closeHelp1() { showHelp1.value  = false }
+  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
+  function closeHelp2() { showHelp2.value  = false }
+  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
+  function closeHelp3() { showHelp3.value  = false }
+
 </script>
 
 <template>
@@ -162,7 +173,7 @@
       <div class="section-title-and-info">
         
         <!-- Title -->
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show Help" >
+        <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Static Performance Analysis</span>
@@ -170,7 +181,7 @@
     </div>
 
     <div class="dropdown-wrapper">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show Help" >
+      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help" >
          <img src="/img/info.png" class="info-img">
       </span>
       <button class="dropdown-header" @click="toggleAnnotations" title="Show Throughput limits" :aria-expanded="showPerformance">
@@ -188,7 +199,7 @@
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
-        <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show Help">
+        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="dropdown-title">Data Dependence Graph</span>
@@ -196,16 +207,16 @@
         <div class="controls">
           <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="7" title="# loop iterations" v-model.number="iters">
+            <input type="number" min="1" max="7" title="# loop iterations" v-model.number="dependenceGraphOptions.iters">
           </div>
           <div class="iters-group">
-            <button class="blue-button" :class="{ active: showIntern }" :aria-pressed="showIntern" 
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
               title="Show/Hide Internal Dependencies" @click="toggleIntern"> <span v-if="showIntern">✔ </span>Internal</button>
-            <button class="blue-button" :class="{ active: showLaten  }" :aria-pressed="showLaten"  
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"   
               title="Show/Hide Execution Latencies" @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
-            <button class="blue-button" :class="{ active: showSmall  }" :aria-pressed="showConst"  
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"   
               title="Show/Hide Instruction Text" @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
-            <button class="blue-button" :class="{ active: showFull   }" :aria-pressed="showRdOnly"
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }" 
               title="Show/Hide All Info" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
           </div>
           <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
@@ -213,8 +224,10 @@
           </button>
         </div>
       </div>
-      
-      <div class="output-block" id="dependence-graph"></div>
+   
+      <div class="output-block">
+        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
+      </div>
     </div>
   </div>
   
@@ -229,29 +242,29 @@
   </div>
   
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
       meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
       <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
     title="Static Performance Analysis"
-    @close="closeTutorial1"/>
+    @close="closeHelp1"/>
   </Teleport>
   
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
          such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
     title="Throughput-bound execution time"
-    @close="closeTutorial2"/>
+    @close="closeHelp2"/>
   </Teleport>
   
   <Teleport to="body">  
-    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp3" :position="helpPosition"
     text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
       <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
       Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
     title="Latency-bound execution time"
-    @close="closeTutorial3"/>
+    @close="closeHelp3"/>
     </Teleport>
 </template>
 
