@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, nextTick, onUnmounted, watch, inject} from 'vue';
-  import TutorialComponent  from '@/components/tutorialComponent.vue';
+  import HelpComponent  from '@/components/tutorialComponent.vue';
 
   /* Safe solution */
   const isMounted = ref(false)
@@ -26,24 +26,23 @@
   const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
   
-  const showTutorial1   = ref(false);
-  const showTutorial2   = ref(false);
-  const showTutorial3   = ref(false);
-  const infoIcon1       = ref(null);
-  const infoIcon2       = ref(null);
-  const infoIcon3       = ref(null);
-  const tutorialPosition= ref({ top: '0%', left: '0%' });
-
 /* ------------------------------------------------------------------ 
- * Tutorial 
+ * Help support 
  * ------------------------------------------------------------------ */
-  function openTutorial1() { nextTick(() => { showTutorial1.value = true }) }
-  function openTutorial2() { nextTick(() => { showTutorial2.value = true }) }
-  function openTutorial3() { nextTick(() => { showTutorial3.value = true }) }
-  
-  function closeTutorial1() { showTutorial1.value  = false }
-  function closeTutorial2() { showTutorial2.value = false }
-  function closeTutorial3() { showTutorial3.value = false }
+  const showHelp1    = ref(false);
+  const showHelp2    = ref(false);
+  const showHelp3    = ref(false);
+  const helpIcon1    = ref(null);
+  const helpIcon2    = ref(null);
+  const helpIcon3    = ref(null);
+  const helpPosition = ref({ top: '0%', left: '0%' });
+
+  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
+  function closeHelp1() { showHelp1.value  = false }
+  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
+  function closeHelp2() { showHelp2.value  = false }
+  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
+  function closeHelp3() { showHelp3.value  = false }
 
 /* ------------------------------------------------------------------ 
  * Timeline options (persistent in localStorage)
@@ -707,7 +706,7 @@
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help">
+        <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Execution Timeline</span>
@@ -753,11 +752,11 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition" title="Timeline"
+    <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
                 The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
              <p><strong>Click</strong> on the timeline to activate it, then use the <strong>arrow keys</strong> to move left/right and up/down. Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
-       @close="closeTutorial" />
+       @close="closeHelp1" />
   </Teleport>
   
   <div v-if="clickedCellInfo" class="modal-overlay" @click.self="clickedCellInfo = null">
