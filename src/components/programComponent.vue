@@ -9,7 +9,7 @@
   
   // Reactive SVG string
   const programText = ref('LOADING ...');
-  const programJSON = null;
+  const programJSON = ref({});
 
 /* ------------------------------------------------------------------ 
  * Program selection and Program setting
