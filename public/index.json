@@ -1,0 +1,17 @@
+// public/index.json  --> describes files provided in distribution
+{
+  "processors": [
+    "B1",
+    "B2",
+    "B3"
+  ],
+  "programs": [
+    "baseline",
+    "v1",
+    "v2"
+  ],
+   "tutorials": [
+    "lesson-1.json",
+    "navigation-tour.json"
+  ]
+}
