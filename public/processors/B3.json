@@ -1,7 +1,7 @@
 {
   "name": "B3",
   "stages": {
-    "dispatch": 2,
+    "dispatch": 3,
     "execute": 3,
     "retire": 4
   },
