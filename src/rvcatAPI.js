@@ -101,12 +101,31 @@ export function useRVCAT_Api() {
       throw error;
     }
   };
-  
-  const setROBSize = async (size) => {
-    const code = `rvcat.set_rob_size(${size})`;
-    return safeExecute(code, `set_rob_size_${Date.now()}`);
+
+  const getExecutionResults = async (n_iters, rob_size) => {
+    try {
+      const code = `rvcat._scheduler.get_results(${n_iters}, ${rob_size})`
+      const result = await safeExecute(code, 'get_execution_results');
+      console.log('Execution Results obtained');
+      return result;
+    } catch (error) {
+      console.error('Failed to get execution results: ', error);
+      throw error;
+    }
   };
-  
+
+   const getTimeline = async (n_iters, rob_size) => {
+    try {
+      const code = `rvcat._scheduler.get_timeline(${n_iters}, ${rob_size})`
+      const result = await safeExecute(code, 'get_timeline');
+      console.log('Timeline obtained');
+      return result;
+    } catch (error) {
+      console.error('Failed to get timeline: ', error);
+      throw error;
+    }
+  };
+   
   // Return all functions
   return {
     importRVCAT,
@@ -116,6 +135,7 @@ export function useRVCAT_Api() {
     setProgram,
     showProgram,
     getDependenceGraph,
-    setROBSize
+    getExecutionResults,
+    getTimeline
   };
 }
