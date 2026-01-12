@@ -81,6 +81,26 @@ export function useRVCAT_Api() {
       throw error;
     }
   };
+
+  const getDependenceGraph = async (n,i,l,s,f) => {
+    try {
+      let internal = "True";
+      let latency  = "True";
+      let small    = "True";
+      let full     = "True";
+      if (!i) {internal = "False"}
+      if (!l) {latency  = "False"}
+      if (!s) {small    = "False"}
+      if (!f) {full     = "False"}
+      const code = `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
+      const result = await safeExecute(code, 'get_dependence_graph');
+      console.log('Dependence Graph (GRAPHVIZ) obtained');
+      return result;
+    } catch (error) {
+      console.error('Failed to get dependence graph: ', error);
+      throw error;
+    }
+  };
   
   const setROBSize = async (size) => {
     const code = `rvcat.set_rob_size(${size})`;
@@ -95,6 +115,7 @@ export function useRVCAT_Api() {
     setProcessor,
     setProgram,
     showProgram,
+    getDependenceGraph,
     setROBSize
   };
 }
