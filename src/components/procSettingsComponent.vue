@@ -1,6 +1,6 @@
 <script setup>
   import { ref, reactive, computed, onMounted, onUnmounted, nextTick} from "vue";
-  import TutorialComponent from '@/components/tutorialComponent.vue';
+  import HelpComponent from '@/components/tutorialComponent.vue';
 
   const dispatch        = ref(0);
   const retire          = ref(0);
@@ -417,25 +417,33 @@
   }
 
 /* ------------------------------------------------------------------ 
- * Tutorial 
+ * Help support 
  * ------------------------------------------------------------------ */
-  function openTutorial1()  { nextTick(() => { showTutorial1.value = true }) }
-  function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }
-  function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }
-  function openTutorial4()  { nextTick(() => { showTutorial4.value = true }) }
-  
-  function closeTutorial1() { showTutorial1.value = false }
-  function closeTutorial2() { showTutorial2.value = false }
-  function closeTutorial3() { showTutorial3.value = false }
-  function closeTutorial4() { showTutorial4.value = false }
+  const showHelp1    = ref(false);
+  const showHelp2    = ref(false);
+  const showHelp3    = ref(false);
+  const showHelp4    = ref(false);
+  const helpIcon1    = ref(null);
+  const helpIcon2    = ref(null);
+  const helpIcon3    = ref(null);
+  const helpIcon4    = ref(null);
+  const helpPosition = ref({ top: '0%', left: '0%' });
 
+  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
+  function closeHelp1() { showHelp1.value  = false }
+  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
+  function closeHelp2() { showHelp2.value  = false }
+  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
+  function closeHelp3() { showHelp3.value  = false }
+  function openHelp4()  { nextTick(() => { showHelp4.value = true }) }
+  function closeHelp4() { showHelp4.value  = false }
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show Help" >
+        <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Processor Settings - {{ name }}</span>
@@ -457,7 +465,7 @@
       <!-- Widths Group -->
       <div class="settings-group">
         <div class="section-title-and-info">
-        <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show Help" >
+        <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Stage Width Settings</span>
@@ -477,7 +485,7 @@
       <!-- Cache Settings Group -->
       <div class="settings-group">
         <div class="section-title-and-info">
-        <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show Help" >
+        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Cache Memory Settings</span>
@@ -510,7 +518,7 @@
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
         <div class="section-title-and-info">
-          <span ref="infoIcon4" class="info-icon" @click="openTutorial4" title="Show Help" >
+          <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
             <img src="/img/info.png" class="info-img">
           </span>
           <span class="header-title">Instruction Latencies and Execution Ports</span>
@@ -569,38 +577,38 @@
   </div>
   
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition" 
+    <HelpComponent v-if="showHelp1" :position="helpPosition" 
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
       (2) <em>Cache Memory</em> (Note: Setting Number of Blocks = 0 means all data accesses will always hit in the cache);
       (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10). 
       <p>Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution); 
          If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Processor Settings"
-    @close="closeTutorial1"/>
+    @close="closeHelp1"/>
 
-    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition" 
+    <HelpComponent v-if="showHelp2" :position="helpPosition" 
     text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths. 
        They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
       <p>They may impose a throughput-bound performace limit.</p>"
     title="Dispatch/Retire Width Settings"
-    @close="closeTutorial2"/>
+    @close="closeHelp2"/>
 
-    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition" 
+    <HelpComponent v-if="showHelp3" :position="helpPosition" 
     text="Modify the <strong>Cache Memory</strong> settings. Setting a Number of Blocks = 0 means all data accesses 
       will always hit in the cache, and, therefore, the latency of memory loads and stores will always be the same.
       <p>The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
       The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory. 
       It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
     title="Cache Memory Settings"
-    @close="closeTutorial3"/>
+    @close="closeHelp3"/>
 
-  <TutorialComponent v-if="showTutorial4" :position="tutorialPosition" 
+  <HelpComponent v-if="showHelp4" :position="helpPosition" 
     text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Thorughput</strong> of instruction types.
       <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports 
          (only one is used for execution each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Instruction Latency and Throughput Settings"
-    @close="closeTutorial4"/>
+    @close="closeHelp4"/>
     
   </Teleport>
   
