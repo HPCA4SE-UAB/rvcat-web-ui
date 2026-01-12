@@ -1,0 +1,68 @@
+{
+  "id": "navigation-tour",
+  "name": "Navigation Tour",
+  "description": "A tour through all the application tabs",
+  "steps": [
+    {
+      "title": "Welcome to RVCAT-WEB!",
+      "description": "This tutorial will show you the different parts of the application. Let's start with the Simulation tab.",
+      "selector": ".header-title",
+      "position": "bottom"
+    },
+    {
+      "title": "Simulation Tab",
+      "description": "Here you can run simulations of your code. This is the main tab of the application.",
+      "selector": "button:contains(\"Simulation\")",
+      "position": "bottom",
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "title": "Save execution",
+      "description": "Click the button 'Save' to save the current execution to the comparison tab.",
+      "selector": "button:contains(\"Save\")",
+      "position": "bottom",
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "title": "Comparison Tab",
+      "description": "Here you can compare saved executions to analyze performance differences.",
+      "selector": "button:contains(\"Comparison\")",
+      "position": "bottom",
+      "action": "switchTo:comparisonComponent"
+    },
+    {
+      "title": "Static Analysis",
+      "description": "In this tab you can perform static analysis of your code to detect potential issues.",
+      "selector": "button:contains(\"Static Analysis\")",
+      "position": "bottom",
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "title": "Timeline",
+      "description": "The Timeline tab allows you to see the temporal evolution of program execution.",
+      "selector": "button:contains(\"Timeline\")",
+      "position": "bottom",
+      "action": "switchTo:timelineComponent"
+    },
+    {
+      "title": "Processor Settings",
+      "description": "Here you can configure processor parameters for simulations.",
+      "selector": "button:contains(\"Processor\")",
+      "position": "bottom",
+      "action": "switchTo:processorEditorComponent"
+    },
+    {
+      "title": "Program Editor",
+      "description": "Here you can write and edit your programs for simulation.",
+      "selector": "button:contains(\"Program\")",
+      "position": "bottom",
+      "action": "switchTo:programEditorComponent"
+    },
+    {
+      "title": "Tutorial Complete!",
+      "description": "You have completed the navigation tour. Now you know all the main parts of the application.",
+      "selector": ".header-title",
+      "position": "bottom"
+    }
+  ]
+}
