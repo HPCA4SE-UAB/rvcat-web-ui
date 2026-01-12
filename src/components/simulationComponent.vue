@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, watch, inject } from "vue";
-  import HelpComponent from '@/components/tutorialComponent.vue';
+  import HelpComponent from '@/components/helpComponent.vue';
 
   const simState = inject('simulationState');
 
