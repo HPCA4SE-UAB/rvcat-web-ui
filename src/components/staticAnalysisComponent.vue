@@ -30,6 +30,7 @@
   // Load from localStorage
   onMounted(() => {
     isMounted.value = true
+    const cleanupHandleGraph = registerHandler('get_dependence_graph', handleGraph);
 
     // Load from localStorage
     try {
@@ -42,7 +43,6 @@
     } catch (error) {
       console.error('Failed to load dependence graph options:', error)
     }
-    const cleanupHandleGraph = registerHandler('get_dependence_graph', handleGraph);
   });
 
  /* ------------------------------------------------------------------ 
@@ -76,7 +76,7 @@
   })
 
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
-  const handleGraph = (data, dataType) => {
+  const handleGraph = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to get dependence graph:', data);
       return;
