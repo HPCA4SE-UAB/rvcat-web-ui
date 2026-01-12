@@ -29,9 +29,15 @@ async function loadFileList() {
     if (!simState.selectedProcessor && data.processors.length > 0) {
       simState.selectedProcessor = data.processors[0]
     }
-    return data.processors
+    console.log('Program List:', data.programs)
+    simState.availablePrograms = data.programs
+    if (!simState.selectedProgram && data.programs.length > 0) {
+      simState.selectedProgram = data.program[0]
+    }
+    console.log('Tutorial List:', data.tutorials)
+    simState.availableTutorials = data.tutorials
   } catch (error) {
-    console.error('Failed to load processor list:', error)
+    console.error('Failed to load processor/program/tutorial list:', error)
     return []
   }
 }
