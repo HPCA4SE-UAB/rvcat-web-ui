@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, nextTick, onUnmounted, watch, inject} from 'vue';
-  import HelpComponent  from '@/components/tutorialComponent.vue';
+  import HelpComponent  from '@/components/helpComponent.vue';
 
   /* Safe solution */
   const isMounted = ref(false)
