@@ -11,7 +11,8 @@ const SimulationState = reactive({
   selectedProcessor:   '',
   availableProcessors: [],
   selectedProgram:     '',
-  availablePrograms:   []
+  availablePrograms:   [],
+  availableTutorials:  []
 })
 
 app.use(router)
