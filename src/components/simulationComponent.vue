@@ -1,21 +1,25 @@
 <script setup>
   import { ref, onMounted, watch, inject } from "vue";
-  import TutorialComponent from '@/components/tutorialComponent.vue';
-
-/* ------------------------------------------------------------------ 
- * UI state 
- * ------------------------------------------------------------------ */
-  const showCriticalPath = ref(false);
-  const tutorialPosition = ref({ top: '0%', left: '0%' });
-  const showTutorial1    = ref(false);
-  const infoIcon1        = ref(null);
-  const showTutorial2    = ref(false);
-  const infoIcon2        = ref(null);
-  const showTutorial3    = ref(false);
-  const infoIcon3        = ref(null);
-  const iters            = ref(1)
+  import HelpComponent from '@/components/tutorialComponent.vue';
 
   const simState = inject('simulationState');
+
+/* ------------------------------------------------------------------ 
+ * UI state (iters in localStorage)
+ * ------------------------------------------------------------------ */
+  const showCriticalPath = ref(false);
+  const iters            = ref(1)
+
+  onMounted(() => {
+    const v = localStorage.getItem("ExecutionIterations");
+    if (v !== null) iters.value = parseInt(v);
+  });
+
+  watch(iters, v => localStorage.setItem("ExecutionIterations", v));
+    
+/* ------------------------------------------------------------------ 
+ * UI
+ * ------------------------------------------------------------------ */
 
   // Watch for changes to ROBsize
   watch(() => simState.ROBsize, (newValue, oldValue) => {
@@ -28,41 +32,38 @@
     getSchedulerAnalysis( iters.value, simState.ROBsize ) 
   }
   
-/* ------------------------------------------------------------------ 
- * Tutorial 
- * ------------------------------------------------------------------ */
-  function openTutorial1()  { nextTick(() => { showTutorial1.value = true }) }  
-  function closeTutorial1() { showTutorial1.value  = false }
-  function openTutorial2()  { nextTick(() => { showTutorial2.value = true }) }  
-  function closeTutorial2() { showTutorial2.value  = false }
-  function openTutorial3()  { nextTick(() => { showTutorial3.value = true }) }  
-  function closeTutorial3() { showTutorial3.value  = false }
-
   function RunSimulation()  { getSchedulerAnalysis( iters.value, simState.ROBsize ) }
-  
-/* ------------------------------------------------------------------ 
- * Critical Path Statistics 
- * ------------------------------------------------------------------ */
+
   function toggleCriticalPath() {
     showCriticalPath.value = !showCriticalPath.value;
   }
   
-/* ------------------------------------------------------------------ 
- * Load / save options from localStorage 
- * ------------------------------------------------------------------ */
-  onMounted(() => {
-    const v = localStorage.getItem("ExecutionIterations");
-    if (v !== null) iters.value = parseInt(v);
-  });
 
-  watch(iters, v => localStorage.setItem("ExecutionIterations", v));
+/* ------------------------------------------------------------------ 
+ * Help support 
+ * ------------------------------------------------------------------ */
+  const showHelp1    = ref(false);
+  const showHelp2    = ref(false);
+  const showHelp3    = ref(false);
+  const helpIcon1    = ref(null);
+  const helpIcon2    = ref(null);
+  const helpIcon3    = ref(null);
+  const helpPosition = ref({ top: '0%', left: '0%' });
+
+  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
+  function closeHelp1() { showHelp1.value  = false }
+  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
+  function closeHelp2() { showHelp2.value  = false }
+  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
+  function closeHelp3() { showHelp3.value  = false }
+  
 </script>
 
 <template>
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="infoIcon1" class="info-icon" @click="openTutorial1" title="Show help">
+        <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Simulation of the Execution of the Program</span>
@@ -115,7 +116,7 @@
 
     <!--- Critical Path Breakdown (percentages) ---->
     <div class="dropdown-wrapper" id="critical-path-section">
-      <span ref="infoIcon2" class="info-icon" @click="openTutorial2" title="Show help">
+      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
       <button class="dropdown-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath" title="Show Critical % Info">
@@ -132,7 +133,7 @@
 
     <!--    Processor Graph with visual usage  -->
     <div id="graph-section" class="graph-section" style="display: none;">
-       <span ref="infoIcon3" class="info-icon" @click="openTutorial3" title="Show help">
+       <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show help">
           <img src="/img/info.png" class="info-img">
        </span>
        <span class="dropdown-title">Processor Bottlenecks</span>
@@ -150,7 +151,7 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial1" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="<strong>Simulate</strong> the execution of a specified number of program 
       loop iterations and view aggregate performance metrics, including the total number of executed 
       <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
@@ -159,25 +160,25 @@
       <p>The sections below provide detailed statistics on the critical execution path and 
       the utilization of core processor resources.</p>"
     title="Overall Simulation Results"
-    @close="closeTutorial1"/>
+    @close="closeHelp1"/>
   </Teleport>
   
   <Teleport to="body">    
-    <TutorialComponent v-if="showTutorial2" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Open this tab to visualize the <strong>time distribution of instructions</strong>,
       along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>. 
       <p>You can also explore the critical execution path in a detailed timeline view for a limited number 
       of loop iterations in the <strong>Timeline</strong> tab.</p>"
     title="Critical execution path breakdown"
-    @close="closeTutorial2"/>
+    @close="closeHelp2"/>
   </Teleport>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showTutorial3" :position="tutorialPosition"
+    <HelpComponent v-if="showHelp3" :position="helpPosition"
     text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
       to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
     title="Processor Utilization"
-    @close="closeTutorial3"/>
+    @close="closeHelp3"/>
   </Teleport>
 </template>
 
