@@ -22,7 +22,7 @@ const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 
 async function loadFileList() {
   try {
-    const response = await fetch('/public/index.json')
+    const response = await fetch('./index.json')
     console.log('Response status:', response.status)
     console.log('Response URL:', response.url)
     console.log('Response headers:', [...response.headers])
