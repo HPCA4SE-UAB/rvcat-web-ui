@@ -2,8 +2,7 @@
   import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
   import HelpComponent    from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
-  import { debounce }     from 'lodash-es'  // Add debouncing to prevent too many writes to loaclStorage
-
+ 
   const { getDependenceGraph } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
@@ -45,6 +44,11 @@
     }
   });
 
+  // Clean up on unmount
+  onUnmounted(() => {
+    cleanupHandleGraph();
+  })
+
  /* ------------------------------------------------------------------ 
   * Dependence Graph options: UI actions 
   * ------------------------------------------------------------------ */
@@ -53,27 +57,36 @@
   function toggleSmall()  { dependenceGraphOptions.showSmall  = !dependenceGraphOptions.showSmall  }
   function toggleFull()   { dependenceGraphOptions.showFull   = !dependenceGraphOptions.showFull }
 
-  const debouncedShowGraphAndSave = debounce(() => {
+  // Watch ALL graph options for changes
+  watch(
+    () => ({
+      iters:      graphOptions.iters,
+      showIntern: graphOptions.showIntern,
+      showLaten:  graphOptions.showLaten,
+      showSmall:  graphOptions.showSmall,
+      showFull:   graphOptions.showFull
+  }),
+  (newOptions, oldOptions) => {
     if (!isMounted.value) return
-    getDependenceGraph(
-        dependenceGraphOptions.iters,
-        dependenceGraphOptions.showIntern,
-        dependenceGraphOptions.showLaten,
-        dependenceGraphOptions.showSmall,
-        dependenceGraphOptions.showFull
+
+    clearTimeout(graphTimeout)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newOptions))
+    } catch (error) {
+      console.error('Failed to save graph options:', error)
+    }
+    graphTimeout = setTimeout(() => {
+       getDependenceGraph(
+        newOptions.iters,
+        newOptions.showIntern,
+        newOptions.showLaten,
+        newOptions.showSmall,
+        newOptions.showFull
       )
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(options))
-    console.log('Saved dependence graph options:', options)
-  }, 75)
-
-  // Watch all options with a single debounced handler
-  watch(dependenceGraphOptions, debouncedShowGraphAndSave, { deep: true })
-
-  // Clean up on unmount
-  onUnmounted(() => {
-    debouncedShowGraphAndSave.cancel()
-    cleanupHandleGraph();
-  })
+    }, 75)
+  },
+  { deep: true, immediate: true }
+)
 
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {
@@ -89,7 +102,8 @@
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
- 
+
+  
 /* ------------------------------------------------------------------ 
  * Show Performance: UI state 
  * ------------------------------------------------------------------ */
