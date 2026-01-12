@@ -1,5 +1,6 @@
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch } from 'vue';
+
 import headerComponent         from '@/components/headerComponent.vue';
 import processorComponent      from '@/components/processorComponent.vue';
 import programComponent        from '@/components/programComponent.vue';
@@ -8,11 +9,49 @@ import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
+  
 import { useRVCAT_Api }        from '@/rvcatAPI';
 
-const { isReady, registerHandler }                = inject('worker');
+const simState                      = inject('simulationState');
+const { isReady, registerHandler }  = inject('worker');
 const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 
+/* ------------------------------------------------------------------ 
+ * Read Processor/Program/Tutorial files from distribution folders
+ * ------------------------------------------------------------------ */
+
+async function loadFileList() {
+  try {
+    const response = await fetch('/index.json')
+    const data     = await response.json()
+    console.log('Processor List:', data.processors)
+    simState.availableProcessors = data.processors
+    if (!simState.selectedProcessor && data.processors.length > 0) {
+      simState.selectedProcessor = data.processors[0]
+    }
+    return data.processors
+  } catch (error) {
+    console.error('Failed to load processor list:', error)
+    return []
+  }
+}
+
+async function loadProcessorData(processorName) {
+  try {
+    const response = await fetch(`/processors/${processorName}.json`)
+    const data     = await response.json()
+    return data
+  } catch (error) {
+    console.error(`Failed to load ${processorName}:`, error)
+    throw error
+  }
+}
+
+
+/* ------------------------------------------------------------------ 
+ * Main Simulator Panel UI
+ * ------------------------------------------------------------------ */
+  
 // Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
 const pendingKey        = ref(null);
@@ -65,19 +104,26 @@ function cancelLeave() {
 function closeLoadingOverlay() { showOverlay.value = false }
 
 // Handler for 'import_rvcat' message
-const handleRVCAT = (data, dataType) => {
+const handleRVCAT = async (data, dataType) => {
   if (dataType === 'error') {
     console.error('Failed to load RVCAT:', data);
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
 
+  await loadFileList()
+  
+  if ( simState.selectedProcessor ) {
+    const firstProcessor = await loadProcessorData( simState.selectedProcessor )
+    console.log('First processor data:', firstProcessor)
+  }
+
   // Look in localStorage for processors & programs, 
   // if not found, get from distribution folders
-  getProcessors();  // from RVCAT API
-  getPrograms();    // from RVCAT API
+  //getProcessors();  // from RVCAT API
+  //getPrograms();    // from RVCAT API
 };
-
+ 
 onMounted(() => {
   nextTick(() => {
       loadingMessage.value = 'Loading RVCAT';
