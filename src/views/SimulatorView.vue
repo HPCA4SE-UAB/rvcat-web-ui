@@ -23,14 +23,6 @@ const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 async function loadFileList() {
   try {
     const response = await fetch('./index.json')
-    console.log('Response status:', response.status)
-    console.log('Response URL:', response.url)
-    console.log('Response headers:', [...response.headers])
-    
-    // See what's actually being returned
-    const text = await response.text()
-    console.log('Response text (first 200 chars):', text.substring(0, 200))
-    
     const data     = await response.json()
     console.log('Processor List:', data.processors)
     simState.availableProcessors = data.processors
