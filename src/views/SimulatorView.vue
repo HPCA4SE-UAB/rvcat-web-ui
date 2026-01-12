@@ -32,7 +32,7 @@ async function loadFileList() {
     console.log('Program List:', data.programs)
     simState.availablePrograms = data.programs
     if (!simState.selectedProgram && data.programs.length > 0) {
-      simState.selectedProgram = data.program[0]
+      simState.selectedProgram = data.programs[0]
     }
     console.log('Tutorial List:', data.tutorials)
     simState.availableTutorials = data.tutorials
