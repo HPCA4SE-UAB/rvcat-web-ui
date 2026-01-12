@@ -3,12 +3,13 @@
   import HelpComponent  from '@/components/tutorialComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProgram, showProgram } = useRVCAT_Api();
-  const { registerHandler }         = inject('worker');
-  const simState                    = inject('simulationState');
+  const { setProgram, showProgram, saveProgram } = useRVCAT_Api();
+  const { registerHandler }                      = inject('worker');
+  const simState                                 = inject('simulationState');
   
   // Reactive SVG string
   const programText = ref('LOADING ...');
+  const programJSON = null;
 
 /* ------------------------------------------------------------------ 
  * Program selection and Program setting
@@ -51,6 +52,7 @@
       let programInfo = JSON.parse(data);
       console.log('Program Info:', programInfo);
       // copy programInfo into JSON variable for edition & load/save
+      programJSON.value = programInfo;
 
       // obtain text from RVCAT API
       showProgram( simState.selectedProgram );
@@ -73,17 +75,35 @@
       programText.value = 'Failed to show program';
     }
   }
+
+  
+  // Handler for 'save_program' message (fired by this component)
+  const handleSaveProgram = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to save program:', data);
+      return;
+    }
+    try {
+      console.log('Program saved:', data);
+      // programText.value = data;
+    } catch (error) {
+      console.error('Failed to show program:', error)
+      programText.value = 'Failed to show program';
+    }
+  }
   
   onMounted(() => {
     const cleanupHandleGet = registerHandler('get_programs', handlePrograms);
     const cleanupHandleSet = registerHandler('set_program',  handleSetProgram);
     const cleanupHandleShow= registerHandler('show_program', handleShowProgram);
+    const cleanupHandleSave= registerHandler('save_program', handleSaveProgram);
   });
 
   onUnmounted(() => {
     cleanupHandleGet();
     cleanupHandleSet();
     cleanupHandleShow();
+    cleanupHandleSave();
   });
 
   const reloadProgram = () => {
@@ -102,8 +122,7 @@
     const name     = modalName.value.trim();
     const selectEl = document.getElementById("programs-list");
 
-    const nameExists = Array.from(selectEl.options).some(opt => opt.value === name);
-    if (nameExists) {
+    if (name == simState.selectedProgram) {
       nameError.value = "A program with this name already exists. Please, choose another one.";
       return;
     }
@@ -113,18 +132,7 @@
 
     uploadedProgramObject.name = name;
     const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
-    await saveNewProgram(jsonText);
-
-    const observer = new MutationObserver((mutations, obs) => {
-      const justAdded = Array.from(selectEl.options).some(opt => opt.value === name);
-      if (justAdded) {
-        selectEl.value = name;
-        reloadRvcat(robState.ROBsize);
-        obs.disconnect();
-      }
-    });
-    observer.observe(selectEl, { childList: true });
-    reloadRvcat(robState.ROBsize);
+    saveProgram(jsonText);
   }
 
   function cancelModal() {
@@ -135,11 +143,10 @@
   }
 
   async function downloadProgram() {
-    let data = await getProgramJSON();
-    const jsonText = JSON.stringify(data, null, 2);
+    const jsonText = JSON.stringify(programJSON.value, null, 2);
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
-        suggestedName: `${document.getElementById('programs-list').value}.json`,
+        suggestedName: `${simState.selectedProgram}.json`,
         types: [{
           description: 'JSON files',
           accept: { 'application/json': ['.json'] }
@@ -153,7 +160,7 @@
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href = url;
-      a.download = `${document.getElementById('programs-list').value}.json`;
+      a.download = `${simState.selectedProgram}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
