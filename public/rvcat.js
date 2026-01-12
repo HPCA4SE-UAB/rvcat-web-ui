@@ -1,12 +1,3 @@
-function readPythonProgramsAndProcessors() {
-      programShow();
-      getSchedulerAnalysis(1000,100);
-}
-
-function programShow() {
-    executeCode( 'rvcat._program.show_code()', 'program_show' );
-}
-
 function insert_cache_annotations(cache) {
   if (cache.nBlocks>0){
      document.getElementById('cache-info').innerHTML=`
@@ -53,11 +44,6 @@ function getSchedulerAnalysis(n_iters, rob_size) {
     let res = `rvcat._scheduler.init(${n_iters}, ${rob_size}); `
     res    += 'rvcat._scheduler.format_analysis_json()';
     executeCode( res, 'generate_simulation_results' );
-}
-
-function reloadRvcat() {
-    programShow();
-    getProcessorInformation();
 }
 
 function programShowPerformanceLimits() {
@@ -109,41 +95,6 @@ async function saveModifiedProcessor(config) {
    let res = `rvcat._processor.save(${JSON.stringify(config)})`
    await executeCode( res, 'save_modified_processor' )
    await executeCode('rvcat.files.list_json(True)', 'get_processors')
-}
-
-async function getProgramJSON(){
-  return new Promise((resolve, reject) => {
-    // Temporarily override the handler for this one request:
-    const original = handlers['get_program_json'];
-
-    handlers['get_program_json'] = (data) => {
-      try {
-        const obj = JSON.parse(data);
-        programData = obj;
-        resolve(obj);
-      } catch (err) {
-        reject(err);
-      } finally {
-        // restore the old handler
-        handlers['get_program_json'] = original;
-      }
-    };
-
-    executeCode( 'rvcat._program.json()', 'get_program_json');
-  });
-}
-
-async function saveNewProgram(config) {
-  const payload = typeof config === 'string' ? JSON.parse(config) : config;
-  let res = `rvcat._program.save(${JSON.stringify(payload)})`
-  await executeCode( res, 'add_new_program' )
-  await executeCode('rvcat.files.list_json(False)',  'get_programs'  );
-}
-
-function programShowMemtrace(n_iters) {
-   let res = `rvcat._scheduler.init(${n_iters}, 10); rvcat._program.show_memory_trace()`
-   executeCode( res, 'print_output' )
-   lastExecutedCommand = programShowMemtrace;
 }
 
 ////////////////////////////////////////
