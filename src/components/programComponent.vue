@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch } from "vue";
-  import HelpComponent  from '@/components/tutorialComponent.vue';
+  import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
   const { setProgram, showProgram, saveProgram } = useRVCAT_Api();
