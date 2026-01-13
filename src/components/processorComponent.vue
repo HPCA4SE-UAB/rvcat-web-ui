@@ -22,58 +22,38 @@
     }
   });
   
-  // Handler for 'get_processors' message (fired from parent component)
-  const handleProcessors = (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('Failed to get list of processors:', data);
-      return;
-    }
-    try {
-      let processors = JSON.parse(data);
-      console.log('Processor List:', processors)
-      simState.availableProcessors = processors
-      // Auto-select first processor if none selected
-      if (!simState.selectedProcessor && processors.length > 0) {
-        simState.selectedProcessor = processors[0]
-      }
-    } catch (error) {
-      console.error('Failed to parse processors:', error)
-    }
-  }
-
   // Handler for 'set_processor' message (fired by this component)
   const handleSetProcessor = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to set processor:', data);
       return;
     }
-    try {
-      let processorInfo = JSON.parse(data);
-      console.log('Processor Info:', processorInfo)
-      //   insert_cache_annotations(cache)
-      const svg = await getProcessorGraph(processorInfo);
-      pipelineSvg.value = svg.outerHTML;
-    } catch (error) {
-      console.error('Failed to set processor:', error)
-      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
-    }
+    console.log('Processor set into RVCAT')
   }
 
-  
   onMounted(() => {
-    const cleanupHandleGet = registerHandler('get_processors', handleProcessors);
     const cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
   });
 
   onUnmounted(() => {
-    cleanupHandleGet();
     cleanupHandleSet();
   });
 
   const reloadProcessor = () => {
-    console.log('Reloading with:', simState.selectedProcessor);
-    // Call Python RVCAT to load new processor configuration --> 'set-processor'
-    setProcessor( simState.selectedProcessor )
+    console.log('Reloading processor with:', simState.selectedProcessor);
+    try {
+      const jsonString = localStorage.getItem(`processor.${simState.selectedProcessor}`)
+      const processorInfo = JSON.parse(jsonString)
+      // Call Python RVCAT to load new processor configuration --> 'set-processor'
+      setProcessor( processorInfo )
+      //   insert_cache_annotations(cache)
+      const svg = await getProcessorGraph(processorInfo);
+      pipelineSvg.value = svg.outerHTML;
+      console.log('Processor set into RVCAT')
+    } catch (error) {
+      console.error('Failed to set processor:', error)
+      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
   }
   
 /* ------------------------------------------------------------------ 
