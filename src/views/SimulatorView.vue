@@ -19,70 +19,9 @@ const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 /* ------------------------------------------------------------------ 
  * Read Processor/Program/Tutorial files from distribution folders
  * ------------------------------------------------------------------ */
-
 const processorKeys = []
 const programKeys   = []
 const tutorialKeys  = []
-
-  function getKeys(name) {
-    const allKeys = [] 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key.startsWith(`${name}.`)) {
-        allKeys.push(key)
-      }
-    }
-    return allKeys
-  }
-  
-async function loadFileList() {
-  try {
-    // if some list is empty load from distribution files
-    if (processorKeys.length == 0 || 
-        programKeys.length == 0 ||
-        tutorialKeys.length == 0 ) {
-      const response = await fetch('./index.json')
-      const data     = await response.json()
-    }
-    
-    if (processorKeys.length == 0) { // load processors from distribution files
-      console.log('Load processors from distribution files')
-      simState.availableProcessors = data.processors
-      for (let i = 0; i < data.processors.length; i += 1) {
-        const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
-        localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
-      }
-      processorKeys = getKeys('processor')
-    }
-    simState.selectedProcessor = processorKeys[0]
-
-    if (programKeys.length == 0) { // load programs from distribution files
-      console.log('Load programs from distribution files')
-      simState.availablePrograms = data.programs
-      for (let i = 0; i < data.programs.length; i += 1) {
-        const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-        localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
-      }
-      programKeys = getKeys('program')
-    }
-    simState.selectedProgram = programKeys[0]
-  
-    if (tutorialKeys.length == 0) { // load tutorials from distribution files
-      console.log('Load tutorials from distribution files')
-      simState.availableTutorials = data.tutorials
-      for (let i = 0; i < data.tutorials.length; i += 1) {
-        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
-        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
-      }
-      tutorialKeys  = getKeys('tutorial')
-    }
-    simState.availableTutorials = tutorialKeys
-   
-  } catch (error) {
-    console.error('Failed to load processor/program/tutorial list:', error)
-    return []
-  }
-}
 
 async function loadJSONfile(name) {
   try {
@@ -96,6 +35,69 @@ async function loadJSONfile(name) {
   }
 }
 
+function getKeys(name) {
+  const allKeys = [] 
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key.startsWith(`${name}.`)) {
+      const suffix = key.substring(`${name}.`.length)
+      allKeys.push(suffix)
+    }
+  }
+  return allKeys
+}
+
+// Loads processors, programs and tutorials from localStorage or otherwise from distribution files
+async function loadALL() {
+  try {
+    const response = null;
+    const data     = null;
+
+    // if some list is empty load from distribution files
+    if (processorKeys.length == 0 || 
+        programKeys.length == 0 ||
+        tutorialKeys.length == 0 ) {
+      const response = await fetch('./index.json')
+      const data     = await response.json()
+    }
+    
+    if (processorKeys.length == 0) { // load processors from distribution files
+      console.log('Load processors from distribution files')
+      for (let i = 0; i < data.processors.length; i += 1) {
+        const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
+        localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+      }
+      processorKeys = getKeys('processor')
+    }
+    simState.availableProcessors = processorKeys
+    simState.selectedProcessor  = processorKeys[0]
+
+    if (programKeys.length == 0) { // load programs from distribution files
+      console.log('Load programs from distribution files')
+      for (let i = 0; i < data.programs.length; i += 1) {
+        const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+        localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+      }
+      programKeys = getKeys('program')
+    }
+    simState.availablePrograms = programKeys
+    simState.selectedProgram = programKeys[0]
+  
+    if (tutorialKeys.length == 0) { // load tutorials from distribution files
+      console.log('Load tutorials from distribution files')
+      for (let i = 0; i < data.tutorials.length; i += 1) {
+        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
+      }
+      tutorialKeys  = getKeys('tutorial')
+    }
+    simState.availableTutorials = tutorialKeys
+   
+  } catch (error) {
+    console.error('Failed to load processor/program/tutorial list:', error)
+    return []
+  }
+}
 
 /* ------------------------------------------------------------------ 
  * Main Simulator Panel UI
@@ -159,16 +161,7 @@ const handleRVCAT = async (data, dataType) => {
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  await loadFileList()
-  if ( simState.selectedProcessor ) {
-    // const firstProcessor = await loadProcessorData( simState.selectedProcessor )
-    // console.log('First processor data:', firstProcessor)
-  }
-
-  // Look in localStorage for processors & programs, 
-  // if not found, get from distribution folders
-  //getProcessors();  // from RVCAT API
-  //getPrograms();    // from RVCAT API
+  await loadALL()
 };
  
 onMounted(() => {
