@@ -144,7 +144,7 @@ const handleRVCAT = async (data, dataType) => {
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  
+  await loadFileList()
   if ( simState.selectedProcessor ) {
     // const firstProcessor = await loadProcessorData( simState.selectedProcessor )
     // console.log('First processor data:', firstProcessor)
@@ -171,7 +171,6 @@ onMounted(() => {
   console.log('Found processor keys:', processorKeys)
   console.log('Found program keys:',   programKeys)
   console.log('Found tutorial keys:',  tutorialKeys)
-  await loadFileList()
 });
 
 onUnmounted(() => {
