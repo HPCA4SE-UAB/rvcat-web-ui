@@ -50,8 +50,8 @@ function getKeys(name) {
 // Loads processors, programs and tutorials from localStorage or otherwise from distribution files
 async function loadALL() {
   try {
-    const response = null;
-    const data     = null;
+    let response = null;
+    let data     = null;
 
     // if some list is empty load from distribution files
     if (processorKeys.length == 0 || 
