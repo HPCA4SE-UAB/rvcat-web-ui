@@ -37,32 +37,47 @@ const tutorialKeys  = []
   
 async function loadFileList() {
   try {
-    const response = await fetch('./index.json')
-    const data     = await response.json()
-    console.log('Processor List:', data.processors)
-    simState.availableProcessors = data.processors
-    if (!simState.selectedProcessor && data.processors.length > 0) {
-      simState.selectedProcessor = data.processors[0]
+    // if some list is empty load from distribution files
+    if (processorKeys.length == 0 || 
+        programKeys.length == 0 ||
+        tutorialKeys.length == 0 ) {
+      const response = await fetch('./index.json')
+      const data     = await response.json()
     }
-    for (let i = 0; i < data.processors.length; i += 1) {
-      const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
-      localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+    
+    if (processorKeys.length == 0) { // load processors from distribution files
+      console.log('Load processors from distribution files')
+      simState.availableProcessors = data.processors
+      for (let i = 0; i < data.processors.length; i += 1) {
+        const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
+        localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+      }
+      processorKeys = getKeys('processor')
     }
-    console.log('Program List:', data.programs)
-    simState.availablePrograms = data.programs
-    if (!simState.selectedProgram && data.programs.length > 0) {
-      simState.selectedProgram = data.programs[0]
+    simState.selectedProcessor = processorKeys[0]
+
+    if (programKeys.length == 0) { // load programs from distribution files
+      console.log('Load programs from distribution files')
+      simState.availablePrograms = data.programs
+      for (let i = 0; i < data.programs.length; i += 1) {
+        const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+        localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+      }
+      programKeys = getKeys('program')
     }
-    for (let i = 0; i < data.programs.length; i += 1) {
-      const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-      localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+    simState.selectedProgram = programKeys[0]
+  
+    if (tutorialKeys.length == 0) { // load tutorials from distribution files
+      console.log('Load tutorials from distribution files')
+      simState.availableTutorials = data.tutorials
+      for (let i = 0; i < data.tutorials.length; i += 1) {
+        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
+      }
+      tutorialKeys  = getKeys('tutorial')
     }
-    console.log('Tutorial List:', data.tutorials)
-    simState.availableTutorials = data.tutorials
-    for (let i = 0; i < data.tutorials.length; i += 1) {
-      const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
-      localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
-    }
+    simState.availableTutorials = tutorialKeys
+   
   } catch (error) {
     console.error('Failed to load processor/program/tutorial list:', error)
     return []
