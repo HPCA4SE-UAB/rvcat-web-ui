@@ -57,8 +57,8 @@ async function loadALL() {
     if (processorKeys.length == 0 || 
         programKeys.length == 0 ||
         tutorialKeys.length == 0 ) {
-      const response = await fetch('./index.json')
-      const data     = await response.json()
+      response = await fetch('./index.json')
+      data     = await response.json()
     }
     
     if (processorKeys.length == 0) { // load processors from distribution files
