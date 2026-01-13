@@ -30,13 +30,17 @@ async function loadFileList() {
       simState.selectedProcessor = data.processors[0]
     }
     for (let i = 0; i < data.processors.length; i += 1) {
-      const filedata = loadJSONfile(`./processors/${data.processors[i]}.json`)
+      const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
       localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
     }
     console.log('Program List:', data.programs)
     simState.availablePrograms = data.programs
     if (!simState.selectedProgram && data.programs.length > 0) {
       simState.selectedProgram = data.programs[0]
+    }
+    for (let i = 0; i < data.programs.length; i += 1) {
+      const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+      localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
     }
     console.log('Tutorial List:', data.tutorials)
     simState.availableTutorials = data.tutorials
@@ -50,6 +54,7 @@ async function loadJSONfile(name) {
   try {
     const response = await fetch(name)
     const data     = await response.json()
+    console.log('File read: ', name, data)
     return data
   } catch (error) {
     console.error(`Failed to load ${name}:`, error)
