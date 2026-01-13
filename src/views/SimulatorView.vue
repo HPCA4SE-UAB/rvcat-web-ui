@@ -20,6 +20,21 @@ const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
  * Read Processor/Program/Tutorial files from distribution folders
  * ------------------------------------------------------------------ */
 
+const processorKeys = []
+const programKeys   = []
+const tutorialKeys  = []
+
+  function getKeys(name) {
+    const allKeys = [] 
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key.startsWith(`${name}.`)) {
+        allKeys.push(key)
+      }
+    }
+    return allKeys
+  }
+  
 async function loadFileList() {
   try {
     const response = await fetch('./index.json')
@@ -44,6 +59,10 @@ async function loadFileList() {
     }
     console.log('Tutorial List:', data.tutorials)
     simState.availableTutorials = data.tutorials
+    for (let i = 0; i < data.tutorials.length; i += 1) {
+      const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+      localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
+    }
   } catch (error) {
     console.error('Failed to load processor/program/tutorial list:', error)
     return []
@@ -125,8 +144,6 @@ const handleRVCAT = async (data, dataType) => {
     return;
   }
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-
-  await loadFileList()
   
   if ( simState.selectedProcessor ) {
     // const firstProcessor = await loadProcessorData( simState.selectedProcessor )
@@ -147,6 +164,14 @@ onMounted(() => {
   
   // Register processors handler
   const cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
+  
+  const processorKeys = getKeys('processor')
+  const programKeys   = getKeys('program')
+  const tutorialKeys  = getKeys('tutorial')
+  console.log('Found processor keys:', processorKeys)
+  console.log('Found program keys:',   programKeys)
+  console.log('Found tutorial keys:',  tutorialKeys)
+  await loadFileList()
 });
 
 onUnmounted(() => {
