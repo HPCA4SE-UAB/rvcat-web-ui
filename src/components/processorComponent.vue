@@ -39,17 +39,15 @@
     cleanupHandleSet();
   });
 
-  const reloadProcessor = () => {
+  const reloadProcessor = async () => {
     console.log('Reloading processor with:', simState.selectedProcessor);
     try {
       const jsonString = localStorage.getItem(`processor.${simState.selectedProcessor}`)
       const processorInfo = JSON.parse(jsonString)
-      // Call Python RVCAT to load new processor configuration --> 'set-processor'
-      setProcessor( processorInfo )
+      setProcessor( processorInfo )   // Call Python RVCAT to load new processor config --> 'set-processor'
       //   insert_cache_annotations(cache)
       const svg = await getProcessorGraph(processorInfo);
       pipelineSvg.value = svg.outerHTML;
-      console.log('Processor set into RVCAT')
     } catch (error) {
       console.error('Failed to set processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
