@@ -30,7 +30,7 @@ async function loadFileList() {
       simState.selectedProcessor = data.processors[0]
     }
     for (let i = 0; i < data.processors.length; i += 1) {
-      const filedata = loadJSONfile(`/processors/${data.processors[i]}.json`)
+      const filedata = loadJSONfile(`./processors/${data.processors[i]}.json`)
       localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
     }
     console.log('Program List:', data.programs)
@@ -124,8 +124,8 @@ const handleRVCAT = async (data, dataType) => {
   await loadFileList()
   
   if ( simState.selectedProcessor ) {
-    const firstProcessor = await loadProcessorData( simState.selectedProcessor )
-    console.log('First processor data:', firstProcessor)
+    // const firstProcessor = await loadProcessorData( simState.selectedProcessor )
+    // console.log('First processor data:', firstProcessor)
   }
 
   // Look in localStorage for processors & programs, 
