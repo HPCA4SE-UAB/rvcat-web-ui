@@ -10,10 +10,6 @@
   // Reactive SVG string
   const pipelineSvg = ref('');
 
-/* ------------------------------------------------------------------ 
- * Processor selection and ROB size specification
- * ------------------------------------------------------------------ */
-
   // Watch for processor changes
   watch(() => simState.selectedProcessor, (newProcessor, oldProcessor) => {
     console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
@@ -23,7 +19,7 @@
   });
   
   // Handler for 'set_processor' message (fired by this component)
-  const handleSetProcessor = async (data, dataType) => {
+  const handleSetProcessor = (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to set processor:', data);
       return;
