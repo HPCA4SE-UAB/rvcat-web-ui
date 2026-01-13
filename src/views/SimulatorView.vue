@@ -19,11 +19,8 @@ const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
 /* ------------------------------------------------------------------ 
  * Read Processor/Program/Tutorial files from distribution folders
  * ------------------------------------------------------------------ */
-const processorKeys = []
-const programKeys   = []
-const tutorialKeys  = []
 
-async function loadJSONfile(name) {
+  async function loadJSONfile(name) {
   try {
     const response = await fetch(name)
     const data     = await response.json()
@@ -53,6 +50,13 @@ async function loadALL() {
     let response = null;
     let data     = null;
 
+    let processorKeys = getKeys('processor')
+    let programKeys   = getKeys('program')
+    let tutorialKeys  = getKeys('tutorial')
+    console.log('Found processor keys:', processorKeys)
+    console.log('Found program keys:',   programKeys)
+    console.log('Found tutorial keys:',  tutorialKeys)
+    
     // if some list is empty load from distribution files
     if (processorKeys.length == 0 || 
         programKeys.length == 0 ||
@@ -172,13 +176,6 @@ onMounted(() => {
   
   // Register processors handler
   const cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
-  
-  const processorKeys = getKeys('processor')
-  const programKeys   = getKeys('program')
-  const tutorialKeys  = getKeys('tutorial')
-  console.log('Found processor keys:', processorKeys)
-  console.log('Found program keys:',   programKeys)
-  console.log('Found tutorial keys:',  tutorialKeys)
 });
 
 onUnmounted(() => {
