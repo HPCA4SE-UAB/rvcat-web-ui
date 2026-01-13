@@ -29,6 +29,10 @@ async function loadFileList() {
     if (!simState.selectedProcessor && data.processors.length > 0) {
       simState.selectedProcessor = data.processors[0]
     }
+    for (let i = 0; i < data.processors.length; i += 1) {
+      const filedata = loadJSONfile(`/processors/${data.processors[i]}.json`)
+      localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+    }
     console.log('Program List:', data.programs)
     simState.availablePrograms = data.programs
     if (!simState.selectedProgram && data.programs.length > 0) {
@@ -42,13 +46,13 @@ async function loadFileList() {
   }
 }
 
-async function loadProcessorData(processorName) {
+async function loadJSONfile(name) {
   try {
-    const response = await fetch(`/processors/${processorName}.json`)
+    const response = await fetch(name)
     const data     = await response.json()
     return data
   } catch (error) {
-    console.error(`Failed to load ${processorName}:`, error)
+    console.error(`Failed to load ${name}:`, error)
     throw error
   }
 }
