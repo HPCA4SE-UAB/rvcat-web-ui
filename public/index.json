@@ -10,7 +10,7 @@
     "v2"
   ],
    "tutorials": [
-    "lesson-1.json",
-    "navigation-tour.json"
+    "lesson-1",
+    "navigation-tour"
   ]
 }
