@@ -24,7 +24,7 @@ export function useRVCAT_Api() {
   
   const setProcessor = async (jsontext) => {
     try {
-      const code = `rvcat._processor.load("${jsontext}")`;
+      const code = `rvcat._processor.load(${jsontext})`;
       const result = await safeExecute(code, 'set_processor');
       console.log('Processor set:', result);
       return result;
@@ -36,7 +36,7 @@ export function useRVCAT_Api() {
 
   const setProgram = async (jsontext) => {
     try {
-      const code = `rvcat._program.load("${jsontext}")`;
+      const code = `rvcat._program.load(${jsontext})`;
       const result = await safeExecute(code, 'set_program');
       console.log('Program set:', result);
       return result;
