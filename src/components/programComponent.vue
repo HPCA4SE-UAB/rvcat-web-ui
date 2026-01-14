@@ -12,7 +12,7 @@
   const availablePrograms = ref([]);
 
   // Watch for program changes
-  watch(() => currentProgram, (newProgram, oldProgram) => {
+  watch(() => currentProgram.value, (newProgram, oldProgram) => {
     console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
     if (newProgram && newProgram !== oldProgram) {
       reloadProgram();
