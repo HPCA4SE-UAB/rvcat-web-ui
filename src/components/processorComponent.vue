@@ -103,7 +103,7 @@
       </div>
       
       <div id="settings-div">
-        <select v-model="currentProcessor" title="Select Processor">
+        <select v-model="currentProcessor.value" title="Select Processor">
           <option value="" disabled>Select</option>
           <option 
             v-for="processor in availableProcessors" 
