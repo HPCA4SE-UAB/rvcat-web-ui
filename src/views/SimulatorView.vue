@@ -14,94 +14,7 @@ import { useRVCAT_Api }        from '@/rvcatAPI';
 
 const simState                      = inject('simulationState');
 const { isReady, registerHandler }  = inject('worker');
-const { importRVCAT, getProcessors, getPrograms } = useRVCAT_Api();
-
-/* ------------------------------------------------------------------ 
- * Read Processor/Program/Tutorial files from distribution folders
- * ------------------------------------------------------------------ */
-
-  async function loadJSONfile(name) {
-  try {
-    const response = await fetch(name)
-    const data     = await response.json()
-    console.log('File read: ', name, data)
-    return data
-  } catch (error) {
-    console.error(`Failed to load ${name}:`, error)
-    throw error
-  }
-}
-
-function getKeys(name) {
-  const allKeys = [] 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key.startsWith(`${name}.`)) {
-      const suffix = key.substring(`${name}.`.length)
-      allKeys.push(suffix)
-    }
-  }
-  return allKeys
-}
-
-// Loads processors, programs and tutorials from localStorage or otherwise from distribution files
-async function loadALL() {
-  try {
-    let response = null;
-    let data     = null;
-
-    let processorKeys = getKeys('processor')
-    let programKeys   = getKeys('program')
-    let tutorialKeys  = getKeys('tutorial')
-    console.log('Found processor keys:', processorKeys)
-    console.log('Found program keys:',   programKeys)
-    console.log('Found tutorial keys:',  tutorialKeys)
-    
-    // if some list is empty load from distribution files
-    if (processorKeys.length == 0 || 
-        programKeys.length == 0 ||
-        tutorialKeys.length == 0 ) {
-      response = await fetch('./index.json')
-      data     = await response.json()
-    }
-    
-    if (processorKeys.length == 0) { // load processors from distribution files
-      console.log('Load processors from distribution files')
-      for (let i = 0; i < data.processors.length; i += 1) {
-        const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
-        localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
-      }
-      processorKeys = getKeys('processor')
-    }
-    simState.availableProcessors = processorKeys
-    simState.selectedProcessor  = processorKeys[0]
-
-    if (programKeys.length == 0) { // load programs from distribution files
-      console.log('Load programs from distribution files')
-      for (let i = 0; i < data.programs.length; i += 1) {
-        const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-        localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
-      }
-      programKeys = getKeys('program')
-    }
-    simState.availablePrograms = programKeys
-    simState.selectedProgram = programKeys[0]
-  
-    if (tutorialKeys.length == 0) { // load tutorials from distribution files
-      console.log('Load tutorials from distribution files')
-      for (let i = 0; i < data.tutorials.length; i += 1) {
-        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
-        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
-      }
-      tutorialKeys  = getKeys('tutorial')
-    }
-    simState.availableTutorials = tutorialKeys
-   
-  } catch (error) {
-    console.error('Failed to load processor/program/tutorial list:', error)
-    return []
-  }
-}
+const { importRVCAT }               = useRVCAT_Api();
 
 /* ------------------------------------------------------------------ 
  * Main Simulator Panel UI
@@ -133,7 +46,7 @@ function onRequestSwitch(key) {
     currentKey.value === 'procSettingsComponent' &&
     settingsCompInst.value?.canLeave?.()
   ) {
-    pendingKey.value   = key;
+    pendingKey.value     = key;
     showLeaveModal.value = true;
   } else {
     currentKey.value       = key;
@@ -153,7 +66,7 @@ function confirmLeave() {
   
 function cancelLeave() {
   showLeaveModal.value = false;
-  pendingKey.value       = null;
+  pendingKey.value     = null;
 }
 
 function closeLoadingOverlay() { showOverlay.value = false }
@@ -161,11 +74,12 @@ function closeLoadingOverlay() { showOverlay.value = false }
 // Handler for 'import_rvcat' message
 const handleRVCAT = async (data, dataType) => {
   if (dataType === 'error') {
-    console.error('Failed to load RVCAT:', data);
+    console.error('Failed to import RVCAT:', data);
     return;
   }
+  loadingMessage.value = 'Loading complete!';
   setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  await loadALL()
+  simState.RVCAT_imported = true;  // fires processor & program components to set processor/program
 };
  
 onMounted(() => {
