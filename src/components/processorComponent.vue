@@ -8,22 +8,33 @@
   const simState            = inject('simulationState');
 
   // Reactive SVG string
-  const pipelineSvg = ref('');
+  const pipelineSvg         = ref('');
+  const currentProcessor    = ref('');
+  const availableProcessors = ref([]);
 
   // Watch for processor changes
-  watch(() => simState.selectedProcessor, (newProcessor, oldProcessor) => {
+  watch(() => currentProcessor, (newProcessor, oldProcessor) => {
     console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
     if (newProcessor && newProcessor !== oldProcessor) {
       reloadProcessor();
     }
   });
-  
+
+  // Watch for changes on RVCAT import
+  watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
+    if (newValue) {
+      console.log('RVCAT imported: look for processors and select current');
+      initProcessor();
+    }
+  });
+
   // Handler for 'set_processor' message (fired by this component)
   const handleSetProcessor = (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to set processor:', data);
       return;
     }
+    simState.selectedProcessor = currentProcessor.value;  // fire other components, watching for a change
     console.log('Processor set into RVCAT')
   }
 
@@ -35,10 +46,35 @@
     cleanupHandleSet();
   });
 
-  const reloadProcessor = async () => {
-    console.log('Reloading processor with:', simState.selectedProcessor);
+  
+  const initProcessor = async () => {
+    console.log('Init processor list');
     try {
-      const jsonString = localStorage.getItem(`processor.${simState.selectedProcessor}`)
+      let processorKeys = getKeys('processor') // from localStorage
+
+      if (processorKeys.length == 0) { // load processors from distribution files
+        console.log('Load processors from distribution files')
+        const response = await fetch('./index.json')
+        const data     = await response.json()
+        for (let i = 0; i < data.processors.length; i += 1) {
+           const filedata = await loadJSONfile(`./programs/${data.processors[i]}.json`)
+           localStorage.setItem(`program.${data.processors[i]}`, JSON.stringify(filedata))
+        }
+        processorKeys = getKeys('processor')
+      }
+      availableProcessors.value = processorKeys
+      currentProcessor.value = processorKeys[0]
+      reloadProcessor()
+    } catch (error) {
+      console.error('Failed to set processor:', error)
+      programText.value = 'Failed to set program';
+    }      
+  }
+  
+  const reloadProcessor = async () => {
+    console.log('Reloading processor with:', currentProcessor.value);
+    try {
+      const jsonString = localStorage.getItem(`processor.${currentProcessor.value}`)
       const processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )   // Call Python RVCAT to load new processor config --> 'set-processor'
       //   insert_cache_annotations(cache)
@@ -67,10 +103,10 @@
       </div>
       
       <div id="settings-div">
-        <select v-model="simState.selectedProcessor" title="Select Processor">
+        <select v-model="currentProcessor" title="Select Processor">
           <option value="" disabled>Select</option>
           <option 
-            v-for="processor in simState.availableProcessors" 
+            v-for="processor in availableProcessors" 
             :key="processor"
             :value="processor"
           >
