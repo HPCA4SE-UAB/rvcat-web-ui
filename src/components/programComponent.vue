@@ -61,8 +61,7 @@
     console.log('Reloading program with:', simState.selectedProgram);
     try {
       const jsonString  = localStorage.getItem(`program.${simState.selectedProgram}`)
-      const programInfo = JSON.parse(jsonString)
-      setProgram( programInfo ) // Call Python RVCAT to load new program --> id= 'set-program'
+      setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to set program';
