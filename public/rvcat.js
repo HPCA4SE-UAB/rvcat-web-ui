@@ -1,3 +1,32 @@
+/* ------------------------------------------------------------------ 
+ * Read files from distribution folders & manage localStorage
+ * ------------------------------------------------------------------ */
+
+async function loadJSONfile(name) {
+  try {
+    const response = await fetch(name)
+    const data     = await response.json()
+    console.log('File read: ', name, data)
+    return data
+  } catch (error) {
+    console.error(`Failed to load ${name}:`, error)
+    throw error
+  }
+}
+
+function getKeys(name) {
+  const allKeys = [] 
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key.startsWith(`${name}.`)) {
+      const suffix = key.substring(`${name}.`.length)
+      allKeys.push(suffix)
+    }
+  }
+  return allKeys
+}
+
+
 function insert_cache_annotations(cache) {
   if (cache.nBlocks>0){
      document.getElementById('cache-info').innerHTML=`
