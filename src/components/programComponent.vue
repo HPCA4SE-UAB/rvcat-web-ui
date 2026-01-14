@@ -7,15 +7,23 @@
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
   
-  // Reactive SVG string
-  const programText = ref('LOADING ...');
-  const programJSON = ref({});
+  const programText       = ref('LOADING ...');
+  const currentProgram    = ref('');
+  const availablePrograms = ref([]);
 
   // Watch for program changes
-  watch(() => simState.selectedProgram, (newProgram, oldProgram) => {
+  watch(() => currentProgram, (newProgram, oldProgram) => {
     console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
     if (newProgram && newProgram !== oldProgram) {
       reloadProgram();
+    }
+  });
+
+  // Watch for changes on RVCAT import
+  watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
+    if (newValue) {
+      console.log('RVCAT imported: look for programs and select current');
+      initProgram();
     }
   });
   
@@ -26,7 +34,8 @@
       return;
     }
     try {    
-      showProgram( simState.selectedProgram );  // obtain text from RVCAT API (id= 'show_program')
+      simState.selectedProgram = currentProgram;  // fire other components, watching for a change
+      showProgram();  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to get program description';
@@ -57,10 +66,36 @@
     cleanupHandleShow();
   });
 
-  const reloadProgram = async () => {
-    console.log('Reloading program with:', simState.selectedProgram);
+  
+  const initProgram = async () => {
+    console.log('Init program list');
     try {
-      const jsonString  = localStorage.getItem(`program.${simState.selectedProgram}`)
+      let programKeys = getKeys('program') // from localStorage
+
+      if (programKeys.length == 0) { // load programs from distribution files
+        console.log('Load programs from distribution files')
+        const response = await fetch('./index.json')
+        const data     = await response.json()
+        for (let i = 0; i < data.programs.length; i += 1) {
+           const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+           localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+        }
+        programKeys = getKeys('program')
+      }
+      availablePrograms = programKeys
+      currentProgram = programKeys[0]
+      const jsonString  = localStorage.getItem(`program.${currentProgram}`)
+      setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
+    } catch (error) {
+      console.error('Failed to set program:', error)
+      programText.value = 'Failed to set program';
+    }      
+  }
+  
+  const reloadProgram = async () => {
+    console.log('Reloading program with:', currentProgram);
+    try {
+      const jsonString  = localStorage.getItem(`program.${currentProgram}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -72,7 +107,6 @@
   const showModalUp = ref(false);
   const modalName   = ref("");
   const nameError   = ref("");
-  let uploadedProgramObject = null;
 
   async function confirmModal() {
     const name     = modalName.value.trim();
@@ -176,9 +210,9 @@
       <div id="settings-div">
         <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
-        <select v-model="simState.selectedProgram" title="Select Program">
+        <select v-model="currentProgram" title="Select Program">
           <option value="" disabled>Select</option>
-          <option v-for="program in simState.availablePrograms" :key="program" :value="program">
+          <option v-for="program in availablePrograms" :key="program" :value="program">
             {{ program }}
           </option>
         </select>
@@ -202,7 +236,7 @@
   </div>
 
   <Teleport to="body">
-    <TutorialComponent v-if="showHelp" :position="helpPosition"
+    <HelpComponent v-if="showHelp" :position="helpPosition"
     text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level, 
        informal language. The <em>type</em>, execution <em>latency</em> and eligible <em>execution ports</em> are shown for each instruction.
         <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states, 
