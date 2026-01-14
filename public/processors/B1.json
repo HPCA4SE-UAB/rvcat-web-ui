@@ -2,8 +2,8 @@
   "name": "B1",
   "stages": {
     "dispatch": 1,
-    "execute": 3,
-    "retire": 4
+    "execute": 2,
+    "retire": 2
   },
   "resources": {
     "INT": 1,
@@ -32,24 +32,20 @@
     ],
     "1": [
       "INT",
+      "FLOAT.ADD",
+      "FLOAT.DIV",
+      "FLOAT.SQRT",
+      "VFLOAT.ADD",
       "FLOAT.MUL",
       "FLOAT.FMA",
       "VFLOAT.MUL",
       "VFLOAT.FMA"
-    ],
-    "2": [
-      "INT",
-      "FLOAT.ADD",
-      "FLOAT.DIV",
-      "FLOAT.SQRT",
-      "VFLOAT.ADD"
     ]
   },
   "rports": {
     "INT": [
       "0",
-      "1",
-      "2"
+      "1"
     ],
     "BRANCH": [
       "0"
@@ -79,16 +75,16 @@
       "1"
     ],
     "FLOAT.ADD": [
-      "2"
+      "1"
     ],
     "FLOAT.DIV": [
-      "2"
+      "1"
     ],
     "FLOAT.SQRT": [
-      "2"
+      "1"
     ],
     "VFLOAT.ADD": [
-      "2"
+      "1"
     ]
   },
   "nBlocks": 0,
