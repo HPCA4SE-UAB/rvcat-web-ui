@@ -82,8 +82,8 @@
         }
         programKeys = getKeys('program')
       }
-      availablePrograms = programKeys
-      currentProgram = programKeys[0]
+      availablePrograms.value = programKeys
+      currentProgram.value = programKeys[0]
       const jsonString  = localStorage.getItem(`program.${currentProgram}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
