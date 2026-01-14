@@ -1,9 +1,9 @@
 {
   "name": "B2",
   "stages": {
-    "dispatch": 3,
+    "dispatch": 2,
     "execute": 3,
-    "retire": 4
+    "retire": 3
   },
   "resources": {
     "INT": 1,
