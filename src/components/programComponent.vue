@@ -35,7 +35,8 @@
     }
     try {    
       simState.selectedProgram = currentProgram.value;  // fire other components, watching for a change
-      showProgram();  // obtain text from RVCAT API (id= 'show_program')
+      if (simState.selectedProcessor != '')
+        showProgram();  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to get program description';
