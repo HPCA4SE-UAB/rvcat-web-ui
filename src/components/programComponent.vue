@@ -34,7 +34,7 @@
       return;
     }
     try {    
-      simState.selectedProgram = currentProgram;  // fire other components, watching for a change
+      simState.selectedProgram = currentProgram.value;  // fire other components, watching for a change
       showProgram();  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -84,8 +84,7 @@
       }
       availablePrograms.value = programKeys
       currentProgram.value = programKeys[0]
-      const jsonString  = localStorage.getItem(`program.${currentProgram.value}`)
-      setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
+      reloadProgram()
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to set program';
