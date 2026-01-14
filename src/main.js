@@ -7,9 +7,10 @@ const app = createApp(App)
 
 // Create reactive state: data shared between components; changes provoke reactions
 const SimulationState = reactive({
+  RVCAT_imported:     false,
   ROBsize:            100,
-  selectedProcessor:   '',
-  selectedProgram:     ''
+  selectedProcessor:  '',
+  selectedProgram:    ''
 })
 
 app.use(router)
