@@ -9,10 +9,7 @@ const app = createApp(App)
 const SimulationState = reactive({
   ROBsize:            100,
   selectedProcessor:   '',
-  availableProcessors: [],
-  selectedProgram:     '',
-  availablePrograms:   [],
-  availableTutorials:  []
+  selectedProgram:     ''
 })
 
 app.use(router)
