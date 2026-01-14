@@ -21,34 +21,10 @@ export function useRVCAT_Api() {
       throw error;
     }
   };
-
-  const getProcessors = async () => {
-    try {
-      const code = 'rvcat.files.list_json(True)';
-      const result = await safeExecute(code, 'get_processors');
-      console.log('List of processor names:', result);
-      return result;
-    } catch (error) {
-      console.error('Failed to get processor names:', error);
-      throw error;
-    }
-  };
-
-  const getPrograms = async () => {
-    try {
-      const code = 'rvcat.files.list_json(False)';
-      const result = await safeExecute(code, 'get_programs');
-      console.log('List of program names:', result);
-      return result;
-    } catch (error) {
-      console.error('Failed to get program names:', error);
-      throw error;
-    }
-  };
   
-  const setProcessor = async (name) => {
+  const setProcessor = async (jsontext) => {
     try {
-      const code = `rvcat._processor.load("${name}")`;
+      const code = `rvcat._processor.load("${jsontext}")`;
       const result = await safeExecute(code, 'set_processor');
       console.log('Processor set:', result);
       return result;
@@ -58,9 +34,9 @@ export function useRVCAT_Api() {
     }
   };
 
-  const setProgram = async (name) => {
+  const setProgram = async (jsontext) => {
     try {
-      const code = `rvcat._program.load("${name}")`;
+      const code = `rvcat._program.load("${jsontext}")`;
       const result = await safeExecute(code, 'set_program');
       console.log('Program set:', result);
       return result;
@@ -70,7 +46,7 @@ export function useRVCAT_Api() {
     }
   };
 
-  const showProgram = async (name) => {
+  const showProgram = async () => {
     try {
       const code = 'rvcat._program.show_code()';
       const result = await safeExecute(code, 'show_program');
@@ -129,8 +105,6 @@ export function useRVCAT_Api() {
   // Return all functions
   return {
     importRVCAT,
-    getProcessors,
-    getPrograms,
     setProcessor,
     setProgram,
     showProgram,
