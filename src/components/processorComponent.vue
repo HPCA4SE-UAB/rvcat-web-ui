@@ -57,8 +57,8 @@
         const response = await fetch('./index.json')
         const data     = await response.json()
         for (let i = 0; i < data.processors.length; i += 1) {
-           const filedata = await loadJSONfile(`./programs/${data.processors[i]}.json`)
-           localStorage.setItem(`program.${data.processors[i]}`, JSON.stringify(filedata))
+           const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
+           localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
         }
         processorKeys = getKeys('processor')
       }
