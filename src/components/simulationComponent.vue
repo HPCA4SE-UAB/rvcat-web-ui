@@ -11,11 +11,11 @@
   const iters            = ref(1)
 
   onMounted(() => {
-    const v = localStorage.getItem("ExecutionIterations");
+    const v = localStorage.getItem("simulation.Iterations");
     if (v !== null) iters.value = parseInt(v);
   });
 
-  watch(iters, v => localStorage.setItem("ExecutionIterations", v));
+  watch(iters, v => localStorage.setItem("simulation.Iterations", v));
     
 /* ------------------------------------------------------------------ 
  * UI
