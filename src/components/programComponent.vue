@@ -3,17 +3,13 @@
   import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { setProgram, showProgram, saveProgram } = useRVCAT_Api();
-  const { registerHandler }                      = inject('worker');
-  const simState                                 = inject('simulationState');
+  const { setProgram, showProgram } = useRVCAT_Api();
+  const { registerHandler }         = inject('worker');
+  const simState                    = inject('simulationState');
   
   // Reactive SVG string
   const programText = ref('LOADING ...');
   const programJSON = ref({});
-
-/* ------------------------------------------------------------------ 
- * Program selection and Program setting
- * ------------------------------------------------------------------ */
 
   // Watch for program changes
   watch(() => simState.selectedProgram, (newProgram, oldProgram) => {
@@ -23,39 +19,14 @@
     }
   });
   
-  // Handler for 'get_programs' message (fired from parent component)
-  const handlePrograms = (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('Failed to get list of programs:', data);
-      return;
-    }
-    try {
-      let programs = JSON.parse(data);
-      console.log('Program List:', programs)
-      simState.availablePrograms = programs
-      // Auto-select first program if none selected
-      if (!simState.selectedProgram && programs.length > 0) {
-        simState.selectedProgram = programs[0]
-      }
-    } catch (error) {
-      console.error('Failed to parse programs:', error)
-    }
-  }
-
-  // Handler for 'set_program' message (fired by this component)
+   // Handler for 'set_program' message (fired by this component)
   const handleSetProgram = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('Failed to set program:', data);
       return;
     }
     try {    
-      let programInfo = JSON.parse(data);
-      console.log('Program Info:', programInfo);
-      // copy programInfo into JSON variable for edition & load/save
-      programJSON.value = programInfo;
-
-      // obtain text from RVCAT API
-      showProgram( simState.selectedProgram );
+      showProgram( simState.selectedProgram );  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to get program description';
@@ -76,40 +47,26 @@
     }
   }
 
-  
-  // Handler for 'save_program' message (fired by this component)
-  const handleSaveProgram = async (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('Failed to save program:', data);
-      return;
-    }
-    try {
-      console.log('Program saved:', data);
-      // programText.value = data;
-    } catch (error) {
-      console.error('Failed to show program:', error)
-      programText.value = 'Failed to show program';
-    }
-  }
-  
   onMounted(() => {
-    const cleanupHandleGet = registerHandler('get_programs', handlePrograms);
     const cleanupHandleSet = registerHandler('set_program',  handleSetProgram);
     const cleanupHandleShow= registerHandler('show_program', handleShowProgram);
-    const cleanupHandleSave= registerHandler('save_program', handleSaveProgram);
   });
 
   onUnmounted(() => {
-    cleanupHandleGet();
     cleanupHandleSet();
     cleanupHandleShow();
-    cleanupHandleSave();
   });
 
-  const reloadProgram = () => {
-    console.log('Reloading with:', simState.selectedProgram);
-    // Call Python RVCAT to load new program --> 'set-program'
-    setProgram( simState.selectedProgram )
+  const reloadProgram = async () => {
+    console.log('Reloading program with:', simState.selectedProgram);
+    try {
+      const jsonString  = localStorage.getItem(`program.${simState.selectedProgram}`)
+      const programInfo = JSON.parse(jsonString)
+      setProgram( programInfo ) // Call Python RVCAT to load new program --> id= 'set-program'
+    } catch (error) {
+      console.error('Failed to set program:', error)
+      programText.value = 'Failed to set program';
+    }      
   }
   
   // Modal logic
