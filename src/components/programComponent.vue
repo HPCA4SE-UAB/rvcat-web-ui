@@ -84,7 +84,7 @@
       }
       availablePrograms.value = programKeys
       currentProgram.value = programKeys[0]
-      const jsonString  = localStorage.getItem(`program.${currentProgram}`)
+      const jsonString  = localStorage.getItem(`program.${currentProgram.value}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -93,9 +93,9 @@
   }
   
   const reloadProgram = async () => {
-    console.log('Reloading program with:', currentProgram);
+    console.log('Reloading program with:', currentProgram.value);
     try {
-      const jsonString  = localStorage.getItem(`program.${currentProgram}`)
+      const jsonString  = localStorage.getItem(`program.${currentProgram.value}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('Failed to set program:', error)
