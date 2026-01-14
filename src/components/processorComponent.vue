@@ -40,7 +40,7 @@
     try {
       const jsonString = localStorage.getItem(`processor.${simState.selectedProcessor}`)
       const processorInfo = JSON.parse(jsonString)
-      setProcessor( processorInfo )   // Call Python RVCAT to load new processor config --> 'set-processor'
+      setProcessor( jsonString )   // Call Python RVCAT to load new processor config --> 'set-processor'
       //   insert_cache_annotations(cache)
       const svg = await getProcessorGraph(processorInfo);
       pipelineSvg.value = svg.outerHTML;
