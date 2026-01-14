@@ -13,7 +13,7 @@
   const availableProcessors = ref([]);
 
   // Watch for processor changes
-  watch(() => currentProcessor, (newProcessor, oldProcessor) => {
+  watch(() => currentProcessor.value, (newProcessor, oldProcessor) => {
     console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
     if (newProcessor && newProcessor !== oldProcessor) {
       reloadProcessor();
