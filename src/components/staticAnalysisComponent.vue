@@ -3,9 +3,9 @@
   import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
  
-  const { getDependenceGraph } = useRVCAT_Api();
-  const { registerHandler }    = inject('worker');
-  const simState               = inject('simulationState');
+  const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
 
   /* ------------------------------------------------------------------ 
    * Dependence Graph options (persistent in localStorage)
@@ -18,11 +18,12 @@
     showFull:   false
   })
 
-  // Reactive SVG string
   const dependenceGraphSvg     = ref('');
   const fullDependenceGraphSvg = ref('');
   let   graphTimeout       = null;
-  
+  const showPerformance    = ref(false);
+  const showFullScreen     = ref(false);
+    
   // Load / save options from localStorage
   const STORAGE_KEY = 'dependentGraphOptions'
 
@@ -37,7 +38,8 @@
   
   // Load from localStorage
   onMounted(() => {
-    const cleanupHandleGraph = registerHandler('get_dependence_graph', handleGraph);
+    const cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
+    const cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
 
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -97,6 +99,10 @@ watch (
     const processorChanged = newProcessor && newProcessor !== oldProcessor
     
     if (!programChanged && !processorChanged) return
+
+    if (programChanged && showPerformance.value) {
+      getPerformanceAnalysis();
+    }
     
     clearTimeout(graphTimeout)
     graphTimeout = setTimeout(() => {
@@ -131,25 +137,21 @@ watch (
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
-  
-/* ------------------------------------------------------------------ 
- * Show Performance: UI state 
- * ------------------------------------------------------------------ */
-  const showPerformance = ref(false);
-  const showFullScreen  = ref(false);
-/*       
-    'prog_show_performance': (data) => {
-      let item         = document.getElementById('performance-limits');
-      item.textContent = data;
-      document.getElementById('pipeline-graph')
-    },
-  */    
-/*
-  function programShowPerformanceLimits() {
-    executeCode( 'rvcat._program.show_performance_analysis()', 'prog_show_performance' )
+
+  // Handler for 'get_performance_analysis' message (fired by RVCAT getPerformanceAnalysis function)
+  const handleAnalysis = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to get performance analysis:', data);
+      return;
+    }
+    try {
+      console.log('✅ Performance Analysis:', data)
+    } catch (error) {
+      console.error('Failed to generate SVG for graphviz Dependence Graph:', error)
+      dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
   }
-*/
-  
+
 /* ------------------------------------------------------------------ 
  * Fullscreen graph 
  * ------------------------------------------------------------------ */  
@@ -176,7 +178,7 @@ watch (
     showPerformance.value = !showPerformance.value;
     if (showPerformance.value) {
       nextTick(() => {
-        programShowPerformanceLimits();
+        getPerformanceAnalysis();
       });
     }
   }
@@ -246,16 +248,16 @@ watch (
           <div class="iters-group">
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
                     title="Show/Hide Nodes with only internal data dependencies" @click="toggleIntern"> 
-              <span v-if="dependenceGraphOptionsshowIntern">✔ </span>Internal</button>
+              <span v-if="dependenceGraphOptions.showIntern">✔ </span>Internal</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"   
                     title="Show/Hide Execution Latencies" @click="toggleLaten"> 
-              <span v-if="dependenceGraphOptionsshowLaten">✔ </span>Latencies</button>
+              <span v-if="dependenceGraphOptions.showLaten">✔ </span>Latencies</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"   
                     title="Show/Hide Instruction Text" @click="toggleSmall"> 
-              <span v-if="dependenceGraphOptionsshowSmall">✔ </span>Small</button>
+              <span v-if="dependenceGraphOptions.showSmall">✔ </span>Small</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }" 
                     title="Show/Hide constant and read-only input data dependencies" @click="toggleFull">  
-              <span v-if="dependenceGraphOptionsshowFull">✔ </span>Full</button>
+              <span v-if="dependenceGraphOptions.showFull">✔ </span>Full</button>
           </div>
           <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
              <img src="/img/fullscreen.png" class="bt-img">
