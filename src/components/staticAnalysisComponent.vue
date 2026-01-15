@@ -62,20 +62,25 @@
   function toggleFull()   { dependenceGraphOptions.showFull   = !dependenceGraphOptions.showFull }
 
   // Watch ALL graph options for changes
-  watch(dependenceGraphOptions, (newOptions) => {
+  watch(dependenceGraphOptions, () => {
     clearTimeout(graphTimeout)
     try {
+      if (dependenceGraphOptions.iters > 7) { 
+        dependenceGraphOptions.iters = 7
+      }  else if (dependenceGraphOptions.iters < 1) { 
+        dependenceGraphOptions.iters = 1
+      }
       saveOptions()
       graphTimeout = setTimeout(() => {
         getDependenceGraph(
-          newOptions.iters,
-          newOptions.showIntern,
-          newOptions.showLaten,
-          newOptions.showSmall,
-          newOptions.showFull
+          dependenceGraphOptions.iters,
+          dependenceGraphOptions.showIntern,
+          dependenceGraphOptions.showLaten,
+          dependenceGraphOptions.showSmall,
+          dependenceGraphOptions.showFull
         )
       }, 75)
-      console.log('✅ Saved graph options:', newOptions)
+      console.log('✅ Saved graph options:', dependenceGraphOptions)
     } catch (error) {
       console.error('Failed to save dependence graph options:', error)
     } 
