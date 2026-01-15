@@ -121,7 +121,7 @@
  * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
-    const Zoom        = zoomLevel.value;
+    const Zoom        = timelineOptions.zoomLevel;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
     const cellW       = 14 * Zoom;
@@ -149,10 +149,10 @@
     );
 
     // Filter out port rows, compute visibleRows[]
-    const visibleRows = filterVisibleRows(processed, rowPorts, showPorts.value);
+    const visibleRows = filterVisibleRows(processed, rowPorts, timelineOptions.showPorts);
 
     // Measure & resize canvas based on visibleRows and zoomLevel and show/hide instructions
-    const measured = measureLines(visibleRows, showInstr.value);
+    const measured = measureLines(visibleRows, timelineOptions.showInstr);
     canvas.width  = padX * 2 + measured.maxCols * cellW;
     canvas.height = padY * 2 + visibleRows.length * cellH;
 
@@ -705,7 +705,7 @@
       <div class="timeline-controls">
          <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iterations">
+            <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iters">
          </div>
          <div class="iters-group">
             <button class="blue-button" :class="{ active: timelineOptions.zoomValue }" :aria-pressed="timelineOptions.zoomValue"
