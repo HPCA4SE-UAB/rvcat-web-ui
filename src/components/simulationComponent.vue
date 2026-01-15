@@ -1,44 +1,89 @@
 <script setup>
   import { ref, onMounted, watch, inject } from "vue";
   import HelpComponent from '@/components/helpComponent.vue';
+  import { useRVCAT_Api } from '@/rvcatAPI';
+ 
+  const { getExecutionResults } = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
 
-  const simState = inject('simulationState');
-
-/* ------------------------------------------------------------------ 
- * UI state (iters in localStorage)
- * ------------------------------------------------------------------ */
-  const showCriticalPath = ref(false);
-  const iters            = ref(1)
-
-  onMounted(() => {
-    const v = localStorage.getItem("simulation.Iterations");
-    if (v !== null) iters.value = parseInt(v);
-  });
-
-  watch(iters, v => localStorage.setItem("simulation.Iterations", v));
-    
-/* ------------------------------------------------------------------ 
- * UI
- * ------------------------------------------------------------------ */
-
-  // Watch for changes to ROBsize
-  watch(() => simState.ROBsize, (newValue, oldValue) => {
-    recomputeAnalysis() 
+ /* ------------------------------------------------------------------ 
+   * Simulation Results options (persistent in localStorage)
+   * ------------------------------------------------------------------ */
+  const simulationOptions = reactive({
+    iters:        1,
+    showCritical: false
   })
 
-  // Define the function that should be called
-  const recomputeAnalysis = () => {
-    console.log('Reloading RVCAT with ROBsize:', simState.ROBsize)
-    getSchedulerAnalysis( iters.value, simState.ROBsize ) 
+  let results= {}
+  
+  // Load / save options from localStorage
+  const STORAGE_KEY = 'simulationOptions'
+
+  // Save on changes
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(simulationOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
   }
   
-  function RunSimulation()  { getSchedulerAnalysis( iters.value, simState.ROBsize ) }
+  // Load from localStorage
+  onMounted(() => {
+    const cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
 
-  function toggleCriticalPath() {
-    showCriticalPath.value = !showCriticalPath.value;
+    try {    // Load from localStorage
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(simulationOptions, JSON.parse(saved))
+      }
+    } catch (error) {
+      console.error('❌ Failed to load:', error)
+    }
+  });
+
+  // Clean up on unmount
+  onUnmounted(() => {
+    cleanupHandleResults();
+  })
+
+ // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
+  const handleResults = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to get execution results:', data);
+      return;
+    }
+    try {
+      console.log('✅ Execution Results:', data)
+    } catch (error) {
+      console.error('Failed to obtain execution results:', error)
+    }
   }
-  
 
+  
+ /* ------------------------------------------------------------------ 
+  * Simulation options: UI actions 
+  * ------------------------------------------------------------------ */
+
+  function toggleCritical() { simulationOptions.showCritical = !simulationOptions.showCritical }
+
+  // Watch multiple reactive sources
+  watch (
+    [() => simState.selectedProgram, () => simState.selectedProcessor], () => simState.ROBsize,
+    ([newProgram, newProcessor], [oldProgram, oldProcessor], (newValue, oldValue) ) => {
+      // Check if either changed meaningfully
+      const programChanged   =   newProgram      && newProgram   !== oldProgram
+      const processorChanged =   newProcessor    && newProcessor !== oldProcessor
+      const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
+ 
+      if (!programChanged && !processorChanged && !ROBsizeChanged) return
+
+      getExecutionResults() 
+      console.log('✅ Request execution results')
+    },
+  { immediate: false })
+ 
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
@@ -71,10 +116,9 @@
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" id="num-iters" min="1" max="20000" @change="RunSimulation" 
-             v-model.number="iters" title="# loop iterations">
+          <input type="number" min="1" max="5000" title="# loop iterations (1 to 5000)" v-model.number="simulationOptions.iters" >
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="RunSimulation" title="Run Simulation">
+        <button id="run-simulation-button" class="blue-button" @click="getExecutionResults" title="Run Simulation">
            Run
         </button>
       </div>
@@ -119,16 +163,16 @@
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="dropdown-header" @click="toggleCriticalPath" :aria-expanded="showCriticalPath" title="Show Critical % Info">
+      <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical" title="Show Critical % Info">
         <span class="arrow" aria-hidden="true">
-          {{ showCriticalPath ? '▼' : '▶' }}
+          {{ showCritical ? '▼' : '▶' }}
         </span>
         <span class="dropdown-title">Critical Execution Path</span>
       </button>
     </div>
       
     <Transition name="fold" appear>
-      <prev v-show="showCriticalPath" id="critical-path"></prev>
+      <prev v-show="showCritical" id="critical-path"></prev>
     </Transition>
 
     <!--    Processor Graph with visual usage  -->
