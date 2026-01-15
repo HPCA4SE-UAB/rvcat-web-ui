@@ -54,6 +54,7 @@
   // Clean up on unmount
   onUnmounted(() => {
     cleanupHandleGraph();
+    cleanupHandleAnalysis();
   })
 
  /* ------------------------------------------------------------------ 
