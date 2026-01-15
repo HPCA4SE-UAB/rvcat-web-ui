@@ -1,19 +1,22 @@
 <script setup>
   import { ref, onMounted, nextTick, onUnmounted, watch, inject} from 'vue';
   import HelpComponent  from '@/components/helpComponent.vue';
+  import { useRVCAT_Api } from '@/rvcatAPI';
+ 
+  const { getTimeline }      = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
 
-  /* Safe solution */
-  const isMounted = ref(false)
-  onMounted(() => {
-    isMounted.value = true
+  /* ------------------------------------------------------------------ 
+   * Timeline options (persistent in localStorage)
+   * ------------------------------------------------------------------ */
+  const dependenceGraphOptions = reactive({
+    iters:     1,
+    zoomLevel: 1
+    showPorts: false,
+    showInstr: false
   })
-  
-/* ------------------------------------------------------------------ 
- * UI state 
- * ------------------------------------------------------------------ */
 
-  const simState = inject('simulationState')
-  
   let canvasTimeout = null
 
   const canvasWidth    = 1200;
@@ -25,91 +28,69 @@
 
   const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
-  
-/* ------------------------------------------------------------------ 
- * Help support 
- * ------------------------------------------------------------------ */
-  const showHelp1    = ref(false);
-  const showHelp2    = ref(false);
-  const showHelp3    = ref(false);
-  const helpIcon1    = ref(null);
-  const helpIcon2    = ref(null);
-  const helpIcon3    = ref(null);
-  const helpPosition = ref({ top: '0%', left: '0%' });
 
-  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
-  function closeHelp1() { showHelp1.value  = false }
-  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
-  function closeHelp2() { showHelp2.value  = false }
-  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
-  function closeHelp3() { showHelp3.value  = false }
+    // Load / save options from localStorage
+  const STORAGE_KEY = 'timelineOptions'
 
-/* ------------------------------------------------------------------ 
- * Timeline options (persistent in localStorage)
- * ------------------------------------------------------------------ */
-  const iterations = ref(1)
-  const zoomLevel  = ref(1)
-  const showPorts  = ref(true);
-  const showInstr  = ref(true);
+  // Save on changes
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
+  }
   
-/* ------------------------------------------------------------------ 
- * Load / save options from localStorage 
- * ------------------------------------------------------------------ */
+  // Load from localStorage
   onMounted(() => {
-    const i = localStorage.getItem("showPorts");
-    if (i !== null) showPorts.value = i === "1";
+    const cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
 
-    const l = localStorage.getItem("showInstr");
-    if (l !== null) showInstr.value = l === "1";
-
-    const v1 = localStorage.getItem("timelineIterations");
-    if (v1 !== null) iterations.value = parseInt(v1);
-
-    const v2 = localStorage.getItem("timelineZoom");
-    if (v2 !== null) zoomLevel.value = parseInt(v2);
+    try {    // Load from localStorage
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(timelineOptions, JSON.parse(saved))
+      }
+    } catch (error) {
+      console.error('❌ Failed to load:', error)
+    }
   });
 
-  watch(iterations, v => localStorage.setItem("timelineIterations", v) )
-  watch(zoomLevel,  v => localStorage.setItem("timelineZoom", v)       )
-  watch(showPorts,  v => localStorage.setItem("showPorts", v ? "1" : "0"));
-  watch(showInstr,  v => localStorage.setItem("showInstr", v ? "1" : "0"));
-
+  // Clean up on unmount
+  onUnmounted(() => {
+    cleanupHandleTimeline();
+  })
+  
 /* ------------------------------------------------------------------ 
 * UI actions 
 * ------------------------------------------------------------------ */
-  function togglePorts()  { showPorts.value = !showPorts.value }
-  function toggleInstr()  { showInstr.value = !showInstr.value }
-  function zoomReduce()   { zoomLevel.value = Math.min(zoomLevel.value + 1, 7) }
-  function zoomIncrease() { zoomLevel.value = Math.max(zoomLevel.value - 1, 1) }
+  function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
+  function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
+  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 7) }
+  function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
   
-  watch(
-    [iterations],
-    ([i]) => {
-      if (!isMounted.value) return
-
-      clearTimeout(canvasTimeout)
-      canvasTimeout = setTimeout(() => {
-        getTimelineAndDraw()
-      }, 75)
-    },
-    { immediate: true }
-  )
-
-  watch(
-    [zoomLevel, showPorts, showInstr],
-    ([z, p, s]) => {
-      if (!isMounted.value) return
-
+  // Watch ALL graph options for changes
+  watch(timelineOptions, () => {
+    clearTimeout(graphTimeout)
+    try {
+      if (timelineOptions.iters > 9) { 
+        timelineOptions.iters = 9
+      }  else if (timelineOptions.iters < 1) { 
+        timelineOptions.iters = 1
+      }
+      saveOptions()
       clearTimeout(canvasTimeout)
       canvasTimeout = setTimeout(() => {
         if (timelineData.value) 
           drawTimeline(timelineData.value);
       }, 75)
-    },
-    { immediate: true }
-  )
+      console.log('✅ Saved timeline options')
+    } catch (error) {
+      console.error('Failed to save dependence graph options:', error)
+    } 
+  },
+  { deep: true, immediate: true })
 
-  // Watch for changes to ROBsize
+    // Watch for changes to ROBsize
   watch(() => simState.ROBsize, (newValue, oldValue) => {
     recomputeTimeline() 
   })
@@ -120,23 +101,11 @@
     getTimelineAndDraw()
   }
   
-/* ------------------------------------------------------------------ 
- * External selectors listeners 
- * ------------------------------------------------------------------ */
- 
-  onMounted(() => {
-    nextTick(() => {
-      document.addEventListener("change", (e) => {
-        if (
-          e.target?.id == "processors-list" ||
-          e.target?.id == "programs-list"
-        )  {
-          setTimeout(getTimelineAndDraw, 100);
-        }
-      });
-      getTimelineAndDraw();
-    });
-  });
+  async function getTimelineAndDraw() {
+    timelineOptions.iters   = Math.min(timelineOptions.iters, 9);
+    timelineData.value = await getTimeline(timelineOptions.iters, simState.ROBsize );
+    drawTimeline(timelineData.value);
+  }
 
 /* ------------------------------------------------------------------ 
  * CANVAS: timeline
@@ -694,12 +663,24 @@
     return msg;
   }
 
-  async function getTimelineAndDraw() {
-    iterations.value   = Math.min(iterations.value, 9);
-    timelineData.value = await getTimeline(iterations.value, simState.ROBsize );
-    drawTimeline(timelineData.value);
-  }
+/* ------------------------------------------------------------------ 
+ * Help support 
+ * ------------------------------------------------------------------ */
+  const showHelp1    = ref(false);
+  const showHelp2    = ref(false);
+  const showHelp3    = ref(false);
+  const helpIcon1    = ref(null);
+  const helpIcon2    = ref(null);
+  const helpIcon3    = ref(null);
+  const helpPosition = ref({ top: '0%', left: '0%' });
 
+  function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
+  function closeHelp1() { showHelp1.value  = false }
+  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
+  function closeHelp2() { showHelp2.value  = false }
+  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
+  function closeHelp3() { showHelp3.value  = false }
+  
 </script>
  
 <template>
