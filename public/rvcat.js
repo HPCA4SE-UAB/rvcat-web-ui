@@ -58,42 +58,6 @@ async function getProcessorGraph(processorInfo) {
   }
 }
 
-function getSchedulerAnalysis(n_iters, rob_size) {
-    document.getElementById('instructions-output').innerHTML = '?';
-    document.getElementById('cycles-output').innerHTML       = '?';
-    document.getElementById('IPC-output').innerHTML          = '?';
-    document.getElementById('cycles-per-iteration-output').innerHTML = '?';
-
-    document.getElementById('run-simulation-spinner').style.display = 'block';
-    document.getElementById('simulation-running').style.display     = 'block';
-    document.getElementById('graph-section').style.display          = 'none';
-    document.getElementById('critical-path-section').style.display  = 'none';
-    document.getElementById('run-simulation-button').disabled       = true;
-
-    let res = `rvcat._scheduler.init(${n_iters}, ${rob_size}); `
-    res    += 'rvcat._scheduler.format_analysis_json()';
-    executeCode( res, 'generate_simulation_results' );
-}
-
-function programShowPerformanceLimits() {
-    executeCode( 'rvcat._program.show_performance_analysis()', 'prog_show_performance' )
-}
-
-function showCriticalPathsGraph(n,i,l,s,f) {
-    let internal = "True";
-    let latency  = "True";
-    let small    = "True";
-    let full     = "True";
-    if (!i) {internal = "False"}
-    if (!l) {latency  = "False"}
-    if (!s) {small    = "False"}
-    if (!f) {full     = "False"}
-  
-    let res = `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
-    executeCode( res, 'generate_critical_paths_graph' )
-    lastExecutedCommand = showCriticalPathsGraph;
-}
-
 async function getTimeline(num_iters, rob_size) {
     let controls = document.getElementById('dependencies-controls');
     controls.style.display = 'block';
@@ -118,12 +82,6 @@ async function getTimeline(num_iters, rob_size) {
       executeCode( res, 'format_timeline');
       lastExecutedCommand = getTimeline;
     });
-}
-
-async function saveModifiedProcessor(config) {
-   let res = `rvcat._processor.save(${JSON.stringify(config)})`
-   await executeCode( res, 'save_modified_processor' )
-   await executeCode('rvcat.files.list_json(True)', 'get_processors')
 }
 
 ////////////////////////////////////////
@@ -164,11 +122,6 @@ function createProcessorSimulationGraph(dispatch, execute, retire, usage=null) {
   fullGraphDotCode = construct_full_processor_dot(dispatch, execute, retire, usage);
   svg = createGraphVizGraph(fullGraphDotCode);
   document.getElementById('simulation-graph').appendChild(svg)
-}
-
-function showFullProcessor(){
-   svg = createGraphVizGraph(fullGraphDotCode);
-   document.getElementById('simulation-graph').appendChild(svg)
 }
 
 async function showCellInfo(instrID, cycle) {
