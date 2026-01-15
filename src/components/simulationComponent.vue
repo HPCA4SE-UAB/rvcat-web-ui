@@ -82,7 +82,7 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      getExecutionResults() 
+      getExecutionResults(simulationOptions.iters.value, simState.ROBsize) 
       console.log('✅ Request execution results')
     },
   { immediate: false })
