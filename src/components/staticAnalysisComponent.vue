@@ -19,7 +19,8 @@
   })
 
   // Reactive SVG string
-  const dependenceGraphSvg = ref('');
+  const dependenceGraphSvg     = ref('');
+  const fullDependenceGraphSvg = ref('');
   let   graphTimeout       = null;
   
   // Load / save options from localStorage
@@ -130,11 +131,6 @@ watch (
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
-
-/* ------------------------------------------------------------------ 
- * External selectors listeners: changes on program or processor
- * ------------------------------------------------------------------ */
-
   
 /* ------------------------------------------------------------------ 
  * Show Performance: UI state 
@@ -249,13 +245,17 @@ watch (
           </div>
           <div class="iters-group">
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
-              title="Show/Hide Internal Dependencies" @click="toggleIntern"> <span v-if="showIntern">✔ </span>Internal</button>
+                    title="Show/Hide Nodes with only internal data dependencies" @click="toggleIntern"> 
+              <span v-if="dependenceGraphOptionsshowIntern">✔ </span>Internal</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"   
-              title="Show/Hide Execution Latencies" @click="toggleLaten"> <span v-if="showLaten">✔ </span>Latencies</button>
+                    title="Show/Hide Execution Latencies" @click="toggleLaten"> 
+              <span v-if="dependenceGraphOptionsshowLaten">✔ </span>Latencies</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"   
-              title="Show/Hide Instruction Text" @click="toggleSmall"> <span v-if="showSmall">✔ </span>Small</button>
+                    title="Show/Hide Instruction Text" @click="toggleSmall"> 
+              <span v-if="dependenceGraphOptionsshowSmall">✔ </span>Small</button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }" 
-              title="Show/Hide All Info" @click="toggleFull">  <span v-if="showFull">✔ </span>Full</button>
+                    title="Show/Hide constant and read-only input data dependencies" @click="toggleFull">  
+              <span v-if="dependenceGraphOptionsshowFull">✔ </span>Full</button>
           </div>
           <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
              <img src="/img/fullscreen.png" class="bt-img">
@@ -275,7 +275,9 @@ watch (
         Data Dependence Graph (circular paths in red)
         <button class="close-btn" @click="closeFullScreen">x</button>
       </div>
-      <div class="output-block" id="dependence-graph-full"></div>
+      <div class="output-block">
+        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
+      </div>
     </div>
   </div>
   
