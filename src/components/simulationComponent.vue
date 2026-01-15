@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, watch, inject } from "vue";
+  import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue";
   import HelpComponent from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
  
@@ -15,7 +15,7 @@
     showCritical: false
   })
 
-  let results= {}
+  let executionResults= {}
   
   // Load / save options from localStorage
   const STORAGE_KEY = 'simulationOptions'
@@ -56,6 +56,7 @@
     }
     try {
       console.log('✅ Execution Results:', data)
+      executionResults = data
     } catch (error) {
       console.error('Failed to obtain execution results:', error)
     }
