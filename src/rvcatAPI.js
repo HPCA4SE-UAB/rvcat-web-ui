@@ -78,6 +78,18 @@ export function useRVCAT_Api() {
     }
   };
 
+  const getPerformanceAnalysis = async () => {
+    try {
+      const code = `rvcat._program.get_performance_analysis()`
+      const result = await safeExecute(code, 'get_performance_analysis');
+      console.log('Performance Analysis obtained',result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get performance analysis: ', error);
+      throw error;
+    }
+  };
+
   const getExecutionResults = async (n_iters, rob_size) => {
     try {
       const code = `rvcat._scheduler.get_results(${n_iters}, ${rob_size})`
@@ -108,6 +120,7 @@ export function useRVCAT_Api() {
     setProcessor,
     setProgram,
     showProgram,
+    getPerformanceAnalysis,
     getDependenceGraph,
     getExecutionResults,
     getTimeline
