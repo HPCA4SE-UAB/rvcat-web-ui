@@ -70,8 +70,8 @@
 
   // Watch multiple reactive sources
   watch (
-    [() => simState.selectedProgram, () => simState.selectedProcessor], () => simState.ROBsize,
-    ([newProgram, newProcessor], [oldProgram, oldProcessor], (newValue, oldValue) ) => {
+    [() => simState.selectedProgram, () => simState.selectedProcessor, () => simState.ROBsize],
+    ([newProgram, newProcessor], [oldProgram, oldProcessor], [newValue, oldValue] ) => {
       // Check if either changed meaningfully
       const programChanged   =   newProgram      && newProgram   !== oldProgram
       const processorChanged =   newProcessor    && newProcessor !== oldProcessor
