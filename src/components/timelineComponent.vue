@@ -705,23 +705,23 @@
       <div class="timeline-controls">
          <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="9" title="# loop iterations" v-model.number="iterations">
+            <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iterations">
          </div>
          <div class="iters-group">
-            <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomValue }" :aria-pressed="timelineOptions.zoomValue"
                 title="Zoom Out" @click="ZoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
-            <button class="blue-button" :class="{ active: zoomValue }" :aria-pressed="zoomValue"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomValue }" :aria-pressed="timelineOptions.zoomValue"
                 title="Zoom In" @click="ZoomIncrease">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
          <div class="iters-group">
-           <button class="blue-button" :class="{ active: showPorts }" :aria-pressed="showPorts" 
-              title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="showPorts">✔ </span>Port Usage</button>
-           <button class="blue-button" :class="{ active: showInstr }" :aria-pressed="showInstr"  
-              title="Show/Hide Instructions" @click="toggleInstr"> <span v-if="showInstr">✔ </span>Instructions</button>
+           <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts" 
+              title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="timelineOptions.showPorts">✔ </span>Port Usage</button>
+           <button class="blue-button" :class="{ active: timelineOptions.showInstr }" :aria-pressed="timelineOptions.showInstr"  
+              title="Show/Hide Instructions" @click="toggleInstr"> <span v-if="timelineOptions.showInstr">✔ </span>Instructions</button>
          </div>
       </div>
     </div>
