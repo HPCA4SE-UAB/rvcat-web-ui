@@ -4,15 +4,15 @@
   import { useRVCAT_Api } from '@/rvcatAPI';
  
   const { getDependenceGraph } = useRVCAT_Api();
-  const { registerHandler } = inject('worker');
-  const simState            = inject('simulationState');
+  const { registerHandler }    = inject('worker');
+  const simState               = inject('simulationState');
 
   /* ------------------------------------------------------------------ 
    * Dependence Graph options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const dependenceGraphOptions = reactive({
     iters:      1,
-    showIntern: true,
+    showIntern: false,
     showLaten:  false,
     showSmall:  false,
     showFull:   false
@@ -20,27 +20,31 @@
 
   // Reactive SVG string
   const dependenceGraphSvg = ref('');
-  const isMounted          = ref(false)
   let   graphTimeout       = null;
   
   // Load / save options from localStorage
   const STORAGE_KEY = 'dependentGraphOptions'
 
+  // Save on changes
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dependenceGraphOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
+  }
+  
   // Load from localStorage
   onMounted(() => {
-    isMounted.value = true
     const cleanupHandleGraph = registerHandler('get_dependence_graph', handleGraph);
 
-    // Load from localStorage
-    try {
+    try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        const parsed = JSON.parse(saved)
-        Object.assign(dependenceGraphOptions, parsed)
-        console.log('Loaded graph options:', dependenceGraphOptions)
+        Object.assign(dependenceGraphOptions, JSON.parse(saved))
       }
     } catch (error) {
-      console.error('Failed to load dependence graph options:', error)
+      console.error('❌ Failed to load:', error)
     }
   });
 
@@ -58,33 +62,23 @@
   function toggleFull()   { dependenceGraphOptions.showFull   = !dependenceGraphOptions.showFull }
 
   // Watch ALL graph options for changes
-  watch(
-    () => ({
-      iters:      graphOptions.iters,
-      showIntern: graphOptions.showIntern,
-      showLaten:  graphOptions.showLaten,
-      showSmall:  graphOptions.showSmall,
-      showFull:   graphOptions.showFull
-  }),
-  (newOptions, oldOptions) => {
-    if (!isMounted.value) return
-
+  watch(dependenceGraphOptions, (newOptions) => {
     clearTimeout(graphTimeout)
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newOptions))
+      saveOptions()
+      graphTimeout = setTimeout(() => {
+        getDependenceGraph(
+          newOptions.iters,
+          newOptions.showIntern,
+          newOptions.showLaten,
+          newOptions.showSmall,
+          newOptions.showFull
+        )
+      }, 75)
+      console.log('✅ Saved graph options:', newOptions)
     } catch (error) {
-      console.error('Failed to save graph options:', error)
+      console.error('Failed to save dependence graph options:', error)
     }
-    graphTimeout = setTimeout(() => {
-       getDependenceGraph(
-        newOptions.iters,
-        newOptions.showIntern,
-        newOptions.showLaten,
-        newOptions.showSmall,
-        newOptions.showFull
-      )
-    }, 75)
-  },
   { deep: true, immediate: true }
 )
 
@@ -102,6 +96,10 @@
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
+
+/* ------------------------------------------------------------------ 
+ * External selectors listeners: changes on program or processor
+ * ------------------------------------------------------------------ */
 
   
 /* ------------------------------------------------------------------ 
@@ -152,14 +150,6 @@
       });
     }
   }
-
-/* ------------------------------------------------------------------ 
- * External selectors listeners: changes on program or processor
- * ------------------------------------------------------------------ */
- //            if (showPerformance.value) {
- //             programShowPerformanceLimits();
- //           }
- //           updateGraph()
 
 /* ------------------------------------------------------------------ 
  * Help support 
