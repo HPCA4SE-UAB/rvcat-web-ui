@@ -78,7 +78,8 @@
       console.log('✅ Saved graph options:', newOptions)
     } catch (error) {
       console.error('Failed to save dependence graph options:', error)
-    }
+    } 
+  },
   { deep: true, immediate: true }
 )
 
