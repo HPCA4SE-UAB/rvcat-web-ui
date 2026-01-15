@@ -90,20 +90,34 @@
   },
   { deep: true, immediate: true })
 
-    // Watch for changes to ROBsize
-  watch(() => simState.ROBsize, (newValue, oldValue) => {
-    recomputeTimeline() 
-  })
+  // Watch multiple reactive sources
+  watch (
+    [() => simState.selectedProgram, 
+     () => simState.selectedProcessor, 
+     () => simState.ROBsize],
+    ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
+      // Check if any changed meaningfully
+      const programChanged   =   newProgram      && newProgram   !== oldProgram
+      const processorChanged =   newProcessor    && newProcessor !== oldProcessor
+      const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
+ 
+      if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
+      if (simState.RVCAT_imported && newProgram && newProcessor) {
+         getTimelineAndDraw()
+         console.log('✅ Request timeline')
+      }
+    },
+  { immediate: false })
+
+  
   // Define the function that should be called
   const recomputeTimeline = () => {
-    console.log('Recompute Timeline with new ROBsize:', simState.ROBsize)
-    getTimelineAndDraw()
   }
   
   async function getTimelineAndDraw() {
-    timelineOptions.iters   = Math.min(timelineOptions.iters, 9);
-    timelineData.value = await getTimeline(timelineOptions.iters, simState.ROBsize );
+    timelineOptions.iters = Math.min(timelineOptions.iters, 9);
+    timelineData.value    = await getTimeline(timelineOptions.iters, simState.ROBsize );
     drawTimeline(timelineData.value);
   }
 
