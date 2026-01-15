@@ -85,9 +85,37 @@
       console.error('Failed to save dependence graph options:', error)
     } 
   },
-  { deep: true, immediate: true }
-)
+  { deep: true, immediate: true })
 
+// Watch multiple reactive sources
+watch (
+  [() => simState.program, () => simState.processor],
+  ([newProgram, newProcessor], [oldProgram, oldProcessor]) => {
+    // Check if either changed meaningfully
+    const programChanged   = newProgram   && newProgram   !== oldProgram
+    const processorChanged = newProcessor && newProcessor !== oldProcessor
+    
+    if (!programChanged && !processorChanged) return
+    
+    clearTimeout(graphTimeout)
+    graphTimeout = setTimeout(() => {
+      getDependenceGraph(
+        dependenceGraphOptions.iters,
+        dependenceGraphOptions.showIntern,
+        dependenceGraphOptions.showLaten,
+        dependenceGraphOptions.showSmall,
+        dependenceGraphOptions.showFull
+      )
+    }, 75)
+    
+    console.log('✅ Graph updated:', { 
+      program: newProgram, 
+      processor: newProcessor,
+      reason: programChanged ? 'program' : 'processor'
+    })
+  },
+  { immediate: false })
+  
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {
     if (dataType === 'error') {
@@ -217,7 +245,7 @@
         <div class="controls">
           <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="7" title="# loop iterations" v-model.number="dependenceGraphOptions.iters">
+            <input type="number" min="1" max="7" title="# loop iterations (1 to 7)" v-model.number="dependenceGraphOptions.iters">
           </div>
           <div class="iters-group">
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
