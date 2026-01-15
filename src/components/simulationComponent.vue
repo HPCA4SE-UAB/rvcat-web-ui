@@ -78,8 +78,10 @@
         simulationOptions.iters = 1
       }
       saveOptions()
-      getExecutionResults(simulationOptions.iters, simState.ROBsize) 
-      console.log('✅ Request execution results')
+      if (simState.RVCAT_imported && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
+        getExecutionResults(simulationOptions.iters, simState.ROBsize) 
+        console.log('✅ Request execution results')
+      }
     } catch (error) {
       console.error('Failed to save dependence graph options:', error)
     } 
@@ -101,8 +103,10 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      getExecutionResults(simulationOptions.iters, simState.ROBsize) 
-      console.log('✅ Request execution results')
+      if (simState.RVCAT_imported && newProgram && newProcessor) {
+        getExecutionResults(simulationOptions.iters, simState.ROBsize) 
+        console.log('✅ Request execution results')
+      }
     },
   { immediate: false })
  
