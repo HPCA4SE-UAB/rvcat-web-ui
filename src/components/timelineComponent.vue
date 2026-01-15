@@ -12,7 +12,7 @@
    * ------------------------------------------------------------------ */
   const dependenceGraphOptions = reactive({
     iters:     1,
-    zoomLevel: 1
+    zoomLevel: 1,
     showPorts: false,
     showInstr: false
   })
