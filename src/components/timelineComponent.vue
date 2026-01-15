@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch, inject} from 'vue';
+  import { ref, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue';
   import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
  
@@ -10,7 +10,7 @@
   /* ------------------------------------------------------------------ 
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
-  const dependenceGraphOptions = reactive({
+  const timelineOptions = reactive({
     iters:     1,
     zoomLevel: 1,
     showPorts: false,
@@ -70,7 +70,7 @@
   
   // Watch ALL graph options for changes
   watch(timelineOptions, () => {
-    clearTimeout(graphTimeout)
+    clearTimeout(canvasTimeout)
     try {
       if (timelineOptions.iters > 9) { 
         timelineOptions.iters = 9
@@ -78,7 +78,6 @@
         timelineOptions.iters = 1
       }
       saveOptions()
-      clearTimeout(canvasTimeout)
       canvasTimeout = setTimeout(() => {
         if (timelineData.value) 
           drawTimeline(timelineData.value);
@@ -110,10 +109,6 @@
     },
   { immediate: false })
 
-  
-  // Define the function that should be called
-  const recomputeTimeline = () => {
-  }
   
   async function getTimelineAndDraw() {
     timelineOptions.iters = Math.min(timelineOptions.iters, 9);
