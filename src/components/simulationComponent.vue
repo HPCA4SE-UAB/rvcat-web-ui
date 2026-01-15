@@ -69,6 +69,25 @@
 
   function toggleCritical() { simulationOptions.showCritical = !simulationOptions.showCritical }
 
+  // Watch ALL simulation options for changes
+  watch(simulationOptions, () => {
+    try {
+      if (simulationOptions.iters > 5000) { 
+        simulationOptions.iters = 5000
+      }  else if (simulationOptions.iters < 1) { 
+        simulationOptions.iters = 1
+      }
+      saveOptions()
+      getExecutionResults(simulationOptions.iters, simState.ROBsize) 
+      console.log('✅ Request execution results')
+    } catch (error) {
+      console.error('Failed to save dependence graph options:', error)
+    } 
+  },
+  { deep: true, immediate: true })
+
+
+  
   // Watch multiple reactive sources
   watch (
     [() => simState.selectedProgram, 
@@ -82,7 +101,7 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      getExecutionResults(simulationOptions.iters.value, simState.ROBsize) 
+      getExecutionResults(simulationOptions.iters, simState.ROBsize) 
       console.log('✅ Request execution results')
     },
   { immediate: false })
