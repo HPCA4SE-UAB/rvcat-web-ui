@@ -63,6 +63,21 @@
       cleanupHandleTimeline = null
     }
   })
+
+ // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
+  const handleTimeline = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('Failed to get timeline:', data);
+      return;
+    }
+    try {
+      console.log('✅ Timeline', data)
+      timelineData.value = data
+      drawTimeline(data);
+    } catch (error) {
+      console.error('Failed to obtain execution results:', error)
+    }
+  }
   
 /* ------------------------------------------------------------------ 
 * UI actions 
@@ -113,11 +128,9 @@
     },
   { immediate: false })
 
-  
   async function getTimelineAndDraw() {
     timelineOptions.iters = Math.min(timelineOptions.iters, 9);
-    timelineData.value    = await getTimeline(timelineOptions.iters, simState.ROBsize );
-    drawTimeline(timelineData.value);
+    await getTimeline(timelineOptions.iters, simState.ROBsize );
   }
 
 /* ------------------------------------------------------------------ 
@@ -178,7 +191,7 @@
       padX, padY, cellW, cellH,
       headerStart, cycleCount,
       fontYOffset,
-      showInstructions: showInstr.value,
+      showInstructions: timelineOptions.showInstr,
       interactiveCells
     });
   });
@@ -647,6 +660,11 @@
     };
   }
 
+  async function showCellInfo(instrID, cycle) {
+    //TO DO: Create Python function that returs additional info
+    return 'TO DO'
+  }
+  
   async function handleCellClick(instrID, cycle) {
     const text = await showCellInfo(instrID, cycle);
     clickedCellInfo.value = { instrID, cycle, text };
