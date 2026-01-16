@@ -16,6 +16,7 @@
   })
 
   let executionResults= {}
+  let cleanupHandleResults = null
   
   // Load / save options from localStorage
   const STORAGE_KEY = 'simulationOptions'
@@ -31,7 +32,7 @@
   
   // Load from localStorage
   onMounted(() => {
-    const cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
+    cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
 
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -45,8 +46,11 @@
 
   // Clean up on unmount
   onUnmounted(() => {
-    cleanupHandleResults();
-  })
+     if (cleanupHandleResults) {
+        cleanupHandleResults();
+        cleanupHandleResults = null
+     }
+    })
 
  // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
   const handleResults = async (data, dataType) => {
@@ -89,7 +93,6 @@
   { deep: true, immediate: true })
 
 
-  
   // Watch multiple reactive sources
   watch (
     [() => simState.selectedProgram, 
