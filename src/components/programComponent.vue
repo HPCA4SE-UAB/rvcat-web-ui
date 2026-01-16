@@ -7,9 +7,11 @@
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
   
-  const programText       = ref('LOADING ...');
-  const currentProgram    = ref('');
-  const availablePrograms = ref([]);
+  const programText       = ref('LOADING ...')
+  const currentProgram    = ref('')
+  const availablePrograms = ref([])
+  let cleanupHandleSet    = null
+  let cleanupHandleShow   = null
 
   // Watch for program changes
   watch(() => currentProgram.value, (newProgram, oldProgram) => {
@@ -36,35 +38,39 @@
     try {    
       simState.selectedProgram = currentProgram.value;  // fire other components, watching for a change
       if (simState.selectedProcessor != '')
-        showProgram();  // obtain text from RVCAT API (id= 'show_program')
+        showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
-      programText.value = 'Failed to get program description';
+      programText.value = 'Failed to get program description'
     }
   }
 
    // Handler for 'show_program' message (fired by this component)
   const handleShowProgram = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to show program:', data);
+      console.error('Failed to show program:', data)
       return;
     }
     try {
-      programText.value = data;
+      programText.value = data
     } catch (error) {
       console.error('Failed to show program:', error)
-      programText.value = 'Failed to show program';
+      programText.value = 'Failed to show program'
     }
   }
 
   onMounted(() => {
-    const cleanupHandleSet = registerHandler('set_program',  handleSetProgram);
-    const cleanupHandleShow= registerHandler('show_program', handleShowProgram);
+    cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
+    cleanupHandleShow= registerHandler('show_program', handleShowProgram)
   });
 
   onUnmounted(() => {
-    cleanupHandleSet();
-    cleanupHandleShow();
+    if (cleanupHandleSet) {
+      cleanupHandleSet()
+      cleanupHandleShow()
+      cleanupHandleSet = null
+      cleanupHandleShow= null
+  }
   });
 
   
@@ -109,9 +115,7 @@
   const nameError   = ref("");
 
   async function confirmModal() {
-    const name     = modalName.value.trim();
-    const selectEl = document.getElementById("programs-list");
-
+    const name = modalName.value.trim();
     if (name == simState.selectedProgram) {
       nameError.value = "A program with this name already exists. Please, choose another one.";
       return;
@@ -122,7 +126,11 @@
 
     uploadedProgramObject.name = name;
     const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
-    saveProgram(jsonText);
+    localStorage.setItem(`program.${name}`, jsonText)
+    programKeys = getKeys('program')
+    availablePrograms.value = programKeys
+    currentProgram.value = programKeys[0]
+    reloadProgram()
   }
 
   function cancelModal() {
