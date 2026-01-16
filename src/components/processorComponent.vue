@@ -8,15 +8,16 @@
   const simState            = inject('simulationState');
 
   // Reactive SVG string
-  const pipelineSvg         = ref('');
-  const currentProcessor    = ref('');
-  const availableProcessors = ref([]);
+  const pipelineSvg         = ref('')
+  const currentProcessor    = ref('')
+  const availableProcessors = ref([])
+  let   cleanupHandleSet    = null
 
   // Watch for processor changes
   watch(() => currentProcessor.value, (newProcessor, oldProcessor) => {
     console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
     if (newProcessor && newProcessor !== oldProcessor) {
-      reloadProcessor();
+      reloadProcessor()
     }
   });
 
@@ -24,7 +25,7 @@
   watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
     if (newValue) {
       console.log('RVCAT imported: look for processors and select current');
-      initProcessor();
+      initProcessor()
     }
   });
 
@@ -39,11 +40,14 @@
   }
 
   onMounted(() => {
-    const cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
+    cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
   });
 
   onUnmounted(() => {
-    cleanupHandleSet();
+    if (cleanupHandleTimeline) {
+      cleanupHandleSet()
+      cleanupHandleSet = null
+    }
   });
 
   
