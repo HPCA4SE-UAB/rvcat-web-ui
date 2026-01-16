@@ -112,7 +112,64 @@
       }
     },
   { immediate: false })
- 
+
+
+let fullGraphDotCode;
+
+function createProcessorSimulationGraph(dispatch, execute, retire, usage=null) {
+  fullGraphDotCode = construct_full_processor_dot(dispatch, execute, retire, usage);
+  svg    = createGraphVizGraph(fullGraphDotCode);
+  document.getElementById('simulation-graph').appendChild(svg)
+}
+  
+function createCriticalPathList(data) {
+  const COLORS = [
+    "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
+    "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
+    "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
+    "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
+  ]
+
+  const baseStyle = `
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    padding:         2px;
+    border-top:      1px solid black;
+    border-left:     1px solid black;
+    border-right:    1px solid black;
+    box-sizing:      border-box;
+  `
+  const getColor = (p) =>
+    p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
+
+  const row = (label, percentage, isLast = false) => `
+    <li style="background-color:${getColor(percentage)}; list-style:none; margin:0; padding:0">
+      <div style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
+         <div style="width:100%; text-align:center;">
+            ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b> 
+        </div>
+      </div>
+    </li>
+  `
+  let out = "<list>"
+
+  // DISPATCH
+  out += row("DISPATCH", data.dispatch)
+
+  // INSTRUCTIONS
+  out += data.instructions
+    .map(i => row(i.instruction, i.percentage))
+    .join("")
+
+  // RETIRE
+  out += row("RETIRE", data.retire, true)
+
+  out += "</list>"
+  return out
+}
+
+  
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
@@ -194,14 +251,14 @@
       </span>
       <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical" title="Show Critical % Info">
         <span class="arrow" aria-hidden="true">
-          {{ showCritical ? '▼' : '▶' }}
+          {{ simulationOptions.showCritical ? '▼' : '▶' }}
         </span>
         <span class="dropdown-title">Critical Execution Path</span>
       </button>
     </div>
       
     <Transition name="fold" appear>
-      <prev v-show="showCritical" id="critical-path"></prev>
+      <prev v-show="simulationOptions.showCritical" id="critical-path"></prev>
     </Transition>
 
     <!--    Processor Graph with visual usage  -->
