@@ -17,10 +17,13 @@
     showSmall:  false,
     showFull:   false
   })
+  
+  const dependenceGraphSvg     = ref('')
+  const fullDependenceGraphSvg = ref('')
+  let graphTimeout          = null
+  let cleanupHandleGraph    = null;
+  let cleanupHandleAnalysis = null
 
-  const dependenceGraphSvg     = ref('');
-  const fullDependenceGraphSvg = ref('');
-  let   graphTimeout       = null;
   const showPerformance    = ref(false);
   const showFullScreen     = ref(false);
     
@@ -38,8 +41,8 @@
   
   // Load from localStorage
   onMounted(() => {
-    const cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
-    const cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
+    cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
+    cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
 
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -53,8 +56,12 @@
 
   // Clean up on unmount
   onUnmounted(() => {
-    cleanupHandleGraph();
-    cleanupHandleAnalysis();
+    if (cleanupHandleGraph) {
+        cleanupHandleGraph();
+        cleanupHandleAnalysis();
+        cleanupHandleGraph    = null;
+        cleanupHandleAnalysis = null
+    }
   })
 
  /* ------------------------------------------------------------------ 
