@@ -18,6 +18,7 @@
   })
 
   let canvasTimeout = null
+  let cleanupHandleTimeline = null
 
   const canvasWidth    = 1200;
   const canvasHeight   = 10000;
@@ -43,7 +44,7 @@
   
   // Load from localStorage
   onMounted(() => {
-    const cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
+    cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
 
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -57,7 +58,10 @@
 
   // Clean up on unmount
   onUnmounted(() => {
-    cleanupHandleTimeline();
+    if (cleanupHandleTimeline) {
+      cleanupHandleTimeline()
+      cleanupHandleTimeline = null
+    }
   })
   
 /* ------------------------------------------------------------------ 
