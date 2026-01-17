@@ -10,25 +10,33 @@
   /* ------------------------------------------------------------------ 
    * Dependence Graph options (persistent in localStorage)
    * ------------------------------------------------------------------ */
-  const dependenceGraphOptions = reactive({
+  const STORAGE_KEY = 'dependentGraphOptions'
+  const defaultOptions = {
     iters:      1,
     showIntern: false,
     showLaten:  false,
     showSmall:  false,
     showFull:   false
-  })
+  }
   
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
+    }
+  })()
+
+  const dependenceGraphOptions = reactive({ ...defaultOptions, ...savedOptions })
   const dependenceGraphSvg     = ref('')
-  const fullDependenceGraphSvg = ref('')
+  const fullDependenceGraphSvg = ref('')  
+  const showPerformance        = ref(false);
+  const showFullScreen         = ref(false);
+
   let graphTimeout          = null
   let cleanupHandleGraph    = null;
   let cleanupHandleAnalysis = null
-
-  const showPerformance    = ref(false);
-  const showFullScreen     = ref(false);
-    
-  // Load / save options from localStorage
-  const STORAGE_KEY = 'dependentGraphOptions'
 
   // Save on changes
   const saveOptions = () => {
@@ -76,11 +84,8 @@
   watch(dependenceGraphOptions, () => {
     clearTimeout(graphTimeout)
     try {
-      if (dependenceGraphOptions.iters > 7) { 
-        dependenceGraphOptions.iters = 7
-      }  else if (dependenceGraphOptions.iters < 1) { 
-        dependenceGraphOptions.iters = 1
-      }
+      dependenceGraphOptions.iters = Math.min(dependenceGraphOptions.iters, 7);
+      dependenceGraphOptions.iters = Math.max(dependenceGraphOptions.iters, 1);
       saveOptions()
       graphTimeout = setTimeout(() => {
         getDependenceGraph(
@@ -91,7 +96,7 @@
           dependenceGraphOptions.showFull
         )
       }, 75)
-      console.log('✅ Saved graph options:', dependenceGraphOptions)
+      console.log('✅ Saved graph options')
     } catch (error) {
       console.error('Failed to save dependence graph options:', error)
     } 
@@ -123,11 +128,7 @@ watch (
       )
     }, 75)
     
-    console.log('✅ Graph updated:', { 
-      program: newProgram, 
-      processor: newProcessor,
-      reason: programChanged ? 'program' : 'processor'
-    })
+    console.log('✅ Graph updated')
   },
   { immediate: false })
   
@@ -153,7 +154,7 @@ watch (
       return;
     }
     try {
-      console.log('✅ Performance Analysis:', data)
+      console.log('✅ Performance Analysis obtained')
     } catch (error) {
       console.error('Failed to generate SVG for graphviz Dependence Graph:', error)
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
