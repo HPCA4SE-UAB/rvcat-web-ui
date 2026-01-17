@@ -26,45 +26,6 @@ function getKeys(name) {
   return allKeys
 }
 
-function insert_cache_annotations(cache) {
-  if (cache.nBlocks>0){
-     document.getElementById('cache-info').innerHTML=`
-      <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
-  }
-  else {
-     document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
-  }
-}
-
-async function getProcessorGraph(processorInfo) {
-  try {
-    const dotCode = construct_reduced_processor_dot(
-       processorInfo.stages.dispatch,
-       Object.keys(processorInfo.ports).length, 
-       processorInfo.stages.retire,  
-       {
-          'nBlocks':    processorInfo.nBlocks,
-          'blkSize':    processorInfo.blkSize,
-          'mPenalty':   processorInfo.mPenalty,
-          'mIssueTime': processorInfo.mIssueTime
-       }
-    );
-    const svg = await createGraphVizGraph(dotCode);  
-    return svg;
-    
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function getTimeline(num_iters, rob_size) {
-    let controls = document.getElementById('dependencies-controls');
-}
-
-////////////////////////////////////////
-////  Helping functions  ///////////////
-////////////////////////////////////////
-
 async function createGraphVizGraph(dotCode) {
   try {
     const viz = new Viz();
