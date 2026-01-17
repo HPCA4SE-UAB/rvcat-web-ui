@@ -51,6 +51,8 @@
       if (saved) {
         Object.assign(timelineOptions, JSON.parse(saved))
       }
+      if (!timelineData.value && simState.RVCAT_imported)  // on mount
+         getTimelineAndDraw()
     } catch (error) {
       console.error('❌ Failed to load:', error)
     }
