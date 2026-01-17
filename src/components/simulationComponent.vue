@@ -125,18 +125,26 @@
 
   function toggleCritical() { simulationOptions.showCritical = !simulationOptions.showCritical }
 
+  const reloadExecutionResults = async () => {
+    try {
+      getExecutionResults(simulationOptions.iters, simState.ROBsize) // Call Python RVCAT --> 'get_execution_results'
+      console.log('✅ Reloading execution results')
+    } catch (error) {
+      console.error('Failed to request execution results:', error)
+    }
+  }
+
   // Watch ALL simulation options for changes
   watch(simulationOptions, () => {
     try {
       simulationOptions.iters = Math.min(simulationOptions.iters, 5000);
       simulationOptions.iters = Math.max(simulationOptions.iters, 1);
       saveOptions()
-      if (simState.RVCAT_imported && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
-        getExecutionResults(simulationOptions.iters, simState.ROBsize) 
-        console.log('✅ Request execution results')
+      if (simState.RVCAT_state == 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
+        reloadExecutionResults()
       }
     } catch (error) {
-      console.error('Failed to save dependence graph options:', error)
+      console.error('Failed when simulation options modified:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -155,9 +163,8 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      if (simState.RVCAT_imported && newProgram && newProcessor) {
-        getExecutionResults(simulationOptions.iters, simState.ROBsize) 
-        console.log('✅ Request execution results')
+      if (simState.RVCAT_state == 3 && newProgram && newProcessor) {
+        reloadExecutionResults()
       }
     },
   { immediate: false })
@@ -342,7 +349,7 @@ function createCriticalPathList(data) {
           <span class="iters-label">Iterations:</span>
           <input type="number" min="1" max="5000" title="# loop iterations (1 to 5000)" v-model.number="simulationOptions.iters" >
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="getExecutionResults" title="Run Simulation">
+        <button id="run-simulation-button" class="blue-button" @click="reloadExecutionResults" title="Run Simulation">
            Run
         </button>
       </div>
