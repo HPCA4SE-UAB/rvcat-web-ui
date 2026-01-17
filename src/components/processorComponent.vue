@@ -93,7 +93,7 @@
       processorOptions.currentROBsize = Math.min(processorOptions.currentROBsize, 200);
       processorOptions.currentROBsize = Math.max(processorOptions.currentROBsize, 1);
       saveOptions()
-      if (simState.RVCAT_imported) {
+      if (simState.RVCAT_state > 0) {  // imported or loaded
          if (processorOptions.currentProcessor !== simState.selectedProcessor) {  // Processor changed
             console.log(`Processor changed from "${simState.selectedProcessor}" to "${processorOptions.currentProcessor}"`);
             reloadProcessor()
@@ -129,9 +129,12 @@
         processorOptions.availableProcessors = processorKeys
         processorOptions.currentProcessor    = processorKeys[0]  // creates reactive action to reloadProcessor
       }
+      else {
+        console.log('Processors already stored on localStorage. Set processor')
+        reloadProcessor()
+      }
     } catch (error) {
       console.error('Failed to set processor:', error)
-      programText.value = 'Failed to set program';
     }      
   }
   
