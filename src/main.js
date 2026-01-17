@@ -7,7 +7,7 @@ const app = createApp(App)
 
 // Create reactive state: data shared between components; changes provoke reactions
 const SimulationState = reactive({
-  RVCAT_imported:     false,
+  RVCAT_state:         0,  // 0: not-imported, 1: imported, 2: processor-loaded, 3: program-loaded
   ROBsize:            20,
   selectedProcessor:  '',
   selectedProgram:    ''
