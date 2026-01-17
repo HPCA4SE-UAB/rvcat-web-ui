@@ -100,13 +100,13 @@
             return
          }
          if (processorOptions.currentROBsize !== simState.ROBsize)  { // ROB size changed
-          console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);
+          console.log(`ROB size changed to "${processorOptions.currentROBsize}"`);
           drawProcessor()
           simState.ROBsize = processorOptions.currentROBsize // fires other components
         }
       }
     } catch (error) {
-      console.error('Failed to save dependence graph options:', error)
+      console.error('Failed to handle changes on processor:', error)
     } 
   },
   { deep: true, immediate: true })
