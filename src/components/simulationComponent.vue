@@ -321,7 +321,6 @@ function createCriticalPathList(data) {
 
   .results-info {
     width:      100%;
-    margin-top: 10px;
   }
   .results-info .row {
     gap:     20px;
@@ -333,7 +332,7 @@ function createCriticalPathList(data) {
   .simulation-inline-item {
     flex:    1;
     display: flex;
-    padding: 4px 10px;
+    padding: 2px 2px;
     justify-content: space-between;
     align-items:     center;
     background:      #f0f0f0;
@@ -346,7 +345,6 @@ function createCriticalPathList(data) {
   .simulation-inline-item span {
     text-align:  right;
     flex-shrink: 0;
-    min-width:   60px;
   }
 
   .sim-running-msg {
