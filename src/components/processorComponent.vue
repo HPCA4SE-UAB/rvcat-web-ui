@@ -7,35 +7,38 @@
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
-  // Reactive SVG string
-  const pipelineSvg         = ref('')
-  const currentProcessor    = ref('')
-  const currentROBsize      = ref(20)
-  const availableProcessors = ref([])
-  let   cleanupHandleSet    = null
+ /* ------------------------------------------------------------------ 
+   * Simulation Results options (persistent in localStorage)
+   * ------------------------------------------------------------------ */
+  const STORAGE_KEY = 'processorOptions'
 
-  // Watch for processor changes
-  watch (
-    [() => currentProcessor.value, () => currentROBsize.value],
-    ([newProcessor, newValue], [oldProcessor, oldValue] ) => {
-
-    if (newValue > 200) { 
-      newValue = 200
-      currentROBsize.value = 200
-    }  else if (newValue < 1) { 
-      newValue = 1
-      currentROBsize.value = 1
-    }
+  const defaultOptions = {
+    currentProcessor:    '',
+    currentROBsize:      20,
+    availableProcessors: []
+  }
   
-    if (newProcessor && newProcessor !== oldProcessor) {  // Processor changed
-       console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
-       reloadProcessor()
-    } else if (newValue !== oldValue) {  // ROB size changed
-       console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);
-       drawProcessor()
-       simState.ROBsize = currentROBsize.value // fires other components
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
     }
-  });
+  })()
+
+  const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
+  
+  const pipelineSvg      = ref('')
+  let   cleanupHandleSet = null
+
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(processorOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
+  }
 
   // Watch for changes on RVCAT import
   watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
@@ -51,13 +54,21 @@
       console.error('Failed to set processor:', data);
       return;
     }
-    simState.selectedProcessor = currentProcessor.value;  // fire other components, watching for a change
+    simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components, watching for a change
     console.log('Processor set into RVCAT')
     drawProcessor()
   }
 
   onMounted(() => {
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
+    try {    // Load from localStorage
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(processorOptions, JSON.parse(saved))
+      }
+    } catch (error) {
+      console.error('❌ Failed to load:', error)
+    }
   });
 
   onUnmounted(() => {
@@ -66,24 +77,49 @@
       cleanupHandleSet = null
     }
   });
+
+  // Watch ALL processor options for changes
+  watch(processorOptions, () => {
+    try {     
+      processorOptions.currentROBsize = Math.min(processorOptions.currentROBsize, 200);
+      processorOptions.currentROBsize = Math.max(processorOptions.currentROBsize, 1);
+      saveOptions()
+      if (simState.RVCAT_imported) {
+         if (processorOptions.currentProcessor !== simState.selectedProcessor) {  // Processor changed
+            console.log(`Processor changed from "${simState.selectedProcessor}" to "${processorOptions.currentProcessor}"`);
+            reloadProcessor()
+            return
+         }
+        if (processorOptions.currentROBsize !== simState.ROBsize)  { // ROB size changed
+          console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);
+          drawProcessor()
+          simState.ROBsize = processorOptions.currentROBsize // fires other components
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save dependence graph options:', error)
+    } 
+  },
+  { deep: true, immediate: true })
   
   const initProcessor = async () => {
     console.log('Init processor list');
     try {
-      let processorKeys = getKeys('processor') // from localStorage
-
-      if (processorKeys.length == 0) { // load processors from distribution files
-        console.log('Load processors from distribution files')
-        const response = await fetch('./index.json')
-        const data     = await response.json()
-        for (let i = 0; i < data.processors.length; i += 1) {
-           const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
-           localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+      if (processorOptions.availableProcessors.value.length == 0) {
+        let processorKeys = getKeys('processor') // from localStorage
+        if (processorKeys.length == 0) { // load processors from distribution files
+          console.log('Load processors from distribution files')
+          const response = await fetch('./index.json')
+          const data     = await response.json()
+          for (let i = 0; i < data.processors.length; i += 1) {
+             const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
+             localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
+          }
+          processorKeys = getKeys('processor')
         }
-        processorKeys = getKeys('processor')
+        processorOptions.availableProcessors = processorKeys
+        processorOptions.currentProcessor    = processorKeys[0]  // creates reactive action to reloadProcessor
       }
-      availableProcessors.value = processorKeys
-      currentProcessor.value    = processorKeys[0]  // creates reactive action to reloadProcessor
     } catch (error) {
       console.error('Failed to set processor:', error)
       programText.value = 'Failed to set program';
@@ -91,9 +127,9 @@
   }
   
   const reloadProcessor = async () => {
-    console.log('Reloading processor with:', currentProcessor.value);
+    console.log('Reloading processor with:', processorOptions.currentProcessor);
     try {
-      const jsonString    = localStorage.getItem(`processor.${currentProcessor.value}`)
+      const jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
       const processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
@@ -105,13 +141,13 @@
   const drawProcessor = async () => {
     console.log('Redrawing processor');
     try {
-      const jsonString    = localStorage.getItem(`processor.${currentProcessor.value}`)
+      const jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
       const processorInfo = JSON.parse(jsonString)
       const dotCode = get_processor_dot (
          processorInfo.stages.dispatch,
          Object.keys(processorInfo.ports).length, 
          processorInfo.stages.retire,
-         currentROBsize.value,
+         processorOptions.currentROBsize,
          {
            'nBlocks':    processorInfo.nBlocks,
            'blkSize':    processorInfo.blkSize,
@@ -263,10 +299,10 @@
       </div>
       
       <div id="settings-div">
-        <select v-model="currentProcessor" title="Select Processor">
+        <select v-model="processorOptions.currentProcessor" title="Select Processor">
           <option value="" disabled>Select</option>
           <option 
-            v-for="processor in availableProcessors" 
+            v-for="processor in processorOptions.availableProcessors" 
             :key="processor"
             :value="processor"
           >
@@ -276,7 +312,7 @@
         
         <span class="iters-label">ROB size: </span>
         <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
-               v-model.number="currentROBsize">
+               v-model.number="processorOptions.currentROBsize">
       </div>
     </div>
 
