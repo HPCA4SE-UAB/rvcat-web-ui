@@ -79,7 +79,7 @@
       return;
     }
     try {
-      console.log('✅ Timeline', data)
+      console.log('✅ Draw Timeline')
       timelineData.value = data
       drawTimeline(data);
     } catch (error) {
