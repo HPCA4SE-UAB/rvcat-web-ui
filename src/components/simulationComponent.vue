@@ -30,6 +30,7 @@
 
   let executionResults= {}
   let cleanupHandleResults = null
+  let executionGraphDotCode
   
   // Save on changes
   const saveOptions = () => {
@@ -71,12 +72,53 @@
     try {
       console.log('✅ Execution Results received')
       executionResults = data
+      let d = JSON.parse(data);
+      if (d['data_type'] === 'error') {
+          alert('Error running simulation');
+          document.getElementById('run-simulation-spinner').style.display = 'none';
+          document.getElementById('simulation-running').style.display     = 'none';
+          document.getElementById('graph-section').style.display          = 'block';
+          document.getElementById('critical-path-section').style.display  = 'block';
+          document.getElementById('run-simulation-button').disabled       = false;
+          return;
+      }
+      document.getElementById('instructions-output').innerHTML = d["total_instructions"];
+      document.getElementById('cycles-output').innerHTML       = d["total_cycles"];
+      document.getElementById('IPC-output').innerHTML          = d["ipc"].toFixed(2);
+      document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
+      document.getElementById('critical-path').innerHTML       = createCriticalPathList(d['critical_path']);
+      
+      usage = {}
+      usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
+      usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
+      usage.ports       = {}
+      let i = 0;
+      let keys = Object.keys(processorInfo.ports);
+      for (let key of keys) {
+          usage.ports[i] = d.ports[key];
+          i++;
+      }
+      /* createProcessorSimulationGraph(
+          processorInfo.stages.dispatch, 
+          Object.keys(processorInfo.ports).length, 
+          processorInfo.stages.retire, 
+          usage);
+       */
+      
+      document.getElementById('run-simulation-spinner').style.display = 'none';
+      document.getElementById('simulation-running').style.display     = 'none';
+      document.getElementById('graph-section').style.display          = 'block';
+      document.getElementById('critical-path-section').style.display  = 'block';
+      document.getElementById('run-simulation-button').disabled       = false;
+      
+      fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
+      svg    = createGraphVizGraph(fullGraphDotCode);
+      document.getElementById('simulation-graph').appendChild(svg)
     } catch (error) {
       console.error('Failed to obtain execution results:', error)
     }
   }
 
-  
  /* ------------------------------------------------------------------ 
   * Simulation options: UI actions 
   * ------------------------------------------------------------------ */
@@ -123,13 +165,103 @@
     },
   { immediate: false })
 
-let fullGraphDotCode;
+  
+function get_execution_processor_dot(dispatch_width, num_ports, retire_width, rob_size, usage = null) {
+  let dot_code = `
+  digraph "Usage of Processor Pipeline"{
+    rankdir=TB;
+    node [fontsize=14, fontname="Arial"];
+  `;
 
-function createProcessorSimulationGraph(dispatch, execute, retire, usage=null) {
-  fullGraphDotCode = construct_full_processor_dot(dispatch, execute, retire, usage);
-  svg    = createGraphVizGraph(fullGraphDotCode);
-  document.getElementById('simulation-graph').appendChild(svg)
+  // Colorscale from white to red
+  const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
+                  "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
+                  "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
+  ];
+
+  let dispatch_color = color[Math.floor(usage.dispatch/5)];
+  // --- FETCH ---
+  dot_code += `Fetch [
+        shape=point
+        width=0
+        height=0
+        fixedsize=true
+        label=""
+        margin=0
+        style=invis
+      ];`;
+
+  dot_code += `
+    Fetch -> "Waiting Buffer" [
+      label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${dispatch_color}"><TR><TD>Dispatch = ${dispatch_width} (${usage.dispatch.toFixed(1)}%)</TD></TR></TABLE>>,
+      fontsize=14,
+      fontname="Arial",
+      tooltip="Usage: ${usage.dispatch.toFixed(1)}%"
+    ];
+  `;
+
+  // --- WAITING BUFFER ---
+  dot_code += `  "Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1.2, width=1.2, tooltip="Instructions wait for input data and port availability", fixedsize=true];\n`;
+
+  dot_code += `subgraph cluster_execute {
+      rankdir="TB";
+  `
+  for (let i = num_ports-1; i >= 0; i--) {
+    if (usage !== null && usage.ports[i]!==0.0) {
+        let execute_color = color[Math.floor(usage.ports[i] / 5)];
+        dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, style=filled, fillcolor="${execute_color}", tooltip="Usage: ${usage.ports[i].toFixed(1)}%"];\n`
+    } else {
+        dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, tooltip="Usage: 0.0%"];\n`
+    }
+    dot_code += `"Waiting Buffer" -> P${i};\n`;
+  }
+
+  dot_code += `label = "Execute";\n
+  fontname="Arial";
+  fontsize=12;
+  }\n`
+
+  dot_code += `  Registers [shape=box, height=1.2, width=1.2, fixedsize=true,tooltip="Architectural state: updated on instruction retirement"];\n`;
+
+  // Align top row
+  dot_code += `
+    {
+      rank=same;
+      Fetch;
+      "Waiting Buffer";
+      ${[...Array(num_ports).keys()].map(i => `P${i}`).join("; ")};
+      Registers;
+    }
+  `;
+
+  // --- ROB ---
+  dot_code += `
+    ROB [label="ROB: ${rob_size} entries", tooltip="Reorder Buffer: maintains program order", shape=box, height=0.6, width=5, fixedsize=true];
+    {
+      rank=sink;
+      ROB;
+    }
+  `;
+
+  dot_code += `  Fetch -> ROB;\n`;
+  for (let i = 0; i < num_ports; i++) {
+    dot_code += `  P${i} -> ROB;\n`;
+  }
+
+  let retire_color = color[Math.floor(usage.retire/5)];
+  dot_code += `
+    ROB -> Registers [
+      label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${retire_color}"><TR><TD>Retire = ${retire_width} (${usage.retire.toFixed(1)}%)</TD></TR></TABLE>>,
+      fontsize=14,
+      fontname="Arial",
+      tooltip="Usage: ${usage.retire.toFixed(1)}%"
+    ];
+  `;
+
+  dot_code += `}`;
+  return dot_code;
 }
+
   
 function createCriticalPathList(data) {
   const COLORS = [
