@@ -67,8 +67,7 @@
         processorKeys = getKeys('processor')
       }
       availableProcessors.value = processorKeys
-      currentProcessor.value = processorKeys[0]
-      reloadProcessor()
+      currentProcessor.value = processorKeys[0]  // creates reactive action to reloadProcessor
     } catch (error) {
       console.error('Failed to set processor:', error)
       programText.value = 'Failed to set program';
