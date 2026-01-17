@@ -128,11 +128,8 @@
   // Watch ALL simulation options for changes
   watch(simulationOptions, () => {
     try {
-      if (simulationOptions.iters > 5000) { 
-        simulationOptions.iters = 5000
-      }  else if (simulationOptions.iters < 1) { 
-        simulationOptions.iters = 1
-      }
+      simulationOptions.iters = Math.min(simulationOptions.iters, 5000);
+      simulationOptions.iters = Math.max(simulationOptions.iters, 1);
       saveOptions()
       if (simState.RVCAT_imported && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
         getExecutionResults(simulationOptions.iters, simState.ROBsize) 
