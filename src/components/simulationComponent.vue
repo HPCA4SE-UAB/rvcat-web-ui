@@ -10,17 +10,27 @@
  /* ------------------------------------------------------------------ 
    * Simulation Results options (persistent in localStorage)
    * ------------------------------------------------------------------ */
-  const simulationOptions = reactive({
+  const STORAGE_KEY = 'simulationOptions'
+
+  const defaultOptions = {
     iters:        1,
     showCritical: false
-  })
+  }
+  
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
+    }
+  })()
+
+  const simulationOptions = reactive({ ...defaultOptions, ...savedOptions })
 
   let executionResults= {}
   let cleanupHandleResults = null
   
-  // Load / save options from localStorage
-  const STORAGE_KEY = 'simulationOptions'
-
   // Save on changes
   const saveOptions = () => {
     try {
@@ -59,7 +69,7 @@
       return;
     }
     try {
-      console.log('✅ Execution Results:', data)
+      console.log('✅ Execution Results received')
       executionResults = data
     } catch (error) {
       console.error('Failed to obtain execution results:', error)
@@ -112,7 +122,6 @@
       }
     },
   { immediate: false })
-
 
 let fullGraphDotCode;
 
