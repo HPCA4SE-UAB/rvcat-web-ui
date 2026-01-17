@@ -109,14 +109,15 @@
           usage);
        */
       
+      fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
+      svg    = createGraphVizGraph(fullGraphDotCode);
+            
       document.getElementById('run-simulation-spinner').style.display = 'none';
       document.getElementById('simulation-running').style.display     = 'none';
       document.getElementById('graph-section').style.display          = 'block';
       document.getElementById('critical-path-section').style.display  = 'block';
       document.getElementById('run-simulation-button').disabled       = false;
-      
-      fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
-      svg    = createGraphVizGraph(fullGraphDotCode);
+
       document.getElementById('simulation-graph').appendChild(svg)
     } catch (error) {
       console.error('Failed to obtain execution results:', error)
@@ -130,14 +131,28 @@
   function toggleCritical() { simulationOptions.showCritical = !simulationOptions.showCritical }
 
   const reloadExecutionResults = async () => {
+    clearTimeout(resultsTimeout)
     try {
-      getExecutionResults(simulationOptions.iters, simState.ROBsize) // Call Python RVCAT --> 'get_execution_results'
-      console.log('✅ Reloading execution results')
+      resultsTimeout = setTimeout(() => {
+        document.getElementById('instructions-output').innerHTML = '?';
+        document.getElementById('cycles-output').innerHTML = '?';
+        document.getElementById('IPC-output').innerHTML = '?';
+        document.getElementById('cycles-per-iteration-output').innerHTML = '?';
+
+        document.getElementById('run-simulation-spinner').style.display = 'block';
+        document.getElementById('simulation-running').style.display     = 'block';
+        document.getElementById('graph-section').style.display          = 'none';
+        document.getElementById('critical-path-section').style.display  = 'none';
+        document.getElementById('run-simulation-button').disabled       = true;
+
+        getExecutionResults(simulationOptions.iters, simState.ROBsize) // Call Python RVCAT --> 'get_execution_results'
+        console.log('✅ Reloading execution results')
+       }, 200)
     } catch (error) {
       console.error('Failed to request execution results:', error)
     }
   }
-
+  
   // Watch ALL simulation options for changes
   watch(simulationOptions, () => {
     try {
