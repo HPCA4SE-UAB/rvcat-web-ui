@@ -36,8 +36,9 @@ const components = {
   simulationComponent
 };
 
-const currentKey        = ref('simulationComponent');
-const currentComponent  = shallowRef(components[currentKey.value]);
+const currentKey        = ref('simulationComponent')
+const currentComponent  = shallowRef(components[currentKey.value])
+let   cleanupRVCAT      = null
   
 // Handle requests from header
 function onRequestSwitch(key) {
@@ -78,8 +79,8 @@ const handleRVCAT = async (data, dataType) => {
     return;
   }
   loadingMessage.value = 'Loading complete!';
-  setTimeout(() => closeLoadingOverlay(), 500) // Optional delay
-  simState.RVCAT_imported = true;  // fires processor & program components to set processor/program
+  setTimeout(() => closeLoadingOverlay(), 1000)
+  simState.RVCAT_state = 1;  // fires processor & program components to set processor/program
 };
  
 onMounted(() => {
@@ -89,11 +90,14 @@ onMounted(() => {
   });
   
   // Register processors handler
-  const cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
+  cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
 });
 
 onUnmounted(() => {
-  cleanupRVCAT();
+  if (cleanupRVCAT) {
+     cleanupRVCAT()
+     cleanupRVCAT = null
+  }
 });
   
 watch(isReady, (ready) => {
