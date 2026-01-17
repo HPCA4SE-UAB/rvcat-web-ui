@@ -88,7 +88,7 @@
       document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
       document.getElementById('critical-path').innerHTML       = createCriticalPathList(d['critical_path']);
       
-      usage = {}
+      let usage = {}
       usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
       usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
       usage.ports       = {}
