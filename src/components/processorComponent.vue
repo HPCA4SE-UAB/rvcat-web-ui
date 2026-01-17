@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
+  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch } from 'vue'
   import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
@@ -8,7 +8,7 @@
   const simState            = inject('simulationState');
 
  /* ------------------------------------------------------------------ 
-   * Simulation Results options (persistent in localStorage)
+   * Processor options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'processorOptions'
 
