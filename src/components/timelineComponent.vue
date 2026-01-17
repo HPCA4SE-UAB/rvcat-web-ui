@@ -17,7 +17,8 @@
     showInstr: false
   })
 
-  let canvasTimeout = null
+  let lastTimelineIters     = 1
+  let canvasTimeout         = null
   let cleanupHandleTimeline = null
 
   const canvasWidth    = 1200;
@@ -54,7 +55,7 @@
       if (!timelineData.value && simState.RVCAT_imported)  // on mount
          getTimelineAndDraw()
     } catch (error) {
-      console.error('❌ Failed to load:', error)
+      console.error('❌ Failed on timeline component:', error)
     }
   });
 
@@ -93,17 +94,22 @@
   watch(timelineOptions, () => {
     clearTimeout(canvasTimeout)
     try {
-      if (timelineOptions.iters > 9) { 
-        timelineOptions.iters = 9
-      }  else if (timelineOptions.iters < 1) { 
-        timelineOptions.iters = 1
-      }
+      timelineOptions.iters = Math.min(timelineOptions.iters, 9);
+      timelineOptions.iters = Math.max(timelineOptions.iters, 1);
       saveOptions()
+
+      if (lastTimelineIters !== timelineOptions.iters) {
+        lastTimelineIters = timelineOptions.iters
+        timelineData.value = null
+      }
+      
       canvasTimeout = setTimeout(() => {
         if (timelineData.value) 
           drawTimeline(timelineData.value);
+        else
+          getTimelineAndDraw()
       }, 75)
-      console.log('✅ Saved timeline options')
+      console.log('✅ Modified timeline options')
     } catch (error) {
       console.error('Failed to save dependence graph options:', error)
     } 
@@ -131,7 +137,6 @@
   { immediate: false })
 
   async function getTimelineAndDraw() {
-    timelineOptions.iters = Math.min(timelineOptions.iters, 9);
     await getTimeline(timelineOptions.iters, simState.ROBsize );
   }
 
@@ -732,11 +737,11 @@
             <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iters">
          </div>
          <div class="iters-group">
-            <button class="blue-button" :class="{ active: timelineOptions.zoomValue }" :aria-pressed="timelineOptions.zoomValue"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
                 title="Zoom Out" @click="ZoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
-            <button class="blue-button" :class="{ active: timelineOptions.zoomValue }" :aria-pressed="timelineOptions.zoomValue"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
                 title="Zoom In" @click="ZoomIncrease">
                 <img src="/img/zoom-in.png">
             </button>
