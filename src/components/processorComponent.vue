@@ -40,9 +40,9 @@
     }
   }
 
-  // Watch for changes on RVCAT import
-  watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
-    if (newValue) {
+  // Watch for changes on RVCAT state
+  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
+    if (newValue == 1) {
       console.log('RVCAT imported: look for processors and select current');
       initProcessor()
     }
@@ -54,8 +54,13 @@
       console.error('Failed to set processor:', data);
       return;
     }
-    simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components, watching for a change
-    console.log('Processor set into RVCAT')
+    simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components
+    if (simStat.RVCAT_state == 1)   // RVCAT only imported
+      simState.RVCAT_state = 2;                                        // fire program load
+      console.log('RVCAT Initialization: processor set')
+    }
+    else
+       console.log('New processor set into RVCAT')
     drawProcessor()
   }
 
@@ -66,8 +71,8 @@
       if (saved) {
         Object.assign(processorOptions, JSON.parse(saved))
       }
-      if (simState.RVCAT_imported) {
-        console.log('RVCAT already imported: look for processors and select current');
+      if (simState.RVCAT_state == 1) {
+        console.log('RVCAT just imported: look for processors and select current');
         initProcessor()
       }
     } catch (error) {
