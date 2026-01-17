@@ -55,7 +55,7 @@
       return;
     }
     simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components
-    if (simStat.RVCAT_state == 1)   // RVCAT only imported
+    if (simStat.RVCAT_state == 1) {  // RVCAT only imported
       simState.RVCAT_state = 2;                                        // fire program load
       console.log('RVCAT Initialization: processor set')
     }
