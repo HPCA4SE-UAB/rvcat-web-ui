@@ -1,20 +1,38 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, watch } from "vue";
+  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue";
   import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
   const { setProgram, showProgram } = useRVCAT_Api();
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
+
+ /* ------------------------------------------------------------------ 
+   * Program options (persistent in localStorage)
+   * ------------------------------------------------------------------ */
+  const STORAGE_KEY = 'programOptions'
+
+  const defaultOptions = {
+    currentProgram:    '',
+    availablePrograms: []
+  }
   
-  const programText       = ref('LOADING ...')
-  const currentProgram    = ref('')
-  const availablePrograms = ref([])
-  let cleanupHandleSet    = null
-  let cleanupHandleShow   = null
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
+    }
+  })()
+
+  const programOptions  = reactive({ ...defaultOptions, ...savedOptions })
+  const programText     = ref('LOADING ...')
+  let cleanupHandleSet  = null
+  let cleanupHandleShow = null
 
   // Watch for program changes
-  watch(() => currentProgram.value, (newProgram, oldProgram) => {
+  watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
     console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
     if (newProgram && newProgram !== oldProgram) {
       reloadProgram();
@@ -36,7 +54,7 @@
       return;
     }
     try {    
-      simState.selectedProgram = currentProgram.value;  // fire other components, watching for a change
+      simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
       if (simState.selectedProcessor != '')
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
@@ -89,8 +107,8 @@
         }
         programKeys = getKeys('program')
       }
-      availablePrograms.value = programKeys
-      currentProgram.value = programKeys[0]   // fires reaction to reloadProgram
+      programOptions.availablePrograms = programKeys
+      programOptions.currentProgram = programKeys[0]   // fires reaction to reloadProgram
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to set program';
@@ -98,9 +116,9 @@
   }
   
   const reloadProgram = async () => {
-    console.log('Reloading program with:', currentProgram.value);
+    console.log('Reloading program with:', programOptions.currentProgram);
     try {
-      const jsonString  = localStorage.getItem(`program.${currentProgram.value}`)
+      const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -127,8 +145,8 @@
     const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
     localStorage.setItem(`program.${name}`, jsonText)
     programKeys = getKeys('program')
-    availablePrograms.value = programKeys
-    currentProgram.value = programKeys[0]
+    programOptions.availablePrograms = programKeys
+    programOptions.currentProgram = programKeys[0]
     reloadProgram()
   }
 
@@ -217,9 +235,9 @@
       <div id="settings-div">
         <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
         <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
-        <select v-model="currentProgram" title="Select Program">
+        <select v-model="programOptions.currentProgram" title="Select Program">
           <option value="" disabled>Select</option>
-          <option v-for="program in availablePrograms" :key="program" :value="program">
+          <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
           </option>
         </select>
