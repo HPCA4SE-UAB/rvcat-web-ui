@@ -87,13 +87,17 @@
       document.getElementById('IPC-output').innerHTML          = d["ipc"].toFixed(2);
       document.getElementById('cycles-per-iteration-output').innerHTML = d["cycles_per_iteration"].toFixed(2);
       document.getElementById('critical-path').innerHTML       = createCriticalPathList(d['critical_path']);
-      
+
+      let dispatch= 2
+      let retire  = 2
+      let execute = 3
       let usage = {}
-      usage['dispatch'] = (d["ipc"] / processorInfo.stages.dispatch) * 100;
-      usage['retire']   = (d["ipc"] / processorInfo.stages.retire)   * 100;
+      usage['dispatch'] = (d["ipc"] / dispatch) * 100;
+      usage['retire']   = (d["ipc"] / retire)   * 100;
       usage.ports       = {}
       let i = 0;
-      let keys = Object.keys(processorInfo.ports);
+      // let keys = Object.keys(processorInfo.ports);
+      let keys = ["P0", "P1", "P2"]
       for (let key of keys) {
           usage.ports[i] = d.ports[key];
           i++;
