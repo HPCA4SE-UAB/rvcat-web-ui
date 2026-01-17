@@ -105,7 +105,7 @@
   const initProcessor = async () => {
     console.log('Init processor list');
     try {
-      if (processorOptions.availableProcessors.value.length == 0) {
+      if (processorOptions.availableProcessors.length == 0) {
         let processorKeys = getKeys('processor') // from localStorage
         if (processorKeys.length == 0) { // load processors from distribution files
           console.log('Load processors from distribution files')
