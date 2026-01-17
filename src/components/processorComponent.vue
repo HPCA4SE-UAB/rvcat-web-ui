@@ -56,7 +56,7 @@
     }
     simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components
     if (simState.RVCAT_state == 1) {  // RVCAT only imported
-      simState.RVCAT_state = 2;                  // fire program load
+      simState.RVCAT_state = 2;       // fire program load
       console.log('RVCAT Initialization: processor set. Next, program must be set')
     }
     else
@@ -99,7 +99,7 @@
             reloadProcessor()
             return
          }
-        if (processorOptions.currentROBsize !== simState.ROBsize)  { // ROB size changed
+         if (processorOptions.currentROBsize !== simState.ROBsize)  { // ROB size changed
           console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);
           drawProcessor()
           simState.ROBsize = processorOptions.currentROBsize // fires other components
