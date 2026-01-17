@@ -31,10 +31,19 @@
   let cleanupHandleSet  = null
   let cleanupHandleShow = null
 
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(programOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
+  }
+
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
     console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
-    if (newProgram && newProgram !== oldProgram) {
+    saveOptions()
+    if (simState.RVCAT_state > 1 && newProgram !== oldProgram) {
       reloadProgram();
     }
   });
@@ -81,6 +90,18 @@
   onMounted(() => {
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
     cleanupHandleShow= registerHandler('show_program', handleShowProgram)
+    try {    // Load from localStorage
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(programOptions, JSON.parse(saved))
+      }
+      if (simState.RVCAT_state == 2) {
+        console.log('RVCAT imported and processor set: look for programs and select current');
+        initProgram();
+      }
+    } catch (error) {
+      console.error('❌ Failed to load:', error)
+    }
   });
 
   onUnmounted(() => {
