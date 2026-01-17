@@ -39,10 +39,10 @@
     }
   });
 
-  // Watch for changes on RVCAT import
-  watch(() => simState.RVCAT_imported, (newValue, oldValue) => {
-    if (newValue) {
-      console.log('RVCAT imported: look for programs and select current');
+  // Watch for changes on RVCAT state
+  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
+    if (newValue == 2) {
+      console.log('RVCAT imported and processor set: look for programs and select current');
       initProgram();
     }
   });
@@ -55,6 +55,7 @@
     }
     try {    
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
+      simState.RVCAT_state = 3;                                  // program loaded
       if (simState.selectedProgram != '')
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
@@ -91,7 +92,6 @@
   }
   });
 
-  
   const initProgram = async () => {
     console.log('Init program list');
     try {
@@ -109,6 +109,10 @@
         }
         programOptions.availablePrograms = programKeys
         programOptions.currentProgram = programKeys[0]   // fires reaction to reloadProgram
+      }
+      else {
+        console.log('Programs already stored on localStorage. Set program')
+        reloadProgram()
       }
     } catch (error) {
       console.error('Failed to set program:', error)
