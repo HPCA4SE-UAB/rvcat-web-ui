@@ -55,7 +55,7 @@
     }
     try {    
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
-      if (simState.selectedProcessor != '')
+      if (simState.selectedProgram != '')
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
@@ -134,7 +134,7 @@
 
   async function confirmModal() {
     const name = modalName.value.trim();
-    if (name == simState.selectedProgram) {
+    if (name in simState.availablePrograms) {
       nameError.value = "A program with this name already exists. Please, choose another one.";
       return;
     }
