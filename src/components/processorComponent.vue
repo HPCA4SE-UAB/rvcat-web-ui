@@ -66,6 +66,10 @@
       if (saved) {
         Object.assign(processorOptions, JSON.parse(saved))
       }
+      if (simState.RVCAT_imported) {
+        console.log('RVCAT already imported: look for processors and select current');
+        initProcessor()
+      }
     } catch (error) {
       console.error('❌ Failed to load:', error)
     }
