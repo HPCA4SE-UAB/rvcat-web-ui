@@ -28,9 +28,10 @@
 
   const simulationOptions = reactive({ ...defaultOptions, ...savedOptions })
 
-  let executionResults= {}
-  let cleanupHandleResults = null
-  let executionGraphDotCode
+  let executionResults      = {}
+  let cleanupHandleResults  = null
+  let executionGraphDotCode = null
+  let resultsTimeout        = null
   
   // Save on changes
   const saveOptions = () => {
@@ -134,9 +135,9 @@
     clearTimeout(resultsTimeout)
     try {
       resultsTimeout = setTimeout(() => {
-        document.getElementById('instructions-output').innerHTML = '?';
-        document.getElementById('cycles-output').innerHTML = '?';
-        document.getElementById('IPC-output').innerHTML = '?';
+        document.getElementById('instructions-output').innerHTML         = '?';
+        document.getElementById('cycles-output').innerHTML               = '?';
+        document.getElementById('IPC-output').innerHTML                  = '?';
         document.getElementById('cycles-per-iteration-output').innerHTML = '?';
 
         document.getElementById('run-simulation-spinner').style.display = 'block';
