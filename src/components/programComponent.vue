@@ -90,8 +90,7 @@
         programKeys = getKeys('program')
       }
       availablePrograms.value = programKeys
-      currentProgram.value = programKeys[0]
-      reloadProgram()
+      currentProgram.value = programKeys[0]   // fires reaction to reloadProgram
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to set program';
