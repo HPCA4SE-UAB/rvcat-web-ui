@@ -95,20 +95,21 @@
   const initProgram = async () => {
     console.log('Init program list');
     try {
-      let programKeys = getKeys('program') // from localStorage
-
-      if (programKeys.length == 0) { // load programs from distribution files
-        console.log('Load programs from distribution files')
-        const response = await fetch('./index.json')
-        const data     = await response.json()
-        for (let i = 0; i < data.programs.length; i += 1) {
-           const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-           localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+      if (programOptions.availablePrograms.length == 0) {
+        let programKeys = getKeys('program') // from localStorage
+        if (programKeys.length == 0) { // load programs from distribution files
+          console.log('Load programs from distribution files')
+          const response = await fetch('./index.json')
+          const data     = await response.json()
+          for (let i = 0; i < data.programs.length; i += 1) {
+            const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+            localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
+          }
+          programKeys = getKeys('program')
         }
-        programKeys = getKeys('program')
+        programOptions.availablePrograms = programKeys
+        programOptions.currentProgram = programKeys[0]   // fires reaction to reloadProgram
       }
-      programOptions.availablePrograms = programKeys
-      programOptions.currentProgram = programKeys[0]   // fires reaction to reloadProgram
     } catch (error) {
       console.error('Failed to set program:', error)
       programText.value = 'Failed to set program';
