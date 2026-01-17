@@ -27,22 +27,13 @@
       currentROBsize.value = 1
     }
   
-    // Check if any changed meaningfully
-    const processorChanged =  newProcessor && newProcessor !== oldProcessor
-    const ROBsizeChanged   =  newValue  !== oldValue
- 
-    if (processorChanged)
-       console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);        
-    else if (ROBsizeChanged) 
-       console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);        
-    else
-      return
-
-    if (processorChanged)
-      reloadProcessor()
-    else {
-      drawProcessor()
-      simState.ROBsize = currentROBsize.value // fires other components
+    if (newProcessor && newProcessor !== oldProcessor) {  // Processor changed
+       console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
+       reloadProcessor()
+    } else if (newValue !== oldValue) {  // ROB size changed
+       console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);
+       drawProcessor()
+       simState.ROBsize = currentROBsize.value // fires other components
     }
   });
 
@@ -92,7 +83,7 @@
         processorKeys = getKeys('processor')
       }
       availableProcessors.value = processorKeys
-      currentProcessor.value = processorKeys[0]  // creates reactive action to reloadProcessor
+      currentProcessor.value    = processorKeys[0]  // creates reactive action to reloadProcessor
     } catch (error) {
       console.error('Failed to set processor:', error)
       programText.value = 'Failed to set program';
@@ -102,9 +93,9 @@
   const reloadProcessor = async () => {
     console.log('Reloading processor with:', currentProcessor.value);
     try {
-      const jsonString = localStorage.getItem(`processor.${currentProcessor.value}`)
+      const jsonString    = localStorage.getItem(`processor.${currentProcessor.value}`)
       const processorInfo = JSON.parse(jsonString)
-      setProcessor( jsonString )   // Call Python RVCAT to load new processor config --> 'set-processor'
+      setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
       console.error('Failed to set processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
@@ -114,7 +105,7 @@
   const drawProcessor = async () => {
     console.log('Redrawing processor');
     try {
-      const jsonString = localStorage.getItem(`processor.${currentProcessor.value}`)
+      const jsonString    = localStorage.getItem(`processor.${currentProcessor.value}`)
       const processorInfo = JSON.parse(jsonString)
       const dotCode = get_processor_dot (
          processorInfo.stages.dispatch,
