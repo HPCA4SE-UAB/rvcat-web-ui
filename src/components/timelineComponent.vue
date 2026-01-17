@@ -12,7 +12,7 @@
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
   const defaultOptions = {
-    iters: 1,
+    iters:     1,
     zoomLevel: 1,
     showPorts: false,
     showInstr: false
@@ -57,7 +57,7 @@
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
 
     try {    // Load from localStorage
-      if (!timelineData.value && simState.RVCAT_imported)  // on mount
+      if (!timelineData.value && simState.RVCAT_state == 3)  // on mount
          getTimelineAndDraw()
     } catch (error) {
       console.error('❌ Failed on timeline:', error)
@@ -128,21 +128,21 @@
      () => simState.ROBsize],
     ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
       // Check if any changed meaningfully
-      const programChanged   =   newProgram      && newProgram   !== oldProgram
-      const processorChanged =   newProcessor    && newProcessor !== oldProcessor
+      const programChanged   =   newProgram   !== oldProgram
+      const processorChanged =   newProcessor !== oldProcessor
       const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      if (simState.RVCAT_imported && newProgram && newProcessor) {
-         getTimelineAndDraw()
-         console.log('✅ Request timeline')
-      }
+      getTimelineAndDraw()
     },
   { immediate: false })
 
   async function getTimelineAndDraw() {
-    await getTimeline(timelineOptions.iters, simState.ROBsize );
+    if (simState.RVCAT_state == 3) {
+      console.log('✅ Request timeline')
+      await getTimeline(timelineOptions.iters, simState.ROBsize )
+    }
   }
 
 /* ------------------------------------------------------------------ 
