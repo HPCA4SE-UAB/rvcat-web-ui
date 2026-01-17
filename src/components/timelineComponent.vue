@@ -10,12 +10,24 @@
   /* ------------------------------------------------------------------ 
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
-  const timelineOptions = reactive({
-    iters:     1,
+  const STORAGE_KEY = 'timelineOptions'
+  const defaultOptions = {
+    iters: 1,
     zoomLevel: 1,
     showPorts: false,
     showInstr: false
-  })
+  }
+
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
+    }
+  })()
+
+  const timelineOptions = reactive({ ...defaultOptions, ...savedOptions })
 
   let lastTimelineIters     = 1
   let canvasTimeout         = null
@@ -31,9 +43,6 @@
   const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
 
-    // Load / save options from localStorage
-  const STORAGE_KEY = 'timelineOptions'
-
   // Save on changes
   const saveOptions = () => {
     try {
@@ -48,14 +57,10 @@
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
 
     try {    // Load from localStorage
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        Object.assign(timelineOptions, JSON.parse(saved))
-      }
       if (!timelineData.value && simState.RVCAT_imported)  // on mount
          getTimelineAndDraw()
     } catch (error) {
-      console.error('❌ Failed on timeline component:', error)
+      console.error('❌ Failed on timeline:', error)
     }
   });
 
