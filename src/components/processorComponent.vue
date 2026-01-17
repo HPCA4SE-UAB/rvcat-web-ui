@@ -10,14 +10,39 @@
   // Reactive SVG string
   const pipelineSvg         = ref('')
   const currentProcessor    = ref('')
+  const currentROBsize      = ref(20)
   const availableProcessors = ref([])
   let   cleanupHandleSet    = null
 
   // Watch for processor changes
-  watch(() => currentProcessor.value, (newProcessor, oldProcessor) => {
-    console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);
-    if (newProcessor && newProcessor !== oldProcessor) {
+  watch (
+    [() => currentProcessor.value, () => currentROBsize.value],
+    ([newProcessor, newValue], [oldProcessor, oldValue] ) => {
+
+    if (newValue > 200) { 
+      newValue = 200
+      currentROBsize.value = 200
+    }  else if (newValue < 1) { 
+      newValue = 1
+      currentROBsize.value = 1
+    }
+  
+    // Check if any changed meaningfully
+    const processorChanged =  newProcessor && newProcessor !== oldProcessor
+    const ROBsizeChanged   =  newValue  !== oldValue
+ 
+    if (processorChanged)
+       console.log(`Processor changed from "${oldProcessor}" to "${newProcessor}"`);        
+    else if (ROBsizeChanged) 
+       console.log(`ROB size changed from "${oldValue}" to "${newValue}"`);        
+    else
+      return
+
+    if (processorChanged)
       reloadProcessor()
+    else {
+      drawProcessor()
+      simState.ROBsize = currentROBsize.value // fires other components
     }
   });
 
@@ -37,6 +62,7 @@
     }
     simState.selectedProcessor = currentProcessor.value;  // fire other components, watching for a change
     console.log('Processor set into RVCAT')
+    drawProcessor()
   }
 
   onMounted(() => {
@@ -49,7 +75,6 @@
       cleanupHandleSet = null
     }
   });
-
   
   const initProcessor = async () => {
     console.log('Init processor list');
@@ -80,15 +105,46 @@
       const jsonString = localStorage.getItem(`processor.${currentProcessor.value}`)
       const processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )   // Call Python RVCAT to load new processor config --> 'set-processor'
-      //   insert_cache_annotations(cache)
-      const svg = await getProcessorGraph(processorInfo);
-      pipelineSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('Failed to set processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
   
+  const drawProcessor = async () => {
+    console.log('Redrawing processor');
+    try {
+      const jsonString = localStorage.getItem(`processor.${currentProcessor.value}`)
+      const processorInfo = JSON.parse(jsonString)
+      const dotCode = construct_reduced_processor_dot(
+         processorInfo.stages.dispatch,
+         Object.keys(processorInfo.ports).length, 
+         processorInfo.stages.retire,  
+         {
+           'nBlocks':    processorInfo.nBlocks,
+           'blkSize':    processorInfo.blkSize,
+           'mPenalty':   processorInfo.mPenalty,
+           'mIssueTime': processorInfo.mIssueTime
+         }
+      );
+      const svg = await createGraphVizGraph(dotCode);  
+      pipelineSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('Failed to draw processor:', error)
+      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+
+  function insert_cache_annotations(cache) {
+    if (cache.nBlocks>0){
+      document.getElementById('cache-info').innerHTML=`
+       <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
+    }
+    else {
+      document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
+    }
+  }
+
   const showHelp     = ref(false);
   const helpPosition = ref({ top: '0%', left: '40%' });
   const helpIcon     = ref(null);
@@ -119,7 +175,7 @@
         
         <span class="iters-label">ROB size: </span>
         <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
-               v-model.number="simState.ROBsize">
+               v-model.number="currentROBsize">
       </div>
     </div>
 
