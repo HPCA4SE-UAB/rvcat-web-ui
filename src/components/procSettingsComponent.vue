@@ -2,7 +2,7 @@
   import { ref, reactive, computed, onMounted, onUnmounted, nextTick} from "vue";
   import HelpComponent from '@/components/helpComponent.vue';
 
-  const simState            = inject('simulationState');
+  const simState = inject('simulationState');
 
   const dispatch        = ref(0);
   const retire          = ref(0);
