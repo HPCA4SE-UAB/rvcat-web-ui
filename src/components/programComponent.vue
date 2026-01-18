@@ -153,9 +153,10 @@
   }
   
   // Modal logic
-  const showModalUp = ref(false);
-  const modalName   = ref("");
-  const nameError   = ref("");
+  const showModalUp = ref(false)
+  const modalName   = ref("")
+  const nameError   = ref("")
+  let uploadedProgramObject = null
 
   async function confirmModal() {
     const name = modalName.value.trim();
@@ -167,6 +168,7 @@
     nameError.value   = "";
     showModalUp.value = false;
 
+    console.log('Modal confirmed')
     uploadedProgramObject.name = name;
     const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
     localStorage.setItem(`program.${name}`, jsonText)
@@ -229,12 +231,12 @@
         uploadedProgramObject = parsed;
         modalName.value       = parsed.name;
         showModalUp.value     = true;
+        console.log('Uploaded program:', uploadedProgramObject)
       } catch (err) {
         console.error("Failed to parse JSON file:", err);
         alert("Could not load program file.");
       }
     };
-    document.body.appendChild(input);
     input.click();
     input.remove();
   }
