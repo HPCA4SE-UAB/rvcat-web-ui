@@ -163,7 +163,7 @@ watch (
       return;
     }
     try {
-      performanceData.value = data
+      Object.assign(performanceData.value, data)  // let VUE understand reactive action
       console.log('✅ Performance Analysis obtained')
     } catch (error) {
       console.error('Error handling performance analysis:', error)
