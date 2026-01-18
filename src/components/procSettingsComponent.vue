@@ -215,13 +215,13 @@
 
   async function confirmModal() {
     const list = simState.availableProcessors
-      for (const opt of list.options) {
-        if (opt.value === modalName.value) {
-          nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
-          return;
-        }
+    for (const opt of list.options) {
+      if (opt.value === modalName.value) {
+        nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
+        return;
       }
     }
+    
     const data = getCurrentProcessorJSON();
 
     Object.assign(originalSettings, {
