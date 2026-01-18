@@ -161,13 +161,16 @@ watch (
       return;
     }
     try {
+      console.log('📥 Data received:', data)
+      console.log('📊 Current performanceData:', performanceData.value)
       Object.assign(performanceData.value, data)  // let VUE understand reactive action
-      console.log('✅ Performance Analysis obtained')
+      console.log('🔄 Updated performanceData:', performanceData.value)
+      console.log('✅ Performance Analysis updated')
     } catch (error) {
       console.error('Error handling performance analysis:', error)
     }
   }
-
+  
 /* ------------------------------------------------------------------ 
  * Fullscreen graph 
  * ------------------------------------------------------------------ */  
