@@ -491,14 +491,14 @@ watch (
 }
 
 .performance-summary {
-  margin: 0.5rem 0;
+  margin: 0.2rem 0;
 }
 
 .summary-card {
   background: #f8f9fa;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 0.75rem;
+  border-radius: 3px;
+  padding: 0.5rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -569,7 +569,7 @@ watch (
 .bottlenecks-list {
   background: #fff;
   border: 1px solid #dadce0;
-  border-radius: 8px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
@@ -585,7 +585,7 @@ watch (
 }
 
 .bottleneck-index {
-  min-width: 40px;
+  min-width: 20px;
   color: #5f6368;
   font-weight: 600;
   font-size: 0.95em;
