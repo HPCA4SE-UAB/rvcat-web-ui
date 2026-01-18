@@ -38,7 +38,7 @@
   let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
 
-  const performanceData = ref({
+  let performanceData = ref({
     name: "No data",
     LatencyTime: 0.0,
     ThroughputTime: 0.0,
