@@ -121,10 +121,8 @@ watch (
     const processorChanged = newProcessor && newProcessor !== oldProcessor
     
     if (!programChanged && !processorChanged) return
-
-    if (programChanged && showPerformance.value) {
-      getPerformanceAnalysis();
-    }
+    
+    getPerformanceAnalysis();
     
     clearTimeout(graphTimeout)
     graphTimeout = setTimeout(() => {
@@ -185,21 +183,8 @@ watch (
     });
   }
 
-  function closeFullScreen() {
-    showFullScreen.value = false;
-  }
-
-/* ------------------------------------------------------------------ 
- * Performance annotations 
- * ------------------------------------------------------------------ */
-  function toggleAnnotations() {
-    showPerformance.value = !showPerformance.value;
-    if (showPerformance.value) {
-      nextTick(() => {
-        getPerformanceAnalysis();
-      });
-    }
-  }
+  function closeFullScreen()   { showFullScreen.value = false;  }
+  function toggleAnnotations() {  showPerformance.value = !showPerformance.value; }
 
 /* ------------------------------------------------------------------ 
  * Help support 
