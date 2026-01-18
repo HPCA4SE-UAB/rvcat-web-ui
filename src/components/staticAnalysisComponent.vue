@@ -267,11 +267,14 @@ watch (
         <span class="arrow" aria-hidden="true">
           {{ showPerformance ? '▼' : '▶' }}
         </span>
-        <span class="dropdown-title">
-          Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
-        </span>
-      </button>
-    </div>
+        <div v-if="!performanceData || performanceData.name === 'No data'" class="empty-state">
+          <div class="empty-icon">📊</div>
+          <p>Run analysis to see performance data</p>
+        </div>
+        <div v-else class="performance-content">    
+          <span class="dropdown-title">  
+            Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
+          </span>
 
     <Transition name="fold" appear>
     <div v-show="showPerformance" class="annotations-box">
@@ -286,6 +289,12 @@ watch (
       </div>
     </div>
   </Transition>
+          
+        </div>
+      </button>
+    </div>
+
+
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
