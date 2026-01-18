@@ -222,7 +222,7 @@ watch (
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Static Performance Analysis: <strong>{{ performanceData.name }}</strong></span>
+        <span class="header-title">Static Performance Analysis: <strong>{{  simState.selectedProgram }}</strong></span>
       </div>
     </div>
 
@@ -237,15 +237,15 @@ watch (
       </div>
       <div class="metric-item">
         <span class="metric-label">Latency:</span>
-        <span class="metric-value">{{ performanceData.LatencyTime }}cycles/iteration</span>
+        <span class="metric-value">{{ performanceData.LatencyTime }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Throughput:</span>
-        <span class="metric-value">{{ performanceData.ThroughputTime }}cycles/iteration</span>
+        <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Best:</span>
-        <span class="metric-value highlight">{{ performanceData.BestTime }}cycles/iteration</span>
+        <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
       </div>
     </div>
   </div>
@@ -267,7 +267,7 @@ watch (
     </div>
 
     <Transition name="fold" appear>
-      <div v-show="showPerformance" class="annotations-box">
+      <div v-show="showPerformance" class="summary-card compact">
         <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
           <div class="bottleneck-index">{{ index + 1 }}: </div>
           <div class="bottleneck-text">{{ bottleneck }}</div>
@@ -594,7 +594,6 @@ watch (
 .bottleneck-text {
   flex: 1;
   color: #202124;
-  font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
   line-height: 1.4;
 }
