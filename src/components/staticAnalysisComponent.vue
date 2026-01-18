@@ -229,31 +229,32 @@ watch (
       </div>
     </div>
 
-    <div class="performance-summary">
-      <div class="summary-card">
-        <div class="card-content">
-          <div class="metric-row">
-            <span class="metric-label">Performance Bound:</span>
-            <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
-              {{ performanceData['performance-bound'] }}
-            </span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Latency Time:</span>
-            <span class="metric-value">{{ performanceData.LatencyTime }} cycles/iteration</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Throughput Time:</span>
-            <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Best Time:</span>
-            <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
-          </div>
-        </div>
+<div class="performance-summary">
+  <div class="summary-card compact">
+    <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <span class="metric-label">Bound:</span>
+        <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
+          {{ performanceData['performance-bound'] }}
+        </span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Latency:</span>
+        <span class="metric-value">{{ performanceData.LatencyTime }}c</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Throughput:</span>
+        <span class="metric-value">{{ performanceData.ThroughputTime }}c/i</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Best:</span>
+        <span class="metric-value highlight">{{ performanceData.BestTime }}c/i</span>
       </div>
     </div>
-    
+  </div>
+</div>
+  
     <!-- Bottlenecks Section -->
     <div class="dropdown-wrapper">
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
@@ -514,31 +515,35 @@ watch (
   border-bottom: 2px solid #e9ecef;
 }
 
-.metric-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.35rem 0;
-  min-height: auto; /* Elimina altura mínima si existe */
-  line-height: 1.2; /* Más compacto */
-  border-bottom: 1px solid #f1f3f4;
+/* CSS para diseño horizontal */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.metric-row:last-child {
-  border-bottom: none;
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.3rem;
+  background: #f8f9fa;
+  border-radius: 4px;
 }
 
 .metric-label {
-  color: #5f6368;
-  font-weight: 500;
-  font-size: 0.9em; /* Texto más pequeño */
+  font-size: 0.8em;
+  color: #6c757d;
+  margin-bottom: 0.1rem;
 }
 
 .metric-value {
-  color: #202124;
+  font-size: 1em;
   font-weight: 600;
-  font-size: 0.9em; /* Texto más pequeño */
 }
-
+  
 .metric-value.highlight {
   color: #1a73e8;
   font-size: 1.1em;
