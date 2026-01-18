@@ -362,7 +362,7 @@ function createCriticalPathList(data) {
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Simulation of the Execution of the Program</span>
+        <span class="header-title">Simulate Execution of <strong>{{ simState.selectedProgram }}</strong></span>
       </div>
       <div class="iters-run">
         <div class="iters-group">
