@@ -186,24 +186,24 @@
   }
 
   async function downloadProgram() {
-    const jsonText = JSON.stringify(programJSON.value, null, 2);
+    const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
-        suggestedName: `${simState.selectedProgram}.json`,
+        suggestedName: `${programOptions.currentProgram}.json`,
         types: [{
           description: 'JSON files',
           accept: { 'application/json': ['.json'] }
         }],
       });
       const writable = await handle.createWritable();
-      await writable.write(jsonText);
+      await writable.write(jsonString);
       await writable.close();
     } else {
-      const blob = new Blob([jsonText], { type: 'application/json' });
+      const blob = new Blob([jsonString], { type: 'application/json' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href = url;
-      a.download = `${simState.selectedProgram}.json`;
+      a.download = `${programOptions.currentProgram}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
