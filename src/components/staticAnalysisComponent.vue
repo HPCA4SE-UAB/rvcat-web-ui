@@ -217,31 +217,42 @@ watch (
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Static Performance Analysis</span>
+        <span v-if="!performanceData" class="loading-badge">Loading...</span>
       </div>
     </div>
-
-    <!-- Summary Cards -->
-    <div class="performance-summary">
-      <div class="summary-card">
-        <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
-        <div class="card-content">
-          <div class="metric-row">
-            <span class="metric-label">Performance Bound:</span>
-            <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
-              {{ performanceData['performance-bound'] }}
-            </span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Latency Time:</span>
-            <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Throughput Time:</span>
-            <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Best Time:</span>
-            <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
+    
+    <!-- Mostrar placeholder mientras carga -->
+    <div v-if="!performanceData || performanceData.name === 'No data'" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <p>Run analysis to see performance data</p>
+      <button @click="runAnalysis" class="run-analysis-btn">
+        Run Performance Analysis
+      </button>
+    </div>
+    <!-- Mostrar datos cuando estén disponibles -->
+    <div v-else class="performance-content">
+      <div class="performance-summary">
+        <div class="summary-card">
+          <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
+          <div class="card-content">
+            <div class="metric-row">
+              <span class="metric-label">Performance Bound:</span>
+              <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
+                {{ performanceData['performance-bound'] }}
+              </span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Latency Time:</span>
+              <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Throughput Time:</span>
+              <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Best Time:</span>
+              <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
+            </div>
           </div>
         </div>
       </div>
