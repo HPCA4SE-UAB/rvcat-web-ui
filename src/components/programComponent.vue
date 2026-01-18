@@ -172,9 +172,9 @@
     uploadedProgramObject.name = name;
     const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
     localStorage.setItem(`program.${name}`, jsonText)
-    programKeys = getKeys('program')
+    const programKeys = getKeys('program')
     programOptions.availablePrograms = programKeys
-    programOptions.currentProgram = programKeys[0]
+    programOptions.currentProgram = name
     reloadProgram()
   }
 
