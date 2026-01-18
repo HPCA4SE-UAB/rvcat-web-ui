@@ -240,7 +240,7 @@ watch (
           </div>
           <div class="metric-row">
             <span class="metric-label">Latency Time:</span>
-            <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
+            <span class="metric-value">{{ performanceData.LatencyTime }} cycles/iteration</span>
           </div>
           <div class="metric-row">
             <span class="metric-label">Throughput Time:</span>
@@ -271,14 +271,9 @@ watch (
 
     <Transition name="fold" appear>
       <div v-show="showPerformance" class="annotations-box">
-        <div v-if="performanceData['Throughput-Bottlenecks'] && performanceData['Throughput-Bottlenecks'].length > 0" class="bottlenecks-list">
-          <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
-            <div class="bottleneck-index">#{{ index + 1 }}</div>
-            <div class="bottleneck-text">{{ bottleneck }}</div>
-          </div>
-        </div>
-        <div v-else class="no-bottlenecks">
-          No throughput bottlenecks detected
+        <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
+          <div class="bottleneck-index">{{ index + 1 }}: </div>
+          <div class="bottleneck-text">{{ bottleneck }}</div>
         </div>
       </div>
     </Transition>
@@ -601,16 +596,6 @@ watch (
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
   line-height: 1.4;
-}
-
-.no-bottlenecks {
-  text-align: center;
-  color: #5f6368;
-  font-style: italic;
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border: 1px dashed #dadce0;
-  border-radius: 8px;
 }
 
 .annotations-box {
