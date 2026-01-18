@@ -92,7 +92,7 @@
 * ------------------------------------------------------------------ */
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
-  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 7) }
+  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 5) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
  
   // Watch ALL graph options for changes
@@ -150,7 +150,7 @@
  * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
-    const Zoom        = timelineOptions.zoomLevel;
+    const Zoom        = (1+timelineOptions.zoomLevel)/3;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
     const cellW       = 14 * Zoom;
@@ -673,12 +673,11 @@
   }
 
   async function showCellInfo(instrID, cycle) {
-    //TO DO: Create Python function that returs additional info
-    return 'TO DO'
   }
   
   async function handleCellClick(instrID, cycle) {
-    const text = await showCellInfo(instrID, cycle);
+    //TO DO: Create Python function that returs additional info
+    const text = 'To DO';
     clickedCellInfo.value = { instrID, cycle, text };
   }
 
@@ -709,12 +708,8 @@
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
-  const showHelp1    = ref(false);
-  const showHelp2    = ref(false);
-  const showHelp3    = ref(false);
-  const helpIcon1    = ref(null);
-  const helpIcon2    = ref(null);
-  const helpIcon3    = ref(null);
+  const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
+  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
@@ -743,12 +738,12 @@
          </div>
         
          <div class="iters-group">
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 7 }" :disabled="timelineOptions.zoomLevel == 7"
-                title="Zoom Out" @click="zoomReduce">
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 5 }" :disabled="timelineOptions.zoomLevel == 5"
+                title="Zoom Out (5 levels)" @click="zoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-                title="Zoom In" @click="zoomIncrease">
+                title="Zoom In (5 levels)" @click="zoomIncrease">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
