@@ -274,7 +274,7 @@
     setTimeout(()=>{
       list.value=modalName.value;
       localStorage.setItem(`processor.${list.value}`, jsonText)
-      simState.currentProcessor = list.value;
+      simState.selectedProcessor = list.value;
     },100);
   }
 
