@@ -243,7 +243,7 @@ watch (
         <span class="metric-value">{{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration</span>
       </div>
       <div class="metric-item">
-        <span class="metric-label">Best:</span>
+        <span class="metric-label">Best possible time:</span>
         <span class="metric-value highlight">{{ performanceData.BestTime.toFixed(2) }} cycles/iteration</span>
       </div>
     </div>
@@ -497,8 +497,8 @@ watch (
 .summary-card {
   background: #f8f9fa;
   border: 1px solid #dee2e6;
-  border-radius: 3px;
-  padding: 0.5rem;
+  border-radius: 2px;
+  padding: 0.2rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -507,7 +507,7 @@ watch (
   font-weight: 600;
   color: #2c3e50;
   margin-bottom: 1rem;
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.2rem;
   border-bottom: 2px solid #e9ecef;
 }
 
