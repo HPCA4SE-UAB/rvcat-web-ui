@@ -92,7 +92,7 @@
 * ------------------------------------------------------------------ */
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
-  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 5) }
+  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 6) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
  
   // Watch ALL graph options for changes
@@ -150,7 +150,7 @@
  * ------------------------------------------------------------------ */
 
   function drawTimeline(data) {
-    const Zoom        = (1+timelineOptions.zoomLevel)/3;
+    const Zoom        = (1+timelineOptions.zoomLevel)/4;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
     const cellW       = 14 * Zoom;
@@ -738,12 +738,12 @@
          </div>
         
          <div class="iters-group">
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 5 }" :disabled="timelineOptions.zoomLevel == 5"
-                title="Zoom Out (5 levels)" @click="zoomReduce">
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
+                title="Zoom Out (6 levels)" @click="zoomIncrease">
                 <img src="/img/zoom-out.png">
             </button>
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-                title="Zoom In (5 levels)" @click="zoomIncrease">
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 6 }" :disabled="timelineOptions.zoomLevel == 6"
+                title="Zoom In (6 levels)" @click="zoomReduce">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
