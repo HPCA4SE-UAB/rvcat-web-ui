@@ -50,13 +50,14 @@
     // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
     const thisId = ++lastRequestId;
-    if (typeof getProcessorJSON !== "function") return;
     try {
-      const cfg = await getProcessorJSON();
+      const jsonString  = localStorage.getItem(`processor.${simState.selectedProcessor}`)
+      const cfg         = JSON.parse(jsonString);
+
       if (thisId !== lastRequestId) return;
 
       dispatch.value   = cfg.stages.dispatch;
-      retire.value     = cfg.stages.retire;
+      retire.value     = cfg.stages.retir;
       name.value       = cfg.name;
       ports.value      = cfg.ports || {};
       nBlocks.value    = cfg.nBlocks;
@@ -85,13 +86,13 @@
         mIssueTime: cfg.mIssueTime,
       });
     } catch(e) {
-      console.error("Failed to load processor JSON:", e);
+      console.error("Failed to update processor settings:", e);
     }
   };
 
   onMounted(() => {
     nextTick(() => {
-      const list = document.getElementById("processors-list");
+      const list = simState.selectedProcessor;
       if (list) {
         prevProcessorHandler = () => {
           prevProcessor.value=list.value;
@@ -113,7 +114,7 @@
   });
 
   onUnmounted(() => {
-    const list = document.getElementById("processors-list");
+    const list = simState.selectedProcessor;
     if (list && processorsListHandler) {
       list.removeEventListener("change", processorsListHandler);
     }
@@ -213,8 +214,7 @@
   }
 
   async function confirmModal() {
-    const list = document.getElementById("processors-list");
-    if (list) {
+    const list = simState.availableProcessors
       for (const opt of list.options) {
         if (opt.value === modalName.value) {
           nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
@@ -223,7 +223,6 @@
       }
     }
     const data = getCurrentProcessorJSON();
-    await saveModifiedProcessor(data);
 
     Object.assign(originalSettings, {
       dispatch:   data.stages.dispatch,
@@ -270,11 +269,12 @@
     }
     name.value = modalName.value;
     showModalDown.value = false;
-    showModalUp.value = false;
+    showModalUp.value   = false;
 
     setTimeout(()=>{
       list.value=modalName.value;
-      reloadRvcat();
+      localStorage.setItem(`processor.${list.value}`, jsonText)
+      simState.currentProcessor = list.value;
     },100);
   }
 
@@ -391,8 +391,7 @@
 
   function cancelLeave() {
     if (modalConfirmOperation=='change') {
-      document.getElementById('processors-list').value = prevProcessor.value;
-      reloadRvcat();
+      simState.selectedProgram = prevProcessor.value;
     }
     showModalChange.value = false;
   }
@@ -410,14 +409,8 @@
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
-  const showHelp1    = ref(false);
-  const showHelp2    = ref(false);
-  const showHelp3    = ref(false);
-  const showHelp4    = ref(false);
-  const helpIcon1    = ref(null);
-  const helpIcon2    = ref(null);
-  const helpIcon3    = ref(null);
-  const helpIcon4    = ref(null);
+  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false);
+  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
