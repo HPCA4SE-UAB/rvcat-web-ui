@@ -212,7 +212,7 @@ watch (
       case 'THROUGHPUT':
         return 'throughput-bound'
       default:
-        return ''
+        return 'both'
     }
   }
   
@@ -500,30 +500,32 @@ watch (
 }
 
 .performance-summary {
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 }
 
 .summary-card {
   background: #f8f9fa;
   border: 1px solid #dee2e6;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.75rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .card-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #2c3e50;
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
   border-bottom: 2px solid #e9ecef;
 }
 
 .metric-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: 0.35rem 0;
+  min-height: auto; /* Elimina altura mínima si existe */
+  line-height: 1.2; /* Más compacto */
   border-bottom: 1px solid #f1f3f4;
 }
 
@@ -534,11 +536,13 @@ watch (
 .metric-label {
   color: #5f6368;
   font-weight: 500;
+  font-size: 0.9em; /* Texto más pequeño */
 }
 
 .metric-value {
   color: #202124;
   font-weight: 600;
+  font-size: 0.9em; /* Texto más pequeño */
 }
 
 .metric-value.highlight {
@@ -547,19 +551,26 @@ watch (
 }
 
 .metric-value.latency-bound {
-  color: #d93025;
-  background: #fce8e6;
-  padding: 0 4px;
+  color:         #d93025;
+  background:    #fce8e6;
+  padding:       0 4px;
   border-radius: 3px;
 }
 
 .metric-value.throughput-bound {
-  color: #188038;
-  background: #e6f4ea;
-  padding: 0 4px;
+  color:         #188038;
+  background:    #e6f4ea;
+  padding:       0 4px;
   border-radius: 3px;
 }
 
+.metric-value.both {
+  color:         #488038;
+  background:    #eff4ea;
+  padding:       0 4px;
+  border-radius: 3px;
+}
+  
 .bottlenecks-list {
   background: #fff;
   border: 1px solid #dadce0;
