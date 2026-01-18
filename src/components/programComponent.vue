@@ -261,14 +261,14 @@
       </div>
       
       <div id="settings-div">
-        <button id="download-button" title="Save current Program"  class="blue-button" @click="downloadProgram">Download</button>
-        <button id="upload-button"   title="Load new Program"      class="blue-button" @click="uploadProgram">Upload</button>
         <select v-model="programOptions.currentProgram" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
           </option>
         </select>
+        <button class="blue-button" title="Save current Program" @click="downloadProgram"> Download </button>
+        <button class="blue-button" title="Load new Program"     @click="uploadProgram">   Upload   </button>
       </div>
     </div>
     
