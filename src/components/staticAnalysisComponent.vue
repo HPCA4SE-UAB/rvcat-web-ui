@@ -66,6 +66,7 @@
       if (saved) {
         Object.assign(dependenceGraphOptions, JSON.parse(saved))
       }
+      getPerformanceAnalysis();
     } catch (error) {
       console.error('❌ Failed to load:', error)
     }
@@ -163,7 +164,7 @@ watch (
     try {
       console.log('📥 Data received:', data)
       console.log('📊 Current performanceData:', performanceData.value)
-      Object.assign(performanceData.value, data)  // let VUE understand reactive action
+      Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
       console.log('🔄 Updated performanceData:', performanceData.value)
       console.log('✅ Performance Analysis updated')
     } catch (error) {
