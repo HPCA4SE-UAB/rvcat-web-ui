@@ -12,11 +12,12 @@
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'dependentGraphOptions'
   const defaultOptions = {
-    iters:      1,
-    showIntern: false,
-    showLaten:  false,
-    showSmall:  false,
-    showFull:   false
+    iters:       1,
+    showIntern:  false,
+    showLaten:   false,
+    showSmall:   false,
+    showFull:    false,
+    showThrough: false
   }
   
   const savedOptions = (() => {
@@ -31,7 +32,6 @@
   const dependenceGraphOptions = reactive({ ...defaultOptions, ...savedOptions })
   const dependenceGraphSvg     = ref('')
   const fullDependenceGraphSvg = ref('')  
-  const showPerformance        = ref(false);
   const showFullScreen         = ref(false);
 
   let graphTimeout          = null
@@ -85,10 +85,11 @@
  /* ------------------------------------------------------------------ 
   * Dependence Graph options: UI actions 
   * ------------------------------------------------------------------ */
-  function toggleIntern() { dependenceGraphOptions.showIntern = !dependenceGraphOptions.showIntern }
-  function toggleLaten()  { dependenceGraphOptions.showLaten  = !dependenceGraphOptions.showLaten  }
-  function toggleSmall()  { dependenceGraphOptions.showSmall  = !dependenceGraphOptions.showSmall  }
-  function toggleFull()   { dependenceGraphOptions.showFull   = !dependenceGraphOptions.showFull }
+  function toggleIntern () { dependenceGraphOptions.showIntern  = !dependenceGraphOptions.showIntern  }
+  function toggleLaten  () { dependenceGraphOptions.showLaten   = !dependenceGraphOptions.showLaten   }
+  function toggleSmall  () { dependenceGraphOptions.showSmall   = !dependenceGraphOptions.showSmall   }
+  function toggleFull   () { dependenceGraphOptions.showFull    = !dependenceGraphOptions.showFull    }
+  function toggleThrough() { dependenceGraphOptions.showThrough = !dependenceGraphOptions.showThrough }
 
   // Watch ALL graph options for changes
   watch(dependenceGraphOptions, () => {
@@ -183,9 +184,7 @@ watch (
       }
     });
   }
-
   function closeFullScreen()   { showFullScreen.value = false;  }
-  function toggleAnnotations() {  showPerformance.value = !showPerformance.value; }
 
 /* ------------------------------------------------------------------ 
  * Help support 
@@ -237,15 +236,15 @@ watch (
       </div>
       <div class="metric-item">
         <span class="metric-label">Latency:</span>
-        <span class="metric-value">{{ performanceData.LatencyTime }} cycles/iteration</span>
+        <span class="metric-value">{{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Throughput:</span>
-        <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
+        <span class="metric-value">{{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Best:</span>
-        <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
+        <span class="metric-value highlight">{{ performanceData.BestTime.toFixed(2) }} cycles/iteration</span>
       </div>
     </div>
   </div>
@@ -256,9 +255,10 @@ watch (
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
         <img src="/img/info.png" class="info-img">
       </span>
-      <button class="dropdown-header" @click="toggleAnnotations" title="Show Throughput limits" :aria-expanded="showPerformance">
+      <button class="dropdown-header" @click="toggleThrough" title="Show Throughput limits" 
+              :aria-expanded="dependenceGraphOptions.showThrough">
         <span class="arrow" aria-hidden="true">
-          {{ showPerformance ? '▼' : '▶' }}
+          {{ dependenceGraphOptions.showThrough ? '▼' : '▶' }}
         </span>
         <span class="dropdown-title">  
           Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
@@ -267,7 +267,7 @@ watch (
     </div>
 
     <Transition name="fold" appear>
-      <div v-show="showPerformance" class="summary-card compact">
+      <div v-show="dependenceGraphOptions.showThrough" class="summary-card compact">
         <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
           <div class="bottleneck-index">{{ index + 1 }}: </div>
           <div class="bottleneck-text">{{ bottleneck }}</div>
@@ -575,7 +575,7 @@ watch (
 
 .bottleneck-item {
   display: flex;
-  padding: 0.75rem 1rem;
+  padding: 0.25rem 1rem;
   border-bottom: 1px solid #f1f3f4;
   background: #f8f9fa;
 }
@@ -588,7 +588,7 @@ watch (
   min-width: 40px;
   color: #5f6368;
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 0.95em;
 }
 
 .bottleneck-text {
