@@ -34,8 +34,9 @@
   const showPerformance        = ref(false);
   const showFullScreen         = ref(false);
 
+  let performanceData       = null
   let graphTimeout          = null
-  let cleanupHandleGraph    = null;
+  let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
 
   // Save on changes
@@ -154,10 +155,10 @@ watch (
       return;
     }
     try {
+      performanceData = data
       console.log('✅ Performance Analysis obtained')
     } catch (error) {
-      console.error('Failed to generate SVG for graphviz Dependence Graph:', error)
-      dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
+      console.error('Error handling performance analysis:', error)
     }
   }
 
@@ -195,12 +196,8 @@ watch (
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
-  const showHelp1    = ref(false);
-  const showHelp2    = ref(false);
-  const showHelp3    = ref(false);
-  const helpIcon1    = ref(null);
-  const helpIcon2    = ref(null);
-  const helpIcon3    = ref(null);
+  const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
+  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
@@ -216,8 +213,6 @@ watch (
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        
-        <!-- Title -->
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
@@ -225,29 +220,68 @@ watch (
       </div>
     </div>
 
+    <!-- Summary Cards -->
+    <div class="performance-summary">
+      <div class="summary-card">
+        <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
+        <div class="card-content">
+          <div class="metric-row">
+            <span class="metric-label">Performance Bound:</span>
+            <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
+              {{ performanceData['performance-bound'] }}
+            </span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Latency Time:</span>
+            <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Throughput Time:</span>
+            <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Best Time:</span>
+            <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottlenecks Section -->
     <div class="dropdown-wrapper">
-      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help" >
-         <img src="/img/info.png" class="info-img">
+      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+        <img src="/img/info.png" class="info-img">
       </span>
       <button class="dropdown-header" @click="toggleAnnotations" title="Show Throughput limits" :aria-expanded="showPerformance">
         <span class="arrow" aria-hidden="true">
           {{ showPerformance ? '▼' : '▶' }}
         </span>
         <span class="dropdown-title">
-          Throughput-bound Limits
+          Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
         </span>
       </button>
     </div>
+
     <Transition name="fold" appear>
-      <pre v-show="showPerformance" id="performance-limits" class="annotations-box"></pre>
-    </Transition>
+    <div v-show="showPerformance" class="annotations-box">
+      <div v-if="performanceData['Throughput-Bottlenecks'] && performanceData['Throughput-Bottlenecks'].length > 0" class="bottlenecks-list">
+        <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
+          <div class="bottleneck-index">#{{ index + 1 }}</div>
+          <div class="bottleneck-text">{{ bottleneck }}</div>
+        </div>
+      </div>
+      <div v-else class="no-bottlenecks">
+        No throughput bottlenecks detected
+      </div>
+    </div>
+  </Transition>
     
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
         <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="dropdown-title">Data Dependence Graph</span>
+        <span class="dropdown-title"> Latency-bound Limits </span>
 
         <div class="controls">
           <div class="iters-group">
@@ -451,14 +485,129 @@ watch (
     margin:      0;
   }
   
-  .annotations-box {
-    white-space: pre-wrap;
-    background:  #f3f3f3;
-    padding:     10px;
-    margin-top:  0;
-    font-size:   0.8rem;
-    line-height: 1.2;
-    border-radius: 0 0 5px 5px;
-  }
-  
+
+/* suggested by IA */
+.performance-analysis {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.performance-summary {
+  margin: 1rem 0;
+}
+
+.summary-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.metric-value {
+  color: #202124;
+  font-weight: 600;
+}
+
+.metric-value.highlight {
+  color: #1a73e8;
+  font-size: 1.1em;
+}
+
+.metric-value.latency-bound {
+  color: #d93025;
+  background: #fce8e6;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.metric-value.throughput-bound {
+  color: #188038;
+  background: #e6f4ea;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.bottlenecks-list {
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bottleneck-item {
+  display: flex;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f3f4;
+  background: #f8f9fa;
+}
+
+.bottleneck-item:last-child {
+  border-bottom: none;
+}
+
+.bottleneck-index {
+  min-width: 40px;
+  color: #5f6368;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.bottleneck-text {
+  flex: 1;
+  color: #202124;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.no-bottlenecks {
+  text-align: center;
+  color: #5f6368;
+  font-style: italic;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border: 1px dashed #dadce0;
+  border-radius: 8px;
+}
+
+.annotations-box {
+  margin-top: 0.5rem;
+}
+
+/* Fold transition */
+.fold-enter-active, .fold-leave-active {
+  transition: all 0.3s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.fold-enter-from, .fold-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
 </style>
