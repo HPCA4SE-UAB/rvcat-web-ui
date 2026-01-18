@@ -162,10 +162,7 @@ watch (
       return;
     }
     try {
-      console.log('📥 Data received:', data)
-      console.log('📊 Current performanceData:', performanceData.value)
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
-      console.log('🔄 Updated performanceData:', performanceData.value)
       console.log('✅ Performance Analysis updated')
     } catch (error) {
       console.error('Error handling performance analysis:', error)
@@ -231,7 +228,6 @@ watch (
 
 <div class="performance-summary">
   <div class="summary-card compact">
-    <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
     <div class="metrics-grid">
       <div class="metric-item">
         <span class="metric-label">Bound:</span>
@@ -241,15 +237,15 @@ watch (
       </div>
       <div class="metric-item">
         <span class="metric-label">Latency:</span>
-        <span class="metric-value">{{ performanceData.LatencyTime }}c</span>
+        <span class="metric-value">{{ performanceData.LatencyTime }}cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Throughput:</span>
-        <span class="metric-value">{{ performanceData.ThroughputTime }}c/i</span>
+        <span class="metric-value">{{ performanceData.ThroughputTime }}cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Best:</span>
-        <span class="metric-value highlight">{{ performanceData.BestTime }}c/i</span>
+        <span class="metric-value highlight">{{ performanceData.BestTime }}cycles/iteration</span>
       </div>
     </div>
   </div>
@@ -534,7 +530,7 @@ watch (
 }
 
 .metric-label {
-  font-size: 0.8em;
+  font-size: 0.95em;
   color: #6c757d;
   margin-bottom: 0.1rem;
 }
