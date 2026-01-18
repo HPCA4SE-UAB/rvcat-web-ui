@@ -160,7 +160,7 @@
 
   async function confirmModal() {
     const name = modalName.value.trim();
-    if (simState.availablePrograms.includes(name)) {
+    if (simState.availablePrograms.value.includes(name)) {
       nameError.value = "A program with this name already exists. Please, choose another one.";
       return;
     }
