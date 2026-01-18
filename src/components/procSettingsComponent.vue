@@ -45,18 +45,7 @@
   const modalDownload = ref(true);
   const nameError     = ref("");
 
-  // --- tutorial state ---
-  const showTutorial1   = ref(false);
-  const showTutorial2   = ref(false);
-  const showTutorial3   = ref(false);
-  const showTutorial4   = ref(false);
-  const infoIcon1       = ref(null);
-  const infoIcon2       = ref(null);
-  const infoIcon3       = ref(null);
-  const infoIcon4       = ref(null);
-  const tutorialPosition= ref({ top: '0%', left: '0%' });
-
-  // --- load & update processor settings ---
+    // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
     const thisId = ++lastRequestId;
     if (typeof getProcessorJSON !== "function") return;
@@ -446,7 +435,7 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Processor Settings - {{ name }}</span>
+        <span class="header-title">Processor Settings - <strong>{{  simState.selectedProgram }}</strong></span>
       </div>
 
       <div class="buttons">
