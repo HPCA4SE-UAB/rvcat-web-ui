@@ -228,28 +228,27 @@ watch (
       </div>
     </div>
 
-      <div class="performance-summary">
-        <div class="summary-card">
-          <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
-          <div class="card-content">
-            <div class="metric-row">
-              <span class="metric-label">Performance Bound:</span>
-              <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
-                {{ performanceData['performance-bound'] }}
-              </span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-label">Latency Time:</span>
-              <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-label">Throughput Time:</span>
-              <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-label">Best Time:</span>
-              <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
-            </div>
+    <div class="performance-summary">
+      <div class="summary-card">
+        <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
+        <div class="card-content">
+          <div class="metric-row">
+            <span class="metric-label">Performance Bound:</span>
+            <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
+              {{ performanceData['performance-bound'] }}
+            </span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Latency Time:</span>
+            <span class="metric-value">{{ performanceData.LatencyTime }} cycles</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Throughput Time:</span>
+            <span class="metric-value">{{ performanceData.ThroughputTime }} cycles/iteration</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Best Time:</span>
+            <span class="metric-value highlight">{{ performanceData.BestTime }} cycles/iteration</span>
           </div>
         </div>
       </div>
@@ -270,19 +269,19 @@ watch (
       </button>
     </div>
 
-  <Transition name="fold" appear>
-    <div v-show="showPerformance" class="annotations-box">
-      <div v-if="performanceData['Throughput-Bottlenecks'] && performanceData['Throughput-Bottlenecks'].length > 0" class="bottlenecks-list">
-        <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
-          <div class="bottleneck-index">#{{ index + 1 }}</div>
-          <div class="bottleneck-text">{{ bottleneck }}</div>
+    <Transition name="fold" appear>
+      <div v-show="showPerformance" class="annotations-box">
+        <div v-if="performanceData['Throughput-Bottlenecks'] && performanceData['Throughput-Bottlenecks'].length > 0" class="bottlenecks-list">
+          <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
+            <div class="bottleneck-index">#{{ index + 1 }}</div>
+            <div class="bottleneck-text">{{ bottleneck }}</div>
+          </div>
+        </div>
+        <div v-else class="no-bottlenecks">
+          No throughput bottlenecks detected
         </div>
       </div>
-      <div v-else class="no-bottlenecks">
-        No throughput bottlenecks detected
-      </div>
-    </div>
-  </Transition>
+    </Transition>
           
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
