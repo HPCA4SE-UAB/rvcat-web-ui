@@ -215,6 +215,18 @@ watch (
   function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
   function closeHelp3() { showHelp3.value  = false }
 
+  // Method to determine CSS class based on performance bound
+  const getBoundClass = (bound) => {
+    switch(bound) {
+      case 'LATENCY':
+        return 'latency-bound'
+      case 'THROUGHPUT':
+        return 'throughput-bound'
+      default:
+        return ''
+    }
+  }
+  
 </script>
 
 <template>
