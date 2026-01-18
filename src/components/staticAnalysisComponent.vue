@@ -34,11 +34,19 @@
   const showPerformance        = ref(false);
   const showFullScreen         = ref(false);
 
-  let performanceData       = null
   let graphTimeout          = null
   let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
 
+  const performanceData = ref({
+    name: "No data",
+    LatencyTime: 0.0,
+    ThroughputTime: 0.0,
+    "performance-bound": "N/A",
+    BestTime: 0.0,
+    "Throughput-Bottlenecks": []
+  })
+  
   // Save on changes
   const saveOptions = () => {
     try {
@@ -217,20 +225,9 @@ watch (
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Static Performance Analysis</span>
-        <span v-if="!performanceData" class="loading-badge">Loading...</span>
       </div>
     </div>
-    
-    <!-- Mostrar placeholder mientras carga -->
-    <div v-if="!performanceData || performanceData.name === 'No data'" class="empty-state">
-      <div class="empty-icon">📊</div>
-      <p>Run analysis to see performance data</p>
-      <button @click="runAnalysis" class="run-analysis-btn">
-        Run Performance Analysis
-      </button>
-    </div>
-    <!-- Mostrar datos cuando estén disponibles -->
-    <div v-else class="performance-content">
+
       <div class="performance-summary">
         <div class="summary-card">
           <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
@@ -267,16 +264,13 @@ watch (
         <span class="arrow" aria-hidden="true">
           {{ showPerformance ? '▼' : '▶' }}
         </span>
-        <div v-if="!performanceData || performanceData.name === 'No data'" class="empty-state">
-          <div class="empty-icon">📊</div>
-          <p>Run analysis to see performance data</p>
-        </div>
-        <div v-else class="performance-content">    
-          <span class="dropdown-title">  
-            Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
-          </span>
+        <span class="dropdown-title">  
+          Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
+        </span>
+      </button>
+    </div>
 
-    <Transition name="fold" appear>
+  <Transition name="fold" appear>
     <div v-show="showPerformance" class="annotations-box">
       <div v-if="performanceData['Throughput-Bottlenecks'] && performanceData['Throughput-Bottlenecks'].length > 0" class="bottlenecks-list">
         <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
@@ -290,12 +284,6 @@ watch (
     </div>
   </Transition>
           
-        </div>
-      </button>
-    </div>
-
-
-    
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
         <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
