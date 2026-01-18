@@ -38,7 +38,7 @@
   let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
 
-  let performanceData = ref({
+  const performanceData = ref({
     name: "No data",
     LatencyTime: 0.0,
     ThroughputTime: 0.0,
@@ -163,7 +163,7 @@ watch (
       return;
     }
     try {
-      performanceData = data
+      performanceData.value = data
       console.log('✅ Performance Analysis obtained')
     } catch (error) {
       console.error('Error handling performance analysis:', error)
