@@ -225,13 +225,12 @@ watch (
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Static Performance Analysis</span>
+        <span class="header-title">Static Performance Analysis: <strong>{{ performanceData.name }}</strong></span>
       </div>
     </div>
 
     <div class="performance-summary">
       <div class="summary-card">
-        <div class="card-title">Analysis: <strong>{{ performanceData.name }}</strong></div>
         <div class="card-content">
           <div class="metric-row">
             <span class="metric-label">Performance Bound:</span>
