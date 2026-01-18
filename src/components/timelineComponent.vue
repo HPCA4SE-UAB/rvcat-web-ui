@@ -94,7 +94,7 @@
   function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
   function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 7) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
-  
+ 
   // Watch ALL graph options for changes
   watch(timelineOptions, () => {
     clearTimeout(canvasTimeout)
@@ -743,11 +743,11 @@
          </div>
          <div class="iters-group">
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
-                title="Zoom Out" @click="ZoomReduce">
+                title="Zoom Out" @click="zoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
-                title="Zoom In" @click="ZoomIncrease">
+                title="Zoom In" @click="zoomIncrease">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
