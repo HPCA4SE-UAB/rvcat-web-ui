@@ -741,16 +741,18 @@
             <span class="iters-label">Iterations:</span>
             <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iters">
          </div>
+        
          <div class="iters-group">
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 7 }" :disabled="timelineOptions.zoomLevel == 7"
                 title="Zoom Out" @click="zoomReduce">
                 <img src="/img/zoom-out.png">
             </button>
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel }" :aria-pressed="timelineOptions.zoomLevel"
+            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
                 title="Zoom In" @click="zoomIncrease">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
+ 
          <div class="iters-group">
            <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts" 
               title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="timelineOptions.showPorts">✔ </span>Port Usage</button>
