@@ -280,15 +280,15 @@ nav ul li {
 .grid-item {
   position:      relative;
   background:    white;
-  border-radius: 6px;
+  border-radius: 3px;
   min-width:     0;
 }
 
   /* Componente procesador normal */
 .grid-item.processor {
+  display:       grid;
   grid-column:   1;
   overflow:      hidden;
-  border:        1px solid #ddd;
 }
 
 /* Componente procesador en pantalla completa */
