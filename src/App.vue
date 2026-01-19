@@ -141,6 +141,8 @@
     font-weight:   600;
     white-space:   nowrap;
     flex-shrink:   1;
+    max-height: fit-content;
+    max-width: fit-content;
 
     transition: 
       background 0.15s ease, 
