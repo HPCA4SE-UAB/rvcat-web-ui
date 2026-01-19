@@ -1,7 +1,6 @@
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, computed } from 'vue';
 
-import headerComponent         from '@/components/headerComponent.vue';
 import processorComponent      from '@/components/processorComponent.vue';
 import programComponent        from '@/components/programComponent.vue';
 import timelineComponent       from '@/components/timelineComponent.vue';
@@ -133,8 +132,7 @@ function toggleProcessorFullscreen() {
         <nav>
           <ul>
             <li>
-              <button class="blue-button" title="Simulate Program's execution"
-                class="fullscreen-btn" :class="{ 'active': isProcessorFullscreen }" 
+              <button class="blue-button" title="Simulate Program's execution" :class="{ 'active': isProcessorFullscreen }" 
                 @click="toggleProcessorFullscreen" >
                   {{ fullscreenButtonText }}
               </button>
@@ -419,8 +417,6 @@ nav ul li {
 .close-fullscreen-btn:hover {
   background: #ff5252;
 }
-
-
 
 /* Asegurar que el contenido del procesador sea visible */
 .grid-item.processor.fullscreen .processor-content {
