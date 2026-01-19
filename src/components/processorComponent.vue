@@ -175,15 +175,8 @@
     }
   }
 
-  function insert_cache_annotations(cache) {
-    if (cache.nBlocks>0){
-      document.getElementById('cache-info').innerHTML=`
-       <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. Miss Issue time: ${cache.mIssueTime}</span>`;
-    }
-    else {
-      document.getElementById('cache-info').innerHTML="<b>Processor does not simulate a cache memory.</b>";
-    }
-  }
+/* <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. 
+   Miss Issue time: ${cache.mIssueTime}</span>`; */
 
   function get_processor_dot(dispatch_width, num_ports, retire_width, rob_size, cache) {
     let dot_code = `
@@ -329,7 +322,6 @@
     </div>
 
     <div class="pipeline-container">
-      <div class="cache-info" id="cache-info"></div>
       <div class="pipeline-img">
         <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
       </div>
@@ -349,19 +341,13 @@
 <style scoped> 
   .pipeline-container {
     width:   100%;
-    height:  100%;
-    padding: 2px;
+    height:  80%;
   }
   .pipeline-img {
-    width:           95%;
-    height:          50px;
+    width:           100%;
+    height:          100%;
     display:         flex;
-    align-items:     stretch;
-    justify-content: center;
-    overflow:        hidden;
-    position:        relative;
-    margin:          1px auto;
-    margin-top:      5%;
+    overflow:        auto;
   }
   .pipeline-img :deep(svg) {
     width:      100% !important;
@@ -386,18 +372,6 @@
     stroke-width: 2px !important;
   }
 
-  .cache-info {
-    flex:          1;
-    display:       flex;
-    align-items:   center;
-    padding:       4px 10px;
-    background:    #f8f8f8;
-    border-radius: 6px;
-    margin-top:    5px;
-    font-size:     0.9rem;
-    justify-content: space-between;
-  }
-  
   #rob-size {
     max-width: 20%;
     font-size: 2.0vh;
