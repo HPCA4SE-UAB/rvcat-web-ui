@@ -28,9 +28,13 @@ const showOverlay       = ref(true);
 const loadingMessage    = ref('Initializing');
 
 // full screen mode
-const isProcessorFullscreen = ref(false);
-const fullscreenButtonText = computed(() => 
-  isProcessorFullscreen.value ? 'Exit Fullscreen' : 'Fullscreen Processor'
+const isFullscreen = ref(false);
+const isProcessor  = ref(false);
+const fullProcessorButtonText  = computed(() => 
+  (isFullscreen.value && isProcessor.value)? 'Exit Processor Edit' : 'Edit Processor'
+);
+const fullProgramButtonText  = computed(() => 
+  (isFullscreen.value && !isProcessor.value)? 'Exit Program Edit' : 'Edit Program'
 );
 
 // Map of component keys -> component definitions
@@ -113,12 +117,25 @@ watch(isReady, (ready) => {
 })
 
 function toggleProcessorFullscreen() {
-  isProcessorFullscreen.value = !isProcessorFullscreen.value;
-  if (isProcessorFullscreen.value) {
+  if (!isFullscreen.value) {
+    isFullscreen.value= true
+    isProcessor.value = true
     document.querySelector('.grid-item.processor').scrollIntoView({ behavior: 'smooth' });
   }
+  else  if (isProcessor.value)
+    isFullscreen.value= false
 }
   
+function toggleProgramFullscreen() {
+  if (!isFullscreen.value) {
+    isFullscreen.value= true
+    isProcessor.value = false
+    document.querySelector('.grid-item.program').scrollIntoView({ behavior: 'smooth' });
+  }
+  else if (!isProcessor.value)
+    isFullscreen.value= false
+}
+
 </script>
 
 <template>
@@ -130,9 +147,17 @@ function toggleProcessorFullscreen() {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Open Full Processor Window. Configure Processor's settings." :class="{ 'active': isProcessorFullscreen }" 
+            <button class="blue-button" title="Open Full Processor Window. Configure Processor's settings." 
+              :class="{ 'active': isFullscreen && isProcessor }" 
               @click="toggleProcessorFullscreen" >
-                {{ fullscreenButtonText }}
+                {{ fullProcessorButtonText }}
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Open Full Program Window. Edit Program." 
+              :class="{ 'active': isFullscreen && !isProcessor}" 
+              @click="toggleProgramFullscreen" >
+                {{ fullProgramButtonText }}
             </button>
           </li>
           <li>
@@ -182,22 +207,17 @@ function toggleProcessorFullscreen() {
       <p>Please wait. Loading can take several seconds</p>
     </div>
     
-    <main class="container" :class="{ 'processor-fullscreen': isProcessorFullscreen }">
+    <main class="container" :class="{ 'processor-fullscreen': isFullscreen }">
 
-      <!-- Processor Component -->
-      <div class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
+      <div v-show="!isFullscreen || isProcessor" class="grid-item processor" :class="{ 'fullscreen': isFullscreen && isProcessor }">
         <processorComponent />
       </div>
       
-      <button class="blue-button" title="Close full screen" v-show="isProcessorFullscreen" @click="toggleProcessorFullscreen" >
-          ✕ Close
-      </button>
-      
-      <div v-show="!isProcessorFullscreen" class="grid-item program">
+      <div v-show="!isFullscreen || !isProcessor" class="grid-item program" :class="{ 'fullscreen': isFullscreen && !isProcessor }">
         <programComponent />
       </div>
       
-      <div v-show="!isProcessorFullscreen" class="grid-item results">
+      <div v-show="!isFullscreen" class="grid-item results">
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
         <div v-else>Component not found</div>
       </div>
@@ -258,7 +278,7 @@ nav ul li {
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 34% 65%;
+  grid-template-columns: 34% 65.5%;
   grid-auto-rows:        48% 52%;
   gap:          0.5vh;
   width:        100vw;
@@ -270,21 +290,37 @@ nav ul li {
   box-sizing:   border-box;
   transition:   all 0.3s ease;
 }
+  
+.processor { grid-column: 1; grid-row: 1; }
+.program   { grid-column: 1; grid-row: 2; }
+.results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
-/* Layout en modo pantalla completa */
 .container.processor-fullscreen {
   grid-template-columns: 1fr;
   grid-template-rows:    1fr;
   position: fixed; /* Contenedor fijo */
-  top: 80px; /* Debajo del header */
-  left: 0;
-  right: 0;
+  top:    40px;    /* Debajo del header */
+  left:   0;
+  right:  0;
   bottom: 0;
   background: white;
   z-index: 999;
-  padding: 0; /* Sin padding en fullscreen */
+  padding: 0;    /* Sin padding en fullscreen */
 }
-  
+
+.container.program-fullscreen {
+  grid-template-columns: 1fr;
+  grid-template-rows:    1fr;
+  position: fixed; /* Contenedor fijo */
+  top:    40px;    /* Debajo del header */
+  left:   0;
+  right:  0;
+  bottom: 0;
+  background: white;
+  z-index: 999;
+  padding: 0;    /* Sin padding en fullscreen */
+}
+
 .grid-item {
   position:      relative;
   background:    white;
@@ -292,13 +328,15 @@ nav ul li {
   min-width:     0;
 }
 
-  /* Componente procesador normal */
-.grid-item.processor {
+ .grid-item.processor {
   display:  grid;
   overflow: hidden;
 }
+.grid-item.program,
+.grid-item.results {
+  display:    grid;
+}
 
-/* Componente procesador en pantalla completa */
 .grid-item.processor.fullscreen {
   grid-column:   1 / span 3;
   grid-row:      1;
@@ -314,10 +352,6 @@ nav ul li {
   border:        none;
   box-shadow:    0 0 10px rgba(0,0,0,0.3);
 }
-  
-.processor { grid-column: 1; grid-row: 1; }
-.program   { grid-column: 1; grid-row: 2; }
-.results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
 /* Ocultar otros componentes en pantalla completa */
 .container.processor-fullscreen .grid-item.program,
@@ -325,11 +359,28 @@ nav ul li {
   display: none;
 }
   
-/* Asegurar que cuando NO esté en fullscreen, los componentes sean visibles */
-.grid-item.program,
-.grid-item.results {
-  display:    grid;
+.grid-item.program.fullscreen {
+  grid-column:   1 / span 3;
+  grid-row:      1;
+  height: 100%;
+  width:  100%;
+  position:      relative;
+  top:           0;
+  left:          0;
+  right:         0;
+  bottom:        0;
+  z-index:       999;
+  border-radius: 0;
+  border:        none;
+  box-shadow:    0 0 10px rgba(0,0,0,0.3);
 }
+
+  /* Ocultar otros componentes en pantalla completa */
+.container.program-fullscreen .grid-item.processor,
+.container.program-fullscreen .grid-item.results {
+  display: none;
+}
+
   
 .blur-overlay {
   top:      0;
@@ -388,5 +439,24 @@ nav ul li {
   background: #888;
   border-radius: 5px;
 }
-  
+
+.grid-item.program.fullscreen .processor-content {
+  padding:   0px;
+  max-width: 1400px;
+  margin:    0 auto;
+}
+
+.grid-item.program.fullscreen::-webkit-scrollbar {
+  width: 10px;
+}
+
+.grid-item.program.fullscreen::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.grid-item.program.fullscreen::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
 </style>
