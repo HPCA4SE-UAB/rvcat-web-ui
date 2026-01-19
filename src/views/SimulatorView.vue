@@ -95,7 +95,6 @@ onMounted(() => {
       showOverlay.value    = true
   });
   
-  // Register processors handler
   cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
 });
 
@@ -260,9 +259,9 @@ nav ul li {
   display:               grid;
   grid-template-columns: 34% 64%;
   grid-auto-rows:        50% 50%;
-  gap:            2vh;
+  gap:          0.5vh;
   width:        100vw;
-  height:        95vh;
+  height:        98vh;
   margin-top:   0.5vh;
   margin-right: 0.5vh;
   background:   #e3e3e3;
