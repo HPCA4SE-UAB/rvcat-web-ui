@@ -197,11 +197,11 @@ function toggleProcessorFullscreen() {
         </button>
       </div>
       
-      <div v-if="!isProcessorFullscreen" class="grid-item program">
+      <div v-show="!isProcessorFullscreen" class="grid-item program">
         <programComponent />
       </div>
       
-      <div v-if="!isProcessorFullscreen" class="grid-item results">
+      <div v-show="!isProcessorFullscreen" class="grid-item results">
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
         <div v-else>Component not found</div>
       </div>
@@ -320,6 +320,25 @@ nav ul li {
 .program   { grid-column: 1; grid-row: 2; }
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
+/* Ocultar otros componentes en pantalla completa */
+.container.processor-fullscreen .grid-item.program,
+.container.processor-fullscreen .grid-item.results {
+  display: none;
+
+    /* Other option
+     visibility: hidden;
+     opacity: 0;
+     pointer-events: none;
+  */
+}
+  
+/* Asegurar que cuando NO esté en fullscreen, los componentes sean visibles */
+.grid-item.program,
+.grid-item.results {
+  display:    grid;
+  transition: opacity 0.3s ease;
+}
+  
 .blur-overlay {
   top:      0;
   left:     0;
@@ -401,11 +420,7 @@ nav ul li {
   background: #ff5252;
 }
 
-/* Ocultar otros componentes en pantalla completa */
-.container.processor-fullscreen .grid-item.program,
-.container.processor-fullscreen .grid-item.results {
-  display: none;
-}
+
 
 /* Asegurar que el contenido del procesador sea visible */
 .grid-item.processor.fullscreen .processor-content {
