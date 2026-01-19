@@ -125,11 +125,58 @@ function toggleProcessorFullscreen() {
 <template>
   <body>
     <header>
-      <headerComponent :activeView="currentKey"  @requestSwitch="onRequestSwitch" />
-      <!--Full Screen Button -->
-      <button  @click="toggleProcessorFullscreen" class="fullscreen-btn" :class="{ 'active': isProcessorFullscreen }" >
-        {{ fullscreen }}
-      </button>
+      <div id="top"
+        <div class="header-title">
+          <img src="/img/favicon.png" class="title-img">
+          <h1>RVCAT-WEB</h1>
+        </div>
+        <nav>
+          <ul>
+            <li>
+              <button class="blue-button" title="Simulate Program's execution"
+                class="fullscreen-btn" :class="{ 'active': isProcessorFullscreen }" 
+                @click="toggleProcessorFullscreen" >
+                  {{ fullscreenButtonText }}
+              </button>
+            </li>
+            <li>
+              <button class="blue-button" title="Simulate Program's execution"
+                :class="{ active: currentKey === 'simulationComponent' }"
+                @click="onRequestSwitch('simulationComponent')" > 
+                  Simulation
+              </button>
+            </li>
+            <li>
+              <button class="blue-button" title="Static Performance Analysis"
+                :class="{ active: currentKey === 'staticAnalysisComponent' }"
+                @click="onRequestSwitch('staticAnalysisComponent')" >
+                  Static Analysis
+              </button>
+            </li>
+            <li>
+              <button class="blue-button" title="Detailed Timeline of Program's execution"
+                :class="{ active: currentKey === 'timelineComponent' }"
+                @click="onRequestSwitch('timelineComponent')" >
+                  Timeline
+              </button>
+            </li>
+            <li>
+              <button class="blue-button" title="Configure Processor's settings"
+              :class="{ active: currentKey === 'procSettingsComponent' }"
+              @click="onRequestSwitch('procSettingsComponent')" >
+                Processor
+              </button>
+            </li>
+            <li>
+              <button class="blue-button" title="Information about this tool"
+              :class="{ active: currentKey === 'aboutComponent' }"
+              @click="onRequestSwitch('aboutComponent')" >
+                About
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
@@ -174,7 +221,45 @@ function toggleProcessorFullscreen() {
 </template>
 
 <style scoped>
+#top {
+  max-height: 5vh;
+  width:      100vw;
+  padding:    0.6%;
+  display:    flex;
+  color:      white;
+  padding:    10px 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  align-items:     center;
+  justify-content: space-between;
+  background-color: #007acc;
+}
+
+h1 {
+  margin: 0;
+  font-size: 4vh;
+}
+
+nav ul {
+  list-style: none;
+  padding:    0;
+  margin:     0;
+  display:    flex;
+}
+nav ul li {
+  margin: 0 5px;
+}
   
+.title-img {
+  height:     4vh;
+  margin-top: 0.25vh;
+}
+  
+.header-title {
+  display:flex;
+  gap: 5px;
+}
+
 .container {
   position:              relative;
   display:               grid;
