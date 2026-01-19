@@ -288,7 +288,7 @@ nav ul li {
   /* Componente procesador normal */
 .grid-item.processor {
   display:       grid;
-  // overflow:      hidden;
+  /* overflow:      hidden; */
 }
 
 /* Componente procesador en pantalla completa */
