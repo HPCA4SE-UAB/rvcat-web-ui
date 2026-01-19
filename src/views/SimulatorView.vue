@@ -223,8 +223,8 @@ function toggleProcessorFullscreen() {
   padding:    0.6%;
   display:    flex;
   color:      white;
-  padding:    10px 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  padding:    20px 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
   align-items:     center;
   justify-content: space-between;
@@ -232,10 +232,9 @@ function toggleProcessorFullscreen() {
 }
 
 h1 {
-  margin: 0;
+  margin:    0;
   font-size: 4vh;
 }
-
 nav ul {
   list-style: none;
   padding:    0;
@@ -253,13 +252,13 @@ nav ul li {
   
 .header-title {
   display:flex;
-  gap: 5px;
+  gap:    5px;
 }
 
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 35% 65%;
+  grid-template-columns: 34% 64%;
   grid-auto-rows:        50% 50%;
   gap:            2vh;
   width:        100vw;
@@ -288,12 +287,8 @@ nav ul li {
   /* Componente procesador normal */
 .grid-item.processor {
   grid-column:   1;
-  overflow:      auto;
+  overflow:      hidden;
   border:        1px solid #ddd;
-  border-radius: 4px;
-  background:    white;
-  transition:    all 0.3s ease;
-  position:      relative;
 }
 
 /* Componente procesador en pantalla completa */
@@ -301,7 +296,7 @@ nav ul li {
   grid-column:   1 / span 3;
   grid-row:      1;
   position:      fixed;
-  top:           10px; /* Altura del header */
+  top:           5px; /* Altura del header */
   left:          0;
   right:         0;
   bottom:        0;
@@ -320,19 +315,12 @@ nav ul li {
 .container.processor-fullscreen .grid-item.program,
 .container.processor-fullscreen .grid-item.results {
   display: none;
-
-    /* Other option
-     visibility: hidden;
-     opacity: 0;
-     pointer-events: none;
-  */
 }
   
 /* Asegurar que cuando NO esté en fullscreen, los componentes sean visibles */
 .grid-item.program,
 .grid-item.results {
   display:    grid;
-  transition: opacity 0.3s ease;
 }
   
 .blur-overlay {
