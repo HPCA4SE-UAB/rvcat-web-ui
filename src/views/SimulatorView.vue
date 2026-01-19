@@ -176,9 +176,9 @@ function toggleProcessorFullscreen() {
 <style scoped>
   
 .container {
-  position: relative;
-  display:  grid;
-  grid-template-columns: 34% 64%;
+  position:              relative;
+  display:               grid;
+  grid-template-columns: 35% 65%;
   grid-auto-rows:        50% 50%;
   gap:            2vh;
   width:        100vw;
@@ -194,13 +194,13 @@ function toggleProcessorFullscreen() {
 /* Layout en modo pantalla completa */
 .container.processor-fullscreen {
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  grid-template-rows:    1fr;
 }
   
 .grid-item {
   position:      relative;
   background:    white;
-  border-radius: 10px;
+  border-radius: 6px;
   min-width:     0;
 }
 
@@ -209,7 +209,7 @@ function toggleProcessorFullscreen() {
   grid-column:   1;
   overflow:      auto;
   border:        1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 4px;
   background:    white;
   transition:    all 0.3s ease;
   position:      relative;
@@ -219,15 +219,15 @@ function toggleProcessorFullscreen() {
 .grid-item.processor.fullscreen {
   grid-column:   1 / span 3;
   grid-row:      1;
-  position:     fixed;
-  top:           60px; /* Altura del header */
+  position:      fixed;
+  top:           10px; /* Altura del header */
   left:          0;
   right:         0;
   bottom:        0;
   z-index:       999;
   border-radius: 0;
   border:        none;
-  box-shadow:    0 0 30px rgba(0,0,0,0.3);
+  box-shadow:    0 0 10px rgba(0,0,0,0.3);
   overflow-y:    auto;
 }
   
