@@ -27,6 +27,12 @@ const settingsCompInst  = ref(null);
 const showOverlay       = ref(true);
 const loadingMessage    = ref('Initializing');
 
+// full screen mode
+const isProcessorFullscreen = ref(false);
+const fullscreenButtonText = computed(() => 
+  isProcessorFullscreen.value ? 'Exit Fullscreen' : 'Fullscreen Processor'
+);
+
 // Map of component keys -> component definitions
 const components = {
   timelineComponent,
@@ -106,16 +112,24 @@ watch(isReady, (ready) => {
       importRVCAT();  // from RVCAT API
   }
 })
- 
+
+function toggleProcessorFullscreen() {
+  isProcessorFullscreen.value = !isProcessorFullscreen.value;
+  if (isProcessorFullscreen.value) {
+    document.querySelector('.grid-item.processor').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+  
 </script>
 
 <template>
   <body>
     <header>
-      <headerComponent
-        :activeView="currentKey"
-        @requestSwitch="onRequestSwitch"
-      />
+      <headerComponent :activeView="currentKey"  @requestSwitch="onRequestSwitch" />
+      <!--Full Screen Button -->
+      <button  @click="toggleProcessorFullscreen" class="fullscreen-btn" :class="{ 'active': isProcessorFullscreen }" >
+        {{ fullscreen }}
+      </button>
     </header>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
@@ -125,19 +139,23 @@ watch(isReady, (ready) => {
       <p>Please wait. Loading can take several seconds</p>
     </div>
     
-    <main class="container">
-      <div class="grid-item processor">
+    <main class="container" :class="{ 'processor-fullscreen': isProcessorFullscreen }">
+      
+      <!-- Processor Component -->
+      <div class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
         <processorComponent />
+        <!-- Close button -->
+        <button v-if="isProcessorFullscreen" @click="toggleProcessorFullscreen" class="close-fullscreen-btn" >
+          ✕ Close
+        </button>
       </div>
-      <div class="grid-item program">
+      
+      <div v-if="!isProcessorFullscreen" class="grid-item program">
         <programComponent />
       </div>
-      <div class="grid-item results">
-        <component
-          :is="currentComponent"
-          v-if="currentComponent"
-          ref="settingsCompInst"
-        />
+      
+      <div v-if="!isProcessorFullscreen" class="grid-item results">
+        <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
         <div v-else>Component not found</div>
       </div>
 
@@ -146,7 +164,7 @@ watch(isReady, (ready) => {
           <p>You should apply (save) the changes on the processor settings before leaving this page.</p>
           <p><b>Do you want to continue?</b></p>
           <div class="modal-actions">
-            <button @click="confirmLeave" title="Leave" class="blue-button">OK</button>
+            <button @click="confirmLeave" title="Leave"  class="blue-button">OK</button>
             <button @click="cancelLeave"  title="Cancel" class="blue-button">Cancel</button>
           </div>
         </div>
@@ -156,6 +174,7 @@ watch(isReady, (ready) => {
 </template>
 
 <style scoped>
+  /*
 .container {
   position: relative;
   display:  grid;
@@ -169,13 +188,59 @@ watch(isReady, (ready) => {
   background:   #e3e3e3;
   overflow:     hidden;
   box-sizing:   border-box;
+} */
+
+/* Layout en modo normal */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  gap: 15px;
+  height: calc(100vh - 60px);
+  padding: 15px;
+  transition: all 0.3s ease;
 }
+
+/* Layout en modo pantalla completa */
+.container.processor-fullscreen {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+  
 .grid-item {
   position:      relative;
   background:    white;
   border-radius: 10px;
   min-width:     0;
 }
+
+  /* Componente procesador normal */
+.grid-item.processor {
+  grid-column: 1;
+  overflow:    auto;
+  border:      1px solid #ddd;
+  border-radius: 8px;
+  background:    white;
+  transition:    all 0.3s ease;
+  position:      relative;
+}
+
+/* Componente procesador en pantalla completa */
+.grid-item.processor.fullscreen {
+  grid-column: 1 / span 3;
+  grid-row:    1;
+  position:    fixed;
+  top:         60px; /* Altura del header */
+  left:        0;
+  right:       0;
+  bottom:      0;
+  z-index:     999;
+  border-radius: 0;
+  border:        none;
+  box-shadow:    0 0 30px rgba(0,0,0,0.3);
+  overflow-y:    auto;
+}
+  
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
@@ -218,4 +283,74 @@ watch(isReady, (ready) => {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.fullscreen-btn {
+  position: absolute;
+  top:      15px;
+  right:    15px;
+  padding:  8px 16px;
+  background: #4a6fa5;
+  color:      white;
+  border:     none;
+  border-radius: 4px;
+  cursor:        pointer;
+  font-size:     14px;
+  transition:    all 0.3s;
+  z-index:       1000;
+}
+
+.fullscreen-btn:hover {
+  background: #3a5a8a;
+}
+
+.fullscreen-btn.active {
+  background: #ff6b6b;
+}
+
+/* Botón de cerrar en modo pantalla completa */
+.close-fullscreen-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 10px 20px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 1001;
+}
+
+.close-fullscreen-btn:hover {
+  background: #ff5252;
+}
+
+/* Ocultar otros componentes en pantalla completa */
+.container.processor-fullscreen .grid-item.program,
+.container.processor-fullscreen .grid-item.results {
+  display: none;
+}
+
+/* Asegurar que el contenido del procesador sea visible */
+.grid-item.processor.fullscreen .processor-content {
+  padding:   20px;
+  max-width: 1400px;
+  margin:   0 auto;
+}
+
+/* Añadir scroll suave */
+.grid-item.processor.fullscreen::-webkit-scrollbar {
+  width: 10px;
+}
+
+.grid-item.processor.fullscreen::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.grid-item.processor.fullscreen::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+  
 </style>
