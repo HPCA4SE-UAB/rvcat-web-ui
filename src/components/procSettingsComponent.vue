@@ -49,12 +49,12 @@
 
     // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
-    const thisId = ++lastRequestId;
+    // const thisId = ++lastRequestId;
     try {
       const jsonString  = localStorage.getItem(`processor.${simState.selectedProcessor}`)
       const cfg         = JSON.parse(jsonString);
 
-      if (thisId !== lastRequestId) return;
+      // if (thisId !== lastRequestId) return;
 
       dispatch.value   = cfg.stages.dispatch;
       retire.value     = cfg.stages.retir;
@@ -89,117 +89,73 @@
       console.error("Failed to update processor settings:", e);
     }
   };
+  
+  function uploadProcessorConfig(event) {
+    const inputEl = event.target;
+    const file    = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        
+        // === apply JSON to your reactive state ===
+        dispatch.value   = data.stages?.dispatch ?? dispatch.value;
+        retire.value     = data.stages?.retire   ?? retire.value;
+        name.value       = data.name             ?? name.value;
+        nBlocks.value    = data.nBlocks;
+        blkSize.value    = data.blkSize;
+        mIssueTime.value = data.mIssueTime;
+        mPenalty.value   = data.mPenalty;
+
+        // update resources
+        Object.keys(resources).forEach(k => delete resources[k]);
+        Object.entries(data.resources || {}).forEach(([k,v]) => {
+          resources[k] = v;
+        });
+
+        // update ports
+        ports.value = data.ports || {};
+
+        // stash originalSettings if needed...
+        Object.assign(originalSettings, {
+          dispatch:   data.stages?.dispatch ?? 0,
+          retire:     data.stages?.retire   ?? 0,
+          name:       data.name             ?? "",
+          resources:  JSON.parse(JSON.stringify(data.resources||{})),
+          ports:      JSON.parse(JSON.stringify(data.ports||{})),
+          rports:     JSON.parse(JSON.stringify(data.rports||{})),
+          cache:      data.cache,
+          nBlocks:    data.nBlocks,
+          blkSize:    data.blkSize,
+          mPenalty:   data.mPenalty,
+          mIssueTime: data.mIssueTime,
+        });
+
+        // === now pop up the Save‐As dialog ===
+        // strip extension from filename for default
+        modalName.value     = file.name.replace(/\.[^.]+$/, "");
+        modalDownload.value = false;
+        nameError.value     = "";
+        showModalUp.value   = true;
+
+      } catch (err) {
+        console.error("Invalid JSON:", err);
+        alert("Failed to load processor config. Please, check the file.");
+      }
+      inputEl.value = "";
+    };
+    reader.readAsText(file);
+  }
 
   onMounted(() => {
     nextTick(() => {
-      const list = simState.selectedProcessor;
-      if (list) {
-        prevProcessorHandler = () => {
-          prevProcessor.value=list.value;
-        }
-        processorsListHandler = () => {
-          if(isModified.value){
-            showModalChange.value = true;
-            modalConfirmOperation = 'change';
-          }
-          else {
-            setTimeout( ()=> { updateProcessorSettings();},100);
-          }
-        }
-        list.addEventListener("focus",  prevProcessorHandler);
-        list.addEventListener("change", processorsListHandler);
-      }
       updateProcessorSettings();
     });
   });
 
-  onUnmounted(() => {
-    const list = simState.selectedProcessor;
-    if (list && processorsListHandler) {
-      list.removeEventListener("change", processorsListHandler);
-    }
-    list.removeEventListener("focus", prevProcessorHandler);
-  });
-
-  // --- detect modifications ---
-  function shallowEq(a, b) {
-    const ka = Object.keys(a), kb = Object.keys(b);
-    if (ka.length !== kb.length) return false;
-    for (let k of ka) {
-      if (a[k] !== b[k]) return false;
-    }
-    return true;
-  }
-  
-  function portsEq(a, b) {
-    const ka = Object.keys(a), kb = Object.keys(b);
-    
-    if (ka.length !== kb.length) return false;
-    
-    for (let k of ka) {
-      const arrA = a[k] || [], arrB = b[k] || [];
-      if (arrA.length !== arrB.length) return false;
-
-      // get frequencies as arrays could be in different order
-      const freq = new Map();
-      for (let v of arrA) {
-        freq.set(v, (freq.get(v) || 0) + 1);
-      }
-      for (let v of arrB) {
-        if (!freq.has(v)) return false;
-        freq.set(v, freq.get(v) - 1);
-        if (freq.get(v) === 0) freq.delete(v);
-      }
-      // after removing all arrB items, map should be empty
-      if (freq.size !== 0) return false;
-    }
-    return true;
-  }
-  
-  const isModified = computed(() => {
-    if (dispatch.value !== originalSettings.dispatch)       return true;
-    if (retire.value   !== originalSettings.retire)         return true;
-    if (nBlocks.value   !== originalSettings.nBlocks)       return true;
-    if (blkSize.value   !== originalSettings.blkSize)       return true;
-    if (mPenalty.value   !== originalSettings.mPenalty)     return true;
-    if (mIssueTime.value   !== originalSettings.mIssueTime) return true;
-    if (!shallowEq(resources, originalSettings.resources))  return true;
-    if (!portsEq(ports.value, originalSettings.ports))      return true;
-    return false;
-  });
-
-  function canLeave() {
-    return isModified.value;
-  }
-
-  defineExpose({ canLeave });
-
-  // --- helpers and modal controls ---
-  function getCurrentProcessorJSON() {
-    const rports = {};
-    Object.entries(ports.value).forEach(([port, instrs]) => {
-      instrs.forEach(instr => {
-        if (!rports[instr]) rports[instr] = [];
-        rports[instr].push(port);
-      });
-    });
-    return {
-      name: modalName.value,
-      stages: {
-        dispatch: dispatch.value,
-        execute:  Object.keys(ports.value).length,
-        retire:   retire.value,
-      },
-      resources:  { ...resources },
-      ports:      ports.value,
-      rports:     rports,
-      cache:      originalSettings.cache,
-      nBlocks:    nBlocks.value,
-      blkSize:    blkSize.value,
-      mPenalty:   mPenalty.value,
-      mIssueTime: mIssueTime.value,
-    };
-  }
+  onUnmounted(() => {});
 
   function openModal() {
     modalName.value     = name.value + "*";
@@ -211,6 +167,33 @@
   function closeModal() {
     showModalDown.value = false;
     showModalUp.value   = false;
+  }
+  
+  function confirmLeave(){
+    showModalChange.value = false;
+    if(modalConfirmOperation=='upload') {
+      document.getElementById('file-upload').click();
+    }
+    else if(modalConfirmOperation=='change') {
+      updateProcessorSettings();
+    }
+  }
+
+  function cancelLeave() {
+    if (modalConfirmOperation=='change') {
+      simState.selectedProgram = prevProcessor.value;
+    }
+    showModalChange.value = false;
+  }
+
+  function openUploadModal() {
+    if (isModified.value) {
+      showModalChange.value = true;
+      modalConfirmOperation = 'upload';
+    }
+    else {
+      document.getElementById('file-upload').click();
+    }
   }
 
   async function confirmModal() {
@@ -278,6 +261,90 @@
     },100);
   }
 
+  
+/********************************************************
+ **  Manipulation of processor data in User Interface ***
+ ********************************************************/
+  
+  // return current processor configuration as JSON
+  function getCurrentProcessorJSON() {
+    const rports = {};
+    Object.entries(ports.value).forEach(([port, instrs]) => {
+      instrs.forEach(instr => {
+        if (!rports[instr]) rports[instr] = [];
+        rports[instr].push(port);
+      });
+    });
+    return {
+      name: modalName.value,
+      stages: {
+        dispatch: dispatch.value,
+        execute:  Object.keys(ports.value).length,
+        retire:   retire.value,
+      },
+      resources:  { ...resources },
+      ports:      ports.value,
+      rports:     rports,
+      cache:      originalSettings.cache,
+      nBlocks:    nBlocks.value,
+      blkSize:    blkSize.value,
+      mPenalty:   mPenalty.value,
+      mIssueTime: mIssueTime.value,
+    };
+  }
+
+  function shallowEq(a, b) {  
+    const ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    for (let k of ka) {
+      if (a[k] !== b[k]) return false;
+    }
+    return true;
+  }
+  
+  function portsEq(a, b) {
+    const ka = Object.keys(a), kb = Object.keys(b);
+    
+    if (ka.length !== kb.length) return false;
+    
+    for (let k of ka) {
+      const arrA = a[k] || [], arrB = b[k] || [];
+      if (arrA.length !== arrB.length) return false;
+
+      // get frequencies as arrays could be in different order
+      const freq = new Map();
+      for (let v of arrA) {
+        freq.set(v, (freq.get(v) || 0) + 1);
+      }
+      for (let v of arrB) {
+        if (!freq.has(v)) return false;
+        freq.set(v, freq.get(v) - 1);
+        if (freq.get(v) === 0) freq.delete(v);
+      }
+      // after removing all arrB items, map should be empty
+      if (freq.size !== 0) return false;
+    }
+    return true;
+  }
+  
+  const isModified = computed(() => {
+    if (dispatch.value !== originalSettings.dispatch)       return true;
+    if (retire.value   !== originalSettings.retire)         return true;
+    if (nBlocks.value   !== originalSettings.nBlocks)       return true;
+    if (blkSize.value   !== originalSettings.blkSize)       return true;
+    if (mPenalty.value   !== originalSettings.mPenalty)     return true;
+    if (mIssueTime.value   !== originalSettings.mIssueTime) return true;
+    if (!shallowEq(resources, originalSettings.resources))  return true;
+    if (!portsEq(ports.value, originalSettings.ports))      return true;
+    return false;
+  });
+
+  function canLeave() {
+    return isModified.value;
+  }
+
+  defineExpose({ canLeave });
+  
   // --- port add/delete ---
   function addPort() {
     const existing = portList.value.map(n => parseInt(n,10)).sort((a,b)=>a-b);
@@ -311,65 +378,6 @@
     }
   }
 
-  function uploadProcessorConfig(event) {
-    const inputEl = event.target;
-    const file    = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        
-        // === apply JSON to your reactive state ===
-        dispatch.value   = data.stages?.dispatch ?? dispatch.value;
-        retire.value     = data.stages?.retire   ?? retire.value;
-        name.value       = data.name             ?? name.value;
-        nBlocks.value    = data.nBlocks;
-        blkSize.value    = data.blkSize;
-        mIssueTime.value = data.mIssueTime;
-        mPenalty.value   = data.mPenalty;
-
-        // update resources
-        Object.keys(resources).forEach(k => delete resources[k]);
-        Object.entries(data.resources || {}).forEach(([k,v]) => {
-          resources[k] = v;
-        });
-
-        // update ports
-        ports.value = data.ports || {};
-
-        // stash originalSettings if needed...
-        Object.assign(originalSettings, {
-          dispatch:   data.stages?.dispatch ?? 0,
-          retire:     data.stages?.retire   ?? 0,
-          name:       data.name             ?? "",
-          resources:  JSON.parse(JSON.stringify(data.resources||{})),
-          ports:      JSON.parse(JSON.stringify(data.ports||{})),
-          rports:     JSON.parse(JSON.stringify(data.rports||{})),
-          cache:      data.cache,
-          nBlocks:    data.nBlocks,
-          blkSize:    data.blkSize,
-          mPenalty:   data.mPenalty,
-          mIssueTime: data.mIssueTime,
-        });
-
-        // === now pop up the Save‐As dialog ===
-        // strip extension from filename for default
-        modalName.value     = file.name.replace(/\.[^.]+$/, "");
-        modalDownload.value = false;
-        nameError.value     = "";
-        showModalUp.value   = true;
-
-      } catch (err) {
-        console.error("Invalid JSON:", err);
-        alert("Failed to load processor config. Please, check the file.");
-      }
-      inputEl.value = "";
-    };
-    reader.readAsText(file);
-  }
-
   function noPortAssigned(instr) {
     if (!portList.value.some(p => ports.value[p]?.includes(instr))) {
       ports.value[0].push(instr)
@@ -377,33 +385,6 @@
       setTimeout(() => { showTooltip.value = false }, 2000)
     }
     return !portList.value.some(p => ports.value[p]?.includes(instr))
-  }
-
-  function confirmLeave(){
-    showModalChange.value = false;
-    if(modalConfirmOperation=='upload') {
-      document.getElementById('file-upload').click();
-    }
-    else if(modalConfirmOperation=='change') {
-      updateProcessorSettings();
-    }
-  }
-
-  function cancelLeave() {
-    if (modalConfirmOperation=='change') {
-      simState.selectedProgram = prevProcessor.value;
-    }
-    showModalChange.value = false;
-  }
-
-  function openUploadModal() {
-    if (isModified.value) {
-      showModalChange.value = true;
-      modalConfirmOperation = 'upload';
-    }
-    else {
-      document.getElementById('file-upload').click();
-    }
   }
 
 /* ------------------------------------------------------------------ 
@@ -430,7 +411,7 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Processor Settings - <strong>{{  simState.selectedProgram }}</strong></span>
+        <span class="header-title">Processor Settings - <strong>{{  simState.selectedProcessor }}</strong></span>
       </div>
 
       <div class="buttons">
