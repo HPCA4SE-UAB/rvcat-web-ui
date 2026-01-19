@@ -662,22 +662,22 @@
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: auto;
-    width:      5ch;
+    width:      8ch;
     padding:    1px;
     margin:     0 2px;
     text-align: right;
-    font-size:  0.5em;
+    font-size:  0.8em;
   }
 
   /* Firefox */
   input[type=number] {
     appearance: auto;
     -moz-appearance: number-input;
-    width:      5ch;
+    width:      8ch;
     padding:    1px;
     margin:     0 2px;
     text-align: right;
-    font-size:  0.5em;
+    font-size:  0.8em;
   }
 
   .ports-toolbar {
