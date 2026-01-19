@@ -353,14 +353,14 @@
     padding: 2px;
   }
   .pipeline-img {
-    width:           100%;
-    height:          150px;
+    width:           95%;
+    height:          50px;
     display:         flex;
-    align-items:     center;
+    align-items:     stretch;
     justify-content: center;
     overflow:        hidden;
     position:        relative;
-    margin:          2px auto;
+    margin:          1px auto;
     margin-top:      5%;
   }
   .pipeline-img :deep(svg) {
@@ -400,7 +400,7 @@
   
   #rob-size {
     max-width: 20%;
-    font-size: 2.2vh;
+    font-size: 2.0vh;
   }
   table {
     display:none;
