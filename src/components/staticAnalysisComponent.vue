@@ -312,15 +312,17 @@ watch (
       </div>
     </div>
   </div>
-  
-  <div v-if="showFullScreen" class="fullscreen-overlay">
+
+  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
     <div class="fullscreen-content">
       <div class="fullscreen-header">
-        Data Dependence Graph (circular paths in red)
-        <button class="close-btn" @click="closeFullScreen">x</button>
+        <span>Data Dependence Graph (circular paths in red)</span>
+        <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
-      <div class="output-block">
-        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
+      <div class="graph-container">
+        <div class="graph-wrapper" ref="graphContainer">
+          <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg" class="svg-content"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -352,7 +354,25 @@ watch (
     </Teleport>
 </template>
 
+
 <style scoped>
+
+/*
+  <div v-if="showFullScreen" class="fullscreen-overlay">
+    <div class="fullscreen-content">
+      <div class="fullscreen-header">
+        Data Dependence Graph (circular paths in red)
+        <button class="close-btn" @click="closeFullScreen">x</button>
+      </div>
+      <div class="output-block">
+        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
+      </div>
+    </div>
+  </div>
+  
+*/
+
+  
   .iters-group input[type="number"] { width: 4ch; }
 
   .graph-toolbar {
@@ -435,17 +455,16 @@ watch (
     height:2.5vh;
   }
 
- .fullscreen-overlay {
-    position: fixed;
-    top:      0; 
-    left:     0;
-    width:    100vw; height: 100vh;
-    display:  flex;
-    z-index:  1000;
-    align-items: center;
-    background:  rgba(0,0,0,0.4);
-    justify-content: center;
-  }
+.fullscreen-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
   .fullscreen-content {
     background: white;
     margin:     10px;
@@ -464,6 +483,18 @@ watch (
     flex-direction: column;
     box-shadow:     0 4px 12px rgba(0,0,0,0.25);
   }
+
+/*
+.fullscreen-content {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  width: 90vw;
+  height: 90vh;
+  min-width: 300px;
+  min-height: 200px;
+  position: relative;
+}
+*/
+  
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
@@ -472,18 +503,50 @@ watch (
     cursor:     pointer;
     margin-bottom: 8px;
   }
+  
   .fullscreen-header {
     display:         flex;
     justify-content: space-between;
     align-items:     center;
     margin-bottom:   10px;
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
-  .fullscreen-title {
+
+  /*
+ .fullscreen-header {
+  padding: 12px 16px;
+} */
+
+ .fullscreen-title {
     font-size:   1.5rem;
     font-weight: 600;
     margin:      0;
   }
   
+.graph-container {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.graph-wrapper svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
 
 /* suggested by IA */
 .performance-analysis {
