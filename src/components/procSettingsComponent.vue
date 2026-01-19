@@ -666,6 +666,7 @@
     padding:    1px;
     margin:     0 2px;
     text-align: right;
+    font-size:  0.5em;
   }
 
   /* Firefox */
@@ -676,6 +677,7 @@
     padding:    1px;
     margin:     0 2px;
     text-align: right;
+    font-size:  0.5em;
   }
 
   .ports-toolbar {
@@ -714,7 +716,7 @@
   .instr-table th,
   .instr-table td {
     border:     1px solid #ccc;
-    padding:    4px;
+    padding:    1px;
     text-align: center;
   }
 
