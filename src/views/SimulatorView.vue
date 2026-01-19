@@ -126,7 +126,7 @@ function toggleProcessorFullscreen() {
     <header>
      <div id="top" class="header-title"> 
        <img src="/img/favicon.png" class="title-img"> 
-       <h1>RVCAT-WEB</h1> </div>
+       <h1>RVCAT-WEB</h1>
        <nav>
         <ul>
           <li>
