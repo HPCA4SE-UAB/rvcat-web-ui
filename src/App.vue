@@ -39,12 +39,11 @@
     height:   100%;
     width:    100%;
     overflow: auto;
-    padding:  5px;
-    padding:  6px 8px;
+    padding:  2px 2px;
     z-index:  10;       
     position: relative;
     background:    white;
-    border-radius: 10px;
+    border-radius: 5px;
     box-shadow:    0 1px 0 rgba(0,0,0,0.08);
   }
   
@@ -165,23 +164,6 @@
   .blue-button[disabled] {
     opacity: 0.5;
     cursor:default;
-  }
-
-  .gray-button {
-    background:    #e0e0e0;
-    border:        1px solid #b0b0b0;
-    border-radius: 4px;
-    width:       3.5vh;
-    height:      3.5vh;
-    line-height: 1;
-    text-align:  center;
-    font-size:   2.5vh;
-    cursor:      pointer;
-    user-select: none;
-  }
-
-  .gray-button:hover {
-    background: #d0d0d0;
   }
 
   input {
