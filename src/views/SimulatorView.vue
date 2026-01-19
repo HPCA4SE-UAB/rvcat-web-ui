@@ -258,8 +258,8 @@ nav ul li {
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 34% 66%;
-  grid-auto-rows:        50% 50%;
+  grid-template-columns: 34% 65%;
+  grid-auto-rows:        48% 52%;
   gap:          0.5vh;
   width:        100vw;
   height:        98vh;
