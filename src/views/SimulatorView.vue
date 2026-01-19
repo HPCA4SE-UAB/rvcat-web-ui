@@ -183,13 +183,15 @@ function toggleProcessorFullscreen() {
     </div>
     
     <main class="container" :class="{ 'processor-fullscreen': isProcessorFullscreen }">
-      <button class="blue-button" title="Close full screen" v-if="isProcessorFullscreen" @click="toggleProcessorFullscreen" >
-          ✕ Close
-      </button>
+
       <!-- Processor Component -->
       <div class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
         <processorComponent />
       </div>
+      
+      <button class="blue-button" title="Close full screen" v-show="isProcessorFullscreen" @click="toggleProcessorFullscreen" >
+          ✕ Close
+      </button>
       
       <div v-show="!isProcessorFullscreen" class="grid-item program">
         <programComponent />
@@ -300,7 +302,6 @@ nav ul li {
   border-radius: 0;
   border:        none;
   box-shadow:    0 0 10px rgba(0,0,0,0.3);
-  align-self: start;
 }
   
 .processor { grid-column: 1; grid-row: 1; }
