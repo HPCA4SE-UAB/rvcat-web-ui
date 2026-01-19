@@ -37,6 +37,12 @@ const fullProgramButtonText  = computed(() =>
   (isFullscreen.value && !isProcessor.value)? 'Exit Program Edit' : 'Edit Program'
 );
 
+const containerClasses = computed(() => ({
+  'processor-fullscreen': isFullscreen.value && isProcessor.value,
+  'program-fullscreen':   isFullscreen.value && !isProcessor.value,
+  // Puedes añadir más clases condicionales aquí
+}));
+
 // Map of component keys -> component definitions
 const components = {
   timelineComponent,
@@ -207,10 +213,8 @@ function toggleProgramFullscreen() {
       <p>Please wait. Loading can take several seconds</p>
     </div>
     
-    <main class="container" 
-        :class="{ 'processor-fullscreen': isFullscreen && isProcessor }" 
-        :class="{ 'program-fullscreen': isFullscreen && !isProcessor }">
-
+    <main class="container" :class="containerClasses">
+      
       <div v-show="!isFullscreen || isProcessor" class="grid-item processor" :class="{ 'fullscreen': isFullscreen && isProcessor }">
         <processorComponent />
       </div>
