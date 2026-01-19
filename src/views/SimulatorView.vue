@@ -124,8 +124,10 @@ function toggleProcessorFullscreen() {
 <template>
   <body>
     <header>
-      <div id="top" class="header-title"> <img src="/img/favicon.png" class="title-img"> <h1>RVCAT-WEB</h1> </div>
-      <nav>
+     <div id="top" class="header-title"> 
+       <img src="/img/favicon.png" class="title-img"> 
+       <h1>RVCAT-WEB</h1> </div>
+       <nav>
         <ul>
           <li>
             <button class="blue-button" title="Simulate Program's execution" :class="{ 'active': isProcessorFullscreen }" 
@@ -169,7 +171,8 @@ function toggleProcessorFullscreen() {
             </button>
           </li>
         </ul>
-      </nav>
+       </nav>
+     </div>
     </header>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
