@@ -207,7 +207,9 @@ function toggleProgramFullscreen() {
       <p>Please wait. Loading can take several seconds</p>
     </div>
     
-    <main class="container" :class="{ 'processor-fullscreen': isFullscreen }">
+    <main class="container" 
+        :class="{ 'processor-fullscreen': isFullscreen && isProcessor }" 
+        :class="{ 'program-fullscreen': isFullscreen && !isProcessor }">
 
       <div v-show="!isFullscreen || isProcessor" class="grid-item processor" :class="{ 'fullscreen': isFullscreen && isProcessor }">
         <processorComponent />
