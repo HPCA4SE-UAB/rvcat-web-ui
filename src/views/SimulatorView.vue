@@ -174,7 +174,7 @@ function toggleProcessorFullscreen() {
 </template>
 
 <style scoped>
-  /*
+  
 .container {
   position: relative;
   display:  grid;
@@ -188,16 +188,16 @@ function toggleProcessorFullscreen() {
   background:   #e3e3e3;
   overflow:     hidden;
   box-sizing:   border-box;
-} */
+}
 
 /* Layout en modo normal */
 .container {
-  display: grid;
+  display:     grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
-  gap: 15px;
-  height: calc(100vh - 60px);
-  padding: 15px;
+  gap:        15px;
+  height:     calc(100vh - 60px);
+  padding:    15px;
   transition: all 0.3s ease;
 }
 
