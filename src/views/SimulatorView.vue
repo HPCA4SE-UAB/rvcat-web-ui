@@ -124,57 +124,52 @@ function toggleProcessorFullscreen() {
 <template>
   <body>
     <header>
-      <div id="top"
-        <div class="header-title">
-          <img src="/img/favicon.png" class="title-img">
-          <h1>RVCAT-WEB</h1>
-        </div>
-        <nav>
-          <ul>
-            <li>
-              <button class="blue-button" title="Simulate Program's execution" :class="{ 'active': isProcessorFullscreen }" 
-                @click="toggleProcessorFullscreen" >
-                  {{ fullscreenButtonText }}
-              </button>
-            </li>
-            <li>
-              <button class="blue-button" title="Simulate Program's execution"
-                :class="{ active: currentKey === 'simulationComponent' }"
-                @click="onRequestSwitch('simulationComponent')" > 
-                  Simulation
-              </button>
-            </li>
-            <li>
-              <button class="blue-button" title="Static Performance Analysis"
-                :class="{ active: currentKey === 'staticAnalysisComponent' }"
-                @click="onRequestSwitch('staticAnalysisComponent')" >
-                  Static Analysis
-              </button>
-            </li>
-            <li>
-              <button class="blue-button" title="Detailed Timeline of Program's execution"
-                :class="{ active: currentKey === 'timelineComponent' }"
-                @click="onRequestSwitch('timelineComponent')" >
-                  Timeline
-              </button>
-            </li>
-            <li>
-              <button class="blue-button" title="Configure Processor's settings"
-              :class="{ active: currentKey === 'procSettingsComponent' }"
-              @click="onRequestSwitch('procSettingsComponent')" >
-                Processor
-              </button>
-            </li>
-            <li>
-              <button class="blue-button" title="Information about this tool"
-              :class="{ active: currentKey === 'aboutComponent' }"
-              @click="onRequestSwitch('aboutComponent')" >
-                About
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <div id="top" class="header-title"> <img src="/img/favicon.png" class="title-img"> <h1>RVCAT-WEB</h1> </div>
+      <nav>
+        <ul>
+          <li>
+            <button class="blue-button" title="Simulate Program's execution" :class="{ 'active': isProcessorFullscreen }" 
+              @click="toggleProcessorFullscreen" >
+                {{ fullscreenButtonText }}
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Simulate Program's execution"
+              :class="{ active: currentKey === 'simulationComponent' }"
+              @click="onRequestSwitch('simulationComponent')" > 
+                Simulation
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Static Performance Analysis"
+              :class="{ active: currentKey === 'staticAnalysisComponent' }"
+              @click="onRequestSwitch('staticAnalysisComponent')" >
+                Static Analysis
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Detailed Timeline of Program's execution"
+              :class="{ active: currentKey === 'timelineComponent' }"
+              @click="onRequestSwitch('timelineComponent')" >
+                Timeline
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Configure Processor's settings"
+            :class="{ active: currentKey === 'procSettingsComponent' }"
+            @click="onRequestSwitch('procSettingsComponent')" >
+              Processor
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Information about this tool"
+            :class="{ active: currentKey === 'aboutComponent' }"
+            @click="onRequestSwitch('aboutComponent')" >
+              About
+            </button>
+          </li>
+        </ul>
+      </nav>
     </header>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
