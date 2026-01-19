@@ -3,6 +3,7 @@ import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, compu
 
 import processorComponent      from '@/components/processorComponent.vue';
 import programComponent        from '@/components/programComponent.vue';
+  
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
@@ -130,7 +131,7 @@ function toggleProcessorFullscreen() {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Simulate Program's execution" :class="{ 'active': isProcessorFullscreen }" 
+            <button class="blue-button" title="Open Full Processor Window. Configure Processor's settings." :class="{ 'active': isProcessorFullscreen }" 
               @click="toggleProcessorFullscreen" >
                 {{ fullscreenButtonText }}
             </button>
@@ -188,7 +189,7 @@ function toggleProcessorFullscreen() {
       <div class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
         <processorComponent />
         <!-- Close button -->
-        <button v-if="isProcessorFullscreen" @click="toggleProcessorFullscreen" class="close-fullscreen-btn" >
+        <button class="blue-button" title="Close full screen" v-if="isProcessorFullscreen" @click="toggleProcessorFullscreen" >
           ✕ Close
         </button>
       </div>
@@ -262,7 +263,7 @@ nav ul li {
   grid-auto-rows:        50% 50%;
   gap:            2vh;
   width:        100vw;
-  height:        94vh;
+  height:        95vh;
   margin-top:   0.5vh;
   margin-right: 0.5vh;
   background:   #e3e3e3;
@@ -287,8 +288,7 @@ nav ul li {
   /* Componente procesador normal */
 .grid-item.processor {
   display:       grid;
-  grid-column:   1;
-  overflow:      hidden;
+  // overflow:      hidden;
 }
 
 /* Componente procesador en pantalla completa */
@@ -296,7 +296,7 @@ nav ul li {
   grid-column:   1 / span 3;
   grid-row:      1;
   position:      fixed;
-  top:           5px; /* Altura del header */
+  top:           0px; /* Altura del header */
   left:          0;
   right:         0;
   bottom:        0;
@@ -362,56 +362,12 @@ nav ul li {
   to { transform: rotate(360deg); }
 }
 
-.fullscreen-btn {
-  position:      absolute;
-  top:           15px;
-  right:         15px;
-  padding:       8px 16px;
-  background:    #4a6fa5;
-  color:         white;
-  border:        none;
-  border-radius: 4px;
-  cursor:        pointer;
-  font-size:     14px;
-  transition:    all 0.3s;
-  z-index:       1000;
-}
-
-.fullscreen-btn:hover {
-  background: #3a5a8a;
-}
-
-.fullscreen-btn.active {
-  background: #ff6b6b;
-}
-
-/* Botón de cerrar en modo pantalla completa */
-.close-fullscreen-btn {
-  position: absolute;
-  top:      15px;
-  right:    15px;
-  padding:  10px 20px;
-  background: #ff6b6b;
-  color:    white;
-  border:   none;
-  border-radius: 4px;
-  cursor:    pointer;
-  font-size: 16px;
-  z-index:   1001;
-}
-
-.close-fullscreen-btn:hover {
-  background: #ff5252;
-}
-
-/* Asegurar que el contenido del procesador sea visible */
 .grid-item.processor.fullscreen .processor-content {
-  padding:   20px;
+  padding:   0px;
   max-width: 1400px;
-  margin:   0 auto;
+  margin:    0 auto;
 }
 
-/* Añadir scroll suave */
 .grid-item.processor.fullscreen::-webkit-scrollbar {
   width: 10px;
 }
