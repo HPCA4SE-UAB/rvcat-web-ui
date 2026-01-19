@@ -4,15 +4,15 @@
 
   const simState = inject('simulationState');
 
-  const dispatch        = ref(0);
-  const retire          = ref(0);
+  const dispatch        = ref(1);
+  const retire          = ref(1);
   const resources       = reactive({});
-  const name            = ref("");
+  const name            = ref("default");
   const ports           = ref({});
   const nBlocks         = ref(0);
-  const blkSize         = ref(0);
-  const mPenalty        = ref(0);
-  const mIssueTime      = ref(0);
+  const blkSize         = ref(1);
+  const mPenalty        = ref(1);
+  const mIssueTime      = ref(1);
   const showTooltip     = ref(false);
   const showModalChange = ref(false);
   const prevProcessor   = ref(null);
@@ -23,17 +23,17 @@
   let modalConfirmOperation = null;
 
   const originalSettings = reactive({
-    dispatch:   0,
-    retire:     0,
+    dispatch:   1,
+    retire:     1,
     resources:  {},
-    name:       "",
+    name:       "default",
     ports:      {},
     rports:     {},
     cache:      null,
     nBlocks:    0,
-    blkSize:    0,
-    mPenalty:   0,
-    mIssueTime: 0,
+    blkSize:    1,
+    mPenalty:   1,
+    mIssueTime: 1,
   });
 
   // --- computed lists ---
@@ -57,7 +57,7 @@
       // if (thisId !== lastRequestId) return;
 
       dispatch.value   = cfg.stages.dispatch;
-      retire.value     = cfg.stages.retir;
+      retire.value     = cfg.stages.retire;
       name.value       = cfg.name;
       ports.value      = cfg.ports || {};
       nBlocks.value    = cfg.nBlocks;
@@ -648,7 +648,8 @@
     flex-direction: column;
     border:         1px solid #ccc;
     border-radius:  8px;
-    padding:        1rem; /* 10px */
+    padding:        0.7rem; /* 10px */
+    gap:            5px;
     background:     #fafafa;
   }
 
@@ -706,13 +707,14 @@
   }
   .instr-table {
     width:           100%;
-    margin-top:      10px;
+    margin-top:      5px;
     border-collapse: collapse;
+    font-size:       0.75em;
   }
   .instr-table th,
   .instr-table td {
     border:     1px solid #ccc;
-    padding:    5px;
+    padding:    4px;
     text-align: center;
   }
 
