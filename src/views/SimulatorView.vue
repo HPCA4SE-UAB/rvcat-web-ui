@@ -31,10 +31,10 @@ const loadingMessage    = ref('Initializing');
 const isFullscreen = ref(false);
 const isProcessor  = ref(false);
 const fullProcessorButtonText  = computed(() => 
-  (isFullscreen.value && isProcessor.value)? 'Exit Processor Edit' : 'Edit Processor'
+  (isFullscreen.value && isProcessor.value)? '✔ Edit Processor' : 'Edit Processor'
 );
 const fullProgramButtonText  = computed(() => 
-  (isFullscreen.value && !isProcessor.value)? 'Exit Program Edit' : 'Edit Program'
+  (isFullscreen.value && !isProcessor.value)? '✔ Edit Program' : 'Edit Program'
 );
 
 const containerClasses = computed(() => ({
