@@ -188,17 +188,7 @@ function toggleProcessorFullscreen() {
   background:   #e3e3e3;
   overflow:     hidden;
   box-sizing:   border-box;
-}
-
-/* Layout en modo normal */
-.container {
-  display:     grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr;
-  gap:        15px;
-  height:     calc(100vh - 60px);
-  padding:    15px;
-  transition: all 0.3s ease;
+  transition:   all 0.3s ease;
 }
 
 /* Layout en modo pantalla completa */
@@ -216,9 +206,9 @@ function toggleProcessorFullscreen() {
 
   /* Componente procesador normal */
 .grid-item.processor {
-  grid-column: 1;
-  overflow:    auto;
-  border:      1px solid #ddd;
+  grid-column:   1;
+  overflow:      auto;
+  border:        1px solid #ddd;
   border-radius: 8px;
   background:    white;
   transition:    all 0.3s ease;
@@ -227,14 +217,14 @@ function toggleProcessorFullscreen() {
 
 /* Componente procesador en pantalla completa */
 .grid-item.processor.fullscreen {
-  grid-column: 1 / span 3;
-  grid-row:    1;
-  position:    fixed;
-  top:         60px; /* Altura del header */
-  left:        0;
-  right:       0;
-  bottom:      0;
-  z-index:     999;
+  grid-column:   1 / span 3;
+  grid-row:      1;
+  position:     fixed;
+  top:           60px; /* Altura del header */
+  left:          0;
+  right:         0;
+  bottom:        0;
+  z-index:       999;
   border-radius: 0;
   border:        none;
   box-shadow:    0 0 30px rgba(0,0,0,0.3);
@@ -246,11 +236,11 @@ function toggleProcessorFullscreen() {
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
 .blur-overlay {
-  top:    0;
-  left:   0;
-  width:  100%;
-  height: 100%;
-  z-index: 1000;
+  top:      0;
+  left:     0;
+  width:    100%;
+  height:   100%;
+  z-index:  1000;
   position: fixed;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
@@ -285,13 +275,13 @@ function toggleProcessorFullscreen() {
 }
 
 .fullscreen-btn {
-  position: absolute;
-  top:      15px;
-  right:    15px;
-  padding:  8px 16px;
-  background: #4a6fa5;
-  color:      white;
-  border:     none;
+  position:      absolute;
+  top:           15px;
+  right:         15px;
+  padding:       8px 16px;
+  background:    #4a6fa5;
+  color:         white;
+  border:        none;
   border-radius: 4px;
   cursor:        pointer;
   font-size:     14px;
@@ -310,16 +300,16 @@ function toggleProcessorFullscreen() {
 /* Botón de cerrar en modo pantalla completa */
 .close-fullscreen-btn {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  padding: 10px 20px;
+  top:      15px;
+  right:    15px;
+  padding:  10px 20px;
   background: #ff6b6b;
-  color: white;
-  border: none;
+  color:    white;
+  border:   none;
   border-radius: 4px;
-  cursor: pointer;
+  cursor:    pointer;
   font-size: 16px;
-  z-index: 1001;
+  z-index:   1001;
 }
 
 .close-fullscreen-btn:hover {
