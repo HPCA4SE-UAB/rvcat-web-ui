@@ -258,7 +258,7 @@ nav ul li {
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 34% 64%;
+  grid-template-columns: 34% 66%;
   grid-auto-rows:        50% 50%;
   gap:          0.5vh;
   width:        100vw;
@@ -275,6 +275,14 @@ nav ul li {
 .container.processor-fullscreen {
   grid-template-columns: 1fr;
   grid-template-rows:    1fr;
+  position: fixed; /* Contenedor fijo */
+  top: 80px; /* Debajo del header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 999;
+  padding: 0; /* Sin padding en fullscreen */
 }
   
 .grid-item {
@@ -294,7 +302,10 @@ nav ul li {
 .grid-item.processor.fullscreen {
   grid-column:   1 / span 3;
   grid-row:      1;
-  top:           0px; /* Altura del header */
+  height: 100%;
+  width:  100%;
+  position:      relative;
+  top:           0;
   left:          0;
   right:         0;
   bottom:        0;
