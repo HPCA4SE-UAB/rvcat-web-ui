@@ -243,6 +243,66 @@
       console.error("Failed to update processor settings:", e);
     }
   };
+
+  function updateProcessor(name) {
+    const list = processorOptions.availableProcessors.value
+    for (const opt of list.options) {
+      if (opt.value === name)
+        return false   // choose another name
+    }
+    
+    processorInfo = getCurrentProcessorJSON(name);
+    jsonText      = JSON.stringify(processorInfo, null, 2)
+
+    setTimeout(()=>{
+      localStorage.setItem(`processor.${name}`, jsonText)
+      processorOptions.availableProcessors = getKeys('processor')
+      processorOptions.currentProcessor    = name;
+    }, 100);
+    
+    Object.assign(originalSettings, {
+      dispatch:   processorInfo.stages.dispatch,
+      retire:     processorInfo.stages.retire,
+      name:       processorInfo.name,
+      resources:  JSON.parse(JSON.stringify(processorInfo.resources)),
+      ports:      JSON.parse(JSON.stringify(processorInfo.ports)),
+      rports:     JSON.parse(JSON.stringify(processorInfo.rports)),
+      cache:      processorInfo.cache,
+      nBlocks:    processorInfo.nBlocks,
+      blkSize:    processorInfo.blkSize,
+      mPenalty:   processorInfo.mPenalty,
+      mIssueTime: processorInfo.mIssueTime,
+    });
+
+    return true  // processor replaced
+  }
+
+  function downloadProcessor(name) {
+     // force a Save As... dialog if API is supported
+     if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: `${name}.json`,
+          types: [{
+            description: 'JSON files',
+            accept: { 'application/json': ['.json'] }
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(jsonText);
+        await writable.close();
+     } else {
+        // fallback: traditional anchor download
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+     }
+  }
   
   function uploadProcessorConfig(event) {
     const inputEl = event.target;
@@ -444,7 +504,7 @@
  ********************************************************/
   
   // return current processor configuration as JSON
-  function getCurrentProcessorJSON() {
+  function getCurrentProcessorJSON(name) {
     const rports = {};
     Object.entries(ports.value).forEach(([port, instrs]) => {
       instrs.forEach(instr => {
@@ -453,7 +513,7 @@
       });
     });
     return {
-      name: modalName.value,
+      name: name,
       stages: {
         dispatch: dispatch.value,
         execute:  Object.keys(ports.value).length,
@@ -609,68 +669,16 @@
   }
 
   async function confirmModal() {
-    const list = processorOptions.availableProcessors
-    for (const opt of list.options) {
-      if (opt.value === modalName.value) {
-        nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
-        return;
-      }
+    if (!updateProcessor(modalName.value)) {
+      nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
+      return;
     }
-    
-    const data = getCurrentProcessorJSON();
 
-    Object.assign(originalSettings, {
-      dispatch:   data.stages.dispatch,
-      retire:     data.stages.retire,
-      name:       data.name,
-      resources:  JSON.parse(JSON.stringify(data.resources)),
-      ports:      JSON.parse(JSON.stringify(data.ports)),
-      rports:     JSON.parse(JSON.stringify(data.rports)),
-      cache:      data.cache,
-      nBlocks:    data.nBlocks,
-      blkSize:    data.blkSize,
-      mPenalty:   data.mPenalty,
-      mIssueTime: data.mIssueTime,
-    });
-
-    jsonText      = JSON.stringify(data, null, 2)
-    processorInfo = data
-
-    //download JSON file
-    if (modalDownload.value) {
-      // force a Save As... dialog if API is supported
-      if (window.showSaveFilePicker) {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: `${data.name}.json`,
-          types: [{
-            description: 'JSON files',
-            accept: { 'application/json': ['.json'] }
-          }],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(jsonText);
-        await writable.close();
-      } else {
-        // fallback: traditional anchor download
-        const blob = new Blob([jsonText], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url;
-        a.download = `${data.name}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
+    if (modalDownload.value) {    //download JSON file
+      downloadProcessor(modalName.value)
     }
     showModalDown.value = false;
     showModalUp.value   = false;
-
-    setTimeout(()=>{
-      localStorage.setItem(`processor.${data.name}`, jsonText)
-      processorOptions.availableProcessors = getKeys('processor')
-      processorOptions.currentProcessor    = data.name;
-    },100);
   }
 
 /* ------------------------------------------------------------------ 
@@ -760,8 +768,12 @@
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Stage Width Settings</span>
+        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help" >
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Cache Memory Settings</span>
         </div>
-        
+
         <div class="iters-group">
           <span>Dispatch:</span>
           <input type="number" v-model.number="dispatch" min="1" max="9" 
@@ -770,19 +782,7 @@
           <span>Retire:</span>
           <input type="number" v-model.number="retire" min="1" max="9" 
                    title="max. number of instructions retired per cycle"/>
-        </div>  
-      </div> <!--- Widths Group -->
 
-      <!-- Cache Settings Group -->
-      <div class="settings-group">
-        <div class="section-title-and-info">
-        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help" >
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Cache Memory Settings</span>
-        </div>
-        
-        <div class="iters-group">
           <span>Number of Blocks:</span>
           <input type="number" v-model.number="nBlocks" min="0" max="32" 
                  title="Memory blocks stored into cache (0 => no cache)"/>
@@ -804,7 +804,7 @@
           <input type="number" v-model.number="mIssueTime" min="1" max="99" 
                  title="Minimum time between Memory accesses"/>
         </div>
-      </div> <!--- Cache Settings Group -->
+      </div> <!--- Settings Group -->
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
@@ -828,7 +828,7 @@
           </button>
         </div>
 
-        <table class="instr-table" v-if="availableInstructions.length">
+        <table v-if="availableInstructions.length" class="instr-table" >
           <thead>
             <tr>
               <th>TYPE</th>
