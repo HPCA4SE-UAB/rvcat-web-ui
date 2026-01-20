@@ -979,6 +979,11 @@
 
 <style scoped> 
 
+.spacer {
+  min-width: 120px; /* Espacio mínimo entre elementos */
+  height:    1px; /* Solo para referencia visual */
+}
+
 /* Para asegurar que cada grupo esté centrado en su mitad */
 .title-group {
   flex: 0 0 auto;
