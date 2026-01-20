@@ -828,7 +828,7 @@
             + Add Port
           </button>
         </div>
-        {{availableInstructions.value}}
+        {{ availableInstructions }}
 
         <table v-if="availableInstructions.length" class="instr-table" >
           <thead>
