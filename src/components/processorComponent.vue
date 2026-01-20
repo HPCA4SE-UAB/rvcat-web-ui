@@ -815,13 +815,7 @@
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
-        
-        <div class="debug-info" style="background: yellow; padding: 5px; margin-bottom: 10px;">
-          DEBUG: isFullscreen = {{ isFullscreen }}<br>
-          availableInstructions.length = {{ availableInstructions.length }}<br>
-          portList.length = {{ portList.length }}
-        </div>
-           
+               
         <div class="section-title-and-info">
           <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
             <img src="/img/info.png" class="info-img">
@@ -829,12 +823,6 @@
           <span class="header-title">Instruction Latencies and Execution Ports</span>
         </div>
 
-        <!-- DEBUG: Ver si el contenido antes de la tabla se muestra -->
-        <div style="background: lime; padding: 5px; margin: 10px 0;">
-          ¿Se ven los ports en el toolbar? Ports: {{ portList.join(', ') }}
-        </div>
-
-        
         <!-- Ports toolbar: show existing ports and add/delete -->
         <div class="ports-toolbar">
           <span v-for="port in portList" :key="port" class="port-tag">
@@ -848,12 +836,6 @@
           </button>
         </div>
 
-    <!-- DEBUG antes de la tabla -->
-    <div style="background: orange; padding: 5px; margin: 10px 0;">
-      Tabla debería tener {{ availableInstructions.length }} filas
-    </div>
-
-        
         <table class="instr-table" style="border: 3px solid green;">
           <thead>
             <tr style="background: cyan;">
@@ -887,12 +869,7 @@
             </tr>
           </tbody>
         </table>
-
-   <!-- DEBUG después de la tabla -->
-    <div v-if="availableInstructions.length === 0" style="background: red; color: white; padding: 10px;">
-      ⚠️ availableInstructions está VACÍO!
-    </div>
-        
+       
       </div> <!--- Latency & Port Settings Group -->
     </div>
     
