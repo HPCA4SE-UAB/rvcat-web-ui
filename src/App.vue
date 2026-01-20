@@ -58,8 +58,12 @@
   .section-title-and-info {
     display:     flex;
     align-items: center;
-    gap:         6px; 
+    gap:         40px; 
     flex-wrap:   wrap;
+    justify-content: space-between; /* Máxima separación */
+    width: 100%;
+    padding: 0 40px; /* Espacio a los lados */
+    box-sizing: border-box;
   }
  
   .header-title {
