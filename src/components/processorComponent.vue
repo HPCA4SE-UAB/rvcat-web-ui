@@ -739,14 +739,15 @@
           </option>
         </select>
 
-      <div class="buttons">
-        <button class="blue-button" @click="openModal" :disabled="!isModified">
-          Apply Changes
-        </button>
-        <input id="file-upload" type="file" accept=".json" @change="uploadProcessorConfig" style="display: none;"/>
-        <button class="blue-button" @click="openUploadModal">
-          Upload
-        </button>
+        <div class="buttons">
+          <button class="blue-button" @click="openModal" :disabled="!isModified">
+            Apply Changes
+          </button>
+          <input id="file-upload" type="file" accept=".json" @change="uploadProcessorConfig" style="display: none;"/>
+          <button class="blue-button" @click="openUploadModal">
+            Upload
+          </button>
+        </div>
       </div>
     </div>
 
