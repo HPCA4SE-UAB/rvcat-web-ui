@@ -734,7 +734,7 @@
         <span class="header-title">Processor Settings - <strong>{{  simState.selectedProcessor }}</strong></span>
       </div>
       
-      <div id="settings-div">
+      <div>
         <select v-model="processorOptions.currentProcessor" title="Select Processor">
           <option value="" disabled>Select</option>
           <option 
@@ -761,7 +761,7 @@
     <div v-if="isFullscreen" class="settings-sections">
     
       <!-- Widths Group -->
-      <div class="settings-group">
+      <div class="settings-group widths-group">
         <div class="section-title-and-info">
           <div class="title-group left-group">
             <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
@@ -811,71 +811,70 @@
           <input type="number" v-model.number="mIssueTime" min="1" max="99" 
                  title="Minimum time between Memory accesses"/>
         </div>
-      </div> <!--- Settings Group -->
+      </div> <!--- Width-group Settings Group -->
       
-      <!-- Latency and Port Settings Group -->
-      <div class="settings-group">
-               
-        <div class="section-title-and-info">
-          <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
-            <img src="/img/info.png" class="info-img">
-          </span>
-          <span class="header-title">Instruction Latencies and Execution Ports</span>
-        </div>
+      
+      <!-- Contenedor para tabla + imagen en horizontal -->
+      <div class="horizontal-layout">
+        <!-- Latency and Port Settings Group (izquierda) -->
+        <div class="settings-group latency-group">
+              
+          <div class="section-title-and-info">
+            <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
+              <img src="/img/info.png" class="info-img">
+            </span>
+            <span class="header-title">Instruction Latencies and Execution Ports</span>
+          </div>
 
-        <!-- Ports toolbar: show existing ports and add/delete -->
-        <div class="ports-toolbar">
-          <span v-for="port in portList" :key="port" class="port-tag">
-            P{{ port }}
-            <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove port P${port}`">
-              <img src="/img/delete.png" class="delete-icon" width="16px">
+          <!-- Ports toolbar -->
+          <div class="ports-toolbar">
+            <span v-for="port in portList" :key="port" class="port-tag">
+              P{{ port }}
+              <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove port P${port}`">
+                <img src="/img/delete.png" class="delete-icon" width="16px">
+              </button>
+            </span>
+            <button v-if="portList.length < 10" class="add-port" @click="addPort">
+              + Add Port
             </button>
-          </span>
-          <button v-if="portList.length < 10" class="add-port" @click="addPort">
-            + Add Port
-          </button>
-        </div>
-
-        <table class="instr-table" style="border: 3px solid green;">
-          <thead>
-            <tr style="background: cyan;">
-              <th>TYPE</th>
-              <th>LATENCY</th>
-              <th v-for="port in portList" :key="port">P{{ port }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="instr in availableInstructions" :key="instr" style="background: #f0f0f0;">
-              <td style="font-weight: bold;">{{ instr }}</td>
-              <td>
-                <div class="latency-group">
-                  <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
+          </div>
+            
+          <!-- Tabla -->
+          <div class="table-container">
+            <table class="instr-table" style="border: 3px solid green;">
+              <thead>
+                <tr style="background: cyan;">
+                  <th>TYPE</th><th>LATENCY</th>
+                  <th v-for="port in portList" :key="port">P{{ port }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="instr in availableInstructions" :key="instr" style="background: #f0f0f0;">
+                  <td style="font-weight: bold;">{{ instr }}</td>
+                  <td>
+                    <div class="latency-group">
+                      <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
                          title="execution latency in clock cycles for the corresponding instruction type"/>
-                </div>
-              </td>
-              <td v-for="port in portList" :key="port" class="port-checkbox">
-                <label class="port-label">
-                  <input
-                    type="checkbox"
-                    title="indicates if this port can execute the corresponding instruction type"
-                    :checked="
-                      (ports[port] || []).includes(instr)
-                      || (port === portList[0] && noPortAssigned(instr))
-                    "
-                    @change="togglePortInstruction(port, instr, $event.target.checked)"
-                  />
-                </label>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-       
-      </div> <!--- Latency & Port Settings Group -->
-    </div>
-    
-    <div class="pipeline-container">
-      <div class="pipeline-img">
-        <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+                    </div>
+                  </td>
+                  <td v-for="port in portList" :key="port" class="port-checkbox">
+                    <label class="port-label">
+                      <input type="checkbox" title="indicates if this port can execute the corresponding instruction type"
+                      :checked="(ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
+                      @change="togglePortInstruction(port, instr, $event.target.checked)" />
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div> <!--- Table Container -->
+        </div> <!--- Latency & Port Settings Group -->
+
+        <div class="pipeline-side-container">
+          <div class="pipeline-img">
+            <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -999,16 +998,83 @@
     display: none;
   }
   
+  /* Contenedor principal horizontal */
+.horizontal-layout {
+  display: flex;
+  gap: 20px; /* Espacio entre tabla e imagen */
+  margin-top: 20px;
+  align-items: flex-start; /* Alinear al inicio */
+  min-height: 500px;       /* Altura mínima */
+}
+
+/* Grupo de latencias (izquierda) */
+.latency-group {
+  flex: 1; /* Ocupa espacio disponible */
+  min-width: 300px; /* Ancho mínimo */
+  max-width: 70%; /* Ancho máximo si quieres control */
+}
+
+/* Tabla dentro del grupo */
+.latency-group .table-container {
+  max-height: 500px; /* Altura máxima con scroll si es necesario */
+  overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
+}
+  
   .pipeline-container {
     width:   100%;
     height:  80%;
   }
+
+/* Contenedor de imagen (derecha) */
+.pipeline-side-container {
+  flex: 0 0 400px; /* Ancho fijo para la imagen */
+  min-width: 300px; /* Ancho mínimo */
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajustar la tabla para mejor visualización */
+.instr-table {
+  width: 100%;
+  margin-top:      1px;
+  border-collapse: collapse;
+}
+
+.instr-table th,
+.instr-table td {
+  padding: 5px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.instr-table th {
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+} 
+ 
+.pipeline-img > div {
+  max-width: 100%;
+  max-height: 100%;
+}
   .pipeline-img {
     width:           100%;
     height:          100%;
     display:         flex;
     overflow:        auto;
   }
+
+/* Imagen dentro del contenedor 
+.pipeline-img {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+*/
   .pipeline-img :deep(svg) {
     width:      100% !important;
     height:     100% !important;
@@ -1124,17 +1190,6 @@
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
-  }
-  .instr-table {
-    width:           100%;
-    margin-top:      1px;
-    border-collapse: collapse;
-  }
-  .instr-table th,
-  .instr-table td {
-    border:     1px solid #ccc;
-    padding:    5px;
-    text-align: center;
   }
 
   .download-checkbox {
