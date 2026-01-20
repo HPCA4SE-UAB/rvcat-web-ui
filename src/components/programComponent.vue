@@ -291,8 +291,10 @@
             {{ program }}
           </option>
         </select>
-        <button class="blue-button" title="Save current Program" @click="downloadProgram"> Download </button>
-        <button class="blue-button" title="Load new Program"     @click="uploadProgram">   Upload   </button>
+        <div class="buttons">
+          <button class="blue-button" title="Save current Program" @click="downloadProgram"> Download </button>
+          <button class="blue-button" title="Load new Program"     @click="uploadProgram">   Upload   </button>
+        </div>
       </div>
     </div>
 
