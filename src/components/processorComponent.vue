@@ -26,6 +26,10 @@
     availableProcessors: []
   }
 
+  // JSON of current processor configuration. Updated by ReloadProcessor()
+  let jsonString    = ''
+  let processorInfo = null
+
   const dispatch        = ref(1);
   const retire          = ref(1);
   const resources       = reactive({});
@@ -194,8 +198,8 @@
   const reloadProcessor = async () => {
     console.log('Reloading processor with:', processorOptions.currentProcessor);
     try {
-      const jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
-      const processorInfo = JSON.parse(jsonString)
+      jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
+      processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
       console.error('Failed to set processor:', error)
@@ -206,37 +210,34 @@
   // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
     try {
-      const jsonString  = localStorage.getItem(`processor.${simState.selectedProcessor}`)
-      const cfg         = JSON.parse(jsonString);
-
-      dispatch.value   = cfg.stages.dispatch;
-      retire.value     = cfg.stages.retire;
-      name.value       = cfg.name;
-      ports.value      = cfg.ports || {};
-      nBlocks.value    = cfg.nBlocks;
-      blkSize.value    = cfg.blkSize;
-      mIssueTime.value = cfg.mIssueTime;
-      mPenalty.value   = cfg.mPenalty;
+      dispatch.value   = processorInfo.stages.dispatch;
+      retire.value     = processorInfo.stages.retire;
+      name.value       = processorInfo.name;
+      ports.value      = processorInfo.ports || {};
+      nBlocks.value    = processorInfo.nBlocks;
+      blkSize.value    = processorInfo.blkSize;
+      mIssueTime.value = processorInfo.mIssueTime;
+      mPenalty.value   = processorInfo.mPenalty;
 
       // refresh resources
       Object.keys(resources).forEach(k => delete resources[k]);
-      Object.entries(cfg.resources || {}).forEach(([k,v]) => {
+      Object.entries(processorInfo.resources || {}).forEach(([k,v]) => {
         resources[k] = v;
       });
 
       // stash original
       Object.assign(originalSettings, {
-        dispatch:   cfg.stages.dispatch,
-        retire:     cfg.stages.retire,
-        name:       cfg.name,
-        resources:  JSON.parse(JSON.stringify(cfg.resources || {})),
-        ports:      JSON.parse(JSON.stringify(cfg.ports || {})),
-        rports:     JSON.parse(JSON.stringify(cfg.rports || {})),
-        cache:      cfg.cache,
-        nBlocks:    cfg.nBlocks,
-        blkSize:    cfg.blkSize,
-        mPenalty:   cfg.mPenalty,
-        mIssueTime: cfg.mIssueTime,
+        dispatch:   processorInfo.stages.dispatch,
+        retire:     processorInfo.stages.retire,
+        name:       processorInfo.name,
+        resources:  JSON.parse(JSON.stringify(processorInfo.resources || {})),
+        ports:      JSON.parse(JSON.stringify(processorInfo.ports || {})),
+        rports:     JSON.parse(JSON.stringify(processorInfo.rports || {})),
+        cache:      processorInfo.cache,
+        nBlocks:    processorInfo.nBlocks,
+        blkSize:    processorInfo.blkSize,
+        mPenalty:   processorInfo.mPenalty,
+        mIssueTime: processorInfo.mIssueTime,
       });
     } catch(e) {
       console.error("Failed to update processor settings:", e);
@@ -305,8 +306,6 @@
   const drawProcessor = async () => {
     console.log('Redrawing processor');
     try {
-      const jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
-      const processorInfo = JSON.parse(jsonString)
       const dotCode = get_processor_dot (
          processorInfo.stages.dispatch,
          Object.keys(processorInfo.ports).length, 
@@ -594,7 +593,7 @@
 
   function cancelLeave() {
     if (modalConfirmOperation=='change') {
-      simState.selectedProgram = prevProcessor.value;
+      programOptions.currentProcessor = prevProcessor.value;
     }
     showModalChange.value = false;
   }
@@ -634,14 +633,15 @@
       mIssueTime: data.mIssueTime,
     });
 
+    jsonText      = JSON.stringify(data, null, 2)
+    processorInfo = data
+
     //download JSON file
     if (modalDownload.value) {
-      const jsonText = JSON.stringify(data, null, 2);
-
       // force a Save As... dialog if API is supported
       if (window.showSaveFilePicker) {
         const handle = await window.showSaveFilePicker({
-          suggestedName: `${modalName.value}.json`,
+          suggestedName: `${data.name}.json`,
           types: [{
             description: 'JSON files',
             accept: { 'application/json': ['.json'] }
@@ -656,20 +656,20 @@
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url;
-        a.download = `${modalName.value}.json`;
+        a.download = `${data.name}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     }
-    processorOptions.currentProcessor = modalName.value;
     showModalDown.value = false;
     showModalUp.value   = false;
 
     setTimeout(()=>{
-      localStorage.setItem(`processor.${processorOptions.currentProcessor}`, jsonText)
-      simState.selectedProcessor = processorOptions.currentProcessor;
+      localStorage.setItem(`processor.${data.name}`, jsonText)
+      processorOptions.availableProcessors = getKeys('processor')
+      processorOptions.currentProcessor    = data.name;
     },100);
   }
 
