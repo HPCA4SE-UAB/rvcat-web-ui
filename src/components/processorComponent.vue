@@ -769,6 +769,7 @@
             <span class="header-title">Stage Width Settings</span>
           </div>
           <div class="spacer"></div>
+          <div class="spacer"></div>
           <div class="title-group right-group">
             <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
               <img src="/img/info.png" class="info-img">
