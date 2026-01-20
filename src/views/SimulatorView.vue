@@ -427,7 +427,7 @@ nav ul li {
   border-radius: 5px;
 }
 
-.grid-item.program.fullscreen .processor-content {
+.grid-item.program.fullscreen {
   padding:   0px;
   max-width: 1400px;
   margin:    0 auto;
