@@ -35,6 +35,7 @@
   const blkSize         = ref(1);
   const mPenalty        = ref(1);
   const mIssueTime      = ref(1);
+  
   const showTooltip     = ref(false);
   const showModalChange = ref(false);
   const prevProcessor   = ref(null);
@@ -112,13 +113,11 @@
     }
     else
        console.log('New processor set into RVCAT')
+    updateProcessorSettings();
     drawProcessor()
   }
 
   onMounted(() => {
-    nextTick(() => {
-      updateProcessorSettings();
-    });
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -206,12 +205,9 @@
 
   // --- load & update processor settings ---
   const updateProcessorSettings = async () => {
-    // const thisId = ++lastRequestId;
     try {
       const jsonString  = localStorage.getItem(`processor.${simState.selectedProcessor}`)
       const cfg         = JSON.parse(jsonString);
-
-      // if (thisId !== lastRequestId) return;
 
       dispatch.value   = cfg.stages.dispatch;
       retire.value     = cfg.stages.retire;
@@ -614,7 +610,7 @@
   }
 
   async function confirmModal() {
-    const list = simState.availableProcessors
+    const list = processorOptions.availableProcessors
     for (const opt of list.options) {
       if (opt.value === modalName.value) {
         nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
@@ -667,14 +663,13 @@
         URL.revokeObjectURL(url);
       }
     }
-    name.value = modalName.value;
+    processorOptions.currentProcessor = modalName.value;
     showModalDown.value = false;
     showModalUp.value   = false;
 
     setTimeout(()=>{
-      list.value=modalName.value;
-      localStorage.setItem(`processor.${list.value}`, jsonText)
-      simState.selectedProcessor = list.value;
+      localStorage.setItem(`processor.${processorOptions.currentProcessor}`, jsonText)
+      simState.selectedProcessor = processorOptions.currentProcessor;
     },100);
   }
 
@@ -731,6 +726,18 @@
         </span>
         <span class="header-title">Processor Settings - <strong>{{  simState.selectedProcessor }}</strong></span>
       </div>
+      
+      <div id="settings-div">
+        <select v-model="processorOptions.currentProcessor" title="Select Processor">
+          <option value="" disabled>Select</option>
+          <option 
+            v-for="processor in processorOptions.availableProcessors" 
+            :key="processor"
+            :value="processor"
+          >
+            {{ processor }}
+          </option>
+        </select>
 
       <div class="buttons">
         <button class="blue-button" @click="openModal" :disabled="!isModified">
@@ -742,7 +749,6 @@
         </button>
       </div>
     </div>
-
 
     <div v-if="isFullscreen" class="settings-sections">
     
