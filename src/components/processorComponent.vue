@@ -768,6 +768,7 @@
             </span>
             <span class="header-title">Stage Width Settings</span>
           </div>
+          <div class="spacer"></div>
           <div class="title-group right-group">
             <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
               <img src="/img/info.png" class="info-img">
@@ -785,6 +786,8 @@
           <input type="number" v-model.number="retire" min="1" max="9" 
                    title="max. number of instructions retired per cycle"/>
 
+          <div class="spacer"></div>
+ 
           <span>Number of Blocks:</span>
           <input type="number" v-model.number="nBlocks" min="0" max="32" 
                  title="Memory blocks stored into cache (0 => no cache)"/>
