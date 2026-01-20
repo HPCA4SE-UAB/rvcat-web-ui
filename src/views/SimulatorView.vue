@@ -22,7 +22,6 @@ const { importRVCAT }               = useRVCAT_Api();
 // Modal & navigation state, Current view key & component
 const showLeaveModal    = ref(false);
 const pendingKey        = ref(null);
-const settingsCompInst  = ref(null);
 const showOverlay       = ref(true);
 const loadingMessage    = ref('Initializing');
 
@@ -57,16 +56,8 @@ let   cleanupRVCAT      = null
 // Handle requests from header  <-------------------------------- TODO
 function onRequestSwitch(key) {
   const nextComp = components[key];
-  if (
-    currentKey.value === 'procSettingsComponent' &&
-    settingsCompInst.value?.canLeave?.()
-  ) {
-    pendingKey.value     = key;
-    showLeaveModal.value = true;
-  } else {
-    currentKey.value       = key;
-    currentComponent.value = nextComp;
-  }
+  currentKey.value       = key;
+  currentComponent.value = nextComp;
 }
 
 // Confirm or cancel navigation
@@ -102,7 +93,6 @@ onMounted(() => {
       loadingMessage.value = 'Loading RVCAT';
       showOverlay.value    = true
   });
-  
   cleanupRVCAT = registerHandler('import_rvcat', handleRVCAT);
 });
 
@@ -183,13 +173,6 @@ function toggleProgramFullscreen() {
               :class="{ active: currentKey === 'timelineComponent' }"
               @click="onRequestSwitch('timelineComponent')" >
                 Timeline
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" title="Configure Processor's settings"
-            :class="{ active: currentKey === 'procSettingsComponent' }"
-            @click="onRequestSwitch('procSettingsComponent')" >
-              Processor
             </button>
           </li>
           <li>
