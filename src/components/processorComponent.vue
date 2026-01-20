@@ -277,7 +277,7 @@
     return true  // processor replaced
   }
 
-  function downloadProcessor(name) {
+  async function downloadProcessor(name) {
      // force a Save As... dialog if API is supported
      if (window.showSaveFilePicker) {
         const handle = await window.showSaveFilePicker({
@@ -304,7 +304,7 @@
      }
   }
   
-  function uploadProcessorConfig(event) {
+  function uploadProcessor(event) {
     const inputEl = event.target;
     const file    = event.target.files[0];
     if (!file) return;
@@ -751,7 +751,7 @@
           <button class="blue-button" @click="openModal" :disabled="!isModified">
             Apply Changes
           </button>
-          <input id="file-upload" type="file" accept=".json" @change="uploadProcessorConfig" style="display: none;"/>
+          <input id="file-upload" type="file" accept=".json" @change="uploadProcessor" style="display: none;"/>
           <button class="blue-button" @click="openUploadModal">
             Upload
           </button>
