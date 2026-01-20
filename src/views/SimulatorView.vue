@@ -153,14 +153,14 @@ function toggleProgramFullscreen() {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Open full <strong>Processor</strong> window and configure settings (pinned/unpinned)" 
+            <button class="blue-button" title="Open full window for processor configuration (pinned/unpinned)" 
               :class="{ 'active': isFullscreen && isProcessor }" 
               @click="toggleProcessorFullscreen" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Open full <strong>Program</strong> window and edit (pinned/unpinned)" 
+            <button class="blue-button" title="Open full window for program edition (pinned/unpinned)" 
               :class="{ 'active': isFullscreen && !isProcessor}" 
               @click="toggleProgramFullscreen" >
                 {{ fullProgramButtonText }}
