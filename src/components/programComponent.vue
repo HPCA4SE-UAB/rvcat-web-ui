@@ -262,6 +262,22 @@
 
 <template>
   <div class="main">
+    <div v-if="!isFullscreen" class="header">
+      <div class="section-title-and-info">
+        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span class="header-title">Program</span>
+      </div>
+      
+      <div id="settings-div">
+        <select v-model="programOptions.currentProgram" title="Select Program">
+          <option value="" disabled>Select</option>
+          <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
+            {{ program }}
+          </option>
+        </select>
+      </div>
+    </div>
+    
     <div v-if="isFullscreen" class="header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
@@ -280,22 +296,6 @@
       </div>
     </div>
 
-    <div v-if="!isFullscreen" class="header">
-      <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Program</span>
-      </div>
-      
-      <div id="settings-div">
-        <select v-model="programOptions.currentProgram" title="Select Program">
-          <option value="" disabled>Select</option>
-          <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
-            {{ program }}
-          </option>
-        </select>
-      </div>
-    </div>
-    
     <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
   </div>
   
