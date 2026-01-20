@@ -7,6 +7,14 @@
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
+  // Usando Composition API con setup
+  const props = defineProps({
+    isFullscreen: {
+      type: Boolean,
+      default: false
+    }
+  })
+
  /* ------------------------------------------------------------------ 
    * Processor options (persistent in localStorage)
    * ------------------------------------------------------------------ */
@@ -321,7 +329,7 @@
       </div>
     </div>
 
-    <div class="pipeline-container">
+    <div v-if="isFullscreen" class="pipeline-container">
       <div class="pipeline-img">
         <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
       </div>
@@ -339,6 +347,10 @@
 </template>
 
 <style scoped> 
+  .fullscreen-only {
+    display: none;
+  }
+  
   .pipeline-container {
     width:   100%;
     height:  80%;
