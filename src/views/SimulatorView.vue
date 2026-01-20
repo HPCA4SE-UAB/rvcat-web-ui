@@ -7,7 +7,6 @@ import programComponent        from '@/components/programComponent.vue';
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
-import procSettingsComponent   from '@/components/procSettingsComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
   
 import { useRVCAT_Api }        from '@/rvcatAPI';
@@ -47,7 +46,6 @@ const containerClasses = computed(() => ({
 const components = {
   timelineComponent,
   staticAnalysisComponent,
-  procSettingsComponent,
   aboutComponent,
   simulationComponent
 };
@@ -56,7 +54,7 @@ const currentKey        = ref('simulationComponent')
 const currentComponent  = shallowRef(components[currentKey.value])
 let   cleanupRVCAT      = null
   
-// Handle requests from header
+// Handle requests from header  <-------------------------------- TODO
 function onRequestSwitch(key) {
   const nextComp = components[key];
   if (
