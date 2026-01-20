@@ -250,10 +250,10 @@
         return false   // choose another name
     
     processorInfo = getCurrentProcessorJSON(name);
-    jsonText      = JSON.stringify(processorInfo, null, 2)
+    jsonString    = JSON.stringify(processorInfo, null, 2)
 
     setTimeout(()=>{
-      localStorage.setItem(`processor.${name}`, jsonText)
+      localStorage.setItem(`processor.${name}`, jsonString)
       processorOptions.availableProcessors = getKeys('processor')
       processorOptions.currentProcessor    = name;
     }, 100);
@@ -286,11 +286,11 @@
           }],
         });
         const writable = await handle.createWritable();
-        await writable.write(jsonText);
+        await writable.write(jsonString);
         await writable.close();
      } else {
         // fallback: traditional anchor download
-        const blob = new Blob([jsonText], { type: 'application/json' });
+        const blob = new Blob([jsonString], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url;
