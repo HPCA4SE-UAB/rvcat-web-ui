@@ -201,7 +201,7 @@ function toggleProgramFullscreen() {
       </div>
       
       <div v-show="!isFullscreen || !isProcessor" class="grid-item program" :class="{ 'fullscreen': isFullscreen && !isProcessor }">
-        <programComponent />
+        <programComponent :is-fullscreen="isFullscreen && !isProcessor" />
       </div>
       
       <div v-show="!isFullscreen" class="grid-item results">
