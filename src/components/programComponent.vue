@@ -362,7 +362,6 @@
 .fullscreen-settings {
   display: flex;
   align-items: center;
-  gap: 20px; /* Más espacio en fullscreen */
 }
   
 </style>
