@@ -1065,11 +1065,11 @@
   }
   
   .settings-group {
-    display:        flex;  /**/
+    display:        flex;
     flex-direction: column;
     border:         1px solid #ccc;
     border-radius:  8px;
-    padding:        1rem; /* 10px */
+    padding:        0.3rem;
     background:     #fafafa;
   }
 
@@ -1099,7 +1099,7 @@
   }
 
   .ports-toolbar {
-    margin: 8px 0;
+    margin: 4px 0;
   }
   .port-tag {
     display:       inline-block;
@@ -1127,7 +1127,7 @@
   }
   .instr-table {
     width:           100%;
-    margin-top:      10px;
+    margin-top:      1px;
     border-collapse: collapse;
   }
   .instr-table th,
