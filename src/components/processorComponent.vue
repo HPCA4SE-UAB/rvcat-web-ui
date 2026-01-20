@@ -246,7 +246,7 @@
   };
 
   function updateProcessor(name) {
-    if ( processorOptions.availableProcessors.value.includes(name) )
+    if ( processorOptions.availableProcessors.includes(name) )
         return false   // choose another name
     
     processorInfo = getCurrentProcessorJSON(name);
