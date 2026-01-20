@@ -116,7 +116,7 @@ function toggleProcessorFullscreen() {
     isProcessor.value = true
     document.querySelector('.grid-item.processor').scrollIntoView({ behavior: 'smooth' });
   }
-  else  if (isProcessor.value)
+  else if (isProcessor.value)
     isFullscreen.value= false
 }
   
