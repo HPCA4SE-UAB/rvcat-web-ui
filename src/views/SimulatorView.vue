@@ -31,10 +31,10 @@ const loadingMessage    = ref('Initializing');
 const isFullscreen = ref(false);
 const isProcessor  = ref(false);
 const fullProcessorButtonText  = computed(() => 
-  (isFullscreen.value && isProcessor.value)? '✔ Edit Processor' : 'Edit Processor'
+  (isFullscreen.value && isProcessor.value)? '📍Edit Processor' : '📌Edit Processor'
 );
 const fullProgramButtonText  = computed(() => 
-  (isFullscreen.value && !isProcessor.value)? '✔ Edit Program' : 'Edit Program'
+  (isFullscreen.value && !isProcessor.value)? '📍Edit Program' : '📌Edit Program'
 );
 
 const containerClasses = computed(() => ({
@@ -153,14 +153,14 @@ function toggleProgramFullscreen() {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Open Full Processor Window. Configure Processor's settings." 
+            <button class="blue-button" title="Open full <strong>Processor</strong> window and configure settings (pinned/unpinned)" 
               :class="{ 'active': isFullscreen && isProcessor }" 
               @click="toggleProcessorFullscreen" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Open Full Program Window. Edit Program." 
+            <button class="blue-button" title="Open full <strong>Program</strong> window and edit (pinned/unpinned)" 
               :class="{ 'active': isFullscreen && !isProcessor}" 
               @click="toggleProgramFullscreen" >
                 {{ fullProgramButtonText }}
