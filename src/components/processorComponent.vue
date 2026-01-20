@@ -49,6 +49,8 @@
   let lastRequestId         = 0;
   let modalConfirmOperation = null;
 
+  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
+
   const originalSettings = reactive({
     dispatch:   1,
     retire:     1,
@@ -64,8 +66,7 @@
   });
 
   // --- computed lists ---
-  const availableInstructions = computed(() => { const res = unref(resources); return Object.keys(res); });
-  const portList              = computed(() => Object.keys(ports.value));
+  const portList = computed(() => Object.keys(ports.value));
 
   // --- modal state ---
   const showModalDown = ref(false);
@@ -828,9 +829,8 @@
             + Add Port
           </button>
         </div>
-        {{ availableInstructions }}
-
-        <table v-if="availableInstructions.length" class="instr-table" >
+        
+        <table class="instr-table" >
           <thead>
             <tr>
               <th>TYPE</th>
