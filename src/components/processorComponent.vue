@@ -64,7 +64,7 @@
   });
 
   // --- computed lists ---
-  const availableInstructions = computed(() => { const res = unref(resources); return Object.keys(res)); }
+  const availableInstructions = computed(() => { const res = unref(resources); return Object.keys(res); });
   const portList              = computed(() => Object.keys(ports.value));
 
   // --- modal state ---
