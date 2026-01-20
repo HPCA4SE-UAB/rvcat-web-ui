@@ -262,11 +262,6 @@
 
 <template>
   <div class="main">
-   <!-- DEBUG -->
-    <div style="position: fixed; top: 10px; left: 10px; background: yellow; padding: 10px; z-index: 9999;">
-      DEBUG: isFullscreen = {{ isFullscreen }}<br>
-      Buttons should be visible: {{ isFullscreen ? 'YES' : 'NO' }}
-    </div>
     
     <div v-if="!isFullscreen" class="header">
       <div class="section-title-and-info">
@@ -362,6 +357,7 @@
 .fullscreen-settings {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
   
 </style>
