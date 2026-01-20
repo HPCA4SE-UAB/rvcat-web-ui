@@ -245,11 +245,8 @@
   };
 
   function updateProcessor(name) {
-    const list = processorOptions.availableProcessors.value
-    for (const opt of list.options) {
-      if (opt.value === name)
+    if ( processorOptions.availableProcessors.value.includes(name) )
         return false   // choose another name
-    }
     
     processorInfo = getCurrentProcessorJSON(name);
     jsonText      = JSON.stringify(processorInfo, null, 2)
@@ -764,16 +761,20 @@
       <!-- Widths Group -->
       <div class="settings-group">
         <div class="section-title-and-info">
-        <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help" >
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Stage Width Settings</span>
-        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help" >
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Cache Memory Settings</span>
+          <div class="title-group left-group">
+            <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+              <img src="/img/info.png" class="info-img">
+            </span>
+            <span class="header-title">Stage Width Settings</span>
+          </div>
+          <div class="title-group right-group">
+            <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
+              <img src="/img/info.png" class="info-img">
+            </span>
+            <span class="header-title">Cache Memory Settings</span>
+          </div>
         </div>
-
+          
         <div class="iters-group">
           <span>Dispatch:</span>
           <input type="number" v-model.number="dispatch" min="1" max="9" 
@@ -827,6 +828,7 @@
             + Add Port
           </button>
         </div>
+        {{availableInstructions.value}}
 
         <table v-if="availableInstructions.length" class="instr-table" >
           <thead>
@@ -973,6 +975,15 @@
 </template>
 
 <style scoped> 
+
+/* Para asegurar que cada grupo esté centrado en su mitad */
+.title-group {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+ 
   .fullscreen-only {
     display: none;
   }
