@@ -815,13 +815,26 @@
       
       <!-- Latency and Port Settings Group -->
       <div class="settings-group">
+        
+        <div class="debug-info" style="background: yellow; padding: 5px; margin-bottom: 10px;">
+          DEBUG: isFullscreen = {{ isFullscreen }}<br>
+          availableInstructions.length = {{ availableInstructions.length }}<br>
+          portList.length = {{ portList.length }}
+        </div>
+           
         <div class="section-title-and-info">
           <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
             <img src="/img/info.png" class="info-img">
           </span>
           <span class="header-title">Instruction Latencies and Execution Ports</span>
         </div>
-          
+
+        <!-- DEBUG: Ver si el contenido antes de la tabla se muestra -->
+        <div style="background: lime; padding: 5px; margin: 10px 0;">
+          ¿Se ven los ports en el toolbar? Ports: {{ portList.join(', ') }}
+        </div>
+
+        
         <!-- Ports toolbar: show existing ports and add/delete -->
         <div class="ports-toolbar">
           <span v-for="port in portList" :key="port" class="port-tag">
@@ -834,19 +847,24 @@
             + Add Port
           </button>
         </div>
+
+    <!-- DEBUG antes de la tabla -->
+    <div style="background: orange; padding: 5px; margin: 10px 0;">
+      Tabla debería tener {{ availableInstructions.length }} filas
+    </div>
+
         
-        <table class="instr-table" >
+        <table class="instr-table" style="border: 3px solid green;">
           <thead>
-            <tr>
+            <tr style="background: cyan;">
               <th>TYPE</th>
               <th>LATENCY</th>
-              <!-- one TH per port -->
               <th v-for="port in portList" :key="port">P{{ port }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="instr in availableInstructions" :key="instr">
-              <td>{{ instr }}</td>
+            <tr v-for="instr in availableInstructions" :key="instr" style="background: #f0f0f0;">
+              <td style="font-weight: bold;">{{ instr }}</td>
               <td>
                 <div class="latency-group">
                   <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
@@ -869,6 +887,12 @@
             </tr>
           </tbody>
         </table>
+
+   <!-- DEBUG después de la tabla -->
+    <div v-if="availableInstructions.length === 0" style="background: red; color: white; padding: 10px;">
+      ⚠️ availableInstructions está VACÍO!
+    </div>
+        
       </div> <!--- Latency & Port Settings Group -->
     </div>
     
@@ -1035,8 +1059,9 @@
     max-width: 20%;
     font-size: 2.0vh;
   }
+  
   table {
-    display:none;
+    display: table !important;
   }
   .scale-container {
     display: flex;
