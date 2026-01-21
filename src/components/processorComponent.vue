@@ -989,13 +989,6 @@
     width:     100%;
     height:    100%;
     display:   flex;
-    flex:      0 0 600px; /* Ancho fijo para la imagen */
-    min-width: 300px; /* Ancho mínimo */
-    padding:   2px;
-    flex-direction: column;
-    border:        1px solid #ddd;
-    background:    #f8f9fa;
-    border-radius: 8px;
   }
 
   .pipeline-side-container {
