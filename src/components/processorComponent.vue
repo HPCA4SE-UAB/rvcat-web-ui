@@ -44,14 +44,11 @@
     mIssueTime: 1
   });
 
-// portList como computed
-const portList = computed(() => 
-  Object.keys(procConfig.ports)
-    .map(k => Number(k))
-    .sort((a, b) => a - b)
-);
-
-  const portList   = computed(() => Object.keys(procConfig.ports));
+  const portList = computed(() => 
+    Object.keys(procConfig.ports)
+      .map(k => Number(k))
+      .sort((a, b) => a - b)
+  );
 
   // --- modal state ---
   const showModalDown = ref(false);
