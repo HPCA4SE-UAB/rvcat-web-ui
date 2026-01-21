@@ -722,8 +722,10 @@
           </div>
         </div>
       </div>
-      <div class="pipeline-img">
-         <svg v-html="pipelineSvg" v-if="pipelineSvg"></svg>
+      <div class="pipeline-container">
+        <div class="pipeline-img">
+          <svg v-html="pipelineSvg" v-if="pipelineSvg"></svg>
+        </div>
       </div>
     </div>
 
@@ -984,10 +986,8 @@
   }
 
   .pipeline-container {
-    width:   100%;
-    height:  100%;
-    display: block;
-    align-items: flex-start; /* Alinear al inicio */
+    width:     100%;
+    height:    100%;
     display:   flex;
     flex:      0 0 600px; /* Ancho fijo para la imagen */
     min-width: 300px; /* Ancho mínimo */
