@@ -1107,6 +1107,7 @@
      max-width:  100%; /* Pero no más ancho que el contenedor */
      overflow-x: auto; /* Scroll si es necesario */
      overflow-y: auto; /* Scroll vertical si es necesario */
+     padding-bottom: 30px; /* permite mover el contenedor y verlo completo
   }
 
   table {
