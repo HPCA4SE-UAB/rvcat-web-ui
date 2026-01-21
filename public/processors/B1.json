@@ -1,11 +1,12 @@
 {
   "name": "B1",
-  "stages": {
-    "dispatch": 1,
-    "execute": 2,
-    "retire": 2
-  },
-  "resources": {
+  "dispatch": 1,
+  "retire": 2,
+  "nBlocks": 0,
+  "blkSize": 8,
+  "mPenalty": 12,
+  "mIssueTime": 8,
+  "latencies": {
     "INT": 1,
     "BRANCH": 1,
     "MEM.STR": 2,
@@ -41,54 +42,5 @@
       "VFLOAT.MUL",
       "VFLOAT.FMA"
     ]
-  },
-  "rports": {
-    "INT": [
-      "0",
-      "1"
-    ],
-    "BRANCH": [
-      "0"
-    ],
-    "MEM.STR": [
-      "0"
-    ],
-    "MEM.LOAD": [
-      "0"
-    ],
-    "MEM.VLOAD": [
-      "0"
-    ],
-    "MEM.VSTR": [
-      "0"
-    ],
-    "FLOAT.MUL": [
-      "1"
-    ],
-    "FLOAT.FMA": [
-      "1"
-    ],
-    "VFLOAT.MUL": [
-      "1"
-    ],
-    "VFLOAT.FMA": [
-      "1"
-    ],
-    "FLOAT.ADD": [
-      "1"
-    ],
-    "FLOAT.DIV": [
-      "1"
-    ],
-    "FLOAT.SQRT": [
-      "1"
-    ],
-    "VFLOAT.ADD": [
-      "1"
-    ]
-  },
-  "nBlocks": 0,
-  "blkSize": 8,
-  "mPenalty": 12,
-  "mIssueTime": 8
+  }
 }
