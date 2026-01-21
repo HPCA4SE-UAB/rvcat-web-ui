@@ -287,13 +287,13 @@ nav ul li {
   grid-template-columns: 1fr;
   grid-template-rows:    1fr;
   position: fixed; 
-  top:    40px;  
-  left:   0;
-  right:  0;
-  bottom: 0;
+  top:      40px;  
+  left:     0;
+  right:    0;
+  bottom:   0;
+  z-index:  999;
+  padding:  0; 
   background: white;
-  z-index: 999;
-  padding: 0; 
 }
 
 .grid-item {
@@ -309,15 +309,15 @@ nav ul li {
 }
 .grid-item.program,
 .grid-item.results {
-  display:    grid;
+  display: grid;
 }
 
 .grid-item.processor.fullscreen,
 .grid-item.program.fullscreen {
   grid-column:   1 / span 3;
   grid-row:      1;
-  height: 100%;
-  width:  100%;
+  height:        100%;
+  width:         100%;
   position:      relative;
   top:           0;
   left:          0;
@@ -349,27 +349,27 @@ nav ul li {
 }
 
 .overlay {
-  top:   50%;
-  left:  50%;
+  top:     50%;
+  left:    50%;
   z-index: 1001;
-  position:   fixed;
-  transform:  translate(-50%, -50%);
-  background: white;
-  padding:    2rem;
+  position:       fixed;
+  transform:      translate(-50%, -50%);
+  background:     white;
+  padding:       2rem;
   border-radius: 8px;
   box-shadow:    0 4px 20px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  min-width: 300px;
+  text-align:    center;
+  min-width:     300px;
 }
 
 .spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  border:            4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #3498db;
-  border-radius: 50%;
+  border-radius:     50%;
   width:    40px;
   height:   40px;
   animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
+  margin:    0 auto 1rem;
 }
 
 @keyframes spin {
@@ -395,7 +395,7 @@ nav ul li {
 
 .grid-item.processor.fullscreen::-webkit-scrollbar-thumb,
 .grid-item.program.fullscreen::-webkit-scrollbar-thumb {
-  background: #888;
+  background:    #888;
   border-radius: 5px;
 }
 
