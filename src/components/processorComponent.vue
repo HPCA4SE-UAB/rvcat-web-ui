@@ -157,7 +157,8 @@
     // Watch ALL processor configuration values for changes
   watch(processorConfig, () => {
     try {
-      drawProcessor()  
+      if (simState.RVCAT_state >= 2)  // RVCAT imported & processor loaded
+        drawProcessor()  
     } catch (error) {
       console.error('Failed to handle changes on processor configuration:', error)
     } 
@@ -206,13 +207,13 @@
   // --- load & update processor settings ---
   const updateProcessorSettings = async (procInfo) => {
     try {
-      dispatch.value   = procInfo.dispatch;
-      retire.value     = procInfo.retire;
-      ports.value      = procInfo.ports || {};
-      nBlocks.value    = procInfo.nBlocks;
-      blkSize.value    = procInfo.blkSize;
-      mIssueTime.value = procInfo.mIssueTime;
-      mPenalty.value   = procInfo.mPenalty;
+      dispatch   = procInfo.dispatch;
+      retire     = procInfo.retire;
+      ports      = procInfo.ports || {};
+      nBlocks    = procInfo.nBlocks;
+      blkSize    = procInfo.blkSize;
+      mIssueTime = procInfo.mIssueTime;
+      mPenalty   = procInfo.mPenalty;
 
       // refresh latencies
       Object.keys(latencies).forEach(k => delete latencies[k]);
