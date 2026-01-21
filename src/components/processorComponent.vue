@@ -1053,7 +1053,6 @@
   }
   .latency-group {
     flex: 1; /* Ocupa espacio disponible */
-    min-width: 300px; /* Ancho mínimo */
     max-width: 70%; /* Ancho máximo si quieres control */
   }
   .latency-group .table-container {
