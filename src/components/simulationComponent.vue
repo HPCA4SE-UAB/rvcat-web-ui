@@ -485,7 +485,7 @@ function createCriticalPathList(data) {
   }
 
   .results-info {
-    width:      100%;
+    width: 100%;
   }
   .results-info .row {
     gap:     20px;
@@ -568,7 +568,7 @@ function createCriticalPathList(data) {
     width:      100%;
     display:    flex;
     margin-top: 10px;
-    font-size:  2.75vh;
+    font-size:  smaller;
     justify-content: space-between;
   }
   .color-scale {
