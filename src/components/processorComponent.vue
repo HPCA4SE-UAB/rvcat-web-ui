@@ -37,12 +37,19 @@
     dispatch:   1,
     retire:     1,
     latencies:  {},
-    ports:      {},
+    ports:      {0:[]},
     nBlocks:    0,
     blkSize:    1,
     mPenalty:   1,
     mIssueTime: 1
   });
+
+// portList como computed
+const portList = computed(() => 
+  Object.keys(procConfig.ports)
+    .map(k => Number(k))
+    .sort((a, b) => a - b)
+);
 
   const portList   = computed(() => Object.keys(procConfig.ports));
 
@@ -465,8 +472,8 @@
     if (procConfig.blkSize.value    !== processorInfo.blkSize)     return true;
     if (procConfig.mPenalty.value   !== processorInfo.mPenalty)    return true;
     if (procConfig.mIssueTime.value !== processorInfo.mIssueTime)  return true;
-    if (!shallowEq(procConfig.latencies.value, processorInfo.latencies)) return true;
-    if (!portsEq(procConfig.ports.value, processorInfo.ports))           return true;
+    if (!shallowEq(procConfig.latencies, processorInfo.latencies)) return true;
+    if (!portsEq(procConfig.ports, processorInfo.ports))           return true;
     return false;
   });
 
@@ -477,43 +484,45 @@
   defineExpose({ canLeave });
   
   // --- port add/delete ---
+
   function addPort() {
-    const existing = portList.value.map(n => parseInt(n,10)).sort((a,b)=>a-b);
+    const existing = portList.value;
     let next = 0;
     for (; existing.includes(next); next++);
-    procConfig.ports.value[next] = [];
+    procConfig.ports[next] = [];  
   }
-  
-  function removePort(port) {
+
+    function removePort(port) {
     const idx = Number(port);
-    delete procConfig.ports.value[idx];
-
-    //sort and reindex other ports
-    const leftover = Object.entries(procConfig.ports)
-      .map(([k,v]) => [Number(k), v])
-      .sort((a,b) => a[0] - b[0]);
-
-    Object.keys(procConfig.ports).forEach(k => delete procConfig.ports.value[k]);
-    leftover.forEach(([oldIdx, portArr], newIdx) => {
-      procConfig.ports.value[newIdx] = portArr;
+    delete procConfig.ports[idx];
+  
+    // Si quedan puertos, reindexar
+    const ports = Object.entries(procConfig.ports)
+      .map(([k, v]) => [Number(k), v])
+      .sort((a, b) => a[0] - b[0]);
+  
+    // Limpiar y reasignar
+    Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
+    ports.forEach(([oldIdx, portArr], newIdx) => {
+      procConfig.ports[newIdx] = portArr;
     });
   }
-
-  function togglePortInstruction(portNum, instruction, isChecked) {
-    if (!procConfig.ports.value[portNum]) procConfig.ports.value[portNum] = [];
+  
+    function togglePortInstruction(portNum, instruction, isChecked) {
+    if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
     if (isChecked) {
-      if (!procConfig.ports.value[portNum].includes(instruction))
-        procConfig.ports.value[portNum].push(instruction);
+      if (!procConfig.ports[portNum].includes(instruction))
+        procConfig.ports[portNum].push(instruction);
     } else {
-      procConfig.ports.value[portNum] = procConfig.ports.value[portNum].filter(i => i !== instruction);
+      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== instruction);
     }
   }
 
   function noPortAssigned(instr) {
-    if (!portList.value.some(p => procConfig.ports.value[p]?.includes(instr))) {
-      procConfig.ports.value[0].push(instr)
+    if (!portList.value.some(p => procConfig.ports[p]?.includes(instr))) {
+      procConfig.ports[0].push(instr)
     }
-    return !portList.value.some(p => procConfig.ports.value[p]?.includes(instr))
+    return !portList.value.some(p => procConfig.ports[p]?.includes(instr))
   }
 
 /* ------------------------------------------------------------------ 
