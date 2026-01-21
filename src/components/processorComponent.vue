@@ -306,7 +306,7 @@
     const dispatch_width = procConfig.dispatch.value
     const retire_width   = procConfig.retire.value
     const ROBsize        = processorOptions.ROBsize
-    const num_ports      = Object.keys(procConfig.ports.value).length
+    const num_ports      = Object.keys(procConfig.ports).length
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
