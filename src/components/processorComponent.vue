@@ -1058,15 +1058,14 @@
     flex: 1; /* Ocupa espacio disponible */
   }
   .latency-group .table-container {
-    max-height: 500px; /* Altura máxima con scroll si es necesario */
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
   /* Input de latencia más compacto */
   .latency-input {
-    width: 60px !important; /* Más estrecho */
+    width:     40px !important; /* Más estrecho */
     max-width: 60px;
-    padding: 3px !important;
-    margin: 0 auto !important;
+    padding:   3px !important;
+    margin:    0 auto !important;
   }
 
  /* Asegurar que los checkboxes sean pequeños */
@@ -1075,12 +1074,12 @@
  }
  .port-label {
     display: block;
-    margin: 0;
+    margin:  0;
     padding: 0;
  }
  .port-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width:  12px;
+    height: 14px;
     margin: 0;
     cursor: pointer;
   }
@@ -1105,11 +1104,10 @@
   }
 
   .table-container {
-     width: auto; /* Se ajusta al contenido */
-     max-width: 100%; /* Pero no más ancho que el contenedor */
+     width:      auto; /* Se ajusta al contenido */
+     max-width:  100%; /* Pero no más ancho que el contenedor */
      overflow-x: auto; /* Scroll si es necesario */
      overflow-y: auto; /* Scroll vertical si es necesario */
-     max-height: 500px;
   }
 
   table {
@@ -1124,7 +1122,7 @@
 
   .instr-table th,
   .instr-table td {
-    padding:    5px;
+    padding:    1px;
     text-align: center;
     border:     1px solid #ddd;
   }
@@ -1138,26 +1136,26 @@
   /* Ajusta el ancho específico de las columnas */
   .instr-table th:first-child,  /* Columna TYPE */
   .instr-table td:first-child {
-    text-align: left;
-    padding-left: 10px;
-    padding-right: 10px;
-    /* width: auto; - Se ajustará al contenido */
+    text-align:    left;
+    padding-left:  1px;
+    padding-right: 1px;
+
   }
 
   .instr-table th:nth-child(2),  /* Columna LATENCY */
   .instr-table td:nth-child(2) {
-    width: 100px; /* Ancho fijo para latencia */
-    min-width: 100px;
+    min-width: 50px;
     max-width: 100px; 
+    width: auto;
   }
 
   /* Columnas de puertos - muy estrechas */
   .instr-table th:nth-child(n+3),  /* Todas las columnas de puertos */
   .instr-table td:nth-child(n+3) {
-    width: 60px; /* Ancho fijo para checkboxes */
-    min-width: 60px;
+    width: auto;
+    min-width: 20px;
     max-width: 60px;
-    padding: 2px; /* Menos padding para más estrecho */
+    padding: 1px; /* Menos padding para más estrecho */
   }
 
   /* Chrome, Safari, Edge, Opera */
