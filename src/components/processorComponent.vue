@@ -723,9 +723,8 @@
         </div>
       </div>
       <div class="pipeline-container">
-         <div class="pipeline-img">
-           <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
-           </div>
+        <div class="pipeline-img">
+          <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
         </div>
       </div>
     </div>
@@ -872,6 +871,7 @@
             <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
           </div>
         </div>
+        
       </div>
     </div>
   </div>
