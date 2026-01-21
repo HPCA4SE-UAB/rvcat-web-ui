@@ -40,7 +40,6 @@
   const mPenalty        = ref(1);
   const mIssueTime      = ref(1);
   
-  const showTooltip     = ref(false);
   const showModalChange = ref(false);
   const prevProcessor   = ref(null);
   
@@ -826,11 +825,12 @@
           <div class="ports-toolbar">
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
-              <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" :title="`Remove port P${port}`">
+              <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" 
+                      :title="`Remove port P${port}` from the Execution Engine">
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
-            <button v-if="portList.length < 10" class="add-port" @click="addPort">
+            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" class="add-port" @click="addPort">
               + Add Port
             </button>
           </div>
@@ -850,12 +850,12 @@
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
-                         title="execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
+                         title="Execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
-                      <input type="checkbox" title="indicates if this port can execute the corresponding instruction type"
+                      <input type="checkbox" title="Indicates if this port can execute the corresponding instruction type"
                       :checked="(ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
                       @change="togglePortInstruction(port, instr, $event.target.checked)" />
                     </label>
@@ -880,16 +880,14 @@
     <HelpComponent v-if="showHelp" :position="helpPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
         <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
-        Use the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>"
+        Pin the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>"
     title="Processor MicroArchitecture"
     @close="closeHelp" />
 
     <HelpComponent v-if="showHelp1" :position="helpPosition" 
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
-      (2) <em>Cache Memory</em> (Note: Setting Number of Blocks = 0 means all data accesses will always hit in the cache);
-      (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10). 
-      <p>Each instruction type can be assigned a latency and a set of eligible execution ports (only one is used per execution); 
-         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
+      (2) <em>Cache Memory</em>; (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
+      (4) <em>Execution Latencies</em>"
     title="Processor Settings"
     @close="closeHelp1"/>
 
@@ -968,12 +966,7 @@
         <button class="blue-button" title="No, I want to cancel" @click="cancelLeave">Cancel</button>
       </div>
     </div>
-  </div>
-
-  <span id="auto-tooltip" ref="tooltip" class="auto-tooltip" :class="{ 'slide-in': showTooltip }">
-    Each instruction type must have at least one assigned execution port; default is P0.
-  </span>
-    
+  </div>   
 </template>
 
 <style scoped> 
@@ -1246,23 +1239,6 @@
   .spacer {
     min-width: 120px; /* Espacio mínimo entre elementos */
     height:    1px; /* Solo para referencia visual */  
-  }
-
-  .auto-tooltip {
-    position:fixed;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 2.2vh;
-    white-space: nowrap;
-    top: 35vh;
-    right: 0;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-  }
-  .auto-tooltip.slide-in {
-    transform: translateX(0);
   }
 
 </style>
