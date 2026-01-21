@@ -722,7 +722,7 @@
           </div>
         </div>
       </div>
-      <div class="pipeline-container">
+      <div class="pipeline-img">
          <svg v-html="pipelineSvg" v-if="pipelineSvg"></svg>
       </div>
     </div>
@@ -987,6 +987,15 @@
     width:   100%;
     height:  100%;
     display: block;
+    align-items: flex-start; /* Alinear al inicio */
+    display:   flex;
+    flex:      0 0 600px; /* Ancho fijo para la imagen */
+    min-width: 300px; /* Ancho mínimo */
+    padding:   2px;
+    flex-direction: column;
+    border:        1px solid #ddd;
+    background:    #f8f9fa;
+    border-radius: 8px;
   }
 
   .pipeline-side-container {
@@ -1053,16 +1062,13 @@
   }
 
   .pipeline-img {
-    width:           100%;
-    height:          100%;
-    /* display:         flex; */
-    overflow:        auto;
-    flex:            1;
-    align-items:     center;
-    justify-content: center;
+    width:        100%;
+    height:       100%;
+    flex:         1;
+    align-items:  center;
   }
   .pipeline-img > div {
-    max-width: 100%;
+    max-width:  100%;
     max-height: 100%;
   }
   .pipeline-img :deep(svg) {
