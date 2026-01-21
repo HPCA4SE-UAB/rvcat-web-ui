@@ -1064,24 +1064,13 @@
   .pipeline-img {
     width:        100%;
     height:       100%;
-    flex:         1;
+    max-width:    150%;
+    max-height:   150%;
     align-items:  center;
-  }
-  .pipeline-img > div {
-    max-width:  100%;
-    max-height: 100%;
-  }
-  .pipeline-img :deep(svg) {
-    width:      100% !important;
-    height:     100% !important;
-    max-width:  100% !important;
-    max-height: 100% !important;
-    object-fit: contain; /* Keeps aspect ratio */
-    display:    block;
-  }
-  .pipeline-img :deep(svg) g {
+    object-fit:   contain;
     transform-box: fill-box;
   }
+  
   .pipeline-img svg text {
     font-size:   12px !important;
     font-family: Arial, sans-serif !important;
