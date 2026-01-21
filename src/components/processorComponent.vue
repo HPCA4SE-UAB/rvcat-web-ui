@@ -1001,7 +1001,10 @@
     padding:        0.3rem;
     background:     #fafafa;
   }
-  
+  /* Para que la tabla no se expanda más allá de lo necesario */
+  .settings-group.latency-group .table-container {
+    flex: 0 0 auto; /* No crece, se ajusta al contenido */
+  }
   .pipeline-container {
     width:     100%;
     height:    100%;
@@ -1058,6 +1061,29 @@
     max-height: 500px; /* Altura máxima con scroll si es necesario */
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
+  /* Input de latencia más compacto */
+  .latency-input {
+    width: 60px !important; /* Más estrecho */
+    max-width: 60px;
+    padding: 3px !important;
+    margin: 0 auto !important;
+  }
+
+ /* Asegurar que los checkboxes sean pequeños */
+ .port-checkbox {
+   text-align: center;
+ }
+ .port-label {
+    display: block;
+    margin: 0;
+    padding: 0;
+ }
+ .port-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+  }
 
   .pipeline-img {
     width:        100%;
@@ -1079,18 +1105,20 @@
   }
 
   .table-container {
-    width: 100%;
-    overflow-x: auto; /* Scroll horizontal si la tabla es muy ancha */
+     width: auto; /* Se ajusta al contenido */
+     max-width: 100%; /* Pero no más ancho que el contenedor */
+     overflow-x: auto; /* Scroll si es necesario */
+     overflow-y: auto; /* Scroll vertical si es necesario */
+     max-height: 500px;
   }
 
   table {
     display: table !important;
   }
   .instr-table {
-    width:           100%;
-    margin-top:      1px;
-    min-width:       100%; /* Asegura que use el espacio disponible */
-    table-layout:    fixed; /* Para controlar mejor las columnas */
+    width:           auto;
+    white-space:     nowrap;
+    marginn-top:     1px;
     border-collapse: collapse;
   }
 
@@ -1106,23 +1134,32 @@
     position: sticky;
     top:      0;
   } 
- 
-  .scale-container {
-    display: flex;
-    justify-content: center; /* Center horizontally */
+
+  /* Ajusta el ancho específico de las columnas */
+  .instr-table th:first-child,  /* Columna TYPE */
+  .instr-table td:first-child {
+    text-align: left;
+    padding-left: 10px;
+    padding-right: 10px;
+    /* width: auto; - Se ajustará al contenido */
   }
-  .color-scale {
-    width:      30%;
-    height:     10px;
-    background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
-    position:   relative;
-    border-radius: 5px;
+
+  .instr-table th:nth-child(2),  /* Columna LATENCY */
+  .instr-table td:nth-child(2) {
+    width: 100px; /* Ancho fijo para latencia */
+    min-width: 100px;
+    max-width: 100px; 
   }
-  #settings-div {
-    display: flex;
-    gap:     5px;
+
+  /* Columnas de puertos - muy estrechas */
+  .instr-table th:nth-child(n+3),  /* Todas las columnas de puertos */
+  .instr-table td:nth-child(n+3) {
+    width: 60px; /* Ancho fijo para checkboxes */
+    min-width: 60px;
+    max-width: 60px;
+    padding: 2px; /* Menos padding para más estrecho */
   }
-  
+
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
