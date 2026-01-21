@@ -42,10 +42,6 @@
   
   const showModalChange = ref(false);
   const prevProcessor   = ref(null);
-  
-  let prevProcessorHandler;
-  let processorsListHandler;
-  let lastRequestId         = 0;
   let modalConfirmOperation = null;
 
   const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
@@ -84,7 +80,6 @@
   })()
 
   const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
-  
   const pipelineSvg      = ref('')
   let   cleanupHandleSet = null
 
