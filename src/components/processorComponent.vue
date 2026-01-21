@@ -973,101 +973,94 @@
 </template>
 
 <style scoped> 
-
-.spacer {
-  min-width: 120px; /* Espacio mínimo entre elementos */
-  height:    1px; /* Solo para referencia visual */
-}
-
-/* Para asegurar que cada grupo esté centrado en su mitad */
-.title-group {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
- 
-  .fullscreen-only {
-    display: none;
+  .horizontal-layout {
+    display:     flex;
+    gap:         10px; /* Espacio entre tabla e imagen */
+    margin-top:  25px;
+    align-items: flex-start; /* Alinear al inicio */
+    min-height:  800px;       /* Altura mínima */  
   }
-  
-  /* Contenedor principal horizontal */
-.horizontal-layout {
-  display: flex;
-  gap: 20px; /* Espacio entre tabla e imagen */
-  margin-top: 20px;
-  align-items: flex-start; /* Alinear al inicio */
-  min-height: 500px;       /* Altura mínima */
-}
 
-/* Grupo de latencias (izquierda) */
-.latency-group {
-  flex: 1; /* Ocupa espacio disponible */
-  min-width: 300px; /* Ancho mínimo */
-  max-width: 70%; /* Ancho máximo si quieres control */
-}
-
-/* Tabla dentro del grupo */
-.latency-group .table-container {
-  max-height: 500px; /* Altura máxima con scroll si es necesario */
-  overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
-}
-  
   .pipeline-container {
     width:   100%;
     height:  80%;
   }
 
-/* Contenedor de imagen (derecha) */
-.pipeline-side-container {
-  flex: 0 0 400px; /* Ancho fijo para la imagen */
-  min-width: 300px; /* Ancho mínimo */
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-}
+  .pipeline-side-container {
+    flex:      0 0 400px; /* Ancho fijo para la imagen */
+    min-width: 300px; /* Ancho mínimo */
+    padding:   10px;
+    display:   flex;
+    border:    1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 8px;
+    flex-direction: column;
+  }
 
-/* Ajustar la tabla para mejor visualización */
-.instr-table {
-  width: 100%;
-  margin-top:      1px;
-  border-collapse: collapse;
-}
+  .fullscreen-only {
+    display: none;
+  }
+  
+  .settings-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.instr-table th,
-.instr-table td {
-  padding: 5px;
-  text-align: center;
-  border: 1px solid #ddd;
-}
+  .fullscreen-settings {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.instr-table th {
-  background-color: #f5f5f5;
-  position: sticky;
-  top: 0;
-} 
- 
-.pipeline-img > div {
-  max-width: 100%;
-  max-height: 100%;
-}
+  .settings-sections {
+    display:         flex;
+    flex-direction:  column;
+    justify-content: down;
+    gap:             5px;
+    width:           100%;
+  }
+  .settings-group {
+    display:        flex;
+    flex-direction: column;
+    border:         1px solid #ccc;
+    border-radius:  8px;
+    padding:        0.3rem;
+    background:     #fafafa;
+  }
+  .button-group {
+    display:     inline-flex;
+    align-items: center;
+  }
+  .title-group {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .latency-group {
+    flex: 1; /* Ocupa espacio disponible */
+    min-width: 300px; /* Ancho mínimo */
+    max-width: 70%; /* Ancho máximo si quieres control */
+  }
+  .latency-group .table-container {
+    max-height: 500px; /* Altura máxima con scroll si es necesario */
+    overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
+  }
+
   .pipeline-img {
     width:           100%;
     height:          100%;
     display:         flex;
     overflow:        auto;
+    flex:            1;
+    align-items:     center;
+    justify-content: center;
   }
-
-/* Imagen dentro del contenedor 
-.pipeline-img {
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-}
-*/
+  .pipeline-img > div {
+    max-width: 100%;
+    max-height: 100%;
+  }
   .pipeline-img :deep(svg) {
     width:      100% !important;
     height:     100% !important;
@@ -1079,25 +1072,37 @@
   .pipeline-img :deep(svg) g {
     transform-box: fill-box;
   }
-  
-  /* Make GraphViz elements more visible */
   .pipeline-img svg text {
     font-size:   12px !important;
     font-family: Arial, sans-serif !important;
   }
-
   .pipeline-img svg polygon,
   .pipeline-img svg path {
     stroke-width: 2px !important;
-  }
-
-  #rob-size {
-    max-width: 80%;
   }
   
   table {
     display: table !important;
   }
+  .instr-table {
+    width: 100%;
+    margin-top:      1px;
+    border-collapse: collapse;
+  }
+
+  .instr-table th,
+  .instr-table td {
+    padding: 5px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+
+  .instr-table th {
+    background-color: #f5f5f5;
+    position: sticky;
+    top: 0;
+  } 
+ 
   .scale-container {
     display: flex;
     justify-content: center; /* Center horizontally */
@@ -1114,38 +1119,8 @@
     gap:         5px;
   }
 
-.settings-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.fullscreen-settings {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-   .settings-sections {
-    display:         flex;
-    flex-direction:  column;
-    justify-content: down;
-    gap:             5px;
-    width:           100%;
-  }
-  
-  .settings-group {
-    display:        flex;
-    flex-direction: column;
-    border:         1px solid #ccc;
-    border-radius:  8px;
-    padding:        0.3rem;
-    background:     #fafafa;
-  }
-
-  .button-group {
-    display:     inline-flex;
-    align-items: center;
+  #rob-size {
+    max-width: 100%;
   }
   
   /* Chrome, Safari, Edge, Opera */
@@ -1232,6 +1207,11 @@
   .warning-wrapper:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+  }
+
+  .spacer {
+    min-width: 120px; /* Espacio mínimo entre elementos */
+    height:    1px; /* Solo para referencia visual */  
   }
 
   .auto-tooltip {
