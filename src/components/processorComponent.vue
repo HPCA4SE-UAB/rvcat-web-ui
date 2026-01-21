@@ -981,7 +981,7 @@
     display:     flex;
     gap:         6px; /* Espacio entre tabla e imagen */
     margin-top:  6px;
-    align-items: flex-start; /* Alinear al inicio */
+    align-items: stretch; /* Para que ambos tengan misma altura */
     min-height:  800px;       /* Altura mínima */  
   }
   
@@ -1077,13 +1077,20 @@
   .pipeline-img svg path {
     stroke-width: 2px !important;
   }
-  
+
+  .table-container {
+    width: 100%;
+    overflow-x: auto; /* Scroll horizontal si la tabla es muy ancha */
+  }
+
   table {
     display: table !important;
   }
   .instr-table {
     width:           100%;
     margin-top:      1px;
+    min-width:       100%; /* Asegura que use el espacio disponible */
+    table-layout:    fixed; /* Para controlar mejor las columnas */
     border-collapse: collapse;
   }
 
