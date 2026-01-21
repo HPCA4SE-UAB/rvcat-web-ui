@@ -413,7 +413,7 @@
     return {
       name:       name,
       dispatch:   procConfig.dispatch.value,
-      execute:    Object.keys(procConfig.ports.value).length,
+      execute:    Object.keys(procConfig.ports).length,
       retire:     procConfig.retire.value,
       latencies:  { ...procConfig.latencies },
       ports:      procConfig.ports.value,
@@ -466,7 +466,7 @@
     if (procConfig.mPenalty.value   !== processorInfo.mPenalty)    return true;
     if (procConfig.mIssueTime.value !== processorInfo.mIssueTime)  return true;
     if (!shallowEq(procConfig.latencies.value, processorInfo.latencies)) return true;
-    if (!portsEq(procConfig.ports.value, processorInfo.ports))     return true;
+    if (!portsEq(procConfig.ports.value, processorInfo.ports))           return true;
     return false;
   });
 
@@ -481,19 +481,19 @@
     const existing = portList.value.map(n => parseInt(n,10)).sort((a,b)=>a-b);
     let next = 0;
     for (; existing.includes(next); next++);
-    ports.value[next] = [];
+    procConfig.ports.value[next] = [];
   }
   
   function removePort(port) {
     const idx = Number(port);
-    delete ports.value[idx];
+    delete procConfig.ports.value[idx];
 
     //sort and reindex other ports
-    const leftover = Object.entries(procConfig.ports.value)
+    const leftover = Object.entries(procConfig.ports)
       .map(([k,v]) => [Number(k), v])
       .sort((a,b) => a[0] - b[0]);
 
-    Object.keys(procConfig.ports.value).forEach(k => delete procConfig.ports.value[k]);
+    Object.keys(procConfig.ports).forEach(k => delete procConfig.ports.value[k]);
     leftover.forEach(([oldIdx, portArr], newIdx) => {
       procConfig.ports.value[newIdx] = portArr;
     });
