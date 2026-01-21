@@ -240,7 +240,7 @@ function toggleProgramFullscreen() {
 
 h1 {
   margin:    0;
-  font-size: 4vh;
+  font-size: large;
 }
 nav ul {
   list-style: none;
