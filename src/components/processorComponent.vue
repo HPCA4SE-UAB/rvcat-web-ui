@@ -734,26 +734,19 @@
         <span class="header-title">Processor Settings - <strong>{{  simState.selectedProcessor }}</strong></span>
       </div>
       
-      <div>
+      <div class="settings-container fullscreen-settings">
         <select v-model="processorOptions.currentProcessor" title="Select Processor">
           <option value="" disabled>Select</option>
-          <option 
-            v-for="processor in processorOptions.availableProcessors" 
-            :key="processor"
-            :value="processor"
-          >
+          <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
             {{ processor }}
           </option>
         </select>
 
         <div class="buttons">
-          <button class="blue-button" @click="openModal" :disabled="!isModified">
-            Apply Changes
-          </button>
+          <button class="blue-button" title="Apply/Save new processor configuration" @click="openModal" 
+                  :disabled="!isModified"> Apply Changes </button>
           <input id="file-upload" type="file" accept=".json" @change="uploadProcessor" style="display: none;"/>
-          <button class="blue-button" @click="openUploadModal">
-            Upload
-          </button>
+          <button class="blue-button" title="Load new Processor" @click="openUploadModal"> Upload </button>
         </div>
       </div>
     </div>
@@ -1122,6 +1115,19 @@
     gap:         5px;
   }
 
+.settings-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fullscreen-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+  
    .settings-sections {
     display:         flex;
     flex-direction:  column;
