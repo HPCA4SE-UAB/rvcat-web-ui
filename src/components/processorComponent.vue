@@ -850,7 +850,7 @@
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
-                         title="execution latency in clock cycles for the corresponding instruction type"/>
+                         title="execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
@@ -1182,12 +1182,12 @@
     margin: 4px 0;
   }
   .port-tag {
-    display:       inline-block;
+    display:       inline-flex;
     background:    #e3e3e3;
     border-radius: 4px;
-    padding:       2px;
-    margin-right:  5px;
-    margin-bottom: 5px;
+    padding:       1px;
+    margin-right:  1px;
+    margin-bottom: 3px;
     font-size:     0.9em;
   }
   .delete-port {
@@ -1200,7 +1200,7 @@
     background:    #4caf50;
     color:         white;
     border:        none;
-    padding:       4px 8px;
+    padding:       2px 4px;
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
