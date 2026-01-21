@@ -4,18 +4,15 @@
 
 <style>
   body {
-    width:      100vf;
-    height:     100vh;
-    max-width:  100vf;
-    max-height: 100vh;
     font-family: 'Trebuchet MS', sans-serif;
-    font-size:  2.5vh;
+    font-size:  initial;
     height:     100%;
     margin:     0;
     padding:    0;
     overflow:   hidden;
     background: #e3e3e3;
   }
+  
   ::-webkit-scrollbar {
     width: 0.75vh;
     height:0.75vh;
@@ -29,8 +26,6 @@
     border-radius:10px;
     height:0.75vh;
   }
-
-  /* Handle on hover */
   ::-webkit-scrollbar-thumb:hover {
     background: #8b8b8b;
   }
@@ -50,7 +45,7 @@
   .header {
     display:     flex;
     align-items: center;
-    padding:     8px 8px;
+    padding:     5px;
     font-size:   medium;
     justify-content: space-between;
   }
@@ -58,7 +53,7 @@
   .section-title-and-info {
     display:     flex;
     align-items: center;
-    gap:         10px; 
+    gap:         3px; 
     flex-wrap:   wrap;
   }
  
@@ -96,18 +91,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-
-  #num-iters {
-    width:     6ch;
-    font-size: 14px;
-  }
-
-  #run-button{
-    display: block;
-    cursor:  pointer;
-    left:    3px;
-  }
-
   .arrow {
     opacity:   0.8;
     font-size: 0.85em;
@@ -118,15 +101,9 @@
     align-items: center;
     gap:         6px;
   }
-  .iters-group input[type="number"] {
-    width:      8ch;
-    text-align: center;
-  }
   .iters-label {
-    font-size:   small;
-    font-weight: 500;
+    font-size:  medium;
     text-align: center;
-    justify-content: center;
   }
  
   .blue-button {
@@ -134,7 +111,7 @@
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
     padding:    6px 14px;
-    font-size:  small;
+    font-size:  medium;
     line-height:   1.2;
     border-radius: 6px;
     cursor:        pointer;
@@ -169,7 +146,7 @@
   }
 
   input {
-    font-size: small;
+    font-size: medium;
   }
 
   /* Modal styles */
@@ -220,8 +197,6 @@
   .info-icon {
     display:      inline-flex;
     align-items:  center;
-    margin-right: 9px;
-    margin-leftt: 9px;
     cursor:       pointer;
   }
   .info-img {
