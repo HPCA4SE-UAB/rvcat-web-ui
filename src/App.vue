@@ -51,7 +51,7 @@
     display:     flex;
     align-items: center;
     padding:     8px 8px;
-    font-size:   14px;
+    font-size:   medium;
     justify-content: space-between;
   }
 
@@ -63,7 +63,7 @@
   }
  
   .header-title {
-    font-size:    18px;
+    font-size:    medium;
     font-weight:  600
   }
 
@@ -84,7 +84,7 @@
     display:     inline-flex;
     align-items: center;
     gap:         0.4rem;
-    font-size:   1.1rem;
+    font-size:   1.0rem;
   }
   .dropdown-header:hover {
     background: #eaeaea;
@@ -123,7 +123,7 @@
     text-align: center;
   }
   .iters-label {
-    font-size:   15px;
+    font-size:   small;
     font-weight: 500;
     text-align: center;
     justify-content: center;
@@ -134,15 +134,15 @@
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
     padding:    6px 14px;
-    font-size:  14px;
+    font-size:  small;
     line-height:   1.2;
     border-radius: 6px;
     cursor:        pointer;
     font-weight:   600;
     white-space:   nowrap;
     flex-shrink:   1;
-    max-height: fit-content;
-    max-width: fit-content;
+    max-height:   fit-content;
+    max-width:    fit-content;
 
     transition: 
       background 0.15s ease, 
@@ -154,7 +154,7 @@
     background:   #1a4fb3;
     border-color: #1a4fb3;
     color:        white;
-    box-shadow:  inset 0 0 0 1px rgba(255,255,255,0.4);
+    box-shadow:   inset 0 0 0 1px rgba(255,255,255,0.4);
   }
   .blue-button:active {
     transform: translateY(1px);
@@ -165,56 +165,56 @@
   }
   .blue-button[disabled] {
     opacity: 0.5;
-    cursor:default;
+    cursor:  default;
   }
 
   input {
-    font-size: 2.5vh;
+    font-size: small;
   }
 
   /* Modal styles */
   .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    position:   fixed;
+    top:        0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
+    display:    flex;
+    align-items:     center;
     justify-content: center;
-    z-index: 1000;
+    z-index:         1000;
   }
   .modal         {
-    background: white;
-    padding: 20px;
+    background:    white;
+    padding:       20px;
     border-radius: 8px;
-    width: 30%;
-    position: relative;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    background: rgba(255,255,255);
-    z-index: 1000;
+    width:         30%;
+    position:      relative;
+    box-shadow:  0 2px 10px rgba(0,0,0,0.3);
+    background:  rgba(255,255,255);
+    z-index:     1000;
   }
   .modal-actions {
-    display: flex;
+    display:     flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap:        10px;
     margin-top: 20px;
   }
   .error {
-    color: red;
+    color:  red;
     margin: 6px 0;
   }
 
   /* Folding animation */
   .fold-enter-active, .fold-leave-active {
     transition: max-height 0.25s ease, opacity 0.2s ease;
-    overflow: hidden;
+    overflow:   hidden;
   }
   .fold-enter-from, .fold-leave-to {
     max-height: 0;
-    opacity: 0;
+    opacity:    0;
   }
   .fold-enter-to, .fold-leave-from {
     max-height: 500px;
-    opacity: 1;
+    opacity:    1;
   }
 
   .info-icon {
