@@ -257,7 +257,7 @@
     reader.onload = e => {
       try {
         const data = JSON.parse(e.target.result);
-        await updateProcessorSettings(data)
+        updateProcessorSettings(data)
         
         // === now pop up the Save‐As dialog ===
         // strip extension from filename for default
