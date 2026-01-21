@@ -702,23 +702,30 @@
 <template>
   <div class="main">
 
-    <div v-if="!isFullscreen" class="header">
-      <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Processor</span>
+    <div v-if="!isFullscreen">
+      <div class="header">
+        <div class="section-title-and-info">
+          <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+          <span class="header-title">Processor</span>
+        </div>
+        <div class="settings-container">
+          <select v-model="processorOptions.currentProcessor" title="Select Processor">
+            <option value="" disabled>Select</option>
+            <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
+              {{ processor }}
+            </option>
+          </select>
+          <div class="iters-group">
+            <span class="iters-label">ROB size:</span>
+            <input type="number" min="1" max="200" title="# ROB entries" 
+                 v-model.number="processorOptions.currentROBsize">
+          </div>
+        </div>
       </div>
-      
-      <div class="settings-container">
-        <select v-model="processorOptions.currentProcessor" title="Select Processor">
-          <option value="" disabled>Select</option>
-          <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
-            {{ processor }}
-          </option>
-        </select>
-        <div class="iters-group">
-          <span class="iters-label">ROB size:</span>
-          <input type="number" min="1" max="200" title="# ROB entries" 
-               v-model.number="processorOptions.currentROBsize">
+      <div class="pipeline-container">
+         <div class="pipeline-img">
+           <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+           </div>
         </div>
       </div>
     </div>
@@ -972,8 +979,8 @@
 <style scoped> 
   .horizontal-layout {
     display:     flex;
-    gap:         10px; /* Espacio entre tabla e imagen */
-    margin-top:  25px;
+    gap:         6px; /* Espacio entre tabla e imagen */
+    margin-top:  6px;
     align-items: flex-start; /* Alinear al inicio */
     min-height:  800px;       /* Altura mínima */  
   }
@@ -984,14 +991,14 @@
   }
 
   .pipeline-side-container {
-    flex:      0 0 400px; /* Ancho fijo para la imagen */
-    min-width: 300px; /* Ancho mínimo */
-    padding:   10px;
     display:   flex;
-    border:    1px solid #ddd;
-    background: #f8f9fa;
-    border-radius: 8px;
+    flex:      0 0 600px; /* Ancho fijo para la imagen */
+    min-width: 300px; /* Ancho mínimo */
+    padding:   2px;
     flex-direction: column;
+    border:        1px solid #ddd;
+    background:    #f8f9fa;
+    border-radius: 8px;
   }
 
   .fullscreen-only {
