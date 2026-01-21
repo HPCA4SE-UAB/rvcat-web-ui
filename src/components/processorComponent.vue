@@ -298,15 +298,15 @@
     console.log('Redrawing processor');
     try {
       const dotCode = get_processor_dot (
-         processorInfo.stages.dispatch,
+         dispatch,
          Object.keys(processorInfo.ports).length, 
-         processorInfo.stages.retire,
+         retire,
          processorOptions.currentROBsize,
          {
-           'nBlocks':    processorInfo.nBlocks,
-           'blkSize':    processorInfo.blkSize,
-           'mPenalty':   processorInfo.mPenalty,
-           'mIssueTime': processorInfo.mIssueTime
+           'nBlocks':    nBlocks,
+           'blkSize':    blkSize,
+           'mPenalty':   mPenalty,
+           'mIssueTime': mIssueTime
          }
       );
       const svg = await createGraphVizGraph(dotCode);  
@@ -553,7 +553,6 @@
     }
     return !portList.value.some(p => ports.value[p]?.includes(instr))
   }
-
 
 /* ------------------------------------------------------------------ 
  * Confirm Modal support 
