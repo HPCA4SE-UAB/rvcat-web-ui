@@ -46,7 +46,6 @@
     display:     flex;
     align-items: center;
     padding:     5px;
-    font-size:   medium;
     justify-content: space-between;
   }
 
@@ -58,7 +57,7 @@
   }
  
   .header-title {
-    font-size:    medium;
+    font-size:    large;
     font-weight:  600
   }
 
