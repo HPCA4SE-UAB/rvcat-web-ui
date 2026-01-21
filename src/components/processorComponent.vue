@@ -32,18 +32,27 @@
   // JSON of current processor configuration. Updated by ReloadProcessor()
   let jsonString    = ''
   let processorInfo = null
+  
+  const processorConfig = reactive({
+    dispatch: 1,
+    retire: 1,
+    latencies: {},
+    ports: {},
+    nBlocks: 0,
+    blkSize: 1,
+    mPenalty: 1,
+    mIssueTime: 1
+  });
 
-  const dispatch        = ref(1);
-  const retire          = ref(1);
-  const latencies       = reactive({});
-  const ports           = ref({});
-  const nBlocks         = ref(0);
-  const blkSize         = ref(1);
-  const mPenalty        = ref(1);
-  const mIssueTime      = ref(1);
-
-  // --- computed lists ---
-  const portList = computed(() => Object.keys(ports.value));
+  const dispatch   = computed(() => processorConfig.dispatch);
+  const retire     = computed(() => processorConfig.retire);
+  const latencies  = computed(() => processorConfig.latencies);
+  const ports      = computed(() => processorConfig.ports);
+  const nBlocks    = computed(() => processorConfig.nBlocks);
+  const blkSize    = computed(() => processorConfig.blkSize);
+  const mPenalty   = computed(() => processorConfig.mPenalty);
+  const mIssueTime = computed(() => processorConfig.mIssueTime);
+  const portList   = computed(() => Object.keys(ports.value));
 
   // --- modal state ---
   const showModalDown = ref(false);
@@ -97,7 +106,7 @@
     else
        console.log('New processor set into RVCAT')
     updateProcessorSettings(processorInfo);
-    drawProcessor()
+    // drawProcessor()
   }
 
   onMounted(() => {
@@ -144,7 +153,17 @@
     } 
   },
   { deep: true, immediate: true })
-  
+
+    // Watch ALL processor configuration values for changes
+  watch(processorConfig, () => {
+    try {
+      drawProcessor()  
+    } catch (error) {
+      console.error('Failed to handle changes on processor configuration:', error)
+    } 
+  },
+  { deep: true, immediate: true })
+
   const initProcessor = async () => {
     console.log('Init processor list');
     try {
