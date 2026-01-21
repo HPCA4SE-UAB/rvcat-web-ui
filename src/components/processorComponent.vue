@@ -26,6 +26,9 @@
     availableProcessors: []
   }
 
+  // TO DO: obtain from a distribution/local file, or from Processor Configuration
+  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
+
   // JSON of current processor configuration. Updated by ReloadProcessor()
   let jsonString    = ''
   let processorInfo = null
@@ -39,26 +42,6 @@
   const blkSize         = ref(1);
   const mPenalty        = ref(1);
   const mIssueTime      = ref(1);
-  
-  const showModalChange = ref(false);
-  const prevProcessor   = ref(null);
-  let modalConfirmOperation = null;
-
-  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
-
-  const originalSettings = reactive({
-    dispatch:   1,
-    retire:     1,
-    resources:  {},
-    name:       "default",
-    ports:      {},
-    rports:     {},
-    cache:      null,
-    nBlocks:    0,
-    blkSize:    1,
-    mPenalty:   1,
-    mIssueTime: 1,
-  });
 
   // --- computed lists ---
   const portList = computed(() => Object.keys(ports.value));
@@ -69,6 +52,9 @@
   const modalName     = ref("");
   const modalDownload = ref(true);
   const nameError     = ref("");
+  const showModalChange = ref(false);
+  let   modalConfirmOperation = null;
+  const prevProcessor   = ref(null);    // Not used
   
   const savedOptions = (() => {
     try {
@@ -123,10 +109,8 @@
       if (saved) {
         Object.assign(processorOptions, JSON.parse(saved))
       }
-      if (simState.RVCAT_state == 1) {
-        console.log('RVCAT just imported: look for processors and select current');
-        initProcessor()
-      }
+      if (simState.RVCAT_state != 0)
+        console.error('RVCAT imported before mounting Processor component')
     } catch (error) {
       console.error('❌ Failed to load:', error)
     }
@@ -219,21 +203,6 @@
       Object.entries(processorInfo.resources || {}).forEach(([k,v]) => {
         resources[k] = v;
       });
-
-      // stash original
-      Object.assign(originalSettings, {
-        dispatch:   processorInfo.stages.dispatch,
-        retire:     processorInfo.stages.retire,
-        name:       processorInfo.name,
-        resources:  JSON.parse(JSON.stringify(processorInfo.resources || {})),
-        ports:      JSON.parse(JSON.stringify(processorInfo.ports || {})),
-        rports:     JSON.parse(JSON.stringify(processorInfo.rports || {})),
-        cache:      processorInfo.cache,
-        nBlocks:    processorInfo.nBlocks,
-        blkSize:    processorInfo.blkSize,
-        mPenalty:   processorInfo.mPenalty,
-        mIssueTime: processorInfo.mIssueTime,
-      });
     } catch(e) {
       console.error("Failed to update processor settings:", e);
     }
@@ -251,20 +220,6 @@
       processorOptions.availableProcessors = getKeys('processor')
       processorOptions.currentProcessor    = name;
     }, 100);
-    
-    Object.assign(originalSettings, {
-      dispatch:   processorInfo.stages.dispatch,
-      retire:     processorInfo.stages.retire,
-      name:       processorInfo.name,
-      resources:  JSON.parse(JSON.stringify(processorInfo.resources)),
-      ports:      JSON.parse(JSON.stringify(processorInfo.ports)),
-      rports:     JSON.parse(JSON.stringify(processorInfo.rports)),
-      cache:      processorInfo.cache,
-      nBlocks:    processorInfo.nBlocks,
-      blkSize:    processorInfo.blkSize,
-      mPenalty:   processorInfo.mPenalty,
-      mIssueTime: processorInfo.mIssueTime,
-    });
 
     return true  // processor replaced
   }
@@ -323,21 +278,6 @@
 
         // update ports
         ports.value = data.ports || {};
-
-        // stash originalSettings if needed...
-        Object.assign(originalSettings, {
-          dispatch:   data.stages?.dispatch ?? 0,
-          retire:     data.stages?.retire   ?? 0,
-          name:       data.name             ?? "",
-          resources:  JSON.parse(JSON.stringify(data.resources||{})),
-          ports:      JSON.parse(JSON.stringify(data.ports||{})),
-          rports:     JSON.parse(JSON.stringify(data.rports||{})),
-          cache:      data.cache,
-          nBlocks:    data.nBlocks,
-          blkSize:    data.blkSize,
-          mPenalty:   data.mPenalty,
-          mIssueTime: data.mIssueTime,
-        });
 
         // === now pop up the Save‐As dialog ===
         // strip extension from filename for default
@@ -514,7 +454,6 @@
       resources:  { ...resources },
       ports:      ports.value,
       rports:     rports,
-      cache:      originalSettings.cache,
       nBlocks:    nBlocks.value,
       blkSize:    blkSize.value,
       mPenalty:   mPenalty.value,
@@ -557,14 +496,14 @@
   }
   
   const isModified = computed(() => {
-    if (dispatch.value !== originalSettings.dispatch)       return true;
-    if (retire.value   !== originalSettings.retire)         return true;
-    if (nBlocks.value   !== originalSettings.nBlocks)       return true;
-    if (blkSize.value   !== originalSettings.blkSize)       return true;
-    if (mPenalty.value   !== originalSettings.mPenalty)     return true;
-    if (mIssueTime.value   !== originalSettings.mIssueTime) return true;
-    if (!shallowEq(resources, originalSettings.resources))  return true;
-    if (!portsEq(ports.value, originalSettings.ports))      return true;
+    if (dispatch.value   !== processorInfo.dispatch)    return true;
+    if (retire.value     !== processorInfo.retire)      return true;
+    if (nBlocks.value    !== processorInfo.nBlocks)     return true;
+    if (blkSize.value    !== processorInfo.blkSize)     return true;
+    if (mPenalty.value   !== processorInfo.mPenalty)    return true;
+    if (mIssueTime.value !== processorInfo.mIssueTime)  return true;
+    if (!shallowEq(resources, processorInfo.resources)) return true;
+    if (!portsEq(ports.value, processorInfo.ports))     return true;
     return false;
   });
 
