@@ -1116,16 +1116,12 @@
     display: flex;
     gap:     5px;
   }
-
-  #rob-size {
-    max-width: 120%;
-  }
   
   /* Chrome, Safari, Edge, Opera */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: auto;
-    width:      5ch;
+    width:      6ch;
     padding:    1px;
     margin:     0 2px;
     text-align: right;
@@ -1135,7 +1131,7 @@
   input[type=number] {
     appearance: auto;
     -moz-appearance: number-input;
-    width:      5ch;
+    width:      6ch;
     padding:    1px;
     margin:     0 2px;
     text-align: right;
