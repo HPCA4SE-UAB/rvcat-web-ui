@@ -723,9 +723,7 @@
         </div>
       </div>
       <div class="pipeline-container">
-        <div class="pipeline-img">
-          <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
-        </div>
+         <svg v-html="pipelineSvg" v-if="pipelineSvg"></svg>
       </div>
     </div>
 
@@ -988,6 +986,7 @@
   .pipeline-container {
     width:   100%;
     height:  100%;
+    display: block;
   }
 
   .pipeline-side-container {
@@ -1056,7 +1055,7 @@
   .pipeline-img {
     width:           100%;
     height:          100%;
-    display:         flex;
+    /* display:         flex; */
     overflow:        auto;
     flex:            1;
     align-items:     center;
