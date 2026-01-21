@@ -307,8 +307,8 @@
    Miss Issue time: ${cache.mIssueTime}</span>`; */
 
   function get_processor_dot() {
-    const dispatch_width = procConfig.dispatch.value
-    const retire_width   = procConfig.retire.value
+    const dispatch_width = procConfig.dispatch
+    const retire_width   = procConfig.retire
     const ROBsize        = processorOptions.ROBsize
     const num_ports      = Object.keys(procConfig.ports).length
     let dot_code = `
