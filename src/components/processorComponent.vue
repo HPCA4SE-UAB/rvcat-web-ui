@@ -846,7 +846,7 @@
               </thead>
               <tbody>
                 <tr v-for="instr in availableInstructions" :key="instr" style="background: #f0f0f0;">
-                  <td style="font-weight: bold;">{{ instr }}</td>
+                  <td>{{ instr }}</td>
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
@@ -1135,10 +1135,8 @@
   /* Ajusta el ancho específico de las columnas */
   .instr-table th:first-child,  /* Columna TYPE */
   .instr-table td:first-child {
-    text-align:    left;
-    padding-left:  1px;
-    padding-right: 1px;
-
+    text-align:  center;
+    padding:     2px;
   }
 
   .instr-table th:nth-child(2),  /* Columna LATENCY */
@@ -1146,6 +1144,7 @@
     min-width: 50px;
     max-width: 100px; 
     width: auto;
+    padding: 2px;
   }
 
   /* Columnas de puertos - muy estrechas */
@@ -1154,7 +1153,7 @@
     width: auto;
     min-width: 20px;
     max-width: 60px;
-    padding: 1px; /* Menos padding para más estrecho */
+    padding: 2px;
   }
 
   /* Chrome, Safari, Edge, Opera */
