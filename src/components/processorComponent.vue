@@ -54,7 +54,6 @@
   const nameError     = ref("");
   const showModalChange = ref(false);
   let   modalConfirmOperation = null;
-  const prevProcessor   = ref(null);    // Not used
   
   const savedOptions = (() => {
     try {
