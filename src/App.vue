@@ -110,7 +110,7 @@
     background: #e6f0ff;
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
-    padding:    6px 14px;
+    padding:    3px 8px;
     font-size:  small;
     line-height:   1.2;
     border-radius: 6px;
