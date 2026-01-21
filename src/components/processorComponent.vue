@@ -44,7 +44,7 @@
     mIssueTime: 1
   });
 
-  const portList   = computed(() => Object.keys(procConfig.ports.value));
+  const portList   = computed(() => Object.keys(procConfig.ports));
 
   // --- modal state ---
   const showModalDown = ref(false);
