@@ -1,11 +1,12 @@
 {
   "name": "B2",
-  "stages": {
-    "dispatch": 2,
-    "execute": 3,
-    "retire": 3
-  },
-  "resources": {
+  "dispatch": 2,
+  "retire": 3,
+  "nBlocks": 0,
+  "blkSize": 8,
+  "mPenalty": 12,
+  "mIssueTime": 8,
+  "latencies": {
     "INT": 1,
     "BRANCH": 1,
     "MEM.STR": 2,
@@ -44,55 +45,5 @@
       "FLOAT.SQRT",
       "VFLOAT.ADD"
     ]
-  },
-  "rports": {
-    "INT": [
-      "0",
-      "1",
-      "2"
-    ],
-    "BRANCH": [
-      "0"
-    ],
-    "MEM.STR": [
-      "0"
-    ],
-    "MEM.LOAD": [
-      "0"
-    ],
-    "MEM.VLOAD": [
-      "0"
-    ],
-    "MEM.VSTR": [
-      "0"
-    ],
-    "FLOAT.MUL": [
-      "1"
-    ],
-    "FLOAT.FMA": [
-      "1"
-    ],
-    "VFLOAT.MUL": [
-      "1"
-    ],
-    "VFLOAT.FMA": [
-      "1"
-    ],
-    "FLOAT.ADD": [
-      "2"
-    ],
-    "FLOAT.DIV": [
-      "2"
-    ],
-    "FLOAT.SQRT": [
-      "2"
-    ],
-    "VFLOAT.ADD": [
-      "2"
-    ]
-  },
-  "nBlocks": 0,
-  "blkSize": 8,
-  "mPenalty": 12,
-  "mIssueTime": 8
+  }
 }
