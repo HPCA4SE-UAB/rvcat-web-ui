@@ -1,6 +1,6 @@
 {
+  "name": "base",
   "n": 7,
-  "name": "baseline",
   "instruction_list": [
     {
       "type": "MEM.LOAD.SP",
