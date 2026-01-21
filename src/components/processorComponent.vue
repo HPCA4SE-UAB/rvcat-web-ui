@@ -21,8 +21,8 @@
   const STORAGE_KEY = 'processorOptions'
 
   const defaultOptions = {
-    currentProcessor:    '',
-    currentROBsize:      20,
+    processorName:      '',
+    ROBsize:            20,
     availableProcessors: []
   }
 
@@ -35,8 +35,7 @@
 
   const dispatch        = ref(1);
   const retire          = ref(1);
-  const resources       = reactive({});
-  const name            = ref("default");
+  const latencies       = reactive({});
   const ports           = ref({});
   const nBlocks         = ref(0);
   const blkSize         = ref(1);
@@ -90,14 +89,14 @@
       console.error('Failed to set processor:', data);
       return;
     }
-    simState.selectedProcessor = processorOptions.currentProcessor;  // fire other components
+    simState.selectedProcessor = processorOptions.processorName;  // fire other components
     if (simState.RVCAT_state == 1) {  // RVCAT only imported
       simState.RVCAT_state = 2;       // fire program load
       console.log('RVCAT Initialization: processor set. Next, program must be set')
     }
     else
        console.log('New processor set into RVCAT')
-    updateProcessorSettings();
+    updateProcessorSettings(processorInfo);
     drawProcessor()
   }
 
@@ -125,19 +124,19 @@
   // Watch ALL processor options for changes
   watch(processorOptions, () => {
     try {     
-      processorOptions.currentROBsize = Math.min(processorOptions.currentROBsize, 200);
-      processorOptions.currentROBsize = Math.max(processorOptions.currentROBsize, 1);
+      processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
+      processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
       saveOptions()
       if (simState.RVCAT_state > 0) {  // imported or loaded
-         if (processorOptions.currentProcessor !== simState.selectedProcessor) {  // Processor changed
-            console.log(`Processor changed from "${simState.selectedProcessor}" to "${processorOptions.currentProcessor}"`);
+         if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
+            console.log(`Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
             reloadProcessor()
             return
          }
-         if (processorOptions.currentROBsize !== simState.ROBsize)  { // ROB size changed
-          console.log(`ROB size changed to "${processorOptions.currentROBsize}"`);
+         if (processorOptions.ROBsize !== simState.ROBsize)  { // ROB size changed
+          console.log(`ROB size changed to "${processorOptions.ROBsize}"`);
           drawProcessor()
-          simState.ROBsize = processorOptions.currentROBsize // fires other components
+          simState.ROBsize = processorOptions.ROBsize // fires other components
         }
       }
     } catch (error) {
@@ -162,7 +161,7 @@
           processorKeys = getKeys('processor')
         }
         processorOptions.availableProcessors = processorKeys
-        processorOptions.currentProcessor    = processorKeys[0]  // creates reactive action to reloadProcessor
+        processorOptions.processorName      = processorKeys[0]  // creates reactive action to reloadProcessor
       }
       else {
         console.log('Processors already stored on localStorage. Set processor')
@@ -174,9 +173,9 @@
   }
   
   const reloadProcessor = async () => {
-    console.log('Reloading processor with:', processorOptions.currentProcessor);
+    console.log('Reloading processor with:', processorOptions.processorName);
     try {
-      jsonString    = localStorage.getItem(`processor.${processorOptions.currentProcessor}`)
+      jsonString    = localStorage.getItem(`processor.${processorOptions.processorName}`)
       processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
@@ -186,21 +185,20 @@
   }
 
   // --- load & update processor settings ---
-  const updateProcessorSettings = async () => {
+  const updateProcessorSettings = async (procInfo) => {
     try {
-      dispatch.value   = processorInfo.stages.dispatch;
-      retire.value     = processorInfo.stages.retire;
-      name.value       = processorInfo.name;
-      ports.value      = processorInfo.ports || {};
-      nBlocks.value    = processorInfo.nBlocks;
-      blkSize.value    = processorInfo.blkSize;
-      mIssueTime.value = processorInfo.mIssueTime;
-      mPenalty.value   = processorInfo.mPenalty;
+      dispatch.value   = procInfo.dispatch;
+      retire.value     = procInfo.retire;
+      ports.value      = procInfo.ports || {};
+      nBlocks.value    = procInfo.nBlocks;
+      blkSize.value    = procInfo.blkSize;
+      mIssueTime.value = procInfo.mIssueTime;
+      mPenalty.value   = procInfo.mPenalty;
 
-      // refresh resources
-      Object.keys(resources).forEach(k => delete resources[k]);
-      Object.entries(processorInfo.resources || {}).forEach(([k,v]) => {
-        resources[k] = v;
+      // refresh latencies
+      Object.keys(latencies).forEach(k => delete latencies[k]);
+      Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
+        latencies[k] = v;
       });
     } catch(e) {
       console.error("Failed to update processor settings:", e);
@@ -217,7 +215,7 @@
     setTimeout(()=>{
       localStorage.setItem(`processor.${name}`, jsonString)
       processorOptions.availableProcessors = getKeys('processor')
-      processorOptions.currentProcessor    = name;
+      processorOptions.processorName = name;
     }, 100);
 
     return true  // processor replaced
@@ -259,25 +257,8 @@
     reader.onload = e => {
       try {
         const data = JSON.parse(e.target.result);
+        await updateProcessorSettings(data)
         
-        // === apply JSON to your reactive state ===
-        dispatch.value   = data.stages?.dispatch ?? dispatch.value;
-        retire.value     = data.stages?.retire   ?? retire.value;
-        name.value       = data.name             ?? name.value;
-        nBlocks.value    = data.nBlocks;
-        blkSize.value    = data.blkSize;
-        mIssueTime.value = data.mIssueTime;
-        mPenalty.value   = data.mPenalty;
-
-        // update resources
-        Object.keys(resources).forEach(k => delete resources[k]);
-        Object.entries(data.resources || {}).forEach(([k,v]) => {
-          resources[k] = v;
-        });
-
-        // update ports
-        ports.value = data.ports || {};
-
         // === now pop up the Save‐As dialog ===
         // strip extension from filename for default
         modalName.value     = file.name.replace(/\.[^.]+$/, "");
@@ -297,18 +278,7 @@
   const drawProcessor = async () => {
     console.log('Redrawing processor');
     try {
-      const dotCode = get_processor_dot (
-         dispatch,
-         Object.keys(processorInfo.ports).length, 
-         retire,
-         processorOptions.currentROBsize,
-         {
-           'nBlocks':    nBlocks,
-           'blkSize':    blkSize,
-           'mPenalty':   mPenalty,
-           'mIssueTime': mIssueTime
-         }
-      );
+      const dotCode = get_processor_dot ()
       const svg = await createGraphVizGraph(dotCode);  
       pipelineSvg.value = svg.outerHTML;
     } catch (error) {
@@ -320,21 +290,16 @@
 /* <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. 
    Miss Issue time: ${cache.mIssueTime}</span>`; */
 
-  function get_processor_dot(dispatch_width, num_ports, retire_width, rob_size, cache) {
+  function get_processor_dot() {
+    const dispatch_width = dispatch.value
+    const retire_width   = retire.value
+    const ROBsize        = processorOptions.ROBsize
+    const num_ports      = Object.keys(ports.value).length
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
       node [fontsize=14, fontname="Arial"];
-
-      Fetch [
-        shape=point
-        width=0
-        height=0
-        fixedsize=true
-        label=""
-        margin=0
-        style=invis
-      ];
+      Fetch [shape=point width=0 height=0 fixedsize=true label="" margin=0 style=invis ];
     `;
 
     // --- FETCH  ---
@@ -342,7 +307,7 @@
     dot_code += `
       Fetch -> "Waiting Buffer" [
         label="Dispatch = ${dispatch_width}",
-        tooltip="Dispath Width: instructions per cycle",
+        tooltip="Dispath Width: ${dispatch_width} instructions per cycle",
         fontsize=14, fontname="Arial"
       ];
     `;
@@ -388,10 +353,7 @@
 
     dot_code += `
     {
-      rank=same;
-      Fetch;
-      "Waiting Buffer";
-      tooltip="Instructions wait for input data and available port"
+      rank=same; Fetch; "Waiting Buffer"; tooltip="Instructions wait for input data and available port"
     `;
 
     if (num_ports >= 4) {
@@ -410,7 +372,7 @@
     dot_code += `Registers;\n  }\n`;
 
     // --- ROB ---
-    dot_code += `ROB [label="ROB: ${rob_size} entries", tooltip="Reorder Buffer: maintains sequential program order", shape=box, height=0.6, width=5, fixedsize=true];\n`;
+    dot_code += `ROB [label="ROB: ${ROBsize} entries", tooltip="Reorder Buffer: maintains sequential program order", shape=box, height=0.6, width=5, fixedsize=true];\n`;
     dot_code += `{ rank=sink; ROB; }\n\n`;
 
     dot_code += `Fetch -> ROB;\n`;
@@ -436,23 +398,13 @@
   
   // return current processor configuration as JSON
   function getCurrentProcessorJSON(name) {
-    const rports = {};
-    Object.entries(ports.value).forEach(([port, instrs]) => {
-      instrs.forEach(instr => {
-        if (!rports[instr]) rports[instr] = [];
-        rports[instr].push(port);
-      });
-    });
     return {
-      name: name,
-      stages: {
-        dispatch: dispatch.value,
-        execute:  Object.keys(ports.value).length,
-        retire:   retire.value,
-      },
-      resources:  { ...resources },
+      name:       name,
+      dispatch:   dispatch.value,
+      execute:    Object.keys(ports.value).length,
+      retire:     retire.value,
+      latencies:  { ...latencies },
       ports:      ports.value,
-      rports:     rports,
       nBlocks:    nBlocks.value,
       blkSize:    blkSize.value,
       mPenalty:   mPenalty.value,
@@ -548,8 +500,6 @@
   function noPortAssigned(instr) {
     if (!portList.value.some(p => ports.value[p]?.includes(instr))) {
       ports.value[0].push(instr)
-      showTooltip.value = true
-      setTimeout(() => { showTooltip.value = false }, 2000)
     }
     return !portList.value.some(p => ports.value[p]?.includes(instr))
   }
@@ -576,13 +526,13 @@
       document.getElementById('file-upload').click();
     }
     else if(modalConfirmOperation=='change') {
-      updateProcessorSettings();
+      updateProcessorSettings(processorInfo);
     }
   }
 
   function cancelLeave() {
     if (modalConfirmOperation=='change') {
-      programOptions.currentProcessor = prevProcessor.value;
+      // programOptions.processorName = prevProcessor.value;
     }
     showModalChange.value = false;
   }
@@ -637,10 +587,10 @@
       <div class="header">
         <div class="section-title-and-info">
           <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-          <span class="header-title">Processor</span>
+          <span class="header-title">Processor <strong>{{ processorOptions.processorName }}</strong></span>
         </div>
         <div class="settings-container">
-          <select v-model="processorOptions.currentProcessor" title="Select Processor">
+          <select v-model="processorOptions.processorName" title="Select Processor">
             <option value="" disabled>Select</option>
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
@@ -648,8 +598,8 @@
           </select>
           <div class="iters-group">
             <span class="iters-label">ROB size:</span>
-            <input type="number" min="1" max="200" title="# ROB entries" 
-                 v-model.number="processorOptions.currentROBsize">
+            <input type="number" min="1" max="200" title="Number of ROB entries (1 to 200)" 
+                 v-model.number="processorOptions.ROBsize">
           </div>
         </div>
       </div>
@@ -665,11 +615,11 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Processor Settings - <strong>{{  simState.selectedProcessor }}</strong></span>
+        <span class="header-title">Processor Settings - <strong>{{ processorOptions.processorName }}</strong></span>
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <select v-model="processorOptions.currentProcessor" title="Select Processor">
+        <select v-model="processorOptions.processorName" title="Select Processor">
           <option value="" disabled>Select</option>
           <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
             {{ processor }}
@@ -679,7 +629,7 @@
         <div class="buttons">
           <button class="blue-button" title="Apply/Save new processor configuration" @click="openModal" 
                   :disabled="!isModified"> Apply Changes </button>
-          <input id="file-upload" type="file" accept=".json" @change="uploadProcessor" style="display: none;"/>
+          <input id="file-upload" type="file" accept=".json"     @change="uploadProcessor" style="display: none;"/>
           <button class="blue-button" title="Load new Processor" @click="openUploadModal"> Upload </button>
         </div>
       </div>
@@ -694,49 +644,47 @@
             <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
               <img src="/img/info.png" class="info-img">
             </span>
-            <span class="header-title">Stage Width Settings</span>
+            <span>Stage Width Settings</span>
           </div>
-          <div class="spacer"></div>
-          <div class="spacer"></div>
           <div class="title-group right-group">
             <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
               <img src="/img/info.png" class="info-img">
             </span>
-            <span class="header-title">Cache Memory Settings</span>
+            <span>Cache Memory Settings</span>
           </div>
         </div>
           
         <div class="iters-group">
           <span>Dispatch:</span>
           <input type="number" v-model.number="dispatch" min="1" max="9" 
-                 title="max. number of instructions dispatched per cycle"/>
+                 title="max. number of instructions dispatched per cycle (1 to 9)"/>
         
           <span>Retire:</span>
           <input type="number" v-model.number="retire" min="1" max="9" 
-                   title="max. number of instructions retired per cycle"/>
+                   title="max. number of instructions retired per cycle(1 to 9)"/>
 
           <div class="spacer"></div>
  
           <span>Number of Blocks:</span>
           <input type="number" v-model.number="nBlocks" min="0" max="32" 
-                 title="Memory blocks stored into cache (0 => no cache)"/>
+                 title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
         
           <span>Block Size:</span>
           <div class="button-group">
             <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
             <input type="number" v-model.number="blkSize" readonly
-                   title="Size of Memory block: must be a power of two"
+                   title="Size of Memory block: must be a power of two (1 to 128)"
              />
             <button @click="blkSize = Math.min(128, blkSize * 2)">+</button>
           </div>
 
           <span>Miss Penalty:</span>
           <input type="number" v-model.number="mPenalty" min="1" max="99" 
-                 title="Extra latency due to cache miss"/>
+                 title="Extra latency due to cache miss (1 to 99)"/>
 
           <span>Miss Issue Time:</span>
           <input type="number" v-model.number="mIssueTime" min="1" max="99" 
-                 title="Minimum time between Memory accesses"/>
+                 title="Minimum time between Memory accesses (1 to 99)"/>
         </div>
       </div> <!--- Width-group Settings Group -->
       
@@ -781,7 +729,7 @@
                   <td>{{ instr }}</td>
                   <td>
                     <div class="latency-group">
-                      <input type="number" v-model.number="resources[instr]" class="latency-input" min="1" max="99"
+                      <input type="number" v-model.number="latencies[instr]" class="latency-input" min="1" max="99"
                          title="Execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
                     </div>
                   </td>
@@ -869,8 +817,8 @@
       </label>
 
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I will save the current changes" @click="confirmModal">Apply</button>
-        <button class="blue-button" title="No, I do not want to save the current changes" @click="closeModal">Cancel</button>
+        <button class="blue-button" title="Yes, I will save the current changes"          @click="confirmModal"> Apply </button>
+        <button class="blue-button" title="No, I do not want to save the current changes" @click="closeModal">  Cancel </button>
       </div>
     </div>
   </div>
@@ -882,8 +830,8 @@
       <input id="config-name" type="text" title="name of loaded processor configuration" v-model="modalName"/>
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I want to load" @click="confirmModal">Load</button>
-        <button class="blue-button" title="No, I want to cancel"  @click="closeModal">Cancel</button>
+        <button class="blue-button" title="Yes, I want to load"   @click="confirmModal"> Load  </button>
+        <button class="blue-button" title="No, I want to cancel"  @click="closeModal">  Cancel </button>
       </div>
     </div>
   </div>
@@ -894,8 +842,8 @@
          Changes will be lost if you select or upload a new processor configuration.</p>
       <p><b>Do you want to continue?</b></p>
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I want to continue" @click="confirmLeave">OK</button>
-        <button class="blue-button" title="No, I want to cancel" @click="cancelLeave">Cancel</button>
+        <button class="blue-button" title="Yes, I want to continue" @click="confirmLeave">  OK   </button>
+        <button class="blue-button" title="No, I want to cancel"    @click="cancelLeave"> Cancel </button>
       </div>
     </div>
   </div>   
