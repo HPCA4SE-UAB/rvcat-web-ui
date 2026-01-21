@@ -33,26 +33,18 @@
   let jsonString    = ''
   let processorInfo = null
   
-  const processorConfig = reactive({
-    dispatch: 1,
-    retire: 1,
-    latencies: {},
-    ports: {},
-    nBlocks: 0,
-    blkSize: 1,
-    mPenalty: 1,
+  const procConfig = reactive({
+    dispatch:   1,
+    retire:     1,
+    latencies:  {},
+    ports:      {},
+    nBlocks:    0,
+    blkSize:    1,
+    mPenalty:   1,
     mIssueTime: 1
   });
 
-  const dispatch   = computed(() => processorConfig.dispatch);
-  const retire     = computed(() => processorConfig.retire);
-  const latencies  = computed(() => processorConfig.latencies);
-  const ports      = computed(() => processorConfig.ports);
-  const nBlocks    = computed(() => processorConfig.nBlocks);
-  const blkSize    = computed(() => processorConfig.blkSize);
-  const mPenalty   = computed(() => processorConfig.mPenalty);
-  const mIssueTime = computed(() => processorConfig.mIssueTime);
-  const portList   = computed(() => Object.keys(ports.value));
+  const portList   = computed(() => Object.keys(procConfig.ports.value));
 
   // --- modal state ---
   const showModalDown = ref(false);
@@ -155,7 +147,7 @@
   { deep: true, immediate: true })
 
     // Watch ALL processor configuration values for changes
-  watch(processorConfig, () => {
+  watch(procConfig, () => {
     try {
       if (simState.RVCAT_state >= 2)  // RVCAT imported & processor loaded
         drawProcessor()  
@@ -207,18 +199,18 @@
   // --- load & update processor settings ---
   const updateProcessorSettings = async (procInfo) => {
     try {
-      dispatch   = procInfo.dispatch;
-      retire     = procInfo.retire;
-      ports      = procInfo.ports || {};
-      nBlocks    = procInfo.nBlocks;
-      blkSize    = procInfo.blkSize;
-      mIssueTime = procInfo.mIssueTime;
-      mPenalty   = procInfo.mPenalty;
+      procConfig.dispatch   = procInfo.dispatch;
+      procConfig.retire     = procInfo.retire;
+      procConfig.ports      = procInfo.ports || {};
+      procConfig.nBlocks    = procInfo.nBlocks;
+      procConfig.blkSize    = procInfo.blkSize;
+      procConfig.mIssueTime = procInfo.mIssueTime;
+      procConfig.mPenalty   = procInfo.mPenalty;
 
       // refresh latencies
-      Object.keys(latencies).forEach(k => delete latencies[k]);
+      Object.keys(procConfig.latencies).forEach(k => delete procConfig.latencies[k]);
       Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
-        latencies[k] = v;
+        procConfig.latencies[k] = v;
       });
     } catch(e) {
       console.error("Failed to update processor settings:", e);
@@ -311,10 +303,10 @@
    Miss Issue time: ${cache.mIssueTime}</span>`; */
 
   function get_processor_dot() {
-    const dispatch_width = dispatch.value
-    const retire_width   = retire.value
+    const dispatch_width = procConfig.dispatch.value
+    const retire_width   = procConfig.retire.value
     const ROBsize        = processorOptions.ROBsize
-    const num_ports      = Object.keys(ports.value).length
+    const num_ports      = Object.keys(procConfig.ports.value).length
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
@@ -420,15 +412,15 @@
   function getCurrentProcessorJSON(name) {
     return {
       name:       name,
-      dispatch:   dispatch.value,
-      execute:    Object.keys(ports.value).length,
-      retire:     retire.value,
-      latencies:  { ...latencies },
-      ports:      ports.value,
-      nBlocks:    nBlocks.value,
-      blkSize:    blkSize.value,
-      mPenalty:   mPenalty.value,
-      mIssueTime: mIssueTime.value,
+      dispatch:   procConfig.dispatch.value,
+      execute:    Object.keys(procConfig.ports.value).length,
+      retire:     procConfig.retire.value,
+      latencies:  { ...procConfig.latencies },
+      ports:      procConfig.ports.value,
+      nBlocks:    procConfig.nBlocks.value,
+      blkSize:    procConfig.blkSize.value,
+      mPenalty:   procConfig.mPenalty.value,
+      mIssueTime: procConfig.mIssueTime.value,
     };
   }
 
@@ -467,14 +459,14 @@
   }
   
   const isModified = computed(() => {
-    if (dispatch.value   !== processorInfo.dispatch)    return true;
-    if (retire.value     !== processorInfo.retire)      return true;
-    if (nBlocks.value    !== processorInfo.nBlocks)     return true;
-    if (blkSize.value    !== processorInfo.blkSize)     return true;
-    if (mPenalty.value   !== processorInfo.mPenalty)    return true;
-    if (mIssueTime.value !== processorInfo.mIssueTime)  return true;
-    if (!shallowEq(latencies, processorInfo.latencies)) return true;
-    if (!portsEq(ports.value, processorInfo.ports))     return true;
+    if (procConfig.dispatch.value   !== processorInfo.dispatch)    return true;
+    if (procConfig.retire.value     !== processorInfo.retire)      return true;
+    if (procConfig.nBlocks.value    !== processorInfo.nBlocks)     return true;
+    if (procConfig.blkSize.value    !== processorInfo.blkSize)     return true;
+    if (procConfig.mPenalty.value   !== processorInfo.mPenalty)    return true;
+    if (procConfig.mIssueTime.value !== processorInfo.mIssueTime)  return true;
+    if (!shallowEq(procConfig.latencies.value, processorInfo.latencies)) return true;
+    if (!portsEq(procConfig.ports.value, processorInfo.ports))     return true;
     return false;
   });
 
@@ -497,31 +489,31 @@
     delete ports.value[idx];
 
     //sort and reindex other ports
-    const leftover = Object.entries(ports.value)
+    const leftover = Object.entries(procConfig.ports.value)
       .map(([k,v]) => [Number(k), v])
       .sort((a,b) => a[0] - b[0]);
 
-    Object.keys(ports.value).forEach(k => delete ports.value[k]);
+    Object.keys(procConfig.ports.value).forEach(k => delete procConfig.ports.value[k]);
     leftover.forEach(([oldIdx, portArr], newIdx) => {
-      ports.value[newIdx] = portArr;
+      procConfig.ports.value[newIdx] = portArr;
     });
   }
 
   function togglePortInstruction(portNum, instruction, isChecked) {
-    if (!ports.value[portNum]) ports.value[portNum] = [];
+    if (!procConfig.ports.value[portNum]) procConfig.ports.value[portNum] = [];
     if (isChecked) {
-      if (!ports.value[portNum].includes(instruction))
-        ports.value[portNum].push(instruction);
+      if (!procConfig.ports.value[portNum].includes(instruction))
+        procConfig.ports.value[portNum].push(instruction);
     } else {
-      ports.value[portNum] = ports.value[portNum].filter(i => i !== instruction);
+      procConfig.ports.value[portNum] = procConfig.ports.value[portNum].filter(i => i !== instruction);
     }
   }
 
   function noPortAssigned(instr) {
-    if (!portList.value.some(p => ports.value[p]?.includes(instr))) {
-      ports.value[0].push(instr)
+    if (!portList.value.some(p => procConfig.ports.value[p]?.includes(instr))) {
+      procConfig.ports.value[0].push(instr)
     }
-    return !portList.value.some(p => ports.value[p]?.includes(instr))
+    return !portList.value.some(p => procConfig.ports.value[p]?.includes(instr))
   }
 
 /* ------------------------------------------------------------------ 
@@ -676,34 +668,34 @@
           
         <div class="iters-group">
           <span>Dispatch:</span>
-          <input type="number" v-model.number="dispatch" min="1" max="9" 
+          <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
                  title="max. number of instructions dispatched per cycle (1 to 9)"/>
         
           <span>Retire:</span>
-          <input type="number" v-model.number="retire" min="1" max="9" 
+          <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
                    title="max. number of instructions retired per cycle(1 to 9)"/>
 
           <div class="spacer"></div>
  
           <span>Number of Blocks:</span>
-          <input type="number" v-model.number="nBlocks" min="0" max="32" 
+          <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
                  title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
         
           <span>Block Size:</span>
           <div class="button-group">
-            <button @click="blkSize = Math.max(1, blkSize / 2)">−</button>
-            <input type="number" v-model.number="blkSize" readonly
+            <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
+            <input type="number" v-model.number="procConfig.blkSize" readonly
                    title="Size of Memory block: must be a power of two (1 to 128)"
              />
-            <button @click="blkSize = Math.min(128, blkSize * 2)">+</button>
+            <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
           </div>
 
           <span>Miss Penalty:</span>
-          <input type="number" v-model.number="mPenalty" min="1" max="99" 
+          <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
                  title="Extra latency due to cache miss (1 to 99)"/>
 
           <span>Miss Issue Time:</span>
-          <input type="number" v-model.number="mIssueTime" min="1" max="99" 
+          <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
                  title="Minimum time between Memory accesses (1 to 99)"/>
         </div>
       </div> <!--- Width-group Settings Group -->
@@ -749,14 +741,14 @@
                   <td>{{ instr }}</td>
                   <td>
                     <div class="latency-group">
-                      <input type="number" v-model.number="latencies[instr]" class="latency-input" min="1" max="99"
+                      <input type="number" v-model.number="procConfig.latencies[instr]" class="latency-input" min="1" max="99"
                          title="Execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
                       <input type="checkbox" title="Indicates if this port can execute the corresponding instruction type"
-                      :checked="(ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
+                      :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
                       @change="togglePortInstruction(port, instr, $event.target.checked)" />
                     </label>
                   </td>
