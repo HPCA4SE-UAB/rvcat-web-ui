@@ -453,7 +453,7 @@
     if (blkSize.value    !== processorInfo.blkSize)     return true;
     if (mPenalty.value   !== processorInfo.mPenalty)    return true;
     if (mIssueTime.value !== processorInfo.mIssueTime)  return true;
-    if (!shallowEq(resources, processorInfo.resources)) return true;
+    if (!shallowEq(latencies, processorInfo.latencies)) return true;
     if (!portsEq(ports.value, processorInfo.ports))     return true;
     return false;
   });
