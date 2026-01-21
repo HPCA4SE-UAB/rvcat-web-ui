@@ -705,7 +705,7 @@
     <div v-if="!isFullscreen" class="header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Processor Pipeline</span>
+        <span class="header-title">Processor</span>
       </div>
       
       <div id="settings-div">
@@ -1092,8 +1092,7 @@
   }
 
   #rob-size {
-    max-width: 20%;
-    font-size: 2.0vh;
+    max-width: 80%;
   }
   
   table {
@@ -1127,7 +1126,6 @@
   gap: 10px;
 }
 
-  
    .settings-sections {
     display:         flex;
     flex-direction:  column;
