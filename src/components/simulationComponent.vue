@@ -338,12 +338,8 @@ function createCriticalPathList(data) {
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
-  const showHelp1    = ref(false);
-  const showHelp2    = ref(false);
-  const showHelp3    = ref(false);
-  const helpIcon1    = ref(null);
-  const helpIcon2    = ref(null);
-  const helpIcon3    = ref(null);
+  const showHelp1 = ref(false);  const showHelp2 = ref(false); const showHelp3 = ref(false);
+  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);  const helpIcon3 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
@@ -495,9 +491,9 @@ function createCriticalPathList(data) {
   }
 
   .simulation-inline-item {
-    flex:    1;
-    display: flex;
-    padding: 2px 2px;
+    flex:            1;
+    display:         flex;
+    padding:         2px 2px;
     justify-content: space-between;
     align-items:     center;
     background:      #f0f0f0;
@@ -572,9 +568,9 @@ function createCriticalPathList(data) {
     justify-content: space-between;
   }
   .color-scale {
-    width:   100%;
-    height:  10px;
-    border:  1px solid black;
+    width:    100%;
+    height:   10px;
+    border:   1px solid black;
     position: relative;
     background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
     border-radius: 5px;
