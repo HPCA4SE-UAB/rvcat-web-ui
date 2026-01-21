@@ -984,7 +984,24 @@
     align-items: flex-start; /* Alinear al inicio */
     min-height:  800px;       /* Altura mínima */  
   }
+  
+  .settings-group.latency-group,
+  .pipeline-side-container {
+    flex: 1 1 50%;          /* Esto hace que cada uno ocupe 50% */
+    min-width: 0;           /* Importante para evitar desbordamiento */
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
+  }
 
+  .settings-group.latency-group {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    border:         1px solid #ccc;
+    border-radius:  8px;
+    padding:        0.3rem;
+    background:     #fafafa;
+  }
+  
   .pipeline-container {
     width:     100%;
     height:    100%;
@@ -993,8 +1010,6 @@
 
   .pipeline-side-container {
     display:   flex;
-    flex:      0 0 600px; /* Ancho fijo para la imagen */
-    min-width: 300px; /* Ancho mínimo */
     padding:   2px;
     flex-direction: column;
     border:        1px solid #ddd;
@@ -1025,15 +1040,7 @@
     gap:             5px;
     width:           100%;
   }
-  .settings-group {
-    display:        flex;
-    flex-direction: column;
-    align-items:    center;
-    border:         1px solid #ccc;
-    border-radius:  8px;
-    padding:        0.3rem;
-    background:     #fafafa;
-  }
+
   .button-group {
     display:     inline-flex;
     align-items: center;
@@ -1046,7 +1053,6 @@
   }
   .latency-group {
     flex: 1; /* Ocupa espacio disponible */
-    max-width: 70%; /* Ancho máximo si quieres control */
   }
   .latency-group .table-container {
     max-height: 500px; /* Altura máxima con scroll si es necesario */
