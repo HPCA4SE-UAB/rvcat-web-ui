@@ -826,7 +826,7 @@
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
               <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" 
-                      :title="`Remove port P${port}` from the Execution Engine">
+                      :title="`Remove port P${port} from the Execution Engine`">
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
