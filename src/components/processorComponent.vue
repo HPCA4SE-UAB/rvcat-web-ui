@@ -1007,9 +1007,9 @@
     border-radius: 8px;
   }
 
-  .fullscreen-only {
+ /* .fullscreen-only {
     display: none;
-  }
+  } */
   
   .settings-container {
     display: flex;
