@@ -416,15 +416,15 @@
   function getCurrentProcessorJSON(name) {
     return {
       name:       name,
-      dispatch:   procConfig.dispatch.value,
+      dispatch:   procConfig.dispatch,
       execute:    Object.keys(procConfig.ports).length,
-      retire:     procConfig.retire.value,
+      retire:     procConfig.retire,
       latencies:  { ...procConfig.latencies },
-      ports:      procConfig.ports.value,
-      nBlocks:    procConfig.nBlocks.value,
-      blkSize:    procConfig.blkSize.value,
-      mPenalty:   procConfig.mPenalty.value,
-      mIssueTime: procConfig.mIssueTime.value,
+      ports:      procConfig.ports,
+      nBlocks:    procConfig.nBlocks,
+      blkSize:    procConfig.blkSize,
+      mPenalty:   procConfig.mPenalty,
+      mIssueTime: procConfig.mIssueTime,
     };
   }
 
@@ -463,12 +463,12 @@
   }
   
   const isModified = computed(() => {
-    if (procConfig.dispatch.value   !== processorInfo.dispatch)    return true;
-    if (procConfig.retire.value     !== processorInfo.retire)      return true;
-    if (procConfig.nBlocks.value    !== processorInfo.nBlocks)     return true;
-    if (procConfig.blkSize.value    !== processorInfo.blkSize)     return true;
-    if (procConfig.mPenalty.value   !== processorInfo.mPenalty)    return true;
-    if (procConfig.mIssueTime.value !== processorInfo.mIssueTime)  return true;
+    if (procConfig.dispatch   !== processorInfo.dispatch)    return true;
+    if (procConfig.retire     !== processorInfo.retire)      return true;
+    if (procConfig.nBlocks    !== processorInfo.nBlocks)     return true;
+    if (procConfig.blkSize    !== processorInfo.blkSize)     return true;
+    if (procConfig.mPenalty   !== processorInfo.mPenalty)    return true;
+    if (procConfig.mIssueTime !== processorInfo.mIssueTime)  return true;
     if (!shallowEq(procConfig.latencies, processorInfo.latencies)) return true;
     if (!portsEq(procConfig.ports, processorInfo.ports))           return true;
     return false;
