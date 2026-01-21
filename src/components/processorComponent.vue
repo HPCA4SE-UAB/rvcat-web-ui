@@ -981,19 +981,15 @@
     display:     flex;
     gap:         6px; /* Espacio entre tabla e imagen */
     margin-top:  6px;
-    align-items: stretch; /* Para que ambos tengan misma altura */
-    min-height:  800px;       /* Altura mínima */  
+    align-items: stretch;
+    height:      auto;
   }
   
-  .settings-group.latency-group,
-  .pipeline-side-container {
-    flex: 1 1 50%;          /* Esto hace que cada uno ocupe 50% */
-    min-width: 0;           /* Importante para evitar desbordamiento */
-    box-sizing: border-box; /* Incluye padding y border en el cálculo */
-  }
-
   .settings-group.latency-group {
     display:        flex;
+    flex: 1 1 45%;
+    min-width: 0;           /* Importante para evitar desbordamiento */
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
     flex-direction: column;
     align-items:    center;
     border:         1px solid #ccc;
@@ -1001,6 +997,7 @@
     padding:        0.3rem;
     background:     #fafafa;
   }
+  
   /* Para que la tabla no se expanda más allá de lo necesario */
   .settings-group.latency-group .table-container {
     flex: 0 0 auto; /* No crece, se ajusta al contenido */
@@ -1010,8 +1007,10 @@
     height:    100%;
     display:   flex;
   }
-
   .pipeline-side-container {
+    flex: 1 1 55%;
+    min-width: 0;           /* Importante para evitar desbordamiento */
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
     display:   flex;
     padding:   2px;
     flex-direction: column;
