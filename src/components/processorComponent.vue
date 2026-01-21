@@ -708,21 +708,18 @@
         <span class="header-title">Processor</span>
       </div>
       
-      <div id="settings-div">
+      <div class="settings-container">
         <select v-model="processorOptions.currentProcessor" title="Select Processor">
           <option value="" disabled>Select</option>
-          <option 
-            v-for="processor in processorOptions.availableProcessors" 
-            :key="processor"
-            :value="processor"
-          >
+          <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
             {{ processor }}
           </option>
         </select>
-        
-        <span class="iters-label">ROB size: </span>
-        <input type="number" title="# ROB entries" id="rob-size" name="rob-size" min="1" max="200"
+        <div class="iters-group">
+          <span class="iters-label">ROB size:</span>
+          <input type="number" min="1" max="200" title="# ROB entries" 
                v-model.number="processorOptions.currentROBsize">
+        </div>
       </div>
     </div>
 
@@ -983,7 +980,7 @@
 
   .pipeline-container {
     width:   100%;
-    height:  80%;
+    height:  100%;
   }
 
   .pipeline-side-container {
@@ -1023,6 +1020,7 @@
   .settings-group {
     display:        flex;
     flex-direction: column;
+    align-items:    center;
     border:         1px solid #ccc;
     border-radius:  8px;
     padding:        0.3rem;
@@ -1085,22 +1083,22 @@
     display: table !important;
   }
   .instr-table {
-    width: 100%;
+    width:           100%;
     margin-top:      1px;
     border-collapse: collapse;
   }
 
   .instr-table th,
   .instr-table td {
-    padding: 5px;
+    padding:    5px;
     text-align: center;
-    border: 1px solid #ddd;
+    border:     1px solid #ddd;
   }
 
   .instr-table th {
     background-color: #f5f5f5;
     position: sticky;
-    top: 0;
+    top:      0;
   } 
  
   .scale-container {
@@ -1115,12 +1113,12 @@
     border-radius: 5px;
   }
   #settings-div {
-    display:     flex;
-    gap:         5px;
+    display: flex;
+    gap:     5px;
   }
 
   #rob-size {
-    max-width: 100%;
+    max-width: 120%;
   }
   
   /* Chrome, Safari, Edge, Opera */
