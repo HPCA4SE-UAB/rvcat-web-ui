@@ -199,18 +199,13 @@
     </div>
 
     <!-- Tutorial Editor -->
-    <tutorialEditor 
-      v-if="showEditor" 
-      @close="showEditor = false"
-      @preview="previewCustomTutorial"
-      @tutorialFinished="addFinishedTutorial"
-    />
+    <!-- tutorialEditor v-if="showEditor" @close="showEditor = false" @preview="previewCustomTutorial" @tutorialFinished="addFinishedTutorial" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import tutorialEditor from './tutorialEditor.vue'
+// import tutorialEditor from './tutorialEditor.vue'
 
 // ============================================================================
 // PROPS & EMITS
