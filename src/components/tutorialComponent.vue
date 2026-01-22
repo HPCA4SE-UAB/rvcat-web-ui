@@ -1002,7 +1002,7 @@ onUnmounted(() => {
 
 .tutorial-close {
   position:    absolute;
-  top:         10px
+  top:         10px;
   right:       15px;
   background:  none;
   border:      none;
