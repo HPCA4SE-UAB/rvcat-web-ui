@@ -597,7 +597,7 @@
       <div class="header">
         <div class="section-title-and-info">
           <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-          <span class="header-title">Processor <strong>{{ processorOptions.processorName }}</strong></span>
+          <span class="header-title">Processor</span>
         </div>
         <div class="settings-container">
           <select v-model="processorOptions.processorName" title="Select Processor">
