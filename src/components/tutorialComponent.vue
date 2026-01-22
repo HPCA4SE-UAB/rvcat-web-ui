@@ -880,37 +880,38 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+  
 .tutorial-system {
-  position: relative;
+  position: fixed;
   z-index: 9999;
 }
 
 .tutorial-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
+  top:    0;
+  left:   0;
+  width:  100vw;
   height: 100vh;
+  z-index:  9999;
+  position: fixed;
   background: transparent;
-  z-index: 9999;
   pointer-events: none;
-  transition: opacity 0.3s ease-in-out;
+  transition:     opacity 0.3s ease-in-out;
 }
 
 .tutorial-tooltip {
-  position: absolute;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  padding: 0;
-  width: 300px;
-  max-width: calc(100vw - 40px);
-  z-index: 10001;
+  position:    absolute;
+  background:  white;
+  box-shadow:  0 8px 24px rgba(0, 0, 0, 0.3);
+  padding:     0;
+  opacity:     0;
+  width:       300px;
+  max-width:   calc(100vw - 40px);
+  z-index:     10001;
   pointer-events: all;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  opacity: 0;
-  transform: translateY(-10px) scale(0.95);
-  animation: tutorial-tooltip-appear 0.4s ease-out forwards;
+  transition:    all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 12px;
+  transform:     translateY(-10px) scale(0.95);
+  animation:     tutorial-tooltip-appear 0.4s ease-out forwards;
 }
 
 .tutorial-content {
@@ -918,8 +919,8 @@ onUnmounted(() => {
 }
 
 .tutorial-content h3 {
-  margin: 0 0 10px 0;
-  color: #333;
+  margin:    0 0 10px 0;
+  color:     #333;
   font-size: 18px;
 }
 
@@ -1017,136 +1018,136 @@ onUnmounted(() => {
 
 .tutorial-launcher {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 10000;
+  bottom:   20px;
+  right:    20px;
+  z-index:  10000;
 }
 
 .tutorial-launcher-btn {
-  width: 60px;
-  height: 60px;
+  width:         50px;
+  height:        50px;
   border-radius: 50%;
-  background: #007acc;
-  color: white;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 122, 204, 0.4);
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
+  background:    #007acc;
+  color:         white;
+  border:        none;
+  cursor:        pointer;
+  box-shadow:    0 4px 12px rgba(0, 122, 204, 0.4);
+  transition:    all 0.3s;
+  display:       flex;
+  align-items:   center;
   justify-content: center;
 }
 
 .tutorial-launcher-btn:hover {
-  background: #005999;
-  transform: scale(1.1);
+  background:  #005999;
+  transform:   scale(1.1);
 }
 
 .tutorial-icon {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: xx-large;
+  font-weight: bolder;
 }
 
 .tutorial-menu {
-  position: absolute;
-  bottom: 70px;
-  right: 0;
+  bottom:  20px;
+  right:   20px;
+  padding: 12px;
+  width:      360px;
+  max-height: 500px;
+  position:   absolute;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  width: 320px;
-  max-height: 400px;
   overflow-y: auto;
 }
 
 .tutorial-menu h4 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 16px;
+  margin:    0 0 10px 0;
+  color:     #333;
+  font-size: medium;
 }
 
 .tutorial-list {
   display: flex;
+  gap:     8px;
   flex-direction: column;
-  gap: 10px;
 }
 
 .tutorial-menu-item {
   background: none;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 15px;
-  cursor: pointer;
+  border:     1px solid #ddd;
+  padding:    10px;
+  cursor:     pointer;
   text-align: left;
   transition: all 0.2s;
+  border-radius: 6px;
 }
 
 .tutorial-menu-item:hover {
-  background: #f5f5f5;
+  background:  #f5f5f5;
   border-color: #007acc;
 }
 
 .tutorial-item-content strong {
-  display: block;
-  color: #333;
+  display:       block;
+  color:         #333;
   margin-bottom: 5px;
-  font-size: 14px;
+  font-size:     medium;
 }
 
 .tutorial-item-content p {
-  margin: 0;
-  color: #666;
-  font-size: 12px;
+  margin:     0;
+  color:      #666;
+  font-size:  small;
   line-height: 1.4;
 }
 
 .tutorial-loading {
-  padding: 20px;
+  padding:     20px;
   text-align: center;
-  color: #666;
+  color:      #666;
   font-style: italic;
 }
 
 .tutorial-menu-separator {
-  height: 1px;
+  height:     1px;
   background: #eee;
-  margin: 10px 0;
+  margin:     6px 0;
 }
 
 .tutorial-create-item {
-  background: linear-gradient(135deg, #007acc, #0056b3);
-  color: white;
+  background:   linear-gradient(135deg, #007acc, #0056b3);
+  color:        white;
   border-color: #007acc;
 }
 
 .tutorial-create-item:hover {
-  background: linear-gradient(135deg, #005999, #004085);
+  background:   linear-gradient(135deg, #005999, #004085);
   border-color: #005999;
 }
 
 .tutorial-paused-section {
-  border-bottom: 2px solid #eee;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
+  border-bottom:  2px solid #eee;
+  margin-bottom:  10px;
+  padding-bottom: 10px;
 }
 
 .tutorial-paused-header {
-  text-align: center;
-  margin-bottom: 15px;
+  text-align:    center;
+  margin-bottom: 10px;
 }
 
 .tutorial-paused-header h5 {
-  margin: 0 0 5px 0;
-  color: #333;
-  font-size: 16px;
+  margin:      0 0 2px 0;
+  color:       #333;
+  font-size:   large;
   font-weight: 600;
 }
 
 .tutorial-paused-info {
-  margin: 0;
-  color: #666;
-  font-size: 13px;
+  margin:     0;
+  color:      #666;
+  font-size:  small;
   font-style: italic;
 }
 
