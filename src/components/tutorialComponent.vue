@@ -199,7 +199,7 @@
     </div>
 
     <!-- Tutorial Editor -->
-    <!-- tutorialEditor v-if="showEditor" @close="showEditor = false" @preview="previewCustomTutorial" @tutorialFinished="addFinishedTutorial" />
+    <!-- tutorialEditor v-if="showEditor" @close="showEditor = false" @preview="previewCustomTutorial" @tutorialFinished="addFinishedTutorial" /> -->
   </div>
 </template>
 
@@ -1734,4 +1734,5 @@ onUnmounted(() => {
       transform: translate(-50%, -50%) scale(1);
     }
   }
+    
 </style>
