@@ -134,7 +134,7 @@
 
     <!-- Tutorial Launcher Button -->
     <div v-if="!isActive" class="tutorial-launcher">
-      <button @click="toggleTutorialMenu" class="tutorial-launcher-btn">
+      <button @click="toggleTutorialMenu" title="Open Tutorial" class="tutorial-launcher-btn">
         <span class="tutorial-icon">?</span>
       </button>
       
