@@ -19,12 +19,6 @@ const { importRVCAT }               = useRVCAT_Api();
  * Main Simulator Panel UI
  * ------------------------------------------------------------------ */
   
-// Modal & navigation state, Current view key & component
-const showLeaveModal    = ref(false);
-const pendingKey        = ref(null);
-const showOverlay       = ref(true);
-const loadingMessage    = ref('Initializing');
-
 // full screen mode
 const isFullscreen = ref(false);
 const isProcessor  = ref(false);
@@ -48,7 +42,10 @@ const components = {
   aboutComponent,
   simulationComponent
 };
-
+  
+// Navigation state, Current view key & component
+const showOverlay       = ref(true);
+const loadingMessage    = ref('Initializing');
 const currentKey        = ref('simulationComponent')
 const currentComponent  = shallowRef(components[currentKey.value])
 let   cleanupRVCAT      = null
@@ -58,21 +55,6 @@ function onRequestSwitch(key) {
   const nextComp = components[key];
   currentKey.value       = key;
   currentComponent.value = nextComp;
-}
-
-// Confirm or cancel navigation
-function confirmLeave() {
-  showLeaveModal.value = false;
-  if (pendingKey.value) {
-    currentKey.value       = pendingKey.value;
-    currentComponent.value = components[pendingKey.value];
-    pendingKey.value       = null;
-  }
-}
-  
-function cancelLeave() {
-  showLeaveModal.value = false;
-  pendingKey.value     = null;
 }
 
 function closeLoadingOverlay() { showOverlay.value = false }
@@ -209,21 +191,14 @@ function toggleProgramFullscreen() {
         <div v-else>Component not found</div>
       </div>
 
-      <div v-if="showLeaveModal" class="modal-overlay">
-        <div class="modal">
-          <p>You should apply (save) the changes on the processor settings before leaving this page.</p>
-          <p><b>Do you want to continue?</b></p>
-          <div class="modal-actions">
-            <button @click="confirmLeave" title="Leave"  class="blue-button">OK</button>
-            <button @click="cancelLeave"  title="Cancel" class="blue-button">Cancel</button>
-          </div>
-        </div>
-      </div>
+      <!--- Tutorial system goes here --->
+      
     </main>
   </body>
 </template>
 
 <style scoped>
+  
 #top {
   max-height: 5vh;
   width:      100vw;
