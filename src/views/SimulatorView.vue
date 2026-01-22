@@ -3,6 +3,8 @@ import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, compu
 
 import processorComponent      from '@/components/processorComponent.vue';
 import programComponent        from '@/components/programComponent.vue';
+
+import tutorialComponent       from '@/components/tutorialComponent.vue';
   
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
@@ -50,7 +52,7 @@ const currentKey        = ref('simulationComponent')
 const currentComponent  = shallowRef(components[currentKey.value])
 let   cleanupRVCAT      = null
   
-// Handle requests from header  <-------------------------------- TODO
+// Handle requests from header
 function onRequestSwitch(key) {
   const nextComp = components[key];
   currentKey.value       = key;
@@ -191,8 +193,12 @@ function toggleProgramFullscreen() {
         <div v-else>Component not found</div>
       </div>
 
-      <!--- Tutorial system goes here --->
-      
+      <!-- Tutorial System -->
+      <tutorialComponent 
+        :activeView="currentKey"
+        @requestSwitch="onRequestSwitch"
+      />
+
     </main>
   </body>
 </template>
