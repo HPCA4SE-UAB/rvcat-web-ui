@@ -544,9 +544,6 @@
   }
 
   function cancelLeave() {
-    if (modalConfirmOperation=='change') {
-      // programOptions.processorName = prevProcessor.value;
-    }
     showModalChange.value = false;
   }
 
@@ -824,7 +821,7 @@
         <span class="warning-wrapper" aria-label="Info">
           ⚠️
           <div class="tooltip-text">
-            Saving a local copy is recommended as modified settings will not persist in your next session.
+            Saving a copy in your file system is recommended, even though modified settings persist during sessions.
           </div>
         </span>
       </label>
