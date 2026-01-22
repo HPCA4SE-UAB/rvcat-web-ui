@@ -102,7 +102,6 @@
     else
        console.log('New processor set into RVCAT')
     updateProcessorSettings(processorInfo);
-    // drawProcessor()
   }
 
   onMounted(() => {
@@ -303,9 +302,6 @@
     }
   }
 
-/* <b>Cache:</b><span>${cache.nBlocks} blocks of ${cache.blkSize} bytes. Miss penalty: ${cache.mPenalty}. 
-   Miss Issue time: ${cache.mIssueTime}</span>`; */
-
   function get_processor_dot() {
     const dispatch_width = procConfig.dispatch
     const retire_width   = procConfig.retire
@@ -417,7 +413,6 @@
     return {
       name:       name,
       dispatch:   procConfig.dispatch,
-      execute:    Object.keys(procConfig.ports).length,
       retire:     procConfig.retire,
       latencies:  { ...procConfig.latencies },
       ports:      procConfig.ports,
@@ -489,7 +484,7 @@
     procConfig.ports[next] = [];  
   }
 
-    function removePort(port) {
+  function removePort(port) {
     const idx = Number(port);
     delete procConfig.ports[idx];
   
@@ -505,7 +500,7 @@
     });
   }
   
-    function togglePortInstruction(portNum, instruction, isChecked) {
+  function togglePortInstruction(portNum, instruction, isChecked) {
     if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
     if (isChecked) {
       if (!procConfig.ports[portNum].includes(instruction))
