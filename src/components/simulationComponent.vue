@@ -110,8 +110,8 @@
           usage);
        */
       
-      fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
-      svg    = createGraphVizGraph(fullGraphDotCode);
+      // fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
+      // svg    = createGraphVizGraph(fullGraphDotCode);
             
       document.getElementById('run-simulation-spinner').style.display = 'none';
       document.getElementById('simulation-running').style.display     = 'none';
@@ -119,7 +119,7 @@
       document.getElementById('critical-path-section').style.display  = 'block';
       document.getElementById('run-simulation-button').disabled       = false;
 
-      document.getElementById('simulation-graph').appendChild(svg)
+      // document.getElementById('simulation-graph').appendChild(svg)
     } catch (error) {
       console.error('Failed to obtain execution results:', error)
     }
