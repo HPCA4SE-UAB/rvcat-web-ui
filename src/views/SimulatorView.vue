@@ -202,15 +202,15 @@ function toggleFullScreen(component) {
     
     <main class="container" :class="containerClasses">
       
-      <div v-show="isProcessorFullscreen" class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
+      <div v-show="isProcessorFullscreen || isNotFullscreen" class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
         <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
       </div>
       
-      <div v-show="isProgramFullscreen" class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }">
+      <div v-show="isProgramFullscreen || isNotFullscreen" class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }">
         <programComponent :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
 
-      <div v-show="isTutorialFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
+      <div v-show="isTutorialFullscreen || isNotFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
         <tutorialEditor :is-fullscreen="isTutorialFullscreen" />
       </div>
       
@@ -287,7 +287,7 @@ nav ul li {
   
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
-.tutorial  { grid-column: 1; grid-row: 2; }
+.tutorial  { grid-column: 1; grid-row: 1; }
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
 .container.processor-fullscreen, 
@@ -312,7 +312,7 @@ nav ul li {
   min-width:     0;
 }
 
- .grid-item.processor {
+.grid-item.processor {
   display:  grid;
   overflow: hidden;
 }
