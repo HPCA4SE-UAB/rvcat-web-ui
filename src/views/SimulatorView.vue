@@ -23,12 +23,12 @@ const { importRVCAT }               = useRVCAT_Api();
  * ------------------------------------------------------------------ */
   
 // full screen mode
-const fullComponent = ref(0);
 const FULL_NONE      = 0
 const FULL_PROCESSOR = 1
 const FULL_PROGRAM   = 2
 const FULL_TUTORIAL  = 3
-
+const fullComponent = ref(FULL_NONE);
+  
 const fullProcessorButtonText  = computed(() => 
   (fullComponent.value == FULL_PROCESSOR)? '📍Edit Processor' : '📌Edit Processor'
 );
@@ -198,16 +198,16 @@ function toggleFullscreen(component) {
     
     <main class="container" :class="containerClasses">
       
-      <div v-show="fullComponent.value == FULL_PROCESSOR" class="grid-item processor" :class="{ 'fullscreen': fullComponent.value == FULL_PROCESSOR }">
-        <processorComponent :is-fullscreen="fullComponent.value == FULL_PROCESSOR" />
+      <div v-show="fullComponent === FULL_PROCESSOR" class="grid-item processor" :class="{ 'fullscreen': fullComponent === FULL_PROCESSOR }">
+        <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
       </div>
       
-      <div v-show="fullComponent.value == FULL_PROGRAM" class="grid-item program" :class="{ 'fullscreen': fullComponent.value == FULL_PROGRAM }">
-        <programComponent :is-fullscreen="fullComponent.value == FULL_PROGRAM" />
+      <div v-show="fullComponent === FULL_PROGRAM" class="grid-item program" :class="{ 'fullscreen': fullComponent === FULL_PROGRAM }">
+        <programComponent :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
 
-      <div v-show="fullComponent.value == FULL_TUTORIAL" class="grid-item tutorial" :class="{ 'fullscreen': fullComponent.value == FULL_TUTORIAL }">
-        <tutorialEditor :is-fullscreen="fullComponent.value == FULL_TUTORIAL" />
+      <div v-show="fullComponent === FULL_TUTORIAL" class="grid-item tutorial" :class="{ 'fullscreen': fullComponent === FULL_TUTORIAL }">
+        <tutorialEditor :is-fullscreen="fullComponent === FULL_TUTORIAL" />
       </div>
       
       <div v-show="!isFullscreen" class="grid-item results">
