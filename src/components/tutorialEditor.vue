@@ -1,6 +1,5 @@
 <template>
-  <div class="tutorial-editor-overlay">
-    <div class="tutorial-editor">
+   <div class="tutorial-editor">
       <!-- Simple header with title and close -->
       <div class="editor-header">
         <div class="header-left">
@@ -266,8 +265,7 @@
           <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
         </div>
       </div>
-    </div>
-  </div>
+   </div>
 </template>
 
 <script setup>
