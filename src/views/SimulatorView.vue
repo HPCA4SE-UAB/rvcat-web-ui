@@ -203,11 +203,11 @@ function toggleFullscreen(component) {
     <main class="container" :class="containerClasses">
       
       <div v-show="isProcessorFullscreen" class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
-        <processorComponent :is-fullscreen="isProcessorFullscreen" />
+        <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
       </div>
       
       <div v-show="isProgramFullscreen" class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }">
-        <programComponent :is-fullscreen="isProgramFullscreen" />
+        <programComponent :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
 
       <div v-show="isTutorialFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
