@@ -5,6 +5,7 @@ import processorComponent      from '@/components/processorComponent.vue';
 import programComponent        from '@/components/programComponent.vue';
 
 import tutorialComponent       from '@/components/tutorialComponent.vue';
+import tutorialEditor          from '@/components/tutorialEditor.vue';
   
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
@@ -22,19 +23,27 @@ const { importRVCAT }               = useRVCAT_Api();
  * ------------------------------------------------------------------ */
   
 // full screen mode
-const isFullscreen = ref(false);
-const isProcessor  = ref(false);
+const fullComponent = ref(0);
+const FULL_NONE      = 0
+const FULL_PROCESSOR = 1
+const FULL_PROGRAM   = 2
+const FULL_TUTORIAL  = 3
+
 const fullProcessorButtonText  = computed(() => 
-  (isFullscreen.value && isProcessor.value)? '📍Edit Processor' : '📌Edit Processor'
+  (fullComponent.value == FULL_PROCESSOR)? '📍Edit Processor' : '📌Edit Processor'
 );
 const fullProgramButtonText  = computed(() => 
-  (isFullscreen.value && !isProcessor.value)? '📍Edit Program' : '📌Edit Program'
+  (fullComponent.value == FULL_PROGRAM)? '📍Edit Program' : '📌Edit Program'
+);
+const fullTutorialButtonText  = computed(() => 
+  (fullComponent.value == FULL_TUTORIAL)? '📍Edit Tutorial' : '📌Edit Tutorial'
 );
 
 const containerClasses = computed(() => ({
-  'processor-fullscreen': isFullscreen.value && isProcessor.value,
-  'program-fullscreen':   isFullscreen.value && !isProcessor.value,
-  // Puedes añadir más clases condicionales aquí
+  'processor-fullscreen': fullComponent.value == FULL_PROCESSOR,
+  'program-fullscreen':   fullComponent.value == FULL_PROGRAM,
+  'tutorial-fullscreen':  fullComponent.value == FULL_TUTORIAL
+  // add more components here
 }));
 
 // Map of component keys -> component definitions
@@ -57,6 +66,7 @@ function onRequestSwitch(key) {
   const nextComp = components[key];
   currentKey.value       = key;
   currentComponent.value = nextComp;
+  fullComponent.value    = FULL_NONE;
 }
 
 function closeLoadingOverlay() { showOverlay.value = false }
@@ -94,24 +104,25 @@ watch(isReady, (ready) => {
   }
 })
 
-function toggleProcessorFullscreen() {
-  if (!isFullscreen.value) {
-    isFullscreen.value= true
-    isProcessor.value = true
-    document.querySelector('.grid-item.processor').scrollIntoView({ behavior: 'smooth' });
+function toggleFullscreen(component) {
+  if (fullComponent.value == FULL_NONE) {
+    fullComponent.value == component
+    let item = '.grid-item.processor'
+    switch (component) {
+      case FULL_PROCESSOR:
+        const item= '.grid-item.processor'
+        break
+      case FULL_PROGRAM:
+        const item = '.grid-item.program'
+        break
+      case FULL_TUTORIAL:
+        const item = '.grid-item.tutorial'
+        break
+    }
+    document.querySelector(item).scrollIntoView({ behavior: 'smooth' });
   }
-  else if (isProcessor.value)
-    isFullscreen.value= false
-}
-  
-function toggleProgramFullscreen() {
-  if (!isFullscreen.value) {
-    isFullscreen.value= true
-    isProcessor.value = false
-    document.querySelector('.grid-item.program').scrollIntoView({ behavior: 'smooth' });
-  }
-  else if (!isProcessor.value)
-    isFullscreen.value= false
+  else if (fullComponent.value == component)
+    fullComponent.value == FULL_NONE
 }
 
 </script>
@@ -125,17 +136,24 @@ function toggleProgramFullscreen() {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Open full window for processor configuration (pinned/unpinned)" 
-              :class="{ 'active': isFullscreen && isProcessor }" 
-              @click="toggleProcessorFullscreen" >
+            <button class="blue-button" title="Open full window for processor configuration" 
+              :class="{ 'active': fullComponent.value == FULL_PROCESSOR }" 
+              @click="toggleFullscreen(FULL_PROCESSOR)" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Open full window for program edition (pinned/unpinned)" 
-              :class="{ 'active': isFullscreen && !isProcessor}" 
-              @click="toggleProgramFullscreen" >
+            <button class="blue-button" title="Open full window for program edition" 
+              :class="{ 'active': fullComponent.value == FULL_PROGRAM}" 
+              @click="toggleFullscreen(FULL_PROGRAM)" >
                 {{ fullProgramButtonText }}
+            </button>
+          </li>
+          <li>
+            <button class="blue-button" title="Open full window for tutorial edition" 
+              :class="{ 'active': fullComponent.value == FULL_TUTORIAL}" 
+              @click="toggleFullscreen(FULL_TUTORIAL)" >
+                {{ fullTutorialButtonText }}
             </button>
           </li>
           <li>
@@ -180,12 +198,16 @@ function toggleProgramFullscreen() {
     
     <main class="container" :class="containerClasses">
       
-      <div v-show="!isFullscreen || isProcessor" class="grid-item processor" :class="{ 'fullscreen': isFullscreen && isProcessor }">
-        <processorComponent :is-fullscreen="isFullscreen && isProcessor" />
+      <div v-show="fullComponent.value == FULL_PROCESSOR" class="grid-item processor" :class="{ 'fullscreen': fullComponent.value == FULL_PROCESSOR }">
+        <processorComponent :is-fullscreen="fullComponent.value == FULL_PROCESSOR" />
       </div>
       
-      <div v-show="!isFullscreen || !isProcessor" class="grid-item program" :class="{ 'fullscreen': isFullscreen && !isProcessor }">
-        <programComponent :is-fullscreen="isFullscreen && !isProcessor" />
+      <div v-show="fullComponent.value == FULL_PROGRAM" class="grid-item program" :class="{ 'fullscreen': fullComponent.value == FULL_PROGRAM }">
+        <programComponent :is-fullscreen="fullComponent.value == FULL_PROGRAM" />
+      </div>
+
+      <div v-show="fullComponent.value == FULL_TUTORIAL" class="grid-item program" :class="{ 'fullscreen': fullComponent.value == FULL_TUTORIAL }">
+        <tutorialEditor :is-fullscreen="fullComponent.value == FULL_TUTORIAL" />
       </div>
       
       <div v-show="!isFullscreen" class="grid-item results">
