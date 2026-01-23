@@ -27,7 +27,7 @@ const FULL_NONE      = 0
 const FULL_PROCESSOR = 1
 const FULL_PROGRAM   = 2
 const FULL_TUTORIAL  = 3
-const fullComponent = ref(FULL_NONE);
+const fullComponent  = ref(FULL_NONE);
 
 // Computed para usar en template
 const isNotFullscreen       = computed(() => fullComponent.value === FULL_NONE);
@@ -111,9 +111,9 @@ watch(isReady, (ready) => {
   }
 })
 
-function toggleFullscreen(component) {
+function toggleFullScreen(component) {
   if (fullComponent.value == FULL_NONE) {
-    fullComponent.value == component
+    fullComponent.value = component
     let item = '.grid-item.processor'
     switch (component) {
       case FULL_PROCESSOR:
@@ -129,7 +129,7 @@ function toggleFullscreen(component) {
     document.querySelector(item).scrollIntoView({ behavior: 'smooth' });
   }
   else if (fullComponent.value == component)
-    fullComponent.value == FULL_NONE
+    fullComponent.value = FULL_NONE
 }
 
 </script>
@@ -144,19 +144,19 @@ function toggleFullscreen(component) {
         <ul>
           <li>
             <button class="blue-button" title="Open full window for processor configuration" 
-              :class="{ 'active': isProcessorFullscreen }" @click="toggleFullscreen(FULL_PROCESSOR)" >
+              :class="{ 'active': isProcessorFullscreen }" @click="toggleFullScreen(FULL_PROCESSOR)" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
             <button class="blue-button" title="Open full window for program edition" 
-              :class="{ 'active': isProgramFullscreen }" @click="toggleFullscreen(FULL_PROGRAM)" >
+              :class="{ 'active': isProgramFullscreen }" @click="toggleFullScreen(FULL_PROGRAM)" >
                 {{ fullProgramButtonText }}
             </button>
           </li>
           <li>
             <button class="blue-button" title="Open full window for tutorial edition" 
-              :class="{ 'active': isTutorialFullscreen }" @click="toggleFullscreen(FULL_TUTORIAL)" >
+              :class="{ 'active': isTutorialFullscreen }" @click="toggleFullScreen(FULL_TUTORIAL)" >
                 {{ fullTutorialButtonText }}
             </button>
           </li>
