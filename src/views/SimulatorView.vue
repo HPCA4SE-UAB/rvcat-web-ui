@@ -159,6 +159,9 @@ function toggleFullScreen(component) {
                 {{ fullTutorialButtonText }}
             </button>
           </li>
+
+          <li class="separator"></li>
+
           <li>
             <button class="blue-button" title="Simulate Program's execution"
               :class="{ active: currentKey === 'simulationComponent' }"
@@ -256,6 +259,17 @@ nav ul {
 }
 nav ul li {
   margin: 0 5px;
+}
+
+.separator {
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.15);
+  align-self: center; /* Centrar verticalmente */
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 0 20px;
+  height: 60%; /* Porcentaje de la altura del contenedor */
 }
   
 .title-img {
