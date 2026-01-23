@@ -112,26 +112,25 @@ watch(isReady, (ready) => {
 })
 
 function toggleFullScreen(component) {
-  if (fullComponent.value == FULL_NONE) {
-    fullComponent.value = component
-    let item = '.grid-item.processor'
-    switch (component) {
-      case FULL_PROCESSOR:
+  if (fullComponent.value == component) {
+    fullComponent.value = FULL_NONE
+    return
+  }
+  fullComponent.value = component
+  let item = '.grid-item.processor'
+  switch (component) {
+     case FULL_PROCESSOR:
         item= '.grid-item.processor'
         break
-      case FULL_PROGRAM:
+     case FULL_PROGRAM:
         item = '.grid-item.program'
         break
-      case FULL_TUTORIAL:
+     case FULL_TUTORIAL:
         item = '.grid-item.tutorial'
         break
-    }
-    document.querySelector(item).scrollIntoView({ behavior: 'smooth' });
   }
-  else if (fullComponent.value == component)
-    fullComponent.value = FULL_NONE
+  document.querySelector(item).scrollIntoView({ behavior: 'smooth' }); 
 }
-
 </script>
 
 <template>
