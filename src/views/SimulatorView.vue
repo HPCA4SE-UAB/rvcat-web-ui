@@ -110,13 +110,13 @@ function toggleFullscreen(component) {
     let item = '.grid-item.processor'
     switch (component) {
       case FULL_PROCESSOR:
-        const item= '.grid-item.processor'
+        item= '.grid-item.processor'
         break
       case FULL_PROGRAM:
-        const item = '.grid-item.program'
+        item = '.grid-item.program'
         break
       case FULL_TUTORIAL:
-        const item = '.grid-item.tutorial'
+        item = '.grid-item.tutorial'
         break
     }
     document.querySelector(item).scrollIntoView({ behavior: 'smooth' });
@@ -206,7 +206,7 @@ function toggleFullscreen(component) {
         <programComponent :is-fullscreen="fullComponent.value == FULL_PROGRAM" />
       </div>
 
-      <div v-show="fullComponent.value == FULL_TUTORIAL" class="grid-item program" :class="{ 'fullscreen': fullComponent.value == FULL_TUTORIAL }">
+      <div v-show="fullComponent.value == FULL_TUTORIAL" class="grid-item tutorial" :class="{ 'fullscreen': fullComponent.value == FULL_TUTORIAL }">
         <tutorialEditor :is-fullscreen="fullComponent.value == FULL_TUTORIAL" />
       </div>
       
