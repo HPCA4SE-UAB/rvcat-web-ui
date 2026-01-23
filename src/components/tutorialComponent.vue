@@ -204,52 +204,59 @@
 </template>
 
 <script setup>
+  
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+
 // import tutorialEditor from './tutorialEditor.vue'
 
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
 const props = defineProps({ activeView: String })
-const emit = defineEmits(['requestSwitch'])
+const emit  = defineEmits(['requestSwitch'])
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 const TUTORIAL_PROGRESS_KEY = 'rvcat-tutorial-progress'
-const TOOLTIP_WIDTH = 300
+const TOOLTIP_WIDTH  = 300
 const TOOLTIP_HEIGHT = 200
 
 // ============================================================================
 // STATE
 // ============================================================================
+
 // Core tutorial state
-const isActive = ref(false)
-const showTutorialMenu = ref(false)
-const showEditor = ref(false)
-const currentTutorial = ref(null)
-const stepIndex = ref(0)
-const highlightElement = ref(null)
+const currentTutorial    = ref(null)
 const availableTutorials = ref([])
-const isLoading = ref(false)
-const validationState = ref({})
-const tooltipPositionTrigger = ref(0)
+  
+const isActive         = ref(false)
+const isLoading        = ref(false)
+
+// refer to this variable to force evaluation of validation state
+const validationState  = ref({})
+  
+const showTutorialMenu = ref(false)
+const showEditor       = ref(false)
+const stepIndex        = ref(0)
+const highlightElement = ref(null)
 
 // Scroll position
 const originalScrollPosition = ref({ x: 0, y: 0 })
+const tooltipPositionTrigger = ref(0)
 
 // Question state
-const selectedAnswers = ref([])
-const questionAnswered = ref(false)
+const selectedAnswers       = ref([])
+const questionAnswered      = ref(false)
 const shuffledAnswerIndices = ref([])
 
 // Button click tracking
-const clickedButtons = ref(new Set())
+const clickedButtons        = ref(new Set())
 const trackedButtonElements = ref([])
 
 // Lightbox state
 const lightboxImage = ref('')
-const showLightbox = ref(false)
+const showLightbox  = ref(false)
 
 // Event listeners storage (reactive for proper cleanup)
 const validationEventListeners = ref([])
@@ -268,7 +275,7 @@ const isQuestionStep = computed(() =>
 const isQuestionCorrect = computed(() => {
   if (!currentStep.value || currentStep.value.type !== 'question') return false
   
-  const answers = currentStep.value.answers || []
+  const answers        = currentStep.value.answers || []
   const correctIndices = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
   
   if (currentStep.value.answerMode === 'single') {
@@ -276,7 +283,7 @@ const isQuestionCorrect = computed(() => {
   }
   
   const hasAllCorrect = correctIndices.every(i => selectedAnswers.value.includes(i))
-  const hasNoWrong = selectedAnswers.value.every(i => correctIndices.includes(i))
+  const hasNoWrong    = selectedAnswers.value.every(i => correctIndices.includes(i))
   return hasAllCorrect && hasNoWrong
 })
 
@@ -319,28 +326,30 @@ const canProceed = computed(() => {
 })
 
 const tooltipStyle = computed(() => {
+  
   tooltipPositionTrigger.value // Force reactivity
+  
   if (!highlightElement.value || !currentStep.value) return { display: 'none' }
   
   const rect = highlightElement.value.getBoundingClientRect()
-  const pos = currentStep.value.position || 'bottom'
+  const pos  = currentStep.value.position || 'bottom'
   const margin = 25
   
   let top, left
-  const centerX = rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2
-  const centerY = rect.top + rect.height / 2 - TOOLTIP_HEIGHT / 2
+  const centerX = rect.left + rect.width / 2  - TOOLTIP_WIDTH / 2
+  const centerY = rect.top  + rect.height / 2 - TOOLTIP_HEIGHT / 2
   
   switch (pos) {
-    case 'top':    top = rect.top - TOOLTIP_HEIGHT - 15; left = centerX; break
-    case 'bottom': top = rect.bottom + 15; left = centerX; break
-    case 'left':   top = centerY; left = rect.left - TOOLTIP_WIDTH - 15; break
-    case 'right':  top = centerY; left = rect.right + 15; break
-    default:       top = rect.bottom + 15; left = centerX
+    case 'top':    top = rect.top - TOOLTIP_HEIGHT - 15; left = centerX;                        break
+    case 'bottom': top = rect.bottom + 15;               left = centerX;                        break
+    case 'left':   top = centerY;                        left = rect.left - TOOLTIP_WIDTH - 15; break
+    case 'right':  top = centerY;                        left = rect.right + 15;                break
+    default:       top = rect.bottom + 15;               left = centerX
   }
   
   // Clamp to viewport
-  left = Math.max(margin, Math.min(left, window.innerWidth - TOOLTIP_WIDTH - margin))
-  top = Math.max(margin, Math.min(top, window.innerHeight - TOOLTIP_HEIGHT - margin))
+  left = Math.max(margin, Math.min(left, window.innerWidth -  TOOLTIP_WIDTH - margin))
+  top  = Math.max(margin, Math.min(top,  window.innerHeight - TOOLTIP_HEIGHT - margin))
   
   return { top: `${top}px`, left: `${left}px` }
 })
@@ -348,6 +357,7 @@ const tooltipStyle = computed(() => {
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+  
 const isElementVisible = (el) => {
   const rect = el.getBoundingClientRect()
   return rect.top < window.innerHeight && rect.bottom > 0 && 
@@ -363,7 +373,7 @@ const clearHighlights = () => {
 }
 
 const resetQuestionState = () => {
-  selectedAnswers.value = []
+  selectedAnswers.value  = []
   questionAnswered.value = false
 }
 
@@ -398,11 +408,11 @@ const saveTutorialProgress = () => {
   if (!currentTutorial.value) return
   try {
     localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify({
-      tutorialId: currentTutorial.value.id,
+      tutorialId:   currentTutorial.value.id,
       tutorialName: currentTutorial.value.name,
-      stepIndex: stepIndex.value,
-      totalSteps: currentTutorial.value.steps.length,
-      timestamp: new Date().toISOString()
+      stepIndex:    stepIndex.value,
+      totalSteps:   currentTutorial.value.steps.length,
+      timestamp:    new Date().toISOString()
     }))
   } catch (e) {
     console.error('❌ Error saving progress:', e)
@@ -430,8 +440,8 @@ const clearTutorialProgress = () => {
 // ============================================================================
 // LIGHTBOX
 // ============================================================================
-const openLightbox = (src) => { lightboxImage.value = src; showLightbox.value = true }
-const closeLightbox = () => { showLightbox.value = false; lightboxImage.value = '' }
+const openLightbox = (src) => { lightboxImage.value = src;  showLightbox.value  = true }
+const closeLightbox = () =>   { showLightbox.value = false; lightboxImage.value = '' }
 
 // ============================================================================
 // ANSWER SHUFFLING (Fisher-Yates)
@@ -457,8 +467,9 @@ const loadTutorials = async () => {
   isLoading.value = true
   
   try {
-    const basePaths = ['', '/rvcat-web-ui']
-    let indexData = null, workingBasePath = null
+    const basePaths     = ['', '/rvcat-web-ui']
+    let indexData       = null
+    let workingBasePath = null
     
     for (const basePath of basePaths) {
       try {
@@ -525,11 +536,11 @@ const validateCurrentStep = async () => {
   const getElement = (sel) => document.querySelector(sel)
   
   const validators = {
-    program_selected: () => getElement('#programs-list')?.value === v.value,
+    program_selected: () =>      getElement('#programs-list')?.value === v.value,
     architecture_selected: () => getElement('#processors-list')?.value === v.value,
-    input_value: () => getElement(v.selector)?.value === v.value,
-    input_value_min: () => parseInt(getElement(v.selector)?.value) >= v.minValue,
-    button_clicked: () => v.selector && clickedButtons.value.has(v.selector.trim())
+    input_value: () =>           getElement(v.selector)?.value === v.value,
+    input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
+    button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
   }
   
   const isValid = validators[v.type]?.() ?? true
@@ -543,10 +554,10 @@ const setupValidationListeners = () => {
   if (!v) return
   
   const selectorMap = {
-    program_selected: '#programs-list',
+    program_selected:      '#programs-list',
     architecture_selected: '#processors-list',
-    input_value: v.selector,
-    input_value_min: v.selector
+    input_value:            v.selector,
+    input_value_min:        v.selector
   }
   
   const selector = selectorMap[v.type]
@@ -613,9 +624,9 @@ const cleanup = (options = {}) => {
   cleanupValidationListeners()
   cleanupButtonClickTracking()
   
-  if (options.resetClicks) clickedButtons.value = new Set()
+  if (options.resetClicks)   clickedButtons.value = new Set()
   if (options.clearProgress) clearTutorialProgress()
-  if (options.saveProgress) saveTutorialProgress()
+  if (options.saveProgress)  saveTutorialProgress()
   
   resetQuestionState()
   restoreScrollPosition()
@@ -712,14 +723,14 @@ const getErrorMessage = () => {
   if (!questionAnswered.value || isQuestionCorrect.value) return ''
   
   const answers = currentStep.value.answers || []
-  const correctIndices = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
+  const correctIndices  = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
-  const selectedWrong = selectedAnswers.value.filter(i => !correctIndices.includes(i))
+  const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
   
-  if (currentStep.value.answerMode === 'single') return 'Incorrect answer. Try again!'
+  if (currentStep.value.answerMode === 'single')       return 'Incorrect answer. Try again!'
   if (selectedWrong.length && !selectedCorrect.length) return 'Wrong answer selected. Try again!'
-  if (selectedWrong.length) return 'You selected some correct answers, but also wrong ones. Try again!'
-  if (selectedCorrect.length < correctIndices.length) return 'Not all correct answers selected. Try again!'
+  if (selectedWrong.length)                            return 'You selected some correct answers, but also wrong ones. Try again!'
+  if (selectedCorrect.length < correctIndices.length)  return 'Not all correct answers selected. Try again!'
   return 'Try again!'
 }
 
@@ -776,8 +787,8 @@ const endTutorial = (fullReset = false) => {
   cleanup({ resetClicks: fullReset, clearProgress: fullReset, saveProgress: !fullReset })
   isActive.value = false
   if (fullReset) {
-    currentTutorial.value = null
-    stepIndex.value = 0
+    currentTutorial.value  = null
+    stepIndex.value        = 0
     highlightElement.value = null
   }
 }
@@ -806,13 +817,13 @@ const toggleTutorialMenu = () => {
 // CUSTOM TUTORIALS
 // ============================================================================
 const previewCustomTutorial = (data) => {
-  showEditor.value = false
+  showEditor.value       = false
   showTutorialMenu.value = false
   
   data.steps = processStepActions(data.steps)
   currentTutorial.value = data
   stepIndex.value = 0
-  isActive.value = true
+  isActive.value  = true
   
   nextTick(highlightCurrentStep)
 }
@@ -830,7 +841,7 @@ const handleClickOutside = (e) => {
   if (!showTutorialMenu.value) return
   
   const menu = document.querySelector('.tutorial-menu')
-  const btn = document.querySelector('.tutorial-launcher-btn')
+  const btn  = document.querySelector('.tutorial-launcher-btn')
   
   if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
     showTutorialMenu.value = false
@@ -849,7 +860,7 @@ const restoreTutorialProgress = async () => {
   if (tutorial) {
     console.log(`🔄 Restored progress: ${saved.tutorialName} (Step ${saved.stepIndex + 1})`)
     currentTutorial.value = tutorial
-    stepIndex.value = saved.stepIndex
+    stepIndex.value       = saved.stepIndex
     return true
   }
   
@@ -863,8 +874,8 @@ const restoreTutorialProgress = async () => {
 onMounted(async () => {
   console.log('🎯 TutorialComponent mounted')
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener('resize', handleWindowChange)
-  window.addEventListener('scroll', handleWindowChange, true)
+  window.addEventListener  ('resize', handleWindowChange)
+  window.addEventListener  ('scroll', handleWindowChange, true)
   
   await loadTutorials()
   await restoreTutorialProgress()
@@ -872,10 +883,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('resize', handleWindowChange)
-  window.removeEventListener('scroll', handleWindowChange, true)
-  cleanupValidationListeners()
-  cleanupButtonClickTracking()
+  window.removeEventListener ('resize', handleWindowChange)
+  window.removeEventListener ('scroll', handleWindowChange, true)
+  cleanupValidationListeners ()
+  cleanupButtonClickTracking ()
 })
 </script>
 
