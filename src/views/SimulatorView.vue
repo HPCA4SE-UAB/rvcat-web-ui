@@ -210,7 +210,7 @@ function toggleFullScreen(component) {
         <programComponent :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
 
-      <div v-show="isTutorialFullscreen || isNotFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
+      <div v-show="isTutorialFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
         <tutorialEditor :is-fullscreen="isTutorialFullscreen" />
       </div>
       
