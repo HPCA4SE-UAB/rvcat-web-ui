@@ -731,19 +731,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.tutorial-editor-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
 
 .tutorial-editor {
   background: white;
