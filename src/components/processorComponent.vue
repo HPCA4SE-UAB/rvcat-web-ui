@@ -615,7 +615,7 @@
       </div>
       <div class="pipeline-container">
         <div class="pipeline-img">
-          <svg v-html="pipelineSvg" v-if="pipelineSvg"></svg>
+          <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
         </div>
       </div>
     </div>
