@@ -666,7 +666,7 @@
           </div>
         </div> 
 
-        <div class="settings-group widths-group">
+        <div class="settings-group cache-group">
           <div class="section-title-and-info">
             <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
               <img src="/img/info.png" class="info-img">
@@ -865,9 +865,8 @@
     height:      auto;
   }
 
-  .settings-group.widths-group {
+  .settings-group {
     display:    flex;
-    flex:       1 1 50%;
     min-width:  0;
     box-sizing: border-box;
     flex-direction: column;
@@ -877,17 +876,15 @@
     padding:        0.3rem;
     background:     #fafafa;
   } 
+  
+  .settings-group.widths-group {
+    flex:           1 1 35%;
+  }
   .settings-group.latency-group {
-    display:        flex;
     flex:           1 1 45%;
-    min-width:      0;         
-    box-sizing:     border-box; 
-    flex-direction: column;
-    align-items:    center;
-    border:         1px solid #ccc;
-    border-radius:  8px;
-    padding:        0.3rem;
-    background:     #fafafa;
+  }
+  .settings-group.cache-group {
+    flex: 1 1 65%;
   }
   
   /* Para que la tabla no se expanda más allá de lo necesario */
