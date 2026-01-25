@@ -446,13 +446,6 @@ function createCriticalPathList(data) {
     @close="closeHelp2"/>
   </Teleport>
 
-  <Teleport to="body">
-    <HelpComponent v-if="showHelp3" :position="helpPosition"
-    text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
-      to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
-    title="Processor Utilization"
-    @close="closeHelp3"/>
-  </Teleport>
 </template>
 
 <style scoped>
