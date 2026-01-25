@@ -860,7 +860,7 @@
   .horizontal-layout {
     display:     flex;
     gap:         6px; /* Espacio entre tabla e imagen */
-    margin-top:  6px;
+    margin-top:  2px;
     align-items: stretch;
     height:      auto;
   }
@@ -1089,9 +1089,6 @@
     margin-top: 10px;
   }
   
-  strong{
-    margin:0;
-  }
   .warning-wrapper {
     position: relative;
     display: inline-block;
@@ -1120,11 +1117,6 @@
   .warning-wrapper:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
-  }
-
-  .spacer {
-    min-width: 120px; /* Espacio mínimo entre elementos */
-    height:    1px; /* Solo para referencia visual */  
   }
 
 </style>
