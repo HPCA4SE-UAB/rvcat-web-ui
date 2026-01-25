@@ -646,64 +646,65 @@
     </div>
 
     <div v-if="isFullscreen" class="settings-sections">
-    
-      <!-- Widths Group -->
-      <div class="settings-group widths-group">
-        <div class="section-title-and-info">
-          <div class="title-group left-group">
-            <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
-              <img src="/img/info.png" class="info-img">
-            </span>
-            <span>Stage Width Settings</span>
+      <div class="horizontal-layout">
+        <div class="settings-group widths-group">
+          <div class="section-title-and-info">
+            <div class="title-group">
+              <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+                <img src="/img/info.png" class="info-img">
+              </span>
+              <span>Stage Width Settings</span>
+            </div>
           </div>
-          <div class="title-group right-group">
-            <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
-              <img src="/img/info.png" class="info-img">
-            </span>
-            <span>Cache Memory Settings</span>
-          </div>
-        </div>
-          
-        <div class="iters-group">
-          <span>Dispatch:</span>
-          <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
+        
+          <div class="iters-group">
+            <span>Dispatch:</span>
+            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
                  title="max. number of instructions dispatched per cycle (1 to 9)"/>
         
-          <span>Retire:</span>
-          <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
+            <span>Retire:</span>
+            <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
                    title="max. number of instructions retired per cycle(1 to 9)"/>
+          </div>
+        </div> 
 
-          <div class="spacer"></div>
- 
-          <span>Number of Blocks:</span>
-          <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
-                 title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
-        
-          <span>Block Size:</span>
-          <div class="button-group">
-            <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
-            <input type="number" v-model.number="procConfig.blkSize" readonly
-                   title="Size of Memory block: must be a power of two (1 to 128)"
-             />
-            <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
+        <div class="settings-group widths-group">
+          <div class="section-title-and-info">
+            <div class="title-group">
+              <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
+                <img src="/img/info.png" class="info-img">
+              </span>
+              <span>Cache Memory Settings</span>
+            </div>
           </div>
 
-          <span>Miss Penalty:</span>
-          <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
+          <div class="iters-group">
+            <span>Number of Blocks:</span>
+            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
+                 title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
+            
+            <span>Block Size:</span>
+            <div class="button-group">
+              <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
+              <input type="number" v-model.number="procConfig.blkSize" readonly
+                   title="Size of Memory block: must be a power of two (1 to 128)"
+               />
+              <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
+            </div>
+            
+            <span>Miss Penalty:</span>
+            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
                  title="Extra latency due to cache miss (1 to 99)"/>
 
-          <span>Miss Issue Time:</span>
-          <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
+            <span>Miss Issue Time:</span>
+            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
                  title="Minimum time between Memory accesses (1 to 99)"/>
+          </div>
         </div>
-      </div> <!--- Width-group Settings Group -->
+      </div>      
       
-      
-      <!-- Contenedor para tabla + imagen en horizontal -->
       <div class="horizontal-layout">
-        <!-- Latency and Port Settings Group (izquierda) -->
         <div class="settings-group latency-group">
-              
           <div class="section-title-and-info">
             <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
               <img src="/img/info.png" class="info-img">
