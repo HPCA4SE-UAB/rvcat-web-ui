@@ -869,7 +869,7 @@
     height:      auto;
   }
 
-  .settings-group.width-group {
+  .settings-group.widths-group {
     display:    flex;
     flex:       1 1 50%;
     min-width:  0;
