@@ -868,12 +868,24 @@
     align-items: stretch;
     height:      auto;
   }
-  
+
+  .settings-group.width-group {
+    display:    flex;
+    flex:       1 1 50%;
+    min-width:  0;
+    box-sizing: border-box;
+    flex-direction: column;
+    align-items:    center;
+    border:         1px solid #ccc;
+    border-radius:  8px;
+    padding:        0.3rem;
+    background:     #fafafa;
+  } 
   .settings-group.latency-group {
     display:        flex;
-    flex: 1 1 45%;
-    min-width: 0;           /* Importante para evitar desbordamiento */
-    box-sizing: border-box; /* Incluye padding y border en el cálculo */
+    flex:           1 1 45%;
+    min-width:      0;         
+    box-sizing:     border-box; 
     flex-direction: column;
     align-items:    center;
     border:         1px solid #ccc;
@@ -902,10 +914,6 @@
     background:    #f8f9fa;
     border-radius: 8px;
   }
-
- /* .fullscreen-only {
-    display: none;
-  } */
   
   .settings-container {
     display: flex;
