@@ -574,8 +574,8 @@
  * Help support 
  * ------------------------------------------------------------------ */
   const showHelp  = ref(false); const helpIcon  = ref(null);
-  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false);
-  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
+  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false); const showHelp5 = ref(false);
+  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);  const helpIcon5 = ref(null);
   const helpPosition = ref({ top: '0%', left: '40%' });
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
@@ -588,6 +588,8 @@
   function closeHelp3() { showHelp3.value  = false }
   function openHelp4()  { nextTick(() => { showHelp4.value = true }) }
   function closeHelp4() { showHelp4.value  = false }
+  function openHelp5()  { nextTick(() => { showHelp5.value = true }) }
+  function closeHelp5() { showHelp5.value  = false }
 </script>
 
 <template>
@@ -615,8 +617,8 @@
       </div>
 
       <!--    Processor Graph with visual usage  -->
-      <div id="graph-section" class="graph-section" style="display: none;">
-        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show help">
+      <div class="graph-section">
+        <span ref="helpIcon5" class="info-icon" @click="openHelp5" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
         <span class="dropdown-title">Processor Bottlenecks</span>
@@ -820,6 +822,12 @@
     title="Instruction Latency and Throughput Settings"
     @close="closeHelp4"/>
     
+    <HelpComponent v-if="showHelp5" :position="helpPosition"
+    text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
+      to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
+    title="Processor Utilization"
+    @close="closeHelp5"/>
+
   </Teleport>
   
   <!-- Modal Dialog -->
