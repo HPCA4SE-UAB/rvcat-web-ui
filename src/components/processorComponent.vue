@@ -980,6 +980,35 @@
     cursor: pointer;
   }
 
+  .graph-section {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+  }
+  
+  .scale-container {
+    width:      50%;
+    margin:     0 auto;
+    margin-top: 2%;
+    text-align: center;
+    display:    block;
+  }
+  .scale-labels {
+    width:      100%;
+    display:    flex;
+    margin-top: 10px;
+    font-size:  smaller;
+    justify-content: space-between;
+  }
+  .color-scale {
+    width:    100%;
+    height:   10px;
+    border:   1px solid black;
+    position: relative;
+    background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
+    border-radius: 5px;
+  }
+    
   .pipeline-img {
     width:        100%;
     height:       100%;
@@ -989,7 +1018,7 @@
     object-fit:   contain;
     transform-box: fill-box;
   }
-  
+
   .pipeline-img svg text {
     font-size:   12px !important;
     font-family: Arial, sans-serif !important;
