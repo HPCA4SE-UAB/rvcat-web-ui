@@ -649,12 +649,10 @@
       <div class="horizontal-layout">
         <div class="settings-group widths-group">
           <div class="section-title-and-info">
-            <div class="title-group">
-              <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
-                <img src="/img/info.png" class="info-img">
-              </span>
-              <span>Stage Width Settings</span>
-            </div>
+            <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+              <img src="/img/info.png" class="info-img">
+            </span>
+            <span class="header-title">Stage Width Settings</span>
           </div>
         
           <div class="iters-group">
@@ -670,12 +668,10 @@
 
         <div class="settings-group widths-group">
           <div class="section-title-and-info">
-            <div class="title-group">
-              <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
-                <img src="/img/info.png" class="info-img">
-              </span>
-              <span>Cache Memory Settings</span>
-            </div>
+            <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
+              <img src="/img/info.png" class="info-img">
+            </span>
+            <span class="header-title">Cache Memory Settings</span>
           </div>
 
           <div class="iters-group">
@@ -938,12 +934,6 @@
   .button-group {
     display:     inline-flex;
     align-items: center;
-  }
-  .title-group {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 10px;
   }
   .latency-group {
     flex: 1; /* Ocupa espacio disponible */
