@@ -99,6 +99,7 @@
     display:     inline-flex;
     align-items: center;
     gap:         6px;
+    margin-top:  3px;
   }
   .iters-label {
     font-size:  medium;
