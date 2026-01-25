@@ -421,24 +421,6 @@ function createCriticalPathList(data) {
     <Transition name="fold" appear>
       <prev v-show="simulationOptions.showCritical" id="critical-path"></prev>
     </Transition>
-
-    <!--    Processor Graph with visual usage  -->
-    <div id="graph-section" class="graph-section" style="display: none;">
-       <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show help">
-          <img src="/img/info.png" class="info-img">
-       </span>
-       <span class="dropdown-title">Processor Bottlenecks</span>
-       <div class="simulation-img" id="simulation-graph"> </div>
-    </div>
-
-    <div class="scale-container">
-      <div class="color-scale"></div>
-      <div class="scale-labels">
-        <span>Underutilized</span>
-        <span></span>
-        <span>Saturated</span>
-      </div>
-    </div>
   </div>
 
   <Teleport to="body">
