@@ -520,42 +520,4 @@ function createCriticalPathList(data) {
       }
   }
 
-  .graph-section {
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
-  }
-  .simulation-img svg {
-    width:      100%;
-    max-height: 50%;
-  }
-  .simulation-graph {
-    display: block;
-    width:   70%;
-    margin:  auto;
-  }
-  
-  .scale-container {
-    width:      50%;
-    margin:     0 auto;
-    margin-top: 2%;
-    text-align: center;
-    display:    block;
-  }
-  .scale-labels {
-    width:      100%;
-    display:    flex;
-    margin-top: 10px;
-    font-size:  smaller;
-    justify-content: space-between;
-  }
-  .color-scale {
-    width:    100%;
-    height:   10px;
-    border:   1px solid black;
-    position: relative;
-    background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
-    border-radius: 5px;
-  }
-  
 </style>
