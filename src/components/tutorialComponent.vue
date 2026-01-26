@@ -205,7 +205,7 @@
 
 <script setup>
   
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
 const simState = inject('simulationState');
 
