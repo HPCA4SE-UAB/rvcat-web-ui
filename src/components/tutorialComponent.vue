@@ -213,30 +213,12 @@ const simState = inject('simulationState');
  * Tutorial State (persistent in localStorage)
  * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'tutorialOptions'
+  const TUTORIAL_PROGRESS_KEY = 'tutorialProgress'
 
   const defaultOptions = {
     availableTutorials:  [],
     currentTutorialName: '',
     progressStep:         0
-  }
-  
-  const savedOptions = (() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
-    }
-  })()
-
-  const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
-
-  const saveOptions = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
-    } catch (error) {
-      console.error('❌ Failed to save:', error)
-    }
   }
   
 // ============================================================================
@@ -289,6 +271,63 @@ const showLightbox  = ref(false)
 // Event listeners storage (reactive for proper cleanup)
 const validationEventListeners = ref([])
 
+// ============================================================================
+// LOCAL STORAGE
+// ============================================================================
+
+const savedOptions = (() => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : defaultOptions
+  } catch {
+    return defaultOptions
+  }
+})()
+
+const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
+  
+const saveOptions = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+  } catch (error) {
+    console.error('❌ Failed to save:', error)
+  }
+}
+  
+const saveTutorialProgress = () => {
+  if (!currentTutorial.value) return
+  try {
+    localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify({
+      tutorialId:   currentTutorial.value.id,
+      tutorialName: currentTutorial.value.name,
+      stepIndex:    stepIndex.value,
+      totalSteps:   currentTutorial.value.steps.length,
+      timestamp:    new Date().toISOString()
+    }))
+  } catch (e) {
+    console.error('❌ Error saving progress:', e)
+  }
+}
+
+const loadTutorialProgress = () => {
+  try {
+    const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
+    return data ? JSON.parse(data) : null
+  } catch (e) {
+    console.error('❌ Error loading progress:', e)
+    return null
+  }
+}
+
+const clearTutorialProgress = () => {
+  try {
+    localStorage.removeItem(TUTORIAL_PROGRESS_KEY)
+  } catch (e) {
+    console.error('❌ Error clearing progress:', e)
+  }
+}
+
+  
 // ============================================================================
 // COMPUTED PROPERTIES
 // ============================================================================
@@ -427,42 +466,6 @@ const saveScrollPosition = () => {
 
 const restoreScrollPosition = () => {
   window.scrollTo({ ...originalScrollPosition.value, behavior: 'smooth' })
-}
-
-// ============================================================================
-// LOCAL STORAGE
-// ============================================================================
-const saveTutorialProgress = () => {
-  if (!currentTutorial.value) return
-  try {
-    localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify({
-      tutorialId:   currentTutorial.value.id,
-      tutorialName: currentTutorial.value.name,
-      stepIndex:    stepIndex.value,
-      totalSteps:   currentTutorial.value.steps.length,
-      timestamp:    new Date().toISOString()
-    }))
-  } catch (e) {
-    console.error('❌ Error saving progress:', e)
-  }
-}
-
-const loadTutorialProgress = () => {
-  try {
-    const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
-    return data ? JSON.parse(data) : null
-  } catch (e) {
-    console.error('❌ Error loading progress:', e)
-    return null
-  }
-}
-
-const clearTutorialProgress = () => {
-  try {
-    localStorage.removeItem(TUTORIAL_PROGRESS_KEY)
-  } catch (e) {
-    console.error('❌ Error clearing progress:', e)
-  }
 }
 
 // ============================================================================
