@@ -175,7 +175,7 @@
         </div>
         <div v-else class="tutorial-list">
           <button 
-            v-for="tutorial in availableTutorials" 
+            v-for="tutorial in tutorialOptions.availableTutorials" 
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
             class="tutorial-menu-item"
@@ -207,8 +207,38 @@
   
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 
-// import tutorialEditor from './tutorialEditor.vue'
+const simState = inject('simulationState');
 
+/* ------------------------------------------------------------------ 
+ * Tutorial State (persistent in localStorage)
+ * ------------------------------------------------------------------ */
+  const STORAGE_KEY = 'tutorialOptions'
+
+  const defaultOptions = {
+    availableTutorials:  [],
+    currentTutorialName: '',
+    progressStep:         0
+  }
+  
+  const savedOptions = (() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultOptions
+    } catch {
+      return defaultOptions
+    }
+  })()
+
+  const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
+
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+    } catch (error) {
+      console.error('❌ Failed to save:', error)
+    }
+  }
+  
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
@@ -218,27 +248,25 @@ const emit  = defineEmits(['requestSwitch'])
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-const TUTORIAL_PROGRESS_KEY = 'rvcat-tutorial-progress'
-const TOOLTIP_WIDTH  = 300
+const TOOLTIP_WIDTH  = 400
 const TOOLTIP_HEIGHT = 200
 
 // ============================================================================
 // STATE
 // ============================================================================
 
-// Core tutorial state
-const currentTutorial    = ref(null)
-const availableTutorials = ref([])
+// Core tutorial state 
+const currentTutorial = ref(null)
+const stepIndex       = ref(0)
   
-const isActive         = ref(false)
-const isLoading        = ref(false)
+const isActive  = ref(false)
+const isLoading = ref(false)
 
 // refer to this variable to force evaluation of validation state
 const validationState  = ref({})
   
 const showTutorialMenu = ref(false)
 const showEditor       = ref(false)
-const stepIndex        = ref(0)
 const highlightElement = ref(null)
 
 // Scroll position
@@ -265,7 +293,7 @@ const validationEventListeners = ref([])
 // COMPUTED PROPERTIES
 // ============================================================================
 const currentStep = computed(() => 
-  currentTutorial.value?.steps?.[stepIndex.value] ?? null
+   currentTutorial.value?.steps?.[stepIndex.value] ?? null
 )
 
 const isQuestionStep = computed(() => 
@@ -307,9 +335,9 @@ const canProceed = computed(() => {
     const { type, selector, value, minValue } = validation
     switch (type) {
       case 'program_selected':
-        return document.querySelector('#programs-list')?.value === value
+        return simState.selectedProgram === value
       case 'architecture_selected':
-        return document.querySelector('#processors-list')?.value === value
+        return simState.selectedProcessor === value
       case 'input_value':
         return document.querySelector(selector)?.value === value
       case 'input_value_min':
@@ -462,48 +490,33 @@ const shuffleAnswers = () => {
 // ============================================================================
 // TUTORIAL LOADING
 // ============================================================================
+  
 const loadTutorials = async () => {
   console.log('🔄 Loading tutorials...')
   isLoading.value = true
-  
   try {
-    const basePaths     = ['', '/rvcat-web-ui']
-    let indexData       = null
-    let workingBasePath = null
-    
-    for (const basePath of basePaths) {
-      try {
-        const res = await fetch(`${basePath}/tutorials/index.json`)
-        if (res.ok) {
-          indexData = await res.json()
-          workingBasePath = basePath
-          break
+    if (tutorialOptions.availableTutorials.length == 0) {
+      let tutorialKeys = getKeys('tutorial') // from localStorage
+      if (tutorialKeys.length == 0) { // load tutorials from distribution files
+        const response = await fetch('./index.json')
+        const data     = await response.json()
+        for (let i = 0; i < data.tutorials.length; i += 1) {
+          const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+          localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
         }
-      } catch (e) { /* try next */ }
-    }
-    
-    if (!indexData) throw new Error('Could not load tutorial index')
-    
-    const tutorials = []
-    for (const file of indexData.tutorials) {
-      try {
-        const res = await fetch(`${workingBasePath}/tutorials/${file}`)
-        if (res.ok) {
-          const tutorial = await res.json()
-          tutorial.steps = processStepActions(tutorial.steps)
-          tutorials.push(tutorial)
-        }
-      } catch (e) {
-        console.error(`❌ Failed to load: ${file}`, e)
+        tutorialKeys = getKeys('tutorial')
       }
+      tutorialOptions.availableTutorials = tutorialKeys
+      tutorialOptions.currentTutorial = tutorialKeys[0]   // fires reaction to reloadTutorial
+      console.log(`✅ Loaded ${tutorialKeys.length} tutorials`)
     }
-    
-    availableTutorials.value = tutorials
-    console.log(`✅ Loaded ${tutorials.length} tutorials`)
-    
+    else {
+      console.log('✅ Tutorials already stored on localStorage')
+      reloadTutorial()
+    }
   } catch (e) {
     console.error('❌ Tutorial loading failed:', e)
-    availableTutorials.value = [{
+    tutorialOptions.availableTutorials = [{
       id: 'fallback',
       name: '⚠️ Fallback Tutorial',
       description: 'Error loading tutorials',
@@ -513,7 +526,7 @@ const loadTutorials = async () => {
     isLoading.value = false
   }
 }
-
+  
 // ============================================================================
 // VALIDATION
 // ============================================================================
@@ -737,8 +750,15 @@ const getErrorMessage = () => {
 // ============================================================================
 // NAVIGATION
 // ============================================================================
+
+/*  Process Steps when loading 
+   res = JSON string
+   const tutorial = await res.json()
+   tutorial.steps = processStepActions(tutorial.steps)
+   **********************************************/
+  
 const startTutorial = (tutorialId) => {
-  const tutorial = availableTutorials.value.find(t => t.id === tutorialId)
+  const tutorial = tutorialOptions.availableTutorials.find(t => t.id === tutorialId)
   if (!tutorial) return
   
   saveScrollPosition()
@@ -830,7 +850,7 @@ const previewCustomTutorial = (data) => {
 
 const addFinishedTutorial = (data) => {
   data.steps = processStepActions(data.steps)
-  availableTutorials.value.push(data)
+  tutorialOptions.availableTutorials.push(data)
   console.log(`✅ Added tutorial: ${data.name}`)
 }
 
@@ -854,9 +874,9 @@ const handleWindowChange = () => {
 
 const restoreTutorialProgress = async () => {
   const saved = loadTutorialProgress()
-  if (!saved || !availableTutorials.value.length) return false
+  if (!saved || !tutorialOptions.availableTutorials.length) return false
   
-  const tutorial = availableTutorials.value.find(t => t.id === saved.tutorialId)
+  const tutorial = tutorialOptions.availableTutorials.find(t => t.id === saved.tutorialId)
   if (tutorial) {
     console.log(`🔄 Restored progress: ${saved.tutorialName} (Step ${saved.stepIndex + 1})`)
     currentTutorial.value = tutorial
