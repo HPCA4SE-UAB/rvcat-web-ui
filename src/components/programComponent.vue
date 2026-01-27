@@ -59,7 +59,7 @@
   // Watch for changes on RVCAT state
   watch(() => simState.RVCAT_state, (newValue, oldValue) => {
     if (newValue == 2) {
-      console.log('✅ RVCAT imported and processor set: look for programs and select current');
+      console.log('✅ RVCAT imported and processor set');
       initProgram();
       reloadProgram();
     }
@@ -68,7 +68,7 @@
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
     if (newValue != oldValue && simState.RVCAT_state == 3 && simState.selectedProgram != '') {
-      console.log('🔄 Refresh program visualization for modified processor configuration');
+      console.log('🔄 Refreshing program visualization...');
       showProgram()
     }
   });
@@ -83,9 +83,10 @@
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
       simState.RVCAT_state = 3;                                  // program loaded
       if (simState.selectedProgram != '')
+        console.log('🔄 Refreshing program visualization...');
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
-      console.error('Failed to set program:', error)
+      console.error('❌ Failed to set program:', error)
       programText.value = '❌ Failed to get program description'
     }
   }
@@ -98,9 +99,10 @@
     }
     try {
       programText.value = data
+      console.log('✅ program shown');
     } catch (error) {
       console.error('❌ Failed to show program:', error)
-      programText.value = 'Failed to show program'
+      programText.value = '❌ Failed to show program'
     }
   }
 
@@ -114,7 +116,7 @@
         Object.assign(programOptions, JSON.parse(saved))
       }
       if (simState.RVCAT_state == 2) {
-        console.log('✅ RVCAT imported and processor set: look for programs and select current');
+        console.log('✅ RVCAT imported and processor set');
         initProgram();
       }
     } catch (error) {
@@ -149,12 +151,12 @@
       else {
         console.log(`✅ Loaded ${programKeys.length} programs from localStorage`)
       }
-      programOptions.availablePrograms = programKeys   // fires reaction to reloadProgram
+      programOptions.availablePrograms = programKeys   
       if (!programKeys.includes(programOptions.currentProgram))
-        programOptions.currentProgram = programKeys[0]  
+        programOptions.currentProgram = programKeys[0]  // fires reaction to reloadProgram
     } catch (error) {
       console.error('❌ Failed to load programs:', error)
-      programText.value = 'Failed to set program';
+      programText.value = '❌ Failed to set program';
     }      
   }
   
@@ -165,7 +167,7 @@
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('❌ Failed to set program:', error)
-      programText.value = 'Failed to set program';
+      programText.value = '❌ Failed to set program';
     }      
   }
   
@@ -248,7 +250,7 @@
         uploadedProgramObject = parsed;
         modalName.value       = parsed.name;
         showModalUp.value     = true;
-        console.log('Uploaded program:', uploadedProgramObject)
+        console.log('✅ Uploaded program:', uploadedProgramObject)
       } catch (err) {
         console.error("❌ Failed to parse JSON file:", err);
         alert("Could not load program file.");
