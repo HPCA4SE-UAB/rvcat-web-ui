@@ -535,7 +535,8 @@ const loadCurrentTutorial = async (ID) => {
   fullTutorial.id       = ID
   currentTutorial.value = fullTutorial
   stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
-  tutorialOptions.progressStep =  stepIndex.value
+  tutorialOptions.inProgressID = ID
+  tutorialOptions.progressStep = stepIndex.value
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value})`)
 }
   
@@ -561,8 +562,8 @@ const validateCurrentStep = async () => {
   const getElement = (sel) => document.querySelector(sel)
   
   const validators = {
-    program_selected: () =>      simState.selectedProgram === value,
-    architecture_selected: () => simState.selectedProcessor === value,
+    program_selected: () =>      simState.selectedProgram === v.value,
+    architecture_selected: () => simState.selectedProcessor === v.value,
     input_value: () =>           getElement(v.selector)?.value === v.value,
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
     button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
@@ -744,7 +745,7 @@ const getAnswerClass = (index) => {
 const getErrorMessage = () => {
   if (!questionAnswered.value || isQuestionCorrect.value) return ''
   
-  const answers = currentStep.value.answers || []
+  const answers         = currentStep.value.answers || []
   const correctIndices  = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
   const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
