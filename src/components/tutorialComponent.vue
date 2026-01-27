@@ -284,12 +284,20 @@ const saveOptions = () => {
   }
 }
   
-// Watch for tutorial changes
-watch(() => tutorialOptions, () => {
-  saveOptions()
-});
-
- 
+// Watch for tutorial changes on specific properties
+watch(
+  () => ({
+    available: tutorialOptions.available,
+    inProgressID: tutorialOptions.inProgressID,
+    progressStep: tutorialOptions.progressStep,
+    inEditionID: tutorialOptions.inEditionID
+  }),
+  () => {
+    saveOptions()
+  },
+  { deep: true }
+)
+  
 // ============================================================================
 // COMPUTED PROPERTIES
 // ============================================================================
