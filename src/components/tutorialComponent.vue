@@ -180,24 +180,11 @@
             @click="startTutorial(tutorial)"
             class="tutorial-menu-item"
           >
-            <!----
-              <div class="tutorial-item-content">
-              <strong v-html="tutorial.name"></strong>
-              <p v-html="tutorial.description"></p>
-            </div>
-             --->
-          </button>
-          
-          <div class="tutorial-menu-separator"></div>
-
-          <!----
-          <button @click="showEditor = true" class="tutorial-menu-item tutorial-create-item">
             <div class="tutorial-item-content">
-              <strong>+ Create New Tutorial</strong>
-              <p>Use the visual editor to create a custom tutorial</p>
+              <strong v-html="tutorial"></strong>
+              <!--- <p v-html="tutorial.description"></p>              --->
             </div>
           </button>
-           --->
         </div>
       </div>
     </div>
@@ -1150,17 +1137,6 @@ onUnmounted(() => {
   margin:     5px 0;
 }
 
-.tutorial-create-item {
-  background:   linear-gradient(135deg, #007acc, #0056b3);
-  color:        white;
-  border-color: #007acc;
-}
-
-.tutorial-create-item:hover {
-  background:   linear-gradient(135deg, #005999, #004085);
-  border-color: #005999;
-}
-
 .tutorial-paused-section {
   border-bottom:  2px solid #eee;
   margin-bottom:  8px;
@@ -1249,14 +1225,6 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #c82333, #bd2130);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-}
-
-.tutorial-create-item .tutorial-item-content strong {
-  color: white;
-}
-
-.tutorial-create-item .tutorial-item-content p {
-  color: rgba(255, 255, 255, 0.9);
 }
 
 @keyframes tutorial-tooltip-appear {
