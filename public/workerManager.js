@@ -22,7 +22,7 @@ export class WorkerManager {
           this.readyResolve();
           this.readyResolve = null;
         }
-        console.log('🎯 Worker initialized and ready');
+        console.log('📦🎯 Worker initialized and ready');
       }
       
       if (action === 'executed' && id) {
@@ -95,6 +95,7 @@ export class WorkerManager {
   }
 
 }
+
 
 
 
