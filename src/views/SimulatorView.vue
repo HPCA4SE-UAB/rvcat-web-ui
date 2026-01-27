@@ -81,7 +81,7 @@ function closeLoadingOverlay() { showOverlay.value = false }
 // Handler for 'import_rvcat' message
 const handleRVCAT = async (data, dataType) => {
   if (dataType === 'error') {
-    console.error('Failed to import RVCAT:', data);
+    console.error('❌ handler: failed to import RVCAT:', data);
     return;
   }
   loadingMessage.value = 'Loading complete!';
