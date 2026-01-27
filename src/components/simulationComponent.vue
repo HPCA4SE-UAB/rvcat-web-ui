@@ -20,6 +20,7 @@
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
+      console.log('🕐load options')
       return saved ? JSON.parse(saved) : defaultOptions
     } catch {
       return defaultOptions
