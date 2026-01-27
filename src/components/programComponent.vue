@@ -216,6 +216,7 @@
       const writable = await handle.createWritable();
       await writable.write(jsonString);
       await writable.close();
+      console.log('📄✅ Downloaded program');
     } else {
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url  = URL.createObjectURL(blob);
@@ -226,6 +227,7 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      console.log('📄✅ Downloaded program');
     }
   }
 
