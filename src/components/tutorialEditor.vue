@@ -1,6 +1,53 @@
 <template>
+ <div class="main">
+    <div class="header fullscreen-header">
+      <div class="section-title-and-info">
+        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span class="header-title">Tutorial - <strong>{{ tutorialOptions.currentTutorial }}</strong></span>
+      </div>
+      
+      <div class="settings-container fullscreen-settings">
+        <select v-model="tutorialOptions.currentProgram" title="Select Program">
+          <option value="" disabled>Select</option>
+          <option v-for="tutorial in tutorialOptions.availableTutorials" :key="tutorial" :value="tutorial">
+            {{ tutorial }}
+          </option>
+        </select>
+        <div class="buttons">
+          <button class="blue-button" title="Save current Tutorial" @click="downloadTutorial"> Download </button>
+          <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial">   Upload   </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
+  </div>
+  
+  <div v-if="showModalUp" class="modal-overlay">
+    <div class="modal">
+      <h4>Load Tutorial As</h4>
+      <label for="config-name">Name:</label>
+      <input id="config-name" type="text" v-model="modalName" />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Load" @click="confirmModal">Load</button>
+        <button class="blue-button" title="Cancel Load" @click="cancelModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <Teleport to="body">
+    <HelpComponent v-if="showHelp" :position="helpPosition"
+    text="The tutorial allows ... Tutorials can be uploaded or downloaded in JSON format."
+      title="Tutorial Edition"
+    @close="closeHelp"  />
+  </Teleport>
+
+
+  <!----
+  
    <div class="tutorial-editor">
-      <!-- Simple header with title and close -->
+      
       <div class="editor-header">
         <div class="header-left">
           <h2>Tutorial Editor</h2>
@@ -14,9 +61,7 @@
         </div>
       </div>
       
-      <!-- Main content area -->
       <div class="editor-content">
-        <!-- Tutorial basic info -->
         <div class="section">
           <div class="form-group">
             <label>Tutorial Name <span class="required">*</span></label>
@@ -28,7 +73,6 @@
           </div>
         </div>
 
-        <!-- Steps section -->
         <div class="section">
           <h3>Steps & Questions</h3>
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
@@ -52,7 +96,6 @@
               <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
             </div>
             
-            <!-- Step-specific fields -->
             <template v-if="step.type === 'step'">
               <div class="form-group">
                 <label>Description</label>
@@ -105,7 +148,6 @@
                 </select>
               </div>
 
-              <!-- Validation Section -->
               <div v-if="step.validationType" class="validation-card">
                 <h4>Validation</h4>
                 <div class="form-group">
@@ -181,7 +223,6 @@
               </div>
             </template>
             
-            <!-- Question-specific fields -->
             <template v-else-if="step.type === 'question'">
               <div class="form-group">
                 <label>Question Text <span class="required">*</span></label>
@@ -250,7 +291,6 @@
           </div>
         </div>
 
-        <!-- Actions -->
         <div class="actions">
           <button @click="previewTutorial" class="btn-primary">Preview</button>
           <button @click="uploadTutorial" class="btn-secondary">Upload</button>
@@ -258,7 +298,6 @@
           <button @click="finishTutorial" class="btn-success">Finish</button>
         </div>
 
-        <!-- Export result -->
         <div v-if="exportedContent" class="export-section">
           <h3>Generated JSON</h3>
           <textarea v-model="exportedContent" readonly></textarea>
@@ -266,6 +305,8 @@
         </div>
       </div>
    </div>
+ -->
+  
 </template>
 
 <script setup>
