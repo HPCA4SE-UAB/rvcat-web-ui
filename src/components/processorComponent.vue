@@ -279,7 +279,6 @@
         modalDownload.value = false;
         nameError.value     = "";
         showModalUp.value   = true;
-
       } catch (err) {
         console.error("💻❌ Invalid JSON:", err);
         alert("Failed to load processor config. Please, check the file.");
@@ -536,6 +535,7 @@
     showModalChange.value = false;
     if(modalConfirmOperation=='upload') {
       document.getElementById('file-upload').click();
+      console.log('💻✅ Uploaded processor:', modalName.value)
     }
     else if(modalConfirmOperation=='change') {
       updateProcessorSettings(processorInfo);
@@ -564,6 +564,7 @@
 
     if (modalDownload.value) {    //download JSON file
       downloadProcessor(modalName.value)
+      console.log('💻✅ Downloaded processor:', modalName.value)
     }
     showModalDown.value = false;
     showModalUp.value   = false;
