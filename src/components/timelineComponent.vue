@@ -21,6 +21,7 @@
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
+      console.log('📍📈load options')
       return saved ? JSON.parse(saved) : defaultOptions
     } catch {
       return defaultOptions
@@ -48,7 +49,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineOptions))
     } catch (error) {
-      console.error('❌ Failed to save:', error)
+      console.error('📍📈❌ Failed to save:', error)
     }
   }
   
@@ -60,7 +61,7 @@
       if (!timelineData.value && simState.RVCAT_state == 3)  // on mount
          getTimelineAndDraw()
     } catch (error) {
-      console.error('❌ Failed on timeline:', error)
+      console.error('📍📈❌ Failed on timeline:', error)
     }
   });
 
@@ -75,7 +76,7 @@
  // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to get timeline:', data);
+      console.error('📍📈Failed to get timeline:', data);
       return;
     }
     try {
@@ -83,7 +84,7 @@
       timelineData.value = data
       drawTimeline(data);
     } catch (error) {
-      console.error('Failed to obtain execution results:', error)
+      console.error('📍📈Failed to obtain execution results:', error)
     }
   }
   
@@ -116,7 +117,7 @@
       }, 75)
       console.log('✅ Modified timeline options')
     } catch (error) {
-      console.error('Failed to save dependence graph options:', error)
+      console.error('📍📈Failed to save dependence graph options:', error)
     } 
   },
   { deep: true, immediate: true })
