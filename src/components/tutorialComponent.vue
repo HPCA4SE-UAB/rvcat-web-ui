@@ -200,7 +200,7 @@ const simState = inject('simulationState');
 /* ------------------------------------------------------------------ 
  * Tutorial State (persistent in localStorage)
  * ------------------------------------------------------------------ */
-  const STORAGE_KEY = 'tutorialOptions'
+  const STORAGE_KEY           = 'tutorialOptions'
   const TUTORIAL_PROGRESS_KEY = 'tutorialProgress'
 
   const defaultOptions = {
@@ -266,6 +266,7 @@ const validationEventListeners = ref([])
 const savedOptions = (() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
+    console.log('👨‍🎓✅ load options')
     return saved ? JSON.parse(saved) : defaultOptions
   } catch {
     return defaultOptions
@@ -277,6 +278,7 @@ const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
 const saveOptions = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+    console.log('👨‍🎓✅ save options')
   } catch (error) {
     console.error('👨‍🎓❌ Failed to save:', error)
   }
@@ -292,6 +294,7 @@ const saveTutorialProgress = () => {
       totalSteps:   currentTutorial.value.steps.length,
       timestamp:    new Date().toISOString()
     }))
+    console.log('👨‍🎓✅ saving progress')
   } catch (e) {
     console.error('👨‍🎓❌ Error saving progress:', e)
   }
@@ -301,6 +304,7 @@ const loadTutorialProgress = () => {
   try {
     const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
     return data ? JSON.parse(data) : null
+    console.log('👨‍🎓✅ loading progress')
   } catch (e) {
     console.error('👨‍🎓❌ Error loading progress:', e)
     return null
@@ -310,6 +314,7 @@ const loadTutorialProgress = () => {
 const clearTutorialProgress = () => {
   try {
     localStorage.removeItem(TUTORIAL_PROGRESS_KEY)
+    console.log('👨‍🎓✅ clearing progress')
   } catch (e) {
     console.error('👨‍🎓❌ Error clearing progress:', e)
   }
