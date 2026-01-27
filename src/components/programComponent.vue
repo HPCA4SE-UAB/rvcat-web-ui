@@ -67,7 +67,7 @@
 
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
-    if (newValue != oldValue) {
+    if (newValue != oldValue && simState.RVCAT_state == 3 && simState.selectedProgram != '') {
       console.log('🔄 Refresh program visualization for modified processor configuration');
       showProgram()
     }
