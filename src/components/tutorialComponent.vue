@@ -278,7 +278,7 @@ const saveOptions = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
   } catch (error) {
-    console.error('❌ Failed to save:', error)
+    console.error('👨‍🎓❌ Failed to save:', error)
   }
 }
   
@@ -293,7 +293,7 @@ const saveTutorialProgress = () => {
       timestamp:    new Date().toISOString()
     }))
   } catch (e) {
-    console.error('❌ Error saving progress:', e)
+    console.error('👨‍🎓❌ Error saving progress:', e)
   }
 }
 
@@ -302,7 +302,7 @@ const loadTutorialProgress = () => {
     const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
     return data ? JSON.parse(data) : null
   } catch (e) {
-    console.error('❌ Error loading progress:', e)
+    console.error('👨‍🎓❌ Error loading progress:', e)
     return null
   }
 }
@@ -311,7 +311,7 @@ const clearTutorialProgress = () => {
   try {
     localStorage.removeItem(TUTORIAL_PROGRESS_KEY)
   } catch (e) {
-    console.error('❌ Error clearing progress:', e)
+    console.error('👨‍🎓❌ Error clearing progress:', e)
   }
 }
 
@@ -375,7 +375,7 @@ const canProceed = computed(() => {
         return true
     }
   } catch (e) {
-    console.warn('Validation check error:', e)
+    console.warn('👨‍🎓⚠️Validation check error:', e)
     return true
   }
 })
@@ -483,7 +483,7 @@ const shuffleAnswers = () => {
 // ============================================================================
   
 const loadTutorials = async () => {
-  console.log('🔄 Loading tutorials...')
+  console.log('👨‍🎓🔄 Loading tutorials...')
   isLoading.value = true
   try {
     let tutorialKeys = getKeys('tutorial') // from localStorage
@@ -495,10 +495,10 @@ const loadTutorials = async () => {
         localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
       }
       tutorialKeys = getKeys('tutorial')
-      console.log(`✅ Loaded ${tutorialKeys.length} tutorials from distribution files`)
+      console.log(`👨‍🎓✅ ${tutorialKeys.length} tutorials loaded from distribution files`)
     }
     else {
-      console.log(`✅ Loaded ${tutorialKeys.length} tutorials from localStorage`)
+      console.log(`👨‍🎓✅ ${tutorialKeys.length} tutorials loaded from localStorage`)
     }
 
     const tutorials = []
@@ -509,13 +509,13 @@ const loadTutorials = async () => {
         tutorial.steps = processStepActions(tutorial.steps)
         tutorials.push(tutorial)
       } catch (e) {
-        console.error(`❌ Failed to load: ${file}`, e)
+        console.error(`👨‍🎓❌ Failed to load: ${file}`, e)
       }
     }
     tutorialOptions.availableTutorials = tutorials
     // check if there is a tutorial in progress
   } catch (e) {
-    console.error('❌ Tutorial loading failed:', e)
+    console.error('👨‍🎓❌ Tutorial loading failed:', e)
     tutorialOptions.availableTutorials = [{
       id: 'fallback',
       name: '⚠️ Fallback Tutorial',
@@ -610,7 +610,7 @@ const setupButtonClickTracking = () => {
     if (!btn) return false
     
     const handler = () => {
-      console.log(`✅ Button clicked: ${selector}`)
+      console.log(`👨‍🎓✅ Button clicked: ${selector}`)
       clickedButtons.value.add(selector)
       validationState.value = { t: Date.now() }
     }
@@ -664,7 +664,7 @@ const highlightCurrentStep = async () => {
       await nextTick()
       await delay(300)
     } catch (e) {
-      console.error('Step action error:', e)
+      console.error('👨‍🎓❌ Step action error:', e)
     }
   }
   
@@ -845,7 +845,7 @@ const previewCustomTutorial = (data) => {
 const addFinishedTutorial = (data) => {
   data.steps = processStepActions(data.steps)
   tutorialOptions.availableTutorials.push(data)
-  console.log(`✅ Added tutorial: ${data.name}`)
+  console.log(`👨‍🎓✅ Added tutorial: ${data.name}`)
 }
 
 // ============================================================================
@@ -872,7 +872,7 @@ const restoreTutorialProgress = async () => {
   
   const tutorial = tutorialOptions.availableTutorials.find(t => t.id === saved.tutorialId)
   if (tutorial) {
-    console.log(`🔄 Restored progress: ${saved.tutorialName} (Step ${saved.stepIndex + 1})`)
+    console.log(`👨‍🎓🔄 Restored progress: ${saved.tutorialName} (Step ${saved.stepIndex + 1})`)
     currentTutorial.value = tutorial
     stepIndex.value       = saved.stepIndex
     return true
@@ -886,7 +886,7 @@ const restoreTutorialProgress = async () => {
 // LIFECYCLE
 // ============================================================================
 onMounted(async () => {
-  console.log('🎯 TutorialComponent mounted')
+  console.log('👨‍🎓🎯 TutorialComponent mounted')
   document.addEventListener('click', handleClickOutside)
   window.addEventListener  ('resize', handleWindowChange)
   window.addEventListener  ('scroll', handleWindowChange, true)
