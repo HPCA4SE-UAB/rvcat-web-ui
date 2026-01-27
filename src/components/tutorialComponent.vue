@@ -176,13 +176,13 @@
         <div v-else class="tutorial-list">
           <button 
             v-for="tutorial in tutorialOptions.availableTutorials" 
-            :key="tutorial"
-            @click="startTutorial(tutorial)"
+            :key="tutorial.id"
+            @click="startTutorial(tutorial.id)"
             class="tutorial-menu-item"
           >
             <div class="tutorial-item-content">
-              <strong v-html="tutorial"></strong>
-              <!--- <p v-html="tutorial.description"></p>              --->
+              <strong v-html="tutorial.name"></strong>
+              <p v-html="tutorial.description"></p>
             </div>
           </button>
         </div>
@@ -486,25 +486,34 @@ const loadTutorials = async () => {
   console.log('🔄 Loading tutorials...')
   isLoading.value = true
   try {
-    if (tutorialOptions.availableTutorials.length == 0) {
-      let tutorialKeys = getKeys('tutorial') // from localStorage
-      if (tutorialKeys.length == 0) { // load tutorials from distribution files
-        const response = await fetch('./index.json')
-        const data     = await response.json()
-        for (let i = 0; i < data.tutorials.length; i += 1) {
-          const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
-          localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
-        }
-        tutorialKeys = getKeys('tutorial')
+    let tutorialKeys = getKeys('tutorial') // from localStorage
+    if (tutorialKeys.length == 0) { // load tutorials from distribution files
+      const response = await fetch('./index.json')
+      const data     = await response.json()
+      for (let i = 0; i < data.tutorials.length; i += 1) {
+        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
       }
-      tutorialOptions.availableTutorials = tutorialKeys
-      tutorialOptions.currentTutorial = tutorialKeys[0]   // fires reaction to reloadTutorial
-      console.log(`✅ Loaded ${tutorialKeys.length} tutorials`)
+      tutorialKeys = getKeys('tutorial')
+      console.log(`✅ Loaded ${tutorialKeys.length} tutorials from distribution files`)
     }
     else {
-      console.log('✅ Tutorials already stored on localStorage')
-      reloadTutorial()
+      console.log(`✅ Loaded ${tutorialKeys.length} tutorials from localStorage`)
     }
+
+    const tutorials = []
+    for (const name of tutorialKeys) {
+      try {
+        const jsonString = localStorage.getItem(`tutorial.${name}`)
+        const tutorial   = JSON.parse(jsonString)
+        tutorial.steps = processStepActions(tutorial.steps)
+        tutorials.push(tutorial)
+      } catch (e) {
+        console.error(`❌ Failed to load: ${file}`, e)
+      }
+    }
+    tutorialOptions.availableTutorials = tutorials
+    // check if there is a tutorial in progress
   } catch (e) {
     console.error('❌ Tutorial loading failed:', e)
     tutorialOptions.availableTutorials = [{
@@ -741,12 +750,6 @@ const getErrorMessage = () => {
 // ============================================================================
 // NAVIGATION
 // ============================================================================
-
-/*  Process Steps when loading 
-   res = JSON string
-   const tutorial = await res.json()
-   tutorial.steps = processStepActions(tutorial.steps)
-   **********************************************/
   
 const startTutorial = (tutorialId) => {
   const tutorial = tutorialOptions.availableTutorials.find(t => t.id === tutorialId)
