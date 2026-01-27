@@ -38,7 +38,7 @@ async function initialize() {
  ********/
 
 self.onmessage = async function(message) {
-    console.log('Message received from main thread', message)
+    console.log('🐍 Message send:', message.data.action, message.data.code)
     if (message.data.action === 'initialize') {
         await initialize();
         // Respond message
