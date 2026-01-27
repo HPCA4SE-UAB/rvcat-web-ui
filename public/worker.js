@@ -38,7 +38,6 @@ async function initialize() {
  ********/
 
 self.onmessage = async function(message) {
-    console.log('🐍 Message send:', message.data.action, message.data.code)
     if (message.data.action === 'initialize') {
         await initialize();
         // Respond message
@@ -51,8 +50,9 @@ self.onmessage = async function(message) {
     if (message.data.action === 'execute') {
         // catch python errors
         try {
+            console.log('🐍➡️ execute: ', message.data.code)
             let res = await self.pyodide.runPythonAsync(message.data.code);
-            console.log('🐍➡️Python execution:', res);
+            console.log('🐍✅ results:', res);
             // Send successful result back
             if (message.data.id !== undefined) {
                 self.postMessage({action: 'executed', result: res, data_type: 'text', id: message.data.id});
