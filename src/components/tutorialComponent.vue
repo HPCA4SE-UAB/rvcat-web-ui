@@ -486,24 +486,33 @@ const loadTutorials = async () => {
         console.error(`👨‍🎓❌ Failed to load: ${file}`, e)
       }
     }
-    tutorialOptions.available = tutorials
-    if (!tutorialOptions.available.length) return
-  
+    tutorialOptions.available = tutorials   // fire options saving
+    if (!tutorialOptions.available.length) {
+      tutorialOptions.inProgressID = ""
+      return
+    }
+
+    if (tutorialOptions.inProgressID === "") { // no tutorial in progress
+      currentTutorial.value = null
+      stepIndex.value       = 0
+      return
+    }
+      
     tutorial = tutorialOptions.available.find(t => t.id === tutorialOptions.inProgressID)
     if (tutorial) {
       console.log(`👨‍🎓🔄 Restored progress: ${tutorial.name} (Step ${tutorialOptions.progressStep})`)
       currentTutorial.value = tutorial
       stepIndex.value       = tutorialOptions.progressStep
-    } else { // maybe tutorial has been cleared
+    } else { // in-progress tutorial has been cleared
       tutorialOptions.inProgressID = ""
       tutorialOptions.progressStep =  0
     }
     
   } catch (e) {
     console.error('👨‍🎓❌ Tutorial loading failed:', e)
-    tutorialOptions.availableTutorials = [{
-      id: 'fallback',
-      name: '⚠️ Fallback Tutorial',
+    tutorialOptions.available = [{
+      id:          'fallback',
+      name:        '⚠️ Fallback Tutorial',
       description: 'Error loading tutorials',
       steps: [{ title: 'Error', description: 'Tutorials could not load.', selector: '.header-title', position: 'bottom' }]
     }]
