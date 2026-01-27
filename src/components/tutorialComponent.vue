@@ -763,10 +763,14 @@ const startTutorial = (tutorialId) => {
   if (!tutorial) return
   
   saveScrollPosition()
-  
+
+  console.log('👨‍🎓▶️ Start tutorial', tutorialOptions)
+
   currentTutorial.value = tutorial
   stepIndex.value = (tutorialOptions.inProgressID === tutorialId) ? tutorialOptions.progressStep : 0
-  
+
+  console.log('👨‍🎓▶️ Start tutorial', tutorial, stepIndex.value)
+
   resetQuestionState()
   clickedButtons.value = new Set()
   trackedButtonElements.value = []
