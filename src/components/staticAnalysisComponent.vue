@@ -23,6 +23,7 @@
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
+      console.log('🔎load options')
       return saved ? JSON.parse(saved) : defaultOptions
     } catch {
       return defaultOptions
@@ -52,7 +53,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dependenceGraphOptions))
     } catch (error) {
-      console.error('❌ Failed to save:', error)
+      console.error('🔎❌ Failed to save:', error)
     }
   }
   
@@ -68,7 +69,7 @@
       }
       getPerformanceAnalysis();
     } catch (error) {
-      console.error('❌ Failed to load:', error)
+      console.error('🔎❌ Failed to load:', error)
     }
   });
 
@@ -109,7 +110,7 @@
       }, 75)
       console.log('✅ Saved graph options')
     } catch (error) {
-      console.error('Failed to save dependence graph options:', error)
+      console.error('🔎Failed to save dependence graph options:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -151,7 +152,7 @@ watch (
        const svg = await createGraphVizGraph(data);  
        dependenceGraphSvg.value = svg.outerHTML;
     } catch (error) {
-      console.error('Failed to generate SVG for graphviz Dependence Graph:', error)
+      console.error('🔎Failed to generate SVG for graphviz Dependence Graph:', error)
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
@@ -159,14 +160,14 @@ watch (
   // Handler for 'get_performance_analysis' message (fired by RVCAT getPerformanceAnalysis function)
   const handleAnalysis = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to get performance analysis:', data);
+      console.error('🔎Failed to get performance analysis:', data);
       return;
     }
     try {
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
       console.log('✅ Performance Analysis updated')
     } catch (error) {
-      console.error('Error handling performance analysis:', error)
+      console.error('🔎Error handling performance analysis:', error)
     }
   }
   
