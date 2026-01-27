@@ -287,10 +287,10 @@ const saveOptions = () => {
 // Watch for tutorial changes on specific properties
 watch(
   () => ({
-    available: tutorialOptions.available,
+    available:    tutorialOptions.available,
     inProgressID: tutorialOptions.inProgressID,
     progressStep: tutorialOptions.progressStep,
-    inEditionID: tutorialOptions.inEditionID
+    inEditionID:  tutorialOptions.inEditionID
   }),
   () => {
     saveOptions()
@@ -487,13 +487,17 @@ const loadTutorials = async () => {
     for (const name of tutorialKeys) {
       try {
         const jsonString = localStorage.getItem(`tutorial.${name}`)
-        const tutorial   = JSON.parse(jsonString)
-        tutorial.steps = processStepActions(tutorial.steps)
-        tutorials.push(tutorial)
+        const tutorial = JSON.parse(jsonString)
+        tutorials.push({
+          name:        tutorial.name,
+          id:          name,
+          description: tutorial.description
+        })
       } catch (e) {
-        console.error(`👨‍🎓❌ Failed to load: ${file}`, e)
+        console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
       }
     }
+  
     tutorialOptions.available = tutorials   // fire options saving
     if (!tutorialOptions.available.length) {
       tutorialOptions.inProgressID = ""
@@ -508,9 +512,13 @@ const loadTutorials = async () => {
       
     tutorial = tutorialOptions.available.find(t => t.id === tutorialOptions.inProgressID)
     if (tutorial) {
-      console.log(`👨‍🎓🔄 Restored progress: ${tutorial.name} (Step ${tutorialOptions.progressStep})`)
-      currentTutorial.value = tutorial
+      const jsonString      = localStorage.getItem(`tutorial.${tutorial.id}`)
+      const fullTutorial    = JSON.parse(jsonString)
+      fullTutorial.steps    = processStepActions(fullTutorial.steps)
+      fullTutorial.id       = tutorial.id
+      currentTutorial.value = fullTutorial
       stepIndex.value       = tutorialOptions.progressStep
+      console.log(`👨‍🎓🔄 Restored progress: ${tutorial.id} (Step ${tutorialOptions.progressStep})`)
     } else { // in-progress tutorial has been cleared
       tutorialOptions.inProgressID = ""
       tutorialOptions.progressStep =  0
@@ -640,8 +648,10 @@ const cleanup = (options = {}) => {
   cleanupButtonClickTracking()
   
   if (options.resetClicks)   clickedButtons.value = new Set()
-  if (options.clearProgress) clearTutorialProgress()
-  if (options.saveProgress)  saveTutorialProgress()
+  if (options.clearProgress) {
+    tutorialOptions.inProgressID = ""
+    tutorialOptions.progressStep =  0
+  }
   
   resetQuestionState()
   restoreScrollPosition()
@@ -758,10 +768,9 @@ const startTutorial = (tutorialId) => {
   if (!tutorial) return
   
   saveScrollPosition()
-  currentTutorial.value = tutorial
   
-  const saved = loadTutorialProgress()
-  stepIndex.value = (saved?.tutorialId === tutorialId) ? saved.stepIndex : 0
+  currentTutorial.value = tutorial
+  stepIndex.value = (tutorialOptions.inProgressID === tutorialId) ? tutorialOptions.progressStep : 0
   
   resetQuestionState()
   clickedButtons.value = new Set()
@@ -799,7 +808,7 @@ const previousStep = async () => {
 }
 
 const endTutorial = (fullReset = false) => {
-  cleanup({ resetClicks: fullReset, clearProgress: fullReset, saveProgress: !fullReset })
+  cleanup({ resetClicks: fullReset, clearProgress: fullReset })
   isActive.value = false
   if (fullReset) {
     currentTutorial.value  = null
