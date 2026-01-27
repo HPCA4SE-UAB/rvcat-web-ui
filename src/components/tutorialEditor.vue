@@ -7,12 +7,14 @@
       </div>
       
       <div class="settings-container fullscreen-settings">
+        <!----
         <select v-model="tutorialOptions.currentProgram" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.availableTutorials" :key="tutorial" :value="tutorial">
             {{ tutorial }}
           </option>
         </select>
+          -->
         <div class="buttons">
           <button class="blue-button" title="Save current Tutorial" @click="downloadTutorial"> Download </button>
           <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial">   Upload   </button>
@@ -20,9 +22,21 @@
       </div>
     </div>
 
-    <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
   </div>
   
+    <div class="actions">
+      <button @click="previewTutorial" class="btn-primary">Preview</button>
+      <button @click="uploadTutorial" class="btn-secondary">Upload</button>
+      <button @click="downloadJSON" class="btn-secondary">Download</button>
+      <button @click="finishTutorial" class="btn-success">Finish</button>
+    </div>
+
+    <div v-if="exportedContent" class="export-section">
+      <h3>Generated JSON</h3>
+      <textarea v-model="exportedContent" readonly></textarea>
+      <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
+    </div>
+
   <div v-if="showModalUp" class="modal-overlay">
     <div class="modal">
       <h4>Load Tutorial As</h4>
@@ -291,19 +305,7 @@
           </div>
         </div>
 
-        <div class="actions">
-          <button @click="previewTutorial" class="btn-primary">Preview</button>
-          <button @click="uploadTutorial" class="btn-secondary">Upload</button>
-          <button @click="downloadJSON" class="btn-secondary">Download</button>
-          <button @click="finishTutorial" class="btn-success">Finish</button>
-        </div>
-
-        <div v-if="exportedContent" class="export-section">
-          <h3>Generated JSON</h3>
-          <textarea v-model="exportedContent" readonly></textarea>
-          <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
-        </div>
-      </div>
+       </div>
    </div>
  -->
   
