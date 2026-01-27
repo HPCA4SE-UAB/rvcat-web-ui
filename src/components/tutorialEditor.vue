@@ -3,11 +3,11 @@
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Tutorial - <strong>{{ tutorialOptions.currentTutorial }}</strong></span>
+        <span class="header-title">Tutorial </span>
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <!----
+        <!----   - <strong>{{ tutorialOptions.currentTutorial }}</strong>   -----------
         <select v-model="tutorialOptions.currentProgram" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.availableTutorials" :key="tutorial" :value="tutorial">
