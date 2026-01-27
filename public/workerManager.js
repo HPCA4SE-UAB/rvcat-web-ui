@@ -16,7 +16,7 @@ export class WorkerManager {
   setupMessageHandler() {
     this.worker.onmessage = (message) => {
       const { action, id, result, data_type } = message.data;     
-      console.log('Worker message:', message.data);
+      console.log('📦 Worker message:', message.data);
       
       if (action === 'initialized') {
         this.isReady = true;
@@ -24,7 +24,7 @@ export class WorkerManager {
           this.readyResolve();
           this.readyResolve = null;
         }
-        console.log('Worker initialized and ready');
+        console.log('🎯 Worker initialized and ready');
       }
       
       if (action === 'executed' && id) {
@@ -97,4 +97,5 @@ export class WorkerManager {
   }
 
 }
+
 
