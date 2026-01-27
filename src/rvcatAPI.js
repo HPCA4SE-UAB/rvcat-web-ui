@@ -50,7 +50,7 @@ export function useRVCAT_Api() {
     try {
       const code = 'rvcat._program.show_code()';
       const result = await safeExecute(code, 'show_program');
-      console.log('🧠 RVCAT: show program:\n', result);
+      console.log('🧠 RVCAT: show program text obtained');
       return result;
     } catch (error) {
       console.error('🧠❌ RVCAT: failed to show program:', error);
@@ -70,7 +70,7 @@ export function useRVCAT_Api() {
       if (!f) {full     = "False"}
       const code = `rvcat._program.show_graphviz(${n}, ${internal}, ${latency}, ${small}, ${full})`
       const result = await safeExecute(code, 'get_dependence_graph');
-      console.log('🧠 RVCAT: get dependence Graph (GRAPHVIZ):\n', result);
+      console.log('🧠 RVCAT: dependence Graph (GRAPHVIZ) obtained');
       return result;
     } catch (error) {
       console.error('🧠❌ RVCAT: failed to get dependence graph:', error);
@@ -82,7 +82,7 @@ export function useRVCAT_Api() {
     try {
       const code = `rvcat._program.get_performance_analysis()`
       const result = await safeExecute(code, 'get_performance_analysis');
-      console.log('🧠 RVCAT: get performance analysis:\n', result);
+      console.log('🧠 RVCAT: performance analysis obtained');
       return result;
     } catch (error) {
       console.error('🧠❌ RVCAT: failed to get performance analysis:', error);
@@ -94,7 +94,7 @@ export function useRVCAT_Api() {
     try {
       const code = `rvcat._scheduler.get_results(${n_iters}, ${rob_size})`
       const result = await safeExecute(code, 'get_execution_results');
-      console.log('🧠 RVCAT: Execution Results obtained\n', result);
+      console.log('🧠 RVCAT: execution results obtained');
       return result;
     } catch (error) {
       console.error('🧠❌ RVCAT: failed to get execution results:', error);
