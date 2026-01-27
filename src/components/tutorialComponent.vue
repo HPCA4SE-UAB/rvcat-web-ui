@@ -537,7 +537,7 @@ const loadCurrentTutorial = async (ID) => {
   stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
   tutorialOptions.inProgressID = ID
   tutorialOptions.progressStep = stepIndex.value
-  console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value})`)
+  console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
   
 // ============================================================================
