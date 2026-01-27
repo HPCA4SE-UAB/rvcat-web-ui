@@ -642,17 +642,12 @@ const cleanupButtonClickTracking = () => {
 // ============================================================================
 // CLEANUP HELPERS
 // ============================================================================
-const cleanup = (options = {}) => {
+const cleanup = () => {
   clearHighlights()
   cleanupValidationListeners()
   cleanupButtonClickTracking()
   
-  if (options.resetClicks)   clickedButtons.value = new Set()
-  if (options.clearProgress) {
-    tutorialOptions.inProgressID = ""
-    tutorialOptions.progressStep =  0
-  }
-  
+  clickedButtons.value = new Set()
   resetQuestionState()
   restoreScrollPosition()
 }
@@ -808,7 +803,7 @@ const previousStep = async () => {
 }
 
 const endTutorial = (fullReset = false) => {
-  cleanup({ resetClicks: fullReset, clearProgress: fullReset })
+  cleanup()
   isActive.value = false
   if (fullReset) {
     currentTutorial.value  = null
