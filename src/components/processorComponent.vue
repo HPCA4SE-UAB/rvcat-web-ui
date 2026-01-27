@@ -76,14 +76,14 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(processorOptions))
     } catch (error) {
-      console.error('❌ Failed to save processor options:', error)
+      console.error('💻❌ Failed to save processor options:', error)
     }
   }
 
   // Watch for changes on RVCAT state
   watch(() => simState.RVCAT_state, (newValue, oldValue) => {
     if (newValue == 1) {
-      console.log('✅ RVCAT imported: look for processors and select current');
+      console.log('💻✅ RVCAT imported: look for processors and select current');
       initProcessor()
     }
   });
@@ -91,21 +91,21 @@
   // Handler for 'set_processor' message (fired by this component)
   const handleSetProcessor = (data, dataType) => {
     if (dataType === 'error') {
-      console.error('❌ Failed to set processor:', data);
+      console.error('💻❌ Failed to set processor:', data);
       return;
     }
     simState.selectedProcessor = processorOptions.processorName;  // fire other components
     if (simState.RVCAT_state == 1) {  // RVCAT only imported
       simState.RVCAT_state = 2;       // fire program load
-      console.log('✅ RVCAT Initialization: processor set. Next, program must be set')
+      console.log('💻✅ processor set on initialization step. Next step: set program')
     }
     else
-       console.log('✅ New processor set into RVCAT')
+       console.log('💻✅ new processor set on RVCAT')
     updateProcessorSettings(processorInfo);
   }
 
   onMounted(() => {
-    console.log('🎯 ProcessorComponent mounted')
+    console.log('💻🎯 ProcessorComponent mounted')
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -113,9 +113,9 @@
         Object.assign(processorOptions, JSON.parse(saved))
       }
       if (simState.RVCAT_state != 0)
-        console.error('⚠️ RVCAT imported before mounting Processor component')
+        console.error('💻⚠️ RVCAT imported before mounting processor component')
     } catch (error) {
-      console.error('❌ Failed to mount:', error)
+      console.error('💻❌ Failed to mount:', error)
     }
   });
 
@@ -134,18 +134,18 @@
       saveOptions()
       if (simState.RVCAT_state > 0) {  // imported or loaded
          if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
-            console.log(`✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
+            console.log(`💻✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
             reloadProcessor()
             return
          }
          if (processorOptions.ROBsize !== simState.ROBsize)  { // ROB size changed
-          console.log(`✅ ROB size changed to "${processorOptions.ROBsize}"`);
+          console.log(`💻✅ ROB size changed to "${processorOptions.ROBsize}"`);
           drawProcessor()
           simState.ROBsize = processorOptions.ROBsize // fires other components
         }
       }
     } catch (error) {
-      console.error('❌ Failed to handle changes on processor:', error)
+      console.error('💻❌ Failed to handle changes on processor:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -156,17 +156,16 @@
       if (simState.RVCAT_state >= 2)  // RVCAT imported & processor loaded
         drawProcessor()  
     } catch (error) {
-      console.error('❌ Failed to handle changes on processor configuration:', error)
+      console.error('💻❌ Failed to handle changes on processor configuration:', error)
     } 
   },
   { deep: true, immediate: true })
 
   const initProcessor = async () => {
-    console.log('🔄 Loading processor configurations...')
+    console.log('💻🔄 Loading processor configurations...')
     try {
       let processorKeys = getKeys('processor') // from localStorage
       if (processorKeys.length == 0) { // load processors from distribution files
-        console.log('Load processors from distribution files')
         const response = await fetch('./index.json')
         const data     = await response.json()
         for (let i = 0; i < data.processors.length; i += 1) {
@@ -174,27 +173,27 @@
            localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
         }
         processorKeys = getKeys('processor')
-        console.log(`✅ Loaded ${processorKeys.length} processors from distribution files`)
+        console.log(`💻✅ Loaded ${processorKeys.length} processors from distribution files`)
       }
       else {
-        console.log(`✅ Loaded ${processorKeys.length} processors from localStorage`)
+        console.log(`💻✅ Loaded ${processorKeys.length} processors from localStorage`)
       }
       processorOptions.availableProcessors = processorKeys  // creates reactive action to reloadProcesso
      if (!processorKeys.includes(processorOptions.processorName))
         processorOptions.processorName = processorKeys[0]
     } catch (error) {
-      console.error('❌ Failed to load processor configuration files:', error)
+      console.error('💻❌ Failed to load processor configuration files:', error)
     }      
   }
   
   const reloadProcessor = async () => {
-    console.log('🔄 Reloading processor with:', processorOptions.processorName);
+    console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
       jsonString    = localStorage.getItem(`processor.${processorOptions.processorName}`)
       processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
-      console.error('❌ Failed to set processor:', error)
+      console.error('💻❌ Failed to set processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
@@ -216,7 +215,7 @@
         procConfig.latencies[k] = v;
       });
     } catch(e) {
-      console.error("❌ Failed to update processor settings:", e);
+      console.error("💻❌ Failed to update processor settings:", e);
     }
   };
 
@@ -282,7 +281,7 @@
         showModalUp.value   = true;
 
       } catch (err) {
-        console.error("❌ Invalid JSON:", err);
+        console.error("💻❌ Invalid JSON:", err);
         alert("Failed to load processor config. Please, check the file.");
       }
       inputEl.value = "";
@@ -291,13 +290,13 @@
   }
 
   const drawProcessor = async () => {
-    console.log('Redrawing processor');
+    console.log('💻🔄Redrawing processor');
     try {
       const dotCode = get_processor_dot ()
       const svg = await createGraphVizGraph(dotCode);  
       pipelineSvg.value = svg.outerHTML;
     } catch (error) {
-      console.error('❌ Failed to draw processor:', error)
+      console.error('💻❌ Failed to draw processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
