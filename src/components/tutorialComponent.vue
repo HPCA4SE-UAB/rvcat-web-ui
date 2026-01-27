@@ -497,33 +497,12 @@ const loadTutorials = async () => {
         console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
       }
     }
-  
     tutorialOptions.available = tutorials   // fire options saving
     if (!tutorialOptions.available.length) {
       tutorialOptions.inProgressID = ""
       return
     }
-
-    if (tutorialOptions.inProgressID === "") { // no tutorial in progress
-      currentTutorial.value = null
-      stepIndex.value       = 0
-      return
-    }
-      
-    tutorial = tutorialOptions.available.find(t => t.id === tutorialOptions.inProgressID)
-    if (tutorial) {
-      const jsonString      = localStorage.getItem(`tutorial.${tutorial.id}`)
-      const fullTutorial    = JSON.parse(jsonString)
-      fullTutorial.steps    = processStepActions(fullTutorial.steps)
-      fullTutorial.id       = tutorial.id
-      currentTutorial.value = fullTutorial
-      stepIndex.value       = tutorialOptions.progressStep
-      console.log(`👨‍🎓🔄 Restored progress: ${tutorial.id} (Step ${tutorialOptions.progressStep})`)
-    } else { // in-progress tutorial has been cleared
-      tutorialOptions.inProgressID = ""
-      tutorialOptions.progressStep =  0
-    }
-    
+    await loadCurrentTutorial (tutorialOptions.inProgressID)    
   } catch (e) {
     console.error('👨‍🎓❌ Tutorial loading failed:', e)
     tutorialOptions.available = [{
@@ -535,6 +514,30 @@ const loadTutorials = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+  
+const loadTutorial = async (ID) => {
+  let tutorial = null
+  if ( ID !== "")
+    tutorial = tutorialOptions.available.find(t => t.id === ID)
+    
+  if ( ID === "" || tutorial === null) { // no tutorial in progress
+    tutorialOptions.inProgressID = ""
+    tutorialOptions.progressStep =  0
+    currentTutorial.value        = null
+    stepIndex.value              = 0
+    return
+  }
+
+  const jsonString      = localStorage.getItem(`tutorial.${ID}`)
+  const fullTutorial    = JSON.parse(jsonString)
+  fullTutorial.steps    = processStepActions(fullTutorial.steps)
+  fullTutorial.id       = ID
+  currentTutorial.value = fullTutorial
+  stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
+  tutorialOptions.progressStep =  stepIndex.value
+  console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value})`)
 }
   
 // ============================================================================
@@ -759,24 +762,17 @@ const getErrorMessage = () => {
 // ============================================================================
   
 const startTutorial = (tutorialId) => {
-  const tutorial = tutorialOptions.available.find(t => t.id === tutorialId)
-  if (!tutorial) return
+  
+  await loadCurrentTutorial (tutorialId)
+  if (!currentTutorial.value) return
   
   saveScrollPosition()
-
-  console.log('👨‍🎓▶️ Start tutorial', tutorialOptions)
-
-  currentTutorial.value = tutorial
-  stepIndex.value = (tutorialOptions.inProgressID === tutorialId) ? tutorialOptions.progressStep : 0
-
-  console.log('👨‍🎓▶️ Start tutorial', tutorial, stepIndex.value)
-
   resetQuestionState()
-  clickedButtons.value = new Set()
-  trackedButtonElements.value = []
   
-  isActive.value = true
-  showTutorialMenu.value = false
+  clickedButtons.value        = new Set()
+  trackedButtonElements.value = []
+  isActive.value              = true
+  showTutorialMenu.value      = false
   
   nextTick(() => {
     shuffleAnswers()
