@@ -49,7 +49,7 @@
 
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
-    console.log(`Program changed from "${oldProgram}" to "${newProgram}"`);
+    console.log(`✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
     if (simState.RVCAT_state > 1 && newProgram !== oldProgram) {
       reloadProgram();
@@ -59,7 +59,7 @@
   // Watch for changes on RVCAT state
   watch(() => simState.RVCAT_state, (newValue, oldValue) => {
     if (newValue == 2) {
-      console.log('RVCAT imported and processor set: look for programs and select current');
+      console.log('✅ RVCAT imported and processor set: look for programs and select current');
       initProgram();
     }
   });
@@ -67,7 +67,7 @@
    // Handler for 'set_program' message (fired by this component)
   const handleSetProgram = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to set program:', data);
+      console.error('❌ Failed to set program:', data);
       return;
     }
     try {    
@@ -77,25 +77,26 @@
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('Failed to set program:', error)
-      programText.value = 'Failed to get program description'
+      programText.value = '❌ Failed to get program description'
     }
   }
 
    // Handler for 'show_program' message (fired by this component)
   const handleShowProgram = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to show program:', data)
+      console.error('❌ Failed to show program:', data)
       return;
     }
     try {
       programText.value = data
     } catch (error) {
-      console.error('Failed to show program:', error)
+      console.error('❌ Failed to show program:', error)
       programText.value = 'Failed to show program'
     }
   }
 
   onMounted(() => {
+    console.log('🎯 ProgramComponent mounted')
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
     cleanupHandleShow= registerHandler('show_program', handleShowProgram)
     try {    // Load from localStorage
@@ -104,7 +105,7 @@
         Object.assign(programOptions, JSON.parse(saved))
       }
       if (simState.RVCAT_state == 2) {
-        console.log('RVCAT imported and processor set: look for programs and select current');
+        console.log('✅ RVCAT imported and processor set: look for programs and select current');
         initProgram();
       }
     } catch (error) {
@@ -122,40 +123,39 @@
   });
 
   const initProgram = async () => {
-    console.log('Init program list');
+    console.log('🔄 Loading programs...');
     try {
-      if (programOptions.availablePrograms.length == 0) {
-        let programKeys = getKeys('program') // from localStorage
-        if (programKeys.length == 0) { // load programs from distribution files
-          console.log('Load programs from distribution files')
-          const response = await fetch('./index.json')
-          const data     = await response.json()
-          for (let i = 0; i < data.programs.length; i += 1) {
-            const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-            localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
-          }
-          programKeys = getKeys('program')
+      let programKeys = getKeys('program') // from localStorage
+      if (programKeys.length == 0) { // load programs from distribution files
+        console.log('Load programs from distribution files')
+        const response = await fetch('./index.json')
+        const data     = await response.json()
+        for (let i = 0; i < data.programs.length; i += 1) {
+          const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
+          localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
         }
-        programOptions.availablePrograms = programKeys
-        programOptions.currentProgram = programKeys[0]   // fires reaction to reloadProgram
+        programKeys = getKeys('program')
+        console.log(`✅ Loaded ${programKeys.length} programs from distribution files`)
       }
       else {
-        console.log('Programs already stored on localStorage. Set program')
-        reloadProgram()
+        console.log(`✅ Loaded ${programKeys.length} programs from localStorage`)
       }
+      programOptions.availablePrograms = programKeys   // fires reaction to reloadProgram
+      if (!programKeys.includes(programOptions.currentProgram))
+        programOptions.currentProgram = programKeys[0]  
     } catch (error) {
-      console.error('Failed to set program:', error)
+      console.error('❌ Failed to load programs:', error)
       programText.value = 'Failed to set program';
     }      
   }
   
   const reloadProgram = async () => {
-    console.log('Reloading program with:', programOptions.currentProgram);
+    console.log('🔄 Reloading program with:', programOptions.currentProgram);
     try {
       const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
-      console.error('Failed to set program:', error)
+      console.error('❌ Failed to set program:', error)
       programText.value = 'Failed to set program';
     }      
   }
@@ -241,7 +241,7 @@
         showModalUp.value     = true;
         console.log('Uploaded program:', uploadedProgramObject)
       } catch (err) {
-        console.error("Failed to parse JSON file:", err);
+        console.error("❌ Failed to parse JSON file:", err);
         alert("Could not load program file.");
       }
     };
