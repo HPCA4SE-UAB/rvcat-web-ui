@@ -52,7 +52,11 @@ self.onmessage = async function(message) {
         try {
             console.log('🐍➡️ execute: ', message.data.code)
             let res = await self.pyodide.runPythonAsync(message.data.code);
-            console.log('🐍✅ results:', res);
+            if (res !== undefined) {
+              console.log('🐍✅ results:', res);
+            } else {
+              console.log('🐍✅ executed!');
+            }
             // Send successful result back
             if (message.data.id !== undefined) {
                 self.postMessage({action: 'executed', result: res, data_type: 'text', id: message.data.id});
