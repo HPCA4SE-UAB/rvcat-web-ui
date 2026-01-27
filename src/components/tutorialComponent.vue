@@ -858,19 +858,28 @@ const addFinishedTutorial = (data) => {
 // ============================================================================
 // EVENT HANDLERS
 // ============================================================================
-const handleClickOutside = (e) => {
+
+  const handleClickOutside = (e) => {
+  // Only run if the tutorial menu is currently shown
   if (!showTutorialMenu.value) return
   
+  // Get references to the menu and its launch button
   const menu = document.querySelector('.tutorial-menu')
   const btn  = document.querySelector('.tutorial-launcher-btn')
   
+  // Check if click was OUTSIDE both the menu AND the button
   if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+    // If clicked outside both, hide the menu
     showTutorialMenu.value = false
   }
 }
 
 const handleWindowChange = () => {
-  if (isActive.value && highlightElement.value) tooltipPositionTrigger.value++
+  // Only run if tutorial is active AND there's an element highlighted
+  if (isActive.value && highlightElement.value) {
+    // Increment a counter to trigger tooltip repositioning
+    tooltipPositionTrigger.value++
+  }
 }
 
 // ============================================================================
@@ -885,12 +894,14 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  console.log('👨‍🎓🧹 TutorialComponent unmounted')
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener ('resize', handleWindowChange)
   window.removeEventListener ('scroll', handleWindowChange, true)
   cleanupValidationListeners ()
   cleanupButtonClickTracking ()
 })
+
 </script>
 
 <style scoped>
