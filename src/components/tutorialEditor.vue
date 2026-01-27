@@ -320,7 +320,7 @@ const emit = defineEmits(['close', 'preview', 'tutorialFinished'])
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-const STORAGE_KEY = 'tutorial-editor-draft'
+const STORAGE_KEY    = 'tutorial-editor-draft'
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 // Predefined CSS selectors for highlighting elements
@@ -349,20 +349,20 @@ const predefinedSelectors = [
 ]
 
 const validationInputSelectors = [
-  { label: 'Custom', value: '' },
-  { label: 'ROB Size', value: '#rob-size' },
+  { label: 'Custom',               value: '' },
+  { label: 'ROB Size',             value: '#rob-size' },
   { label: 'Number of Iterations', value: '#num-iters' }
 ]
 
 const validationButtonSelectors = [
-  { label: 'Custom', value: '' },
+  { label: 'Custom',         value: '' },
   { label: 'Run Simulation', value: '#run-simulation-button' }
 ]
 
 // ============================================================================
 // STATE
 // ============================================================================
-const tutorial = reactive({ name: '', description: '', steps: [] })
+const tutorial        = reactive({ name: '', description: '', steps: [] })
 const exportedContent = ref('')
 
 // ============================================================================
@@ -518,7 +518,7 @@ const buildValidation = (step) => {
   if (!step.validationType) return null
   
   const validation = {
-    type: step.validationType,
+    type:    step.validationType,
     message: step.validationMessage || 'Complete this action to continue'
   }
   
@@ -529,7 +529,7 @@ const buildValidation = (step) => {
       break
     case 'input_value':
       validation.selector = step.validationSelector
-      validation.value = step.validationValue
+      validation.value    = step.validationValue
       break
     case 'input_value_min':
       validation.selector = step.validationSelector
@@ -548,8 +548,8 @@ const convertStepForExport = (step) => {
       type: 'question',
       title: step.title,
       questionText: step.questionText,
-      answerMode: step.answerMode,
-      answers: step.answers.filter(a => a.text).map(a => ({
+      answerMode:   step.answerMode,
+      answers:      step.answers.filter(a => a.text).map(a => ({
         text: a.text,
         isCorrect: a.isCorrect,
         explanation: a.explanation || ''
@@ -560,14 +560,14 @@ const convertStepForExport = (step) => {
   }
   
   const s = {
-    type: 'step',
-    title: step.title,
+    type:        'step',
+    title:       step.title,
     description: step.description,
-    selector: step.selector,
-    position: step.position
+    selector:    step.selector,
+    position:    step.position
   }
   if (step.stepImage) s.stepImage = step.stepImage
-  if (step.action) s.action = step.action
+  if (step.action)    s.action    = step.action
   
   const validation = buildValidation(step)
   if (validation) s.validation = validation
@@ -576,10 +576,10 @@ const convertStepForExport = (step) => {
 }
 
 const buildTutorialData = () => ({
-  id: tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-  name: tutorial.name,
+  id:          tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+  name:        tutorial.name,
   description: tutorial.description,
-  steps: tutorial.steps
+  steps:       tutorial.steps
     .filter(s => s.title && (s.type === 'question' || s.selector))
     .map(convertStepForExport)
 })
@@ -660,7 +660,7 @@ const downloadJSON = () => {
   const data = buildTutorialData()
   const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
+  const url  = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = `${data.id}.json`
@@ -676,12 +676,12 @@ const downloadJSON = () => {
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
-      type: 'question',
-      title: step.title || '',
-      questionText: step.questionText || '',
+      type:          'question',
+      title:         step.title || '',
+      questionText:  step.questionText || '',
       questionImage: step.questionImage || '',
-      answerMode: step.answerMode || 'single',
-      answers: (step.answers || []).map(a => ({
+      answerMode:    step.answerMode || 'single',
+      answers:      (step.answers || []).map(a => ({
         text: a.text || '',
         isCorrect: a.isCorrect || false,
         explanation: a.explanation || ''
@@ -696,28 +696,27 @@ const convertUploadedStep = (step) => {
   
   const s = {
     ...createEmptyStep(),
-    title: step.title || '',
+    title:       step.title || '',
     description: step.description || '',
-    stepImage: step.stepImage || '',
-    selector: step.selector || '',
-    position: step.position || 'bottom',
-    action: step.action || ''
+    stepImage:   step.stepImage || '',
+    selector:    step.selector || '',
+    position:    step.position || 'bottom',
+    action:      step.action || ''
   }
   
   if (step.validation) {
-    s.validationType = step.validation.type || ''
-    s.validationMessage = step.validation.message || ''
-    s.validationValue = step.validation.value || ''
+    s.validationType =     step.validation.type || ''
+    s.validationMessage =  step.validation.message || ''
+    s.validationValue =    step.validation.value || ''
     s.validationSelector = step.validation.selector || ''
     s.validationMinValue = step.validation.minValue || ''
   }
-  
   return s
 }
 
 const uploadTutorial = () => {
-  const input = document.createElement('input')
-  input.type = 'file'
+  const input  = document.createElement('input')
+  input.type   = 'file'
   input.accept = '.json'
   input.style.display = 'none'
   
@@ -733,9 +732,9 @@ const uploadTutorial = () => {
         return
       }
       
-      tutorial.name = data.name || ''
+      tutorial.name        = data.name || ''
       tutorial.description = data.description || ''
-      tutorial.steps = data.steps.map(convertUploadedStep)
+      tutorial.steps       = data.steps.map(convertUploadedStep)
       
       alert('Tutorial loaded successfully!')
     } catch (err) {
@@ -756,10 +755,10 @@ onMounted(() => {
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {
     try {
-      const data = JSON.parse(saved)
-      tutorial.name = data.name || ''
+      const data           = JSON.parse(saved)
+      tutorial.name        = data.name || ''
       tutorial.description = data.description || ''
-      tutorial.steps = data.steps || []
+      tutorial.steps       = data.steps || []
       if (!tutorial.steps.length) addStep()
     } catch (err) {
       console.error('Failed to load saved tutorial:', err)
