@@ -516,8 +516,7 @@ const loadTutorials = async () => {
   }
 }
 
-  
-const loadTutorial = async (ID) => {
+const loadCurrentTutorial = async (ID) => {
   let tutorial = null
   if ( ID !== "")
     tutorial = tutorialOptions.available.find(t => t.id === ID)
@@ -761,7 +760,7 @@ const getErrorMessage = () => {
 // NAVIGATION
 // ============================================================================
   
-const startTutorial = (tutorialId) => {
+const startTutorial = async (tutorialId) => {
   
   await loadCurrentTutorial (tutorialId)
   if (!currentTutorial.value) return
