@@ -27,7 +27,6 @@ export class WorkerManager {
       
       if (action === 'executed' && id) {
         // Call specific callback if exists
-        console.log('📦 message received:', result);
         if (this.messageCallbacks.has(id)) {
           const callback = this.messageCallbacks.get(id);
           callback(result, data_type);
@@ -96,6 +95,7 @@ export class WorkerManager {
   }
 
 }
+
 
 
 
