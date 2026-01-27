@@ -6,10 +6,10 @@ async function loadJSONfile(name) {
   try {
     const response = await fetch(name)
     const data     = await response.json()
-    console.log('File read: ', name, data)
+    console.log('✅ loadJSONfile: succeed.', name, data)
     return data
   } catch (error) {
-    console.error(`Failed to load ${name}:`, error)
+    console.error(`❌ loadJSONfile: failed to load ${name}:`, error)
     throw error
   }
 }
@@ -49,7 +49,7 @@ async function createGraphVizGraph(dotCode) {
   
     return svg;
     } catch(error) {
-      console.error("Error rendering graph:", error);
+      console.error("❌ createGraphVizGraph: rendering error:", error);
       throw error;
     }
 }
