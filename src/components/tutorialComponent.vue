@@ -549,8 +549,8 @@ const validateCurrentStep = async () => {
   const getElement = (sel) => document.querySelector(sel)
   
   const validators = {
-    program_selected: () =>      getElement('#programs-list')?.value === v.value,
-    architecture_selected: () => getElement('#processors-list')?.value === v.value,
+    program_selected: () =>      simState.selectedProgram === value,
+    architecture_selected: () => simState.selectedProcessor === value,
     input_value: () =>           getElement(v.selector)?.value === v.value,
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
     button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
