@@ -61,6 +61,7 @@
     if (newValue == 2) {
       console.log('✅ RVCAT imported and processor set: look for programs and select current');
       initProgram();
+      reloadProgram();
     }
   });
 
