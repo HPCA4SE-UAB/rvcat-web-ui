@@ -175,7 +175,7 @@
         </div>
         <div v-else class="tutorial-list">
           <button 
-            v-for="tutorial in tutorialOptions.availableTutorials" 
+            v-for="tutorial in tutorialOptions.available" 
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
             class="tutorial-menu-item"
@@ -200,13 +200,13 @@ const simState = inject('simulationState');
 /* ------------------------------------------------------------------ 
  * Tutorial State (persistent in localStorage)
  * ------------------------------------------------------------------ */
-  const STORAGE_KEY           = 'tutorialOptions'
-  const TUTORIAL_PROGRESS_KEY = 'tutorialProgress'
+  const STORAGE_KEY = 'tutorialOptions'
 
   const defaultOptions = {
-    availableTutorials:  [],
-    currentTutorialName: '',
-    progressStep:         0
+    available:    [],
+    inProgressID: "",
+    progressStep:  0,
+    inEditionID:  "" 
   }
   
 // ============================================================================
@@ -284,43 +284,12 @@ const saveOptions = () => {
   }
 }
   
-const saveTutorialProgress = () => {
-  if (!currentTutorial.value) return
-  try {
-    localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify({
-      tutorialId:   currentTutorial.value.id,
-      tutorialName: currentTutorial.value.name,
-      stepIndex:    stepIndex.value,
-      totalSteps:   currentTutorial.value.steps.length,
-      timestamp:    new Date().toISOString()
-    }))
-    console.log('👨‍🎓✅ saving progress')
-  } catch (e) {
-    console.error('👨‍🎓❌ Error saving progress:', e)
-  }
-}
+// Watch for tutorial changes
+watch(() => tutorialOptions, () => {
+  saveOptions()
+});
 
-const loadTutorialProgress = () => {
-  try {
-    const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
-    return data ? JSON.parse(data) : null
-    console.log('👨‍🎓✅ loading progress')
-  } catch (e) {
-    console.error('👨‍🎓❌ Error loading progress:', e)
-    return null
-  }
-}
-
-const clearTutorialProgress = () => {
-  try {
-    localStorage.removeItem(TUTORIAL_PROGRESS_KEY)
-    console.log('👨‍🎓✅ clearing progress')
-  } catch (e) {
-    console.error('👨‍🎓❌ Error clearing progress:', e)
-  }
-}
-
-  
+ 
 // ============================================================================
 // COMPUTED PROPERTIES
 // ============================================================================
@@ -517,8 +486,19 @@ const loadTutorials = async () => {
         console.error(`👨‍🎓❌ Failed to load: ${file}`, e)
       }
     }
-    tutorialOptions.availableTutorials = tutorials
-    // check if there is a tutorial in progress
+    tutorialOptions.available = tutorials
+    if (!tutorialOptions.available.length) return
+  
+    tutorial = tutorialOptions.available.find(t => t.id === tutorialOptions.inProgressID)
+    if (tutorial) {
+      console.log(`👨‍🎓🔄 Restored progress: ${tutorial.name} (Step ${tutorialOptions.progressStep})`)
+      currentTutorial.value = tutorial
+      stepIndex.value       = tutorialOptions.progressStep
+    } else { // maybe tutorial has been cleared
+      tutorialOptions.inProgressID = ""
+      tutorialOptions.progressStep =  0
+    }
+    
   } catch (e) {
     console.error('👨‍🎓❌ Tutorial loading failed:', e)
     tutorialOptions.availableTutorials = [{
@@ -757,7 +737,7 @@ const getErrorMessage = () => {
 // ============================================================================
   
 const startTutorial = (tutorialId) => {
-  const tutorial = tutorialOptions.availableTutorials.find(t => t.id === tutorialId)
+  const tutorial = tutorialOptions.available.find(t => t.id === tutorialId)
   if (!tutorial) return
   
   saveScrollPosition()
@@ -775,16 +755,15 @@ const startTutorial = (tutorialId) => {
   
   nextTick(() => {
     shuffleAnswers()
-    saveTutorialProgress()
     highlightCurrentStep()
   })
 }
 
 const goToStep = async (newIndex) => {
   stepIndex.value = newIndex
+  tutorialOptions.progressStep =  newIndex  // fire options saving
   resetQuestionState()
-  shuffleAnswers()
-  saveTutorialProgress()
+  shuffleAnswers    ()
   await nextTick()
   await highlightCurrentStep()
 }
@@ -809,6 +788,8 @@ const endTutorial = (fullReset = false) => {
     currentTutorial.value  = null
     stepIndex.value        = 0
     highlightElement.value = null
+    tutorialOptions.inProgressID = ""   // fire options saving
+    tutorialOptions.progressStep =  0
   }
 }
 
@@ -818,12 +799,12 @@ const completeTutorial = async () => {
 }
 
 const closeTutorial = () => endTutorial(false)
-const stopTutorial = () => endTutorial(true)
+const stopTutorial  = () => endTutorial(true)
 
 const resumeTutorial = () => {
   if (!currentTutorial.value) return
   saveScrollPosition()
-  isActive.value = true
+  isActive.value         = true
   showTutorialMenu.value = false
   nextTick(highlightCurrentStep)
 }
@@ -839,17 +820,17 @@ const previewCustomTutorial = (data) => {
   showEditor.value       = false
   showTutorialMenu.value = false
   
-  data.steps = processStepActions(data.steps)
+  data.steps            = processStepActions(data.steps)
   currentTutorial.value = data
-  stepIndex.value = 0
-  isActive.value  = true
+  stepIndex.value       = 0
+  isActive.value        = true
   
   nextTick(highlightCurrentStep)
 }
 
 const addFinishedTutorial = (data) => {
   data.steps = processStepActions(data.steps)
-  tutorialOptions.availableTutorials.push(data)
+  tutorialOptions.available.push(data)
   console.log(`👨‍🎓✅ Added tutorial: ${data.name}`)
 }
 
@@ -871,22 +852,6 @@ const handleWindowChange = () => {
   if (isActive.value && highlightElement.value) tooltipPositionTrigger.value++
 }
 
-const restoreTutorialProgress = async () => {
-  const saved = loadTutorialProgress()
-  if (!saved || !tutorialOptions.availableTutorials.length) return false
-  
-  const tutorial = tutorialOptions.availableTutorials.find(t => t.id === saved.tutorialId)
-  if (tutorial) {
-    console.log(`👨‍🎓🔄 Restored progress: ${saved.tutorialName} (Step ${saved.stepIndex + 1})`)
-    currentTutorial.value = tutorial
-    stepIndex.value       = saved.stepIndex
-    return true
-  }
-  
-  clearTutorialProgress()
-  return false
-}
-
 // ============================================================================
 // LIFECYCLE
 // ============================================================================
@@ -895,9 +860,7 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener  ('resize', handleWindowChange)
   window.addEventListener  ('scroll', handleWindowChange, true)
-  
   await loadTutorials()
-  await restoreTutorialProgress()
 })
 
 onUnmounted(() => {
