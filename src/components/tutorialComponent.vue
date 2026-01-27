@@ -176,30 +176,31 @@
         <div v-else class="tutorial-list">
           <button 
             v-for="tutorial in tutorialOptions.availableTutorials" 
-            :key="tutorial.id"
-            @click="startTutorial(tutorial.id)"
+            :key="tutorial"
+            @click="startTutorial(tutorial)"
             class="tutorial-menu-item"
           >
-            <div class="tutorial-item-content">
+            <!----
+              <div class="tutorial-item-content">
               <strong v-html="tutorial.name"></strong>
               <p v-html="tutorial.description"></p>
             </div>
+             --->
           </button>
           
           <div class="tutorial-menu-separator"></div>
-          
+
+          <!----
           <button @click="showEditor = true" class="tutorial-menu-item tutorial-create-item">
             <div class="tutorial-item-content">
               <strong>+ Create New Tutorial</strong>
               <p>Use the visual editor to create a custom tutorial</p>
             </div>
           </button>
+           --->
         </div>
       </div>
     </div>
-
-    <!-- Tutorial Editor -->
-    <!-- tutorialEditor v-if="showEditor" @close="showEditor = false" @preview="previewCustomTutorial" @tutorialFinished="addFinishedTutorial" /> -->
   </div>
 </template>
 
