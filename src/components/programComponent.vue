@@ -63,6 +63,14 @@
       initProgram();
     }
   });
+
+  // Watch for changes on processor configuration
+  watch(() => simState.selectedProcessor, (newValue, oldValue) => {
+    if (newValue != oldValue) {
+      console.log('🔄 Refresh program visualization for modified processor configuration');
+      showProgram()
+    }
+  });
   
    // Handler for 'set_program' message (fired by this component)
   const handleSetProgram = async (data, dataType) => {
