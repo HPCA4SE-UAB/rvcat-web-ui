@@ -364,10 +364,10 @@ function createCriticalPathList(data) {
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="5000" title="# loop iterations (1 to 5000)" id="simulation-iterations"
-                v-model.number="simulationOptions.iters" >
+          <input type="number" min="1" max="5000" v-model.number="simulationOptions.iters" 
+                 title="# loop iterations (1 to 5000)" id="simulation-iterations" >
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="reloadExecutionResults" 
+        <button class="blue-button" @click="reloadExecutionResults" 
                 title="Run Simulation"  id="run-simulation-button" >
            Run
         </button>
