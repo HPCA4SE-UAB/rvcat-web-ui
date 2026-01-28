@@ -45,7 +45,10 @@
           "explanation": "✅ Excellent! You've identified both critical factors:  <strong>Data Dependencies</strong> (Data Hazards) Instructions wait when they need results from preceding instructions that haven't completed. The pipeline must enforce proper execution order to ensure data flows correctly.  <strong>Execution Port Contention</strong> (Structural Hazards) Even when instructions are data-ready, they may wait if all compatible execution ports are busy. Each port type (integer, floating-point, memory) has limited capacity, creating bottlenecks."
         }
       ]
-    },
+    }
+  ]
+}
+,
     {
       "type": "step",
       "title": "Summary",
@@ -60,5 +63,3 @@
         "value": "baseline"
       }
     }
-  ]
-}
