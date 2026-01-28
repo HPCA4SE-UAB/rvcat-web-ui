@@ -767,7 +767,7 @@
                   <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
                       <input type="checkbox" 
-                       :title="`Port P${port} can execute ${instr} instructions`"
+                       :title="`Set if Port P${port} can execute ${instr} instructions`"
                        :id="`Port${port}-${instr}-check`"
                       :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
                       @change="togglePortInstruction(port, instr, $event.target.checked)" />
