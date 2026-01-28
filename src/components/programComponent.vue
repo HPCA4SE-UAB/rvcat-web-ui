@@ -306,8 +306,10 @@
           </option>
         </select>
         <div class="buttons">
-          <button class="blue-button" title="Save current Program" @click="downloadProgram"> Download </button>
-          <button class="blue-button" title="Load new Program"     @click="uploadProgram">   Upload   </button>
+          <button class="blue-button" @click="downloadProgram"
+               title="Save current Program" id="program-download-button" > Download </button>
+          <button class="blue-button" @click="uploadProgram"
+               title="Load new Program"     id="program-upload-button"   >  Upload  </button>
         </div>
       </div>
     </div>
