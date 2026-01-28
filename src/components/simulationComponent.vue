@@ -39,21 +39,22 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(simulationOptions))
     } catch (error) {
-      console.error('❌ Failed to save:', error)
+      console.error('🕐❌ Failed to save:', error)
     }
   }
   
   // Load from localStorage
   onMounted(() => {
     cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
-
+    console.log('🕐🎯 SimulationComponent mounted')
+  
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         Object.assign(simulationOptions, JSON.parse(saved))
       }
     } catch (error) {
-      console.error('❌ Failed to load:', error)
+      console.error('🕐❌ Failed to load:', error)
     }
   });
 
@@ -68,11 +69,11 @@
  // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
   const handleResults = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to get execution results:', data);
+      console.error('🕐❌Failed to get execution results:', data);
       return;
     }
     try {
-      console.log('✅ Execution Results received')
+      console.log('🕐✅ Execution Results received')
       executionResults = data
       let d = JSON.parse(data);
       if (d['data_type'] === 'error') {
@@ -118,7 +119,7 @@
       document.getElementById('critical-path-section').style.display  = 'block';
       document.getElementById('run-simulation-button').disabled       = false;
     } catch (error) {
-      console.error('Failed to obtain execution results:', error)
+      console.error('🕐❌Failed to obtain execution results:', error)
     }
   }
 
@@ -143,12 +144,16 @@
         document.getElementById('run-simulation-button').disabled       = true;
 
         getExecutionResults(simulationOptions.iters, simState.ROBsize) // Call Python RVCAT --> 'get_execution_results'
-        console.log('✅ Reloading execution results')
+        console.log('🕐✅ Reloading execution results')
        }, 200)
     } catch (error) {
-      console.error('Failed to request execution results:', error)
+      console.error('🕐❌Failed to request execution results:', error)
     }
   }
+
+/****************** 
+   TODO:  do not change when only showCritical is changed, and there is no other change, and results are available
+   ********************/
   
   // Watch ALL simulation options for changes
   watch(simulationOptions, () => {
@@ -160,7 +165,7 @@
         reloadExecutionResults()
       }
     } catch (error) {
-      console.error('Failed when simulation options modified:', error)
+      console.error('🕐❌Failed when simulation options modified:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -359,9 +364,11 @@ function createCriticalPathList(data) {
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="5000" title="# loop iterations (1 to 5000)" v-model.number="simulationOptions.iters" >
+          <input type="number" min="1" max="5000" title="# loop iterations (1 to 5000)" id="simulation-iterations"
+                v-model.number="simulationOptions.iters" >
         </div>
-        <button id="run-simulation-button" class="blue-button" @click="reloadExecutionResults" title="Run Simulation">
+        <button id="run-simulation-button" class="blue-button" @click="reloadExecutionResults" 
+                title="Run Simulation"  id="run-simulation-button" >
            Run
         </button>
       </div>
