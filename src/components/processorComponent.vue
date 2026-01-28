@@ -611,7 +611,7 @@
           </select>
           <div class="iters-group">
             <span class="iters-label">ROB size:</span>
-            <input type="number" min="1" max="200" title="Number of ROB entries (1 to 200)" 
+            <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
                  v-model.number="processorOptions.ROBsize">
           </div>
         </div>
@@ -658,10 +658,10 @@
         </select>
 
         <div class="buttons">
-          <button class="blue-button" title="Apply/Save new processor configuration" @click="openModal" 
+          <button class="blue-button" title="Apply/Save new processor configuration" @click="openModal" id="apply-processorconfig-button"
                   :disabled="!isModified"> Apply Changes </button>
           <input id="file-upload" type="file" accept=".json"     @change="uploadProcessor" style="display: none;"/>
-          <button class="blue-button" title="Load new Processor" @click="openUploadModal"> Upload </button>
+          <button class="blue-button" title="Load new Processor" @click="openUploadModal" id="upload-processorconfig-button" > Upload </button>
         </div>
       </div>
     </div>
@@ -678,11 +678,11 @@
         
           <div class="iters-group">
             <span>Dispatch:</span>
-            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
+            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" id="dispatch-width"
                  title="max. number of instructions dispatched per cycle (1 to 9)"/>
         
             <span>Retire:</span>
-            <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
+            <input type="number" v-model.number="procConfig.retire" min="1" max="9" id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"/>
           </div>
         </div> 
@@ -697,24 +697,24 @@
 
           <div class="iters-group">
             <span>Number of Blocks:</span>
-            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
+            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" id="cache-blocks"
                  title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
             
             <span>Block Size:</span>
             <div class="button-group">
               <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
-              <input type="number" v-model.number="procConfig.blkSize" readonly
+              <input type="number" v-model.number="procConfig.blkSize" readonly id="block-size"
                    title="Size of Memory block: must be a power of two (1 to 128)"
                />
               <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
             </div>
             
             <span>Miss Penalty:</span>
-            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
+            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" id="miss-penalty"
                  title="Extra latency due to cache miss (1 to 99)"/>
 
             <span>Miss Issue Time:</span>
-            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
+            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" id="miss-issue-time"
                  title="Minimum time between Memory accesses (1 to 99)"/>
           </div>
         </div>
@@ -733,12 +733,13 @@
           <div class="ports-toolbar">
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
-              <button v-if="portList.length > 1" class="delete-port" @click="removePort(port)" 
+              <button v-if="portList.length > 1" class="delete-port" id="`remove-port${port}-button`" @click="removePort(port)" 
                       :title="`Remove port P${port} from the Execution Engine`">
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
-            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" class="add-port" @click="addPort">
+            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" id="add-port-button"
+                    class="add-port" @click="addPort">
               + Add Port
             </button>
           </div>
@@ -758,12 +759,15 @@
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="procConfig.latencies[instr]" class="latency-input" min="1" max="99"
-                         title="Execution latency in clock cycles for the corresponding instruction type (1 to 99)"/>
+                         id="`${instr}-latency`"
+                         title="`Execution latency in clock cycles for the ${instr} instruction type (1 to 99)`"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
-                      <input type="checkbox" title="Indicates if this port can execute the corresponding instruction type"
+                      <input type="checkbox" 
+                       title="`Port P${port} can execute ${instr} instructions`"
+                       id="`Port${port}-${instr}-check`"
                       :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
                       @change="togglePortInstruction(port, instr, $event.target.checked)" />
                     </label>
