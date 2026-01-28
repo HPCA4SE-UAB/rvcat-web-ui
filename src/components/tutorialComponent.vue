@@ -333,7 +333,11 @@ const shuffledAnswers = computed(() => {
   return shuffledAnswerIndices.value.map(i => ({ ...answers[i], originalIndex: i }))
 })
 
+
 const canProceed = computed(() => {
+  // Returns true if user can advance to next step
+  // Returns false if validation requirements aren't met
+
   const validation = currentStep.value?.validation
   if (!validation) return true
   
