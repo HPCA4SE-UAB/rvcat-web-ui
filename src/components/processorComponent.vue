@@ -733,8 +733,9 @@
           <div class="ports-toolbar">
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
-              <button v-if="portList.length > 1" class="delete-port" id="`remove-port${port}-button`" @click="removePort(port)" 
-                      :title="`Remove port P${port} from the Execution Engine`">
+              <button v-if="portList.length > 1" class="delete-port"  @click="removePort(port)" 
+                      :title="`Remove port P${port} from the Execution Engine`"
+                      :id="`remove-port${port}-button`" >
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
@@ -759,15 +760,15 @@
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="procConfig.latencies[instr]" class="latency-input" min="1" max="99"
-                         id="`${instr}-latency`"
-                         title="`Execution latency in clock cycles for the ${instr} instruction type (1 to 99)`"/>
+                         :id="`${instr}-latency`"
+                         :title="`Execution latency in clock cycles for the ${instr} instruction type (1 to 99)`"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
                       <input type="checkbox" 
-                       title="`Port P${port} can execute ${instr} instructions`"
-                       id="`Port${port}-${instr}-check`"
+                       :title="`Port P${port} can execute ${instr} instructions`"
+                       :id="`Port${port}-${instr}-check`"
                       :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
                       @change="togglePortInstruction(port, instr, $event.target.checked)" />
                     </label>
