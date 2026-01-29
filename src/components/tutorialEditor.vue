@@ -392,10 +392,16 @@ const hasSavedContent = computed(() =>
 const clearSavedData = () => localStorage.removeItem(STORAGE_KEY)
 
 watch(tutorial, (t) => {
-  if (t.name || t.description || t.steps.length > 0) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(t))
+  try {
+    if (t.name || t.description || t.steps.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(t))
+      console.log('👨‍🎓✅ Edited tutorial saved in localStorage', t.name)
+    }
+  } catch (error) {
+    console.error('👨‍🎓❌ Failed to save edited tutorial in localStoraga:', error)
   }
 }, { deep: true })
+
 
 // ============================================================================
 // STEP CREATION HELPERS
