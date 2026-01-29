@@ -205,8 +205,7 @@ const simState = inject('simulationState');
   const defaultOptions = {
     available:    [],
     inProgressID: "",
-    progressStep:  0,
-    inEditionID:  "" 
+    progressStep:  0
   }
   
 // ============================================================================
@@ -885,6 +884,14 @@ const handleWindowChange = () => {
     tooltipPositionTrigger.value++
   }
 }
+
+ // Watch for changes on SIMULATOR state
+  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
+    if (newValue == 4) { // New edited tutorial has been copied to localStorage
+      console.log('👨‍🎓📥 Include new tutoral in available list');
+      simState.RVCAT_state = 3;   // set state back
+    }
+  });
 
 // ============================================================================
 // LIFECYCLE
