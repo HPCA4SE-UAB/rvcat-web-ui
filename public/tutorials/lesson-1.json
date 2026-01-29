@@ -30,48 +30,48 @@
     },
     {
       "title": "Exercise 1: Select a Program",
-      "description": "Now let's do the first practical exercise. Find the option to select a program and choose 'rec' to start working.",
+      "description": "Now let's do the first practical exercise. Find the option to select a program and choose 'v1' to start working.",
       "selector": "#programs-list",
       "position": "right",
       "validation": {
         "type": "program_selected",
-        "value": "rec",
-        "message": "You must select the 'rec' program to continue with the lesson"
+        "value": "v1",
+        "message": "You must select the 'v1' program to continue with the lesson"
       }
     },
     {
       "title": "Exercise 2: Configure Architecture",
-      "description": "Perfect! Now change the processor architecture to 'base2' to see how it affects the simulation.",
+      "description": "Perfect! Now change the processor architecture configuration to 'B2'.",
       "selector": "#processors-list",
       "position": "right",
       "validation": {
         "type": "architecture_selected",
-        "value": "base2",
-        "message": "Select the 'base2' architecture to continue"
+        "value": "B2",
+        "message": "Select the 'B2' architecture to continue"
       }
     },
     {
       "title": "Exercise 3: Adjust Configuration",
-      "description": "Now we'll modify some parameters. Change the ROB (Reorder Buffer) size to 128 to optimize performance.",
+      "description": "Now we'll modify some parameters. Change the ROB (Reorder Buffer) size to 25 .",
       "selector": "#rob-size",
       "position": "right",
       "validation": {
         "type": "input_value",
         "selector": "#rob-size",
-        "value": "128",
-        "message": "Enter exactly the value 128 in the ROB field"
+        "value": "25",
+        "message": "Enter the value 25 in the ROB field"
       }
     },
     {
       "title": "Exercise 4: Set Iterations",
-      "description": "Configure the number of simulation iterations. Enter a value of 500 iterations for meaningful results.",
-      "selector": "#num-iters",
+      "description": "Configure the number of simulation iterations. Enter a value of 500 iterations in the Simulation tab.",
+      "selector": "#simulation-iterations",
       "position": "bottom",
       "validation": {
         "type": "input_value",
-        "selector": "#num-iters",
+        "selector": "#simulation-iterations",
         "value": "500",
-        "message": "Enter the value 500 for the number of iterations"
+        "message": "Enter the value 500 for the number of iterations in the Simulation tab"
       }
     },
         {
