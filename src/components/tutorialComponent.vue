@@ -480,10 +480,10 @@ const loadTutorials = async () => {
         localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
       }
       tutorialKeys = getKeys('tutorial')
-      console.log(`👨‍🎓✅ ${tutorialKeys.length} tutorials loaded from distribution files`)
+      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from distribution files`)
     }
     else {
-      console.log(`👨‍🎓✅ ${tutorialKeys.length} tutorials loaded from localStorage`)
+      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from localStorage`)
     }
 
     const tutorials = []
@@ -889,6 +889,7 @@ const handleWindowChange = () => {
   watch(() => simState.RVCAT_state, (newValue, oldValue) => {
     if (newValue == 4) { // New edited tutorial has been copied to localStorage
       console.log('👨‍🎓📥 Include new tutoral in available list');
+      // If the edited tutorial replaces the inProgress tutorial, reset progress.
       simState.RVCAT_state = 3;   // set state back
     }
   });
