@@ -1,11 +1,11 @@
 <template>
- <div class="main">
+ <div class="main">   
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Tutorial </span>
       </div>
-      
+   
       <div class="settings-container fullscreen-settings">
         <!----   - <strong>{{ tutorialOptions.currentTutorial }}</strong>   -----------
         <select v-model="tutorialOptions.currentProgram" title="Select Program">
@@ -21,7 +21,10 @@
         </div>
       </div>
     </div>
-
+   
+    <div class="tutorial-editor">
+      
+    </div>
   </div>
   
     <div class="actions">
@@ -308,7 +311,11 @@
        </div>
    </div>
  -->
-  
+            <div class="add-buttons">
+            <button @click="addStep('step')" class="add-step-btn">+ Add Step</button>
+            <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
+          </div>
+
 </template>
 
 <script setup>
@@ -445,18 +452,18 @@ const addStep = (type = 'step') => {
 const onStepTypeChange = (step) => {
   if (step.type === 'question') {
     step.questionText = step.questionText || ''
-    step.answerMode = step.answerMode || 'single'
+    step.answerMode   = step.answerMode || 'single'
     if (!step.answers?.length) {
       step.answers = [
-        { text: '', isCorrect: true, explanation: '' },
+        { text: '', isCorrect: true,  explanation: '' },
         { text: '', isCorrect: false, explanation: '' }
       ]
     }
   } else {
-    step.description = step.description || ''
-    step.selector = step.selector || ''
-    step.position = step.position || 'bottom'
-    step.action = step.action || ''
+    step.description    = step.description || ''
+    step.selector       = step.selector || ''
+    step.position       = step.position || 'bottom'
+    step.action         = step.action || ''
     step.validationType = step.validationType || ''
   }
 }
@@ -544,7 +551,7 @@ const buildValidation = (step) => {
   switch (step.validationType) {
     case 'program_selected':
     case 'architecture_selected':
-      validation.value = step.validationValue
+      validation.value    = step.validationValue
       break
     case 'input_value':
       validation.selector = step.validationSelector
@@ -564,7 +571,7 @@ const buildValidation = (step) => {
 const convertStepForExport = (step) => {
   if (step.type === 'question') {
     const q = {
-      type: 'question',
+      type:  'question',
       title: step.title,
       questionText: step.questionText,
       answerMode:   step.answerMode,
@@ -609,28 +616,28 @@ const buildTutorialData = () => ({
 const validateTutorial = () => {
   const errors = []
   
-  if (!tutorial.name?.trim()) errors.push('• Tutorial Name is required')
-  if (!tutorial.steps.length) errors.push('• At least one step or question is required')
+  if (!tutorial.name?.trim())         errors.push('• Tutorial Name is required')
+  if (!tutorial.steps.length)         errors.push('• At least one step or question is required')
   
   tutorial.steps.forEach((step, i) => {
     const n = i + 1
-    if (!step.title?.trim()) errors.push(`• Step ${n}: Title is required`)
+    if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
     
     if (step.type === 'question') {
       if (!step.questionText?.trim()) errors.push(`• Step ${n}: Question Text is required`)
-      if (!step.answerMode) errors.push(`• Step ${n}: Answer Mode is required`)
+      if (!step.answerMode)           errors.push(`• Step ${n}: Answer Mode is required`)
       
       const validAnswers = step.answers?.filter(a => a.text?.trim()) || []
-      if (validAnswers.length < 2) errors.push(`• Step ${n}: At least 2 answers with text are required`)
+      if (validAnswers.length < 2)    errors.push(`• Step ${n}: At least 2 answers with text are required`)
       
       const correctAnswers = step.answers?.filter(a => a.isCorrect && a.text?.trim()) || []
       if (step.answerMode === 'single' && correctAnswers.length !== 1) {
-        errors.push(`• Step ${n}: Single-choice mode requires exactly one correct answer`)
+                                      errors.push(`• Step ${n}: Single-choice mode requires exactly one correct answer`)
       } else if (correctAnswers.length === 0) {
-        errors.push(`• Step ${n}: At least one answer must be marked as correct`)
+                                      errors.push(`• Step ${n}: At least one answer must be marked as correct`)
       }
     } else if (!step.selector?.trim()) {
-      errors.push(`• Step ${n}: CSS Selector is required`)
+                                      errors.push(`• Step ${n}: CSS Selector is required`)
     }
   })
   
@@ -651,9 +658,9 @@ const showValidationErrors = () => {
 // ============================================================================
 const clearDraft = () => {
   if (confirm('Are you sure you want to clear the current draft? This action cannot be undone.')) {
-    tutorial.name = ''
+    tutorial.name        = ''
     tutorial.description = ''
-    tutorial.steps = []
+    tutorial.steps       = []
     addStep()
     clearSavedData()
   }
@@ -734,9 +741,9 @@ const convertUploadedStep = (step) => {
 }
 
 const uploadTutorial = () => {
-  const input  = document.createElement('input')
-  input.type   = 'file'
-  input.accept = '.json'
+  const input         = document.createElement('input')
+  input.type          = 'file'
+  input.accept        = '.json'
   input.style.display = 'none'
   
   input.onchange = async (e) => {
