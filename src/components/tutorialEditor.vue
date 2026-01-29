@@ -25,10 +25,10 @@
   </div>
   
     <div class="actions">
-      <button @click="previewTutorial" class="btn-primary">Preview</button>
-      <button @click="uploadTutorial" class="btn-secondary">Upload</button>
-      <button @click="downloadJSON" class="btn-secondary">Download</button>
-      <button @click="finishTutorial" class="btn-success">Finish</button>
+      <button @click="previewTutorial" class="btn-primary">   Preview  </button>
+      <button @click="uploadTutorial"  class="btn-secondary"> Upload   </button>
+      <button @click="downloadJSON"    class="btn-secondary"> Download </button>
+      <button @click="finishTutorial"  class="btn-success">   Finish   </button>
     </div>
 
     <div v-if="exportedContent" class="export-section">
@@ -44,8 +44,8 @@
       <input id="config-name" type="text" v-model="modalName" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Load" @click="confirmModal">Load</button>
-        <button class="blue-button" title="Cancel Load" @click="cancelModal">Cancel</button>
+        <button class="blue-button" title="Accept Load" @click="confirmModal"> Load  </button>
+        <button class="blue-button" title="Cancel Load" @click="cancelModal"> Cancel </button>
       </div>
     </div>
   </div>
@@ -328,37 +328,48 @@ const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
   { label: 'Custom', value: '' },
-  { label: '── Main Areas ──', value: '', disabled: true },
-  { label: 'Header / Title', value: '.header-title' },
-  { label: 'Program Area', value: '.program' },
-  { label: 'Processor Area', value: '.processor' },
-  { label: 'Results Area', value: '.results' },
+  { label: '── Main Areas ──',      value: '', disabled: true },
+  { label: 'Header / Title',        value: '.header-title' },
+  { label: 'Program Area',          value: '.program' },
+  { label: 'Processor Area',        value: '.processor' },
+  { label: 'Results Area',          value: '.results' },
   { label: '── Program Section ──', value: '', disabled: true },
-  { label: 'Program Selector', value: '#programs-list' },
-  { label: 'Processor Selector', value: '#processors-list' },
+  { label: 'Program Selector',      value: '#programs-list' },
+  { label: 'Processor Selector',    value: '#processors-list' },
   { label: '── Configuration Inputs ──', value: '', disabled: true },
-  { label: 'ROB Size Input', value: '#rob-size' },
-  { label: 'Number of Iterations', value: '#num-iters' },
-  { label: '── Buttons ──', value: '', disabled: true },
+  { label: 'ROB Size Input',        value: '#rob-size' },
+  { label: 'Number of Iterations',  value: '#num-iters' },
+  { label: '── Buttons ──',         value: '', disabled: true },
   { label: 'Run Simulation Button', value: '#run-simulation-button' },
   { label: '── Navigation Tabs ──', value: '', disabled: true },
-  { label: 'Simulation Tab', value: 'button:contains(\"Simulation\")' },
-  { label: 'Static Analysis Tab', value: 'button:contains(\"Static Analysis\")' },
-  { label: 'Timeline Tab', value: 'button:contains(\"Timeline\")' },
-  { label: 'Comparison Tab', value: 'button:contains(\"Comparison\")' },
-  { label: 'Processor Editor Tab', value: 'button:contains(\"Processor\")' },
-  { label: 'Program Editor Tab', value: 'button:contains(\"Program\")' }
+  { label: 'Simulation Tab',        value: 'button:contains(\"Simulation\")' },
+  { label: 'Static Analysis Tab',   value: 'button:contains(\"Static Analysis\")' },
+  { label: 'Timeline Tab',          value: 'button:contains(\"Timeline\")' },
+  { label: 'Comparison Tab',        value: 'button:contains(\"Comparison\")' },
+  { label: 'Processor Editor Tab',  value: 'button:contains(\"Processor\")' },
+  { label: 'Program Editor Tab',    value: 'button:contains(\"Program\")' }
 ]
 
 const validationInputSelectors = [
   { label: 'Custom',               value: '' },
   { label: 'ROB Size',             value: '#rob-size' },
-  { label: 'Number of Iterations', value: '#num-iters' }
+  { label: 'Dispatch Width',       value: '#dispatch-width' },
+  { label: 'Retire Width',         value: '#retire-width' },
+  { label: 'INT latency',          value: '#INT-latency' },
+  { label: 'Check of INT instructions available on Port0', value: '#Port0-INT-check' },
+  { label: 'Number of Blocks in cache',  value: '#cache-blocks' },
+  { label: 'Number of Iterations', value: '#simulation-iterations' }
 ]
 
 const validationButtonSelectors = [
-  { label: 'Custom',         value: '' },
-  { label: 'Run Simulation', value: '#run-simulation-button' }
+  { label: 'Custom',                         value: '' },
+  { label: 'Run Simulation',                 value: '#run-simulation-button' },
+  { label: 'Apply Processor Configuration',  value: '#apply-processorconfig-button' },
+  { label: 'Upload Processor Configuration', value: '#upload-processorconfig-button' },
+  { label: 'Download Program',               value: '#program-download-button' },
+  { label: 'Upload Program',                 value: '#program-upload-button' },
+  { label: 'Remove PortX',                   value: '#remove-port0-button' },
+  { label: 'Add Port',                       value: '#add-port-button' }
 ]
 
 // ============================================================================
