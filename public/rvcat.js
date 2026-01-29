@@ -6,10 +6,10 @@ async function loadJSONfile(name) {
   try {
     const response = await fetch(name)
     const data     = await response.json()
-    console.log('✅ loadJSONfile: succeed.', name, data)
+    console.log('📥✅ loadJSONfile: succeed.', name)
     return data
   } catch (error) {
-    console.error(`❌ loadJSONfile: failed to load ${name}:`, error)
+    console.error(`📥❌ loadJSONfile: failed to load ${name}:`, error)
     throw error
   }
 }
@@ -41,15 +41,15 @@ async function createGraphVizGraph(dotCode) {
 
     svg.removeAttribute("width")
     svg.removeAttribute("height")
-    svg.style.width  = "100%"
-    svg.style.height = "100%"
-    svg.style.maxWidth = "100%"
+    svg.style.width     = "100%"
+    svg.style.height    = "100%"
+    svg.style.maxWidth  = "100%"
     svg.style.maxHeight = "100%"
-    svg.style.display = "block"
+    svg.style.display   = "block"
   
     return svg;
     } catch(error) {
-      console.error("❌ createGraphVizGraph: rendering error:", error);
+      console.error("🕸️❌ GraphVizGraph: rendering error.", error);
       throw error;
     }
 }
