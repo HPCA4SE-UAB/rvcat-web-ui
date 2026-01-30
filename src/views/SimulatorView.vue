@@ -76,7 +76,9 @@ function onRequestSwitch(key) {
   fullComponent.value    = FULL_NONE;
 }
 
-function closeLoadingOverlay() { showOverlay.value = false }
+function closeLoadingOverlay() { 
+   showOverlay.value = false 
+}
 
 // Handler for 'import_rvcat' message
 const handleRVCAT = async (data, dataType) => {
@@ -85,8 +87,8 @@ const handleRVCAT = async (data, dataType) => {
     return;
   }
   loadingMessage.value = 'Loading complete!';
-  setTimeout(() => closeLoadingOverlay(), 1000)
-  simState.RVCAT_state = 1;  // fires processor & program components to set processor/program
+  setTimeout(() => closeLoadingOverlay(), 1500)
+  simState.state = 1;  // fires processor component to set processor configuration
 };
  
 onMounted(() => {
@@ -107,7 +109,7 @@ onUnmounted(() => {
 watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
-      importRVCAT();  // from RVCAT API
+      importRVCAT();       // call RVCAT API
   }
 })
 
@@ -133,6 +135,7 @@ function toggleFullScreen(component) {
 }
 </script>
 
+<!----  Id's aon the template re used for tutorial linking of panels and buttons: do not change them! -->
 <template>
   <body>
     <header>
@@ -142,20 +145,26 @@ function toggleFullScreen(component) {
        <nav>
         <ul>
           <li>
-            <button class="blue-button" title="Open full window for processor configuration" 
-              :class="{ 'active': isProcessorFullscreen }" @click="toggleFullScreen(FULL_PROCESSOR)" >
+            <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
+               id="processor-button" 
+               title="Open full window for processor configuration" 
+               @click="toggleFullScreen(FULL_PROCESSOR)" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Open full window for program edition" 
-              :class="{ 'active': isProgramFullscreen }" @click="toggleFullScreen(FULL_PROGRAM)" >
+            <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
+               id="program-button"   
+               title="Open full window for program edition" 
+               @click="toggleFullScreen(FULL_PROGRAM)" >
                 {{ fullProgramButtonText }}
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Open full window for tutorial edition" 
-              :class="{ 'active': isTutorialFullscreen }" @click="toggleFullScreen(FULL_TUTORIAL)" >
+            <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
+               id="tutorial-button"  
+               title="Open full window for tutorial edition" 
+               @click="toggleFullScreen(FULL_TUTORIAL)" >
                 {{ fullTutorialButtonText }}
             </button>
           </li>
@@ -163,31 +172,35 @@ function toggleFullScreen(component) {
           <li class="separator"></li>
 
           <li>
-            <button class="blue-button" title="Simulate Program's execution"
-              :class="{ active: currentKey === 'simulationComponent' }"
-              @click="onRequestSwitch('simulationComponent')" > 
+            <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
+               id="simulation-button" 
+               title="Simulate Program's execution and collect performance metrics"
+               @click="onRequestSwitch('simulationComponent')" > 
                 Simulation
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Static Performance Analysis"
-              :class="{ active: currentKey === 'staticAnalysisComponent' }"
-              @click="onRequestSwitch('staticAnalysisComponent')" >
+            <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
+               id="analysis-button"   
+               title="Static Performance Analysis -> identify potential bottleneck, either throughput or latency (depnedencies)"
+               @click="onRequestSwitch('staticAnalysisComponent')" >
                 Static Analysis
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Detailed Timeline of Program's execution"
-              :class="{ active: currentKey === 'timelineComponent' }"
-              @click="onRequestSwitch('timelineComponent')" >
+            <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
+               id="timeline-button"   
+               title="Detailed Timeline of Program's execution"
+               @click="onRequestSwitch('timelineComponent')" >
                 Timeline
             </button>
           </li>
           <li>
-            <button class="blue-button" title="Information about this tool"
-            :class="{ active: currentKey === 'aboutComponent' }"
-            @click="onRequestSwitch('aboutComponent')" >
-              About
+            <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
+               id="about-button"      
+               title="Credits on the design and development for this tool"
+               @click="onRequestSwitch('aboutComponent')" >
+                About
             </button>
           </li>
         </ul>
@@ -204,19 +217,32 @@ function toggleFullScreen(component) {
     
     <main class="container" :class="containerClasses">
       
-      <div v-show="isProcessorFullscreen || isNotFullscreen" class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }">
+      <div v-show="isProcessorFullscreen || isNotFullscreen" 
+          class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }"
+          id="processor-panel"      
+          title="Credits on the design and development for this tool"
+        >
         <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
       </div>
       
-      <div v-show="isProgramFullscreen || isNotFullscreen" class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }">
-        <programComponent :is-fullscreen="fullComponent === FULL_PROGRAM" />
+      <div v-show="isProgramFullscreen || isNotFullscreen" 
+        class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
+        id="program-panel"
+        >
+        <programComponent   :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
 
-      <div v-show="isTutorialFullscreen" class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }">
-        <tutorialEditor :is-fullscreen="isTutorialFullscreen" />
+      <div v-show="isTutorialFullscreen" 
+        class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
+        id="tutorial-panel"
+        >
+        <tutorialEditor     :is-fullscreen="isTutorialFullscreen" />
       </div>
       
-      <div v-show= "isNotFullscreen" class="grid-item results">
+      <div v-show= "isNotFullscreen" 
+        class="grid-item results"
+        id="right-panel"
+        >
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
         <div v-else>Component not found</div>
       </div>
@@ -232,16 +258,17 @@ function toggleFullScreen(component) {
 </template>
 
 <style scoped>
-  
+
+/* applied to header title */
 #top {
-  max-height: 5vh;
-  width:      100vw;
-  padding:    0.6%;
-  display:    flex;
-  color:      white;
-  padding:    20px 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
+  max-height:      5vh;
+  width:           100vw;
+  padding:         0.6%;
+  display:         flex;
+  color:           white;
+  padding:         20px 10px;
+  box-shadow:      0 4px 8px rgba(0, 0, 0, 0.05);
+  box-sizing:      border-box;
   align-items:     center;
   justify-content: space-between;
   background-color: #007acc;
@@ -251,6 +278,7 @@ h1 {
   margin:    0;
   font-size: large;
 }
+  
 nav ul {
   list-style: none;
   padding:    0;
