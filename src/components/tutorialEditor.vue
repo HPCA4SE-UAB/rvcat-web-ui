@@ -7,7 +7,7 @@
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="editedTutorialName" title="Select Tutorial">
+        <select v-model="editedTutorialName" id="tutorials-list" title="Select Tutorial">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in availableTutorials" :key="tutorial" :value="tutorial">
             {{ tutorial }}
@@ -24,14 +24,14 @@
         <div class="buttons">
           <button class="blue-button" title="Add new step to the tutorial (at the end)" 
                 @click="addStep('step')"    >    + Add Step    </button>
-          <button class="blue-button" title="Add new step to the tutorial (at the end)" 
+          <button class="blue-button" title="Add new question to the tutorial (at the end)" 
                 @click="addStep('question')">+ Add Question</button>
         </div>
         <div class="buttons">
-          <button v-if="hasSavedContent" @click="clearDraft" class="clear-btn" title="Clear draft and start fresh">
+          <button v-if="hasSavedContent" @click="clearDraft" class="blue-button" title="Clear draft and start fresh">
             Clear Draft
           </button>
-          <button @click="$emit('close')" class="close-btn">&times;</button>
+          <button @click="$emit('close')" title="Close editor? Do not know if makes sense" class="close-btn">&times;</button>
         </div>
       </div>
     </div>
@@ -858,6 +858,10 @@ onMounted(() => {
   border-bottom:   1px solid #e5e7eb;
   border-radius:   12px 12px 0 0;
   background:      #f9fafb;
+}
+
+#tutorials-list {
+  font-size: larger;
 }
 
 .draft-indicator {
