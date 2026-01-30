@@ -50,15 +50,6 @@
       .sort((a, b) => a - b)
   );
 
-  // --- modal state ---
-  const showModalDown = ref(false);
-  const showModalUp   = ref(false);
-  const modalName     = ref("");
-  const modalDownload = ref(true);
-  const nameError     = ref("");
-  const showModalChange = ref(false);
-  let   modalConfirmOperation = null;
-  
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -235,32 +226,6 @@
 
     return true  // processor replaced
   }
-  
-  function uploadProcessor(event) {
-    const inputEl = event.target;
-    const file    = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        updateProcessorSettings(data)
-        
-        // === now pop up the Save‐As dialog ===
-        // strip extension from filename for default
-        modalName.value     = file.name.replace(/\.[^.]+$/, "");
-        modalDownload.value = false;
-        nameError.value     = "";
-        showModalUp.value   = true;
-      } catch (err) {
-        console.error("💻❌ Invalid JSON:", err);
-        alert("Failed to load processor config. Please, check the file.");
-      }
-      inputEl.value = "";
-    };
-    reader.readAsText(file);
-  }
 
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing processor');
@@ -375,13 +340,11 @@
     return dot_code;
   }
 
-
 /********************************************************
  **  Manipulation of processor data in User Interface ***
  ********************************************************/
-  
-  // return current processor configuration as JSON
-  function getCurrentProcessorJSON(name) {
+ 
+  function getCurrentProcessorJSON(name) {  // return current processor configuration as JSON
     return {
       name:       name,
       dispatch:   procConfig.dispatch,
@@ -492,7 +455,14 @@
 /* ------------------------------------------------------------------ 
  * Confirm Modal support 
  * ------------------------------------------------------------------ */
-
+  const showModalDown   = ref(false);
+  const showModalUp     = ref(false);
+  const modalName       = ref("");
+  const modalDownload   = ref(true);
+  const nameError       = ref("");
+  const showModalChange = ref(false);
+  let   modalConfirmOperation = null;
+  
   function openModal() {
     modalName.value     = name.value + "*";
     modalDownload.value = true;
@@ -508,7 +478,7 @@
   function confirmLeave(){
     showModalChange.value = false;
     if(modalConfirmOperation=='upload') {
-      document.getElementById('file-upload').click();
+      document.getElementById('processor-file-upload').click();
       console.log('💻✅ Uploaded processor:', modalName.value)
     }
     else if(modalConfirmOperation=='change') {
@@ -526,7 +496,7 @@
       modalConfirmOperation = 'upload';
     }
     else {
-      document.getElementById('file-upload').click();
+      document.getElementById('processor-file-upload').click();
     }
   }
 
@@ -535,15 +505,39 @@
       nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
       return;
     }
-
-    if (modalDownload.value) {    //download JSON file
+    if (modalDownload.value) {    // download JSON file
       downloadJSON(modalName.value, jsonString)
       console.log('💻✅ Downloaded processor:', modalName.value)
     }
     showModalDown.value = false;
     showModalUp.value   = false;
   }
+  
+function uploadProcessor(event) {
+    const inputEl = event.target;
+    const file    = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        updateProcessorSettings(data)
+        
+        // === now pop up the Save‐As dialog ===
+        // strip extension from filename for default
+        modalName.value     = file.name.replace(/\.[^.]+$/, "");
+        modalDownload.value = false;
+        nameError.value     = "";
+        showModalUp.value   = true;
+      } catch (err) {
+        console.error("💻❌ Invalid JSON:", err);
+        alert("Failed to load processor config. Please, check the file.");
+      }
+      inputEl.value = "";
+    };
+    reader.readAsText(file);
+  }
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
