@@ -14,18 +14,20 @@
           </option>
         </select>
         <div class="buttons">
-          <button class="blue-button" title="Save current Tutorial" @click="downloadJSON">   Download </button>
-          <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial"> Upload   </button>
+          <button class="blue-button" title="Save current Tutorial" 
+                @click="downloadJSON">   Download </button>
+          <button class="blue-button" title="Load new Tutorial" 
+                @click="uploadTutorial"> Upload   </button>
+          <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
+                @click="finishTutorial"> Add to menu </button>
         </div>
         <div class="buttons">
-          <button @click="previewTutorial" class="btn-primary">   Preview  </button>
-          <button @click="finishTutorial"  class="btn-success">   Finish   </button>
+          <button class="blue-button" title="Add new step to the tutorial (at the end)" 
+                @click="addStep('step')"    >    + Add Step    </button>
+          <button class="blue-button" title="Add new step to the tutorial (at the end)" 
+                @click="addStep('question')">+ Add Question</button>
         </div>
         <div class="buttons">
-          <button @click="addStep('step')"     class="add-step-btn">    + Add Step    </button>
-          <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
-        </div>
-        <div class="header-right">
           <button v-if="hasSavedContent" @click="clearDraft" class="clear-btn" title="Clear draft and start fresh">
             Clear Draft
           </button>
