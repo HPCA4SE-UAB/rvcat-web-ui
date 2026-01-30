@@ -283,7 +283,7 @@
       </div>
       
       <div class="settings-container">
-        <select v-model="programOptions.currentProgram" title="Select Program">
+        <select v-model="programOptions.currentProgram" class="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
