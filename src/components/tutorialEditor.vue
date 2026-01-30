@@ -317,6 +317,7 @@
 
 <script setup>
 import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
+import HelpComponent  from '@/components/helpComponent.vue';
 
 // ============================================================================
 // EMITS
@@ -328,8 +329,6 @@ const emit = defineEmits(['close', 'preview', 'tutorialFinished'])
 // ============================================================================
 const STORAGE_KEY    = 'tutorial-editor-draft'
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
-
-
 
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
@@ -386,6 +385,9 @@ const exportedContent    = ref('')
 const availableTutorials = ref([])
 const editedTutorialName = ref('')
 
+// Shared Simulation State: used to communicate tutorials between tutorial editor and main tutorial components
+const simState = inject('simulationState');
+
 // ============================================================================
 // COMPUTED
 // ============================================================================
@@ -403,40 +405,48 @@ watch(tutorial, (t) => {
   try {
     if (t.name || t.description || t.steps.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(t))
-      console.log('👨‍🎓✅ Edited tutorial saved in localStorage', t.name)
+      console.log('👨‍🎓📥 Edited tutorial saved in localStorage', t.name)
     }
   } catch (error) {
     console.error('👨‍🎓❌ Failed to save edited tutorial in localStoraga:', error)
   }
 }, { deep: true })
 
+  
+// Watch for changes on Simulation state
+  watch(() => simState.state, (newValue, oldValue) => {
+    if (newValue == 5) {
+      console.log('👨‍🎓✅ Tutorial stored by main component');
+    }
+  });
+
 
 // ============================================================================
 // STEP CREATION HELPERS
 // ============================================================================
 const createEmptyStep = () => ({
-  type: 'step',
-  title: '',
-  description: '',
-  stepImage: '',
-  selectorPreset: '',
-  selector: '',
-  position: 'bottom',
-  action: '',
-  validationType: '',
+  type:            'step',
+  title:           '',
+  description:     '',
+  stepImage:       '',
+  selectorPreset:  '',
+  selector:        '',
+  position:        'bottom',
+  action:          '',
+  validationType:  '',
   validationValue: '',
-  validationSelectorPreset: '',
   validationSelector: '',
   validationMinValue: '',
-  validationMessage: ''
+  validationMessage:  '',
+  validationSelectorPreset: ''
 })
 
 const createEmptyQuestion = () => ({
-  type: 'question',
-  title: '',
-  questionText: '',
+  type:          'question',
+  title:         '',
+  questionText:  '',
   questionImage: '',
-  answerMode: 'single',
+  answerMode:    'single',
   answers: [
     { text: '', isCorrect: true, explanation: '' },
     { text: '', isCorrect: false, explanation: '' }
@@ -572,13 +582,13 @@ const buildValidation = (step) => {
 const convertStepForExport = (step) => {
   if (step.type === 'question') {
     const q = {
-      type:  'question',
-      title: step.title,
+      type:         'question',
+      title:        step.title,
       questionText: step.questionText,
       answerMode:   step.answerMode,
       answers:      step.answers.filter(a => a.text).map(a => ({
-        text: a.text,
-        isCorrect: a.isCorrect,
+        text:        a.text,
+        isCorrect:   a.isCorrect,
         explanation: a.explanation || ''
       }))
     }
@@ -597,7 +607,8 @@ const convertStepForExport = (step) => {
   if (step.action)    s.action    = step.action
   
   const validation = buildValidation(step)
-  if (validation) s.validation = validation
+  if (validation) 
+    s.validation = validation
   
   return s
 }
@@ -668,7 +679,7 @@ const showValidationErrors = () => {
 // ACTIONS
 // ============================================================================
 const clearDraft = () => {
-  if (confirm('Are you sure you want to clear the current draft? This action cannot be undone.')) {
+  if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
@@ -699,7 +710,7 @@ const downloadJSON = () => {
   const blob = new Blob([json], { type: 'application/json' })
   const url  = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.href = url
+  link.href     = url
   link.download = `${data.id}.json`
   document.body.appendChild(link)
   link.click()
@@ -733,18 +744,18 @@ const convertUploadedStep = (step) => {
   
   const s = {
     ...createEmptyStep(),
-    title:       step.title || '',
+    title:       step.title       || '',
     description: step.description || '',
-    stepImage:   step.stepImage || '',
-    selector:    step.selector || '',
-    position:    step.position || 'bottom',
-    action:      step.action || ''
+    stepImage:   step.stepImage   || '',
+    selector:    step.selector    || '',
+    position:    step.position    || 'bottom',
+    action:      step.action      || ''
   }
   
   if (step.validation) {
-    s.validationType =     step.validation.type || ''
-    s.validationMessage =  step.validation.message || ''
-    s.validationValue =    step.validation.value || ''
+    s.validationType =     step.validation.type     || ''
+    s.validationMessage =  step.validation.message  || ''
+    s.validationValue =    step.validation.value    || ''
     s.validationSelector = step.validation.selector || ''
     s.validationMinValue = step.validation.minValue || ''
   }
@@ -769,7 +780,7 @@ const uploadTutorial = () => {
         return
       }
       
-      tutorial.name        = data.name || ''
+      tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps.map(convertUploadedStep)
       
@@ -793,9 +804,9 @@ onMounted(() => {
   if (saved) {
     try {
       const data           = JSON.parse(saved)
-      tutorial.name        = data.name || ''
+      tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
-      tutorial.steps       = data.steps || []
+      tutorial.steps       = data.steps       || []
       if (!tutorial.steps.length) addStep()
     } catch (err) {
       console.error('Failed to load saved tutorial:', err)
@@ -812,7 +823,7 @@ onMounted(() => {
 .tutorial-editor {
   background: white;
   border-radius: 12px;
-  width: 100%;
+  width:     100%;
   max-width: 900px;
   max-height: calc(100vh - 80px);
   display: flex;
@@ -822,25 +833,25 @@ onMounted(() => {
 }
 
 .editor-header {
-  display: flex;
+  display:         flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 30px 30px;
-  border-bottom: 1px solid #e5e7eb;
-  border-radius: 12px 12px 0 0;
-  background: #f9fafb;
+  align-items:     center;
+  padding:         30px 30px;
+  border-bottom:   1px solid #e5e7eb;
+  border-radius:   12px 12px 0 0;
+  background:      #f9fafb;
 }
 
 .header-left {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 16px;
+  gap:         16px;
 }
 
 .header-right {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 12px;
+  gap:         12px;
 }
 
 .editor-header h2 {
