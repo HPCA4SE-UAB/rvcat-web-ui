@@ -17,6 +17,16 @@
           <button class="blue-button" title="Save current Tutorial" @click="downloadTutorial"> Download </button>
           <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial">   Upload   </button>
         </div>
+        <div class="actions">
+          <button @click="previewTutorial" class="btn-primary">   Preview  </button>
+          <button @click="uploadTutorial"  class="btn-secondary"> Upload   </button>
+          <button @click="downloadJSON"    class="btn-secondary"> Download </button>
+          <button @click="finishTutorial"  class="btn-success">   Finish   </button>
+        </div>
+        <div class="add-buttons">
+          <button @click="addStep('step')"     class="add-step-btn">    + Add Step    </button>
+          <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
+        </div>
       </div>
     </div>
    
@@ -24,13 +34,6 @@
       
     </div>
   </div>
-  
-    <div class="actions">
-      <button @click="previewTutorial" class="btn-primary">   Preview  </button>
-      <button @click="uploadTutorial"  class="btn-secondary"> Upload   </button>
-      <button @click="downloadJSON"    class="btn-secondary"> Download </button>
-      <button @click="finishTutorial"  class="btn-success">   Finish   </button>
-    </div>
 
     <div v-if="exportedContent" class="export-section">
       <h3>Generated JSON</h3>
@@ -309,10 +312,6 @@
        </div>
    </div>
  -->
-            <div class="add-buttons">
-            <button @click="addStep('step')" class="add-step-btn">+ Add Step</button>
-            <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
-          </div>
 
 </template>
 
@@ -654,6 +653,16 @@ const showValidationErrors = () => {
   }
   return true
 }
+  
+// ============================================================================
+// HELP
+// ============================================================================
+  const showHelp     = ref(false);
+  const helpPosition = ref({ top: '0%', left: '40%' });
+  const helpIcon     = ref(null);
+
+  function openHelp()  { nextTick(() => { showHelp.value = true }) }
+  function closeHelp() { showHelp.value  = false }
 
 // ============================================================================
 // ACTIONS
