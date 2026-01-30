@@ -14,18 +14,22 @@
           </option>
         </select>
         <div class="buttons">
-          <button class="blue-button" title="Save current Tutorial" @click="downloadTutorial"> Download </button>
-          <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial">   Upload   </button>
+          <button class="blue-button" title="Save current Tutorial" @click="downloadJSON">   Download </button>
+          <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial"> Upload   </button>
         </div>
-        <div class="actions">
+        <div class="buttons">
           <button @click="previewTutorial" class="btn-primary">   Preview  </button>
-          <button @click="uploadTutorial"  class="btn-secondary"> Upload   </button>
-          <button @click="downloadJSON"    class="btn-secondary"> Download </button>
           <button @click="finishTutorial"  class="btn-success">   Finish   </button>
         </div>
-        <div class="add-buttons">
+        <div class="buttons">
           <button @click="addStep('step')"     class="add-step-btn">    + Add Step    </button>
           <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
+        </div>
+        <div class="header-right">
+          <button v-if="hasSavedContent" @click="clearDraft" class="clear-btn" title="Clear draft and start fresh">
+            Clear Draft
+          </button>
+          <button @click="$emit('close')" class="close-btn">&times;</button>
         </div>
       </div>
     </div>
@@ -316,7 +320,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, inject, computed } from 'vue'
 import HelpComponent  from '@/components/helpComponent.vue';
 
 // ============================================================================
