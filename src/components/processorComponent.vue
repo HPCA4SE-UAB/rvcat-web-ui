@@ -603,7 +603,7 @@
           <span class="header-title">Processor</span>
         </div>
         <div class="settings-container">
-          <select v-model="processorOptions.processorName" title="Select Processor">
+          <select v-model="processorOptions.processorName" id="processors-list" title="Select Processor">
             <option value="" disabled>Select</option>
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
@@ -650,7 +650,7 @@
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <select v-model="processorOptions.processorName" title="Select Processor">
+        <select v-model="processorOptions.processorName" id="processors-list" title="Select Processor">
           <option value="" disabled>Select</option>
           <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
             {{ processor }}
@@ -898,9 +898,9 @@
   }
 
   .settings-group {
-    display:    flex;
-    min-width:  0;
-    box-sizing: border-box;
+    display:        flex;
+    min-width:      0;
+    box-sizing:     border-box;
     flex-direction: column;
     align-items:    center;
     border:         1px solid #ccc;
@@ -923,6 +923,11 @@
   .settings-group.latency-group .table-container {
     flex: 0 0 auto; /* No crece, se ajusta al contenido */
   }
+  
+  #processors-list {
+    font-size: larger;
+  }
+  
   .pipeline-container {
     width:     100%;
     height:    100%;
