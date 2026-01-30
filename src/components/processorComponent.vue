@@ -82,27 +82,27 @@
   }
 
   // Watch for changes on RVCAT state
-  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
-    if (newValue == 1) {
-      console.log('💻✅ RVCAT imported: look for processors and select current');
+  watch(() => simState.state, (newValue, oldValue) => {
+    if (newValue == 1) { // This is an initialization step
+      console.log('💻✅ Initialization Step (1): RVCAT imported')
       initProcessor()
     }
   });
 
   // Handler for 'set_processor' message (fired by this component)
   const handleSetProcessor = (data, dataType) => {
-    if (dataType === 'error') {
+    if (dataType === 'error') {    
       console.error('💻❌ Failed to set processor:', data);
       return;
     }
     simState.selectedProcessor = processorOptions.processorName;  // fire other components
-    if (simState.RVCAT_state == 1) {  // RVCAT only imported
-      simState.RVCAT_state = 2;       // fire program load
-      console.log('💻✅ processor set on initialization step. Next step: set program')
+    if (simState.state == 1) {  // This is an initialization step
+      simState.state = 2;       // Change to next initialization step
+      console.log('💻✅ Initialization step (2): processor configuration provided to RVCAT')
     }
     else
-       console.log('💻✅ new processor set on RVCAT')
-    updateProcessorSettings(processorInfo);
+       console.log('💻✅ new processor configuration set on RVCAT')
+    updateProcessorSettings(processorInfo);  // update graph & local variables and view
   }
 
   onMounted(() => {
@@ -113,7 +113,7 @@
       if (saved) {
         Object.assign(processorOptions, JSON.parse(saved))
       }
-      if (simState.RVCAT_state != 0)
+      if (simState.state != 0)
         console.error('💻⚠️ RVCAT imported before mounting processor component')
     } catch (error) {
       console.error('💻❌ Failed to mount:', error)
@@ -154,7 +154,7 @@
     // Watch ALL processor configuration values for changes
   watch(procConfig, () => {
     try {
-      if (simState.RVCAT_state >= 2)  // RVCAT imported & processor loaded
+      if (simState.state >= 2)  // RVCAT imported & processor loaded
         drawProcessor()  
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor configuration:', error)
@@ -179,7 +179,7 @@
       else {
         console.log(`💻✅ Loaded ${processorKeys.length} processors from localStorage`)
       }
-      processorOptions.availableProcessors = processorKeys  // creates reactive action to reloadProcesso
+      processorOptions.availableProcessors = processorKeys  // creates reactive action to reloadProcessor
      if (!processorKeys.includes(processorOptions.processorName))
         processorOptions.processorName = processorKeys[0]
     } catch (error) {
@@ -234,33 +234,6 @@
     }, 100);
 
     return true  // processor replaced
-  }
-
-  async function downloadProcessor(name) {
-     // force a Save As... dialog if API is supported
-     if (window.showSaveFilePicker) {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: `${name}.json`,
-          types: [{
-            description: 'JSON files',
-            accept: { 'application/json': ['.json'] }
-          }],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(jsonString);
-        await writable.close();
-     } else {
-        // fallback: traditional anchor download
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url;
-        a.download = `${name}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-     }
   }
   
   function uploadProcessor(event) {
@@ -564,7 +537,7 @@
     }
 
     if (modalDownload.value) {    //download JSON file
-      downloadProcessor(modalName.value)
+      downloadJSON(modalName.value, jsonString)
       console.log('💻✅ Downloaded processor:', modalName.value)
     }
     showModalDown.value = false;
@@ -599,7 +572,9 @@
     <div v-if="!isFullscreen">
       <div class="header">
         <div class="section-title-and-info">
-          <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+          <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help">
+            <img src="/img/info.png" class="info-img">
+          </span>
           <span class="header-title">Processor</span>
         </div>
         <div class="settings-container">
@@ -610,7 +585,7 @@
             </option>
           </select>
           <div class="iters-group">
-            <span class="iters-label">ROB size:</span>
+            <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB size:</span>
             <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
                  v-model.number="processorOptions.ROBsize">
           </div>
@@ -658,10 +633,24 @@
         </select>
 
         <div class="buttons">
-          <button class="blue-button" title="Apply/Save new processor configuration" @click="openModal" id="apply-processorconfig-button"
-                  :disabled="!isModified"> Apply Changes </button>
-          <input id="file-upload" type="file" accept=".json"     @change="uploadProcessor" style="display: none;"/>
-          <button class="blue-button" title="Load new Processor" @click="openUploadModal" id="upload-processorconfig-button" > Upload </button>
+          <button class="blue-button" 
+                  id="apply-processorconfig-button"
+                  title="Apply/Save new processor configuration" 
+                  @click="openModal" 
+                  :disabled="!isModified"> 
+              Apply Changes 
+          </button>
+          <input type="file" accept=".json"
+               id="processor-file-upload" 
+               @change="uploadProcessor" 
+               style="display: none;"
+            />
+          <button class="blue-button" 
+                  id="upload-processorconfig-button"
+                  title="Load new Processor" 
+                  @click="openUploadModal"> 
+              Upload 
+          </button>
         </div>
       </div>
     </div>
@@ -678,11 +667,13 @@
         
           <div class="iters-group">
             <span>Dispatch:</span>
-            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" id="dispatch-width"
+            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
+                 id="dispatch-width"
                  title="max. number of instructions dispatched per cycle (1 to 9)"/>
         
             <span>Retire:</span>
-            <input type="number" v-model.number="procConfig.retire" min="1" max="9" id="retire-width"
+            <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
+                   id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"/>
           </div>
         </div> 
@@ -697,24 +688,28 @@
 
           <div class="iters-group">
             <span>Number of Blocks:</span>
-            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" id="cache-blocks"
+            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
+                 id="cache-blocks"
                  title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
             
             <span>Block Size:</span>
             <div class="button-group">
               <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
-              <input type="number" v-model.number="procConfig.blkSize" readonly id="block-size"
+              <input type="number" v-model.number="procConfig.blkSize" readonly 
+                   id="block-size"
                    title="Size of Memory block: must be a power of two (1 to 128)"
                />
               <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
             </div>
             
             <span>Miss Penalty:</span>
-            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" id="miss-penalty"
+            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
+                 id="miss-penalty"
                  title="Extra latency due to cache miss (1 to 99)"/>
 
             <span>Miss Issue Time:</span>
-            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" id="miss-issue-time"
+            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
+                 id="miss-issue-time"
                  title="Minimum time between Memory accesses (1 to 99)"/>
           </div>
         </div>
@@ -739,7 +734,8 @@
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
-            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" id="add-port-button"
+            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" 
+                    id="add-port-button"
                     class="add-port" @click="addPort">
               + Add Port
             </button>
@@ -841,7 +837,10 @@
     <div class="modal">
       <h4>Save Configuration As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" title="file name of new processor configuration" v-model="modalName"/>
+      <input v-model="modalName" type="text" 
+           id="config-name" 
+           title="file name of new processor configuration"
+        />
       <div v-if="nameError" class="error">{{ nameError }}</div>
 
       <label class="download-checkbox">
@@ -866,7 +865,10 @@
     <div class="modal">
       <h4>Load Configuration As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" title="name of loaded processor configuration" v-model="modalName"/>
+      <input v-model="modalName" type="text" 
+          id="config-name" 
+          title="name of loaded processor configuration" 
+        />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
         <button class="blue-button" title="Yes, I want to load"   @click="confirmModal"> Load  </button>
