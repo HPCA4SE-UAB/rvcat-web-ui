@@ -52,15 +52,14 @@
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
-    if (simState.RVCAT_state > 1 && newProgram !== oldProgram) {
+    if (simState.state > 1 && newProgram !== oldProgram) {
       reloadProgram();
     }
   });
 
   // Watch for changes on RVCAT state
-  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
-    if (newValue == 2) {
-      console.log('📄✅ Next initialization step: set program');
+  watch(() => simState.state, (newValue, oldValue) => {
+    if (newValue == 2) {  // This is an initialization step
       initProgram();
       reloadProgram();
     }
@@ -68,7 +67,7 @@
 
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
-    if (newValue != oldValue && simState.RVCAT_state == 3 && simState.selectedProgram != '') {
+    if (newValue != oldValue && simState.RVCAT_state > 2 && simState.selectedProgram != '') {
       console.log('📄🔄 Refreshing program visualization...');
       showProgram()
     }
@@ -82,9 +81,11 @@
     }
     try {    
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
-      simState.RVCAT_state = 3;                                  // program loaded
+      if (simState.state == 2) {  // This is an initialization step
+        simState.state = 3;       // Change to next initialization step
+        console.log('📄✅ Initialization step (3): program provided to RVCAT')
+      } 
       if (simState.selectedProgram != '')
-        console.log('📄🔄 Refreshing program visualization...');
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
@@ -100,7 +101,7 @@
     }
     try {
       programText.value = data
-      console.log('📄✅ program shown');
+        console.log('📄🔄 Program visualization updated');
     } catch (error) {
       console.error('📄❌ Failed to show program:', error)
       programText.value = '❌ Failed to show program'
@@ -116,9 +117,8 @@
       if (saved) {
         Object.assign(programOptions, JSON.parse(saved))
       }
-      if (simState.RVCAT_state == 2) {
-        console.log('📄✅ Next initialization step: set program');
-        initProgram();
+      if (simState.state > 1) {
+        console.error('📄⚠️ RVCAT imported and processor configuration loaded before mounting program component')
       }
     } catch (error) {
       console.error('📄❌ Failed to load:', error)
@@ -170,41 +170,11 @@
       programText.value = '❌ Failed to set program';
     }      
   }
-  
-  // Modal logic
-  const showModalUp = ref(false)
-  const modalName   = ref("")
-  const nameError   = ref("")
-  let uploadedProgramObject = null
 
-  async function confirmModal() {
-    const name = modalName.value.trim();
-    if (programOptions.availablePrograms.includes(name)) {
-      nameError.value = "A program with this name already exists. Please, choose another one.";
-      return;
-    }
-
-    nameError.value   = "";
-    showModalUp.value = false;
-
-    console.log('Modal confirmed')
-    uploadedProgramObject.name = name;
-    const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
-    localStorage.setItem(`program.${name}`, jsonText)
-    const programKeys = getKeys('program')
-    programOptions.availablePrograms = programKeys
-    programOptions.currentProgram = name
-    reloadProgram()
-  }
-
-  function cancelModal() {
-    showModalUp.value = false;
-    modalName.value   = "";
-    nameError.value   = "";
-    uploadedProgramObject = null;
-  }
-
-  async function downloadProgram() {
+/* ------------------------------------------------------------------ 
+ * DownLoad / UpLoad 
+ * ------------------------------------------------------------------ */
+   async function downloadProgram() {
     const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
@@ -263,6 +233,41 @@
   }
 
 /* ------------------------------------------------------------------ 
+ * Modal logic 
+ * ------------------------------------------------------------------ */
+  const showModalUp = ref(false)
+  const modalName   = ref("")
+  const nameError   = ref("")
+  let uploadedProgramObject = null
+
+  async function confirmModal() {
+    const name = modalName.value.trim();
+    if (programOptions.availablePrograms.includes(name)) {
+      nameError.value = "A program with this name already exists. Please, choose another one.";
+      return;
+    }
+
+    nameError.value   = "";
+    showModalUp.value = false;
+
+    console.log('Modal confirmed')
+    uploadedProgramObject.name = name;
+    const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
+    localStorage.setItem(`program.${name}`, jsonText)
+    const programKeys = getKeys('program')
+    programOptions.availablePrograms = programKeys
+    programOptions.currentProgram = name
+    reloadProgram()
+  }
+
+  function cancelModal() {
+    showModalUp.value = false;
+    modalName.value   = "";
+    nameError.value   = "";
+    uploadedProgramObject = null;
+  }
+
+/* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
   const showHelp     = ref(false);
@@ -307,9 +312,15 @@
         </select>
         <div class="buttons">
           <button class="blue-button" @click="downloadProgram"
-               title="Save current Program" id="program-download-button" > Download </button>
+               title="Save current Program" 
+               id="program-download-button"> 
+            Download 
+          </button>
           <button class="blue-button" @click="uploadProgram"
-               title="Load new Program"     id="program-upload-button"   >  Upload  </button>
+               title="Load new Program"     
+               id="program-upload-button">  
+            Upload  
+          </button>
         </div>
       </div>
     </div>
