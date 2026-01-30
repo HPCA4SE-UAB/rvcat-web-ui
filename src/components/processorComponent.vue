@@ -404,12 +404,6 @@
     return false;
   });
 
-  function canLeave() {
-    return isModified.value;
-  }
-
-  defineExpose({ canLeave });
-  
   // --- port add/delete ---
 
   function addPort() {
@@ -538,6 +532,7 @@ function uploadProcessor(event) {
     };
     reader.readAsText(file);
   }
+  
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
