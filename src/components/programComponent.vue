@@ -283,7 +283,7 @@
       </div>
       
       <div class="settings-container">
-        <select v-model="programOptions.currentProgram" class="programs-list" title="Select Program">
+        <select v-model="programOptions.currentProgram" id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
@@ -299,7 +299,7 @@
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <select v-model="programOptions.currentProgram" title="Select Program">
+        <select v-model="programOptions.currentProgram" id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
@@ -355,12 +355,9 @@
 ::-webkit-scrollbar {
   width: 8px;
 }
-#settings-div {
-  display: flex;
-  gap:     5px;
-}
+  
 #programs-list {
-  font-size:2.2vh;
+  font-size: larger;
 }
 
 .settings-container {
