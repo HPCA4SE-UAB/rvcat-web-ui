@@ -14,6 +14,33 @@ async function loadJSONfile(name) {
   }
 }
 
+async function downloadJSON( name, JSONstring) {
+  // force a Save As... dialog if API is supported
+  if (window.showSaveFilePicker) {
+     const handle = await window.showSaveFilePicker({
+       suggestedName: `${name}.json`,
+       types: [{
+         description: 'JSON files',
+         accept: { 'application/json': ['.json'] }
+       }],
+     });
+     const writable = await handle.createWritable();
+     await writable.write(JSONstring);
+     await writable.close();
+  } else {
+    // fallback: traditional anchor download
+    const blob = new Blob([JSONstring], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+}
+  
 function getKeys(name) {
   const allKeys = [] 
   for (let i = 0; i < localStorage.length; i++) {
