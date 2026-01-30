@@ -837,7 +837,19 @@ onMounted(() => {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   margin: auto;
 }
+  
+.settings-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
+.fullscreen-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+  
 .editor-header {
   display:         flex;
   justify-content: space-between;
@@ -846,25 +858,6 @@ onMounted(() => {
   border-bottom:   1px solid #e5e7eb;
   border-radius:   12px 12px 0 0;
   background:      #f9fafb;
-}
-
-.header-left {
-  display:     flex;
-  align-items: center;
-  gap:         16px;
-}
-
-.header-right {
-  display:     flex;
-  align-items: center;
-  gap:         12px;
-}
-
-.editor-header h2 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: #111827;
 }
 
 .draft-indicator {
@@ -885,22 +878,6 @@ onMounted(() => {
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
-}
-
-.clear-btn {
-  background: #ef4444;
-  color: white;
-  border: none;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.clear-btn:hover {
-  background: #dc2626;
 }
 
 .close-btn {
@@ -1072,45 +1049,6 @@ onMounted(() => {
 
 .validation-details {
   margin-top: 16px;
-}
-
-.add-step-btn {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.add-step-btn:hover {
-  background: #059669;
-}
-
-.add-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.add-question-btn {
-  background: #8b5cf6;
-  color: white;
-  border: none;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.add-question-btn:hover {
-  background: #7c3aed;
 }
 
 /* Step type selector */
@@ -1338,64 +1276,6 @@ onMounted(() => {
 
 .add-answer-btn:hover {
   background: #4b5563;
-}
-
-.actions {
-  padding: 30px 30px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-  display: flex;
-  gap: 16px;
-  border-radius: 0 0 12px 12px;
-  justify-content: center;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.btn-secondary {
-  background: #6b7280;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-  background: #4b5563;
-}
-
-.btn-success {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-success:hover {
-  background: #059669;
 }
 
 .export-section {
