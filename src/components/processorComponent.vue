@@ -133,7 +133,7 @@
       processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
       processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
       saveOptions()
-      if (simState.RVCAT_state > 0) {  // imported or loaded
+      if (simState.state > 0) {  // RVCAT already imported
          if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
             console.log(`💻✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
             reloadProcessor()
@@ -180,7 +180,7 @@
         console.log(`💻✅ Loaded ${processorKeys.length} processors from localStorage`)
       }
       processorOptions.availableProcessors = processorKeys  // creates reactive action to reloadProcessor
-     if (!processorKeys.includes(processorOptions.processorName))
+      if (!processorKeys.includes(processorOptions.processorName))
         processorOptions.processorName = processorKeys[0]
     } catch (error) {
       console.error('💻❌ Failed to load processor configuration files:', error)
