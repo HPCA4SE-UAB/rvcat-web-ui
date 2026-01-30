@@ -352,6 +352,7 @@
   font-size:     2.2vh;
   border-radius: 10px;
 }
+  
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -361,15 +362,15 @@
 }
 
 .settings-container {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 10px;
+  gap:         10px;
 }
 
 .fullscreen-settings {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 10px;
+  gap:         10px;
 }
   
 </style>
