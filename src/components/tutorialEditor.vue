@@ -3,18 +3,16 @@
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Tutorial </span>
+        <span class="header-title">Tutorial - <strong>{{ editedTutorialName }}</strong></span>
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <!----   - <strong>{{ tutorialOptions.currentTutorial }}</strong>   -----------
-        <select v-model="tutorialOptions.currentProgram" title="Select Program">
+        <select v-model="editedTutorialName" title="Select Tutorial">
           <option value="" disabled>Select</option>
-          <option v-for="tutorial in tutorialOptions.availableTutorials" :key="tutorial" :value="tutorial">
+          <option v-for="tutorial in availableTutorials" :key="tutorial" :value="tutorial">
             {{ tutorial }}
           </option>
         </select>
-          -->
         <div class="buttons">
           <button class="blue-button" title="Save current Tutorial" @click="downloadTutorial"> Download </button>
           <button class="blue-button" title="Load new Tutorial"     @click="uploadTutorial">   Upload   </button>
@@ -332,6 +330,8 @@ const emit = defineEmits(['close', 'preview', 'tutorialFinished'])
 const STORAGE_KEY    = 'tutorial-editor-draft'
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
+
+
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
   { label: 'Custom', value: '' },
@@ -382,8 +382,10 @@ const validationButtonSelectors = [
 // ============================================================================
 // STATE
 // ============================================================================
-const tutorial        = reactive({ name: '', description: '', steps: [] })
-const exportedContent = ref('')
+const tutorial           = reactive({ name: '', description: '', steps: [] })
+const exportedContent    = ref('')
+const availableTutorials = ref([])
+const editedTutorialName = ref('')
 
 // ============================================================================
 // COMPUTED
