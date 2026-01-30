@@ -220,7 +220,7 @@ function toggleFullScreen(component) {
       <div v-show="isProcessorFullscreen || isNotFullscreen" 
           class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }"
           id="processor-panel"      
-          title="Credits on the design and development for this tool"
+          title="Processor configuration Panel: show/modify/upload/download processor microarchitecture characteristics"
         >
         <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
       </div>
@@ -228,6 +228,7 @@ function toggleFullScreen(component) {
       <div v-show="isProgramFullscreen || isNotFullscreen" 
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
+        title="Program Panel: show/modify/upload/download program"
         >
         <programComponent   :is-fullscreen="fullComponent === FULL_PROGRAM" />
       </div>
@@ -235,6 +236,7 @@ function toggleFullScreen(component) {
       <div v-show="isTutorialFullscreen" 
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
+        title="Tutorial Panel: edit/upload/download a tutorials/lessons"
         >
         <tutorialEditor     :is-fullscreen="isTutorialFullscreen" />
       </div>
@@ -242,6 +244,7 @@ function toggleFullScreen(component) {
       <div v-show= "isNotFullscreen" 
         class="grid-item results"
         id="right-panel"
+        title="Right Panel: view performance results at different levels -> top-level, analysis, timeline level"
         >
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
         <div v-else>Component not found</div>
@@ -250,6 +253,7 @@ function toggleFullScreen(component) {
       <!-- Tutorial System -->
       <tutorialComponent 
         :activeView="currentKey"
+        id="tutorial-activation"
         @requestSwitch="onRequestSwitch"
       />
 
