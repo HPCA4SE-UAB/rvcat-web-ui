@@ -161,7 +161,7 @@
       simulationOptions.iters = Math.min(simulationOptions.iters, 5000);
       simulationOptions.iters = Math.max(simulationOptions.iters, 1);
       saveOptions()
-      if (simState.RVCAT_state == 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
+      if (simState.state >== 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
         reloadExecutionResults()
       }
     } catch (error) {
@@ -184,7 +184,7 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      if (simState.RVCAT_state == 3 && newProgram && newProcessor) {
+      if (simState.state >== 3 && newProgram && newProcessor) {
         reloadExecutionResults()
       }
     },
@@ -413,7 +413,9 @@ function createCriticalPathList(data) {
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical" title="Show Critical % Info">
+      <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical" 
+        title="Show Critical % Info"
+        id   ="show-critical-button">
         <span class="arrow" aria-hidden="true">
           {{ simulationOptions.showCritical ? '▼' : '▶' }}
         </span>
@@ -462,10 +464,10 @@ function createCriticalPathList(data) {
     width: 100%;
   }
   .results-info .row {
-    gap:     20px;
-    display: flex;
+    gap:             20px;
+    display:         flex;
     justify-content: space-between;
-    margin-bottom: 5px;
+    margin-bottom:   5px;
   }
 
   .simulation-inline-item {
