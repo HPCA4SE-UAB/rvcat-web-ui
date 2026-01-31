@@ -21,7 +21,7 @@
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('📍📈load options')
+      console.log('📈load options')
       return saved ? JSON.parse(saved) : defaultOptions
     } catch {
       return defaultOptions
@@ -49,7 +49,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineOptions))
     } catch (error) {
-      console.error('📍📈❌ Failed to save:', error)
+      console.error('📈❌ Failed to save:', error)
     }
   }
   
@@ -76,15 +76,15 @@
  // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('📍📈Failed to get timeline:', data);
+      console.error('📈❌Failed to get timeline:', data);
       return;
     }
     try {
-      console.log('✅ Draw Timeline')
+      console.log('📈✅ Draw Timeline')
       timelineData.value = data
       drawTimeline(data);
     } catch (error) {
-      console.error('📍📈Failed to obtain execution results:', error)
+      console.error('📈❌Failed to obtain execution results:', error)
     }
   }
   
@@ -115,9 +115,9 @@
         else
           getTimelineAndDraw()
       }, 75)
-      console.log('✅ Modified timeline options')
+      console.log('📈✅ Modified timeline options')
     } catch (error) {
-      console.error('📍📈Failed to save dependence graph options:', error)
+      console.error('📈❌Failed to save dependence graph options:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -140,8 +140,8 @@
   { immediate: false })
 
   async function getTimelineAndDraw() {
-    if (simState.RVCAT_state == 3) {
-      console.log('✅ Request timeline')
+    if (simState.state >= 3) {
+      console.log('📈🔄 Request timeline')
       await getTimeline(timelineOptions.iters, simState.ROBsize )
     }
   }
@@ -735,25 +735,39 @@
       <div class="timeline-controls">
          <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="9" title="# loop iterations (1 to 9)" v-model.number="timelineOptions.iters">
+            <input type="number" min="1" max="9"  v-model.number="timelineOptions.iters"
+               title="# loop iterations (1 to 9)"
+                id="timeline-iterations"
          </div>
         
          <div class="iters-group">
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-                title="Zoom Out (6 levels)" @click="zoomIncrease">
+                title="Zoom Out (6 levels)" id="timeline-zoom-out" 
+                @click="zoomIncrease">
                 <img src="/img/zoom-out.png">
             </button>
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 6 }" :disabled="timelineOptions.zoomLevel == 6"
-                title="Zoom In (6 levels)" @click="zoomReduce">
+                title="Zoom In (6 levels)" id="timeline-zoom-in"
+                @click="zoomReduce">
                 <img src="/img/zoom-in.png">
             </button>
          </div>
  
          <div class="iters-group">
            <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts" 
-              title="Show/Hide Resource Usage" @click="togglePorts"> <span v-if="timelineOptions.showPorts">✔ </span>Port Usage</button>
+              title="Show/Hide Resource Usage" 
+              id="timeline-show-ports"
+              @click="togglePorts"> 
+             <span v-if="timelineOptions.showPorts">✔ </span>
+             Port Usage
+           </button>
            <button class="blue-button" :class="{ active: timelineOptions.showInstr }" :aria-pressed="timelineOptions.showInstr"  
-              title="Show/Hide Instructions" @click="toggleInstr"> <span v-if="timelineOptions.showInstr">✔ </span>Instructions</button>
+              title="Show/Hide Instructions" 
+              id="timeline-show-instructions"
+              @click="toggleInstr"> 
+             <span v-if="timelineOptions.showInstr">✔ </span>
+             Instructions
+           </button>
          </div>
       </div>
     </div>
@@ -765,9 +779,9 @@
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
         <div v-if="hoverInfo.instr!='N/A'"><strong>Instruction:</strong> {{ hoverInfo.instr }}</div>
-        <div v-if="hoverInfo.type!='N/A'"><strong>Type:</strong> {{ hoverInfo.type }}</div>
+        <div v-if="hoverInfo.type!='N/A'"> <strong> Type:</strong> {{ hoverInfo.type }}</div>
         <div v-if="hoverInfo.state!='N/A'"><strong>State:</strong> {{ hoverInfo.state }}</div>
-        <div v-if="hoverInfo.port!='N/A'"><strong>Port:</strong> P{{ hoverInfo.port }}</div>
+        <div v-if="hoverInfo.port!='N/A'"> <strong> Port:</strong> P{{ hoverInfo.port }}</div>
         <div v-if="hoverInfo.kind==='mem'">Block read from main memory</div>
       </div>
     </div>
@@ -788,7 +802,7 @@
         <button class="close-btn" @click="clickedCellInfo = null">x</button>
       </div>
       <p><strong>Instruction:</strong> {{ clickedCellInfo.instrID }}</p>
-      <p><strong>Cycle:</strong> {{ clickedCellInfo.cycle }}</p>
+      <p><strong>Cycle:</strong>       {{ clickedCellInfo.cycle }}</p>
       <p>{{ clickedCellInfo.text }}</p>
     </div>
   </div>
@@ -819,7 +833,6 @@
     min-width: 0;
     overflow-x: auto;
   }
-
 
   .tooltip {
     position: fixed;
@@ -861,9 +874,9 @@
   .close-btn {
     align-self: flex-end;
     background: none;
-    border: none;
-    font-size: 3vh;
-    cursor: pointer;
+    border:     none;
+    font-size:  3vh;
+    cursor:     pointer;
     margin-bottom: 8px;
   }
 </style>
