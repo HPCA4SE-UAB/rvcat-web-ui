@@ -53,6 +53,40 @@ function getKeys(name) {
   return allKeys
 }
 
+// Init Programs/Processors/Tutorials
+const initResource = async ({
+  resourceName, logPrefix, optionsObj, currentKey, availableKey, errorHandler = null }) => {
+  console.log(`${logPrefix}🔄 Loading ${resourceType} configurations...`);
+
+  try {
+    let keys = getKeys(resourceName);
+    if (keys.length === 0) {
+      const response = await fetch('./index.json');
+      const data     = await response.json();
+      const fileList = data[resourceName];
+      if (!fileList) {
+        throw new Error(`No ${resourceName} found in index.json`);
+      }
+      for (const fileName of fileList) {
+        const filedata = await loadJSONfile(`./${resourceName}/${fileName}.json`);
+        localStorage.setItem(`${resourceName}.${fileName}`, JSON.stringify(filedata));
+      }
+      
+      keys = getKeys(resourceName);
+      console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceName}s from distribution files`);
+    } else {
+      console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceName}s from localStorage`);
+    }
+    optionsObj[availableKey] = keys;
+    if (!keys.includes(optionsObj[currentKey])) {
+      optionsObj[currentKey] = keys[0];
+    }
+  } catch (error) {
+    console.error(`${logPrefix}❌ Failed to load ${resourceName}s:`, error); 
+    if (errorHandler) errorHandler(error);
+  }
+};
+
 async function createGraphVizGraph(dotCode) {
   try {
     const viz = new Viz();
