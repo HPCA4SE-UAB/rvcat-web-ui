@@ -272,7 +272,9 @@ watch (
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
         <img src="/img/info.png" class="info-img">
       </span>
-      <button class="dropdown-header" @click="toggleThrough" title="Show Throughput limits" 
+      <button class="dropdown-header" @click="toggleThrough" 
+              id="detailed-thorughput-limits"
+              title="Show detailed throughput limits" 
               :aria-expanded="dependenceGraphOptions.showThrough">
         <span class="arrow" aria-hidden="true">
           {{ dependenceGraphOptions.showThrough ? '▼' : '▶' }}
@@ -302,29 +304,51 @@ watch (
         <div class="controls">
           <div class="iters-group">
             <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="7" title="# loop iterations (1 to 7)" v-model.number="dependenceGraphOptions.iters">
+            <input type="number" min="1" max="7" v-model.number="dependenceGraphOptions.iters"
+              title="# loop iterations (1 to 7)"
+              id="dependence-graph-iterations"
+            >
           </div>
           <div class="iters-group">
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
-                    title="Show/Hide Nodes with only internal data dependencies" @click="toggleIntern"> 
-              <span v-if="dependenceGraphOptions.showIntern">✔ </span>Internal</button>
+                title="Show/Hide Nodes with only internal data dependencies"
+                id="show-internal-dependences"
+              @click="toggleIntern"> 
+              <span v-if="dependenceGraphOptions.showIntern">✔ </span>
+              Internal
+            </button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"   
-                    title="Show/Hide Execution Latencies" @click="toggleLaten"> 
-              <span v-if="dependenceGraphOptions.showLaten">✔ </span>Latencies</button>
+                 title="Show/Hide Execution Latencies" 
+                 id="show-latency-dependences"
+              @click="toggleLaten"> 
+              <span v-if="dependenceGraphOptions.showLaten">✔ </span>
+              Latencies
+            </button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"   
-                    title="Show/Hide Instruction Text" @click="toggleSmall"> 
-              <span v-if="dependenceGraphOptions.showSmall">✔ </span>Small</button>
+                 title="Show/Hide Instruction Text" 
+                 id="show-instruction-dependences"
+              @click="toggleSmall"> 
+              <span v-if="dependenceGraphOptions.showSmall">✔ </span>
+              Small
+            </button>
             <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }" 
-                    title="Show/Hide constant and read-only input data dependencies" @click="toggleFull">  
-              <span v-if="dependenceGraphOptions.showFull">✔ </span>Full</button>
+                 title="Show/Hide constant and read-only input data dependencies"
+                 id="show-full-dependences"
+              @click="toggleFull">  
+              <span v-if="dependenceGraphOptions.showFull">✔ </span>
+              Full
+            </button>
           </div>
-          <button class="icon-button" @click="openFullScreen" title="Open fullscreen">
+          <button class="icon-button" @click="openFullScreen" 
+             title="Open fullscreen"
+             id="open-full-dependence-graph"
+            >
              <img src="/img/fullscreen.png" class="bt-img">
           </button>
         </div>
       </div>
    
-      <div class="output-block">
+      <div class="output-block" id="dependence-graph">
         <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
       </div>
     </div>
@@ -371,25 +395,7 @@ watch (
     </Teleport>
 </template>
 
-
 <style scoped>
-
-/*
-  <div v-if="showFullScreen" class="fullscreen-overlay">
-    <div class="fullscreen-content">
-      <div class="fullscreen-header">
-        Data Dependence Graph (circular paths in red)
-        <button class="close-btn" @click="closeFullScreen">x</button>
-      </div>
-      <div class="output-block">
-        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
-      </div>
-    </div>
-  </div>
-  
-*/
-
-  
   .iters-group input[type="number"] { width: 4ch; }
 
   .graph-toolbar {
@@ -434,10 +440,10 @@ watch (
   }
 
   .icon-button {
-    border:    none;
-    cursor:    pointer;
-    padding:   6px;
-    display:   inline-flex;
+    border:      none;
+    cursor:      pointer;
+    padding:     6px;
+    display:     inline-flex;
     align-items: center;
     background:  #b0b0b0;
     transition:  background 0.2s;
@@ -500,18 +506,7 @@ watch (
     flex-direction: column;
     box-shadow:     0 4px 12px rgba(0,0,0,0.25);
   }
-
-/*
-.fullscreen-content {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  width: 90vw;
-  height: 90vh;
-  min-width: 300px;
-  min-height: 200px;
-  position: relative;
-}
-*/
-  
+ 
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
@@ -533,11 +528,6 @@ watch (
     top: 0;
     z-index: 1;
   }
-
-  /*
- .fullscreen-header {
-  padding: 12px 16px;
-} */
 
  .fullscreen-title {
     font-size:   1.5rem;
@@ -565,7 +555,6 @@ watch (
   display: block;
 }
 
-/* suggested by IA */
 .performance-analysis {
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
