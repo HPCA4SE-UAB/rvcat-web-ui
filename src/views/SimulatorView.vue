@@ -70,7 +70,7 @@ let   cleanupRVCAT      = null
   
 // Handle requests from header
 function onRequestSwitch(key) {
-  const nextComp = components[key];
+  const nextComp         = components[key];
   currentKey.value       = key;
   currentComponent.value = nextComp;
   fullComponent.value    = FULL_NONE;
