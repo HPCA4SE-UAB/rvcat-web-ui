@@ -21,13 +21,6 @@ const { importRVCAT }               = useRVCAT_Api();
 // ============================================================================
 // Main Simulator Panel UI
 // ============================================================================
-// Map of full-component keys -> component definitions
-const fullComponents = {
-  none,
-  processor,
-  program,
-  tutorial
-};
 // Map of component keys -> component definitions
 const components = {
   timelineComponent,
@@ -38,7 +31,6 @@ const components = {
   
 // Navigation state
 const currentFullKey    = ref('none')
-const fullComponent     = shallowRef(fullComponents[currentFullKey.value])
 const currentKey        = ref('simulationComponent')
 const currentComponent  = shallowRef(components[currentKey.value])
 
@@ -75,22 +67,16 @@ function onRequestSwitch(key) {
   const nextComp             = components[key]
   currentKey.value           = key
   currentComponent.value     = nextComp
-  const noneComp             = fullComponents['none']
   currentFullKey.value       = 'none'
-  currentFullComponent.value = noneComp
 }
 
 // Handle requests from header (& tutorial engine)
 function toggleFullScreen(key) {
   if (currentFullKey.value === key) {
-    const noneComp             = fullComponents['none']
     currentFullKey.value       = 'none'
-    currentFullComponent.value = noneComp;
     return
   }
-  currentFullKey.value       = key
-  const nextComp             = fullComponents[key]
-  currentFullComponent.value = nextComp;
+  currentFullKey.value = key
   document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' }); 
 }
 
