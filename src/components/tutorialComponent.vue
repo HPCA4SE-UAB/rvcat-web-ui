@@ -259,7 +259,7 @@ const saveOptions = () => {
 // ============================================================================
 
   // get properties from main panel
-const props = defineProps({ activeView: String, :activeFull: String })
+const props = defineProps({ activeView: String, activeFull: String })
   
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
@@ -418,7 +418,9 @@ const processStepActions = (steps) => steps.map(step => {
   if (step.action && typeof step.action === 'string') {
     const [actionType, param] = step.action.split(':')
     if (actionType === 'switchTo') {
-      step.action = () => emit('requestSwitch', param)
+      step.action = () => emit('requestSwitchPanel', param)
+    } else if (actionType === 'switchToFull') {
+      step.action = () => emit('requestSwitchFull', param)
     }
   }
   return step
