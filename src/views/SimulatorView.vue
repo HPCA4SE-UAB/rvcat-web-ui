@@ -18,41 +18,16 @@ const simState                      = inject('simulationState');
 const { isReady, registerHandler }  = inject('worker');
 const { importRVCAT }               = useRVCAT_Api();
 
-/* ------------------------------------------------------------------ 
- * Main Simulator Panel UI
- * ------------------------------------------------------------------ */
-
-// full screen mode
-const FULL_NONE      = 0
-const FULL_PROCESSOR = 1
-const FULL_PROGRAM   = 2
-const FULL_TUTORIAL  = 3
-const fullComponent  = ref(FULL_NONE);
-
-// Computed para usar en template
-const isNotFullscreen       = computed(() => fullComponent.value === FULL_NONE);
-const isProcessorFullscreen = computed(() => fullComponent.value === FULL_PROCESSOR);
-const isProgramFullscreen   = computed(() => fullComponent.value === FULL_PROGRAM);
-const isTutorialFullscreen  = computed(() => fullComponent.value === FULL_TUTORIAL);
-
-const getButtonText = (componentType, baseText) => {
-  return computed(() => 
-    fullComponent.value === componentType ? `📍${baseText}` : `📌${baseText}`
-  );
+// ============================================================================
+// Main Simulator Panel UI
+// ============================================================================
+// Map of full-component keys -> component definitions
+const fullComponents = {
+  none,
+  process,
+  program,
+  tutorial
 };
-
-// Button texts usando el helper
-const fullProcessorButtonText = getButtonText(FULL_PROCESSOR, 'Edit Processor');
-const fullProgramButtonText   = getButtonText(FULL_PROGRAM,   'Edit Program');
-const fullTutorialButtonText  = getButtonText(FULL_TUTORIAL,  'Edit Tutorial');
-
-// Container classes
-const containerClasses = computed(() => ({
-  'processor-fullscreen': isProcessorFullscreen.value,
-  'program-fullscreen':   isProgramFullscreen.value,
-  'tutorial-fullscreen':  isTutorialFullscreen.value
-}));
-  
 // Map of component keys -> component definitions
 const components = {
   timelineComponent,
@@ -61,24 +36,79 @@ const components = {
   simulationComponent
 };
   
-// Navigation state, Current view key & component
-const showOverlay       = ref(true);
-const loadingMessage    = ref('Initializing');
+// Navigation state
+const currentFullKey    = ref('none')
+const fullComponent     = shallowRef(fullComponents[currentFullKey.value])
 const currentKey        = ref('simulationComponent')
 const currentComponent  = shallowRef(components[currentKey.value])
-let   cleanupRVCAT      = null
+
+// Computed to use on template
+const isNotFullscreen       = computed(() => currentFullKey.value === 'none');
+const isProcessorFullscreen = computed(() => currentFullKey.value === 'processor');
+const isProgramFullscreen   = computed(() => currentFullKey.value === 'program');
+const isTutorialFullscreen  = computed(() => currentFullKey.value === 'tutorial');
+
+const getButtonText = (key, baseText) => {
+  return computed(() => 
+    currentFullKey.value === key ? `📍${baseText}` : `📌${baseText}`
+  );
+};
+
+// Button texts using helper
+const fullProcessorButtonText = getButtonText('processor', 'Edit Processor');
+const fullProgramButtonText   = getButtonText('program',   'Edit Program');
+const fullTutorialButtonText  = getButtonText('tutorial',  'Edit Tutorial');
+
+// Container classes
+const containerClasses = computed(() => ({
+  'processor-fullscreen': isProcessorFullscreen.value,
+  'program-fullscreen':   isProgramFullscreen.value,
+  'tutorial-fullscreen':  isTutorialFullscreen.value
+}));
+
+// ============================================================================
+// Functions to change panel/full-screen
+// ============================================================================
   
-// Handle requests from header
+// Handle requests from header (& tutorial engine)
 function onRequestSwitch(key) {
-  const nextComp         = components[key];
-  currentKey.value       = key;
-  currentComponent.value = nextComp;
-  fullComponent.value    = FULL_NONE;
+  const nextComp             = components[key]
+  currentKey.value           = key
+  currentComponent.value     = nextComp
+  const noneComp             = fullComponents['none']
+  currentFullKey.value       = 'none'
+  currentFullComponent.value = noneComp
 }
+
+// Handle requests from header (& tutorial engine)
+function toggleFullScreen(key) {
+  if (currentFullKey.value === key) {
+    const noneComp             = fullComponents['none']
+    currentFullKey.value       = 'none'
+    currentFullComponent.value = noneComp;
+    return
+  }
+  currentFullKey.value       = key
+  const nextComp             = fullComponents[key]
+  currentFullComponent.value = nextComp;
+  document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' }); 
+}
+
+// ============================================================================
+// Loading view
+// ============================================================================
+
+// Navigation state
+const showOverlay = ref(true);
 
 function closeLoadingOverlay() { 
    showOverlay.value = false 
 }
+  
+// ============================================================================
+// EVENT HANDLERS: import_rvcat     WATCH: isReady
+// ============================================================================
+const loadingMessage = ref('Initializing');
 
 // Handler for 'import_rvcat' message
 const handleRVCAT = async (data, dataType) => {
@@ -90,7 +120,19 @@ const handleRVCAT = async (data, dataType) => {
   setTimeout(() => closeLoadingOverlay(), 1500)
   simState.state = 1;  // fires processor component to set processor configuration
 };
- 
+
+watch(isReady, (ready) => {
+  if (ready) {
+      loadingMessage.value = 'Loading complete!';
+      importRVCAT();       // call RVCAT API
+  }
+})
+  
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
+let  cleanupRVCAT = null
+  
 onMounted(() => {
   console.log('🔵🎯 Main Component mounted')
   nextTick(() => {
@@ -107,36 +149,9 @@ onUnmounted(() => {
   }
 });
   
-watch(isReady, (ready) => {
-  if (ready) {
-      loadingMessage.value = 'Loading complete!';
-      importRVCAT();       // call RVCAT API
-  }
-})
-
-function toggleFullScreen(component) {
-  if (fullComponent.value == component) {
-    fullComponent.value = FULL_NONE
-    return
-  }
-  fullComponent.value = component
-  let item = '.grid-item.processor'
-  switch (component) {
-     case FULL_PROCESSOR:
-        item= '.grid-item.processor'
-        break
-     case FULL_PROGRAM:
-        item = '.grid-item.program'
-        break
-     case FULL_TUTORIAL:
-        item = '.grid-item.tutorial'
-        break
-  }
-  document.querySelector(item).scrollIntoView({ behavior: 'smooth' }); 
-}
 </script>
 
-<!----  Id's aon the template re used for tutorial linking of panels and buttons: do not change them! -->
+<!----  Id's on the template are used for tutorial linking of panels and buttons: do not change them! -->
 <template>
   <body>
     <header>
@@ -149,7 +164,7 @@ function toggleFullScreen(component) {
             <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
                id="processor-button" 
                title="Open full window for processor configuration" 
-               @click="toggleFullScreen(FULL_PROCESSOR)" >
+               @click="toggleFullScreen('processor')" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
@@ -157,7 +172,7 @@ function toggleFullScreen(component) {
             <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
                id="program-button"   
                title="Open full window for program edition" 
-               @click="toggleFullScreen(FULL_PROGRAM)" >
+               @click="toggleFullScreen('program')" >
                 {{ fullProgramButtonText }}
             </button>
           </li>
@@ -165,7 +180,7 @@ function toggleFullScreen(component) {
             <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                id="tutorial-button"  
                title="Open full window for tutorial edition" 
-               @click="toggleFullScreen(FULL_TUTORIAL)" >
+               @click="toggleFullScreen('tutorial')" >
                 {{ fullTutorialButtonText }}
             </button>
           </li>
@@ -222,14 +237,14 @@ function toggleFullScreen(component) {
           class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }"
           id="processor-panel"      
         >
-        <processorComponent :is-fullscreen="fullComponent === FULL_PROCESSOR" />
+        <processorComponent :is-fullscreen="isProcessorFullscreen" />
       </div>
       
       <div v-show="isProgramFullscreen || isNotFullscreen" 
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
-        <programComponent   :is-fullscreen="fullComponent === FULL_PROGRAM" />
+        <programComponent   :is-fullscreen="isProgramFullscreen" />
       </div>
 
       <div v-show="isTutorialFullscreen" 
@@ -250,8 +265,10 @@ function toggleFullScreen(component) {
       <!-- Tutorial System -->
       <tutorialComponent 
         :activeView="currentKey"
+        :activeFull="currentFullKey"
         id="tutorial-activation"
-        @requestSwitch="onRequestSwitch"
+        @requestSwitchPanel="onRequestSwitch"
+        @requestSwitchFull="toggleFullScreen"
       />
 
     </main>
