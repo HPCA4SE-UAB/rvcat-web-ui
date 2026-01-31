@@ -17,13 +17,6 @@
       "action": "switchTo:simulationComponent"
     },
     {
-      "title": "Save execution",
-      "description": "Click the button 'Save' to save the current execution to the comparison tab.",
-      "selector": "button:contains(\"Save\")",
-      "position": "bottom",
-      "action": "switchTo:simulationComponent"
-    },
-    {
       "title": "Static Analysis",
       "description": "In this tab you can perform static analysis of your code to detect potential issues.",
       "selector": "button:contains(\"Static Analysis\")",
@@ -63,6 +56,7 @@
       "description": "Congratulations! You have completed the navigation tour",
       "selector": ".header-title",
       "position": "bottom"
+      "action": "switchToFull:tutorial"
     }
   ]
 }
