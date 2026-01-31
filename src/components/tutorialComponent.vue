@@ -13,7 +13,9 @@
             <span class="image-hint">Click to enlarge</span>
           </div>
           <div class="tutorial-actions">
-            <button @click="previousStep" :disabled="stepIndex === 0" class="tutorial-btn">
+            <button @click="previousStep" :disabled="stepIndex === 0" 
+               title="Go to previous step on the tutorial"
+               class="tutorial-btn">
               Previous
             </button>
             <span class="tutorial-progress">
@@ -21,19 +23,23 @@
             </span>
             <button v-if="stepIndex < currentTutorial.steps.length - 1" 
                     @click="nextStep" 
+                    title="Go to next step on the tutorial.\n If disabled, then an action must be done first."
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Next
             </button>
             <button v-else 
                     @click="completeTutorial" 
+                    title="Finish tutorial.\n If disabled, then an action must be done first."
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Finish
             </button>
           </div>
         </div>
-        <button @click="closeTutorial" class="tutorial-close">&times;</button>
+        <button @click="closeTutorial" 
+          title="Close tutorial, but can be resumed later"
+          class="tutorial-close">&times;</button>
       </div>
     </div>
 
@@ -69,7 +75,7 @@
               >
                 <span class="answer-letter">{{ String.fromCharCode(65 + index) }}</span>
                 <span class="answer-text" v-html="answer.text"></span>
-                <span v-if="questionAnswered && isQuestionCorrect && answer.isCorrect" class="answer-indicator correct">✓</span>
+                <span v-if="questionAnswered && isQuestionCorrect  && answer.isCorrect" class="answer-indicator correct">✓</span>
                 <span v-if="questionAnswered && !isQuestionCorrect && selectedAnswers.includes(answer.originalIndex) && !answer.isCorrect" class="answer-indicator wrong">✗</span>
                 <span v-if="questionAnswered && !isQuestionCorrect && selectedAnswers.includes(answer.originalIndex) && answer.isCorrect" class="answer-indicator partial-correct">✓</span>
               </button>
@@ -93,7 +99,9 @@
         </div>
         
         <div class="question-actions">
-          <button @click="previousStep" :disabled="stepIndex === 0" class="tutorial-btn">
+          <button @click="previousStep" :disabled="stepIndex === 0" 
+               title="Go to previous step on the tutorial"
+               class="tutorial-btn">
             Previous
           </button>
           
@@ -112,11 +120,13 @@
           
           <button v-else-if="stepIndex < currentTutorial.steps.length - 1" 
                   @click="nextStep" 
+                  title="Go to next step on the tutorial"
                   class="tutorial-btn tutorial-btn-primary">
             Next
           </button>
           <button v-else 
                   @click="completeTutorial" 
+                  title="Finish the tutorial"
                   class="tutorial-btn tutorial-btn-primary">
             Finish
           </button>
@@ -150,7 +160,9 @@
           </div>
           
           <div class="tutorial-action-buttons">
-            <button @click="resumeTutorial" class="tutorial-action-btn tutorial-resume-btn">
+            <button @click="resumeTutorial" 
+              title="Resume the tutorial at the step where was left"
+              class="tutorial-action-btn tutorial-resume-btn">
               <div class="tutorial-action-icon">▶️</div>
               <div class="tutorial-action-content">
                 <strong>Resume</strong>
@@ -158,7 +170,9 @@
               </div>
             </button>
             
-            <button @click="stopTutorial" class="tutorial-action-btn tutorial-stop-btn">
+            <button @click="stopTutorial" 
+              title="Stop the tutorial and reset tutorial progress to first step"
+              class="tutorial-action-btn tutorial-stop-btn">
               <div class="tutorial-action-icon">⏹️</div>
               <div class="tutorial-action-content">
                 <strong>Stop</strong>
@@ -178,6 +192,7 @@
             v-for="tutorial in tutorialOptions.available" 
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
+            title="Start this tutorial"
             class="tutorial-menu-item"
           >
             <div class="tutorial-item-content">
@@ -197,9 +212,9 @@ import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounte
 
 const simState = inject('simulationState');
 
-/* ------------------------------------------------------------------ 
- * Tutorial State (persistent in localStorage)
- * ------------------------------------------------------------------ */
+// ============================================================================
+// Tutorial options & localStorage
+// ============================================================================
   const STORAGE_KEY = 'tutorialOptions'
 
   const defaultOptions = {
@@ -207,22 +222,9 @@ const simState = inject('simulationState');
     inProgressID: "",
     progressStep:  0
   }
-  
-// ============================================================================
-// PROPS & EMITS
-// ============================================================================
-const props = defineProps({ activeView: String })
-const emit  = defineEmits(['requestSwitch'])
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
 const TOOLTIP_WIDTH  = 400
 const TOOLTIP_HEIGHT = 200
-
-// ============================================================================
-// STATE
-// ============================================================================
 
 // Core tutorial state 
 const currentTutorial = ref(null)
@@ -230,6 +232,37 @@ const stepIndex       = ref(0)
   
 const isActive  = ref(false)
 const isLoading = ref(false)
+
+const savedOptions = (() => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    console.log('👨‍🎓load options')
+    return saved ? JSON.parse(saved) : defaultOptions
+  } catch {
+    return defaultOptions
+  }
+})()
+
+const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
+  
+const saveOptions = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+    console.log('👨‍🎓✅ save options')
+  } catch (error) {
+    console.error('👨‍🎓❌ Failed to save:', error)
+  }
+}
+
+// ============================================================================
+// PROPS & EMITS
+// ============================================================================
+const props = defineProps({ activeView: String })
+const emit  = defineEmits(['requestSwitch'])
+
+// ============================================================================
+// Tutorial STATE
+// ============================================================================
 
 // refer to this variable to force evaluation of validation state
 const validationState  = ref({})
@@ -258,45 +291,6 @@ const showLightbox  = ref(false)
 // Event listeners storage (reactive for proper cleanup)
 const validationEventListeners = ref([])
 
-// ============================================================================
-// LOCAL STORAGE
-// ============================================================================
-
-const savedOptions = (() => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    console.log('👨‍🎓load options')
-    return saved ? JSON.parse(saved) : defaultOptions
-  } catch {
-    return defaultOptions
-  }
-})()
-
-const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
-  
-const saveOptions = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
-    console.log('👨‍🎓✅ save options')
-  } catch (error) {
-    console.error('👨‍🎓❌ Failed to save:', error)
-  }
-}
-  
-// Watch for tutorial changes on specific properties
-watch(
-  () => ({
-    available:    tutorialOptions.available,
-    inProgressID: tutorialOptions.inProgressID,
-    progressStep: tutorialOptions.progressStep,
-    inEditionID:  tutorialOptions.inEditionID
-  }),
-  () => {
-    saveOptions()
-  },
-  { deep: true }
-)
-  
 // ============================================================================
 // COMPUTED PROPERTIES
 // ============================================================================
@@ -331,7 +325,6 @@ const shuffledAnswers = computed(() => {
   }
   return shuffledAnswerIndices.value.map(i => ({ ...answers[i], originalIndex: i }))
 })
-
 
 const canProceed = computed(() => {
   // Returns true if user can advance to next step
@@ -859,8 +852,20 @@ const addFinishedTutorial = (data) => {
 }
 
 // ============================================================================
-// EVENT HANDLERS
+// EVENT HANDLERS; click, windowChange;  & WATCHES: tutorial, globalState
 // ============================================================================
+
+watch(  // Watch for tutorial changes on specific properties
+  () => ({
+    available:    tutorialOptions.available,
+    inProgressID: tutorialOptions.inProgressID,
+    progressStep: tutorialOptions.progressStep,
+  }),
+  () => {
+    saveOptions()
+  },
+  { deep: true }
+)
 
   const handleClickOutside = (e) => {
   // Only run if the tutorial menu is currently shown
@@ -886,17 +891,18 @@ const handleWindowChange = () => {
 }
 
  // Watch for changes on SIMULATOR state
-  watch(() => simState.RVCAT_state, (newValue, oldValue) => {
+  watch(() => simState.state, (newValue, oldValue) => {
     if (newValue == 4) { // New edited tutorial has been copied to localStorage
       console.log('👨‍🎓📥 Include new tutoral in available list');
       // If the edited tutorial replaces the inProgress tutorial, reset progress.
-      simState.RVCAT_state = 3;   // set state back
+      simState.state = 5;   // acknowledge tutorial has been included in list
     }
   });
+  
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
 
-// ============================================================================
-// LIFECYCLE
-// ============================================================================
 onMounted(async () => {
   console.log('👨‍🎓🎯 TutorialComponent mounted')
   document.addEventListener('click', handleClickOutside)
