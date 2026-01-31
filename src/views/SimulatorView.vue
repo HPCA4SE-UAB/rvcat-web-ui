@@ -24,7 +24,7 @@ const { importRVCAT }               = useRVCAT_Api();
 // Map of full-component keys -> component definitions
 const fullComponents = {
   none,
-  process,
+  processor,
   program,
   tutorial
 };
