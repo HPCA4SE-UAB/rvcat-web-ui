@@ -245,12 +245,12 @@
     showModalUp.value = false;
 
     console.log('Modal confirmed')
-    uploadedProgramObject.name = name;
-    const jsonText = JSON.stringify(uploadedProgramObject, null, 2);
-    localStorage.setItem(`program.${name}`, jsonText)
-    const programKeys = getKeys('program')
+    uploadedProgramObject.name       = name;
+    const jsonText                   = JSON.stringify(uploadedProgramObject, null, 2);
+    const programKeys                = getKeys('program')
     programOptions.availablePrograms = programKeys
-    programOptions.currentProgram = name
+    programOptions.currentProgram    = name
+    localStorage.setItem(`program.${name}`, jsonText)
     reloadProgram()
   }
 
