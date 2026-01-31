@@ -14,10 +14,14 @@
       default: false
     }
   })
+  
+    // TO DO: obtain from a distribution/local file, or from Processor Configuration
+  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
 
- /* ------------------------------------------------------------------ 
-   * Processor options (persistent in localStorage)
-   * ------------------------------------------------------------------ */
+// ============================================================================
+// Processor options & localStorage
+// ============================================================================
+
   const STORAGE_KEY = 'processorOptions'
 
   const defaultOptions = {
@@ -25,9 +29,6 @@
     ROBsize:            20,
     availableProcessors: []
   }
-
-  // TO DO: obtain from a distribution/local file, or from Processor Configuration
-  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
 
   // JSON of current processor configuration. Updated by ReloadProcessor()
   let jsonString    = ''
@@ -62,7 +63,6 @@
 
   const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
   const pipelineSvg      = ref('')
-  let   cleanupHandleSet = null
 
   const saveOptions = () => {
     try {
@@ -71,6 +71,44 @@
       console.error('💻❌ Failed to save processor options:', error)
     }
   }
+    
+/ ============================================================================
+// WATCHES: processor, globalState  HANDLERS: setProcessor
+// ============================================================================
+  // Watch ALL processor options for changes
+  watch(processorOptions, () => {
+    try {     
+      processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
+      processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
+      saveOptions()
+      if (simState.state > 0) {  // RVCAT already imported
+         if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
+            console.log(`💻✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
+            reloadProcessor()
+            return
+         }
+         if (processorOptions.ROBsize !== simState.ROBsize)  { // ROB size changed
+          console.log(`💻✅ ROB size changed to "${processorOptions.ROBsize}"`);
+          drawProcessor()
+          simState.ROBsize = processorOptions.ROBsize // fires other components
+        }
+      }
+    } catch (error) {
+      console.error('💻❌ Failed to handle changes on processor:', error)
+    } 
+  },
+  { deep: true, immediate: true })
+
+  // Watch ALL processor configuration values for changes
+  watch(procConfig, () => {
+    try {
+      if (simState.state >= 2)  // RVCAT imported & processor loaded
+        drawProcessor()  
+    } catch (error) {
+      console.error('💻❌ Failed to handle changes on processor configuration:', error)
+    } 
+  },
+  { deep: true, immediate: true })
 
   // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
@@ -96,6 +134,11 @@
     updateProcessorSettings(processorInfo);  // update graph & local variables and view
   }
 
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
+  let cleanupHandleSet = null
+  
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
@@ -118,65 +161,19 @@
     }
   });
 
-  // Watch ALL processor options for changes
-  watch(processorOptions, () => {
-    try {     
-      processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
-      processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
-      saveOptions()
-      if (simState.state > 0) {  // RVCAT already imported
-         if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
-            console.log(`💻✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
-            reloadProcessor()
-            return
-         }
-         if (processorOptions.ROBsize !== simState.ROBsize)  { // ROB size changed
-          console.log(`💻✅ ROB size changed to "${processorOptions.ROBsize}"`);
-          drawProcessor()
-          simState.ROBsize = processorOptions.ROBsize // fires other components
-        }
-      }
-    } catch (error) {
-      console.error('💻❌ Failed to handle changes on processor:', error)
-    } 
-  },
-  { deep: true, immediate: true })
-
-    // Watch ALL processor configuration values for changes
-  watch(procConfig, () => {
-    try {
-      if (simState.state >= 2)  // RVCAT imported & processor loaded
-        drawProcessor()  
-    } catch (error) {
-      console.error('💻❌ Failed to handle changes on processor configuration:', error)
-    } 
-  },
-  { deep: true, immediate: true })
-
+// ============================================================================
+// PROGRAM ACTIONS: InitProcessor,  ReloadProcessor, updateProcessorSettings, 
+//                  updateProcessor, drawProcessor, get_processor_dot
+// ============================================================================
   const initProcessor = async () => {
-    console.log('💻🔄 Loading processor configurations...')
-    try {
-      let processorKeys = getKeys('processor') // from localStorage
-      if (processorKeys.length == 0) { // load processors from distribution files
-        const response = await fetch('./index.json')
-        const data     = await response.json()
-        for (let i = 0; i < data.processors.length; i += 1) {
-           const filedata = await loadJSONfile(`./processors/${data.processors[i]}.json`)
-           localStorage.setItem(`processor.${data.processors[i]}`, JSON.stringify(filedata))
-        }
-        processorKeys = getKeys('processor')
-        console.log(`💻✅ Loaded ${processorKeys.length} processors from distribution files`)
-      }
-      else {
-        console.log(`💻✅ Loaded ${processorKeys.length} processors from localStorage`)
-      }
-      processorOptions.availableProcessors = processorKeys  // creates reactive action to reloadProcessor
-      if (!processorKeys.includes(processorOptions.processorName))
-        processorOptions.processorName = processorKeys[0]
-    } catch (error) {
-      console.error('💻❌ Failed to load processor configuration files:', error)
-    }      
-  }
+    return initResource({
+      resourceName: 'processor',
+      logPrefix:    '💻',
+      optionsObj:   processorOptions,
+      currentKey:   'processorName',
+      availableKey: 'availableProcessors'
+    });
+  };
   
   const reloadProcessor = async () => {
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
@@ -340,11 +337,11 @@
     return dot_code;
   }
 
-/********************************************************
- **  Manipulation of processor data in User Interface ***
- ********************************************************/
- 
-  function getCurrentProcessorJSON(name) {  // return current processor configuration as JSON
+// ============================================================================
+// Processor Edition LOGIC: getCurrentProcessorJSON, shallowEq, portsEq, isModified
+//                          addPort, removePort, togglePortInstruction, noPortAssigned
+// ============================================================================
+ function getCurrentProcessorJSON(name) {  // return current processor configuration as JSON
     return {
       name:       name,
       dispatch:   procConfig.dispatch,
@@ -446,9 +443,9 @@
     return !portList.value.some(p => procConfig.ports[p]?.includes(instr))
   }
 
-/* ------------------------------------------------------------------ 
- * Confirm Modal support 
- * ------------------------------------------------------------------ */
+// ============================================================================
+// DownLoad / UpLoad + Modal logic
+// ============================================================================
   const showModalDown   = ref(false);
   const showModalUp     = ref(false);
   const modalName       = ref("");
