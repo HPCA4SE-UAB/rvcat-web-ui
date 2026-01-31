@@ -40,11 +40,11 @@
   let cleanupHandleAnalysis = null
 
   const performanceData = ref({
-    name: "No data",
-    LatencyTime: 0.0,
-    ThroughputTime: 0.0,
+    name:                "No data",
+    LatencyTime:         0.0,
+    ThroughputTime:      0.0,
     "performance-bound": "N/A",
-    BestTime: 0.0,
+    BestTime:            0.0,
     "Throughput-Bottlenecks": []
   })
   
@@ -59,6 +59,7 @@
   
   // Load from localStorage
   onMounted(() => {
+    console.log('🔎🎯 Static Analysis Component mounted')
     cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
     cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
 
@@ -108,9 +109,9 @@
           dependenceGraphOptions.showFull
         )
       }, 75)
-      console.log('✅ Saved graph options')
+      console.log('🔎✅ Saved graph options')
     } catch (error) {
-      console.error('🔎Failed to save dependence graph options:', error)
+      console.error('🔎❌Failed to save dependence graph options:', error)
     } 
   },
   { deep: true, immediate: true })
@@ -138,7 +139,7 @@ watch (
       )
     }, 75)
     
-    console.log('✅ Graph updated')
+    console.log('🔎✅ Graph updated')
   },
   { immediate: false })
   
@@ -152,7 +153,7 @@ watch (
        const svg = await createGraphVizGraph(data);  
        dependenceGraphSvg.value = svg.outerHTML;
     } catch (error) {
-      console.error('🔎Failed to generate SVG for graphviz Dependence Graph:', error)
+      console.error('🔎❌Failed to generate SVG for graphviz Dependence Graph:', error)
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
@@ -160,14 +161,14 @@ watch (
   // Handler for 'get_performance_analysis' message (fired by RVCAT getPerformanceAnalysis function)
   const handleAnalysis = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('🔎Failed to get performance analysis:', data);
+      console.error('🔎❌Failed to get performance analysis:', data);
       return;
     }
     try {
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
-      console.log('✅ Performance Analysis updated')
+      console.log('🔎✅ Performance Analysis updated')
     } catch (error) {
-      console.error('🔎Error handling performance analysis:', error)
+      console.error('🔎❌Error handling performance analysis:', error)
     }
   }
   
@@ -231,21 +232,36 @@ watch (
     <div class="metrics-grid">
       <div class="metric-item">
         <span class="metric-label">Bound:</span>
-        <span class="metric-value" :class="getBoundClass(performanceData['performance-bound'])">
+        <span class="metric-value" 
+          id="performance-bound"
+          title="Performance bound: can be latency (cyclic dependencies) or throughput (resources)"
+          :class="getBoundClass(performanceData['performance-bound'])">
           {{ performanceData['performance-bound'] }}
         </span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Latency:</span>
-        <span class="metric-value">{{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration</span>
+        <span class="metric-value"
+            id="latency-limit"
+            title="Minimum execution time (clock cycles per executed loop iteration) due to cyclic data dependencies among instructions"
+          >
+          {{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Throughput:</span>
-        <span class="metric-value">{{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration</span>
+        <span class="metric-value"
+            id="throughput-limit"
+            title="Minimum execution time (clock cycles per executed loop iteration) due to execution/dispatch/retire throughput limits"
+          >
+          {{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Best possible time:</span>
-        <span class="metric-value highlight">{{ performanceData.BestTime.toFixed(2) }} cycles/iteration</span>
+        <span class="metric-value highlight"
+            id="best-limit"
+            title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"          
+          >
+          {{ performanceData.BestTime.toFixed(2) }} cycles/iteration</span>
       </div>
     </div>
   </div>
