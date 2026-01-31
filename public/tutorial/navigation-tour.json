@@ -24,13 +24,6 @@
       "action": "switchTo:simulationComponent"
     },
     {
-      "title": "Comparison Tab",
-      "description": "Here you can compare saved executions to analyze performance differences.",
-      "selector": "button:contains(\"Comparison\")",
-      "position": "bottom",
-      "action": "switchTo:comparisonComponent"
-    },
-    {
       "title": "Static Analysis",
       "description": "In this tab you can perform static analysis of your code to detect potential issues.",
       "selector": "button:contains(\"Static Analysis\")",
@@ -49,18 +42,25 @@
       "description": "Here you can configure processor parameters for simulations.",
       "selector": "button:contains(\"Processor\")",
       "position": "bottom",
-      "action": "switchTo:processorEditorComponent"
+      "action": "switchToFull:processor"
     },
     {
       "title": "Program Editor",
       "description": "Here you can write and edit your programs for simulation.",
       "selector": "button:contains(\"Program\")",
       "position": "bottom",
-      "action": "switchTo:programEditorComponent"
+      "action": "switchToFull:program"
+    },
+    {
+      "title": "Tutorial Editor",
+      "description": "Here you can edit a tutorial (even this tutorial)",
+      "selector": "button:contains(\"Tutorial\")",
+      "position": "bottom",
+      "action": "switchToFull:tutorial"
     },
     {
       "title": "Tutorial Complete!",
-      "description": "You have completed the navigation tour. Now you know all the main parts of the application.",
+      "description": "Congratulations! You have completed the navigation tour",
       "selector": ".header-title",
       "position": "bottom"
     }
