@@ -155,7 +155,7 @@
   });
 
   onUnmounted(() => {
-    if (cleanupHandleTimeline) {
+    if (cleanupHandleSet) {
       cleanupHandleSet()
       cleanupHandleSet = null
     }
