@@ -3,13 +3,13 @@
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Tutorial - <strong>{{ editedTutorialName }}</strong></span>
+        <span class="header-title">Tutorial - <strong>{{ tutorialOptions.inEditionID }}</strong></span>
       </div>
    
       <div class="settings-container fullscreen-settings">
         <select v-model="editedTutorialName" id="tutorials-list" title="Select Tutorial">
           <option value="" disabled>Select</option>
-          <option v-for="tutorial in availableTutorials" :key="tutorial" :value="tutorial">
+          <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
             {{ tutorial }}
           </option>
         </select>
