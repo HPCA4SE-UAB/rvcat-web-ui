@@ -92,6 +92,7 @@ const handleRVCAT = async (data, dataType) => {
 };
  
 onMounted(() => {
+  console.log('🔵🎯 Main Component mounted')
   nextTick(() => {
       loadingMessage.value = 'Loading RVCAT';
       showOverlay.value    = true
