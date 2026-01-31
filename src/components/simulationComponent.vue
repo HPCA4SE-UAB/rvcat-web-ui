@@ -184,7 +184,7 @@
  
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
-      if (simState.state >== 3 && newProgram && newProcessor) {
+      if (simState.state >= 3 && newProgram && newProcessor) {
         reloadExecutionResults()
       }
     },
