@@ -322,18 +322,34 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick, onMounted, inject, computed } from 'vue'
+import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent  from '@/components/helpComponent.vue';
 
+const simState = inject('simulationState');
+
 // ============================================================================
-// EMITS
+// Tutorial options & localStorage
+// ============================================================================
+const STORAGE_KEY = 'tutorialOptions'
+
+const defaultOptions = {
+  available:    [],
+  inProgressID: "",
+  inEditionID:  "",
+  progressStep:  0
+}
+
+// ============================================================================
+// STATE
+// ============================================================================
+const tutorial           = reactive({ name: '', description: '', steps: [] })
+const exportedContent    = ref('')
+
+// ============================================================================
+// EMITS: check
 // ============================================================================
 const emit = defineEmits(['close', 'preview', 'tutorialFinished'])
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-const STORAGE_KEY    = 'tutorial-editor-draft'
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 // Predefined CSS selectors for highlighting elements
@@ -384,17 +400,6 @@ const validationButtonSelectors = [
 ]
 
 // ============================================================================
-// STATE
-// ============================================================================
-const tutorial           = reactive({ name: '', description: '', steps: [] })
-const exportedContent    = ref('')
-const availableTutorials = ref([])
-const editedTutorialName = ref('')
-
-// Shared Simulation State: used to communicate tutorials between tutorial editor and main tutorial components
-const simState = inject('simulationState');
-
-// ============================================================================
 // COMPUTED
 // ============================================================================
 const hasSavedContent = computed(() => 
@@ -405,12 +410,12 @@ const hasSavedContent = computed(() =>
 // ============================================================================
 // LOCAL STORAGE
 // ============================================================================
-const clearSavedData = () => localStorage.removeItem(STORAGE_KEY)
+const clearSavedData = () => localStorage.removeItem('tutorial.temp')
 
 watch(tutorial, (t) => {
   try {
     if (t.name || t.description || t.steps.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(t))
+      localStorage.setItem('tutorial.temp', JSON.stringify(t))
       console.log('👨‍🎓📥 Edited tutorial saved in localStorage', t.name)
     }
   } catch (error) {
@@ -423,21 +428,8 @@ watch(tutorial, (t) => {
     if (newValue == 3) {
       initTutorial();
       reloadEditedTutorial();
-      const saved= null
-      if (saved) {
-        try {
-          const data           = JSON.parse(saved)
-          tutorial.name        = data.name        || ''
-          tutorial.description = data.description || ''
-          tutorial.steps       = data.steps       || []
-          if (!tutorial.steps.length) addStep()
-        } catch (err) {
-          console.error('Failed to load saved tutorial:', err)
-          addStep()
-        }
-      } else {
-        addStep()
-      }
+      simState.state = 4;   // Tutorial engine gets new list of tutorials
+      console.log('📄✅ Initialization step (4): tutorials loaded')
     }
   });
 
@@ -699,25 +691,38 @@ const showValidationErrors = () => {
 // ============================================================================
 // TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, finishTutorial, downloadJSON
 // ============================================================================
-  const initTutorial = async () => {
-    return initResource({
-      resourceName: 'tutorial',
-      logPrefix:    '🎓',
-      optionsObj:    tutorialOptions,
-      currentKey:   'currentTutorial',
-      availableKey: 'availableTutorials',
-    });
-  };
+const initTutorial = async () => {
+  return initResource({
+    resourceName: 'tutorial',
+    logPrefix:    '🎓',
+    optionsObj:    tutorialOptions,
+    currentKey:   'inEditionID',
+    availableKey: 'available',
+  });
+};
 
-  const reloadTutorial = async () => {
-    console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.currentTutorial);
-    try {
-      const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.currentTutorial}`)
-      // convert jsonString to JSON object on tutorial
-    } catch (error) {
-      console.error('🎓❌ Failed to set tutorial:', error)
-    }      
+const reloadEditedTutorial = async () => {
+  if (tutorialOptions.inEditionID === "") {
+    addStep()
+    return
   }
+  try {
+    console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
+    const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
+    if (jsonString) {
+      const data           = JSON.parse(saved)
+      tutorial.name        = data.name        || ''
+      tutorial.description = data.description || ''
+      tutorial.steps       = data.steps       || []
+      if (!tutorial.steps.length) addStep()
+    } else {
+      addStep()
+    }
+  } catch (error) {
+    console.error('🎓❌ Failed to reload edited tutorial:', error)
+    addStep()
+  }      
+}
 
 const clearDraft = () => {
   if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
@@ -763,58 +768,6 @@ const downloadJSON = () => {
 // UPLOAD TUTORIAL
 // ============================================================================
 
-const loadTutorials = async () => {
-  console.log('👨‍🎓🔄 Loading tutorials...')
-  isLoading.value = true
-  try {
-    let tutorialKeys = getKeys('tutorial') // from localStorage
-    if (tutorialKeys.length == 0) { // load tutorials from distribution files
-      const response = await fetch('./index.json')
-      const data     = await response.json()
-      for (let i = 0; i < data.tutorials.length; i += 1) {
-        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
-        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
-      }
-      tutorialKeys = getKeys('tutorial')
-      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from distribution files`)
-    }
-    else {
-      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from localStorage`)
-    }
-
-    const tutorials = []
-    for (const name of tutorialKeys) {
-      try {
-        const jsonString = localStorage.getItem(`tutorial.${name}`)
-        const tutorial   = JSON.parse(jsonString)
-        tutorials.push({
-          name:        tutorial.name,
-          id:          name,
-          description: tutorial.description
-        })
-      } catch (e) {
-        console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
-      }
-    }
-    tutorialOptions.available = tutorials   // fire options saving
-    if (!tutorialOptions.available.length) {
-      tutorialOptions.inProgressID = ""
-      return
-    }
-    await loadCurrentTutorial (tutorialOptions.inProgressID)    
-  } catch (e) {
-    console.error('👨‍🎓❌ Tutorial loading failed:', e)
-    tutorialOptions.available = [{
-      id:          'fallback',
-      name:        '⚠️ Fallback Tutorial',
-      description: 'Error loading tutorials',
-      steps: [{ title: 'Error', description: 'Tutorials could not load.', selector: '.header-title', position: 'bottom' }]
-    }]
-  } finally {
-    isLoading.value = false
-  }
-}
-  
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
