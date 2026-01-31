@@ -414,18 +414,32 @@ watch(tutorial, (t) => {
       console.log('👨‍🎓📥 Edited tutorial saved in localStorage', t.name)
     }
   } catch (error) {
-    console.error('👨‍🎓❌ Failed to save edited tutorial in localStoraga:', error)
+    console.error('👨‍🎓❌ Failed to save edited tutorial in localStorage:', error)
   }
 }, { deep: true })
 
-  
 // Watch for changes on Simulation state
   watch(() => simState.state, (newValue, oldValue) => {
-    if (newValue == 5) {
-      console.log('👨‍🎓✅ Tutorial stored by main component');
+    if (newValue == 3) {
+      initTutorial();
+      reloadEditedTutorial();
+      const saved= null
+      if (saved) {
+        try {
+          const data           = JSON.parse(saved)
+          tutorial.name        = data.name        || ''
+          tutorial.description = data.description || ''
+          tutorial.steps       = data.steps       || []
+          if (!tutorial.steps.length) addStep()
+        } catch (err) {
+          console.error('Failed to load saved tutorial:', err)
+          addStep()
+        }
+      } else {
+        addStep()
+      }
     }
   });
-
 
 // ============================================================================
 // STEP CREATION HELPERS
@@ -681,9 +695,30 @@ const showValidationErrors = () => {
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
 
+
 // ============================================================================
-// ACTIONS
+// TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, finishTutorial, downloadJSON
 // ============================================================================
+  const initTutorial = async () => {
+    return initResource({
+      resourceName: 'tutorial',
+      logPrefix:    '🎓',
+      optionsObj:    tutorialOptions,
+      currentKey:   'currentTutorial',
+      availableKey: 'availableTutorials',
+    });
+  };
+
+  const reloadTutorial = async () => {
+    console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.currentTutorial);
+    try {
+      const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.currentTutorial}`)
+      // convert jsonString to JSON object on tutorial
+    } catch (error) {
+      console.error('🎓❌ Failed to set tutorial:', error)
+    }      
+  }
+
 const clearDraft = () => {
   if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
     tutorial.name        = ''
@@ -723,10 +758,63 @@ const downloadJSON = () => {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
-
+  
 // ============================================================================
 // UPLOAD TUTORIAL
 // ============================================================================
+
+const loadTutorials = async () => {
+  console.log('👨‍🎓🔄 Loading tutorials...')
+  isLoading.value = true
+  try {
+    let tutorialKeys = getKeys('tutorial') // from localStorage
+    if (tutorialKeys.length == 0) { // load tutorials from distribution files
+      const response = await fetch('./index.json')
+      const data     = await response.json()
+      for (let i = 0; i < data.tutorials.length; i += 1) {
+        const filedata = await loadJSONfile(`./tutorials/${data.tutorials[i]}.json`)
+        localStorage.setItem(`tutorial.${data.tutorials[i]}`, JSON.stringify(filedata))
+      }
+      tutorialKeys = getKeys('tutorial')
+      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from distribution files`)
+    }
+    else {
+      console.log(`👨‍🎓📥 ${tutorialKeys.length} tutorials loaded from localStorage`)
+    }
+
+    const tutorials = []
+    for (const name of tutorialKeys) {
+      try {
+        const jsonString = localStorage.getItem(`tutorial.${name}`)
+        const tutorial   = JSON.parse(jsonString)
+        tutorials.push({
+          name:        tutorial.name,
+          id:          name,
+          description: tutorial.description
+        })
+      } catch (e) {
+        console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
+      }
+    }
+    tutorialOptions.available = tutorials   // fire options saving
+    if (!tutorialOptions.available.length) {
+      tutorialOptions.inProgressID = ""
+      return
+    }
+    await loadCurrentTutorial (tutorialOptions.inProgressID)    
+  } catch (e) {
+    console.error('👨‍🎓❌ Tutorial loading failed:', e)
+    tutorialOptions.available = [{
+      id:          'fallback',
+      name:        '⚠️ Fallback Tutorial',
+      description: 'Error loading tutorials',
+      steps: [{ title: 'Error', description: 'Tutorials could not load.', selector: '.header-title', position: 'bottom' }]
+    }]
+  } finally {
+    isLoading.value = false
+  }
+}
+  
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
@@ -806,22 +894,21 @@ const uploadTutorial = () => {
 // LIFECYCLE
 // ============================================================================
 onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) {
-    try {
-      const data           = JSON.parse(saved)
-      tutorial.name        = data.name        || ''
-      tutorial.description = data.description || ''
-      tutorial.steps       = data.steps       || []
-      if (!tutorial.steps.length) addStep()
-    } catch (err) {
-      console.error('Failed to load saved tutorial:', err)
-      addStep()
+  console.log('🎓🎯 TutorialEditor mounted')
+  try {    // Load from localStorage
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      Object.assign(tutorialOptions, JSON.parse(saved))
     }
-  } else {
-    addStep()
+    if (simState.state > 2)
+      console.error('🎓⚠️ Mounting tutorial editor component too late')
+  } catch (error) {
+    console.error('🎓❌ Failed to mount:', error)
   }
-})
+});
+
+onUnmounted(() => {} )
+
 </script>
 
 <style scoped>
