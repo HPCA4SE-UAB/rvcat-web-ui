@@ -340,7 +340,7 @@ const defaultOptions = {
 const savedOptions = (() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    console.log('👨‍🎓load options (editor)')
+    console.log('🎓load options (editor)')
     return saved ? JSON.parse(saved) : defaultOptions
   } catch {
     return defaultOptions
@@ -352,9 +352,9 @@ const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
 const saveOptions = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
-    console.log('👨‍🎓✅ save options (editor)')
+    console.log('🎓✅ save options (editor)')
   } catch (error) {
-    console.error('👨‍🎓❌ Failed to save (editor):', error)
+    console.error('🎓❌ Failed to save (editor):', error)
   }
 }
   
@@ -435,10 +435,10 @@ watch(tutorial, (t) => {
   try {
     if (t.name || t.description || t.steps.length > 0) {
       localStorage.setItem('tutorial.temp', JSON.stringify(t))
-      console.log('👨‍🎓📥 Edited tutorial saved in localStorage', t.name)
+      console.log('🎓📥 Edited tutorial saved in localStorage', t.name)
     }
   } catch (error) {
-    console.error('👨‍🎓❌ Failed to save edited tutorial in localStorage:', error)
+    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error)
   }
 }, { deep: true })
 
@@ -448,7 +448,7 @@ watch(tutorial, (t) => {
       initTutorial();
       reloadEditedTutorial();
       simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-      console.log('📄✅ Initialization step (4): tutorials loaded')
+      console.log('🎓✅ Initialization step (4): tutorials loaded')
     }
   });
 
@@ -729,7 +729,7 @@ const reloadEditedTutorial = async () => {
     console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
     if (jsonString) {
-      const data           = JSON.parse(saved)
+      const data           = JSON.parse(jsobString)
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
@@ -879,7 +879,9 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => {} )
+onUnmounted(() => {
+  console.log('🎓🧹 TutorialEditor mounted')
+})
 
 </script>
 
