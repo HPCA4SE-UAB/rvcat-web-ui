@@ -49,9 +49,6 @@
 // ============================================================================
 // WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
 // ============================================================================
-  let cleanupHandleSet  = null
-  let cleanupHandleShow = null
-
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
@@ -115,6 +112,9 @@
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
+  let cleanupHandleSet  = null
+  let cleanupHandleShow = null
+
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
@@ -146,7 +146,7 @@
 // ============================================================================
   const initProgram = async () => {
     return initResource({
-      resourceType: 'program',
+      resourceName: 'program',
       logPrefix:    '📄',
       optionsObj:    programOptions,
       currentKey:   'currentProgram',
