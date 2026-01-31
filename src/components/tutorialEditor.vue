@@ -729,7 +729,7 @@ const reloadEditedTutorial = async () => {
     console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
     if (jsonString) {
-      const data           = JSON.parse(jsobString)
+      const data           = JSON.parse(jsonString)
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
