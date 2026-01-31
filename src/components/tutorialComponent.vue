@@ -259,7 +259,7 @@ const saveOptions = () => {
 // ============================================================================
 
   // get properties from main panel
-const props = defineProps({ activeView: String })
+const props = defineProps({ activeView: String, :activeFull: String })
   
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
