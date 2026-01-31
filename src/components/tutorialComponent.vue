@@ -189,7 +189,7 @@
         </div>
         <div v-else class="tutorial-list">
           <button 
-            v-for="tutorial in tutorialOptions.available" 
+            v-for="tutorial in tutorialProgress.available" 
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
             title="Start this tutorial"
@@ -461,7 +461,6 @@ const shuffleAnswers = () => {
 // ============================================================================
   
 const loadTutorials = async () => {
-  isLoading.value = true
   initResource({
     resourceName: 'tutorial',
     logPrefix:    '👨‍🎓',
@@ -484,11 +483,12 @@ const loadTutorials = async () => {
     }
   }
   tutorialProgress.available = tutorials   // fire options saving
+  isLoading.value = false
   if (!tutorialProgress.available.length) {
     tutorialProgress.inProgressID = ""
     return
   }
-  await loadCurrentTutorial (tutorialProgress.inProgressID)    
+  await loadCurrentTutorial (tutorialProgress.inProgressID)
 }
 
 const loadCurrentTutorial = async (ID) => {
@@ -887,6 +887,7 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener  ('resize', handleWindowChange)
   window.addEventListener  ('scroll', handleWindowChange, true)
+  isLoading.value = true
 })
 
 onUnmounted(() => {
