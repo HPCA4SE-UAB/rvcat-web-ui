@@ -1,15 +1,15 @@
 {
-  "processors": [
+  "processor": [
     "B1",
     "B2",
     "B3"
   ],
-  "programs": [
+  "program": [
     "base",
     "v1",
     "v2"
   ],
-   "tutorials": [
+   "tutorial": [
     "TutProcessor",
     "lesson-1",
     "navigation-tour"
