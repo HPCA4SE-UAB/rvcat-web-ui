@@ -334,11 +334,30 @@ const STORAGE_KEY = 'tutorialOptions'
 
 const defaultOptions = {
   available:    [],
-  inProgressID: "",
-  inEditionID:  "",
-  progressStep:  0
+  inEditionID:  ""
 }
 
+const savedOptions = (() => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    console.log('👨‍🎓load options (editor)')
+    return saved ? JSON.parse(saved) : defaultOptions
+  } catch {
+    return defaultOptions
+  }
+})()
+
+const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
+  
+const saveOptions = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+    console.log('👨‍🎓✅ save options (editor)')
+  } catch (error) {
+    console.error('👨‍🎓❌ Failed to save (editor):', error)
+  }
+}
+  
 // ============================================================================
 // STATE
 // ============================================================================
@@ -428,7 +447,7 @@ watch(tutorial, (t) => {
     if (newValue == 3) {
       initTutorial();
       reloadEditedTutorial();
-      simState.state = 4;   // Tutorial engine gets new list of tutorials
+      simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
       console.log('📄✅ Initialization step (4): tutorials loaded')
     }
   });
