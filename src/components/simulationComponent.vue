@@ -161,7 +161,7 @@
       simulationOptions.iters = Math.min(simulationOptions.iters, 5000);
       simulationOptions.iters = Math.max(simulationOptions.iters, 1);
       saveOptions()
-      if (simState.state >== 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
+      if (simState.state >= 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
         reloadExecutionResults()
       }
     } catch (error) {
