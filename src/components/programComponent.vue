@@ -14,10 +14,10 @@
       default: false
     }
   })
-  
- /* ------------------------------------------------------------------ 
-   * Program options (persistent in localStorage)
-   * ------------------------------------------------------------------ */
+
+// ============================================================================
+// Program options & localStorage
+// ============================================================================
   const STORAGE_KEY = 'programOptions'
 
   const defaultOptions = {
@@ -37,8 +37,6 @@
 
   const programOptions  = reactive({ ...defaultOptions, ...savedOptions })
   const programText     = ref('LOADING ...')
-  let cleanupHandleSet  = null
-  let cleanupHandleShow = null
 
   const saveOptions = () => {
     try {
@@ -47,6 +45,12 @@
       console.error('📄❌ Failed to save:', error)
     }
   }
+
+// ============================================================================
+// WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
+// ============================================================================
+  let cleanupHandleSet  = null
+  let cleanupHandleShow = null
 
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
@@ -108,6 +112,9 @@
     }
   }
 
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
@@ -134,32 +141,22 @@
   }
   });
 
+// ============================================================================
+// PROGRAM ACTIONS: InitProgram, ReloadProgram
+// ============================================================================
   const initProgram = async () => {
-    console.log('📄🔄 Loading programs...');
-    try {
-      let programKeys = getKeys('program') // from localStorage
-      if (programKeys.length == 0) { // load programs from distribution files
-        const response = await fetch('./index.json')
-        const data     = await response.json()
-        for (let i = 0; i < data.programs.length; i += 1) {
-          const filedata = await loadJSONfile(`./programs/${data.programs[i]}.json`)
-          localStorage.setItem(`program.${data.programs[i]}`, JSON.stringify(filedata))
-        }
-        programKeys = getKeys('program')
-        console.log(`📄✅ ${programKeys.length} programs loaded from distribution files`)
+    return initResource({
+      resourceType: 'program',
+      logPrefix:    '📄',
+      optionsObj:    programOptions,
+      currentKey:   'currentProgram',
+      availableKey: 'availablePrograms',
+      errorHandler: (error) => {
+        programText.value = '❌ Failed to set program';
       }
-      else {
-        console.log(`📄✅ ${programKeys.length} programs loaded from localStorage`)
-      }
-      programOptions.availablePrograms = programKeys   
-      if (!programKeys.includes(programOptions.currentProgram))
-        programOptions.currentProgram = programKeys[0]  // fires reaction to reloadProgram
-    } catch (error) {
-      console.error('📄❌ Failed to load programs:', error)
-      programText.value = '❌ Failed to set program';
-    }      
-  }
-  
+    });
+  };
+
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
@@ -171,9 +168,14 @@
     }      
   }
 
-/* ------------------------------------------------------------------ 
- * DownLoad / UpLoad 
- * ------------------------------------------------------------------ */
+// ============================================================================
+// DownLoad / UpLoad + Modal logic
+// ============================================================================
+  const showModalUp = ref(false)
+  const modalName   = ref("")
+  const nameError   = ref("")
+  let uploadedProgramObject = null
+
    async function downloadProgram() {
     const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
     if (window.showSaveFilePicker) {
@@ -232,14 +234,6 @@
     input.remove();
   }
 
-/* ------------------------------------------------------------------ 
- * Modal logic 
- * ------------------------------------------------------------------ */
-  const showModalUp = ref(false)
-  const modalName   = ref("")
-  const nameError   = ref("")
-  let uploadedProgramObject = null
-
   async function confirmModal() {
     const name = modalName.value.trim();
     if (programOptions.availablePrograms.includes(name)) {
@@ -267,9 +261,9 @@
     uploadedProgramObject = null;
   }
 
-/* ------------------------------------------------------------------ 
- * Help support 
- * ------------------------------------------------------------------ */
+// ============================================================================
+// Help support 
+// ============================================================================
   const showHelp     = ref(false);
   const helpPosition = ref({ top: '0%', left: '40%' });
   const helpIcon     = ref(null);
