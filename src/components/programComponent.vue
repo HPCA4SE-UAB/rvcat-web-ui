@@ -128,7 +128,7 @@
         console.error('📄⚠️ RVCAT imported and processor configuration loaded before mounting program component')
       }
     } catch (error) {
-      console.error('📄❌ Failed to load:', error)
+      console.error('📄❌ Failed to mount:', error)
     }
   });
 
