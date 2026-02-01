@@ -833,7 +833,6 @@ watch (
   [() => tutorialOptions.available, 
    () => tutorialOptions.inEditionID],
   ([newList, newID], [oldList, oldID] ) => {
-  {
     saveOptions()
   },
   { deep: true }
