@@ -7,7 +7,7 @@
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="editedTutorialName" id="tutorials-list" title="Select Tutorial">
+        <select v-model="tutorialOptions.inProgressID" id="tutorials-list" title="Select Tutorial">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
             {{ tutorial }}
