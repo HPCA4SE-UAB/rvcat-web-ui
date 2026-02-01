@@ -928,7 +928,7 @@ onUnmounted(() => {
 }
 
 .section {
-  padding:       15px 15px;
+  padding:       10px 10px;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -937,7 +937,7 @@ onUnmounted(() => {
 }
 
 .section h3 {
-  margin:      0 0 24px 0;
+  margin:      0 0 10px 0;
   font-size:   medium;
   font-weight: 600;
   color:       #111827;
@@ -945,13 +945,13 @@ onUnmounted(() => {
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .form-row {
-  display:      grid;
+  display:               grid;
   grid-template-columns: 1fr 140px;
-  gap: 20px;
+  gap:                   1px;
 }
 
 .form-group label {
@@ -963,22 +963,22 @@ onUnmounted(() => {
 }
 
 .required {
-  color: #ef4444;
+  color:       #ef4444;
   font-weight: 600;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #111827;
-  transition: border-color 0.2s;
-  font-family: inherit;
-  box-sizing: border-box;
+  width:         100%;
+  padding:       8px 9px;
+  border:        1px solid #d1d5db;
+  border-radius: 5px;
+  font-size:     small;
+  color:         #111827;
+  transition:    border-color 0.2s;
+  font-family:   inherit;
+  box-sizing:    border-box;
 }
 
 .form-group input:focus,
