@@ -143,7 +143,8 @@
 // PROGRAM ACTIONS: InitProgram, ReloadProgram
 // ============================================================================
   const initProgram = async () => {
-    return initResource({
+    const savedProgram = programOptions.currentProgram
+    initResource({
       resourceName: 'program',
       logPrefix:    '📄',
       optionsObj:    programOptions,
@@ -153,6 +154,8 @@
         programText.value = '❌ Failed to set program';
       }
     });
+    if (savedProgram === programOptions.currentProgram)
+      reloadProgram()   // On initialization, if currentProgram not modified, force program reloading
   };
 
   const reloadProgram = async () => {
