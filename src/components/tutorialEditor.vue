@@ -866,27 +866,25 @@ onUnmounted(() => {
 <style scoped>
 
 .tutorial-editor {
-  background: white;
-  border-radius: 12px;
-  width:     100%;
-  max-width: 900px;
-  max-height: calc(100vh - 80px);
-  display: flex;
+  background:     white;
+  border-radius:  12px;
+  width:          100%;
+  display:        flex;
   flex-direction: column;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   margin: auto;
+  box-shadow:     1 10px 10px rgba(0, 0, 0, 0.1);
 }
   
 .settings-container {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 10px;
+  gap:         10px;
 }
 
 .fullscreen-settings {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 10px;
+  gap:         10px;
 }
   
 .editor-header {
@@ -930,7 +928,7 @@ onUnmounted(() => {
 }
 
 .section {
-  padding: 30px 30px;
+  padding:       15px 15px;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -939,29 +937,29 @@ onUnmounted(() => {
 }
 
 .section h3 {
-  margin: 0 0 24px 0;
-  font-size: 18px;
+  margin:      0 0 24px 0;
+  font-size:   medium;
   font-weight: 600;
-  color: #111827;
-  text-align: center;
+  color:       #111827;
+  text-align:  center;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .form-row {
-  display: grid;
+  display:      grid;
   grid-template-columns: 1fr 140px;
   gap: 20px;
 }
 
 .form-group label {
-  display: block;
+  display:       block;
   margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size:     small;
+  font-weight:   500;
+  color:         #374151;
 }
 
 .required {
