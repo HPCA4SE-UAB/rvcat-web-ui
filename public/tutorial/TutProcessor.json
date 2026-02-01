@@ -1,5 +1,5 @@
 {
-  "id": "how-a-processor-works",
+  "id": "TutProcessor",
   "name": "How a processor works",
   "description": "We will describe how the program's instructions are executed out-of-order in a current processor microarchitecture.",
   "steps": [
