@@ -35,7 +35,7 @@
     </div>
    
     <div class="tutorial-editor">
-      <!---- Header: Tutorial Description -->
+      <!-- Header: Tutorial Description -->
       <div class="editor-content">
         <div class="section">
           <div class="form-group">
@@ -301,8 +301,8 @@
 
        </div>
    </div>
- -->
-
+   -->
+  </div>
 </template>
 
 <script setup>
