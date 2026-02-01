@@ -7,7 +7,7 @@
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="tutorialOptions.inProgressID" id="tutorials-list" title="Select Tutorial">
+        <select v-model="tutorialOptions.inEditionID" id="tutorials-list" title="Select Tutorial">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
             {{ tutorial }}
@@ -427,14 +427,15 @@ watch(tutorial, (t) => {
 }, { deep: true })
 
 // Watch for changes on Simulation state
-  watch(() => simState.state, (newValue, oldValue) => {
-    if (newValue == 3) {
-      initTutorial();
-      reloadEditedTutorial();
+watch(() => simState.state, (newValue, oldValue) => {
+  if (newValue == 3) { // Initialization Stage
+    (async () => {
+      await initTutorial();
       simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-      console.log('🎓✅ Initialization step (4): tutorials loaded')
-    }
-  });
+      console.log('🎓📥 Initialization step (4): tutorials loaded')
+    })();
+  }
+});
 
 // ============================================================================
 // STEP CREATION HELPERS
@@ -695,13 +696,14 @@ const showValidationErrors = () => {
 // TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, finishTutorial, downloadJSON
 // ============================================================================
 const initTutorial = async () => {
-  return initResource({
+  await initResource({
     resourceName: 'tutorial',
     logPrefix:    '🎓',
     optionsObj:    tutorialOptions,
-    currentKey:   null,
+    currentKey:    null,
     availableKey: 'available',
   });
+  reloadEditedTutorial();
 };
 
 const reloadEditedTutorial = async () => {
