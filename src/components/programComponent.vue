@@ -61,7 +61,7 @@
   // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
     if (newValue == 2) {  // This is an initialization step
-      initProgram();
+      await initProgram();
       reloadProgram();
     }
   });
