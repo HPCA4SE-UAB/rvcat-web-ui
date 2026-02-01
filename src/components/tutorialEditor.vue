@@ -312,14 +312,19 @@ import HelpComponent  from '@/components/helpComponent.vue';
 const simState = inject('simulationState');
 
 // ============================================================================
-// Tutorial options & localStorage
+// Tutorial options & LocalStorage
 // ============================================================================
 const STORAGE_KEY = 'tutorialOptions'
 
-const defaultOptions = {
-  available:    [],
-  inEditionID:  ""
+const defaultOptions = { // save this & tutorialTemp
+  available:   [],
+  inEditionID: ''
 }
+
+const tutorial        = reactive({ name: '', description: '', steps: [] })   // default edited
+const exportedContent = ref('')              // tutorial has been written to local file system
+
+const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 const savedOptions = (() => {
   try {
@@ -332,7 +337,7 @@ const savedOptions = (() => {
 })()
 
 const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
-  
+
 const saveOptions = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
@@ -341,19 +346,6 @@ const saveOptions = () => {
     console.error('🎓❌ Failed to save (editor):', error)
   }
 }
-  
-// ============================================================================
-// STATE
-// ============================================================================
-const tutorial           = reactive({ name: '', description: '', steps: [] })
-const exportedContent    = ref('')
-
-// ============================================================================
-// EMITS: check
-// ============================================================================
-const emit = defineEmits(['close', 'preview', 'tutorialFinished'])
-
-const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
@@ -409,33 +401,6 @@ const hasSavedContent = computed(() =>
   tutorial.name || tutorial.description || 
   tutorial.steps.some(s => s.title || s.description || s.selector || s.questionText)
 )
-
-// ============================================================================
-// LOCAL STORAGE
-// ============================================================================
-const clearSavedData = () => localStorage.removeItem('tutorial.temp')
-
-watch(tutorial, (t) => {
-  try {
-    if (t.name || t.description || t.steps.length > 0) {
-      localStorage.setItem('tutorial.temp', JSON.stringify(t))
-      console.log('🎓📥 Edited tutorial saved in localStorage', t.name)
-    }
-  } catch (error) {
-    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error)
-  }
-}, { deep: true })
-
-// Watch for changes on Simulation state
-watch(() => simState.state, (newValue, oldValue) => {
-  if (newValue == 3) { // Initialization Stage
-    (async () => {
-      await initTutorial();
-      simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-      console.log('🎓📥 Initialization step (4): tutorials loaded')
-    })();
-  }
-});
 
 // ============================================================================
 // STEP CREATION HELPERS
@@ -851,20 +816,46 @@ const uploadTutorial = () => {
 }
 
 // ============================================================================
+// WATCHES: globalState, tutorial, options
+// ============================================================================
+watch(tutorial, (t) => {
+  try {
+    if (t.name || t.description || t.steps.length > 0) {
+      localStorage.setItem('tutorialTemp', JSON.stringify(t))
+      console.log('🎓📥 Edited tutorial saved in localStorage', t.name)
+    }
+  } catch (error) {
+    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error)
+  }
+}, { deep: true })
+
+watch (
+  [() => tutorialOptions.available, 
+   () => tutorialOptions.inEditionID],
+  ([newList, newID], [oldList, oldID] ) => {
+  {
+    saveOptions()
+  },
+  { deep: true }
+)
+  
+// Watch for changes on Simulation state
+watch(() => simState.state, (newValue, oldValue) => {
+  if (newValue == 3) { // Initialization Stage
+    (async () => {
+      await initTutorial();
+      simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
+      console.log('🎓📥 Initialization step (4): tutorials loaded')
+    })();
+  }
+});
+  
+// ============================================================================
 // LIFECYCLE
 // ============================================================================
+
 onMounted(() => {
   console.log('🎓🎯 TutorialEditor mounted')
-  try {    // Load from localStorage
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      Object.assign(tutorialOptions, JSON.parse(saved))
-    }
-    if (simState.state > 2)
-      console.error('🎓⚠️ Mounting tutorial editor component too late')
-  } catch (error) {
-    console.error('🎓❌ Failed to mount:', error)
-  }
 });
 
 onUnmounted(() => {
