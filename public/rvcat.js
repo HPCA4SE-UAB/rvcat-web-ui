@@ -78,7 +78,7 @@ const initResource = async ({
       console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceName}s from localStorage`);
     }
     optionsObj[availableKey] = keys;
-    if (!keys.includes(optionsObj[currentKey])) {
+    if (currentKey && !keys.includes(optionsObj[currentKey])) {
       optionsObj[currentKey] = keys[0];
     }
   } catch (error) {
