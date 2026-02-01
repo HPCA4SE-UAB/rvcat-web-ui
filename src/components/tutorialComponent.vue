@@ -467,6 +467,7 @@ const shuffleAnswers = () => {
 // ============================================================================
   
 const loadTutorials = async () => {
+  const inProgressID = tutorialProgress.inProgressID  // Copy before modification by InitResource 
   initResource({
     resourceName: 'tutorial',
     logPrefix:    '👨‍🎓',
@@ -474,7 +475,9 @@ const loadTutorials = async () => {
     currentKey:   'inProgressID',
     availableKey: 'available',
   });
-  const tutorials = []
+
+  // replace list of tutorial names by list of tutorial descriptions
+  const tutorials = []  
   for (const name of tutorialProgress.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
@@ -488,13 +491,10 @@ const loadTutorials = async () => {
       console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
     }
   }
-  tutorialProgress.available = tutorials   // fire options saving
-  isLoading.value = false
-  if (!tutorialProgress.available.length) {
-    tutorialProgress.inProgressID = ""
-    return
-  }
-  await loadCurrentTutorial (tutorialProgress.inProgressID)
+  
+  tutorialProgress.available  = tutorials   // fire options saving
+  isLoading.value             = false
+  await loadCurrentTutorial (inProgressID)
 }
 
 const loadCurrentTutorial = async (ID) => {
@@ -505,8 +505,9 @@ const loadCurrentTutorial = async (ID) => {
   if ( ID === "" || tutorial === null) { // no tutorial in progress
     tutorialProgress.inProgressID = ""
     tutorialProgress.progressStep =  0
-    currentTutorial.value        = null
-    stepIndex.value              = 0
+    currentTutorial.value         = null
+    stepIndex.value               = 0
+    console.log('👨‍🎓🚦No tutorial in progress')
     return
   }
 
@@ -604,7 +605,7 @@ const setupButtonClickTracking = () => {
     if (!btn) return false
     
     const handler = () => {
-      console.log(`👨‍🎓✅ Button clicked: ${selector}`)
+      console.log(`👨‍🎓⏺️ Button clicked: ${selector}`)
       clickedButtons.value.add(selector)
       validationState.value = { t: Date.now() }
     }
@@ -816,30 +817,17 @@ const toggleTutorialMenu = () => {
 }
 
 // ============================================================================
-// CUSTOM TUTORIALS
+// EVENT HANDLERS: click, windowChange;  WATCHES: tutorial, globalState
 // ============================================================================
-const previewCustomTutorial = (data) => {
-  showEditor.value       = false
-  showTutorialMenu.value = false
+
+watch(() => simState.state, (newValue, oldValue) => {
+  if (newValue == 4) { // Tutorial Editor has set tutorial on localStorage
+    console.log('👨‍🎓📥 Include tutorials in available list');
+    loadTutorials()
+    simState.state = 5;   // acknowledge tutorials have been included in list
+  }
+});
   
-  data.steps            = processStepActions(data.steps)
-  currentTutorial.value = data
-  stepIndex.value       = 0
-  isActive.value        = true
-  
-  nextTick(highlightCurrentStep)
-}
-
-const addFinishedTutorial = (data) => {
-  data.steps = processStepActions(data.steps)
-  tutorialProgress.available.push(data)
-  console.log(`👨‍🎓✅ Added tutorial: ${data.name}`)
-}
-
-// ============================================================================
-// EVENT HANDLERS; click, windowChange;  & WATCHES: tutorial, globalState
-// ============================================================================
-
 watch(  // Watch for tutorial changes on specific properties
   () => ({
     available:    tutorialProgress.available,
@@ -874,15 +862,6 @@ const handleWindowChange = () => {
     tooltipPositionTrigger.value++
   }
 }
-
- // Watch for changes on SIMULATOR state
-  watch(() => simState.state, (newValue, oldValue) => {
-    if (newValue == 4) { // Tutorial Editor has set tutorial on localStorage
-      console.log('👨‍🎓📥 Include tutorials in available list');
-      loadTutorials()
-      simState.state = 5;   // acknowledge tutorial has been included in list
-    }
-  });
   
 // ============================================================================
 // LIFECYCLE:  Mount/unMount

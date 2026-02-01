@@ -7,7 +7,7 @@
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="editedTutorialName" id="tutorials-list" title="Select Tutorial">
+        <select v-model="tutorialOptions.inProgressID" id="tutorials-list" title="Select Tutorial">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
             {{ tutorial }}
@@ -28,16 +28,26 @@
                 @click="addStep('question')">+ Add Question</button>
         </div>
         <div class="buttons">
-          <button v-if="hasSavedContent" @click="clearDraft" class="blue-button" title="Clear draft and start fresh">
-            Clear Draft
-          </button>
-          <button @click="$emit('close')" title="Close editor? Do not know if makes sense" class="close-btn">&times;</button>
+          <button class="blue-button" title="Clear draft and start fresh"
+                v-if="hasSavedContent" @click="clearDraft">  Clear Draft  </button>
         </div>
       </div>
     </div>
    
     <div class="tutorial-editor">
-      
+      <!-- Header: Tutorial Description -->
+      <div class="editor-content">
+        <div class="section">
+          <div class="form-group">
+            <label>Tutorial Name <span class="required">*</span></label>
+            <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
+          </div>
+        </div>
+        
     </div>
   </div>
 
@@ -71,32 +81,6 @@
   <!----
   
    <div class="tutorial-editor">
-      
-      <div class="editor-header">
-        <div class="header-left">
-          <h2>Tutorial Editor</h2>
-          <span v-if="hasSavedContent" class="draft-indicator"></span>
-        </div>
-        <div class="header-right">
-          <button v-if="hasSavedContent" @click="clearDraft" class="clear-btn" title="Clear draft and start fresh">
-            Clear Draft
-          </button>
-          <button @click="$emit('close')" class="close-btn">&times;</button>
-        </div>
-      </div>
-      
-      <div class="editor-content">
-        <div class="section">
-          <div class="form-group">
-            <label>Tutorial Name <span class="required">*</span></label>
-            <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name">
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
-          </div>
-        </div>
-
         <div class="section">
           <h3>Steps & Questions</h3>
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
@@ -317,8 +301,8 @@
 
        </div>
    </div>
- -->
-
+   -->
+  </div>
 </template>
 
 <script setup>
@@ -715,7 +699,7 @@ const initTutorial = async () => {
     resourceName: 'tutorial',
     logPrefix:    '🎓',
     optionsObj:    tutorialOptions,
-    currentKey:   'inEditionID',
+    currentKey:   null,
     availableKey: 'available',
   });
 };
@@ -753,11 +737,6 @@ const clearDraft = () => {
   }
 }
 
-const previewTutorial = () => {
-  if (!showValidationErrors()) return
-  emit('preview', buildTutorialData())
-}
-
 const finishTutorial = () => {
   if (!showValidationErrors()) return
   downloadJSON()
@@ -766,6 +745,13 @@ const finishTutorial = () => {
   alert('Tutorial finished! It has been added to the tutorial menu.')
   emit('close')
 }
+
+/*
+const addFinishedTutorial = (data) => {
+  data.steps = processStepActions(data.steps)
+  tutorialProgress.available.push(data)
+  console.log(`👨‍🎓✅ Added tutorial: ${data.name}`)
+} */
 
 const downloadJSON = () => {
   if (!showValidationErrors()) return
@@ -943,27 +929,6 @@ onUnmounted(() => {
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.close-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
 }
 
 .editor-content {
