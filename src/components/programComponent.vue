@@ -61,11 +61,13 @@
   // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
     if (newValue == 2) {  // This is an initialization step
-      await initProgram();
-      reloadProgram();
+      (async () => {
+        await initProgram();
+        reloadProgram();
+      })();
     }
   });
-
+  
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
     if (newValue != oldValue && simState.RVCAT_state > 2 && simState.selectedProgram != '') {
