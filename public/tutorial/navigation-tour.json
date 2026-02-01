@@ -11,23 +11,23 @@
     },
     {
       "title": "Simulation Tab",
-      "description": "Here you can run simulations of your code. This is the main tab of the application.",
+      "description": "Here you can run simulations of your code. You get global performance metrics and the breakdown of the critical path of the total execution.",
       "selector": "button:contains(\"Simulation\")",
       "position": "bottom",
       "action": "switchTo:simulationComponent"
     },
     {
       "title": "Static Analysis",
-      "description": "In this tab you can perform static analysis of your code to detect potential issues.",
+      "description": "The static performance analysis of the program's code detects potential bottlenecks and visualizes the data dependence graph.",
       "selector": "button:contains(\"Static Analysis\")",
       "position": "bottom",
       "action": "switchTo:staticAnalysisComponent"
     },
     {
       "title": "Timeline",
-      "description": "The Timeline tab allows you to see the temporal evolution of program execution.",
+      "description": "The Timeline shows the temporal evolution of the program's execution.",
       "selector": "button:contains(\"Timeline\")",
-      "position": "bottom",
+      "position": "left",
       "action": "switchTo:timelineComponent"
     },
     {
