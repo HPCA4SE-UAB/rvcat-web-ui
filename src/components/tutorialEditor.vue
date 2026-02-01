@@ -67,65 +67,12 @@
               </div>
               <button @click="removeStep(index)" class="remove-btn">×</button>
             </div>
-          </div>
-        </div>
-        
-    </div>
-  </div>
-
-    <div v-if="exportedContent" class="export-section">
-      <h3>Generated JSON</h3>
-      <textarea v-model="exportedContent" readonly></textarea>
-      <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
-    </div>
-
-  <div v-if="showModalUp" class="modal-overlay">
-    <div class="modal">
-      <h4>Load Tutorial As</h4>
-      <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName" />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" title="Accept Load" @click="confirmModal"> Load  </button>
-        <button class="blue-button" title="Cancel Load" @click="cancelModal"> Cancel </button>
-      </div>
-    </div>
-  </div>
-
-  <Teleport to="body">
-    <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The tutorial allows ... Tutorials can be uploaded or downloaded in JSON format."
-      title="Tutorial Edition"
-    @close="closeHelp"  />
-  </Teleport>
-
-
-  <!----
-  
-   <div class="tutorial-editor">
-        <div class="section">
-          <h3>Steps & Questions</h3>
-          <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
-            <div class="step-header">
-              <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
-              <div class="step-type-selector">
-                <label class="type-radio">
-                  <input type="radio" v-model="step.type" value="step" @change="onStepTypeChange(step)">
-                  <span>Step</span>
-                </label>
-                <label class="type-radio">
-                  <input type="radio" v-model="step.type" value="question" @change="onStepTypeChange(step)">
-                  <span>Question</span>
-                </label>
-              </div>
-              <button @click="removeStep(index)" class="remove-btn">×</button>
-            </div>
             
             <div class="form-group">
               <label>Title <span class="required">*</span></label>
               <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
             </div>
-            
+
             <template v-if="step.type === 'step'">
               <div class="form-group">
                 <label>Description</label>
@@ -252,6 +199,50 @@
                 </select>
               </div>
             </template>
+            
+          </div>
+        </div>
+        
+    </div>
+  </div>
+
+    <div v-if="exportedContent" class="export-section">
+      <h3>Generated JSON</h3>
+      <textarea v-model="exportedContent" readonly></textarea>
+      <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
+    </div>
+
+  <div v-if="showModalUp" class="modal-overlay">
+    <div class="modal">
+      <h4>Load Tutorial As</h4>
+      <label for="config-name">Name:</label>
+      <input id="config-name" type="text" v-model="modalName" />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Load" @click="confirmModal"> Load  </button>
+        <button class="blue-button" title="Cancel Load" @click="cancelModal"> Cancel </button>
+      </div>
+    </div>
+  </div>
+
+  <Teleport to="body">
+    <HelpComponent v-if="showHelp" :position="helpPosition"
+    text="The tutorial allows ... Tutorials can be uploaded or downloaded in JSON format."
+      title="Tutorial Edition"
+    @close="closeHelp"  />
+  </Teleport>
+
+
+  <!----
+  
+   <div class="tutorial-editor">
+        <div class="section">
+          <h3>Steps & Questions</h3>
+          <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
+                     
+            
+            
+
             
             <template v-else-if="step.type === 'question'">
               <div class="form-group">
