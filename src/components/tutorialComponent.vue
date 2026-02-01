@@ -478,7 +478,7 @@ const loadTutorials = async () => {
 
   // replace list of tutorial names by list of tutorial descriptions
   const tutorials = []  
-  for (const name of ) {
+  for (const name of tutorialProgress.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
       const tutorial = JSON.parse(jsonString)
