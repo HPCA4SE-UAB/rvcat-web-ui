@@ -38,12 +38,12 @@
       
       <!-- Header: Tutorial Description -->
       <div class="editor-content">
-        <div class="section">
-          <div class="form-group">
+        <div class="section tutorial-header">
+          <div class="form-group name-column">
             <label>Tutorial Name <span class="required">*</span></label>
             <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name">
           </div>
-          <div class="form-group">
+          <div class="form-group description-column">
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
@@ -914,6 +914,22 @@ onUnmounted(() => {
   border-bottom: none;
 }
 
+.tutorial-header {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-start;
+}
+
+.name-column {
+  flex: 1;      /* 1/4 del espacio disponible */
+  min-width: 0; /* Evita que crezca más de lo necesario */
+}
+
+.description-column {
+  flex: 3;      /* 3/4 del espacio disponible */
+  min-width: 0; /* Importante para textarea flexible */
+}
+  
 .section h3 {
   margin:      0 0 10px 0;
   font-size:   medium;
