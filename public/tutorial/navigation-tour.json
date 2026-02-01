@@ -55,7 +55,7 @@
       "title": "Tutorial Complete!",
       "description": "Congratulations! You have completed the navigation tour",
       "selector": ".header-title",
-      "position": "bottom"
+      "position": "bottom",
       "action": "switchToFull:tutorial"
     }
   ]
