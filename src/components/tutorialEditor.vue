@@ -33,8 +33,9 @@
         </div>
       </div>
     </div>
-   
+
     <div class="tutorial-editor">
+      
       <!-- Header: Tutorial Description -->
       <div class="editor-content">
         <div class="section">
@@ -45,6 +46,27 @@
           <div class="form-group">
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
+          </div>
+        </div>
+
+        <!-- Card: step/question -->
+        <div class="section">
+          <h3>Steps & Questions</h3>
+          <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
+            <div class="step-header">
+              <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
+              <div class="step-type-selector">
+                <label class="type-radio">
+                  <input type="radio" v-model="step.type" value="step" @change="onStepTypeChange(step)">
+                  <span>Step</span>
+                </label>
+                <label class="type-radio">
+                  <input type="radio" v-model="step.type" value="question" @change="onStepTypeChange(step)">
+                  <span>Question</span>
+                </label>
+              </div>
+              <button @click="removeStep(index)" class="remove-btn">×</button>
+            </div>
           </div>
         </div>
         
@@ -293,10 +315,6 @@
             </template>
           </div>
           
-          <div class="add-buttons">
-            <button @click="addStep('step')" class="add-step-btn">+ Add Step</button>
-            <button @click="addStep('question')" class="add-question-btn">+ Add Question</button>
-          </div>
         </div>
 
        </div>
@@ -872,7 +890,6 @@ onUnmounted(() => {
   display:        flex;
   flex-direction: column;
   margin: auto;
-  box-shadow:     1 10px 10px rgba(0, 0, 0, 0.1);
 }
   
 .settings-container {
@@ -887,38 +904,8 @@ onUnmounted(() => {
   gap:         10px;
 }
   
-.editor-header {
-  display:         flex;
-  justify-content: space-between;
-  align-items:     center;
-  padding:         30px 30px;
-  border-bottom:   1px solid #e5e7eb;
-  border-radius:   12px 12px 0 0;
-  background:      #f9fafb;
-}
-
 #tutorials-list {
   font-size: larger;
-}
-
-.draft-indicator {
-  background: #10b981;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  animation: pulse-green 2s infinite;
-}
-
-@keyframes pulse-green {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
 }
 
 .editor-content {
@@ -945,7 +932,7 @@ onUnmounted(() => {
 }
 
 .form-group {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .form-row {
@@ -957,7 +944,7 @@ onUnmounted(() => {
 .form-group label {
   display:       block;
   margin-bottom: 6px;
-  font-size:     small;
+  font-size:     medium;
   font-weight:   500;
   color:         #374151;
 }
@@ -974,7 +961,7 @@ onUnmounted(() => {
   padding:       8px 9px;
   border:        1px solid #d1d5db;
   border-radius: 5px;
-  font-size:     small;
+  font-size:     medium;
   color:         #111827;
   transition:    border-color 0.2s;
   font-family:   inherit;
@@ -984,14 +971,14 @@ onUnmounted(() => {
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-  outline: none;
+  outline:      none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow:   0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-group textarea {
-  height: 90px;
-  resize: vertical;
+  height:      50px;
+  resize:      vertical;
   line-height: 1.5;
 }
 
@@ -1002,49 +989,49 @@ onUnmounted(() => {
 
 .selector-input {
   font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 13px !important;
+  font-size:   13px !important;
 }
 
 .step-card {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background:     #f9fafb;
+  border:        1px solid #e5e7eb;
   border-radius: 10px;
-  padding: 24px 24px;
-  margin-bottom: 20px;
-  position: relative;
+  padding:       12px 12px;
+  margin-bottom: 10px;
+  position:      relative;
 }
 
 .step-header {
-  display: flex;
+  display:         flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items:     center;
+  margin-bottom:   10px;
 }
 
 .step-number {
-  background: #3b82f6;
-  color: white;
-  font-size: 12px;
+  background:  #3b82f6;
+  color:       white;
+  font-size:   small;
   font-weight: 600;
-  padding: 4px 8px;
+  padding:     4px 8px;
   border-radius: 12px;
-  min-width: 24px;
+  min-width:  12px;
   text-align: center;
 }
 
 .remove-btn {
   background: #ef4444;
-  color: white;
-  border: none;
+  color:      white;
+  border:     none;
   border-radius: 4px;
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
+  width:     24px;
+  height:    24px;
+  font-size: medium;
+  cursor:    pointer;
+  display:   flex;
+  align-items:     center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition:      background-color 0.2s;
 }
 
 .remove-btn:hover {
@@ -1052,49 +1039,49 @@ onUnmounted(() => {
 }
 
 .validation-card {
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
+  background:    #fef3c7;
+  border:        1px solid #f59e0b;
   border-radius: 8px;
-  padding: 20px 20px;
-  margin-top: 20px;
+  padding:       12px 21px;
+  margin-top:    20px;
 }
 
 .validation-card h4 {
-  margin: 0 0 16px 0;
-  font-size: 14px;
+  margin:       0 0 16px 0;
+  font-size:   small;
   font-weight: 600;
-  color: #92400e;
-  text-align: center;
+  color:       #92400e;
+  text-align:  center;
 }
 
 .validation-details {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 /* Step type selector */
 .step-type-selector {
   display: flex;
-  gap: 16px;
+  gap:     12px;
 }
 
 .type-radio {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
+  gap:         6px;
+  cursor:      pointer;
+  font-size:   medium;
+  color:       #374151;
 }
 
 .type-radio input {
-  width: auto;
+  width:  auto;
   margin: 0;
   cursor: pointer;
 }
 
 /* Question card styles */
 .question-card {
-  background: #f5f3ff;
+  background:   #f5f3ff;
   border-color: #8b5cf6;
 }
 
@@ -1104,39 +1091,39 @@ onUnmounted(() => {
 
 /* Answer mode selector */
 .answer-mode-selector {
-  display: flex;
-  gap: 24px;
+  display:    flex;
+  gap:        16px;
   margin-top: 8px;
 }
 
 .mode-radio {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
+  gap:         8px;
+  cursor:      pointer;
+  font-size:   small;
+  color:       #374151;
 }
 
 .mode-radio input {
-  width: auto;
+  width:  auto;
   margin: 0;
   cursor: pointer;
 }
 
 /* Image upload section */
 .image-upload-section {
-  display: flex;
+  display:        flex;
   flex-direction: column;
-  gap: 12px;
+  gap:            12px;
 }
 
 .image-input {
-  padding: 8px;
-  border: 2px dashed #d1d5db;
+  padding:       8px;
+  border:        2px dashed #d1d5db;
   border-radius: 8px;
-  cursor: pointer;
-  transition: border-color 0.2s;
+  cursor:        pointer;
+  transition:    border-color 0.2s;
 }
 
 .image-input:hover {
@@ -1144,29 +1131,29 @@ onUnmounted(() => {
 }
 
 .image-preview {
-  position: relative;
-  display: inline-block;
-  max-width: 300px;
+  position:  relative;
+  display:   inline-block;
+  max-width: 400px;
 }
 
 .image-preview img {
-  max-width: 100%;
-  max-height: 200px;
+  max-width:     100%;
+  max-height:    250px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border:        1px solid #e5e7eb;
 }
 
 .remove-image-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top:      8px;
+  right:    8px;
   background: #ef4444;
-  color: white;
-  border: none;
+  color:    white;
+  border:   none;
   border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
+  padding:   4px 8px;
+  font-size: small;
+  cursor:   pointer;
   transition: background 0.2s;
 }
 
@@ -1176,47 +1163,47 @@ onUnmounted(() => {
 
 /* Answers section */
 .answers-section {
-  margin-top: 20px;
-  padding: 20px;
-  background: white;
+  margin-top:  16px;
+  padding:     16px;
+  background:  white;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border:       1px solid #e5e7eb;
 }
 
 .answers-section h4 {
-  margin: 0 0 16px 0;
-  font-size: 14px;
+  margin:      0 0 16px 0;
+  font-size:   small;
   font-weight: 600;
-  color: #374151;
+  color:       #374151;
 }
 
 .answer-card {
   background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  border:     1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-  transition: all 0.2s;
+  padding:       12px;
+  margin-bottom: 10px;
+  transition:    all 0.2s;
 }
 
 .answer-card.correct-answer {
-  background: #ecfdf5;
+  background:   #ecfdf5;
   border-color: #10b981;
 }
 
 .answer-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap:           10px;
+  margin-bottom: 10px;
 }
 
 .answer-letter {
   background: #6b7280;
-  color: white;
-  font-size: 12px;
+  color:      white;
+  font-size:  small;
   font-weight: 600;
-  padding: 4px 10px;
+  padding:       4px 10px;
   border-radius: 4px;
 }
 
@@ -1229,8 +1216,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-size: 13px;
-  color: #374151;
+  font-size:   small;
+  color:       #374151;
   margin-left: auto;
 }
 
@@ -1245,9 +1232,9 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: 4px;
-  width: 20px;
-  height: 20px;
-  font-size: 14px;
+  width:    16px;
+  height:   16px;
+  font-size: small;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1276,7 +1263,7 @@ onUnmounted(() => {
 }
 
 .feedback-group label {
-  font-size: 12px;
+  font-size: small;
   color: #6b7280;
 }
 
@@ -1299,14 +1286,14 @@ onUnmounted(() => {
 }
 
 .export-section {
-  padding: 30px 30px;
+  padding: 20px 20px;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
 }
 
 .export-section h3 {
   margin: 0 0 16px 0;
-  font-size: 16px;
+  font-size: medium;
   font-weight: 600;
   color: #111827;
   text-align: center;
@@ -1319,7 +1306,7 @@ onUnmounted(() => {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
+  font-size: small;
   background: #f3f4f6;
   color: #374151;
   resize: vertical;
