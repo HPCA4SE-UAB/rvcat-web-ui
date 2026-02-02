@@ -58,14 +58,11 @@
         <div class="section">
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
             <div class="step-header">
-             <button @click="removeStep(index)" class="remove-btn">×</button>
-            </div>
-            
-            <div class="form-group">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
               <span class="type-radio"> {{step.type}}</span>
               <label>Title <span class="required">*</span></label>
               <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
+              <button @click="removeStep(index)" class="remove-btn">×</button>
             </div>
 
             <template v-if="step.type === 'step'">
@@ -835,18 +832,18 @@ digraph "Tutorial Graph" {
    //  a [color=lightyellow,label=<<B><FONT COLOR="red">3</FONT></B>>,tooltip="step 3"]
 
   for (let i = 0; i < (num_steps-1); i++) {
-    dot_code += `a${i} -> `
+    dot_code += `    a${i} -> `
   }
-  dot_code += `a${num_steps-1}\n}`
+  dot_code += `a${num_steps-1}`
   dot_code += `
   }
-  start [shape=Msquare];
-  end [shape=Msquare];
-  start -> a0;`
+  start [shape=Msquare]
+  end   [shape=Msquare]
+  start -> a0`
 
     dot_code += `
-  a${num_steps-1} -> end;
-  }\n`;
+  a${num_steps-1} -> end
+}\n`;
   return dot_code;
 }
 
