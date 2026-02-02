@@ -933,15 +933,22 @@ onUnmounted(() => {
 
 .right-column {
   flex: 3;      /* 3/5 del espacio disponible */
-  min-width: 0; /* Importante para textarea flexible */
+  min-width: 0;
+  box-sizing: border-box; /* Incluye padding y border en el cálculo */
+  display:    flex;
+  padding:    2px;
+  flex-direction: column;
+  border:        1px solid #ddd;
+  background:    #f8f9fa;
+  border-radius: 8px;
 }
 
   .pipeline-side-container {
-    flex: 1 1 55%;
-    min-width: 0;           /* Importante para evitar desbordamiento */
+    flex:       1 1 55%;
+    min-width:  0;          /* Importante para evitar desbordamiento */
     box-sizing: border-box; /* Incluye padding y border en el cálculo */
-    display:   flex;
-    padding:   2px;
+    display:    flex;
+    padding:    2px;
     flex-direction: column;
     border:        1px solid #ddd;
     background:    #f8f9fa;
@@ -959,8 +966,8 @@ onUnmounted(() => {
   }
 
   .pipeline-img svg text {
-    font-size:   12px !important;
-    font-family: Arial, sans-serif !important;
+    font-size:   small;
+    font-family: Arial, sans-serif;
   }
   .pipeline-img svg polygon,
   .pipeline-img svg path {
@@ -968,7 +975,7 @@ onUnmounted(() => {
   }
 
 .form-group {
-  margin-bottom: 8px;
+  margin-bottom: 3px;
 }
 
 .form-row {
@@ -1013,9 +1020,9 @@ onUnmounted(() => {
 }
 
 .form-group textarea {
-  height:      50px;
+  height:      30px;
   resize:      vertical;
-  line-height: 1.5;
+  line-height: 1.2;
 }
 
 .label-input-row {
@@ -1034,30 +1041,30 @@ onUnmounted(() => {
 }
 
 .name-input {
-  flex: 1; /* Ocupa todo el espacio disponible */
+  flex:      1; /* Ocupa todo el espacio disponible */
   min-width: 0; /* Importante para que funcione flex */
-  padding: 10px;
-  border: 1px solid #ccc;
+  padding:   8px;
+  border:    1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
 }
 
 /* Selector preset with text input combo */
 .selector-preset {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .selector-input {
   font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size:   13px !important;
+  font-size:   small;
 }
 
 .step-card {
   background:     #f9fafb;
   border:        1px solid #e5e7eb;
   border-radius: 10px;
-  padding:       12px 12px;
-  margin-bottom: 10px;
+  padding:       10px 10px;
+  margin-bottom: 8px;
   position:      relative;
 }
 
@@ -1065,7 +1072,7 @@ onUnmounted(() => {
   display:         flex;
   justify-content: space-between;
   align-items:     center;
-  margin-bottom:   10px;
+  margin-bottom:   8px;
 }
 
 .step-number {
