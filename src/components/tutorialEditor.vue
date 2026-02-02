@@ -57,11 +57,15 @@
         <!-- Card: step/question -->
         <div class="section">
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
-            <div class="step-header">
+            <div class="form-group left-column">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
-              <label>{{step.type}} Title <span class="required">*</span></label>
+              <label>{{step.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
               <button @click="removeStep(index)" class="remove-btn">×</button>
+              <div v-if="step.type === 'step'">
+                <label>Description</label>
+                <textarea v-model="step.description" placeholder="What happens in this step"></textarea>
+              </div>
             </div>
 
             <template v-if="step.type === 'step'">
@@ -70,7 +74,7 @@
                 <textarea v-model="step.description" placeholder="What happens in this step"></textarea>
               </div>
               
-              <div class="form-group">
+              <div class="form-group right-column">
                 <label>Step Image (optional)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleStepImageUpload(e, step)" class="image-input">
@@ -832,7 +836,7 @@ digraph "Tutorial Graph" {
       color = "purple"
       fill  = "mediumpurple1"
     } 
-    dot_code += `    a${i} [color=${color},fillcolor=${fill}label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,tooltip="step ${i}"]\n`
+    dot_code += `    a${i} [color=${color},fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,tooltip="step ${i}"]\n`
   }
   
   for (let i = 0; i < (num_steps-1); i++) {
