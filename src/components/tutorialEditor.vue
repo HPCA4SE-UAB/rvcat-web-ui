@@ -59,16 +59,7 @@
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
             <div class="step-header">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
-              <div class="step-type-selector">
-                <label class="type-radio">
-                  <input type="radio" v-model="step.type" value="step" @change="onStepTypeChange(step)">
-                  <span>Step</span>
-                </label>
-                <label class="type-radio">
-                  <input type="radio" v-model="step.type" value="question" @change="onStepTypeChange(step)">
-                  <span>Question</span>
-                </label>
-              </div>
+              <span class="type-radio"> {{step.type}}</span>
               <button @click="removeStep(index)" class="remove-btn">×</button>
             </div>
             
@@ -451,25 +442,6 @@ const addStep = (type = 'step') => {
 // ============================================================================
 // STEP TYPE & MODE CHANGES
 // ============================================================================
-const onStepTypeChange = (step) => {
-  if (step.type === 'question') {
-    step.questionText = step.questionText || ''
-    step.answerMode   = step.answerMode || 'single'
-    if (!step.answers?.length) {
-      step.answers = [
-        { text: '', isCorrect: true,  explanation: '' },
-        { text: '', isCorrect: false, explanation: '' }
-      ]
-    }
-  } else {
-    step.description    = step.description || ''
-    step.selector       = step.selector || ''
-    step.position       = step.position || 'bottom'
-    step.action         = step.action || ''
-    step.validationType = step.validationType || ''
-  }
-}
-
 const onSelectorPresetChange = (step) => {
   if (step.selectorPreset) step.selector = step.selectorPreset
 }
@@ -699,9 +671,6 @@ const reloadEditedTutorial = async () => {
     } else {
       addStep()
     }
-    const dotCode = generateTutorialDot (tutorial)
-    const svg     = await createGraphVizGraph(dotCode);  
-    pipelineSvg.value = svg.outerHTML;
   } catch (error) {
     console.error('🎓❌ Failed to reload edited tutorial:', error)
     addStep()
@@ -834,7 +803,7 @@ const uploadTutorial = () => {
 // ============================================================================
 
   function generateTutorialDot(tut) {
-    const num_steps = tutorial.steps.length
+    const num_steps = tut.steps.length
     let dot_code = `
 digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
@@ -871,6 +840,11 @@ watch(tutorial, (t) => {
     if (t.name || t.description || t.steps.length > 0) {
       localStorage.setItem('tutorialTemp', JSON.stringify(t))
       console.log('🎓📥 Edited tutorial saved in localStorage', t.name)
+      const dotCode = generateTutorialDot (t)
+      console.log('🎓📥 Dot Code', dotCode)
+      const svg     = await createGraphVizGraph(dotCode)
+      console.log('🎓📥 SVG', svg.outerHTML)
+      pipelineSvg.value = svg.outerHTML;
     }
   } catch (error) {
     console.error('🎓❌ Failed to save edited tutorial in localStorage:', error)
