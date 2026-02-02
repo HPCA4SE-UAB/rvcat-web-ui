@@ -48,8 +48,9 @@
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
           <div class="form-group right-column">
-            <label>Flow graph</label>
-            <textarea v-model="tutorial.id" placeholder="ID (will be a graph)"></textarea>
+            <div class="pipeline-img">
+              <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+            </div>
           </div>
         </div>
 
@@ -331,6 +332,7 @@ const defaultOptions = { // save this & tutorialTemp
 
 const tutorial        = reactive({ name: '', description: '', steps: [] })   // default edited
 const exportedContent = ref('')              // tutorial has been written to local file system
+const pipelineSvg      = ref('')
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
@@ -682,11 +684,16 @@ const initTutorial = async () => {
 const reloadEditedTutorial = async () => {
   if (tutorialOptions.inEditionID === "") {
     addStep()
+    pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
     return
   }
   try {
     console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
+    pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+    //  const dotCode     = get_tutorial_dot ()
+    //  const svg         = await createGraphVizGraph(dotCode);  
+    //  pipelineSvg.value = svg.outerHTML;
     if (jsonString) {
       const data           = JSON.parse(jsonString)
       tutorial.name        = data.name        || ''
@@ -928,14 +935,37 @@ onUnmounted(() => {
   flex: 1;      /* 1/2 del espacio disponible */
   min-width: 0; /* Importante para textarea flexible */
 }
-  
-.section h3 {
-  margin:      0 0 10px 0;
-  font-size:   medium;
-  font-weight: 600;
-  color:       #111827;
-  text-align:  center;
-}
+
+  .pipeline-side-container {
+    flex: 1 1 55%;
+    min-width: 0;           /* Importante para evitar desbordamiento */
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
+    display:   flex;
+    padding:   2px;
+    flex-direction: column;
+    border:        1px solid #ddd;
+    background:    #f8f9fa;
+    border-radius: 8px;
+  }
+
+ .pipeline-img {
+    width:        100%;
+    height:       100%;
+    max-width:    150%;
+    max-height:   150%;
+    align-items:  center;
+    object-fit:   contain;
+    transform-box: fill-box;
+  }
+
+  .pipeline-img svg text {
+    font-size:   12px !important;
+    font-family: Arial, sans-serif !important;
+  }
+  .pipeline-img svg polygon,
+  .pipeline-img svg path {
+    stroke-width: 2px !important;
+  }
 
 .form-group {
   margin-bottom: 8px;
