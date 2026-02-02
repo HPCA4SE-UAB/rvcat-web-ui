@@ -826,7 +826,7 @@ function generateTutorialDot(tut) {
 digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
   subgraph cluster_0 {
-   style="filled,rounded"; color=blue; tooltip="Tutorial flow-graph"; fillcolor=lightblue;
+   style="filled,rounded"; color=grey; tooltip="Tutorial flow-graph"; fillcolor=lightgrey;
    node [style=filled,margin="0.05,0.05", fontname="courier"]; 
 `
   for (let i = 0; i < num_steps; i++) {
@@ -975,8 +975,6 @@ onUnmounted(() => {
  .pipeline-img {
     width:        100%;
     height:       100%;
-    max-width:    150%;
-    max-height:   150%;
     align-items:  center;
     object-fit:   contain;
     transform-box: fill-box;
@@ -1003,7 +1001,7 @@ onUnmounted(() => {
 
 .form-group label {
   display:       block;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   font-size:     medium;
   font-weight:   500;
   color:         #374151;
@@ -1018,9 +1016,9 @@ onUnmounted(() => {
 .form-group textarea,
 .form-group select {
   width:         100%;
-  padding:       8px 9px;
+  padding:       4px 8px;
   border:        1px solid #d1d5db;
-  border-radius: 5px;
+  border-radius: 8px;
   font-size:     medium;
   color:         #111827;
   transition:    border-color 0.2s;
@@ -1037,7 +1035,7 @@ onUnmounted(() => {
 }
 
 .form-group textarea {
-  height:      40px;
+  height:      70px;
   resize:      vertical;
   line-height: 1.2;
 }
@@ -1077,6 +1075,7 @@ onUnmounted(() => {
 }
 
 .step-card {
+  display:        flex;
   background:     #f9fafb;
   border:        1px solid #e5e7eb;
   border-radius: 10px;
@@ -1165,6 +1164,7 @@ onUnmounted(() => {
 
 /* Question card styles */
 .question-card {
+  display:      flex;
   background:   #f5f3ff;
   border-color: #8b5cf6;
 }
