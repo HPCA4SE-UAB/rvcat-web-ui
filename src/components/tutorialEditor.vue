@@ -953,6 +953,7 @@ onUnmounted(() => {
   display:     flex;
   gap:         10px;
   align-items: flex-start;
+  min-height: 200px; /* Altura mínima para la sección */
 }
 
 .left-column {
@@ -970,6 +971,14 @@ onUnmounted(() => {
   border:        1px solid #ddd;
   background:    #f8f9fa;
   border-radius: 8px;
+
+    /* Control de altura máxima */
+  max-height: 600px; /* O la altura máxima que prefieras */
+  min-height: 200px; /* Altura mínima */
+  
+  /* Para que el contenido interno se ajuste */
+  overflow: hidden; /* Oculta cualquier desbordamiento */
+  position: relative; /* Para el posicionamiento interno */
 }
 
  .pipeline-img {
@@ -978,8 +987,20 @@ onUnmounted(() => {
     align-items:  center;
     object-fit:   contain;
     transform-box: fill-box;
+
+
+    /*display: flex;
+    justify-content: center;
+    overflow: hidden;
+    position: relative; */
   }
 
+  .pipeline-img svg[viewBox] {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }  
+  
   .pipeline-img svg text {
     font-size:   small;
     font-family: Arial, sans-serif;
