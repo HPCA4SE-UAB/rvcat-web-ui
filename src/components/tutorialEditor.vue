@@ -40,8 +40,10 @@
       <div class="editor-content">
         <div class="section tutorial-header">
           <div class="form-group left-column">
-            <label>Tutorial Name <span class="required">*</span>
-            <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name"> </label>
+            <div class="label-input-row">
+              <label>Tutorial Name <span class="required">*</span></label>
+              <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name" class="name-input">
+            </div>
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
@@ -984,6 +986,31 @@ onUnmounted(() => {
   height:      50px;
   resize:      vertical;
   line-height: 1.5;
+}
+
+.label-input-row {
+  display:       flex;
+  align-items:   center;
+  margin-bottom: 15px;
+  gap:           15px;
+  width:         100%;
+}
+
+.label-input-row label {
+  flex-shrink: 0; /* Evita que se reduzca */
+  width:       60px; /* Ancho fijo para el label */
+  text-align:  right;
+  font-weight: 500;
+  white-space: nowrap; /* Evita que el texto se parta */
+}
+
+.name-input {
+  flex: 1; /* Ocupa todo el espacio disponible */
+  min-width: 0; /* Importante para que funcione flex */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
 /* Selector preset with text input combo */
