@@ -927,12 +927,12 @@ onUnmounted(() => {
 }
 
 .left-column {
-  flex: 1;      /* 1/2 del espacio disponible */
+  flex: 2;      /* 2/5 del espacio disponible */
   min-width: 0; /* Evita que crezca más de lo necesario */
 }
 
 .right-column {
-  flex: 1;      /* 1/2 del espacio disponible */
+  flex: 3;      /* 3/5 del espacio disponible */
   min-width: 0; /* Importante para textarea flexible */
 }
 
@@ -1021,17 +1021,16 @@ onUnmounted(() => {
 .label-input-row {
   display:       flex;
   align-items:   center;
-  margin-bottom: 15px;
-  gap:           15px;
+  margin-bottom: 2px;
+  gap:           8px;
   width:         100%;
 }
 
 .label-input-row label {
-  flex-shrink: 0; /* Evita que se reduzca */
-  width:       60px; /* Ancho fijo para el label */
+  flex-shrink: 0; 
   text-align:  right;
   font-weight: 500;
-  white-space: nowrap; /* Evita que el texto se parta */
+  white-space: nowrap; 
 }
 
 .name-input {
