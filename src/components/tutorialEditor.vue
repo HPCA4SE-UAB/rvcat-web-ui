@@ -310,7 +310,7 @@ import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounte
 import HelpComponent  from '@/components/helpComponent.vue';
 
 const simState = inject('simulationState');
-
+ 
 // ============================================================================
 // Tutorial options & LocalStorage
 // ============================================================================
@@ -801,26 +801,44 @@ const uploadTutorial = () => {
 // ============================================================================
 // GRAPH: generateTutorialDot
 // ============================================================================
+async function processTutorialUpdate(t) {
+  try {
+    if (t.name || t.description || t.steps.length > 0) {
+      localStorage.setItem('tutorialTemp', JSON.stringify(t));
+      console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
+      
+      const dotCode = generateTutorialDot(t);
+      console.log('🎓📥 Dot Code', dotCode);
+      
+      const svg = await createGraphVizGraph(dotCode);
+      console.log('🎓📥 SVG', svg.outerHTML);
+      
+      pipelineSvg.value = svg.outerHTML;
+    }
+  } catch (error) {
+    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error);
+  }
+}
 
-  function generateTutorialDot(tut) {
-    const num_steps = tut.steps.length
-    let dot_code = `
+function generateTutorialDot(tut) {
+  const num_steps = tut.steps.length
+  let dot_code = `
 digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
   subgraph cluster_0 {
    style="filled,rounded"; color=blue; tooltip="Tutorial flow-graph"; fillcolor=lightblue;
    node [style=filled,margin="0.05,0.05", fontname="courier"]; 
 `
-    for (let i = 0; i < num_steps; i++)
-      dot_code += `    a${i} [color=lightgreen,label=<<B><FONT COLOR="blue">${i}</FONT></B>>,tooltip="step ${i}"\n`
+  for (let i = 0; i < num_steps; i++)
+    dot_code += `    a${i} [color=lightgreen,label=<<B><FONT COLOR="blue">${i}</FONT></B>>,tooltip="step ${i}"\n`
 
    //  a [color=lightyellow,label=<<B><FONT COLOR="red">3</FONT></B>>,tooltip="step 3"]
 
-    for (let i = 0; i < (num_steps-1); i++) {
-      dot_code += `a${i} -> `
-    }
-    dot_code += `a${num_steps-1}\n}`
-    dot_code += `
+  for (let i = 0; i < (num_steps-1); i++) {
+    dot_code += `a${i} -> `
+  }
+  dot_code += `a${num_steps-1}\n}`
+  dot_code += `
   }
   start [shape=Msquare];
   end [shape=Msquare];
@@ -829,28 +847,24 @@ digraph "Tutorial Graph" {
     dot_code += `
   a${num_steps-1} -> end;
   }\n`;
-    return dot_code;
-  }
+  return dot_code;
+}
 
 // ============================================================================
 // WATCHES: globalState, tutorial, options
 // ============================================================================
-watch(tutorial, (t) => {
-  try {
-    if (t.name || t.description || t.steps.length > 0) {
-      localStorage.setItem('tutorialTemp', JSON.stringify(t))
-      console.log('🎓📥 Edited tutorial saved in localStorage', t.name)
-      const dotCode = generateTutorialDot (t)
-      console.log('🎓📥 Dot Code', dotCode)
-      const svg     = await createGraphVizGraph(dotCode)
-      console.log('🎓📥 SVG', svg.outerHTML)
-      pipelineSvg.value = svg.outerHTML;
-    }
-  } catch (error) {
-    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error)
-  }
-}, { deep: true })
+let saveTimeout = null;
 
+watch(tutorial, (t) => {
+  // Cancel previous timeout
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+  saveTimeout = setTimeout(async () => {
+    await processTutorialUpdate(t);
+  }, 100);
+}, { deep: true });
+  
 watch (
   [() => tutorialOptions.available, 
    () => tutorialOptions.inEditionID],
@@ -880,6 +894,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
   console.log('🎓🧹 TutorialEditor mounted')
 })
 
