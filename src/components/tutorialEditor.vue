@@ -68,12 +68,7 @@
               </div>
             </div>
 
-            <template v-if="step.type === 'step'">
-              <div class="form-group">
-                <label>Description</label>
-                <textarea v-model="step.description" placeholder="What happens in this step"></textarea>
-              </div>
-              
+            <template v-if="step.type === 'step'">             
               <div class="form-group right-column">
                 <label>Step Image (optional)</label>
                 <div class="image-upload-section">
