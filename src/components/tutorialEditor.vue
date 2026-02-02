@@ -690,10 +690,6 @@ const reloadEditedTutorial = async () => {
   try {
     console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
-    pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
-    //  const dotCode     = get_tutorial_dot ()
-    //  const svg         = await createGraphVizGraph(dotCode);  
-    //  pipelineSvg.value = svg.outerHTML;
     if (jsonString) {
       const data           = JSON.parse(jsonString)
       tutorial.name        = data.name        || ''
@@ -703,6 +699,9 @@ const reloadEditedTutorial = async () => {
     } else {
       addStep()
     }
+    const dotCode = generateTutorialDot (tutorial)
+    const svg     = await createGraphVizGraph(dotCode);  
+    pipelineSvg.value = svg.outerHTML;
   } catch (error) {
     console.error('🎓❌ Failed to reload edited tutorial:', error)
     addStep()
@@ -831,6 +830,40 @@ const uploadTutorial = () => {
 }
 
 // ============================================================================
+// GRAPH: generateTutorialDot
+// ============================================================================
+
+  function generateTutorialDot(tut) {
+    const num_steps = tutorial.steps.length
+    let dot_code = `
+digraph "Tutorial Graph" {
+  rankdir=LR; splines=spline; newrank=true;
+  subgraph cluster_0 {
+   style="filled,rounded"; color=blue; tooltip="Tutorial flow-graph"; fillcolor=lightblue;
+   node [style=filled,margin="0.05,0.05", fontname="courier"]; 
+`
+    for (let i = 0; i < num_steps; i++)
+      dot_code += `    a${i} [color=lightgreen,label=<<B><FONT COLOR="blue">${i}</FONT></B>>,tooltip="step ${i}"\n`
+
+   //  a [color=lightyellow,label=<<B><FONT COLOR="red">3</FONT></B>>,tooltip="step 3"]
+
+    for (let i = 0; i < (num_steps-1); i++) {
+      dot_code += `a${i} -> `
+    }
+    dot_code += `a${num_steps-1}\n}`
+    dot_code += `
+  }
+  start [shape=Msquare];
+  end [shape=Msquare];
+  start -> a0;`
+
+    dot_code += `
+  a${num_steps-1} -> end;
+  }\n`;
+    return dot_code;
+  }
+
+// ============================================================================
 // WATCHES: globalState, tutorial, options
 // ============================================================================
 watch(tutorial, (t) => {
@@ -927,12 +960,12 @@ onUnmounted(() => {
 }
 
 .left-column {
-  flex: 2;      /* 2/5 del espacio disponible */
+  flex:      1;      /* 1/4 del espacio disponible */
   min-width: 0; /* Evita que crezca más de lo necesario */
 }
 
 .right-column {
-  flex: 3;      /* 3/5 del espacio disponible */
+  flex: 3;          /* 3/4 del espacio disponible */
   min-width: 0;
   box-sizing: border-box; /* Incluye padding y border en el cálculo */
   display:    flex;
@@ -942,18 +975,6 @@ onUnmounted(() => {
   background:    #f8f9fa;
   border-radius: 8px;
 }
-
-  .pipeline-side-container {
-    flex:       1 1 55%;
-    min-width:  0;          /* Importante para evitar desbordamiento */
-    box-sizing: border-box; /* Incluye padding y border en el cálculo */
-    display:    flex;
-    padding:    2px;
-    flex-direction: column;
-    border:        1px solid #ddd;
-    background:    #f8f9fa;
-    border-radius: 8px;
-  }
 
  .pipeline-img {
     width:        100%;
@@ -1020,7 +1041,7 @@ onUnmounted(() => {
 }
 
 .form-group textarea {
-  height:      30px;
+  height:      40px;
   resize:      vertical;
   line-height: 1.2;
 }
