@@ -40,8 +40,8 @@
       <div class="editor-content">
         <div class="section tutorial-header">
           <div class="form-group left-column">
-            <label>Tutorial Name <span class="required">*</span></label>
-            <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name">
+            <label>Tutorial Name <span class="required">*</span>
+            <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name"> </label>
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
@@ -53,7 +53,6 @@
 
         <!-- Card: step/question -->
         <div class="section">
-          <h3>Steps & Questions</h3>
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
             <div class="step-header">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
