@@ -59,8 +59,7 @@
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
             <div class="step-header">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
-              <span class="type-radio"> {{step.type}}</span>
-              <label>Title <span class="required">*</span></label>
+              <label>{{step.type}} Title <span class="required">*</span></label>
               <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
               <button @click="removeStep(index)" class="remove-btn">×</button>
             </div>
@@ -826,11 +825,16 @@ digraph "Tutorial Graph" {
    style="filled,rounded"; color=blue; tooltip="Tutorial flow-graph"; fillcolor=lightblue;
    node [style=filled,margin="0.05,0.05", fontname="courier"]; 
 `
-  for (let i = 0; i < num_steps; i++)
-    dot_code += `    a${i} [color=lightgreen,label=<<B><FONT COLOR="blue">${i}</FONT></B>>,tooltip="step ${i}"]\n`
-
-   //  a [color=lightyellow,label=<<B><FONT COLOR="red">3</FONT></B>>,tooltip="step 3"]
-
+  for (let i = 0; i < num_steps; i++) {
+    let color = "blue"
+    let fill  = "lightblue"
+    if (tut.steps[i].type !== "step") {
+      color = "purple"
+      fill  = "mediumpurple1"
+    } 
+    dot_code += `    a${i} [color=${color},fillcolor=${fill}label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,tooltip="step ${i}"]\n`
+  }
+  
   for (let i = 0; i < (num_steps-1); i++) {
     dot_code += `    a${i} -> `
   }
