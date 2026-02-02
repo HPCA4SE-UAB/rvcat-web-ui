@@ -827,11 +827,13 @@ digraph "Tutorial Graph" {
   for (let i = 0; i < num_steps; i++) {
     let color = "blue"
     let fill  = "lightblue"
-    if (tut.steps[i].type !== "step") {
+    let type  = tut.steps[i].type
+    if (type !== "step") {
       color = "purple"
       fill  = "mediumpurple1"
     } 
-    dot_code += `    a${i} [color=${color},fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,tooltip="step ${i}"]\n`
+    dot_code += `    a${i} [color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
+                            tooltip="click to edit this ${type}", URL="javascript:void(0)", onclick="handleNodeClick(${i})", id="node-${i}"]\n`
   }
   
   for (let i = 0; i < (num_steps-1); i++) {
