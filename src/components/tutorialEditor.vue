@@ -39,13 +39,15 @@
       <!-- Header: Tutorial Description -->
       <div class="editor-content">
         <div class="section tutorial-header">
-          <div class="form-group name-column">
+          <div class="form-group left-column">
             <label>Tutorial Name <span class="required">*</span></label>
             <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name">
-          </div>
-          <div class="form-group description-column">
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
+          </div>
+          <div class="form-group right-column">
+            <label>Flow graph</label>
+            <textarea v-model="tutorial.id" placeholder="ID (will be a graph)"></textarea>
           </div>
         </div>
 
@@ -239,10 +241,6 @@
         <div class="section">
           <h3>Steps & Questions</h3>
           <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
-                     
-            
-            
-
             
             <template v-else-if="step.type === 'question'">
               <div class="form-group">
@@ -920,13 +918,13 @@ onUnmounted(() => {
   align-items: flex-start;
 }
 
-.name-column {
-  flex: 1;      /* 1/4 del espacio disponible */
+.left-column {
+  flex: 1;      /* 1/2 del espacio disponible */
   min-width: 0; /* Evita que crezca más de lo necesario */
 }
 
-.description-column {
-  flex: 3;      /* 3/4 del espacio disponible */
+.right-column {
+  flex: 1;      /* 1/2 del espacio disponible */
   min-width: 0; /* Importante para textarea flexible */
 }
   
