@@ -50,9 +50,11 @@
       "description": "Perfect! Now change the processor architecture configuration to 'B2'.",
       "selector": "#processors-list",
       "position": "right",
-      "validationType":  "architecture_selected",
-      "validationValue": "B2",
-      "validationMessage":  "Select the 'B2' architecture to continue"
+      "validation": {
+        "type":  "architecture_selected",
+        "value": "B2",
+        "message":  "Select the 'B2' architecture to continue"
+      }
     },
     {
       "type": "step",
@@ -60,10 +62,12 @@
       "description": "Now we'll modify some parameters. Change the ROB (Reorder Buffer) size to 25 .",
       "selector": "#rob-size",
       "position": "right"
-      "validationType":  "input_value",
-      "validationValue": "25",
-      "validationSelector": "#rob-size",
-      "validationMessage":  "Enter the value 25 in the ROB field"
+      "validation": {
+        "type":  "input_value",
+        "value": "25",
+        "selector": "#rob-size",
+        "message":  "Enter the value 25 in the ROB field"
+      }
     },
     {
       "type": "step",
@@ -71,19 +75,23 @@
       "description": "Configure the number of simulation iterations. Enter a value of 500 iterations in the Simulation tab.",
       "selector": "#simulation-iterations",
       "position": "bottom"
-      "validationType":  "input_value",
-      "validationValue": "500",
-      "validationSelector": "#simulation-iterations",
-      "validationMessage":  "Enter the value 500 for the number of iterations in the Simulation tab"
+      "validation": {
+        "type":  "input_value",
+        "value": "500",
+        "selector": "#simulation-iterations",
+        "message":  "Enter the value 500 for the number of iterations in the Simulation tab"
+      }
     },
     {
       "type": "step",
       "title": "Exercise 5: Run Simulation",
       "description": "Now click the 'Run' button to start the simulation with the configured parameters.",
       "selector": "#run-simulation-button",
-      "validationType":  "button_clicked",
-      "validationSelector": "#run-simulation-button",
-      "validationMessage":  "Complete this action to continue"
+      "validation": 
+	"type":  "button_clicked",
+        "selector": "#run-simulation-button",
+        "message":  "Complete this action to continue"
+      }
     },
     {
       "type": "step",
