@@ -951,7 +951,7 @@ watch(() => tutorialSvg.value, () => {
 });
 
 const handleNodeClick = (stepId) => {
-  tutorialOptions.selectedStep.value = stepId;
+  tutorialOptions.selectedStep = stepId;
   console.log('🎓 Selected step:', stepId);
 };
 
