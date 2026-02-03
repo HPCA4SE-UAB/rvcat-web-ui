@@ -54,8 +54,7 @@ function getKeys(name) {
 }
 
 // Init Programs/Processors/Tutorials
-const initResource = async ({
-  resourceName, logPrefix, optionsObj, currentKey, availableKey, errorHandler = null }) => {
+const initResource = async ({resourceName, logPrefix, optionsObj, currentKey, availableKey, errorHandler = null }) => {
   console.log(`${logPrefix}🔄 Loading ${resourceName}s ...`);
 
   try {
