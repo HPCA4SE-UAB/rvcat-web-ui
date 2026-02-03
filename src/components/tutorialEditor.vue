@@ -23,7 +23,7 @@
         </div>
         <div class="buttons">
           <button class="blue-button" title="Clear draft and start fresh"
-                v-if="hasSavedContent" @click="clearDraft">  Clear Draft  </button>
+                @click="clearDraft">  Clear Draft  </button>
         </div>
       </div>
     </div>
@@ -49,10 +49,12 @@
                 @click="addStep('step', stepNumber + 1)"    >    + Add Step    </button>
               <button class="blue-button" title="Add new question to the tutorial (before current)" 
                 @click="addStep('question', stepNumber + 1)">+ Add Question</button>
+              <button class="blue-button" title="Duplicate current step" 
+                @click="addStep(null, stepNumber)">+ Duplicate</button>
             </div>
           </div>
           <div class="form-group right-column">
-            <div class="tutorial-img" @click="handleNodeClick(null)">
+            <div class="tutorial-img">
               <div v-html="tutorialSvg" v-if="tutorialSvg"></div>
             </div>
           </div>
@@ -74,12 +76,12 @@
 
             <template v-if="currentStep.type === 'step'">             
               <div class="form-group right-column">
-                <label>Step Image (optional)</label>
+                <label>Step Image (opt.)</label>
                 <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep, 'stepImage')" class="image-input">
-                  <div v-if="currentStep.stepImage" class="image-preview">
-                    <img :src="currentStep.stepImage" alt="Step image preview">
-                    <button @click="currentStep.stepImage = ''" class="remove-image-btn" type="button">× Remove</button>
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
+                  <div v-if="currentStep.image" class="image-preview">
+                    <img :src="currentStep.image" alt="Image preview">
+                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
                   </div>
                 </div>
               </div>
@@ -146,7 +148,7 @@
 
                   <div v-if="currentStep.validationType === 'input_value'" class="form-group">
                     <label>Expected value</label>
-                    <input v-model="currentStep.validationValue" type="text" placeholder="128">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="16">
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value' || currentStep.validationType === 'input_value_min'" class="form-group">
@@ -161,7 +163,7 @@
 
                   <div v-if="currentStep.validationType === 'input_value_min'" class="form-group">
                     <label>Minimum value</label>
-                    <input v-model="currentStep.validationMinValue" type="number" placeholder="100">
+                    <input v-model="currentStep.validationMinValue" type="number" placeholder="10">
                   </div>
 
                   <div v-if="currentStep.validationType === 'button_clicked'" class="form-group">
@@ -193,7 +195,68 @@
                 </select>
               </div>
             </template>
-            
+
+            <template v-else-if="currentStep.type === 'question'">
+              <div class="form-group">
+                <label>Question Text <span class="required">*</span></label>
+                <textarea v-model="currentStep.questionText" placeholder="Enter your question here..."></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Question Image (optional)</label>
+                <div class="image-upload-section">
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
+                  <div v-if="currentStep.image" class="image-preview">
+                    <img :src="currentStep.image" alt="Question image preview">
+                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Answer Mode <span class="required">*</span></label>
+                <div class="answer-mode-selector">
+                  <label class="mode-radio">
+                    <input type="radio" v-model="currentStep.answerMode" value="single" @change="onAnswerModeChange(step)">
+                    <span>Single-choice</span>
+                  </label>
+                  <label class="mode-radio">
+                    <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
+                    <span>Multiple-choice</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="answers-section">
+                <h4>Answers (up to 6) <span class="required">*</span> - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}</h4>
+                <div v-for="(answer, ansIndex) in currentStep.answers" :key="ansIndex" class="answer-card" :class="{ 'correct-answer': answer.isCorrect }">
+                  <div class="answer-header">
+                    <span class="answer-letter">{{ String.fromCharCode(65 + ansIndex) }}</span>
+                    <label class="correct-checkbox">
+                      <input type="checkbox" v-model="answer.isCorrect" @change="onCorrectAnswerChange(currentStep, ansIndex)">
+                      <span>Correct</span>
+                    </label>
+                    <button v-if="currentStep.answers.length > 2" @click="removeAnswer(currentStep, ansIndex)" class="remove-answer-btn">×</button>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Answer Text <span class="required">*</span></label>
+                    <input v-model="answer.text" type="text" placeholder="Answer option...">
+                  </div>
+                  
+                  <div class="feedback-group">
+                    <div class="form-group">
+                      <label v-if="answer.isCorrect">✓ Explanation (shown when user selects this correct answer)</label>
+                      <label v-else>✗ Explanation (shown when user selects this wrong answer)</label>
+                      <input v-model="answer.explanation" type="text" :placeholder="answer.isCorrect ? 'Great! This is correct because...' : 'This is incorrect because...'">
+                    </div>
+                  </div>
+                </div>
+                
+                <button v-if="currentStep.answers.length < 6" @click="addAnswer(currentStep)" class="add-answer-btn">+ Add Answer</button>
+              </div>
+            </template>
+
           </div>
         </div>
         
@@ -226,81 +289,6 @@
     @close="closeHelp"  />
   </Teleport>
 
-
-  <!----
-  
-   <div class="tutorial-editor">
-        <div class="section">
-          <h3>Steps & Questions</h3>
-          <div v-for="(step, index) in tutorial.steps" :key="index" class="step-card" :class="{ 'question-card': step.type === 'question' }">
-            
-            <template v-else-if="step.type === 'question'">
-              <div class="form-group">
-                <label>Question Text <span class="required">*</span></label>
-                <textarea v-model="step.questionText" placeholder="Enter your question here..."></textarea>
-              </div>
-              
-              <div class="form-group">
-                <label>Question Image (optional)</label>
-                <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, step, 'questionImage')" class="image-input">
-                  <div v-if="step.questionImage" class="image-preview">
-                    <img :src="step.questionImage" alt="Question image preview">
-                    <button @click="step.questionImage = ''" class="remove-image-btn" type="button">× Remove</button>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>Answer Mode <span class="required">*</span></label>
-                <div class="answer-mode-selector">
-                  <label class="mode-radio">
-                    <input type="radio" v-model="step.answerMode" value="single" @change="onAnswerModeChange(step)">
-                    <span>Single-choice</span>
-                  </label>
-                  <label class="mode-radio">
-                    <input type="radio" v-model="step.answerMode" value="multiple" @change="onAnswerModeChange(step)">
-                    <span>Multiple-choice</span>
-                  </label>
-                </div>
-              </div>
-              
-              <div class="answers-section">
-                <h4>Answers (up to 6) <span class="required">*</span> - {{ step.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}</h4>
-                <div v-for="(answer, ansIndex) in step.answers" :key="ansIndex" class="answer-card" :class="{ 'correct-answer': answer.isCorrect }">
-                  <div class="answer-header">
-                    <span class="answer-letter">{{ String.fromCharCode(65 + ansIndex) }}</span>
-                    <label class="correct-checkbox">
-                      <input type="checkbox" v-model="answer.isCorrect" @change="onCorrectAnswerChange(step, ansIndex)">
-                      <span>Correct</span>
-                    </label>
-                    <button v-if="step.answers.length > 2" @click="removeAnswer(step, ansIndex)" class="remove-answer-btn">×</button>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Answer Text <span class="required">*</span></label>
-                    <input v-model="answer.text" type="text" placeholder="Answer option...">
-                  </div>
-                  
-                  <div class="feedback-group">
-                    <div class="form-group">
-                      <label v-if="answer.isCorrect">✓ Explanation (shown when user selects this correct answer)</label>
-                      <label v-else>✗ Explanation (shown when user selects this wrong answer)</label>
-                      <input v-model="answer.explanation" type="text" :placeholder="answer.isCorrect ? 'Great! This is correct because...' : 'This is incorrect because...'">
-                    </div>
-                  </div>
-                </div>
-                
-                <button v-if="step.answers.length < 6" @click="addAnswer(step)" class="add-answer-btn">+ Add Answer</button>
-              </div>
-            </template>
-          </div>
-          
-        </div>
-
-       </div>
-   </div>
-   -->
   </div>
 </template>
 
@@ -369,7 +357,7 @@ const predefinedSelectors = [
   { label: '── Program Section ──', value: '', disabled: true },
   { label: 'Program Selector',      value: '#programs-list' },
   { label: 'Processor Selector',    value: '#processors-list' },
-  { label: '── Configuration Inputs ──', value: '', disabled: true },
+  { label: '── Processor Config ──', value: '', disabled: true },
   { label: 'ROB Size Input',        value: '#rob-size' },
   { label: 'Simulation iterations', value: '#simulation-iterations' },
   { label: '── Buttons ──',         value: '', disabled: true },
@@ -404,15 +392,15 @@ const validationInputSelectors = [
   { label: 'VFLOAT.MUL latency',   value: '#VFLOAT.MUL-latency' },
   { label: 'VFLOAT.ADD latency',   value: '#VFLOAT.ADD-latency' },
 
-  { label: 'Check INT instructions on Port0',    value: '#Port0-INT-check' },
-  { label: 'Check BRANCH instructions on Port0', value: '#Port0-BRANCH-check' },
+  { label: 'Check INT on Port0',    value: '#Port0-INT-check' },
+  { label: 'Check BRANCH  on Port0', value: '#Port0-BRANCH-check' },
 
   { label: 'Number of Blocks in cache',  value: '#cache-blocks' },
   { label: 'Size of cache blocks',       value: '#block-size' },
   { label: 'Cache miss penalty',         value: '#miss-penalty' },
   { label: 'Cache miss issue time',      value: '#miss-issue-time' },
 
-  { label: 'Number of simulation iterations', value: '#simulation-iterations' },
+  { label: 'Simulation iterations', value: '#simulation-iterations' },
   { label: 'Critical Path table',             value: '#critical-path' },
 
   { label: 'Number of timeline iterations',   value: '#timeline-iterations' },
@@ -443,21 +431,21 @@ const validationInputSelectors = [
 ]
 
 const validationButtonSelectors = [
-  { label: 'Custom',                         value: '' },
-  { label: 'Set processor panel',            value: '#processor-button' },
-  { label: 'Set program panel',              value: '#program-button' },
-  { label: 'Set tutorial panel',             value: '#tutorial-button' },
-  { label: 'Set simulation panel',           value: '#simulation-button' },
-  { label: 'Set analysis panel',             value: '#analysis-button' },
-  { label: 'Set timeline panel',             value: '#timeline-button' },
-  { label: 'Set about panel',                value: '#about-button' },
-  { label: 'Run Simulation',                 value: '#run-simulation-button' },
-  { label: 'Apply Processor Configuration',  value: '#apply-processorconfig-button' },
-  { label: 'Upload Processor Configuration', value: '#upload-processorconfig-button' },
-  { label: 'Download Program',               value: '#program-download-button' },
-  { label: 'Upload Program',                 value: '#program-upload-button' },
-  { label: 'Remove PortX',                   value: '#remove-port0-button' },
-  { label: 'Add Port',                       value: '#add-port-button' }
+  { label: 'Custom',                     value: '' },
+  { label: 'Set processor panel',        value: '#processor-button' },
+  { label: 'Set program panel',          value: '#program-button' },
+  { label: 'Set tutorial panel',         value: '#tutorial-button' },
+  { label: 'Set simulation panel',       value: '#simulation-button' },
+  { label: 'Set analysis panel',         value: '#analysis-button' },
+  { label: 'Set timeline panel',         value: '#timeline-button' },
+  { label: 'Set about panel',            value: '#about-button' },
+  { label: 'Run Simulation',             value: '#run-simulation-button' },
+  { label: 'Apply Processor Config.',    value: '#apply-processorconfig-button' },
+  { label: 'Upload Processor Config.',   value: '#upload-processorconfig-button' },
+  { label: 'Download Program',           value: '#program-download-button' },
+  { label: 'Upload Program',             value: '#program-upload-button' },
+  { label: 'Remove PortX',               value: '#remove-port0-button' },
+  { label: 'Add Port',                   value: '#add-port-button' }
 ]
 
 // ============================================================================
@@ -467,7 +455,7 @@ const createEmptyStep = () => ({
   type:            'step',
   title:           '',
   description:     '',
-  stepImage:       '',
+  image:           '',
   selectorPreset:  '',
   selector:        '',
   position:        'bottom',
@@ -484,7 +472,7 @@ const createEmptyQuestion = () => ({
   type:          'question',
   title:         '',
   questionText:  '',
-  questionImage: '',
+  image:         '',
   answerMode:    'single',
   answers: [
     { text: '', isCorrect: true, explanation: '' },
@@ -494,14 +482,21 @@ const createEmptyQuestion = () => ({
 
 const addStep = (type = 'step', atIndex = null) => {
   let insertIndex= tutorial.steps.length - 1
+  let newStep = null
+ 
   if (atIndex !== null && atIndex >= 0)
     insertIndex = atIndex
 
-  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length)); 
+  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length-1)); 
 
-  const newStep = type === 'question' ? createEmptyQuestion() : createEmptyStep();
-  tutorial.steps.splice(insertIndex, 0, newStep);
+  if (!type) {  // duplicate current
+    newStep = tutorial.steps[insertIndex]
+    insertIndex = insertIndex+1
+  }
+  else
+    newStep = type === 'question' ? createEmptyQuestion() : createEmptyStep();
   
+  tutorial.steps.splice(insertIndex, 0, newStep);
   tutorialOptions.selectedStep = insertIndex;
 }
 
@@ -555,12 +550,18 @@ const removeAnswer = (step, index) => {
   }
 }
 
-const removeStep = (index) => tutorial.steps.splice(index, 1)
-
+const removeStep = (index) => {
+  tutorial.steps.splice(index, 1)
+  if (index >= 1)
+    tutorialOptions.selectedStep = index-1;
+  else
+    tutorialOptions.selectedStep = 0;
+}
+  
 // ============================================================================
 // IMAGE UPLOAD (unified handler)
 // ============================================================================
-const handleImageUpload = (event, step, imageField) => {
+const handleImageUpload = (event, step) => {
   const file = event.target.files[0]
   if (!file) return
   
@@ -571,7 +572,7 @@ const handleImageUpload = (event, step, imageField) => {
   }
   
   const reader  = new FileReader()
-  reader.onload = (e) => { step[imageField] = e.target.result }
+  reader.onload = (e) => { step.image = e.target.result }
   reader.readAsDataURL(file)
 }
 
@@ -619,7 +620,7 @@ const convertStepForExport = (step) => {
         explanation: a.explanation || ''
       }))
     }
-    if (step.questionImage) q.questionImage = step.questionImage
+    if (step.image) q.image = step.image
     return q
   }
   
@@ -630,8 +631,8 @@ const convertStepForExport = (step) => {
     selector:    step.selector,
     position:    step.position
   }
-  if (step.stepImage) s.stepImage = step.stepImage
-  if (step.action)    s.action    = step.action
+  if (step.image)   s.image  = step.image
+  if (step.action)  s.action = step.action
   
   const validation = buildValidation(step)
   if (validation) 
@@ -718,8 +719,10 @@ const initTutorial = async () => {
 };
 
 const reloadEditedTutorial = async () => {
-  if (tutorialOptions.inEditionID === "")
+  if (tutorialOptions.inEditionID === "") {
+    addStep()
     return
+  }
   try {
     const jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
     if (jsonString) {
@@ -730,8 +733,6 @@ const reloadEditedTutorial = async () => {
       tutorial.steps       = data.steps       || []
       if (!tutorial.steps.length) addStep()
       console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
-    } else {
-      addStep()
     }
   } catch (error) {
     console.error('🎓❌ Failed to reload edited tutorial:', error)
@@ -764,7 +765,6 @@ const addTutorial = () => {
   console.log(`👨‍🎓✅ Added tutorial: ${filename}`)
   simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
   clearDraft()
-  alert('Tutorial has been added to the tutorial menu.')
 }
 
 const downloadJSON = () => {
@@ -795,11 +795,11 @@ const convertUploadedStep = (step) => {
       type:          'question',
       title:         step.title || '',
       questionText:  step.questionText || '',
-      questionImage: step.questionImage || '',
+      image:         step.image || '',
       answerMode:    step.answerMode || 'single',
       answers:      (step.answers || []).map(a => ({
-        text: a.text || '',
-        isCorrect: a.isCorrect || false,
+        text:        a.text || '',
+        isCorrect:   a.isCorrect || false,
         explanation: a.explanation || ''
       }))
     }
@@ -814,7 +814,7 @@ const convertUploadedStep = (step) => {
     ...createEmptyStep(),
     title:       step.title       || '',
     description: step.description || '',
-    stepImage:   step.stepImage   || '',
+    image:       step.image       || '',
     selector:    step.selector    || '',
     position:    step.position    || 'bottom',
     action:      step.action      || ''
@@ -857,13 +857,11 @@ const uploadTutorial = () => {
       tutorialOptions.selectedStep = 0
       
       console.log('🎓📥 Tutorial loaded from local file system', tutorial.name);
-      alert('Tutorial loaded successfully!')
     } catch (err) {
       console.error('🎓❌ Failed to load tutorial:', err)
       alert('Failed to load tutorial file. Please check the file format.')
     }
   }
-  
   document.body.appendChild(input)
   input.click()
   document.body.removeChild(input)
@@ -982,12 +980,12 @@ const addClickListenersToSvg = () => {
       
       node.addEventListener('click', (event) => {
         event.stopPropagation();
-        const nodeId = node.id || index;
+        const ID = node.id || index;
         node.style.filter = 'drop-shadow(0 0 8px rgba(0, 100, 255, 0.8))';
         node.style.stroke = '#0066ff';
         node.style.strokeWidth = '3px';
-        tutorialOptions.selectedStep = stepId;
-        console.log('🎓 Selected step:', stepId);
+        tutorialOptions.selectedStep = ID;
+        console.log('🎓 Selected step:', ID);
         if (lastSelectedNode && lastSelectedNode !== node) {
           lastSelectedNode.style.filter = 'none';
           node.style.stroke      = '#0011bb';
@@ -1025,16 +1023,6 @@ onUnmounted(() => {
   }
   console.log('🎓🧹 TutorialEditor mounted')
 })
-
-
-// ============================================================================
-// COMPUTED
-// ============================================================================
-const hasSavedContent = computed(() => 
-  tutorial.name || tutorial.description || 
-  tutorial.steps.some(s => s.title || s.description || s.selector || s.questionText)
-)
-
 
 </script>
 
