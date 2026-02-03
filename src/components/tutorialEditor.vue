@@ -59,27 +59,26 @@
         </div>
 
         <!-- Card: step/question -->
-        <div :index="tutorialOptions.selectedStep" :step="tutorial.steps[tutorialOptions.selectedStep]" class="section">
-          <div class="step-card" :class="{ 'question-card': step.type === 'question' }">
+        <div v-if="currentStep" class="section">
+          <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
-              <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
-              <label>{{step.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
-              <input v-model="step.title" type="text" :placeholder="step.type === 'question' ? 'Question title' : 'Step title'">
-              <button @click="removeStep(index)" class="remove-btn">×</button>
-              <div v-if="step.type === 'step'">
-                <label>Description</label>
-                <textarea v-model="step.description" placeholder="What happens in this step"></textarea>
+              <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ stepNumber+1 }}</span>
+              <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
+              <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
+              <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
+              <label>Description</label>
+              <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
               </div>
             </div>
 
-            <template v-if="step.type === 'step'">             
+            <template v-if="currentStep.type === 'step'">             
               <div class="form-group right-column">
                 <label>Step Image (optional)</label>
                 <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, step, 'stepImage')" class="image-input">
-                  <div v-if="step.stepImage" class="image-preview">
-                    <img :src="step.stepImage" alt="Step image preview">
-                    <button @click="step.stepImage = ''" class="remove-image-btn" type="button">× Remove</button>
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep, 'stepImage')" class="image-input">
+                  <div v-if="currentStep.stepImage" class="image-preview">
+                    <img :src="currentStep.stepImage" alt="Step image preview">
+                    <button @click="currentStep.stepImage = ''" class="remove-image-btn" type="button">× Remove</button>
                   </div>
                 </div>
               </div>
@@ -87,17 +86,17 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Element to Highlight <span class="required">*</span></label>
-                  <select v-model="step.selectorPreset" @change="onSelectorPresetChange(step)" class="selector-preset">
+                  <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
                     <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
                       {{ opt.label }}
                     </option>
                   </select>
-                  <input v-model="step.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
+                  <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
                 </div>
                 
                 <div class="form-group">
                   <label>Position</label>
-                  <select v-model="step.position">
+                  <select v-model="currentStep.position">
                     <option value="bottom">Bottom</option>
                     <option value="top">Top</option>
                     <option value="left">Left</option>
@@ -108,22 +107,22 @@
               
               <div class="form-group">
                 <label>Action (optional)</label>
-                <select v-model="step.action">
+                <select v-model="currentStep.action">
                   <option value="">No action</option>
                   <option value="switchTo:simulationComponent">Go to Simulation</option>
-                  <option value="switchTo:staticAnalysisComponent">Go to Static Analysis</option>
+                  <option value="switchTo:analysisComponent">Go to Static Analysis</option>
                   <option value="switchTo:timelineComponent">Go to Timeline</option>
-                  <option value="switchTo:processorEditorComponent">Go to Processor</option>
-                  <option value="switchTo:programEditorComponent">Go to Program</option>
-                  <option value="switchTo:comparisonComponent">Go to Comparison</option>
+                  <option value="switchToFull:processorComponent">Go to Processor</option>
+                  <option value="switchToFull:programComponent">Go to Program</option>
+                  <option value="switchToFull:tutorialComponent">Go to Tutorial</option>
                 </select>
               </div>
 
-              <div v-if="step.validationType" class="validation-card">
+              <div v-if="currentStep.validationType" class="validation-card">
                 <h4>Validation</h4>
                 <div class="form-group">
                   <label>Type</label>
-                  <select v-model="step.validationType">
+                  <select v-model="currentStep.validationType">
                     <option value="">No validation</option>
                     <option value="program_selected">Program selected</option>
                     <option value="architecture_selected">Architecture selected</option>
@@ -134,56 +133,56 @@
                 </div>
 
                 <div v-if="step.validationType" class="validation-details">
-                  <div v-if="step.validationType === 'program_selected'" class="form-group">
+                  <div v-if="currentStep.validationType === 'program_selected'" class="form-group">
                     <label>Program name</label>
-                    <input v-model="step.validationValue" type="text" placeholder="rec, fact, sum, etc.">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="rec, fact, sum, etc.">
                   </div>
 
                   <div v-if="step.validationType === 'architecture_selected'" class="form-group">
                     <label>Architecture name</label>
-                    <input v-model="step.validationValue" type="text" placeholder="baseline, base2, ooo, etc.">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="baseline, base2, ooo, etc.">
                   </div>
 
-                  <div v-if="step.validationType === 'input_value'" class="form-group">
+                  <div v-if="currentStep.validationType === 'input_value'" class="form-group">
                     <label>Expected value</label>
-                    <input v-model="step.validationValue" type="text" placeholder="128">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="128">
                   </div>
 
-                  <div v-if="step.validationType === 'input_value' || step.validationType === 'input_value_min'" class="form-group">
+                  <div v-if="currentStep.validationType === 'input_value' || currentStep.validationType === 'input_value_min'" class="form-group">
                     <label>Input Field</label>
-                    <select v-model="step.validationSelectorPreset" @change="onValidationSelectorPresetChange(step)" class="selector-preset">
+                    <select v-model="currentStep.validationSelectorPreset" @change="onValidationSelectorPresetChange(currentStep)" class="selector-preset">
                       <option v-for="opt in validationInputSelectors" :key="opt.label" :value="opt.value">
                         {{ opt.label }}
                       </option>
                     </select>
-                    <input v-model="step.validationSelector" type="text" placeholder="CSS selector for input field" class="selector-input">
+                    <input v-model="currentStep.validationSelector" type="text" placeholder="CSS selector for input field" class="selector-input">
                   </div>
 
-                  <div v-if="step.validationType === 'input_value_min'" class="form-group">
+                  <div v-if="currentStep.validationType === 'input_value_min'" class="form-group">
                     <label>Minimum value</label>
-                    <input v-model="step.validationMinValue" type="number" placeholder="100">
+                    <input v-model="currentStep.validationMinValue" type="number" placeholder="100">
                   </div>
 
-                  <div v-if="step.validationType === 'button_clicked'" class="form-group">
+                  <div v-if="currentStep.validationType === 'button_clicked'" class="form-group">
                     <label>Button to Click</label>
-                    <select v-model="step.validationSelectorPreset" @change="onValidationSelectorPresetChange(step)" class="selector-preset">
+                    <select v-model="currentStep.validationSelectorPreset" @change="onValidationSelectorPresetChange(currentStep)" class="selector-preset">
                       <option v-for="opt in validationButtonSelectors" :key="opt.label" :value="opt.value">
                         {{ opt.label }}
                       </option>
                     </select>
-                    <input v-model="step.validationSelector" type="text" placeholder="CSS selector for button (e.g., #run-btn)" class="selector-input">
+                    <input v-model="currentStep.validationSelector" type="text" placeholder="CSS selector for button (e.g., #run-btn)" class="selector-input">
                   </div>
 
                   <div class="form-group">
                     <label>Error message</label>
-                    <input v-model="step.validationMessage" type="text" placeholder="Complete this action to continue">
+                    <input v-model="currentStep.validationMessage" type="text" placeholder="Complete this action to continue">
                   </div>
                 </div>
               </div>
               
               <div v-else class="form-group">
                 <label>Validation</label>
-                <select v-model="step.validationType">
+                <select v-model="currentStep.validationType">
                   <option value="">No validation</option>
                   <option value="program_selected">Program selected</option>
                   <option value="architecture_selected">Architecture selected</option>
@@ -325,6 +324,7 @@ const tutorial        = reactive({ id: 'filename', name: '', description: '', st
 const exportedContent = ref('')       // tutorial has been written to local file system
 const tutorialSvg     = ref('')
 
+
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 const savedOptions = (() => {
@@ -348,6 +348,15 @@ const saveOptions = () => {
   }
 }
 
+const currentStep = computed(() => {
+  if (tutorialOptions.selectedStep === null) return null;
+  return tutorial.steps[tutorialOptions.selectedStep];
+});
+
+const stepNumber = computed(() => {
+  return tutorialOptions.selectedStep;
+});
+  
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
   { label: 'Custom', value: '' },
