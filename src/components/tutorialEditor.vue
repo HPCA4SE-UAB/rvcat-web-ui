@@ -41,6 +41,10 @@
         <div class="section tutorial-header">
           <div class="form-group left-column">
             <div class="label-input-row">
+              <label>Tutorial ID <span class="required">*</span></label>
+              <input v-model="tutorial.id" type="text" :placeholder="tutorial.id? tutorial.id+'*' : 'filename'" class="name-input">
+	    </div>
+            <div class="label-input-row">
               <label>Tutorial Name <span class="required">*</span></label>
               <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name" class="name-input">
             </div>
@@ -923,6 +927,7 @@ watch (
    () => tutorialOptions.inEditionID],
   ([newList, newID], [oldList, oldID] ) => {
     saveOptions()
+    reloadEditedTutorial()
   },
   { deep: true }
 )
@@ -946,7 +951,7 @@ watch(() => tutorialSvg.value, () => {
 const handleNodeClick = (stepId) => {
   selectedStep.value = stepId;
   console.log('🎓 Selected step:', stepId);
-  highlightNodeInSvg(stepId);
+  // highlightNodeInSvg(stepId);
 };
 
 const addClickListenersToSvg = () => {
@@ -968,7 +973,7 @@ const addClickListenersToSvg = () => {
       });
       
       node.addEventListener('mouseleave', () => {
-        if (!node.classList.contains('selected')) {
+        if (index !== selectedStep.value ) {
           node.style.filter = 'none';
         }
       });
