@@ -22,12 +22,6 @@
                 @click="addTutorial"> Add to menu </button>
         </div>
         <div class="buttons">
-          <button class="blue-button" title="Add new step to the tutorial (at the end)" 
-                @click="addStep('step')"    >    + Add Step    </button>
-          <button class="blue-button" title="Add new question to the tutorial (at the end)" 
-                @click="addStep('question')">+ Add Question</button>
-        </div>
-        <div class="buttons">
           <button class="blue-button" title="Clear draft and start fresh"
                 v-if="hasSavedContent" @click="clearDraft">  Clear Draft  </button>
         </div>
@@ -50,6 +44,12 @@
             </div>
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
+            <div class="buttons">
+              <button class="blue-button" title="Add new step to the tutorial (before current)" 
+                @click="addStep('step', stepNumber + 1)"    >    + Add Step    </button>
+              <button class="blue-button" title="Add new question to the tutorial (before current)" 
+                @click="addStep('question', stepNumber + 1)">+ Add Question</button>
+            </div>
           </div>
           <div class="form-group right-column">
             <div class="tutorial-img" @click="handleNodeClick(null)">
@@ -325,7 +325,6 @@ const tutorial        = reactive({ id: 'filename', name: '', description: '', st
 const exportedContent = ref('')       // tutorial has been written to local file system
 const tutorialSvg     = ref('')
 
-
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
 const savedOptions = (() => {
@@ -493,8 +492,17 @@ const createEmptyQuestion = () => ({
   ]
 })
 
-const addStep = (type = 'step') => {
-  tutorial.steps.push(type === 'question' ? createEmptyQuestion() : createEmptyStep())
+const addStep = (type = 'step', atIndex = null) => {
+  let insertIndex= tutorial.steps.length - 1
+  if (atIndex !== null && atIndex >= 0)
+    insertIndex = atIndex
+
+  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length)); 
+
+  const new_step = type === 'question' ? createEmptyQuestion() : createEmptyStep();
+  tutorial.steps.splice(insertIndex, 0, newStep);
+  
+  tutorialOptions.selectedStep = insertIndex;
 }
 
 // ============================================================================
@@ -975,18 +983,23 @@ const addClickListenersToSvg = () => {
     const nodes = svgElement.querySelectorAll('g.node');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
+      
       node.addEventListener('click', (event) => {
         event.stopPropagation();
         const nodeId = node.id || index;
-        node.style.filter = 'drop-shadow(0 0 3px rgba(0, 0.2, 0, 0.8))';
+        node.style.filter = 'drop-shadow(0 0 8px rgba(0, 100, 255, 0.8))';
+        node.style.stroke = '#0066ff';
+        node.style.strokeWidth = '3px';
         handleNodeClick(nodeId);
       });
+      
       node.addEventListener('mouseenter', () => {
         node.style.filter = 'drop-shadow(0 0 3px rgba(0, 0, 0, 0.3))';
+        node.style.transition = 'filter 0.15s ease';
       });
       
       node.addEventListener('mouseleave', () => {
-        if (index !== tutorialOptions.selectedStep.value ) {
+        if (index !== tutorialOptions.selectedStep ) {
           node.style.filter = 'none';
         }
       });
