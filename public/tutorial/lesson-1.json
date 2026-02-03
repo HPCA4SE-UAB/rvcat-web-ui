@@ -87,7 +87,7 @@
       "title": "Exercise 5: Run Simulation",
       "description": "Now click the 'Run' button to start the simulation with the configured parameters.",
       "selector": "#run-simulation-button",
-      "validation": 
+      "validation": { 
 	"type":  "button_clicked",
         "selector": "#run-simulation-button",
         "message":  "Complete this action to continue"
