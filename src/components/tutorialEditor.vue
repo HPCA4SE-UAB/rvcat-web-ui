@@ -357,16 +357,15 @@ const predefinedSelectors = [
   { label: 'Processor Selector',    value: '#processors-list' },
   { label: '── Configuration Inputs ──', value: '', disabled: true },
   { label: 'ROB Size Input',        value: '#rob-size' },
-  { label: 'Number of Iterations',  value: '#num-iters' },
+  { label: 'Simulation iterations', value: '#simulation-iterations' },
   { label: '── Buttons ──',         value: '', disabled: true },
   { label: 'Run Simulation Button', value: '#run-simulation-button' },
   { label: '── Navigation Tabs ──', value: '', disabled: true },
-  { label: 'Simulation Tab',        value: 'button:contains(\"Simulation\")' },
-  { label: 'Static Analysis Tab',   value: 'button:contains(\"Static Analysis\")' },
-  { label: 'Timeline Tab',          value: 'button:contains(\"Timeline\")' },
-  { label: 'Comparison Tab',        value: 'button:contains(\"Comparison\")' },
-  { label: 'Processor Editor Tab',  value: 'button:contains(\"Processor\")' },
-  { label: 'Program Editor Tab',    value: 'button:contains(\"Program\")' }
+  { label: 'Simulation Tab',        value: '#simulation-button' },
+  { label: 'Static Analysis Tab',   value: '#analysis-button' },
+  { label: 'Timeline Tab',          value: '#timeline-button' },
+  { label: 'Processor Editor Tab',  value: '#processor-button' },
+  { label: 'Program Editor Tab',    value: '#program-button' }
 ]
 
 const validationInputSelectors = [
@@ -618,8 +617,8 @@ const convertStepForExport = (step) => {
   return s
 }
 
-const buildTutorialData = () => ({
-  id:          tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+const buildTutorialData = (filename) => ({
+  id:          filename,
   name:        tutorial.name,
   description: tutorial.description,
   steps:       tutorial.steps
@@ -727,40 +726,43 @@ const clearDraft = () => {
     tutorial.description = ''
     tutorial.steps       = []
     addStep()
-    clearSavedData()
   }
 }
 
 const finishTutorial = () => {
   if (!showValidationErrors()) return
-  downloadJSON()
-  emit('tutorialFinished', buildTutorialData())
-  clearSavedData()
-  alert('Tutorial finished! It has been added to the tutorial menu.')
-  emit('close')
-}
+  let filename = ''
+  if (false) 
+    filename = downloadJSON()
+  else 
+    filename = tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
-/*
-const addFinishedTutorial = (data) => {
-  data.steps = processStepActions(data.steps)
-  tutorialProgress.available.push(data)
-  console.log(`👨‍🎓✅ Added tutorial: ${data.name}`)
-} */
+  tutorialOptions.available.push(filename)
+  const data = buildTutorialData(filename)
+  localStorage.setItem(`tutorial.${filename}`, JSON.stringify(data, null, 2))
+ 
+  console.log(`👨‍🎓✅ Added tutorial: ${filename}`)
+  simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
+  clearDraft()
+  alert('Tutorial finished! It has been added to the tutorial menu.')
+}
 
 const downloadJSON = () => {
   if (!showValidationErrors()) return
-  
-  const data = buildTutorialData()
+
+  const filename = tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const data = buildTutorialData(filename)
   const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url  = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href     = url
-  link.download = `${data.id}.json`
+  link.download = `${filename}.json`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+  return filename
 }
   
 // ============================================================================
