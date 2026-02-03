@@ -4,12 +4,14 @@
   "description": "A tour through all the application tabs",
   "steps": [
     {
+      "type": "step",
       "title": "Welcome to RVCAT-WEB!",
       "description": "This tutorial will show you the different parts of the application. Let's start with the Simulation tab.",
       "selector": ".header-title",
       "position": "bottom"
     },
     {
+      "type": "step",
       "title": "Simulation Tab",
       "description": "Here you can run simulations of your code. You get global performance metrics and the breakdown of the critical path of the total execution.",
       "selector": "button:contains(\"Simulation\")",
@@ -17,6 +19,7 @@
       "action": "switchTo:simulationComponent"
     },
     {
+      "type": "step",
       "title": "Static Analysis",
       "description": "The static performance analysis of the program's code detects potential bottlenecks and visualizes the data dependence graph.",
       "selector": "button:contains(\"Static Analysis\")",
@@ -24,6 +27,7 @@
       "action": "switchTo:staticAnalysisComponent"
     },
     {
+      "type": "step",
       "title": "Timeline",
       "description": "The Timeline shows the temporal evolution of the program's execution.",
       "selector": "button:contains(\"Timeline\")",
@@ -31,6 +35,7 @@
       "action": "switchTo:timelineComponent"
     },
     {
+      "type": "step",
       "title": "Processor Settings",
       "description": "Here you can configure processor parameters for simulations.",
       "selector": "button:contains(\"Processor\")",
@@ -38,6 +43,7 @@
       "action": "switchToFull:processor"
     },
     {
+      "type": "step",
       "title": "Program Editor",
       "description": "Here you can write and edit your programs for simulation.",
       "selector": "button:contains(\"Program\")",
@@ -45,6 +51,7 @@
       "action": "switchToFull:program"
     },
     {
+      "type": "step",
       "title": "Tutorial Editor",
       "description": "Here you can edit a tutorial (even this tutorial)",
       "selector": "button:contains(\"Tutorial\")",
@@ -52,7 +59,8 @@
       "action": "switchToFull:tutorial"
     },
     {
-      "title": "Tutorial Complete!",
+      "type": "step",
+      "title": "Navigation Completed!",
       "description": "Congratulations! You have completed the navigation tour",
       "selector": ".header-title",
       "position": "bottom",
