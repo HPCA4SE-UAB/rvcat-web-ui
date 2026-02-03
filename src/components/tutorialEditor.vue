@@ -60,7 +60,7 @@
 
         <!-- Card: step/question -->
         <div class="section">
-          <div :key="tutorialOptions.selectedStep" :step="tutorial.steps[key]" class="step-card" :class="{ 'question-card': step.type === 'question' }">
+          <div :index="tutorialOptions.selectedStep" :step="tutorial.steps[tutorialOptions.selectedStep]" class="step-card" :class="{ 'question-card': step.type === 'question' }">
             <div class="form-group left-column">
               <span class="step-number" :class="{ 'question-number': step.type === 'question' }">{{ index + 1 }}</span>
               <label>{{step.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
