@@ -61,7 +61,7 @@
       "title": "Exercise 3: Adjust Configuration",
       "description": "Now we'll modify some parameters. Change the ROB (Reorder Buffer) size to 25 .",
       "selector": "#rob-size",
-      "position": "right"
+      "position": "right",
       "validation": {
         "type":  "input_value",
         "value": "25",
@@ -74,7 +74,7 @@
       "title": "Exercise 4: Set Iterations",
       "description": "Configure the number of simulation iterations. Enter a value of 500 iterations in the Simulation tab.",
       "selector": "#simulation-iterations",
-      "position": "bottom"
+      "position": "bottom",
       "validation": {
         "type":  "input_value",
         "value": "500",
