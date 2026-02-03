@@ -338,8 +338,9 @@ const savedOptions = (() => {
   }
 })()
 
-const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
 
+const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
+  
 const saveOptions = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
