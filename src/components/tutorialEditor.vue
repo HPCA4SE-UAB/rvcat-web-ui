@@ -62,7 +62,9 @@
         <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
-              <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }">{{ stepNumber+1 }}</span>
+              <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }">
+                {{ parseInt(stepNumber) + 1 }}
+              </span>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
