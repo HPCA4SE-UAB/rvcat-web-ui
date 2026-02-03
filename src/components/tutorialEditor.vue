@@ -19,7 +19,7 @@
           <button class="blue-button" title="Load new Tutorial" 
                 @click="uploadTutorial"> Upload   </button>
           <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
-                @click="finishTutorial"> Add to menu </button>
+                @click="addTutorial"> Add to menu </button>
         </div>
         <div class="buttons">
           <button class="blue-button" title="Add new step to the tutorial (at the end)" 
@@ -317,13 +317,13 @@ const STORAGE_KEY = 'tutorialOptions'
 
 const defaultOptions = { // save this & tutorialTemp
   available:   [],
-  inEditionID: ''
+  inEditionID: '',
+  selectedStep: 0
 }
 
-const tutorial        = reactive({ id: '', name: '', description: '', steps: [] })   // default edited
-const exportedContent = ref('')              // tutorial has been written to local file system
+const tutorial        = reactive({ id: 'filename', name: '', description: '', steps: [] })   // default edited
+const exportedContent = ref('')       // tutorial has been written to local file system
 const tutorialSvg     = ref('')
-const selectedStep    = ref(0);
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
@@ -551,7 +551,7 @@ const handleImageUpload = (event, step, imageField) => {
     return
   }
   
-  const reader = new FileReader()
+  const reader  = new FileReader()
   reader.onload = (e) => { step[imageField] = e.target.result }
   reader.readAsDataURL(file)
 }
@@ -685,7 +685,7 @@ const showValidationErrors = () => {
 
 
 // ============================================================================
-// TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, finishTutorial, downloadJSON
+// TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, addTutorial, downloadJSON
 // ============================================================================
 const initTutorial = async () => {
   await initResource({
@@ -699,14 +699,10 @@ const initTutorial = async () => {
 };
 
 const reloadEditedTutorial = async () => {
-  if (tutorialOptions.inEditionID === "") {
-    addStep()
-    tutorialSvg.value = `<div class="error">Failed to render graph</div>`;
+  if (tutorialOptions.inEditionID === "")
     return
-  }
   try {
-    console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
-    const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
+    const jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
     if (jsonString) {
       const data           = JSON.parse(jsonString)
       tutorial.id          = tutorialOptions.inEditionID || ''
@@ -714,6 +710,7 @@ const reloadEditedTutorial = async () => {
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
       if (!tutorial.steps.length) addStep()
+      console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     } else {
       addStep()
     }
@@ -725,21 +722,21 @@ const reloadEditedTutorial = async () => {
 
 const clearDraft = () => {
   if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
-    tutorial.id          = ''
+    tutorial.id          = 'newTutorial'
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
     addStep()
+    tutorialOptions.inEditionID = "newTutorial"
+    tutorialOptions.selectedStep = 0
   }
 }
 
-const finishTutorial = () => {
+const addTutorial = () => {
   if (!showValidationErrors()) return
-  let filename = ''
+  let filename = tutorial.id
   if (false) 
     filename = downloadJSON()
-  else 
-    filename = tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
   tutorialOptions.available.push(filename)
   const data = buildTutorialData(filename)
@@ -748,13 +745,13 @@ const finishTutorial = () => {
   console.log(`👨‍🎓✅ Added tutorial: ${filename}`)
   simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
   clearDraft()
-  alert('Tutorial finished! It has been added to the tutorial menu.')
+  alert('Tutorial has been added to the tutorial menu.')
 }
 
 const downloadJSON = () => {
   if (!showValidationErrors()) return
 
-  const filename = tutorial.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const filename = tutorial.id
   const data = buildTutorialData(filename)
   const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
@@ -827,18 +824,23 @@ const uploadTutorial = () => {
     try {
       const data = JSON.parse(await file.text())
       
-      if (!data.name || !data.steps?.length) {
+      if (!data.id || !data.name || !data.steps?.length) {
         alert('Invalid tutorial file format')
         return
       }
       
+      tutorial.id          = data.id          || ''
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps.map(convertUploadedStep)
+
+      tutorialOptions.inEditionID  = data.id
+      tutorialOptions.selectedStep = 0
       
+      console.log('🎓📥 Tutorial loaded from local file system', tutorial.name);
       alert('Tutorial loaded successfully!')
     } catch (err) {
-      console.error('Failed to load tutorial:', err)
+      console.error('🎓❌ Failed to load tutorial:', err)
       alert('Failed to load tutorial file. Please check the file format.')
     }
   }
@@ -861,8 +863,6 @@ async function processTutorialUpdate(t) {
       console.log('🎓📥 Dot Code', dotCode);
       
       const svg = await createGraphVizGraph(dotCode);
-      console.log('🎓📥 SVG', svg.outerHTML);
-      
       tutorialSvg.value = svg.outerHTML;
     }
   } catch (error) {
@@ -924,10 +924,12 @@ watch(tutorial, (t) => {
   
 watch (
   [() => tutorialOptions.available, 
-   () => tutorialOptions.inEditionID],
-  ([newList, newID], [oldList, oldID] ) => {
+   () => tutorialOptions.inEditionID,
+   () => tutorialOptions.selectedStep],
+  ([newList, newID, newStep], [oldList, oldID, oldStep] ) => {
     saveOptions()
-    reloadEditedTutorial()
+    if (newList !== oldList || newID !== oldID)
+      reloadEditedTutorial()
   },
   { deep: true }
 )
@@ -949,9 +951,8 @@ watch(() => tutorialSvg.value, () => {
 });
 
 const handleNodeClick = (stepId) => {
-  selectedStep.value = stepId;
+  tutorialOptions.selectedStep.value = stepId;
   console.log('🎓 Selected step:', stepId);
-  // highlightNodeInSvg(stepId);
 };
 
 const addClickListenersToSvg = () => {
@@ -966,6 +967,7 @@ const addClickListenersToSvg = () => {
       node.addEventListener('click', (event) => {
         event.stopPropagation();
         const nodeId = node.id || index;
+        node.style.filter = 'drop-shadow(0 0 3px rgba(0, 0.2, 0, 0.8))';
         handleNodeClick(nodeId);
       });
       node.addEventListener('mouseenter', () => {
@@ -973,7 +975,7 @@ const addClickListenersToSvg = () => {
       });
       
       node.addEventListener('mouseleave', () => {
-        if (index !== selectedStep.value ) {
+        if (index !== tutorialOptions.selectedStep.value ) {
           node.style.filter = 'none';
         }
       });
