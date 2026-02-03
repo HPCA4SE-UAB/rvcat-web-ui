@@ -46,9 +46,9 @@
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
             <div class="buttons">
               <button class="blue-button" title="Add new step to the tutorial (before current)" 
-                @click="addStep('step', stepNumber + 1)"    >    + Add Step    </button>
+                @click="addStep('step', stepNumber)">    + Add Step    </button>
               <button class="blue-button" title="Add new question to the tutorial (before current)" 
-                @click="addStep('question', stepNumber + 1)">+ Add Question</button>
+                @click="addStep('question', stepNumber)">+ Add Question</button>
               <button class="blue-button" title="Duplicate current step" 
                 @click="addStep(null, stepNumber)">+ Duplicate</button>
             </div>
@@ -65,11 +65,10 @@
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
               <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }">
-                {{ stepNumber }}
+                {{ stepNumber }} <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
               </span>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
-              <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
               <label>Description</label>
               <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
             </div>
@@ -487,14 +486,16 @@ const addStep = (type = 'step', atIndex = null) => {
   if (atIndex !== null && atIndex >= 0)
     insertIndex = atIndex
 
-  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length-1)); 
+  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length - 1)); 
 
   if (!type) {  // duplicate current
-    newStep = tutorial.steps[insertIndex]
+    // Create deep copy
+    newStep = JSON.parse(JSON.stringify(tutorial.steps[insertIndex]));
+    newStep.title = `${newStep.title} (copy)`;
     insertIndex = insertIndex+1
   }
   else
-    newStep = type === 'question' ? createEmptyQuestion() : createEmptyStep();
+    newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
   
   tutorial.steps.splice(insertIndex, 0, newStep);
   tutorialOptions.selectedStep = insertIndex;
@@ -929,6 +930,7 @@ digraph "Tutorial Graph" {
 // ============================================================================
 let saveTimeout      = null;
 let lastSelectedNode = null;
+let clickListeners   = [];     // To clean listeners
 
 watch(tutorial, (t) => {
   // Cancel previous timeout
@@ -972,42 +974,130 @@ const addClickListenersToSvg = () => {
   nextTick(() => {
     const svgElement = document.querySelector('.tutorial-img svg');
     if (!svgElement) return;
-    
+
+    removeClickListeners();
+
     // Add event listener to all nodes
     const nodes = svgElement.querySelectorAll('g.node');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
-      
-      node.addEventListener('click', (event) => {
+
+      const handleClick = (event) => {
         event.stopPropagation();
         const ID = node.id || index;
-        node.style.filter = 'drop-shadow(0 0 8px rgba(0, 100, 255, 0.8))';
-        node.style.stroke = '#0066ff';
-        node.style.strokeWidth = '3px';
-        tutorialOptions.selectedStep = ID;
+        
         console.log('🎓 Selected step:', ID);
+        
+        // 1. DESELECT previous node
         if (lastSelectedNode && lastSelectedNode !== node) {
-          lastSelectedNode.style.filter = 'none';
-          node.style.stroke      = '#0011bb';
-          node.style.strokeWidth = '1px';
+          resetNodeStyle(lastSelectedNode);
         }
-        lastSelectedNode = node
-      });
+        
+        // 2. SELECT new node
+        highlightNodeAsSelected(node);
+        
+        // 3. Update State
+        lastSelectedNode = node;
+        tutorialOptions.selectedStep = parseInt(ID) || index;
+      };
+
+      const handleMouseEnter = () => {
+        if (node !== lastSelectedNode) {
+          node.style.filter     = 'drop-shadow(0 0 3px rgba(0, 0, 0, 0.3))';
+          node.style.transition = 'filter 0.15s ease';
+        }
+      };
       
-      node.addEventListener('mouseenter', () => {
-        node.style.filter = 'drop-shadow(0 0 3px rgba(0, 0, 0, 0.3))';
-        node.style.transition = 'filter 0.15s ease';
-      });
-      
-      node.addEventListener('mouseleave', () => {
-        if (index !== tutorialOptions.selectedStep ) {
+      const handleMouseLeave = () => {
+        if (node !== lastSelectedNode) {
           node.style.filter = 'none';
         }
+      };
+  
+      node.addEventListener('click',      handleClick);
+      node.addEventListener('mouseenter', handleMouseEnter);
+      node.addEventListener('mouseleave', handleMouseLeave);
+
+      clickListeners.push({
+        node,
+        click: handleClick,
+        enter: handleMouseEnter,
+        leave: handleMouseLeave
       });
+      
     });
   });
 };
+
+const removeClickListeners = () => {
+  clickListeners.forEach(({ node, click, enter, leave }) => {
+    node.removeEventListener('click', click);
+    node.removeEventListener('mouseenter', enter);
+    node.removeEventListener('mouseleave', leave);
+  });
+  clickListeners = [];
+};
+
+const highlightNodeAsSelected = (node) => {
+  node.style.filter = 'drop-shadow(0 0 10px rgba(0, 100, 255, 0.8))';
+  const shapes = node.querySelectorAll('ellipse, polygon, path, rect');
+  shapes.forEach(shape => {
+    if (!shape.hasAttribute('data-original-stroke')) {
+      shape.setAttribute('data-original-stroke', 
+        shape.getAttribute('stroke') || '#000000');
+      shape.setAttribute('data-original-stroke-width', 
+        shape.getAttribute('stroke-width') || '1');
+    }
+    
+    shape.setAttribute('stroke', '#0066ff');
+    shape.setAttribute('stroke-width', '3');
+    shape.style.stroke = '#0066ff';
+    shape.style.strokeWidth = '3px';
+  });
+
+  node.classList.add('selected');
+};
+
+const resetNodeStyle = (node) => {
+  node.style.filter = 'none';
+  node.classList.remove('selected');
   
+  const shapes = node.querySelectorAll('ellipse, polygon, path, rect');
+  shapes.forEach(shape => {
+    const originalStroke      = shape.getAttribute('data-original-stroke');
+    const originalStrokeWidth = shape.getAttribute('data-original-stroke-width');
+    
+    if (originalStroke) {
+      shape.setAttribute('stroke', originalStroke);
+      shape.style.stroke = originalStroke;
+    }
+    if (originalStrokeWidth) {
+      shape.setAttribute('stroke-width', originalStrokeWidth);
+      shape.style.strokeWidth = originalStrokeWidth;
+    }
+  });
+};
+
+const selectNodeByIndex = (index) => {
+  const svgElement = document.querySelector('.tutorial-img svg');
+  if (!svgElement) return;
+  
+  const nodes = svgElement.querySelectorAll('g.node');
+  if (index >= 0 && index < nodes.length) {
+    const node = nodes[index];
+    
+    // Deselect
+    if (lastSelectedNode && lastSelectedNode !== node) {
+      resetNodeStyle(lastSelectedNode);
+    }
+    
+    // Select new
+    highlightNodeAsSelected(node);
+    lastSelectedNode = node;
+    tutorialOptions.selectedStep = index;
+  }
+};
+
 // ============================================================================
 // LIFECYCLE
 // ============================================================================
@@ -1021,6 +1111,8 @@ onUnmounted(() => {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
+  removeClickListeners();
+  lastSelectedNode = null;
   console.log('🎓🧹 TutorialEditor mounted')
 })
 
