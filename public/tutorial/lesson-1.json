@@ -4,89 +4,152 @@
   "description": "A practical lesson to learn the basic concepts of the simulator step by step",
   "steps": [
     {
+      "type": "step",
       "title": "Welcome to Lesson 1!",
       "description": "In this first lesson you'll learn to use RVCAT-WEB from scratch. Let's start by making sure you're on the correct tab.",
       "selector": ".header-title",
       "position": "bottom",
-      "action": "switchTo:simulationComponent"
+      "action": "switchTo:simulationComponent",
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "",
+      "validationValue: "",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Know the Interface",
       "description": "The application is divided into three main areas: Program (top left), Processor (bottom left) and Results (right). Let's start with the program.",
       "selector": ".program",
-      "position": "right"
+      "position": "right",
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "",
+      "validationValue: "",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Processor Area",
       "description": "Here you see the processor state: registers, memory and configuration. This is where you'll observe changes during simulation.",
       "selector": ".processor",
-      "position": "right"
+      "position": "right",
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "",
+      "validationValue: "",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Results Area",
       "description": "In this area simulation results, graphics and analysis are shown according to the active tab.",
       "selector": ".results",
-      "position": "left"
+      "position": "left",
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "",
+      "validationValue: "",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Exercise 1: Select a Program",
       "description": "Now let's do the first practical exercise. Find the option to select a program and choose 'v1' to start working.",
       "selector": "#programs-list",
       "position": "right",
-      "validation": {
-        "type": "program_selected",
-        "value": "v1",
-        "message": "You must select the 'v1' program to continue with the lesson"
-      }
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "program_selected",
+      "validationValue: "v1",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "You must select the 'v1' program to continue with the lesson",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Exercise 2: Configure Architecture",
       "description": "Perfect! Now change the processor architecture configuration to 'B2'.",
       "selector": "#processors-list",
       "position": "right",
-      "validation": {
-        "type": "architecture_selected",
-        "value": "B2",
-        "message": "Select the 'B2' architecture to continue"
-      }
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "architecture_selected",
+      "validationValue: "B2",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "Select the 'B2' architecture to continue",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Exercise 3: Adjust Configuration",
       "description": "Now we'll modify some parameters. Change the ROB (Reorder Buffer) size to 25 .",
       "selector": "#rob-size",
       "position": "right",
-      "validation": {
-        "type": "input_value",
-        "selector": "#rob-size",
-        "value": "25",
-        "message": "Enter the value 25 in the ROB field"
-      }
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "input_value",
+      "validationValue: "25",
+      "validationSelector: "#rob-size",
+      "validationMinValue: "",
+      "validationMessage:  "Enter the value 25 in the ROB field",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Exercise 4: Set Iterations",
       "description": "Configure the number of simulation iterations. Enter a value of 500 iterations in the Simulation tab.",
       "selector": "#simulation-iterations",
       "position": "bottom",
-      "validation": {
-        "type": "input_value",
-        "selector": "#simulation-iterations",
-        "value": "500",
-        "message": "Enter the value 500 for the number of iterations in the Simulation tab"
-      }
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "input_value",
+      "validationValue: "500",
+      "validationSelector: "#simulation-iterations",
+      "validationMinValue: "",
+      "validationMessage:  "Enter the value 500 for the number of iterations in the Simulation tab",
+      "validationSelectorPreset: ""
     },
-        {
+    {
+      "type": "step",
       "title": "Exercise 5: Run Simulation",
       "description": "Now click the 'Run' button to start the simulation with the configured parameters.",
       "selector": "#run-simulation-button",
       "position": "bottom",
-      "validation": {
-        "type": "button_clicked",
-        "message": "Complete this action to continue",
-        "selector": "#run-simulation-button"
-      }
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "button_clicked",
+      "validationValue: "",
+      "validationSelector: "#run-simulation-button",
+      "validationMinValue: "",
+      "validationMessage:  "Complete this action to continue",
+      "validationSelectorPreset: ""
     },
     {
+      "type": "step",
       "title": "Congratulations!",
+      "stepImage:       "",
+      "selectorPreset:  "",
+      "validationType:  "",
+      "validationValue: "",
+      "validationSelector: "",
+      "validationMinValue: "",
+      "validationMessage:  "",
+      "validationSelectorPreset: "",
       "description": "You have completed Lesson 1! You now know the basic interface and how to configure simulations.",
       "selector": ".results",
       "position": "left"
