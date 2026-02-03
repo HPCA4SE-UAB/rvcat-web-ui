@@ -499,7 +499,7 @@ const addStep = (type = 'step', atIndex = null) => {
 
   insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length)); 
 
-  const new_step = type === 'question' ? createEmptyQuestion() : createEmptyStep();
+  const newStep = type === 'question' ? createEmptyQuestion() : createEmptyStep();
   tutorial.steps.splice(insertIndex, 0, newStep);
   
   tutorialOptions.selectedStep = insertIndex;
@@ -929,7 +929,8 @@ digraph "Tutorial Graph" {
 // ============================================================================
 // WATCHES: globalState, tutorial, options
 // ============================================================================
-let saveTimeout = null;
+let saveTimeout      = null;
+let lastSelectedNode = null;
 
 watch(tutorial, (t) => {
   // Cancel previous timeout
@@ -969,11 +970,6 @@ watch(() => tutorialSvg.value, () => {
   addClickListenersToSvg();
 });
 
-const handleNodeClick = (stepId) => {
-  tutorialOptions.selectedStep = stepId;
-  console.log('🎓 Selected step:', stepId);
-};
-
 const addClickListenersToSvg = () => {
   nextTick(() => {
     const svgElement = document.querySelector('.tutorial-img svg');
@@ -990,7 +986,14 @@ const addClickListenersToSvg = () => {
         node.style.filter = 'drop-shadow(0 0 8px rgba(0, 100, 255, 0.8))';
         node.style.stroke = '#0066ff';
         node.style.strokeWidth = '3px';
-        handleNodeClick(nodeId);
+        tutorialOptions.selectedStep = stepId;
+        console.log('🎓 Selected step:', stepId);
+        if (lastSelectedNode && lastSelectedNode !== node) {
+          lastSelectedNode.style.filter = 'none';
+          node.style.stroke      = '#0011bb';
+          node.style.strokeWidth = '1px';
+        }
+        lastSelectedNode = node
       });
       
       node.addEventListener('mouseenter', () => {
