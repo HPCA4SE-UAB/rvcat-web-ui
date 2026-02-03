@@ -8,7 +8,14 @@
       "title": "Welcome to RVCAT-WEB!",
       "description": "This tutorial will show you the different parts of the application. Let's start with the Simulation tab.",
       "selector": ".header-title",
-      "position": "bottom"
+      "action": "",
+      "position": "bottom",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -16,7 +23,13 @@
       "description": "Here you can run simulations of your code. You get global performance metrics and the breakdown of the critical path of the total execution.",
       "selector": "button:contains(\"Simulation\")",
       "position": "bottom",
-      "action": "switchTo:simulationComponent"
+      "action": "switchTo:simulationComponent",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -24,7 +37,13 @@
       "description": "The static performance analysis of the program's code detects potential bottlenecks and visualizes the data dependence graph.",
       "selector": "button:contains(\"Static Analysis\")",
       "position": "bottom",
-      "action": "switchTo:staticAnalysisComponent"
+      "action": "switchTo:staticAnalysisComponent",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -32,7 +51,13 @@
       "description": "The Timeline shows the temporal evolution of the program's execution.",
       "selector": "button:contains(\"Timeline\")",
       "position": "left",
-      "action": "switchTo:timelineComponent"
+      "action": "switchTo:timelineComponent",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -40,7 +65,13 @@
       "description": "Here you can configure processor parameters for simulations.",
       "selector": "button:contains(\"Processor\")",
       "position": "bottom",
-      "action": "switchToFull:processor"
+      "action": "switchToFull:processor",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -48,7 +79,13 @@
       "description": "Here you can write and edit your programs for simulation.",
       "selector": "button:contains(\"Program\")",
       "position": "bottom",
-      "action": "switchToFull:program"
+      "action": "switchToFull:program",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -56,7 +93,13 @@
       "description": "Here you can edit a tutorial (even this tutorial)",
       "selector": "button:contains(\"Tutorial\")",
       "position": "bottom",
-      "action": "switchToFull:tutorial"
+      "action": "switchToFull:tutorial",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     },
     {
       "type": "step",
@@ -64,7 +107,13 @@
       "description": "Congratulations! You have completed the navigation tour",
       "selector": ".header-title",
       "position": "bottom",
-      "action": "switchToFull:tutorial"
+      "action": "switchToFull:tutorial",
+      "validationType":  "button_clicked",
+      "validationSelector": "#run-simulation-button",
+      "validationMessage":  "Complete this action to continue",
+      "validationValue": "",
+      "validationMinValue": "",
+      "validationSelectorPreset": ""
     }
   ]
 }
