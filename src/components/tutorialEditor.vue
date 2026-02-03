@@ -48,7 +48,7 @@
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
           <div class="form-group right-column">
-            <div class="pipeline-img">
+            <div class="pipeline-img" @click="handleNodeClick(null)">
               <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
             </div>
           </div>
@@ -68,12 +68,7 @@
               </div>
             </div>
 
-            <template v-if="step.type === 'step'">
-              <div class="form-group">
-                <label>Description</label>
-                <textarea v-model="step.description" placeholder="What happens in this step"></textarea>
-              </div>
-              
+            <template v-if="step.type === 'step'">             
               <div class="form-group right-column">
                 <label>Step Image (optional)</label>
                 <div class="image-upload-section">
@@ -323,7 +318,8 @@ const defaultOptions = { // save this & tutorialTemp
 
 const tutorial        = reactive({ name: '', description: '', steps: [] })   // default edited
 const exportedContent = ref('')              // tutorial has been written to local file system
-const pipelineSvg      = ref('')
+const pipelineSvg     = ref('')
+const selectedStep    = ref(null);
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
@@ -827,16 +823,18 @@ digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
   subgraph cluster_0 {
    style="filled,rounded"; color=grey; tooltip="Tutorial flow-graph"; fillcolor=lightgrey;
-   node [style=filled,margin="0.05,0.05", fontname="courier"]; 
+   node [style=filled,margin="0.05,0.05", fontname="courier", URL="javascript:void(0)"]; 
 `
   for (let i = 0; i < num_steps; i++) {
     let color = "blue"
     let fill  = "lightblue"
-    if (tut.steps[i].type !== "step") {
+    let type  = tut.steps[i].type
+    if (type !== "step") {
       color = "purple"
       fill  = "mediumpurple1"
     } 
-    dot_code += `    a${i} [color=${color},fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,tooltip="step ${i}"]\n`
+    dot_code += `    a${i} [color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
+                            tooltip="click to edit this ${type}", onclick="handleNodeClick(${i})", id="node-${i}"]\n`
   }
   
   for (let i = 0; i < (num_steps-1); i++) {
@@ -889,6 +887,44 @@ watch(() => simState.state, (newValue, oldValue) => {
     })();
   }
 });
+
+// Cuando el SVG se actualice, agregar listeners
+watch(() => pipelineSvg.value, () => {
+  addClickListenersToSvg();
+});
+
+const handleNodeClick = (stepId) => {
+  selectedStep.value = stepId;
+  console.log('🎓 Selected step:', stepId);
+  highlightNodeInSvg(stepId);
+};
+
+const addClickListenersToSvg = () => {
+  nextTick(() => {
+    const svgElement = document.querySelector('.pipeline-img svg');
+    if (!svgElement) return;
+    
+    // Agregar event listener a todos los nodos
+    const nodes = svgElement.querySelectorAll('g.node');
+    nodes.forEach((node, index) => {
+      node.style.cursor = 'pointer';
+      node.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const nodeId = node.id || index;
+        handleNodeClick(nodeId);
+      });
+      node.addEventListener('mouseenter', () => {
+        node.style.filter = 'drop-shadow(0 0 3px rgba(0, 0, 0, 0.3))';
+      });
+      
+      node.addEventListener('mouseleave', () => {
+        if (!node.classList.contains('selected')) {
+          node.style.filter = 'none';
+        }
+      });
+    });
+  });
+};
   
 // ============================================================================
 // LIFECYCLE
@@ -896,6 +932,7 @@ watch(() => simState.state, (newValue, oldValue) => {
 
 onMounted(() => {
   console.log('🎓🎯 TutorialEditor mounted')
+   addClickListenersToSvg();
 });
 
 onUnmounted(() => {
@@ -1009,6 +1046,23 @@ onUnmounted(() => {
   .pipeline-img svg path {
     stroke-width: 2px !important;
   }
+  
+/* Estilos CSS para nodos seleccionados */
+.pipeline-img g.node.selected ellipse,
+.pipeline-img g.node.selected polygon,
+.pipeline-img g.node.selected path {
+  stroke-width: 3px !important;
+  stroke:       #0066ff !important;
+  filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
+}
+
+.pipeline-img g.node:hover ellipse,
+.pipeline-img g.node:hover polygon,
+.pipeline-img g.node:hover path {
+  stroke-width: 2px !important;
+  stroke:       #444444 !important;
+  cursor:       pointer;
+}
 
 .form-group {
   margin-bottom: 3px;
