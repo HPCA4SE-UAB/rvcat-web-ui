@@ -133,13 +133,13 @@
                   </select>
                 </div>
 
-                <div v-if="step.validationType" class="validation-details">
+                <div v-if="currentStep.validationType" class="validation-details">
                   <div v-if="currentStep.validationType === 'program_selected'" class="form-group">
                     <label>Program name</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="rec, fact, sum, etc.">
                   </div>
 
-                  <div v-if="step.validationType === 'architecture_selected'" class="form-group">
+                  <div v-if="currentStep.validationType === 'architecture_selected'" class="form-group">
                     <label>Architecture name</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="baseline, base2, ooo, etc.">
                   </div>
