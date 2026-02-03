@@ -68,7 +68,6 @@
               <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
               <label>Description</label>
               <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
-              </div>
             </div>
 
             <template v-if="currentStep.type === 'step'">             
