@@ -411,7 +411,7 @@ const validationInputSelectors = [
   { label: 'Show internal dependences',       value: '#show-internal-dependences' },
   { label: 'Show latency dependences',        value: '#show-latency-dependences' },
   { label: 'Show instruction dependences',    value: '#show-instruction-dependences' },
-  { label: 'Show full dependences',           value: '#show-intfullernal-dependences' },
+  { label: 'Show full dependences',           value: '#show-intfull-dependences' },
   { label: 'Open full dependence graph',      value: '#open-full-dependence-graph' },
 
   { label: 'Performance bound information',   value: '#performance-bound' },
@@ -883,8 +883,8 @@ digraph "Tutorial Graph" {
       color = "purple"
       fill  = "mediumpurple1"
     } 
-    dot_code += `    a${i} [color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
-                            tooltip="click to edit this ${type}", onclick="handleNodeClick(${i})", id="node-${i}"]\n`
+    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
+                            tooltip="Click to edit this ${type}"]\n`
   }
   
   for (let i = 0; i < (num_steps-1); i++) {
@@ -954,7 +954,7 @@ const addClickListenersToSvg = () => {
     const svgElement = document.querySelector('.tutorial-img svg');
     if (!svgElement) return;
     
-    // Agregar event listener a todos los nodos
+    // Add event listener to all nodes
     const nodes = svgElement.querySelectorAll('g.node');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
