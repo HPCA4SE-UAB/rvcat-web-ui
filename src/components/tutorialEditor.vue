@@ -48,8 +48,8 @@
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
           </div>
           <div class="form-group right-column">
-            <div class="pipeline-img" @click="handleNodeClick(null)">
-              <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+            <div class="tutorial-img" @click="handleNodeClick(null)">
+              <div v-html="tutorialSvg" v-if="tutorialSvg"></div>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@
               <div class="form-group right-column">
                 <label>Step Image (optional)</label>
                 <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleStepImageUpload(e, step)" class="image-input">
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, step, 'stepImage')" class="image-input">
                   <div v-if="step.stepImage" class="image-preview">
                     <img :src="step.stepImage" alt="Step image preview">
                     <button @click="step.stepImage = ''" class="remove-image-btn" type="button">× Remove</button>
@@ -239,7 +239,7 @@
               <div class="form-group">
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, step)" class="image-input">
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, step, 'questionImage')" class="image-input">
                   <div v-if="step.questionImage" class="image-preview">
                     <img :src="step.questionImage" alt="Question image preview">
                     <button @click="step.questionImage = ''" class="remove-image-btn" type="button">× Remove</button>
@@ -316,10 +316,10 @@ const defaultOptions = { // save this & tutorialTemp
   inEditionID: ''
 }
 
-const tutorial        = reactive({ name: '', description: '', steps: [] })   // default edited
+const tutorial        = reactive({ id: '', name: '', description: '', steps: [] })   // default edited
 const exportedContent = ref('')              // tutorial has been written to local file system
-const pipelineSvg     = ref('')
-const selectedStep    = ref(null);
+const tutorialSvg     = ref('')
+const selectedStep    = ref(0);
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
@@ -371,17 +371,73 @@ const predefinedSelectors = [
 
 const validationInputSelectors = [
   { label: 'Custom',               value: '' },
+
   { label: 'ROB Size',             value: '#rob-size' },
   { label: 'Dispatch Width',       value: '#dispatch-width' },
   { label: 'Retire Width',         value: '#retire-width' },
+
   { label: 'INT latency',          value: '#INT-latency' },
-  { label: 'Check of INT instructions available on Port0', value: '#Port0-INT-check' },
+  { label: 'BRANCH latency',       value: '#BRANCH-latency' },
+  { label: 'MEM.LOAD latency',     value: '#MEM.LOAD-latency' },
+  { label: 'MEM.STR latency',      value: '#MEM.STR-latency' },
+  { label: 'MEM.VLOAD latency',    value: '#MEM.VLOAD-latency' },
+  { label: 'MEM.VSTR latency',     value: '#MEM.VSTR-latency' },
+  { label: 'FLOAT.ADD latency',    value: '#FLOAT.ADD-latency' },
+  { label: 'FLOAT.MUL latency',    value: '#FLOAT.MUL-latency' },
+  { label: 'FLOAT.FMA latency',    value: '#FLOAT.FMA-latency' },
+  { label: 'FLOAT.DIV latency',    value: '#FLOAT.DIV-latency' },
+  { label: 'FLOAT.SQRT latency',   value: '#FLOAT.SQRT-latency' },
+  { label: 'VFLOAT.FMA latency',   value: '#VFLOAT.FMA-latency' },
+  { label: 'VFLOAT.MUL latency',   value: '#VFLOAT.MUL-latency' },
+  { label: 'VFLOAT.ADD latency',   value: '#VFLOAT.ADD-latency' },
+
+  { label: 'Check INT instructions on Port0',    value: '#Port0-INT-check' },
+  { label: 'Check BRANCH instructions on Port0', value: '#Port0-BRANCH-check' },
+
   { label: 'Number of Blocks in cache',  value: '#cache-blocks' },
-  { label: 'Number of Iterations', value: '#simulation-iterations' }
+  { label: 'Size of cache blocks',       value: '#block-size' },
+  { label: 'Cache miss penalty',         value: '#miss-penalty' },
+  { label: 'Cache miss issue time',      value: '#miss-issue-time' },
+
+  { label: 'Number of simulation iterations', value: '#simulation-iterations' },
+  { label: 'Critical Path table',             value: '#critical-path' },
+
+  { label: 'Number of timeline iterations',   value: '#timeline-iterations' },
+  { label: 'Timeline Zoom Out',               value: '#timeline-zoom-out' },
+  { label: 'Timeline Zoom In',                value: '#timeline-zoom-in' },
+  { label: 'Timeline show ports',             value: '#timeline-show-ports' },
+  { label: 'Timeline show instructions',      value: '#timeline-show-instructions' },
+
+  { label: 'Dependence Graph',                value: '#dependence-graph' },
+  { label: 'Show internal dependences',       value: '#show-internal-dependences' },
+  { label: 'Show latency dependences',        value: '#show-latency-dependences' },
+  { label: 'Show instruction dependences',    value: '#show-instruction-dependences' },
+  { label: 'Show full dependences',           value: '#show-intfullernal-dependences' },
+  { label: 'Open full dependence graph',      value: '#open-full-dependence-graph' },
+
+  { label: 'Performance bound information',   value: '#performance-bound' },
+  { label: 'Performance latency limit',       value: '#latency-limit' },
+  { label: 'Performance throughput limit',    value: '#throughput-limit' },  
+  { label: 'Performance best limit',          value: '#best-limit' },
+  { label: 'Detailed thorughput limits',      value: '#detailed-thorughput-limits' },
+
+  { label: 'Main RVCAT header',               value: '#top' },
+  { label: 'Processor panel',                 value: '#processor-panel' },
+  { label: 'Program panel',                   value: '#program-panel' },
+  { label: 'Tutorial panel',                  value: '#tutorial-panel' },
+  { label: 'Right panel',                     value: '#right-panel' },
+  { label: 'Tutorial activation icon',        value: '#tutorial-activation' }
 ]
 
 const validationButtonSelectors = [
   { label: 'Custom',                         value: '' },
+  { label: 'Set processor panel',            value: '#processor-button' },
+  { label: 'Set program panel',              value: '#program-button' },
+  { label: 'Set tutorial panel',             value: '#tutorial-button' },
+  { label: 'Set simulation panel',           value: '#simulation-button' },
+  { label: 'Set analysis panel',             value: '#analysis-button' },
+  { label: 'Set timeline panel',             value: '#timeline-button' },
+  { label: 'Set about panel',                value: '#about-button' },
   { label: 'Run Simulation',                 value: '#run-simulation-button' },
   { label: 'Apply Processor Configuration',  value: '#apply-processorconfig-button' },
   { label: 'Upload Processor Configuration', value: '#upload-processorconfig-button' },
@@ -390,14 +446,6 @@ const validationButtonSelectors = [
   { label: 'Remove PortX',                   value: '#remove-port0-button' },
   { label: 'Add Port',                       value: '#add-port-button' }
 ]
-
-// ============================================================================
-// COMPUTED
-// ============================================================================
-const hasSavedContent = computed(() => 
-  tutorial.name || tutorial.description || 
-  tutorial.steps.some(s => s.title || s.description || s.selector || s.questionText)
-)
 
 // ============================================================================
 // STEP CREATION HELPERS
@@ -490,7 +538,7 @@ const removeStep = (index) => tutorial.steps.splice(index, 1)
 // ============================================================================
 // IMAGE UPLOAD (unified handler)
 // ============================================================================
-const handleImageUpload = (event, step, imageField = 'questionImage') => {
+const handleImageUpload = (event, step, imageField) => {
   const file = event.target.files[0]
   if (!file) return
   
@@ -504,8 +552,6 @@ const handleImageUpload = (event, step, imageField = 'questionImage') => {
   reader.onload = (e) => { step[imageField] = e.target.result }
   reader.readAsDataURL(file)
 }
-
-const handleStepImageUpload = (event, step) => handleImageUpload(event, step, 'stepImage')
 
 // ============================================================================
 // TUTORIAL CONVERSION (shared logic)
@@ -652,7 +698,7 @@ const initTutorial = async () => {
 const reloadEditedTutorial = async () => {
   if (tutorialOptions.inEditionID === "") {
     addStep()
-    pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+    tutorialSvg.value = `<div class="error">Failed to render graph</div>`;
     return
   }
   try {
@@ -660,6 +706,7 @@ const reloadEditedTutorial = async () => {
     const jsonString  = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
     if (jsonString) {
       const data           = JSON.parse(jsonString)
+      tutorial.id          = tutorialOptions.inEditionID || ''
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
@@ -675,6 +722,7 @@ const reloadEditedTutorial = async () => {
 
 const clearDraft = () => {
   if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
+    tutorial.id          = ''
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
@@ -809,7 +857,7 @@ async function processTutorialUpdate(t) {
       const svg = await createGraphVizGraph(dotCode);
       console.log('🎓📥 SVG', svg.outerHTML);
       
-      pipelineSvg.value = svg.outerHTML;
+      tutorialSvg.value = svg.outerHTML;
     }
   } catch (error) {
     console.error('🎓❌ Failed to save edited tutorial in localStorage:', error);
@@ -889,7 +937,7 @@ watch(() => simState.state, (newValue, oldValue) => {
 });
 
 // Cuando el SVG se actualice, agregar listeners
-watch(() => pipelineSvg.value, () => {
+watch(() => tutorialSvg.value, () => {
   addClickListenersToSvg();
 });
 
@@ -901,7 +949,7 @@ const handleNodeClick = (stepId) => {
 
 const addClickListenersToSvg = () => {
   nextTick(() => {
-    const svgElement = document.querySelector('.pipeline-img svg');
+    const svgElement = document.querySelector('.tutorial-img svg');
     if (!svgElement) return;
     
     // Agregar event listener a todos los nodos
@@ -941,6 +989,16 @@ onUnmounted(() => {
   }
   console.log('🎓🧹 TutorialEditor mounted')
 })
+
+
+// ============================================================================
+// COMPUTED
+// ============================================================================
+const hasSavedContent = computed(() => 
+  tutorial.name || tutorial.description || 
+  tutorial.steps.some(s => s.title || s.description || s.selector || s.questionText)
+)
+
 
 </script>
 
@@ -1018,7 +1076,7 @@ onUnmounted(() => {
   position: relative; /* Para el posicionamiento interno */
 }
 
- .pipeline-img {
+ .tutorial-img {
     width:        100%;
     height:       100%;
     align-items:  center;
@@ -1032,33 +1090,33 @@ onUnmounted(() => {
     position: relative; */
   }
 
-  .pipeline-img svg[viewBox] {
+  .tutorial-img svg[viewBox] {
     width: 100%;
     height: 100%;
     overflow: hidden;
   }  
   
-  .pipeline-img svg text {
+  .tutorial-img svg text {
     font-size:   small;
     font-family: Arial, sans-serif;
   }
-  .pipeline-img svg polygon,
-  .pipeline-img svg path {
+  .tutorial-img svg polygon,
+  .tutorial-img svg path {
     stroke-width: 2px !important;
   }
   
 /* Estilos CSS para nodos seleccionados */
-.pipeline-img g.node.selected ellipse,
-.pipeline-img g.node.selected polygon,
-.pipeline-img g.node.selected path {
+.tutorial-img g.node.selected ellipse,
+.tutorial-img g.node.selected polygon,
+.tutorial-img g.node.selected path {
   stroke-width: 3px !important;
   stroke:       #0066ff !important;
   filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
 }
 
-.pipeline-img g.node:hover ellipse,
-.pipeline-img g.node:hover polygon,
-.pipeline-img g.node:hover path {
+.tutorial-img g.node:hover ellipse,
+.tutorial-img g.node:hover polygon,
+.tutorial-img g.node:hover path {
   stroke-width: 2px !important;
   stroke:       #444444 !important;
   cursor:       pointer;
