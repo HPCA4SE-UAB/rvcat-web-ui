@@ -77,21 +77,7 @@
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
               <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
-            </div>
-
-            <template v-if="currentStep.type === 'step'">             
-              <div class="form-group">
-                <label>Step Image (opt.)</label>
-                <div class="image-upload-section">
-                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
-                  <div v-if="currentStep.image" class="image-preview">
-                    <img :src="currentStep.image" alt="Image preview">
-                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group">
+              <template v-if="currentStep.type === 'step'">  
                 <label>Position</label>
                 <select v-model="currentStep.position">
                   <option value="bottom">Bottom</option>
@@ -106,6 +92,24 @@
                   </option>
                 </select>
                 <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
+              </template>
+              <template v-if="currentStep.type === 'question'">             
+                <label>Answer Mode <span class="required">*</span></label>
+                <div class="answer-mode-selector">
+                  <label class="mode-radio">
+                    <input type="radio" v-model="currentStep.answerMode" value="single" @change="onAnswerModeChange(step)">
+                    <span>Single-choice</span>
+                  </label>
+                  <label class="mode-radio">
+                    <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
+                    <span>Multiple-choice</span>
+                  </label>
+                </div>
+               </template>
+            </div>
+
+            <template v-if="currentStep.type === 'step'">             
+              <div class="form-group">
                 <label>Action (optional)</label>
                 <select v-model="currentStep.action">
                   <option value="">                               No action            </option>
@@ -116,10 +120,19 @@
                   <option value="switchToFull:programComponent">  Go to Program        </option>
                   <option value="switchToFull:tutorialComponent"> Go to Tutorial       </option>
                 </select>
+
+                <label>Step Image (opt.)</label>
+                <div class="image-upload-section">
+                  <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
+                  <div v-if="currentStep.image" class="image-preview">
+                    <img :src="currentStep.image" alt="Image preview">
+                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
+                  </div>
+                </div>
               </div>
 
               <div v-if="currentStep.validationType" class="validation-card">
-                <h4>Validation</h4>
+                <label>Validation</label>
                 <div class="form-group right-column">
                   <label>Type</label>
                   <select v-model="currentStep.validationType">
@@ -197,6 +210,7 @@
               <div class="form-group left-column">
                 <label>Question Text <span class="required">*</span></label>
                 <textarea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text"></textarea>
+ 
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
@@ -204,17 +218,6 @@
                     <img :src="currentStep.image" alt="Question image preview">
                     <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
                   </div>
-                </div>
-                <label>Answer Mode <span class="required">*</span></label>
-                <div class="answer-mode-selector">
-                  <label class="mode-radio">
-                    <input type="radio" v-model="currentStep.answerMode" value="single" @change="onAnswerModeChange(step)">
-                    <span>Single-choice</span>
-                  </label>
-                  <label class="mode-radio">
-                    <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
-                    <span>Multiple-choice</span>
-                  </label>
                 </div>
               </div>
               
@@ -1234,6 +1237,7 @@ onUnmounted(() => {
 
 .form-group {
   margin-bottom: 3px;
+  padding-left:  8px;
 }
 
 .form-row {
@@ -1342,6 +1346,7 @@ onUnmounted(() => {
   padding:     4px 8px;
   border-radius: 12px;
   min-width:  12px;
+  max-width:  24px;
   text-align: center;
 }
 
@@ -1419,15 +1424,15 @@ onUnmounted(() => {
 /* Answer mode selector */
 .answer-mode-selector {
   display:    flex;
-  gap:        8px;
-  margin-top: 6px;
+  gap:        4px;
+  margin-top: 4px;
   flex-direction: column;
 }
 
 .mode-radio {
   display:     flex;
   align-items: center;
-  gap:         0px;
+  gap:         4px;
   cursor:      pointer;
   font-size:   small;
   color:       #374151;
@@ -1435,7 +1440,7 @@ onUnmounted(() => {
 
 .mode-radio input {
   width:  auto;
-  margin: 0;
+  margin: 4px;
   cursor: pointer;
 }
 
