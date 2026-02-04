@@ -1092,6 +1092,7 @@ const selectNodeByIndex = (index) => {
   
   const nodes = svgElement.querySelectorAll('g.node');
   if (index >= 0 && index < nodes.length) {
+    if (index == -1) index = 1+tutorial.steps.length
     const node = nodes[index];
     
     // Deselect
