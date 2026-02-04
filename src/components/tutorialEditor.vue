@@ -46,10 +46,13 @@
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial" title="Description of the tutorial"></textarea>
             <div class="buttons">
               <button class="blue-button" title="Add new step to the tutorial (after selected step)" 
+                :disabled="stepNumber >= maxSteps"
                 @click="addStep('step', stepNumber)">    + Add Step    </button>
               <button class="blue-button" title="Add new question to the tutorial (after selected step)" 
+                :disabled="stepNumber >= maxSteps"
                 @click="addStep('question', stepNumber)">+ Add Question</button>
-              <button class="blue-button" title="Duplicate selected step (after the selected one)" 
+              <button class="blue-button" title="Duplicate selected step (after the selected one)"
+                :disabled="stepNumber < 0 || stepNumber >= maxSteps"
                 @click="addStep(null, stepNumber)">+ Duplicate</button>
               {{ stepNumber }} 
             </div>
@@ -338,10 +341,9 @@ const currentStep = computed(() => {
   return tutorial.steps[tutorialOptions.selectedStep]
 });
 
-const stepNumber = computed(() => {
-  return tutorialOptions.selectedStep;
-});
-  
+const stepNumber = computed(() => tutorialOptions.selectedStep)
+const maxSteps   = computed(() => tutorial.steps.length)
+
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
   { label: 'Custom', value: '' },
