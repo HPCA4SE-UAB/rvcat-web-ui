@@ -990,7 +990,7 @@ const addClickListenersToSvg = () => {
     removeClickListeners();
 
     // Add event listener to all nodes
-    const nodes = svgElement.querySelectorAll('g.node:not([id*="start"]):not([id*="end"])');
+    const nodes = svgElement.querySelectorAll('g.node:not([shape="Msquare"])');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
 
