@@ -333,7 +333,6 @@ const saveOptions = () => {
 }
 
 const currentStep = computed(() => {
-  if (tutorialOptions.selectedStep === null) return null;
   return tutorial.steps[tutorialOptions.selectedStep];
 });
 
@@ -497,6 +496,14 @@ const addStep = (type = 'step', atIndex = null) => {
   tutorialOptions.selectedStep = insertIndex;
 }
 
+const removeStep = (index) => {
+  tutorial.steps.splice(index, 1)
+  if (index >= 1)
+    tutorialOptions.selectedStep = index-1;
+  else
+    tutorialOptions.selectedStep = 0;
+}
+
 // ============================================================================
 // STEP TYPE & MODE CHANGES
 // ============================================================================
@@ -545,14 +552,6 @@ const removeAnswer = (step, index) => {
     step.answers.splice(index, 1)
     ensureOneCorrectAnswer(step)
   }
-}
-
-const removeStep = (index) => {
-  tutorial.steps.splice(index, 1)
-  if (index >= 1)
-    tutorialOptions.selectedStep = index-1;
-  else
-    tutorialOptions.selectedStep = 0;
 }
   
 // ============================================================================
