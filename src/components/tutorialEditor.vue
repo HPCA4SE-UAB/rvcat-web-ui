@@ -712,12 +712,13 @@ const initTutorial = async () => {
     currentKey:    null,
     availableKey: 'available',
   });
-  reloadEditedTutorial();
+  // reloadEditedTutorial();
 };
 
 const reloadEditedTutorial = async () => {
   if (tutorialOptions.inEditionID === "") {
-    addStep()
+    clearDraft(false)
+    console.log('🎓🔄 Reloading edited tutorial with clear draft.');
     return
   }
   try {
@@ -735,24 +736,24 @@ const reloadEditedTutorial = async () => {
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
-      if (!tutorial.steps.length) addStep()
-      console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
+      console.log('🎓🔄 Reloading Edited tutorial with:', tutorialOptions.inEditionID);
     }
-    else
-      addStep()
+    else {
+      clearDraft(false)
+      console.log('🎓🔄 Reloading edited tutorial with clear draft.');
+    }
   } catch (error) {
+    clearDraft(false)
     console.error('🎓❌ Failed to reload edited tutorial:', error)
-    addStep()
   }      
 }
 
-const clearDraft = () => {
-  if ( confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
+const clearDraft = (check = true) => {
+  if ( check && confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
     tutorial.id          = 'newTutorial'
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
-    addStep()
     tutorialOptions.inEditionID = "newTutorial"
     tutorialOptions.selectedStep = 0
   }
@@ -881,6 +882,9 @@ async function processTutorialUpdate(t) {
     if (t.name || t.description || t.steps.length > 0) {
       localStorage.setItem('tutorialTemp', JSON.stringify(t));
       console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
+
+      if (t.id !=== tutorialOptions.inEditionID)
+        tutorialOptions.inEditionID = t.id   // create reaction to save current options
       
       const dotCode = generateTutorialDot(t);
       console.log('🎓📥 Dot Code', dotCode);
@@ -951,9 +955,10 @@ watch (
    () => tutorialOptions.selectedStep],
   ([newList, newID, newStep], [oldList, oldID, oldStep] ) => {
     saveOptions()
-    if (newList !== oldList || newID !== oldID)
-      reloadEditedTutorial()
-    else
+    if (newList !== oldList || newID !== oldID) {
+      if (tutorialOptions.inEditionID !== tutorial.id)
+        reloadEditedTutorial()
+    } else
       selectNodeByIndex(newStep)
   },
   { deep: true }
