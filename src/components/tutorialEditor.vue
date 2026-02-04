@@ -254,12 +254,6 @@
     </div>
   </div>
 
-    <div v-if="exportedContent" class="export-section">
-      <h3>Generated JSON</h3>
-      <textarea v-model="exportedContent" readonly></textarea>
-      <p class="export-note">Save this as a .json file in public/tutorials/ and add to index.json</p>
-    </div>
-
   <div v-if="showModalUp" class="modal-overlay">
     <div class="modal">
       <h4>Load Tutorial As</h4>
@@ -301,7 +295,6 @@ const defaultOptions = { // save this & tutorialTemp
 }
 
 const tutorial        = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
-const exportedContent = ref('')       // tutorial has been written to local file system
 const tutorialSvg     = ref('')
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
@@ -1266,7 +1259,7 @@ onUnmounted(() => {
 .form-group textarea,
 .form-group select {
   width:         100%;
-  padding:       4px 8px;
+  padding:       4px 6px;
   border:        1px solid #d1d5db;
   border-radius: 8px;
   font-size:     medium;
@@ -1426,8 +1419,8 @@ onUnmounted(() => {
 /* Answer mode selector */
 .answer-mode-selector {
   display:    flex;
-  gap:        16px;
-  margin-top: 8px;
+  gap:        8px;
+  margin-top: 6px;
   flex-direction: column;
 }
 
@@ -1450,7 +1443,7 @@ onUnmounted(() => {
 .image-upload-section {
   display:        flex;
   flex-direction: column;
-  gap:            12px;
+  gap:            8px;
 }
 
 .image-input {
@@ -1474,21 +1467,21 @@ onUnmounted(() => {
 .image-preview img {
   max-width:     100%;
   max-height:    250px;
-  border-radius: 8px;
+  border-radius: 6px;
   border:        1px solid #e5e7eb;
 }
 
 .remove-image-btn {
-  position: absolute;
-  top:      8px;
-  right:    8px;
+  position:   absolute;
+  top:        8px;
+  right:      8px;
   background: #ef4444;
-  color:    white;
-  border:   none;
+  color:      white;
+  border:     none;
   border-radius: 4px;
-  padding:   4px 8px;
-  font-size: small;
-  cursor:   pointer;
+  padding:       4px 6px;
+  font-size:  small;
+  cursor:     pointer;
   transition: background 0.2s;
 }
 
@@ -1498,26 +1491,26 @@ onUnmounted(() => {
 
 /* Answers section */
 .answers-section {
-  margin-top:  16px;
-  padding:     16px;
-  background:  white;
+  margin-top:    1px;
+  padding-left:  8px;
+  background:    white;
   border-radius: 8px;
-  border:       1px solid #e5e7eb;
+  border:        1px solid #e5e7eb;
 }
 
 .answers-section h4 {
-  margin:      0 0 16px 0;
+  margin:      0 0 8px 0;
   font-size:   small;
   font-weight: 600;
   color:       #374151;
 }
 
 .answer-card {
-  background: #f9fafb;
-  border:     1px solid #e5e7eb;
+  background:    #f9fafb;
+  border:        1px solid #e5e7eb;
   border-radius: 8px;
-  padding:       12px;
-  margin-bottom: 10px;
+  padding:       6px;
+  margin-bottom: 6px;
   transition:    all 0.2s;
 }
 
@@ -1527,18 +1520,18 @@ onUnmounted(() => {
 }
 
 .answer-header {
-  display: flex;
-  align-items: center;
-  gap:           10px;
-  margin-bottom: 10px;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  margin-bottom: 6px;
 }
 
 .answer-letter {
-  background: #6b7280;
-  color:      white;
-  font-size:  small;
-  font-weight: 600;
-  padding:       4px 10px;
+  background:    #6b7280;
+  color:         white;
+  font-size:     small;
+  font-weight:   600;
+  padding:       4px 6px;
   border-radius: 4px;
 }
 
@@ -1547,10 +1540,10 @@ onUnmounted(() => {
 }
 
 .correct-checkbox {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
+  gap:         4px;
+  cursor:      pointer;
   font-size:   small;
   color:       #374151;
   margin-left: auto;
@@ -1564,8 +1557,8 @@ onUnmounted(() => {
 
 .remove-answer-btn {
   background: #ef4444;
-  color: white;
-  border: none;
+  color:      white;
+  border:     none;
   border-radius: 4px;
   width:    16px;
   height:   16px;
@@ -1582,15 +1575,15 @@ onUnmounted(() => {
 }
 
 .feedback-group {
-  margin-top: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.7);
+  margin-top:  8px;
+  padding:     8px;
+  background:  rgba(255, 255, 255, 0.7);
   border-radius: 6px;
   border: 1px dashed #d1d5db;
 }
 
 .feedback-group .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .feedback-group .form-group:last-child {
@@ -1603,56 +1596,21 @@ onUnmounted(() => {
 }
 
 .add-answer-btn {
-  background: #6b7280;
-  color: white;
-  border: none;
-  padding: 10px 20px;
+  background:    #6b7280;
+  color:         white;
+  border:        none;
+  padding:       5px 10px;
   border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: block;
-  width: 100%;
+  font-size:     medium;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    background-color 0.2s;
+  display:       block;
+  width:         100%;
 }
 
 .add-answer-btn:hover {
   background: #4b5563;
 }
 
-.export-section {
-  padding: 20px 20px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.export-section h3 {
-  margin: 0 0 16px 0;
-  font-size: medium;
-  font-weight: 600;
-  color: #111827;
-  text-align: center;
-}
-
-.export-section textarea {
-  width: 100%;
-  height: 140px;
-  padding: 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: small;
-  background: #f3f4f6;
-  color: #374151;
-  resize: vertical;
-  line-height: 1.4;
-  box-sizing: border-box;
-}
-
-.export-note {
-  margin: 12px 0 0 0;
-  font-size: 12px;
-  color: #6b7280;
-  text-align: center;
-}
 </style>
