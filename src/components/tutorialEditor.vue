@@ -47,14 +47,13 @@
             <div class="buttons">
               <button class="blue-button" title="Add new step to the tutorial (after selected step)" 
                 :disabled="stepNumber >= maxSteps"
-                @click="addStep('step', stepNumber)">    + Add Step    </button>
+                @click="addStep('step', stepNumber)">Add new Step</button>
               <button class="blue-button" title="Add new question to the tutorial (after selected step)" 
                 :disabled="stepNumber >= maxSteps"
-                @click="addStep('question', stepNumber)">+ Add Question</button>
+                @click="addStep('question', stepNumber)">Add new Question</button>
               <button class="blue-button" title="Duplicate selected step (after the selected one)"
                 :disabled="stepNumber < 0 || stepNumber >= maxSteps"
-                @click="addStep(null, stepNumber)">+ Duplicate</button>
-              {{ stepNumber }} 
+                @click="addStep(null, stepNumber)">Duplicate</button>
             </div>
           </div>
           <div class="form-group right-column">
@@ -68,9 +67,12 @@
         <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
-              <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
-                {{ stepNumber }} <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
-              </span>
+              <div class="form-group">
+                <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
+                  {{ stepNumber }} 
+                </span>
+                <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
+              </div>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
@@ -89,18 +91,8 @@
                 </div>
               </div>
               
-              <div class="form-row">
+              <!--- div class="form-row">  -->
                 <div class="form-group">
-                  <label>Element to Highlight <span class="required">*</span></label>
-                  <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
-                    <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                  <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
-                </div>
-                
-                <div class="form-group right-column">
                   <label>Position</label>
                   <select v-model="currentStep.position">
                     <option value="bottom">Bottom</option>
@@ -108,33 +100,37 @@
                     <option value="left">Left</option>
                     <option value="right">Right</option>
                   </select>
-                </div>
-              </div>
-              
-              <div class="form-group right-column">
-                <label>Action (optional)</label>
-                <select v-model="currentStep.action">
-                  <option value="">No action</option>
-                  <option value="switchTo:simulationComponent">Go to Simulation</option>
-                  <option value="switchTo:analysisComponent">Go to Static Analysis</option>
-                  <option value="switchTo:timelineComponent">Go to Timeline</option>
-                  <option value="switchToFull:processorComponent">Go to Processor</option>
-                  <option value="switchToFull:programComponent">Go to Program</option>
-                  <option value="switchToFull:tutorialComponent">Go to Tutorial</option>
-                </select>
-              </div>
+                  <label>Element to Highlight <span class="required">*</span></label>
+                  <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
+                    <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
+                  <label>Action (optional)</label>
+                  <select v-model="currentStep.action">
+                    <option value="">No action</option>
+                    <option value="switchTo:simulationComponent">   Go to Simulation     </option>
+                    <option value="switchTo:analysisComponent">     Go to Static Analysis</option>
+                    <option value="switchTo:timelineComponent">     Go to Timeline       </option>
+                    <option value="switchToFull:processorComponent">Go to Processor      </option>
+                    <option value="switchToFull:programComponent">  Go to Program        </option>
+                    <option value="switchToFull:tutorialComponent"> Go to Tutorial       </option>
+                  </select>
+                 </div>
+              <!--- /div> -->
 
               <div v-if="currentStep.validationType" class="validation-card">
                 <h4>Validation</h4>
                 <div class="form-group right-column">
                   <label>Type</label>
                   <select v-model="currentStep.validationType">
-                    <option value="">No validation</option>
-                    <option value="program_selected">Program selected</option>
-                    <option value="architecture_selected">Architecture selected</option>
-                    <option value="input_value">Exact input value</option>
-                    <option value="input_value_min">Minimum input value</option>
-                    <option value="button_clicked">Button clicked</option>
+                    <option value="">                      No validation        </option>
+                    <option value="program_selected">      Program selected     </option>
+                    <option value="architecture_selected"> Architecture selected</option>
+                    <option value="input_value">           Exact input value    </option>
+                    <option value="input_value_min">       Minimum input value  </option>
+                    <option value="button_clicked">        Button clicked       </option>
                   </select>
                 </div>
 
@@ -189,13 +185,13 @@
               <div v-else class="form-group">
                 <label>Validation</label>
                 <select v-model="currentStep.validationType">
-                  <option value="">No validation</option>
-                  <option value="program_selected">Program selected</option>
-                  <option value="architecture_selected">Architecture selected</option>
-                  <option value="input_value">Exact input value</option>
-                  <option value="input_value_min">Minimum input value</option>
-                  <option value="button_clicked">Button clicked</option>
-                </select>
+                    <option value="">                      No validation        </option>
+                    <option value="program_selected">      Program selected     </option>
+                    <option value="architecture_selected"> Architecture selected</option>
+                    <option value="input_value">           Exact input value    </option>
+                    <option value="input_value_min">       Minimum input value  </option>
+                    <option value="button_clicked">        Button clicked       </option>
+                  </select>
               </div>
             </template>
 
