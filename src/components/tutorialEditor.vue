@@ -20,6 +20,8 @@
                 @click="uploadTutorial"> Upload   </button>
           <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
                 @click="addTutorial"> Add to menu </button>
+          <button class="blue-button" title="Remove selected tutorial from local storage" 
+                @click="removeTutorial"> Remove from menu </button>
         </div>
         <div class="buttons">
           <button class="blue-button" title="Clear current tutorial draft and start fresh"
@@ -776,6 +778,24 @@ const downloadJSON = () => {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
   return filename
+}
+
+const removeTutorial = () => {
+  if (!tutorial?.id || tutorial.id !== tutorialOptions.inEditionID) {
+    console.error('👨‍🎓❌ No tutorial selected');
+    return;
+  }
+
+  tutorialOptions.available = tutorialOptions.available.filter(
+    id => id !== tutorial.id
+  );
+  
+  localStorage.removeItem(`tutorial.${tutorial.id}`)
+ 
+  console.log(`👨‍🎓🧹 Tutorial removed from local storage: ${tutorial.id}`)
+  
+  clearDraft()
+  simState.state = 4;   // Signal tutorial engine to obtain new list of tutorials from localStorage
 }
   
 // ============================================================================
