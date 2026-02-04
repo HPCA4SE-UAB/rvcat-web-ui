@@ -303,7 +303,7 @@ const STORAGE_KEY = 'tutorialOptions'
 const defaultOptions = { // save this & tutorialTemp
   available:   [],
   inEditionID: '',
-  selectedStep: 0
+  selectedStep: -1
 }
 
 const tutorial        = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
@@ -334,7 +334,8 @@ const saveOptions = () => {
 }
 
 const currentStep = computed(() => {
-  return tutorial.steps[tutorialOptions.selectedStep];
+  if (tutorialOptions.selectedStep < 0) return null
+  return tutorial.steps[tutorialOptions.selectedStep]
 });
 
 const stepNumber = computed(() => {
@@ -475,34 +476,27 @@ const createEmptyQuestion = () => ({
   ]
 })
 
-const addStep = (type = 'step', atIndex = null) => {
-  let insertIndex= tutorial.steps.length - 1
+const addStep = (type = 'step', atIndex = -1) => {
+  let insertIndex= atIndex+1
   let newStep = null
  
-  if (atIndex !== null && atIndex >= 0)
-    insertIndex = atIndex
-
-  insertIndex = Math.max(0, Math.min(insertIndex, tutorial.steps.length - 1)); 
-
   if (!type) {  // duplicate current
+    insertIndex = Math.max(0, Math.min(insertIndex-1, tutorial.steps.length - 1)); 
     // Create deep copy
     newStep = JSON.parse(JSON.stringify(tutorial.steps[insertIndex]));
     newStep.title = `${newStep.title} (copy)`;
+    insertIndex = insertIndex+1
   }
   else
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
 
-  insertIndex = insertIndex+1
   tutorial.steps.splice(insertIndex, 0, newStep);
   tutorialOptions.selectedStep = insertIndex;
 }
 
 const removeStep = (index) => {
   tutorial.steps.splice(index, 1)
-  if (index >= 1)
-    tutorialOptions.selectedStep = index-1;
-  else
-    tutorialOptions.selectedStep = 0;
+  tutorialOptions.selectedStep = index-1;
 }
 
 // ============================================================================
@@ -712,7 +706,6 @@ const initTutorial = async () => {
     currentKey:    null,
     availableKey: 'available',
   });
-  // reloadEditedTutorial();
 };
 
 const reloadEditedTutorial = async () => {
@@ -755,7 +748,7 @@ const clearDraft = (check = true) => {
     tutorial.description = ''
     tutorial.steps       = []
     tutorialOptions.inEditionID = "newTutorial"
-    tutorialOptions.selectedStep = 0
+    tutorialOptions.selectedStep = -1
   }
 }
 
@@ -958,7 +951,7 @@ watch (
     if (newList !== oldList || newID !== oldID) {
       if (tutorialOptions.inEditionID !== tutorial.id)
         reloadEditedTutorial()
-    } else
+    } else if (newStep >= 0)
       selectNodeByIndex(newStep)
   },
   { deep: true }
@@ -988,15 +981,15 @@ const addClickListenersToSvg = () => {
     removeClickListeners();
 
     // Add event listener to all nodes
-    const nodes = svgElement.querySelectorAll('g.node:not([shape="Msquare"])');
+    const nodes = svgElement.querySelectorAll('g.node');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
 
       const handleClick = (event) => {
         event.stopPropagation();
-        const ID = node.id || index;
+        let stepN = index
         
-        console.log('🎓 Selected step:', ID);
+        console.log('🎓 Selected step:', stepN);
         
         // 1. DESELECT previous node
         if (lastSelectedNode && lastSelectedNode !== node) {
@@ -1008,7 +1001,12 @@ const addClickListenersToSvg = () => {
         
         // 3. Update State
         lastSelectedNode = node;
-        tutorialOptions.selectedStep = parseInt(ID) || index;
+        if (index == tutorial.steps.length)
+          stepN = -1
+        else if (index >= tutorial.steps.length)
+          stepN = tutorial.steps.length
+
+        tutorialOptions.selectedStep = stepN;
       };
 
       const handleMouseEnter = () => {
