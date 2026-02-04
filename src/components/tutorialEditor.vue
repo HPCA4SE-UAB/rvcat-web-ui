@@ -133,15 +133,15 @@
 
               <div v-if="currentStep.validationType" class="validation-card">
                 <label>Validation</label>
-                <div class="form-group right-column">
+                <div class="form-group">
                   <label>Type</label>
                   <select v-model="currentStep.validationType">
-                    <option value="">                      No validation        </option>
-                    <option value="program_selected">      Program selected     </option>
+                    <option value=""> No validation </option>
+                    <option value="program_selected">  Program selected     </option>
                     <option value="architecture_selected"> Architecture selected</option>
-                    <option value="input_value">           Exact input value    </option>
-                    <option value="input_value_min">       Minimum input value  </option>
-                    <option value="button_clicked">        Button clicked       </option>
+                    <option value="input_value">    Exact input value    </option>
+                    <option value="input_value_min">   Minimum input value  </option>
+                    <option value="button_clicked">  Button clicked    </option>
                   </select>
                 </div>
 
@@ -222,10 +222,14 @@
               </div>
               
               <div class="answers-section right-column">
-                <h4>Answers (up to 6) <span class="required">*</span> - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}</h4>
+                <h4>Answers (up to 6) 
+                   <span class="required">*</span>
+                   - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}
+                </h4>
                 <div v-for="(answer, ansIndex) in currentStep.answers" :key="ansIndex" class="answer-card" :class="{ 'correct-answer': answer.isCorrect }">
                   <div class="answer-header">
                     <span class="answer-letter">{{ String.fromCharCode(65 + ansIndex) }}</span>
+                    <label>Answer Text <span class="required">*</span></label>
                     <label class="correct-checkbox">
                       <input type="checkbox" v-model="answer.isCorrect" @change="onCorrectAnswerChange(currentStep, ansIndex)">
                       <span>Correct</span>
@@ -234,7 +238,6 @@
                   </div>
                   
                   <div class="form-group">
-                    <label>Answer Text <span class="required">*</span></label>
                     <input v-model="answer.text" type="text" placeholder="Answer option...">
                   </div>
                   
@@ -1237,7 +1240,7 @@ onUnmounted(() => {
 
 .form-group {
   margin-bottom: 3px;
-  padding-left:  8px;
+  padding-right: 10px;
 }
 
 .form-row {
@@ -1282,7 +1285,7 @@ onUnmounted(() => {
 }
 
 .form-group textarea {
-  height:      70px;
+  height:      60px;
   resize:      vertical;
   line-height: 1.2;
 }
@@ -1373,8 +1376,8 @@ onUnmounted(() => {
   background:    #fef3c7;
   border:        1px solid #f59e0b;
   border-radius: 8px;
-  padding:       12px 21px;
-  margin-top:    20px;
+  padding:       8px 8px;
+  margin-top:    2px;
 }
 
 .validation-card h4 {
@@ -1504,7 +1507,7 @@ onUnmounted(() => {
 }
 
 .answers-section h4 {
-  margin:      0 0 8px 0;
+  margin:      0 0 2px 0;
   font-size:   small;
   font-weight: 600;
   color:       #374151;
