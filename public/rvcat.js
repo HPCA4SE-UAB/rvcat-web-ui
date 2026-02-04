@@ -2,14 +2,14 @@
  * Read files from distribution folders & manage localStorage
  * ------------------------------------------------------------------ */
 
-async function loadJSONfile(name) {
+async function loadJSONfile(name, icon) {
   try {
     const response = await fetch(name)
     const data     = await response.json()
-    console.log('📥✅ loadJSONfile: succeed.', name)
+    console.log(`${icon}📥 loadJSONfile: ${name}`)
     return data
   } catch (error) {
-    console.error(`📥❌ loadJSONfile: failed to load ${name}:`, error)
+    console.error(`${icon}❌ loadJSONfile: failed to load ${name}:`, error)
     throw error
   }
 }
@@ -67,7 +67,7 @@ const initResource = async ({resourceName, logPrefix, optionsObj, currentKey, av
         throw new Error(`No ${resourceName} found in index.json`);
       }
       for (const fileName of fileList) {
-        const filedata = await loadJSONfile(`./${resourceName}/${fileName}.json`);
+        const filedata = await loadJSONfile(`./${resourceName}/${fileName}.json`, logPrefix);
         localStorage.setItem(`${resourceName}.${fileName}`, JSON.stringify(filedata));
       }
       
