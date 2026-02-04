@@ -205,9 +205,6 @@
                     <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
                   </div>
                 </div>
-              </div>
-              
-              <div class="form-group">
                 <label>Answer Mode <span class="required">*</span></label>
                 <div class="answer-mode-selector">
                   <label class="mode-radio">
@@ -1431,12 +1428,13 @@ onUnmounted(() => {
   display:    flex;
   gap:        16px;
   margin-top: 8px;
+  flex-direction: column;
 }
 
 .mode-radio {
   display:     flex;
   align-items: center;
-  gap:         8px;
+  gap:         0px;
   cursor:      pointer;
   font-size:   small;
   color:       #374151;
