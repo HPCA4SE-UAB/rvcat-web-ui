@@ -824,7 +824,7 @@ function cancelPendingAction() {
 
     <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
 
-    <div class="program-info">
+    <div v-if="isFullscreen" class="program-info">
       <div class="info-row">
         <label>Program Name:</label>
         <input type="text" v-model="programName" class="name-input" />
@@ -835,7 +835,7 @@ function cancelPendingAction() {
       </div>
     </div>
 
-    <div class="instructions-section">
+    <div v-if="isFullscreen" class="instructions-section">
       <div class="section-header">
         <h4>Instructions</h4>
         <button class="blue-button small add-btn" @click="addInstruction">+ Add Instruction</button>
