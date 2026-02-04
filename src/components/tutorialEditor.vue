@@ -729,6 +729,7 @@ const reloadEditedTutorial = async () => {
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
       tutorial.steps       = data.steps       || []
+      tutorialOptions.selectedStep = 0
       console.log('🎓🔄 Reloading Edited tutorial with:', tutorialOptions.inEditionID);
     }
     else {
@@ -1001,10 +1002,8 @@ const addClickListenersToSvg = () => {
         
         // 3. Update State
         lastSelectedNode = node;
-        if (index == tutorial.steps.length)
+        if (index > tutorial.steps.length)
           stepN = -1
-        else if (index >= tutorial.steps.length)
-          stepN = tutorial.steps.length
 
         tutorialOptions.selectedStep = stepN;
       };
