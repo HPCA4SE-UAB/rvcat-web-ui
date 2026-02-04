@@ -785,6 +785,8 @@ function cancelPendingAction() {
           </option>
         </select>
       </div>
+
+      <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
     </div>
     
     <div v-else class="header fullscreen-header">
@@ -821,8 +823,6 @@ function cancelPendingAction() {
         </div>
       </div>
     </div>
-
-    <section class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
 
     <div v-if="isFullscreen" class="program-info">
       <div class="info-row">
