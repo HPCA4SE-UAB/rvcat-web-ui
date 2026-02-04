@@ -35,21 +35,21 @@
         <div class="section tutorial-header">
           <div class="form-group left-column">
             <div class="label-input-row">
-              <label>Tutorial ID <span class="required">*</span></label>
-              <input v-model="tutorial.id" type="text" :placeholder="tutorial.id? tutorial.id+'*' : 'filename'" class="name-input">
+              <label>ID <span class="required">*</span></label>
+              <input v-model="tutorial.id" type="text" :placeholder="tutorial.id? tutorial.id+'*' : 'filename'"  title="Tutorial identifier, used as name of corresponding JSON file"  class="name-input">
 	          </div>
             <div class="label-input-row">
-              <label>Tutorial Name <span class="required">*</span></label>
-              <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name" class="name-input">
+              <label>Name <span class="required">*</span></label>
+              <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name, used to identify tutorial" title="Tutorial name, used to identify tutorial" class="name-input">
             </div>
             <label>Description</label>
-            <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial"></textarea>
+            <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial" title="Description of the tutorial"></textarea>
             <div class="buttons">
-              <button class="blue-button" title="Add new step to the tutorial (before current)" 
+              <button class="blue-button" title="Add new step to the tutorial (after selected step)" 
                 @click="addStep('step', stepNumber)">    + Add Step    </button>
-              <button class="blue-button" title="Add new question to the tutorial (before current)" 
+              <button class="blue-button" title="Add new question to the tutorial (after selected step)" 
                 @click="addStep('question', stepNumber)">+ Add Question</button>
-              <button class="blue-button" title="Duplicate current step" 
+              <button class="blue-button" title="Duplicate selected step (after the selected one)" 
                 @click="addStep(null, stepNumber)">+ Duplicate</button>
             </div>
           </div>
@@ -64,7 +64,7 @@
         <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
-              <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }">
+              <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
                 {{ stepNumber }} <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
               </span>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
@@ -74,7 +74,7 @@
             </div>
 
             <template v-if="currentStep.type === 'step'">             
-              <div class="form-group right-column">
+              <div class="form-group left-column">
                 <label>Step Image (opt.)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
@@ -96,7 +96,7 @@
                   <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group right-column">
                   <label>Position</label>
                   <select v-model="currentStep.position">
                     <option value="bottom">Bottom</option>
@@ -107,7 +107,7 @@
                 </div>
               </div>
               
-              <div class="form-group">
+              <div class="form-group right-column">
                 <label>Action (optional)</label>
                 <select v-model="currentStep.action">
                   <option value="">No action</option>
@@ -122,7 +122,7 @@
 
               <div v-if="currentStep.validationType" class="validation-card">
                 <h4>Validation</h4>
-                <div class="form-group">
+                <div class="form-group right-column">
                   <label>Type</label>
                   <select v-model="currentStep.validationType">
                     <option value="">No validation</option>
@@ -196,12 +196,9 @@
             </template>
 
             <template v-else-if="currentStep.type === 'question'">
-              <div class="form-group">
+              <div class="form-group left-column">
                 <label>Question Text <span class="required">*</span></label>
-                <textarea v-model="currentStep.questionText" placeholder="Enter your question here..."></textarea>
-              </div>
-              
-              <div class="form-group">
+                <textarea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text"></textarea>
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
@@ -226,7 +223,7 @@
                 </div>
               </div>
               
-              <div class="answers-section">
+              <div class="answers-section right-column">
                 <h4>Answers (up to 6) <span class="required">*</span> - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}</h4>
                 <div v-for="(answer, ansIndex) in currentStep.answers" :key="ansIndex" class="answer-card" :class="{ 'correct-answer': answer.isCorrect }">
                   <div class="answer-header">
@@ -323,7 +320,6 @@ const savedOptions = (() => {
     return defaultOptions
   }
 })()
-
 
 const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
   
@@ -725,9 +721,16 @@ const reloadEditedTutorial = async () => {
     return
   }
   try {
-    const jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
+    let data
+    let jsonString = localStorage.getItem('tutorialTemp');
+    if (jsonString)
+      data = JSON.parse(jsonString)
+    if (!jsonString || data.name !== tutorialOptions.inEditionID) {
+      jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
+      if (jsonString)
+        data = JSON.parse(jsonString)
+    }
     if (jsonString) {
-      const data           = JSON.parse(jsonString)
       tutorial.id          = tutorialOptions.inEditionID || ''
       tutorial.name        = data.name        || ''
       tutorial.description = data.description || ''
@@ -735,6 +738,8 @@ const reloadEditedTutorial = async () => {
       if (!tutorial.steps.length) addStep()
       console.log('🎓🔄 Reloading tutorial with:', tutorialOptions.inEditionID);
     }
+    else
+      addStep()
   } catch (error) {
     console.error('🎓❌ Failed to reload edited tutorial:', error)
     addStep()
@@ -933,10 +938,8 @@ let lastSelectedNode = null;
 let clickListeners   = [];     // To clean listeners
 
 watch(tutorial, (t) => {
-  // Cancel previous timeout
-  if (saveTimeout) {
+  if (saveTimeout)    // Cancel previous timeout
     clearTimeout(saveTimeout);
-  }
   saveTimeout = setTimeout(async () => {
     await processTutorialUpdate(t);
   }, 100);
@@ -950,6 +953,8 @@ watch (
     saveOptions()
     if (newList !== oldList || newID !== oldID)
       reloadEditedTutorial()
+    else
+      selectNodeByIndex(newStep)
   },
   { deep: true }
 )
@@ -1094,7 +1099,6 @@ const selectNodeByIndex = (index) => {
     // Select new
     highlightNodeAsSelected(node);
     lastSelectedNode = node;
-    tutorialOptions.selectedStep = index;
   }
 };
 
@@ -1104,7 +1108,7 @@ const selectNodeByIndex = (index) => {
 
 onMounted(() => {
   console.log('🎓🎯 TutorialEditor mounted')
-   addClickListenersToSvg();
+  addClickListenersToSvg();
 });
 
 onUnmounted(() => {
