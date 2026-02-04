@@ -883,7 +883,7 @@ async function processTutorialUpdate(t) {
       localStorage.setItem('tutorialTemp', JSON.stringify(t));
       console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
-      if (t.id !=== tutorialOptions.inEditionID)
+      if (t.id !== tutorialOptions.inEditionID)
         tutorialOptions.inEditionID = t.id   // create reaction to save current options
       
       const dotCode = generateTutorialDot(t);
