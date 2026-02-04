@@ -305,7 +305,7 @@ const defaultOptions = { // save this & tutorialTemp
   selectedStep: 0
 }
 
-const tutorial        = reactive({ id: 'filename', name: '', description: '', steps: [] })   // default edited
+const tutorial        = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
 const exportedContent = ref('')       // tutorial has been written to local file system
 const tutorialSvg     = ref('')
 
@@ -726,7 +726,7 @@ const reloadEditedTutorial = async () => {
     let jsonString = localStorage.getItem('tutorialTemp');
     if (jsonString)
       data = JSON.parse(jsonString)
-    if (!jsonString || data.name !== tutorialOptions.inEditionID) {
+    if (!jsonString || data.id !== tutorialOptions.inEditionID) {
       jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
       if (jsonString)
         data = JSON.parse(jsonString)
@@ -749,7 +749,7 @@ const reloadEditedTutorial = async () => {
 }
 
 const clearDraft = (check = true) => {
-  if ( check && confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
+  if ( !check || confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
     tutorial.id          = 'newTutorial'
     tutorial.name        = ''
     tutorial.description = ''
