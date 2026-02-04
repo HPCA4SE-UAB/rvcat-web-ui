@@ -7,22 +7,22 @@
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="tutorialOptions.inEditionID" id="tutorials-list" title="Select Tutorial">
+        <select v-model="tutorialOptions.inEditionID" id="tutorials-list" title="Select tutorial in local storage for edition">
           <option value="" disabled>Select</option>
           <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
             {{ tutorial }}
           </option>
         </select>
         <div class="buttons">
-          <button class="blue-button" title="Save current Tutorial" 
+          <button class="blue-button" title="Save current tutorial on your local file system" 
                 @click="downloadJSON">   Download </button>
-          <button class="blue-button" title="Load new Tutorial" 
+          <button class="blue-button" title="Load new tutorial from your local file system" 
                 @click="uploadTutorial"> Upload   </button>
           <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
                 @click="addTutorial"> Add to menu </button>
         </div>
         <div class="buttons">
-          <button class="blue-button" title="Clear draft and start fresh"
+          <button class="blue-button" title="Clear current tutorial draft and start fresh"
                 @click="clearDraft">  Clear Draft  </button>
         </div>
       </div>
@@ -36,7 +36,7 @@
           <div class="form-group left-column">
             <div class="label-input-row">
               <label>ID <span class="required">*</span></label>
-              <input v-model="tutorial.id" type="text" :placeholder="tutorial.id? tutorial.id+'*' : 'filename'"  title="Tutorial identifier, used as name of corresponding JSON file"  class="name-input">
+              <input v-model="tutorial.id" type="text" title="Tutorial identifier, used as name of corresponding JSON file"  class="name-input">
 	          </div>
             <div class="label-input-row">
               <label>Name <span class="required">*</span></label>
@@ -657,7 +657,7 @@ const validateTutorial = () => {
   if (!tutorial.steps.length)         errors.push('• At least one step or question is required')
   
   tutorial.steps.forEach((step, i) => {
-    const n = i + 1
+    const n = i
     if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
     
     if (step.type === 'question') {
@@ -762,14 +762,14 @@ const clearDraft = (check = true) => {
 const addTutorial = () => {
   if (!showValidationErrors()) return
   let filename = tutorial.id
-  if (false) 
-    filename = downloadJSON()
+  
+  filename = downloadJSON()  // TODO: use modal variable to decide if downloading or not
 
   tutorialOptions.available.push(filename)
   const data = buildTutorialData(filename)
   localStorage.setItem(`tutorial.${filename}`, JSON.stringify(data, null, 2))
  
-  console.log(`👨‍🎓✅ Added tutorial: ${filename}`)
+  console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`)
   simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
   clearDraft()
 }
@@ -863,10 +863,10 @@ const uploadTutorial = () => {
       tutorialOptions.inEditionID  = data.id
       tutorialOptions.selectedStep = 0
       
-      console.log('🎓📥 Tutorial loaded from local file system', tutorial.name);
+      console.log('🎓📥 Tutorial downloaded from local file system', tutorial.name);
     } catch (err) {
-      console.error('🎓❌ Failed to load tutorial:', err)
-      alert('Failed to load tutorial file. Please check the file format.')
+      console.error('🎓❌ Failed to download tutorial:', err)
+      alert('Failed to download tutorial file. Please check the file format.')
     }
   }
   document.body.appendChild(input)
@@ -893,7 +893,7 @@ async function processTutorialUpdate(t) {
       tutorialSvg.value = svg.outerHTML;
     }
   } catch (error) {
-    console.error('🎓❌ Failed to save edited tutorial in localStorage:', error);
+    console.error('🎓❌ Failed to save edited tutorial in localStorage and update tutorial view:', error);
   }
 }
 
@@ -917,21 +917,23 @@ digraph "Tutorial Graph" {
     dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
                             tooltip="Click to edit this ${type}"]\n`
   }
-  
-  for (let i = 0; i < (num_steps-1); i++) {
-    dot_code += `    a${i} -> `
-  }
-  dot_code += `a${num_steps-1}`
   dot_code += `
   }
-  start [shape=Msquare]
-  end   [shape=Msquare]
-  start -> a0`
-
-    dot_code += `
-  a${num_steps-1} -> end
-}\n`;
-  return dot_code;
+  start [fontsize=8 margin="0.05,0.02" shape=Msquare]
+  end   [fontsize=8 margin="0.05,0.02" shape=Msquare]
+`
+  if (num_steps > 0) {
+    dot_code += `     start -> `
+    for (let i = 0; i < (num_steps-1); i++) {
+      dot_code += `a${i} -> `
+    }
+    dot_code += `a${num_steps-1} -> end`
+  }
+  else {
+    dot_code += `     start -> end`
+  }
+  return dot_code + `
+  }`
 }
 
 // ============================================================================
@@ -988,7 +990,7 @@ const addClickListenersToSvg = () => {
     removeClickListeners();
 
     // Add event listener to all nodes
-    const nodes = svgElement.querySelectorAll('g.node');
+    const nodes = svgElement.querySelectorAll('g.node:not([id*="start"]):not([id*="end"])');
     nodes.forEach((node, index) => {
       node.style.cursor = 'pointer';
 
