@@ -879,19 +879,17 @@ const uploadTutorial = () => {
 // ============================================================================
 async function processTutorialUpdate(t) {
   try {
-    if (t.name || t.description || t.steps.length > 0) {
-      localStorage.setItem('tutorialTemp', JSON.stringify(t));
-      console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
+    localStorage.setItem('tutorialTemp', JSON.stringify(t));
+    console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
-      if (t.id !== tutorialOptions.inEditionID)
-        tutorialOptions.inEditionID = t.id   // create reaction to save current options
+    if (t.id !== tutorialOptions.inEditionID)
+      tutorialOptions.inEditionID = t.id   // create reaction to save current options
       
-      const dotCode = generateTutorialDot(t);
-      console.log('🎓📥 Dot Code', dotCode);
+    const dotCode = generateTutorialDot(t);
+    console.log('🎓📥 Dot Code', dotCode);
       
-      const svg = await createGraphVizGraph(dotCode);
-      tutorialSvg.value = svg.outerHTML;
-    }
+    const svg = await createGraphVizGraph(dotCode);
+    tutorialSvg.value = svg.outerHTML;
   } catch (error) {
     console.error('🎓❌ Failed to save edited tutorial in localStorage and update tutorial view:', error);
   }
