@@ -67,7 +67,7 @@
         <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
-              <div class="form-group">
+              <div class="form-row">
                 <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
                   {{ stepNumber }} 
                 </span>
@@ -80,7 +80,7 @@
             </div>
 
             <template v-if="currentStep.type === 'step'">             
-              <div class="form-group left-column">
+              <div class="form-group">
                 <label>Step Image (opt.)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
@@ -91,34 +91,32 @@
                 </div>
               </div>
               
-              <!--- div class="form-row">  -->
-                <div class="form-group">
-                  <label>Position</label>
-                  <select v-model="currentStep.position">
-                    <option value="bottom">Bottom</option>
-                    <option value="top">Top</option>
-                    <option value="left">Left</option>
-                    <option value="right">Right</option>
-                  </select>
-                  <label>Element to Highlight <span class="required">*</span></label>
-                  <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
-                    <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                  <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
-                  <label>Action (optional)</label>
-                  <select v-model="currentStep.action">
-                    <option value="">No action</option>
-                    <option value="switchTo:simulationComponent">   Go to Simulation     </option>
-                    <option value="switchTo:analysisComponent">     Go to Static Analysis</option>
-                    <option value="switchTo:timelineComponent">     Go to Timeline       </option>
-                    <option value="switchToFull:processorComponent">Go to Processor      </option>
-                    <option value="switchToFull:programComponent">  Go to Program        </option>
-                    <option value="switchToFull:tutorialComponent"> Go to Tutorial       </option>
-                  </select>
-                 </div>
-              <!--- /div> -->
+              <div class="form-group">
+                <label>Position</label>
+                <select v-model="currentStep.position">
+                  <option value="bottom">Bottom</option>
+                  <option value="top">Top</option>
+                  <option value="left">Left</option>
+                  <option value="right">Right</option>
+                </select>
+                <label>Element to Highlight <span class="required">*</span></label>
+                <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
+                  <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
+                    {{ opt.label }}
+                  </option>
+                </select>
+                <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
+                <label>Action (optional)</label>
+                <select v-model="currentStep.action">
+                  <option value="">                               No action            </option>
+                  <option value="switchTo:simulationComponent">   Go to Simulation     </option>
+                  <option value="switchTo:analysisComponent">     Go to Static Analysis</option>
+                  <option value="switchTo:timelineComponent">     Go to Timeline       </option>
+                  <option value="switchToFull:processorComponent">Go to Processor      </option>
+                  <option value="switchToFull:programComponent">  Go to Program        </option>
+                  <option value="switchToFull:tutorialComponent"> Go to Tutorial       </option>
+                </select>
+              </div>
 
               <div v-if="currentStep.validationType" class="validation-card">
                 <h4>Validation</h4>
