@@ -488,11 +488,11 @@ const addStep = (type = 'step', atIndex = null) => {
     // Create deep copy
     newStep = JSON.parse(JSON.stringify(tutorial.steps[insertIndex]));
     newStep.title = `${newStep.title} (copy)`;
-    insertIndex = insertIndex+1
   }
   else
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
-  
+
+  insertIndex = insertIndex+1
   tutorial.steps.splice(insertIndex, 0, newStep);
   tutorialOptions.selectedStep = insertIndex;
 }
@@ -1034,7 +1034,8 @@ const addClickListenersToSvg = () => {
         enter: handleMouseEnter,
         leave: handleMouseLeave
       });
-      
+
+      selectNodeByIndex(tutorialOptions.selectedStep)
     });
   });
 };
