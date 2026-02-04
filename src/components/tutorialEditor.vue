@@ -51,6 +51,7 @@
                 @click="addStep('question', stepNumber)">+ Add Question</button>
               <button class="blue-button" title="Duplicate selected step (after the selected one)" 
                 @click="addStep(null, stepNumber)">+ Duplicate</button>
+              {{ stepNumber }} 
             </div>
           </div>
           <div class="form-group right-column">
