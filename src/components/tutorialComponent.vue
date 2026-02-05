@@ -1328,47 +1328,56 @@ onUnmounted(() => {
 }
 
 .question-text {
-  font-size: 15px;
+  font-size: medium;
   line-height: 1.6;
   color: #333;
-  margin: 0 0 16px 0;
+  margin: 0 0 6px 0;
 }
 
 .question-text :deep(code) {
-  background: #f4f4f4;
-  padding: 2px 6px;
+  background:    #f4f4f4;
+  padding:       2px 6px;
   border-radius: 3px;
-  font-family: monospace;
+  font-family:   monospace;
 }
 
 .question-image {
-  margin-bottom: 16px;
+  margin-bottom: 6px;
+  text-align:    center;
+  cursor:        pointer;
+  position:      relative;
+}
+
+.step-image {
+  margin:     6px 0;
   text-align: center;
-  cursor: pointer;
-  position: relative;
+  cursor:     pointer;
+  position:   relative;
 }
 
-.question-image img {
-  max-width: 100%;
-  max-height: 300px;
+.question-image img,
+.step-image img {
+  max-width:     100%;
+  max-height:    300px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border:        1px solid #e5e7eb;
+  box-shadow:    0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:    transform 0.2s, box-shadow 0.2s;
 }
 
-.question-image:hover img {
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+.question-image:hover img,
+.step-image:hover img {
+  transform:  scale(1.02);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .question-image .image-hint,
 .step-image .image-hint {
-  display: block;
-  font-size: 11px;
-  color: #6b7280;
-  margin-top: 4px;
-  opacity: 0.7;
+  display:    block;
+  font-size:  small;
+  color:      #6b7280;
+  margin-top: 2px;
+  opacity:    0.7;
 }
 
 .question-image:hover .image-hint,
@@ -1376,59 +1385,36 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-/* Step image in tooltip */
-.step-image {
-  margin: 12px 0;
-  text-align: center;
-  cursor: pointer;
-  position: relative;
-}
-
-.step-image img {
-  max-width: 100%;
-  max-height: 150px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.step-image:hover img {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Lightbox popup */
 .lightbox-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
+  top:      0;
+  left:     0;
+  right:    0;
+  bottom:   0;
+  background:      rgba(0, 0, 0, 0.85);
+  display:         flex;
+  align-items:     center;
   justify-content: center;
-  z-index: 100000;
-  animation: fadeIn 0.2s ease-out;
+  z-index:         100000;
+  animation:       fadeIn 0.2s ease-out;
 }
 
 .lightbox-content {
-  position: relative;
-  max-width: 90vw;
+  position:   relative;
+  max-width:  90vw;
   max-height: 90vh;
-  display: flex;
+  display:     flex;
   align-items: center;
   justify-content: center;
 }
 
 .lightbox-content img {
-  max-width: 90vw;
+  max-width:  90vw;
   max-height: 90vh;
-  width: auto;
-  height: auto;
-  min-width: 200px;
-  min-height: 200px;
+  width:      auto;
+  height:     auto;
+  min-width:  400px;
+  min-height: 400px;
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
