@@ -1171,6 +1171,7 @@ onUnmounted(() => {
   padding: 0;
   display: flex;
   flex-direction: column;
+  height: 1400px;
 }
 
 .section {
@@ -1183,6 +1184,32 @@ onUnmounted(() => {
 
 .section:last-child {
   border-bottom: none;
+}
+
+.scrollable-panel {
+  flex: 1; /* Ocupa espacio disponible */
+  min-height: 0; /* Importante para que funcione flex + overflow */
+  
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* Padding para que el contenido no quede pegado a los bordes */
+  padding: 16px;
+  
+  /* Mejoras de UX */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
+}
+
+/* Opcional: sombra en scroll para indicar más contenido */
+.scrollable-panel {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 20px,
+    black calc(100% - 20px),
+    transparent
+  );
 }
   
 .tutorial-header {
