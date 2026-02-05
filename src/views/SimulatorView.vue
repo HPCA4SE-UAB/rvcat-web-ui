@@ -361,10 +361,12 @@ nav ul li {
   display:  grid;
   overflow: hidden;
 }
+  
 .grid-item.program,
 .grid-item.results,
 .grid-item.tutorial {
   display: grid;
+  overflow: hidden;
 }
 
 .grid-item.processor.fullscreen,
@@ -437,8 +439,10 @@ nav ul li {
   to { transform: rotate(360deg); }
 }
 
-.grid-item.processor.fullscreen .processor-content {
-  padding:   0px;
+.grid-item.processor.fullscreen,
+.grid-item.program.fullscreen,
+.grid-item.tutorial.fullscreen  {
+  padding:      0px;
   max-width: 1400px;
   margin:    0 auto;
 }
