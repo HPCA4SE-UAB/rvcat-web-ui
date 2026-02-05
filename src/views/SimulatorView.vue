@@ -437,15 +437,15 @@ nav ul li {
 
 .grid-item.processor.fullscreen,
 .grid-item.program.fullscreen  {
-  padding:      0px;
-  max-width: 1400px;
-  margin:    0 auto;
+  padding:       0px;
+  max-height: 1400px;
+  margin:     0 auto;
 }
 
 .grid-item.tutorial.fullscreen  {
-  padding:      0px;
-  max-width: 4000px;
-  margin:    0 auto;
+  padding:       0px;
+  max-height: 2400px;
+  margin:     0 auto;
 }
 
 .grid-item.processor.fullscreen::-webkit-scrollbar,
