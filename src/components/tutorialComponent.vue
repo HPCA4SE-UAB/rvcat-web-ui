@@ -49,7 +49,7 @@
         <button @click="closeTutorial" class="question-close">&times;</button>
         
         <div class="question-header">
-          <span class="question-badge">Question {{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</span>
+          <span class="question-badge">Question {{ stepIndex + 1 }}</span>
           <h2 v-html="currentStep?.title"></h2>
         </div>
         
@@ -1225,18 +1225,17 @@ onUnmounted(() => {
 
 /* Question Overlay Styles */
 .question-overlay {
+  display:  flex;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top:      0;
+  left:     0;
+  width:    100vw;
+  height:   100vh;
   background: rgba(0, 0, 0, 0.6);
   z-index: 10000;
-  display: flex;
-  align-items: center;
+  align-items:     flex-start;
   justify-content: center;
-  padding: 30px;
-  animation: fadeIn 0.3s ease-out;
+  animation:       fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
@@ -1245,17 +1244,17 @@ onUnmounted(() => {
 }
 
 .question-panel {
-  background: white;
-  border-radius: 14px;
-  width: 100%;
-  max-width: 550px;
-  max-height: calc(100vh - 60px);
-  display: flex;
+  background:     white;
+  border-radius:  15px;
+  width:          100%;
+  max-width:      800px;
+  max-height:     calc(100vh - 10px);
+  display:        flex;
   flex-direction: column;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.4s ease-out;
-  position: relative;
-  overflow: hidden;
+  box-shadow:     0 16px 48px rgba(0, 0, 0, 0.3);
+  animation:      slideUp 0.4s ease-out;
+  position:       relative;
+  overflow:       hidden;
 }
 
 @keyframes slideUp {
@@ -1271,16 +1270,16 @@ onUnmounted(() => {
 
 .question-close {
   position: absolute;
-  top: 12px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
+  top:      10px;
+  right:    12px;
+  background:  none;
+  border:      none;
+  font-size:   24px;
+  cursor:      pointer;
+  color:       #999;
   line-height: 1;
-  z-index: 10;
-  transition: color 0.2s;
+  z-index:     10;
+  transition:  color 0.2s;
 }
 
 .question-close:hover {
@@ -1288,32 +1287,44 @@ onUnmounted(() => {
 }
 
 .question-header {
-  padding: 18px 24px 14px;
+  padding:       4px 18px 6px;
   border-bottom: 1px solid #f0f0f0;
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: white;
+  background:    linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color:         white;
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  width:         100%;
 }
 
 .question-badge {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 4px 12px;
+  display:       inline-block;
+  background:    rgba(255, 255, 255, 0.2);
+  padding:       3px 10px;
   border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-bottom: 10px;
+  font-size:     small;
+  font-weight:   bold;
+  margin-bottom: 20px;
+  background:    #007bff;
+  color:         white;
+  flex-shrink:   0;
 }
 
 .question-header h2 {
-  margin: 0;
-  font-size: 18px;
+  margin:      0;
+  font-size:   medium;
   font-weight: 600;
+  flex:        1;
+  min-width:   0; /* Importante para que funcione text-overflow */
+  overflow:    hidden;
+  text-overflow: ellipsis;
+  white-space:  nowrap;
 }
 
 .question-body {
-  padding: 20px 24px;
+  padding:    10px 20px;
   overflow-y: auto;
-  flex: 1;
+  flex:       1;
 }
 
 .question-text {
