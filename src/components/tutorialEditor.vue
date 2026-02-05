@@ -66,7 +66,7 @@
         </div>
 
         <!-- Card: step/question -->
-        <div v-if="currentStep" class="section">
+        <div v-if="currentStep" class="section scrollable-panel">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
               <div class="form-row">
@@ -1169,9 +1169,14 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .section {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* Importante para flex + overflow */
   padding:       10px 10px;
   border-bottom: 1px solid #f3f4f6;
 }
@@ -1179,7 +1184,7 @@ onUnmounted(() => {
 .section:last-child {
   border-bottom: none;
 }
-
+  
 .tutorial-header {
   display:     flex;
   gap:         10px;
