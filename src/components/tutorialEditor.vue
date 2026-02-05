@@ -1634,6 +1634,7 @@ onUnmounted(() => {
   transition:    background-color 0.2s;
   display:       block;
   width:         100%;
+  margin-bottom: 20px;
 }
 
 .add-answer-btn:hover {
