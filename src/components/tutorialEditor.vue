@@ -1152,7 +1152,7 @@ onUnmounted(() => {
   width:          100%;
   display:        flex;
   flex-direction: column;
-  margin: auto;
+  margin:         auto;
 }
   
 .settings-container {
@@ -1182,8 +1182,8 @@ onUnmounted(() => {
 
 .section {
   flex: 1;
-  overflow-y: auto;
-  min-height: 0; /* Importante para flex + overflow */
+  overflow-y:    auto;
+  min-height:    0; /* Importante para flex + overflow */
   padding:       10px 10px;
   border-bottom: 1px solid #f3f4f6;
 }
@@ -1196,7 +1196,7 @@ onUnmounted(() => {
   display:     flex;
   gap:         10px;
   align-items: flex-start;
-  min-height: 200px; /* Altura mínima para la sección */
+  min-height:  120px; /* Altura mínima para la sección */
 }
 
 .left-column {
@@ -1205,8 +1205,8 @@ onUnmounted(() => {
 }
 
 .right-column {
-  flex: 3;          /* 3/4 del espacio disponible */
-  min-width: 0;
+  flex:       3;          /* 3/4 del espacio disponible */
+  min-width:  0;
   box-sizing: border-box; /* Incluye padding y border en el cálculo */
   display:    flex;
   padding:    2px;
@@ -1215,8 +1215,8 @@ onUnmounted(() => {
   background:    #f8f9fa;
   border-radius: 8px;
 
-  max-height: 600px; /* O la altura máxima que prefieras */
-  min-height: 200px; /* Altura mínima */
+  max-height: 1500px; /* O la altura máxima que prefieras */
+  min-height:  180px; /* Altura mínima */
   
   overflow: hidden; /* Oculta cualquier desbordamiento */
   position: relative; /* Para el posicionamiento interno */
@@ -1231,8 +1231,8 @@ onUnmounted(() => {
   }
 
   .tutorial-img svg[viewBox] {
-    width: 100%;
-    height: 100%;
+    width:    100%;
+    height:   100%;
     overflow: hidden;
   }  
   
