@@ -1620,7 +1620,7 @@ onUnmounted(() => {
   background:    #6b7280;
   color:         white;
   border:        none;
-  padding:       5px 10px;
+  padding:       2px 10px;
   border-radius: 6px;
   font-size:     medium;
   font-weight:   500;
