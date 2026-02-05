@@ -277,8 +277,14 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The tutorial allows ... Tutorials can be uploaded or downloaded in JSON format."
-      title="Tutorial Edition"
+    text="<p>Tutorials can be edited, uploaded from or downloaded to the local file system in JSON format, added or removed to the local menu 
+      (able to be executed, stored in the navigator local storage, and preserved across sessions).</p>
+      <p>A tutorial is composed of <strong>general steps</strong> and <strong>question steps</strong>. 
+      General steps define an element in the simulator that is highlighted, and may define a action (simulate click on main header buttons).
+      You can specify the position in the screen for the tutorial message in relation to the highlighted screen element. 
+      Finally, you can specify some requirement to continue the tutorial, 
+      such as clicking some button, or selecting some value in a certain input box.</p>"
+    title="Tutorial edition, download/upload, "
     @close="closeHelp"  />
   </Teleport>
 
