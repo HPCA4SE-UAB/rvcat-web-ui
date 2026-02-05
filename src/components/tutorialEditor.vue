@@ -1262,7 +1262,7 @@ onUnmounted(() => {
 }
 
 .form-group {
-  margin-bottom: 3px;
+  margin-bottom: 8px;
   padding-right: 10px;
 }
 
