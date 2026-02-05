@@ -534,8 +534,8 @@ function uploadProcessor(event) {
  * Help support 
  * ------------------------------------------------------------------ */
   const showHelp  = ref(false); const helpIcon  = ref(null);
-  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false); const showHelp5 = ref(false);
-  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);  const helpIcon5 = ref(null);
+  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false); 
+  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null); 
   const helpPosition = ref({ top: '0%', left: '40%' });
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
@@ -548,8 +548,6 @@ function uploadProcessor(event) {
   function closeHelp3() { showHelp3.value  = false }
   function openHelp4()  { nextTick(() => { showHelp4.value = true }) }
   function closeHelp4() { showHelp4.value  = false }
-  function openHelp5()  { nextTick(() => { showHelp5.value = true }) }
-  function closeHelp5() { showHelp5.value  = false }
 </script>
 
 <template>
@@ -580,10 +578,6 @@ function uploadProcessor(event) {
 
       <!--    Processor Graph with visual usage  -->
       <div class="graph-section">
-        <span ref="helpIcon5" class="info-icon" @click="openHelp5" title="Show help">
-           <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="dropdown-title">Processor Bottlenecks</span>
         <div class="pipeline-container">
           <div class="pipeline-img">
             <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
@@ -594,9 +588,9 @@ function uploadProcessor(event) {
       <div class="scale-container">
         <div class="color-scale"></div>
         <div class="scale-labels">
-          <span>Underutilized</span>
+          <span>underutilized</span>
           <span></span>
-          <span>Saturated</span>
+          <span>saturated</span>
         </div>
       </div>
 
@@ -775,10 +769,13 @@ function uploadProcessor(event) {
     <HelpComponent v-if="showHelp" :position="helpPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
         <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
-        Pin the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>"
-    title="Processor MicroArchitecture"
+        Pin the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>
+        <p>After simulating the execution of a program, the graphical view of the processor provides utilization information:
+        hover over the <em>execution ports</em> to inspect their individual <em>utilization</em>. 
+        <strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
+    title="Processor MicroArchitecture and Usage"
     @close="closeHelp" />
-
+    
     <HelpComponent v-if="showHelp1" :position="helpPosition" 
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
       (2) <em>Cache Memory</em>; (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
@@ -803,18 +800,12 @@ function uploadProcessor(event) {
     @close="closeHelp3"/>
 
   <HelpComponent v-if="showHelp4" :position="helpPosition" 
-    text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Thorughput</strong> of instruction types.
+    text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Throughput</strong> of instruction types.
       <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports 
          (only one is used for execution each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Instruction Latency and Throughput Settings"
     @close="closeHelp4"/>
-    
-    <HelpComponent v-if="showHelp5" :position="helpPosition"
-    text="Graphical view of processor utilization: hover over the <em>execution ports</em> 
-      to inspect their individual <em>utilization</em>. <p><strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
-    title="Processor Utilization"
-    @close="closeHelp5"/>
 
   </Teleport>
   
@@ -1003,7 +994,7 @@ function uploadProcessor(event) {
   .scale-labels {
     width:      100%;
     display:    flex;
-    margin-top: 10px;
+    margin-top: 2px;
     font-size:  smaller;
     justify-content: space-between;
   }
