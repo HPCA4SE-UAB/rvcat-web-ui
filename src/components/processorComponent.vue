@@ -911,13 +911,14 @@ function uploadProcessor(event) {
     width:     100%;
     height:    100%;
     display:   flex;
+    margin-top: 6px;
   }
   .pipeline-side-container {
     flex: 1 1 55%;
     min-width: 0;           /* Importante para evitar desbordamiento */
     box-sizing: border-box; /* Incluye padding y border en el cálculo */
     display:   flex;
-    padding:   2px;
+    padding:   3px;
     flex-direction: column;
     border:        1px solid #ddd;
     background:    #f8f9fa;
@@ -985,7 +986,7 @@ function uploadProcessor(event) {
   }
   
   .scale-container {
-    width:      50%;
+    width:      30%;
     margin:     0 auto;
     margin-top: 2%;
     text-align: center;
@@ -995,14 +996,14 @@ function uploadProcessor(event) {
     width:      100%;
     display:    flex;
     margin-top: 2px;
-    font-size:  smaller;
+    font-size:  x-small;
     justify-content: space-between;
   }
   .color-scale {
-    width:    100%;
-    height:   10px;
-    border:   1px solid black;
-    position: relative;
+    width:       100%;
+    height:      8px;
+    border:      1px solid black;
+    position:    relative;
     background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
     border-radius: 5px;
   }
