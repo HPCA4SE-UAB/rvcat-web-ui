@@ -1172,12 +1172,12 @@ onUnmounted(() => {
 }
 
 .editor-content {
-  flex: 1;
+  display:    flex;
+  flex:       1;
   overflow-y: auto;
-  padding: 0;
-  display: flex;
+  padding:    0;
   flex-direction: column;
-  height: 1400px;
+  max-height:     2000px;
 }
 
 .section {
