@@ -66,7 +66,7 @@
         </div>
 
         <!-- Card: step/question -->
-        <div v-if="currentStep" class="section scrollable-panel">
+        <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
               <div class="form-row">
@@ -1185,33 +1185,7 @@ onUnmounted(() => {
 .section:last-child {
   border-bottom: none;
 }
-
-.scrollable-panel {
-  flex: 1; /* Ocupa espacio disponible */
-  min-height: 0; /* Importante para que funcione flex + overflow */
-  
-  overflow-y: auto;
-  overflow-x: hidden;
-  
-  /* Padding para que el contenido no quede pegado a los bordes */
-  padding: 16px;
-  
-  /* Mejoras de UX */
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
-}
-
-/* Opcional: sombra en scroll para indicar más contenido */
-.scrollable-panel {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    black 20px,
-    black calc(100% - 20px),
-    transparent
-  );
-}
-  
+ 
 .tutorial-header {
   display:     flex;
   gap:         10px;
@@ -1235,11 +1209,9 @@ onUnmounted(() => {
   background:    #f8f9fa;
   border-radius: 8px;
 
-    /* Control de altura máxima */
   max-height: 600px; /* O la altura máxima que prefieras */
   min-height: 200px; /* Altura mínima */
   
-  /* Para que el contenido interno se ajuste */
   overflow: hidden; /* Oculta cualquier desbordamiento */
   position: relative; /* Para el posicionamiento interno */
 }
@@ -1250,12 +1222,6 @@ onUnmounted(() => {
     align-items:  center;
     object-fit:   contain;
     transform-box: fill-box;
-
-
-    /*display: flex;
-    justify-content: center;
-    overflow: hidden;
-    position: relative; */
   }
 
   .tutorial-img svg[viewBox] {
@@ -1273,7 +1239,6 @@ onUnmounted(() => {
     stroke-width: 2px !important;
   }
   
-/* Estilos CSS para nodos seleccionados */
 .tutorial-img g.node.selected ellipse,
 .tutorial-img g.node.selected polygon,
 .tutorial-img g.node.selected path {
@@ -1318,7 +1283,7 @@ onUnmounted(() => {
 .form-group textarea,
 .form-group select {
   width:         100%;
-  padding:       4px 6px;
+  padding:       1px 6px;
   border:        1px solid #d1d5db;
   border-radius: 8px;
   font-size:     medium;
@@ -1444,7 +1409,6 @@ onUnmounted(() => {
   margin-top: 12px;
 }
 
-/* Step type selector */
 .step-type-selector {
   display: flex;
   gap:     12px;
@@ -1476,7 +1440,6 @@ onUnmounted(() => {
   background: #8b5cf6 !important;
 }
 
-/* Answer mode selector */
 .answer-mode-selector {
   display:    flex;
   gap:        4px;
@@ -1499,7 +1462,6 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* Image upload section */
 .image-upload-section {
   display:        flex;
   flex-direction: column;
@@ -1549,7 +1511,6 @@ onUnmounted(() => {
   background: #dc2626;
 }
 
-/* Answers section */
 .answers-section {
   margin-top:    1px;
   padding-left:  8px;
@@ -1569,8 +1530,8 @@ onUnmounted(() => {
   background:    #f9fafb;
   border:        1px solid #e5e7eb;
   border-radius: 8px;
-  padding:       6px;
-  margin-bottom: 6px;
+  padding:       3px;
+  margin-bottom: 3px;
   transition:    all 0.2s;
 }
 
@@ -1583,7 +1544,7 @@ onUnmounted(() => {
   display:       flex;
   align-items:   center;
   gap:           6px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .answer-letter {
@@ -1591,7 +1552,7 @@ onUnmounted(() => {
   color:         white;
   font-size:     small;
   font-weight:   600;
-  padding:       4px 6px;
+  padding:       2px 4px;
   border-radius: 4px;
 }
 
@@ -1635,8 +1596,8 @@ onUnmounted(() => {
 }
 
 .feedback-group {
-  margin-top:  8px;
-  padding:     8px;
+  margin-top:  2px;
+  padding:     2px;
   background:  rgba(255, 255, 255, 0.7);
   border-radius: 6px;
   border: 1px dashed #d1d5db;
