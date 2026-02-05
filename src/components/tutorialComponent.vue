@@ -8,8 +8,8 @@
         <div class="tutorial-content">
           <h3 v-html="currentStep?.title"></h3>
           <p class="step-description" v-html="currentStep?.description"></p>
-          <div v-if="currentStep?.stepImage" class="step-image" @click="openLightbox(currentStep.stepImage)">
-            <img :src="currentStep.stepImage" alt="Step image">
+          <div v-if="currentStep?.image" class="step-image" @click="openLightbox(currentStep.image)">
+            <img :src="currentStep.image" alt="Step image">
             <span class="image-hint">Click to enlarge</span>
           </div>
           <div class="tutorial-actions">
@@ -56,8 +56,8 @@
         <div class="question-body">
           <p class="question-text" v-html="currentStep?.questionText"></p>
           
-          <div v-if="currentStep?.questionImage" class="question-image" @click="openLightbox(currentStep.questionImage)">
-            <img :src="currentStep.questionImage" alt="Question image">
+          <div v-if="currentStep?.image" class="question-image" @click="openLightbox(currentStep.image)">
+            <img :src="currentStep.image" alt="Question image">
             <span class="image-hint">Click to enlarge</span>
           </div>
           
