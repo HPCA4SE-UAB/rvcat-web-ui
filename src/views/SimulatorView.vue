@@ -444,7 +444,7 @@ nav ul li {
 
 .grid-item.tutorial.fullscreen  {
   padding:      0px;
-  max-width: 2000px;
+  max-width: 4000px;
   margin:    0 auto;
 }
 
