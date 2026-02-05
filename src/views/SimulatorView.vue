@@ -357,11 +357,7 @@ nav ul li {
   min-width:     0;
 }
 
-.grid-item.processor {
-  display:  grid;
-  overflow: hidden;
-}
-  
+.grid-item.processor,  
 .grid-item.program,
 .grid-item.results,
 .grid-item.tutorial {
@@ -440,10 +436,15 @@ nav ul li {
 }
 
 .grid-item.processor.fullscreen,
-.grid-item.program.fullscreen,
-.grid-item.tutorial.fullscreen  {
+.grid-item.program.fullscreen  {
   padding:      0px;
   max-width: 1400px;
+  margin:    0 auto;
+}
+
+.grid-item.tutorial.fullscreen  {
+  padding:      0px;
+  max-width: 2000px;
   margin:    0 auto;
 }
 
