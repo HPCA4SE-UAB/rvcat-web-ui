@@ -211,8 +211,15 @@ function snapshotProgram() {
 // ============================================================================
 // WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
 // ============================================================================
+  // Constante para la opción especial
+ const ADD_NEW_OPTION = '__add_new__'
+
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
+    if (newProgram === ADD_NEW_OPTION) {
+      uploadProgram()
+      return
+    }
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
     if (simState.state > 1 && newProgram !== oldProgram) {
@@ -407,6 +414,7 @@ function snapshotProgram() {
         uploadedProgramObject = parsed;
         modalName.value       = parsed.name;
         showModalUp.value     = true;
+        programOptions.currentProgram = parsed.name;
         console.log('📄✅ Uploaded program:', uploadedProgramObject)
       } catch (err) {
         console.error("📄❌ Failed to parse JSON file:", err);
@@ -737,7 +745,6 @@ async function proceedPendingAction() {
   pendingAction.value = null;
 }
 
-  
 // ============================================================================
 // Help support 
 // ============================================================================
@@ -747,129 +754,6 @@ async function proceedPendingAction() {
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
-
-
-
-
-// Datos iniciales
-const initialItems = [
-  { id: 1, name: 'Opción A' },
-  { id: 2, name: 'Opción B' },
-  { id: 3, name: 'Opción C' }
-]
-
-// Estado reactivo
-const items = ref([...initialItems])
-const selectedId = ref('')
-const newItemName = ref('')
-const showAddForm = ref(false)
-const newItemInput = ref(null)
-
-// Constante para la opción especial
-const ADD_NEW_OPTION = '__add_new__'
-
-// Computed properties
-const selectedItem = computed(() => {
-  return items.value.find(item => item.id === selectedId.value)
-})
-
-// Manejar cambio en el select
-const handleSelectChange = () => {
-  if (selectedId.value === ADD_NEW_OPTION) {
-    showAddForm.value = true
-    newItemName.value = ''
-    // Enfocar el input después de que se renderice
-    nextTick(() => {
-      if (newItemInput.value) {
-        newItemInput.value.focus()
-      }
-    })
-  } else {
-    showAddForm.value = false
-  }
-}
-
-// Confirmar adición de nuevo elemento
-const confirmAddItem = () => {
-  if (newItemName.value.trim() === '') {
-    cancelAddItem()
-    return
-  }
-
-  // Generar nuevo ID
-  const newId = items.value.length > 0
-    ? Math.max(...items.value.map(item => item.id)) + 1
-    : 1
-
-  // Crear nuevo elemento
-  const newItem = {
-    id: newId,
-    name: newItemName.value.trim()
-  }
-
-  // Añadir a la lista
-  items.value.push(newItem)
- 
-  // Seleccionar el nuevo elemento
-  selectedId.value = newId
- 
-  // Resetear formulario
-  resetAddForm()
-}
-
-// Cancelar adición
-const cancelAddItem = () => {
-  resetAddForm()
-  // Volver a seleccionar el primer elemento si existe
-  if (items.value.length > 0) {
-    selectedId.value = items.value[0].id
-  } else {
-    selectedId.value = ''
-  }
-}
-
-// Cancelar si el campo está vacío y pierde el foco
-const cancelAddIfEmpty = () => {
-  if (newItemName.value.trim() === '') {
-    cancelAddItem()
-  }
-}
-
-// Resetear formulario de añadir
-const resetAddForm = () => {
-  showAddForm.value = false
-  newItemName.value = ''
-  selectedId.value = items.value.length > 0 ? items.value[0].id : ''
-}
-
-// Eliminar elemento seleccionado
-const removeSelectedItem = () => {
-  if (!selectedId.value || selectedId.value === ADD_NEW_OPTION) return
- 
-  removeItem(selectedId.value)
-}
-
-// Eliminar elemento por ID
-const removeItem = (id) => {
-  const index = items.value.findIndex(item => item.id === id)
-  if (index !== -1) {
-    items.value.splice(index, 1)
-   
-    // Actualizar selección
-    if (selectedId.value === id) {
-      selectedId.value = items.value.length > 0 ? items.value[0].id : ''
-    }
-  }
-}
-
-// Observar cambios en la lista para mantener la selección válida
-watch(items, (newItems) => {
-  if (newItems.length === 0) {
-    selectedId.value = ''
-  } else if (!newItems.some(item => item.id === selectedId.value) && selectedId.value !== ADD_NEW_OPTION) {
-    selectedId.value = newItems[0].id
-  }
-}, { deep: true })
 
 </script>
 
@@ -887,10 +771,14 @@ watch(items, (newItems) => {
                id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
-            {{ program }} <button @click="removeItem()" class="btn btn-small" title="Eliminar">×</button>
+            {{ program }}
           </option>
            <option value="__add_new__">Add new</option>
         </select>
+        <button class="blue-button" :disabled="!false" @click="removeProgram"
+          title="Remove program from list (and local storage)">
+            Remove
+        </button>
       </div>
     </div>
     
@@ -1428,9 +1316,6 @@ watch(items, (newItems) => {
   background: #ffebee;
   border-radius: 4px;
 }
-
-
-
   
 .form-select {
   width:            100%;
@@ -1452,30 +1337,6 @@ watch(items, (newItems) => {
   color:            #4a6cf7;
   font-weight:      bold;
   background-color: #f0f5ff;
-}
-
-.btn {
-  padding:       1px 2px;
-  border:        none;
-  border-radius: 6px;
-  font-size:     medium;
-  font-weight:   500;
-  cursor:        pointer;
-  transition:    all 0.2s;
-}
-
-.btn-small {
-  padding:          2px 2px;
-  background-color: #ff6b81;
-  color:            white;
-  border-radius:    4px;
-  font-size:        medium;
-  line-height:      1;
-}
-
-.btn-small:hover {
-  background-color: #ff4757;
-  transform:        scale(1.1);
 }
   
 </style>
