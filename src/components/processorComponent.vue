@@ -1,10 +1,10 @@
 <script setup>
   import { ref, unref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
-  import HelpComponent    from '@/components/helpComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
-  import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource, createGraphVizGraph,
-            downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
-         } from '@/common';
+  import HelpComponent                                            from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                                             from '@/rvcatAPI'
+  import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
+          downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
+          initResource, createGraphVizGraph                                           } from '@/common'
   
   const { setProcessor }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -26,14 +26,12 @@
 // ============================================================================
 
   const STORAGE_KEY = 'processorOptions'
-
   const defaultOptions = {
     processorName:      '',
     ROBsize:            20,
     availableProcessors: []
   }
 
-  // JSON of current processor configuration. Updated by ReloadProcessor()
   let jsonString    = ''
   let processorInfo = null
   
@@ -169,7 +167,7 @@
 //                  updateProcessor, drawProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
-    initResource('processor', processorOptions, 'processorName', 'availableProcessors');
+    await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
   };
   
   const reloadProcessor = async () => {
