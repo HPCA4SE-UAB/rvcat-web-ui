@@ -348,7 +348,7 @@ function snapshotProgram() {
     }      
   }
 
-  const removeProgram () {
+  function removeProgram () {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
   }
   
