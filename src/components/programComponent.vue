@@ -67,7 +67,7 @@ const instructions = ref([]);
 const originalProgramName = ref('');
 const originalProgram     = ref({ name: '', instruction_list: [] });
 
-function loadFromLocalStorage() {
+function loadEditedProgram() {
   const stored = localStorage.getItem('program_temp');
   if (!stored) return;
   try {
@@ -271,7 +271,7 @@ function snapshotProgram() {
       
       if (instructions.value.length === 0)
         addInstruction()
-      loadFromLocalStorage();
+      loadEditedProgram();
       syncOriginalWithCurrent();
       localStorage.setItem('programTemp', JSON.stringify(snapshotProgram()));
     } catch (error) {
