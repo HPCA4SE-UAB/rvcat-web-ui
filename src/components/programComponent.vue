@@ -747,6 +747,130 @@ async function proceedPendingAction() {
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
+
+
+
+
+// Datos iniciales
+const initialItems = [
+  { id: 1, name: 'Opción A' },
+  { id: 2, name: 'Opción B' },
+  { id: 3, name: 'Opción C' }
+]
+
+// Estado reactivo
+const items = ref([...initialItems])
+const selectedId = ref('')
+const newItemName = ref('')
+const showAddForm = ref(false)
+const newItemInput = ref(null)
+
+// Constante para la opción especial
+const ADD_NEW_OPTION = '__add_new__'
+
+// Computed properties
+const selectedItem = computed(() => {
+  return items.value.find(item => item.id === selectedId.value)
+})
+
+// Manejar cambio en el select
+const handleSelectChange = () => {
+  if (selectedId.value === ADD_NEW_OPTION) {
+    showAddForm.value = true
+    newItemName.value = ''
+    // Enfocar el input después de que se renderice
+    nextTick(() => {
+      if (newItemInput.value) {
+        newItemInput.value.focus()
+      }
+    })
+  } else {
+    showAddForm.value = false
+  }
+}
+
+// Confirmar adición de nuevo elemento
+const confirmAddItem = () => {
+  if (newItemName.value.trim() === '') {
+    cancelAddItem()
+    return
+  }
+
+  // Generar nuevo ID
+  const newId = items.value.length > 0
+    ? Math.max(...items.value.map(item => item.id)) + 1
+    : 1
+
+  // Crear nuevo elemento
+  const newItem = {
+    id: newId,
+    name: newItemName.value.trim()
+  }
+
+  // Añadir a la lista
+  items.value.push(newItem)
+ 
+  // Seleccionar el nuevo elemento
+  selectedId.value = newId
+ 
+  // Resetear formulario
+  resetAddForm()
+}
+
+// Cancelar adición
+const cancelAddItem = () => {
+  resetAddForm()
+  // Volver a seleccionar el primer elemento si existe
+  if (items.value.length > 0) {
+    selectedId.value = items.value[0].id
+  } else {
+    selectedId.value = ''
+  }
+}
+
+// Cancelar si el campo está vacío y pierde el foco
+const cancelAddIfEmpty = () => {
+  if (newItemName.value.trim() === '') {
+    cancelAddItem()
+  }
+}
+
+// Resetear formulario de añadir
+const resetAddForm = () => {
+  showAddForm.value = false
+  newItemName.value = ''
+  selectedId.value = items.value.length > 0 ? items.value[0].id : ''
+}
+
+// Eliminar elemento seleccionado
+const removeSelectedItem = () => {
+  if (!selectedId.value || selectedId.value === ADD_NEW_OPTION) return
+ 
+  removeItem(selectedId.value)
+}
+
+// Eliminar elemento por ID
+const removeItem = (id) => {
+  const index = items.value.findIndex(item => item.id === id)
+  if (index !== -1) {
+    items.value.splice(index, 1)
+   
+    // Actualizar selección
+    if (selectedId.value === id) {
+      selectedId.value = items.value.length > 0 ? items.value[0].id : ''
+    }
+  }
+}
+
+// Observar cambios en la lista para mantener la selección válida
+watch(items, (newItems) => {
+  if (newItems.length === 0) {
+    selectedId.value = ''
+  } else if (!newItems.some(item => item.id === selectedId.value) && selectedId.value !== ADD_NEW_OPTION) {
+    selectedId.value = newItems[0].id
+  }
+}, { deep: true })
+
 </script>
 
 <template>
@@ -769,29 +893,27 @@ async function proceedPendingAction() {
         </select>
         <!-- Campo para añadir nuevo elemento (solo visible cuando se selecciona la opción especial) -->
         <div v-if="showAddForm" class="add-form">
-          <input ref="newItemInput" v-model="newItemName" type="text" placeholder="Nombre del nuevo elemento"
+          <input ref="newItemInput" v-model="newItemName" type="text" placeholder="New program"
                  class="form-input" @keyup.enter="confirmAddItem" @blur="cancelAddIfEmpty"/>
           <div class="add-form-buttons">
-            <button @click="confirmAddItem" class="btn btn-add"> Aceptar </button>
-            <button @click="cancelAddItem"  class="btn btn-cancel"> Cancelar </button>
+            <button @click="confirmAddItem" class="btn btn-add"> Accept </button>
+            <button @click="cancelAddItem"  class="btn btn-cancel"> Cancel </button>
           </div>
         </div>
         
-        <!-- Información del elemento seleccionado -->
-        <div v-if="selectedItem && !showAddForm" class="selected-info">
-          <p>Seleccionado: <strong>{{ selectedItem.name }}</strong></p>
+        <div v-if="programOptions.currentProgram && !showAddForm" class="selected-info">
+          <p><strong>{{ programOptions.currentProgram }}</strong></p>
           <button @click="removeSelectedItem" class="btn btn-remove" > Delete </button>
         </div>
 
         <!-- Lista completa de elementos -->
         <div class="items-list">
-          <h4>Elementos disponibles ({{ items.length }}):</h4>
-          <ul v-if="items.length > 0">
-            <li v-for="item in items" :key="item.id" class="item-row">
-              <span :class="{ 'selected-item': selectedId === item.id }">
-                {{ item.name }}
+          <ul v-if="programOptions.availablePrograms.length > 0">
+            <li v-for="item in programOptions.availablePrograms" :key="item" class="item-row">
+              <span :class="{ 'selected-item': selectedId === item }">
+                {{ item }}
               </span>
-              <button @click="removeItem(item.id)" class="btn btn-small" title="Eliminar">×</button>
+              <button @click="removeItem(item)" class="btn btn-small" title="Eliminar">×</button>
             </li>
           </ul>
           <p v-else class="empty-message">No elements.</p>
