@@ -648,7 +648,7 @@ async function downloadProgram2() {
 }
 
 // Upload program from JSON
-function uploadProgram2(force = false) {
+function uploadProgram3(force = false) {
   if (!force && !isProgramEmpty.value) {
     pendingAction.value = 'upload';
     showChangeModal.value = true;
