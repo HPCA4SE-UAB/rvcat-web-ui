@@ -482,7 +482,6 @@ function handleUploadProcessor() {
   
   const showModalDown   = ref(false);
   const showModalUp     = ref(false);
-  const modalName       = ref("");
   const modalDownload   = ref(true);
   const nameError       = ref("");
   const showModalChange = ref(false);
