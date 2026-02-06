@@ -295,9 +295,9 @@
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent  from '@/components/helpComponent.vue';
 
-import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource,
+import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource, createGraphVizGraph,
             downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
-         } from '@/common';
+       } from '@/common'
 
 const simState = inject('simulationState');
  
