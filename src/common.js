@@ -320,7 +320,7 @@ export function getResourceKeys(prefix) {
  * Initialize Programs/Processors/Tutorials resources using data from 
  *  distribution files if not already in localStorage
  * ------------------------------------------------------------------ */
-export async function initResource (resourceType, optionsObj, currentKey, availableKey, errorHandler = null ) {
+export async function initResource (resourceType, optionsObj, currentKey, availableKey) {
   const config = resourceConfig[resourceType];
   if (!config) {
     console.error(`Unknown resource type: ${resourceType}`);
@@ -329,7 +329,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   const storagePrefix = config.storagePrefix;
   const logPrefix     = config.logPrefix;
   
-  console.log(`${logPrefix}🔄 Loading ${resourceName}s ...`);
+  console.log(`${logPrefix}🔄 Loading ${resourceType}s ...`);
   try {
     let keys = getResourceKeys(`${storagePrefix}.`);
     if (keys.length === 0) {
@@ -356,8 +356,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
       optionsObj[currentKey] = keys[0];
     }
   } catch (error) {
-    console.error(`${logPrefix}❌ Failed to load ${resourceType}s:`, error); 
-    if (errorHandler) errorHandler(error);
+    console.error(`${logPrefix}❌ Failed to load ${resourceType}s:`, error);
   }
 };
 
