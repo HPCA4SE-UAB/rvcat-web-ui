@@ -3,6 +3,10 @@
   import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
+  import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource,
+            downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
+         } from '@/common';
+
   const { setProgram, showProgram } = useRVCAT_Api();
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
