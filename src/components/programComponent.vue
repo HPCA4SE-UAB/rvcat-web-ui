@@ -786,16 +786,15 @@ async function proceedPendingAction() {
         <!-- Lista completa de elementos -->
         <div class="items-list">
           <h4>Elementos disponibles ({{ items.length }}):</h4>
-            <ul v-if="items.length > 0">
-              <li v-for="item in items" :key="item.id" class="item-row">
-                <span :class="{ 'selected-item': selectedId === item.id }">
-                  {{ item.name }}
-                </span>
-                <button @click="removeItem(item.id)" class="btn btn-small" title="Eliminar">×</button>
-              </li>
-            </ul>
-            <p v-else class="empty-message">No elements.</p>
-          </div>
+          <ul v-if="items.length > 0">
+            <li v-for="item in items" :key="item.id" class="item-row">
+              <span :class="{ 'selected-item': selectedId === item.id }">
+                {{ item.name }}
+              </span>
+              <button @click="removeItem(item.id)" class="btn btn-small" title="Eliminar">×</button>
+            </li>
+          </ul>
+          <p v-else class="empty-message">No elements.</p>
         </div>
       </div>
     </div>
