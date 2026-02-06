@@ -904,24 +904,6 @@ async function processTutorialUpdate(t) {
 // ============================================================================
 // GRAPH: generateTutorialDot
 // ============================================================================
-async function processTutorialUpdate(t) {
-  try {
-    localStorage.setItem('tutorialTemp', JSON.stringify(t));
-    console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
-
-    if (t.id !== tutorialOptions.inEditionID)
-      tutorialOptions.inEditionID = t.id   // create reaction to save current options
-      
-    const dotCode = generateTutorialDot(t);
-    console.log('🎓📥 Dot Code', dotCode);
-      
-    const svg = await createGraphVizGraph(dotCode);
-    tutorialSvg.value = svg.outerHTML;
-  } catch (error) {
-    console.error('🎓❌ Failed to save edited tutorial in localStorage and update tutorial view:', error);
-  }
-}
-
 function generateTutorialDot(tut) {
   const num_steps = tut.steps.length
   let dot_code = `
