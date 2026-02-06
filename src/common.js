@@ -320,7 +320,7 @@ export function getResourceKeys(prefix) {
  * Initialize Programs/Processors/Tutorials resources using data from 
  *  distribution files if not already in localStorage
  * ------------------------------------------------------------------ */
-const initResource = async ({resourceType, optionsObj, currentKey, availableKey, errorHandler = null }) => {
+export async function initResource (resourceType, optionsObj, currentKey, availableKey, errorHandler = null ) {
   const config = resourceConfig[resourceType];
   if (!config) {
     console.error(`Unknown resource type: ${resourceType}`);
@@ -365,7 +365,7 @@ const initResource = async ({resourceType, optionsObj, currentKey, availableKey,
  * GraphViz conversion to SVG
  * ------------------------------------------------------------------ */
 
-async function createGraphVizGraph(dotCode) {
+export async function createGraphVizGraph(dotCode) {
   try {
     const viz = new Viz();
     const svg = await viz.renderSVGElement(dotCode, { engine: "dot" })
