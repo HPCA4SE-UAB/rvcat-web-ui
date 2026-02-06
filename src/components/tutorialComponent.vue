@@ -833,7 +833,7 @@ watch(  // Watch for tutorial changes on specific properties
   { deep: true }
 )
 
-  const handleClickOutside = (e) => {
+const handleClickOutside = (e) => {
   // Only run if the tutorial menu is currently shown
   if (!showTutorialMenu.value) return
   
