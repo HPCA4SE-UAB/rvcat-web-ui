@@ -325,8 +325,7 @@ function snapshotProgram() {
 // ============================================================================
   const initProgram = async () => {
     const savedProgram = programOptions.currentProgram
-
-   initResource('program', programOptions, 'currentProgram', 'availablePrograms')
+    await initResource('program', programOptions, 'currentProgram', 'availablePrograms')
     if (savedProgram === programOptions.currentProgram)
       reloadProgram()   // On initialization, if currentProgram not modified, force program reloading
   };
@@ -334,7 +333,7 @@ function snapshotProgram() {
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
-      const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
+      const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
