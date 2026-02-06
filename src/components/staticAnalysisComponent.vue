@@ -1,7 +1,8 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
-  import HelpComponent    from '@/components/helpComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
+  import HelpComponent                           from '@/components/helpComponent.vue'
+  import { createGraphVizGraph }                                       from '@/common'
+  import { useRVCAT_Api }                                            from '@/rvcatAPI'
  
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
