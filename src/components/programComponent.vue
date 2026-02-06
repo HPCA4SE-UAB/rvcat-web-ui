@@ -1,11 +1,11 @@
 <script setup>
-  import { ref, computed, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue";
-  import HelpComponent  from '@/components/helpComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
-
-  import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource,
-            downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
-         } from '@/common';
+  import { ref, computed, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
+  import HelpComponent                                     from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                                     from '@/rvcatAPI'
+  import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
+          downloadJSON, uploadJSON, 
+          loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
+          initResource, createGraphVizGraph                                   } from '@/common'
 
   const { setProgram, showProgram } = useRVCAT_Api();
   const { registerHandler }         = inject('worker');
@@ -348,6 +348,10 @@ function snapshotProgram() {
     }      
   }
 
+  const removeProgram () {
+    removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
+  }
+  
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
@@ -394,6 +398,16 @@ function snapshotProgram() {
     }
   }
 
+  const uploadProgram2 = () => {
+    uploadJSON((data) => {
+      uploadedProgramObject = data;
+      modalName.value       = data.name;
+      showModalUp.value     = true;
+      saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
+      programOptions.currentProgram = data.name;
+    }, 'program');
+  };
+
   function uploadProgram() {
     const input  = document.createElement("input");
     input.type   = "file";
@@ -414,8 +428,8 @@ function snapshotProgram() {
         uploadedProgramObject = parsed;
         modalName.value       = parsed.name;
         showModalUp.value     = true;
+        saveToLocalStorage('program', parsed.name, parsed, programOptions.availablePrograms)
         programOptions.currentProgram = parsed.name;
-        console.log('📄✅ Uploaded program:', uploadedProgramObject)
       } catch (err) {
         console.error("📄❌ Failed to parse JSON file:", err);
         alert("Could not load program file.");
@@ -775,8 +789,7 @@ async function proceedPendingAction() {
           </option>
            <option value="__add_new__">Add new</option>
         </select>
-        <button class="blue-button" :disabled="!false" @click="removeProgram"
-          title="Remove program from list (and local storage)">
+        <button class="blue-button" @click="removeProgram" title="Remove program from list (and local storage)">
             Remove
         </button>
       </div>
