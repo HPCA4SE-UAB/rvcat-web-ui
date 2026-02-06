@@ -703,13 +703,7 @@ const showValidationErrors = () => {
 // TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, addTutorial, downloadJSON
 // ============================================================================
 const initTutorial = async () => {
-  await initResource({
-    resourceName: 'tutorial',
-    logPrefix:    '🎓',
-    optionsObj:    tutorialOptions,
-    currentKey:    null,
-    availableKey: 'available',
-  });
+  await initResource('tutorial', tutorialOptions, null, 'available')
 };
 
 const reloadEditedTutorial = async () => {
