@@ -887,37 +887,10 @@ watch(items, (newItems) => {
                id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
-            {{ program }}
+            {{ program }} <button @click="removeItem()" class="btn btn-small" title="Eliminar">×</button>
           </option>
-           <option value="__add_new__">➕Add new</option>
+           <option value="__add_new__">Add new</option>
         </select>
-        <!-- Campo para añadir nuevo elemento (solo visible cuando se selecciona la opción especial) -->
-        <div v-if="showAddForm" class="add-form">
-          <input ref="newItemInput" v-model="newItemName" type="text" placeholder="New program"
-                 class="form-input" @keyup.enter="confirmAddItem" @blur="cancelAddIfEmpty"/>
-          <div class="add-form-buttons">
-            <button @click="confirmAddItem" class="btn btn-add"> Accept </button>
-            <button @click="cancelAddItem"  class="btn btn-cancel"> Cancel </button>
-          </div>
-        </div>
-        
-        <div v-if="programOptions.currentProgram && !showAddForm" class="selected-info">
-          <p><strong>{{ programOptions.currentProgram }}</strong></p>
-          <button @click="removeSelectedItem" class="btn btn-remove" > Delete </button>
-        </div>
-
-        <!-- Lista completa de elementos -->
-        <div class="items-list">
-          <ul v-if="programOptions.availablePrograms.length > 0">
-            <li v-for="item in programOptions.availablePrograms" :key="item" class="item-row">
-              <span :class="{ 'selected-item': selectedId === item }">
-                {{ item }}
-              </span>
-              <button @click="removeItem(item)" class="btn btn-small" title="Eliminar">×</button>
-            </li>
-          </ul>
-          <p v-else class="empty-message">No elements.</p>
-        </div>
       </div>
     </div>
     
