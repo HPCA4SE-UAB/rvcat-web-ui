@@ -297,8 +297,9 @@
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent  from '@/components/helpComponent.vue';
 
-import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource, createGraphVizGraph,
-            downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
+import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
+          downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
+          initResource, createGraphVizGraph
        } from '@/common'
 
 const simState = inject('simulationState');
@@ -702,8 +703,12 @@ const showValidationErrors = () => {
 
 
 // ============================================================================
-// TUTORIAL ACTIONS: InitTutorial, ReloadTutorial, clearDraft, previewTutorial, addTutorial, downloadJSON
+// TUTORIAL ACTIONS: initTutorial, reloadEditedTutorial, clearDraft, addTutorial, 
+//                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
+
+const { modalName, modalError, showSaveModal } = modalState;
+  
 const initTutorial = async () => {
   await initResource('tutorial', tutorialOptions, null, 'available')
 };
@@ -755,18 +760,59 @@ const clearDraft = (check = true) => {
 
 const addTutorial = () => {
   if (!showValidationErrors()) return
-  let filename = tutorial.id
-  
-  // filename = downloadJSON()  // TODO: use modal variable to decide if downloading or not
-  
-  tutorialOptions.available.push(filename)
-  const data = buildTutorialData(filename)
-  localStorage.setItem(`tutorial.${filename}`, JSON.stringify(data, null, 2))
- 
-  console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`)
-  simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-  clearDraft()
+  const filename = tutorial.id
+  const data     = buildTutorialData(filename)
+  const success  = saveToLocalStorage( 'tutorial', filename, data, tutorialOptions.available);
+   if (success) {
+    console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`);
+    simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
+    clearDraft(false);
+  } else {
+    console.error(`👨‍🎓❌ Failed to save tutorial: ${filename}`);
+  }
 }
+
+const saveTutorialAs = () => {
+  // Open modal to input new name
+  modalName.value     = tutorial.id;
+  modalError.value    = '';
+  showSaveModal.value = true;
+};
+
+const confirmSaveTutorialAs = async () => {
+  if (!showValidationErrors()) return
+  const newName = modalName.value.trim();
+  
+  const error = validateResourceName(newName, tutorialOptions.available);
+  if (error) {
+    modalError.value = error;
+    return;
+  }
+  
+  // Guardar con nuevo nombre
+  const oldId = tutorial.id;
+  tutorial.id = newName;
+  
+  const data    = buildTutorialData(newName);
+  const success = saveToLocalStorage('tutorial', newName, data, tutorialOptions.available );
+  
+  if (success) {
+    console.log(`👨‍🎓✅ Tutorial saved as: ${newName} (was: ${oldId})`);
+    
+    showSaveModal.value = false;
+    simState.state = 4;  // Signal tutorial engine to obtain list of tutorials from localStorage
+    
+    // Si estás editando este tutorial, actualizar el ID
+    if (tutorialOptions.inEditionID === oldId) {
+      tutorialOptions.inEditionID = newName;
+    }
+    
+    return true;
+  } else {
+    modalError.value = 'Failed to save tutorial';
+    return false;
+  }
+};
 
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
@@ -777,14 +823,12 @@ const downloadTutorial = () => {
 
 const uploadTutorial = () => {
   uploadJSON((data) => {
-    // Procesar tutorial subido
     tutorial.id          = data.id          || ''
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps.map(convertUploadedStep)
     tutorialOptions.inEditionID  = data.id
     tutorialOptions.selectedStep = 0
-    // processUploadedTutorial(data);  --> automatic invocation
   }, 'tutorial');
 };
 
@@ -793,7 +837,11 @@ const removeTutorial = () => {
   clearDraft()
   simState.state = 4;   // Signal tutorial engine to obtain new list of tutorials from localStorage
 }
-  
+
+// ============================================================================
+// Utilities: convertUploadedStep, processTutorialUpdate
+// ============================================================================
+
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
@@ -833,6 +881,24 @@ const convertUploadedStep = (step) => {
     s.validationMinValue = step.validation.minValue || ''
   }
   return s
+}
+
+async function processTutorialUpdate(t) {
+  try {
+    localStorage.setItem('tutorialTemp', JSON.stringify(t));
+    console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
+
+    if (t.id !== tutorialOptions.inEditionID)
+      tutorialOptions.inEditionID = t.id   // create reaction to save current options
+      
+    const dotCode = generateTutorialDot(t);
+    console.log('🎓📥 Dot Code', dotCode);
+      
+    const svg = await createGraphVizGraph(dotCode);
+    tutorialSvg.value = svg.outerHTML;
+  } catch (error) {
+    console.error('🎓❌ Failed to save edited tutorial in localStorage and update tutorial view:', error);
+  }
 }
 
 // ============================================================================
