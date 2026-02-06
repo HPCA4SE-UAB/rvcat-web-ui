@@ -40,7 +40,11 @@ async function downloadJSON( name, JSONstring) {
     URL.revokeObjectURL(url);
   }
 }
-  
+
+/* ------------------------------------------------------------------ 
+ * Read/Write options on localStorage
+ * ------------------------------------------------------------------ */
+
 function getKeys(name) {
   const allKeys = [] 
   for (let i = 0; i < localStorage.length; i++) {
@@ -85,6 +89,10 @@ const initResource = async ({resourceName, logPrefix, optionsObj, currentKey, av
     if (errorHandler) errorHandler(error);
   }
 };
+
+/* ------------------------------------------------------------------ 
+ * GraphViz conversion to SVG
+ * ------------------------------------------------------------------ */
 
 async function createGraphVizGraph(dotCode) {
   try {
