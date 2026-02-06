@@ -94,6 +94,18 @@ export function cancelPendingAction() {
   closeAllModals();
 }
 
+/**
+ * validateResourceName Valida si un nombre ya existe en la lista de recursos disponibles
+ *     @param {String} name + @param {Array} availableList - Lista de nombres disponibles
+ *       @returns {String} Mensaje de error vacío si es válido, mensaje de error si no
+ */
+export function validateResourceName(name, availableList) {
+  if (!name.trim()) return 'Name is required';
+  
+  if (availableList && availableList.includes(name.trim()))
+    return 'A resource with this name already exists. Please choose another one.';
+  return '';
+}
 
 /**
  * @param {Object} data +  @param {String} filename + @param {String} resourceType
