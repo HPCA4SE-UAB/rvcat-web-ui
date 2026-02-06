@@ -402,7 +402,7 @@ function snapshotProgram() {
     }
   }
 
-  const uploadProgram2 = () => {
+  const uploadProgram = () => {
     uploadJSON((data) => {
       uploadedProgramObject = data;
       modalName.value       = data.name;
@@ -412,7 +412,7 @@ function snapshotProgram() {
     }, 'program');
   };
 
-  function uploadProgram() {
+  function uploadProgramOld() {
     const input  = document.createElement("input");
     input.type   = "file";
     input.accept = "application/json";
