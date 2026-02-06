@@ -2,7 +2,10 @@
   import { ref, unref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
-
+  import {  modalState, resourceConfig, openSaveModal, closeAllModals, 
+            downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
+         } from '@/common';
+  
   const { setProcessor }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
@@ -446,6 +449,37 @@
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
+
+const { showSaveModal, showUploadModal, showChangeModal, modalName, modalError, saveToFile } = modalState;
+
+async function confirmSaveProcessor() {
+  const name = modalName.value.trim();
+  const error = validateResourceName(name, processorOptions.availableProcessors);
+  
+  if (error) {
+    modalError.value = error;
+    return;
+  }
+  
+  // Guardar en localStorage
+  const success = saveToLocalStorage('processor', name, processorInfo, processorOptions.availableProcessors);
+  
+  if (success && saveToFile.value) {
+    await downloadJSON(processorInfo, name, 'processor');
+  }
+  
+  closeAllModals();
+}
+
+function handleUploadProcessor() {
+  uploadJSON((data, filename) => {
+    // Procesar datos subidos
+    updateProcessorSettings(data);
+    modalName.value       = filename;
+    showUploadModal.value = true;
+  }, 'processor');
+}
+  
   const showModalDown   = ref(false);
   const showModalUp     = ref(false);
   const modalName       = ref("");
