@@ -532,14 +532,6 @@ function requestClearProgram() {
   clearProgram();
 }
 
-// Save program
-function openSaveModal() {
-  saveModalName.value = programName.value;
-  saveModalError.value = '';
-  saveToFile.value = true;
-  showSaveModal.value = true;
-}
-
 async function confirmSave() {
   const name = saveModalName.value.trim();
   
@@ -756,10 +748,6 @@ async function proceedPendingAction() {
   pendingAction.value = null;
 }
 
-function cancelPendingAction() {
-  showChangeModal.value = false;
-  pendingAction.value = null;
-}
   
 // ============================================================================
 // Help support 
