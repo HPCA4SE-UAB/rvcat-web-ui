@@ -761,8 +761,8 @@ const addTutorial = () => {
   if (!showValidationErrors()) return
   let filename = tutorial.id
   
-  filename = downloadJSON()  // TODO: use modal variable to decide if downloading or not
-
+  // filename = downloadJSON()  // TODO: use modal variable to decide if downloading or not
+  
   tutorialOptions.available.push(filename)
   const data = buildTutorialData(filename)
   localStorage.setItem(`tutorial.${filename}`, JSON.stringify(data, null, 2))
@@ -772,46 +772,32 @@ const addTutorial = () => {
   clearDraft()
 }
 
-const downloadJSON = () => {
-  if (!showValidationErrors()) return
+const downloadTutorial = () => {
+  if (!validateTutorial()) return;
+  
+  const tutorialData = buildTutorialData();
+  downloadJSON(tutorialData, tutorial.id, 'tutorial');
+};
 
-  const filename = tutorial.id
-  const data = buildTutorialData(filename)
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url  = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href     = url
-  link.download = `${filename}.json`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-  return filename
-}
+const uploadTutorial = () => {
+  uploadJSON((data) => {
+    // Procesar tutorial subido
+    tutorial.id          = data.id          || ''
+    tutorial.name        = data.name        || ''
+    tutorial.description = data.description || ''
+    tutorial.steps       = data.steps.map(convertUploadedStep)
+    tutorialOptions.inEditionID  = data.id
+    tutorialOptions.selectedStep = 0
+    // processUploadedTutorial(data);  --> automatic invocation
+  }, 'tutorial');
+};
 
 const removeTutorial = () => {
-  if (!tutorial?.id || tutorial.id !== tutorialOptions.inEditionID) {
-    console.error('👨‍🎓❌ No tutorial selected');
-    return;
-  }
-
-  tutorialOptions.available = tutorialOptions.available.filter(
-    id => id !== tutorial.id
-  );
-  
-  localStorage.removeItem(`tutorial.${tutorial.id}`)
- 
-  console.log(`👨‍🎓🧹 Tutorial removed from local storage: ${tutorial.id}`)
-  
+  removeFromLocalStorage('tutorial', tutorial.id, tutorialOptions.available);
   clearDraft()
   simState.state = 4;   // Signal tutorial engine to obtain new list of tutorials from localStorage
 }
   
-// ============================================================================
-// UPLOAD TUTORIAL
-// ============================================================================
-
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
@@ -851,43 +837,6 @@ const convertUploadedStep = (step) => {
     s.validationMinValue = step.validation.minValue || ''
   }
   return s
-}
-
-const uploadTutorial = () => {
-  const input         = document.createElement('input')
-  input.type          = 'file'
-  input.accept        = '.json'
-  input.style.display = 'none'
-  
-  input.onchange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    
-    try {
-      const data = JSON.parse(await file.text())
-      
-      if (!data.id || !data.name || !data.steps?.length) {
-        alert('Invalid tutorial file format')
-        return
-      }
-      
-      tutorial.id          = data.id          || ''
-      tutorial.name        = data.name        || ''
-      tutorial.description = data.description || ''
-      tutorial.steps       = data.steps.map(convertUploadedStep)
-
-      tutorialOptions.inEditionID  = data.id
-      tutorialOptions.selectedStep = 0
-      
-      console.log('🎓📥 Tutorial downloaded from local file system', tutorial.name);
-    } catch (err) {
-      console.error('🎓❌ Failed to download tutorial:', err)
-      alert('Failed to download tutorial file. Please check the file format.')
-    }
-  }
-  document.body.appendChild(input)
-  input.click()
-  document.body.removeChild(input)
 }
 
 // ============================================================================
