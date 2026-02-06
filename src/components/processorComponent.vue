@@ -2,7 +2,7 @@
   import { ref, unref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
-  import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource,
+  import {  modalState, resourceConfig, openSaveModal, closeAllModals, initResource, createGraphVizGraph,
             downloadJSON, uploadJSON, saveToLocalStorage, validateResourceName
          } from '@/common';
   
