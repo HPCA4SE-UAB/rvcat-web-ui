@@ -222,18 +222,16 @@ function snapshotProgram() {
 
   // Auto-save edits to localStorage
   watch(
-  () => snapshotProgram(),
-  (val) => {
-    try {
-      localStorage.setItem('programTemp', JSON.stringify(val));
-    } catch (e) {
-      console.error('📄❌ Failed to persist program to localStorage:', e);
-    }
-  },
-  { deep: true }
-);
-
-
+    () => snapshotProgram(),
+    (val) => {
+      try {
+        localStorage.setItem('programTemp', JSON.stringify(val));
+      } catch (e) {
+        console.error('📄❌ Failed to persist program to localStorage:', e);
+      }
+    },
+    { deep: true }
+  );
 
   // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
@@ -327,16 +325,8 @@ function snapshotProgram() {
 // ============================================================================
   const initProgram = async () => {
     const savedProgram = programOptions.currentProgram
-    initResource({
-      resourceName: 'program',
-      logPrefix:    '📄',
-      optionsObj:    programOptions,
-      currentKey:   'currentProgram',
-      availableKey: 'availablePrograms',
-      errorHandler: (error) => {
-        programText.value = '❌ Failed to set program';
-      }
-    });
+
+   initResource('program', programOptions, 'currentProgram', 'availablePrograms')
     if (savedProgram === programOptions.currentProgram)
       reloadProgram()   // On initialization, if currentProgram not modified, force program reloading
   };
