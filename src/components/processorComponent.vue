@@ -169,13 +169,7 @@
 //                  updateProcessor, drawProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
-    return initResource({
-      resourceName: 'processor',
-      logPrefix:    '💻',
-      optionsObj:   processorOptions,
-      currentKey:   'processorName',
-      availableKey: 'availableProcessors'
-    });
+    return initResource('processor', processorOptions, 'processorName', 'availableProcessors');
   };
   
   const reloadProcessor = async () => {
