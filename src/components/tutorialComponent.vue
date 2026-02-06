@@ -209,7 +209,7 @@
 <script setup>
   
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
-
+import {  initResource }                                                       from '@/common'
 const simState = inject('simulationState');
 
 // ============================================================================
@@ -468,20 +468,14 @@ const shuffleAnswers = () => {
   
 const loadTutorials = async () => {
   const inProgressID = tutorialProgress.inProgressID  // Copy before modification by InitResource 
-  initResource({
-    resourceName: 'tutorial',
-    logPrefix:    '👨‍🎓',
-    optionsObj:    tutorialProgress,
-    currentKey:   'inProgressID',
-    availableKey: 'available',
-  });
+  await initResource('tutorial', tutorialProgress, 'inProgressID', 'available')
 
   // replace list of tutorial names by list of tutorial descriptions
   const tutorials = []  
   for (const name of tutorialProgress.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
-      const tutorial = JSON.parse(jsonString)
+      const tutorial   = JSON.parse(jsonString)
       tutorials.push({
         name:        tutorial.name,
         id:          name,
@@ -491,7 +485,6 @@ const loadTutorials = async () => {
       console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
     }
   }
-  
   tutorialProgress.available  = tutorials   // fire options saving
   isLoading.value             = false
   await loadCurrentTutorial (inProgressID)
