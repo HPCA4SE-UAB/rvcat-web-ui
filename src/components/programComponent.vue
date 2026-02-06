@@ -350,6 +350,10 @@ function snapshotProgram() {
 
   function removeProgram () {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
+    if ( programOptions.availablePrograms.length > 0)
+      programOptions.currentProgram = programOptions.availablePrograms[0]
+    else
+      programOptions.currentProgram = ''
   }
   
 // ============================================================================
