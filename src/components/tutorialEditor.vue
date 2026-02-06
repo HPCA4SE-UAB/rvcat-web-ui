@@ -14,10 +14,6 @@
           </option>
         </select>
         <div class="buttons">
-          <button class="blue-button" title="Save current tutorial on your local file system" 
-                @click="downloadJSON">   Download </button>
-          <button class="blue-button" title="Load new tutorial from your local file system" 
-                @click="uploadTutorial"> Upload   </button>
           <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
                 @click="addTutorial"> Add to menu </button>
           <button class="blue-button" title="Remove selected tutorial from local storage" 
@@ -26,6 +22,12 @@
         <div class="buttons">
           <button class="blue-button" title="Clear current tutorial draft and start fresh"
                 @click="clearDraft">  Clear Draft  </button>
+        </div>
+        <div class="buttons">
+          <button class="blue-button" title="Save current tutorial on your local file system" 
+                @click="downloadTutorial">   Download </button>
+          <button class="blue-button" title="Load new tutorial from your local file system" 
+                @click="uploadTutorial"> Upload   </button>
         </div>
       </div>
     </div>
