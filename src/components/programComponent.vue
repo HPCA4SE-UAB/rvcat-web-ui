@@ -487,12 +487,12 @@ async function proceedPendingAction() {
           </button>
         </div>
         <div class="buttons">
-          <button class="green-button" @click="copySelected"
+          <button class="blue-button" @click="copySelected"
                 title="Edit current selected program as new program" 
                 id="edit-program-button">
             Edit selected
           </button>
-          <button class="red-button"   @click="requestClearProgram"
+          <button class="blue-button"   @click="requestClearProgram"
                 title="Clear edition and start new program from scratch" 
                 id="clear-program-button"
             >Clear</button>
@@ -636,7 +636,7 @@ async function proceedPendingAction() {
         <p>You may have unsaved changes. Do you want to continue?</p>
         <div class="modal-actions">
           <button class="blue-button" @click="clearProgram">Continue</button>
-          <button class="red-button"  @click="showChangeModal = false">Cancel</button>
+          <button class="blue-button" @click="showChangeModal = false">Cancel</button>
         </div>
       </div>
     </div>
@@ -693,10 +693,6 @@ async function proceedPendingAction() {
   background: white;
   overflow: hidden;
   border-radius: 10px;
-}
-
-.download-btn {
-  margin-right: 20px;
 }
 
 .editor-header {
@@ -776,12 +772,12 @@ async function proceedPendingAction() {
 }
 
 .table-container {
-  flex: 1;
-  overflow: auto;
-  border: 1px solid #ddd;
+  flex:          1;
+  overflow:      auto;
+  border:        1px solid #ddd;
   border-radius: 5px;
-  margin-right: 20px;
-  max-height: calc(100vh - 300px);
+  margin-right:  20px;
+  max-height:    2000px;
 }
 
 .instructions-table {
@@ -868,50 +864,8 @@ async function proceedPendingAction() {
   border-color: #d32f2f;
 }
 
-.green-button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.green-button:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.green-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.red-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.red-button:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.red-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 .add-btn {
-  margin-right: 20px;
+  margin-right: 50px;
 }
 
 /* Modal styles */
