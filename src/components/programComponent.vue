@@ -179,7 +179,6 @@ function snapshotProgram() {
   };
 }
 
-
 // ============================================================================
 // WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
 // ============================================================================
@@ -299,7 +298,6 @@ function snapshotProgram() {
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
-      programText.value = '❌ Failed to set program';
     }      
   }
 
@@ -314,8 +312,8 @@ function snapshotProgram() {
     }
   }
 
-  // straightforward version: no modal
-  const uploadProgram = async (oldProgram) => {  
+ // UpLOAD from General Panel: straightforward version (no modal)
+const uploadProgram = async (oldProgram) => {  
   try {
     const data = await uploadJSON(null, 'program');
     if (data) {
@@ -336,35 +334,40 @@ function snapshotProgram() {
     programOptions.currentProgram = oldProgram;
   }
 };
-  
+
+ // UpLOAD from Edition Panel: straightforward version (no modal)
+const uploadForEdition = async () => { 
+  try {
+    const data = await uploadJSON(null, 'program');
+    if (data) {
+      // TODO: Check here if it is a valid program
+      localStorage.setItem('programTemp', JSON.stringify(data));
+      loadEditedProgram()
+    }
+  } catch (error) {
+    console.error('📄❌ Failed to upload program for edition:', error)
+  }
+};
+
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
-  const showModalUp = ref(false)
+  const showModalUpload   = ref(false)
+  const showModalDownload = ref(false)
+  const showModalClear    = ref(false);
   const modalName   = ref("")
   let   nameOld     = ''
   const nameError   = ref("")
- 
-  const showSaveModal  = ref(false);
-  const saveModalName  = ref('');
-  const saveModalError = ref('');
-  const saveToFile     = ref(true);
 
-  // Change confirmation state (for load/clear when modified)
-  const showChangeModal = ref(false);
-  const pendingAction   = ref(null); // 'load' | 'clear'
-
-  const uploadProgram2 = (oldProgram) => {
-    uploadJSON((data) => {
-      if (data) {
-        uploadedProgramObject = data;
-        modalName.value       = data.name;
-        showModalUp.value     = true;
-      }
-      else
-        programOptions.currentProgram = oldProgram;
-    }, 'program');
-  };
+  async function downloadEditedProgram() {
+    const name   = modalName.value.trim();
+    const stored = localStorage.getItem('programTemp');
+    if (stored) {
+      const data = JSON.parse(stored);
+      await downloadJSON(data, name, 'program')
+    }
+    showModalDownload.value = false;
+  }
 
   function copySelected () {
     if (uploadedProgramObject) {
@@ -372,61 +375,11 @@ function snapshotProgram() {
       loadEditedProgram()
     }
   }
-  
-  async function confirmModal() {
-    const name = modalName.value.trim();
-    if (programOptions.availablePrograms.includes(name)) {
-      nameError.value = "A program with this name already exists. Please, choose another one.";
-      return;
-    }
-
-    nameError.value   = "";
-    uploadedProgramObject.name   = name;
-    showModalUp.value            = false;
-    saveToLocalStorage('program', name, uploadedProgramObject, programOptions.availablePrograms)
-    programOptions.currentProgram = name;
-    reloadProgram()
-  }
-
-  function cancelModal() {
-    showModalUp.value = false;
-    modalName.value   = "";
-    nameError.value   = "";
-    programOptions.currentProgram = oldProgram;
-  }
-
+ 
 function clearProgram() {
   editedProgram.value = [];
   addInstruction();
-  showChangeModal.value = false;
-}
-  
-function cancelClear() {
-  showChangeModal.value = false;
-  saveModalError.value = '';
-}
-  
-// Handle clear with modification/unsaved check
-function requestClearProgram() {
-  pendingAction.value   = 'clear';
-  showChangeModal.value = true;
-}
-
-function cancelSave() {
-  showSaveModal.value = false;
-  saveModalError.value = '';
-}
- 
-async function proceedPendingAction() {
-  if (pendingAction.value === 'load') {
-    await performLoadProgram();
-  } else if (pendingAction.value === 'clear') {
-    clearProgram();
-  } else if (pendingAction.value === 'upload') {
-    uploadProgram(true);
-  }
-  showChangeModal.value = false;
-  pendingAction.value   = null;
+  showModalClear.value = false;
 }
 
 // ============================================================================
@@ -473,15 +426,19 @@ async function proceedPendingAction() {
       
       <div class="settings-container fullscreen-settings">
         <div class="section-header">
-          <button class="blue-button small add-btn" @click="addInstruction">+ Add Instruction</button>
+          <button class="blue-button small add-btn" @click="addInstruction"
+              title="Add new instruction at the end of program" 
+              id="add-instruction-button">
+            + Add Instruction
+          </button>
         </div>
         <div class="buttons">
-          <button class="blue-button" @click="downloadProgram"
+          <button class="blue-button" @click="showModalDownload = true"
                title="Save current edited program" 
                id="program-download-button"> 
             Download 
           </button>
-          <button class="blue-button" @click="uploadProgram2"
+          <button class="blue-button" @click="uploadForEdition"
                title="Load new program from file system for edition"     
                id="program-upload-button">  
             Upload  
@@ -493,7 +450,7 @@ async function proceedPendingAction() {
                 id="edit-program-button">
             Edit selected
           </button>
-          <button class="blue-button"   @click="requestClearProgram"
+          <button class="blue-button"   @click="showModalClear = true"
                 title="Clear edition and start new program from scratch" 
                 id="clear-program-button"
             >Clear</button>
@@ -597,45 +554,41 @@ async function proceedPendingAction() {
     </div>
   </div>
   
-  <div v-if="showModalUp" class="modal-overlay">
+  <div v-if="showModalUpload" class="modal-overlay">
     <div class="modal">
       <h4>Load Program As</h4>
       <label for="config-name">Name:</label>
       <input id="config-name" type="text" v-model="modalName" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Load" @click="confirmModal">Load</button>
-        <button class="blue-button" title="Cancel Load" @click="cancelModal">Cancel</button>
+        <button class="blue-button" title="Accept Upload" @click="uploadEditedProgram">Load</button>
+        <button class="blue-button" title="Cancel Upload" @click="showModalUpload=false">Cancel</button>
       </div>
     </div>
   </div>
 
-    <div v-if="showSaveModal" class="modal-overlay">
-      <div class="modal">
-        <h4>Save Program As</h4>
-        <label for="save-name">Name:</label>
-        <input id="save-name" type="text" v-model="saveModalName" />
-        <label class="checkbox-row">
-          <input type="checkbox" v-model="saveToFile" />
-          <span>Save JSON file</span>
-        </label>
-        <div v-if="saveModalError" class="error">{{ saveModalError }}</div>
-        <div class="modal-actions">
-          <button class="blue-button" @click="confirmSave">Save</button>
-          <button class="blue-button" @click="cancelSave">Cancel</button>
-        </div>
+  <div v-if="showModalDownload" class="modal-overlay">
+    <div class="modal">
+      <h4>Save Program As</h4>
+      <label for="config-name">Name:</label>
+      <input id="save-name" type="text" v-model="modalName" />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Download" @click="downloadEditedProgram">Save</button>
+        <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">Cancel</button>
       </div>
     </div>
+  </div>
 
-    <div v-if="showChangeModal" class="modal-overlay">
-      <div class="modal">
-        <p>You may have unsaved changes. Do you want to continue?</p>
-        <div class="modal-actions">
-          <button class="blue-button" @click="clearProgram">Continue</button>
-          <button class="blue-button" @click="showChangeModal = false">Cancel</button>
-        </div>
+  <div v-if="showModalClear" class="modal-overlay">
+    <div class="modal">
+      <p>You may have unsaved changes. Do you want to clear current edited program?</p>
+      <div class="modal-actions">
+        <button class="blue-button" title="Yes, clear!" @click="clearProgram">Continue</button>
+        <button class="blue-button" title="No, cancel!" @click="showModalClear = false">Cancel</button>
       </div>
     </div>
+  </div>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
