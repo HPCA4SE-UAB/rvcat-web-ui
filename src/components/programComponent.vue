@@ -62,19 +62,14 @@ const instructionTypes = {
 // ============================================================================
 // Temporal in-edition program 
 // ============================================================================
-const programName  = ref('');
-const instructions = ref([]);
-const originalProgramName = ref('');
-const originalProgram     = ref({ name: '', instruction_list: [] });
+const editedProgram = ref([]);
 
 function loadEditedProgram() {
-  const stored = localStorage.getItem('program_temp');
+  const stored = localStorage.getItem('programTemp');
   if (!stored) return;
   try {
     const data = JSON.parse(stored);
-    programName.value         = data.name || '';
-    originalProgramName.value = programName.value;
-    instructions.value        = (data.instruction_list || []).map(inst => {
+    editedProgram.value = (data.instruction_list || []).map(inst => {
       const [mainType, ...subTypeParts] = (inst.type || '').split('.');
       const subType = subTypeParts.join('.');
       return {
@@ -89,34 +84,11 @@ function loadEditedProgram() {
         constant: inst.constant || ''
       };
     });
-    if (instructions.value.length === 0) addInstruction();
-    syncOriginalWithCurrent();
+    if (editedProgram.value.length === 0) addInstruction();
   } catch (e) {
     console.error('📄❌ Failed to load edited program from localStorage:', e);
   }
 }
-
-// ============================================================================
-// Computed values 
-// ============================================================================
-// Computed iterations based on instruction count
-const iterations = computed(() => instructions.value.length);
-  
-const isProgramEmpty = computed(() => {
-  const snap = snapshotProgram();
-  const hasName = !!snap.name;
-  const hasInstructionContent = snap.instruction_list.some(inst =>
-    inst.text || inst.type || inst.destin || inst.source1 || inst.source2 || inst.source3 || inst.constant
-  );
-  return !hasName && !hasInstructionContent;
-});
-
-const isModified = computed(() => {
-  const current = snapshotProgram();
-  return JSON.stringify(current) !== JSON.stringify(originalProgram.value);
-});
-
-const canSave = computed(() => !isProgramEmpty.value && isModified.value);
 
 // ============================================================================
 // Program handling: addInstruction, removeInstruction, moveInstructionUp, moveInstructionDown
@@ -125,7 +97,7 @@ const canSave = computed(() => !isProgramEmpty.value && isModified.value);
 
 // Initialize with empty instruction
 function addInstruction() {
-  instructions.value.push({
+  editedProgram.value.push({
     text: '',
     type: '',
     mainType: '',
@@ -139,24 +111,24 @@ function addInstruction() {
 }
 
 function removeInstruction(index) {
-  if (instructions.value.length > 1) {
-    instructions.value.splice(index, 1);
+  if (editedProgram.value.length > 1) {
+    editedProgram.value.splice(index, 1);
   }
 }
 
 function moveInstructionUp(index) {
   if (index > 0) {
-    const temp = instructions.value[index];
-    instructions.value[index] = instructions.value[index - 1];
-    instructions.value[index - 1] = temp;
+    const temp = editedProgram.value[index];
+    editedProgram.value[index] = editedProgram.value[index - 1];
+    editedProgram.value[index - 1] = temp;
   }
 }
 
 function moveInstructionDown(index) {
-  if (index < instructions.value.length - 1) {
-    const temp = instructions.value[index];
-    instructions.value[index] = instructions.value[index + 1];
-    instructions.value[index + 1] = temp;
+  if (index < editedProgram.value.length - 1) {
+    const temp = editedProgram.value[index];
+    editedProgram.value[index] = editedProgram.value[index + 1];
+    editedProgram.value[index + 1] = temp;
   }
 }
 
@@ -202,8 +174,8 @@ function normalizeInstruction(inst) {
 
 function snapshotProgram() {
   return {
-    name: (programName.value || '').trim(),
-    instruction_list: instructions.value.map(inst => normalizeInstruction(inst))
+    name:             'programTemp',
+    instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
   };
 }
 
@@ -211,20 +183,17 @@ function snapshotProgram() {
 // ============================================================================
 // WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
 // ============================================================================
-  // Constante para la opción especial
  const ADD_NEW_OPTION = '__add_new__'
 
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
-    if (newProgram === ADD_NEW_OPTION) {
-      uploadProgram()
-      return
-    }
+    if (newProgram === ADD_NEW_OPTION)
+      return uploadProgram()
+
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
-    if (simState.state > 1 && newProgram !== oldProgram) {
-      reloadProgram();
-    }
+    if (simState.state > 1 && newProgram !== oldProgram)
+      reloadProgram()
   });
 
   // Auto-save edits to localStorage
@@ -269,14 +238,8 @@ function snapshotProgram() {
       if (simState.selectedProgram != '')
         showProgram()  // obtain text from RVCAT API (id= 'show_program')
       
-      if (instructions.value.length === 0)
-        addInstruction()
-      loadEditedProgram();
-      syncOriginalWithCurrent();
-      localStorage.setItem('programTemp', JSON.stringify(snapshotProgram()));
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
-      programText.value = '❌ Failed to get program description'
     }
   }
 
@@ -291,7 +254,6 @@ function snapshotProgram() {
         console.log('📄🔄 Program visualization updated');
     } catch (error) {
       console.error('📄❌ Failed to show program:', error)
-      programText.value = '❌ Failed to show program'
     }
   }
 
@@ -305,17 +267,7 @@ function snapshotProgram() {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
     cleanupHandleShow= registerHandler('show_program', handleShowProgram)
-    try {    // Load from localStorage
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        Object.assign(programOptions, JSON.parse(saved))
-      }
-      if (simState.state > 1) {
-        console.error('📄⚠️ RVCAT imported and processor configuration loaded before mounting program component')
-      }
-    } catch (error) {
-      console.error('📄❌ Failed to mount:', error)
-    }
+    loadEditedProgram()
   });
 
   onUnmounted(() => {
@@ -374,34 +326,6 @@ function snapshotProgram() {
 
   let uploadedProgramObject = null
 
-  async function downloadProgram() {
-    const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
-    if (window.showSaveFilePicker) {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: `${programOptions.currentProgram}.json`,
-        types: [{
-          description: 'JSON files',
-          accept: { 'application/json': ['.json'] }
-        }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(jsonString);
-      await writable.close();
-      console.log('📄✅ Downloaded program');
-    } else {
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `${programOptions.currentProgram}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      console.log('📄✅ Downloaded program');
-    }
-  }
-
   const uploadProgram = () => {
     uploadJSON((data) => {
       uploadedProgramObject = data;
@@ -431,72 +355,11 @@ function snapshotProgram() {
     nameError.value   = "";
     uploadedProgramObject = null;
   }
-  
-function syncOriginalWithCurrent() {
-  originalProgram.value = snapshotProgram();
-  originalProgramName.value = programName.value;
-}
 
-// Clear current program
+// Clear current program  --> saved automatically
 function clearProgram() {
-  programName.value = '';
-  instructions.value = [];
+  editedProgram.value = [];
   addInstruction();
-  syncOriginalWithCurrent();
-  localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
-}
-
-// Handle load with modification/unsaved check
-async function requestLoadProgram() {
-  if (!isProgramEmpty.value) {
-    pendingAction.value = 'load';
-    showChangeModal.value = true;
-    return;
-  }
-  await performLoadProgram();
-}
-
-// Load existing program (actual action)
-async function performLoadProgram() {
-  const selectEl = document.getElementById('programs-list');
-  if (!selectEl || !selectEl.value) {
-    alert('No program selected');
-    return;
-  }
-
-  try {
-    const programData = await getProgramJSON();
-    
-    programName.value = programData.name || selectEl.value;
-    originalProgramName.value = programName.value;
-    
-    instructions.value = (programData.instruction_list || []).map(inst => {
-      const [mainType, ...subTypeParts] = inst.type.split('.');
-      const subType = subTypeParts.join('.');
-      
-      return {
-        text: inst.text || '',
-        type: inst.type || '',
-        mainType: mainType || '',
-        subType: subType || '',
-        destin: inst.destin || '',
-        source1: inst.source1 || '',
-        source2: inst.source2 || '',
-        source3: inst.source3 || '',
-        constant: inst.constant || ''
-      };
-    });
-    
-    if (instructions.value.length === 0) {
-      addInstruction();
-    }
-
-    syncOriginalWithCurrent();
-    localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
-  } catch (err) {
-    console.error('Failed to load program:', err);
-    alert('Failed to load program');
-  }
 }
 
 // Handle clear with modification/unsaved check
@@ -509,167 +372,11 @@ function requestClearProgram() {
   clearProgram();
 }
 
-async function confirmSave() {
-  const name = saveModalName.value.trim();
-  
-  if (!name) {
-    saveModalError.value = 'Program name is required';
-    return;
-  }
-
-  // Check if name already exists (do not allow duplicates)
-  const selectEl = document.getElementById('programs-list');
-  if (selectEl) {
-    const nameExists = Array.from(selectEl.options).some(
-      opt => opt.value === name
-    );
-    
-    if (nameExists) {
-      saveModalError.value = 'A program with this name already exists. Please choose another one.';
-      return;
-    }
-  }
-
-  // Build the program JSON
-  const programData = {
-    name: name,
-    n: instructions.value.length,
-    instruction_list: instructions.value.map(inst => ({
-      type: inst.type,
-      text: inst.text,
-      destin: inst.destin,
-      source1: inst.source1,
-      source2: inst.source2,
-      source3: inst.source3,
-      constant: inst.constant
-    }))
-  };
-
-  try {
-    const jsonText = JSON.stringify(programData, null, 2);
-    await saveNewProgram(jsonText);
-    if (saveToFile.value) {
-      try {
-        await saveProgramJsonToFile(programData, name);
-      } catch (fileErr) {
-        if (fileErr?.name !== 'AbortError') {
-          console.error('File save failed:', fileErr);
-          saveModalError.value = 'Saved in app, but file save failed.';
-          return;
-        }
-      }
-    }
-    
-    programName.value = name;
-    originalProgramName.value = name;
-    showSaveModal.value = false;
-    saveModalError.value = '';
-    syncOriginalWithCurrent();
-    localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
-    
-    // Wait for program list to update and select the new program
-    if (selectEl) {
-      setTimeout(() => {
-        selectEl.value = name;
-        reloadRvcat();
-      }, 200);
-    }
-    
-  } catch (err) {
-    console.error('Failed to save program:', err);
-    saveModalError.value = 'Failed to save program';
-  }
-}
-
 function cancelSave() {
   showSaveModal.value = false;
   saveModalError.value = '';
 }
-
-
-// Download program as JSON
-async function downloadProgram2() {
-  const programData = {
-    name: programName.value,
-    n: instructions.value.length,
-    instruction_list: instructions.value.map(inst => ({
-      type: inst.type,
-      text: inst.text,
-      destin: inst.destin,
-      source1: inst.source1,
-      source2: inst.source2,
-      source3: inst.source3,
-      constant: inst.constant
-    }))
-  };
-
-  try {
-    await saveProgramJsonToFile(programData, programName.value || 'program');
-  } catch (err) {
-    if (err?.name !== 'AbortError') {
-      console.error('Download failed:', err);
-      alert('Could not save the JSON file.');
-    }
-  }
-}
-
-// Upload program from JSON
-function uploadProgram3(force = false) {
-  programName.value = programData.name || 'imported_program';
-  originalProgramName.value = '';
-      
-  instructions.value = (programData.instruction_list || []).map(inst => {
-        const [mainType, ...subTypeParts] = inst.type.split('.');
-        const subType = subTypeParts.join('.');
-        
-        return {
-          text: inst.text || '',
-          type: inst.type || '',
-          mainType: mainType || '',
-          subType: subType || '',
-          destin: inst.destin || '',
-          source1: inst.source1 || '',
-          source2: inst.source2 || '',
-          source3: inst.source3 || '',
-          constant: inst.constant || ''
-        };
-  });
-      
-  if (instructions.value.length === 0) {
-    addInstruction();
-  }
-  syncOriginalWithCurrent();
-  localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
-}
-
-async function saveProgramJsonToFile(programData, name) {
-  const jsonText = JSON.stringify(programData, null, 2);
-  const suggested = `${name || 'program'}.json`;
-
-  if (window.showSaveFilePicker) {
-    const handle = await window.showSaveFilePicker({
-      suggestedName: suggested,
-      types: [{
-        description: 'JSON files',
-        accept: { 'application/json': ['.json'] }
-      }],
-    });
-    const writable = await handle.createWritable();
-    await writable.write(jsonText);
-    await writable.close();
-  } else {
-    const blob = new Blob([jsonText], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = suggested;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-}
-  
+ 
 async function proceedPendingAction() {
   if (pendingAction.value === 'load') {
     await performLoadProgram();
