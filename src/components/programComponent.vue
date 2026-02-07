@@ -474,6 +474,9 @@ async function proceedPendingAction() {
       </div>
       
       <div class="settings-container fullscreen-settings">
+        <div class="section-header">
+          <button class="blue-button small add-btn" @click="addInstruction">+ Add Instruction</button>
+        </div>
         <div class="buttons">
           <button class="blue-button" @click="downloadProgram"
                title="Save current edited program" 
@@ -501,11 +504,6 @@ async function proceedPendingAction() {
     </div>
 
     <div v-if="isFullscreen" class="instructions-section">
-      <div class="section-header">
-        <h4>Instructions</h4>
-        <button class="blue-button small add-btn" @click="addInstruction">+ Add Instruction</button>
-      </div>
-
       <div class="table-container">
         <table class="instructions-table">
           <thead>
