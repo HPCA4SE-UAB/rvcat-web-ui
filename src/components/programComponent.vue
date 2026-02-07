@@ -695,6 +695,64 @@ async function proceedPendingAction() {
   border-radius: 10px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items:   center;
+  margin-bottom: 2px;
+  margin-right:  20px;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.table-container {
+  flex:          1;
+  overflow:      auto;
+  border:        1px solid #ddd;
+  border-radius: 5px;
+  margin-right:  2px;
+  max-height:    2000px;
+}
+
+.instructions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: small;
+}
+
+.instructions-table thead {
+  position: sticky;
+  top: 0;
+  background: #007acc;
+  color: white;
+  z-index: 1;
+}
+
+.instructions-table th {
+  padding:     3px 3px;
+  text-align:  middle;
+  font-weight: bold;
+  border: 1px solid #005a9e;
+}
+
+.instructions-table td {
+  padding: 5px;
+  border: 1px solid #ddd;
+  vertical-align: middle;
+}
+
+.instructions-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.instructions-table tbody tr:hover {
+  background: #e8f4fd;
+}
+
+  
 .editor-header {
   display: flex;
   justify-content: space-between;
@@ -757,63 +815,7 @@ async function proceedPendingAction() {
   flex-direction: column;
   overflow: hidden;
 }
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  margin-right: 20px;
-}
-
-.section-header h4 {
-  margin: 0;
-  color: #333;
-}
-
-.table-container {
-  flex:          1;
-  overflow:      auto;
-  border:        1px solid #ddd;
-  border-radius: 5px;
-  margin-right:  20px;
-  max-height:    2000px;
-}
-
-.instructions-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.instructions-table thead {
-  position: sticky;
-  top: 0;
-  background: #007acc;
-  color: white;
-  z-index: 1;
-}
-
-.instructions-table th {
-  padding: 10px 5px;
-  text-align: left;
-  font-weight: bold;
-  border: 1px solid #005a9e;
-}
-
-.instructions-table td {
-  padding: 5px;
-  border: 1px solid #ddd;
-  vertical-align: middle;
-}
-
-.instructions-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
-}
-
-.instructions-table tbody tr:hover {
-  background: #e8f4fd;
-}
+  
 
 .table-input,
 .table-select {
