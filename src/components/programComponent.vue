@@ -395,20 +395,21 @@ function snapshotProgram() {
     programOptions.currentProgram = oldProgram;
   }
 
-// Clear current program  --> saved automatically
 function clearProgram() {
   editedProgram.value = [];
   addInstruction();
+  showChangeModal.value = false;
 }
-
+  
+function cancelClear() {
+  showChangeModal.value = false;
+  saveModalError.value = '';
+}
+  
 // Handle clear with modification/unsaved check
 function requestClearProgram() {
-  if (!isProgramEmpty.value) {
-    pendingAction.value = 'clear';
-    showChangeModal.value = true;
-    return;
-  }
-  clearProgram();
+  pendingAction.value   = 'clear';
+  showChangeModal.value = true;
 }
 
 function cancelSave() {
@@ -425,7 +426,7 @@ async function proceedPendingAction() {
     uploadProgram(true);
   }
   showChangeModal.value = false;
-  pendingAction.value = null;
+  pendingAction.value   = null;
 }
 
 // ============================================================================
@@ -479,17 +480,19 @@ async function proceedPendingAction() {
                id="program-download-button"> 
             Download 
           </button>
-          <button class="blue-button" @click="uploadProgram"
+          <button class="blue-button" @click="uploadProgram2"
                title="Load new program from file system for edition"     
                id="program-upload-button">  
             Upload  
           </button>
+        </div>
+        <div class="buttons">
           <button class="green-button" @click="copySelected"
                 title="Edit current selected program as new program" 
                 id="edit-program-button">
             Edit selected
           </button>
-          <button class="red-button"   @click="clearProgram"
+          <button class="red-button"   @click="requestClearProgram"
                 title="Clear edition and start new program from scratch" 
                 id="clear-program-button"
             >Clear</button>
@@ -630,11 +633,10 @@ async function proceedPendingAction() {
 
     <div v-if="showChangeModal" class="modal-overlay">
       <div class="modal">
-        <h4>Unsaved changes</h4>
         <p>You may have unsaved changes. Do you want to continue?</p>
         <div class="modal-actions">
-          <button class="blue-button" @click="proceedPendingAction">Continue</button>
-          <button class="red-button" @click="cancelPendingAction">Cancel</button>
+          <button class="blue-button" @click="clearProgram">Continue</button>
+          <button class="red-button"  @click="showChangeModal = false">Cancel</button>
         </div>
       </div>
     </div>
