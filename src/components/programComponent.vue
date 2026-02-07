@@ -188,7 +188,7 @@ function snapshotProgram() {
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
     if (newProgram === ADD_NEW_OPTION)
-      return uploadProgram()
+      return uploadProgram(oldProgram)
 
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
@@ -310,28 +310,52 @@ function snapshotProgram() {
     else
       programOptions.currentProgram = ''
   }
+
+ // straightforward version: no modal
+ const uploadProgram = (oldProgram) => {  
+    uploadJSON((data) => {
+      if (data) {
+        if (programOptions.availablePrograms.includes(data.name)) {
+           alert(`A program with name= ${data.name} has been already loaded.`)
+        }
+        else {
+          uploadedProgramObject = data
+          saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
+          programOptions.currentProgram = data.name;
+          reloadProgram()
+          return;
+        }
+      }
+      programOptions.currentProgram = oldProgram;     
+    }, 'program');
+  }; 
   
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
   const showModalUp = ref(false)
   const modalName   = ref("")
+  let   nameOld     = ''
   const nameError   = ref("")
  
-  const showSaveModal = ref(false);
-  const saveModalName = ref('');
+  const showSaveModal  = ref(false);
+  const saveModalName  = ref('');
   const saveModalError = ref('');
-  const saveToFile = ref(true);
+  const saveToFile     = ref(true);
 
   // Change confirmation state (for load/clear when modified)
   const showChangeModal = ref(false);
   const pendingAction   = ref(null); // 'load' | 'clear'
 
-  const uploadProgram = () => {
+  const uploadProgram2 = (oldProgram) => {
     uploadJSON((data) => {
-      uploadedProgramObject = data;
-      modalName.value       = data.name;
-      showModalUp.value     = true;
+      if (data) {
+        uploadedProgramObject = data;
+        modalName.value       = data.name;
+        showModalUp.value     = true;
+      }
+      else
+        programOptions.currentProgram = oldProgram;
     }, 'program');
   };
 
@@ -361,6 +385,7 @@ function snapshotProgram() {
     showModalUp.value = false;
     modalName.value   = "";
     nameError.value   = "";
+    programOptions.currentProgram = oldProgram;
   }
 
 // Clear current program  --> saved automatically
@@ -418,7 +443,7 @@ async function proceedPendingAction() {
       </div>
       
       <div class="settings-container">
-        <select v-model="programOptions.currentProgram" class="form-select"  @change="handleSelectChange" 
+        <select v-model="programOptions.currentProgram" class="form-select" 
                id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
