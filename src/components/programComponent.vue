@@ -334,6 +334,13 @@ function snapshotProgram() {
     }, 'program');
   };
 
+  function copySelected () {
+    if (uploadedProgramObject) {
+      localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
+      loadEditedProgram()
+    }
+  }
+  
   async function confirmModal() {
     const name = modalName.value.trim();
     if (programOptions.availablePrograms.includes(name)) {
@@ -430,46 +437,31 @@ async function proceedPendingAction() {
     <div v-if="isFullscreen" class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Program - <strong>{{ programOptions.currentProgram }}</strong></span>
+        <span class="header-title">Program Editor</span>
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <select v-model="programOptions.currentProgram" id="programs-list" title="Select Program">
-          <option value="" disabled>Select</option>
-          <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
-            {{ program }}
-          </option>
-        </select>
         <div class="buttons">
           <button class="blue-button" @click="downloadProgram"
-               title="Save current Program" 
+               title="Save current edited program" 
                id="program-download-button"> 
             Download 
           </button>
           <button class="blue-button" @click="uploadProgram"
-               title="Load new Program"     
+               title="Load new program from file system for edition"     
                id="program-upload-button">  
             Upload  
           </button>
-
-          <button class="blue-button" @click="requestLoadProgram">Load current program</button>
-          <button class="blue-button" @click="uploadProgram">Upload</button>
-          <button class="blue-button" :disabled="!canSave" @click="openSaveModal">Save</button>
-          <button class="green-button" @click="downloadProgram">Download</button>
-          <button class="red-button" @click="requestClearProgram">Clear</button>
-          
+          <button class="green-button" @click="copySelected"
+                title="Edit current selected program as new program" 
+                id="edit-program-button">
+            Edit selected
+          </button>
+          <button class="red-button"   @click="clearProgram"
+                title="Clear edition and start new program from scratch" 
+                id="clear-program-button"
+            >Clear</button>
         </div>
-      </div>
-    </div>
-
-    <div v-if="isFullscreen" class="program-info">
-      <div class="info-row">
-        <label>Program Name:</label>
-        <input type="text" v-model="programName" class="name-input" />
-      </div>
-      <div class="info-row">
-        <label>Instructions:</label>
-        <span class="instruction-count">{{ iterations }}</span>
       </div>
     </div>
 
@@ -496,7 +488,7 @@ async function proceedPendingAction() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(inst, index) in instructions" :key="index">
+            <tr v-for="(inst, index) in editedProgram" :key="index">
               <td>{{ index }}</td>
               <td>
                 <input type="text" v-model="inst.text" class="table-input" />
@@ -552,7 +544,7 @@ async function proceedPendingAction() {
                 </button>
                 <button 
                   @click="moveInstructionDown(index)" 
-                  :disabled="index === instructions.length - 1"
+                  :disabled="index === editedProgram.length - 1"
                   class="action-btn"
                   title="Move down"
                 >
@@ -560,7 +552,7 @@ async function proceedPendingAction() {
                 </button>
                 <button 
                   @click="removeInstruction(index)" 
-                  :disabled="instructions.length === 1"
+                  :disabled="editedProgram.length === 1"
                   class="action-btn delete"
                   title="Delete"
                 >
