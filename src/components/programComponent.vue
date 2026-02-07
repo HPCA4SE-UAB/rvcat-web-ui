@@ -307,8 +307,11 @@ function snapshotProgram() {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
     if ( programOptions.availablePrograms.length > 0)
       programOptions.currentProgram = programOptions.availablePrograms[0]
-    else
+    else {
       programOptions.currentProgram = ''
+      alert("Removing all programs forces to load the original programs provided in the distribution")
+      initProgram()
+    }
   }
 
   // straightforward version: no modal
@@ -317,9 +320,10 @@ function snapshotProgram() {
     const data = await uploadJSON(null, 'program');
     if (data) {
       if (programOptions.availablePrograms.includes(data.name)) {
-        alert(`A program with name= ${data.name} has been already loaded.`)
+        alert(`A program with name: "${data.name}" has been already loaded.`)
       }
       else {
+        // TODO: Check here if it is a valid program
         uploadedProgramObject = data
         saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
