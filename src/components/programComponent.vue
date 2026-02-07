@@ -282,6 +282,8 @@ function snapshotProgram() {
 // ============================================================================
 // PROGRAM ACTIONS: InitProgram, ReloadProgram
 // ============================================================================
+  let uploadedProgramObject = null
+  
   const initProgram = async () => {
     const savedProgram = programOptions.currentProgram
     await initResource('program', programOptions, 'currentProgram', 'availablePrograms')
@@ -292,7 +294,8 @@ function snapshotProgram() {
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
-      const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
+      const jsonString      = localStorage.getItem(`program.${programOptions.currentProgram}`)
+      uploadedProgramObject = JSON.parse(jsonString)
       setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
@@ -323,8 +326,6 @@ function snapshotProgram() {
   // Change confirmation state (for load/clear when modified)
   const showChangeModal = ref(false);
   const pendingAction   = ref(null); // 'load' | 'clear'
-
-  let uploadedProgramObject = null
 
   const uploadProgram = () => {
     uploadJSON((data) => {
@@ -360,7 +361,6 @@ function snapshotProgram() {
     showModalUp.value = false;
     modalName.value   = "";
     nameError.value   = "";
-    uploadedProgramObject = null;
   }
 
 // Clear current program  --> saved automatically
