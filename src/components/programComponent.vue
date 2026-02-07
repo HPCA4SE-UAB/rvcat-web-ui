@@ -510,9 +510,9 @@ async function proceedPendingAction() {
         <table class="instructions-table">
           <thead>
             <tr>
-              <th style="width: 40px;">#</th>
-              <th style="width: 200px;">Text</th>
-              <th style="width: 120px;">Type</th>
+              <th style="width: 20px;">#</th>
+              <th style="width: 240px;">Text</th>
+              <th style="width: 100px;">Type</th>
               <th style="width: 120px;">Subtype</th>
               <th style="width: 80px;">Destin</th>
               <th style="width: 80px;">Source1</th>
@@ -665,7 +665,14 @@ async function proceedPendingAction() {
 }
   
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
+}
+
+.instructions-section {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
 }
   
 #programs-list {
@@ -682,17 +689,6 @@ async function proceedPendingAction() {
   display:     flex;
   align-items: center;
   gap:         10px;
-}
-
-.program-editor {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 15px 40px 35px 15px;
-  background: white;
-  overflow: hidden;
-  border-radius: 10px;
 }
 
 .section-header {
@@ -718,9 +714,9 @@ async function proceedPendingAction() {
 }
 
 .instructions-table {
-  width: 100%;
+  width:           100%;
   border-collapse: collapse;
-  font-size: small;
+  font-size:       small;
 }
 
 .instructions-table thead {
@@ -733,15 +729,17 @@ async function proceedPendingAction() {
 
 .instructions-table th {
   padding:     3px 3px;
-  text-align:  middle;
+  text-align:  center;
   font-weight: bold;
-  border: 1px solid #005a9e;
+  border:      1px solid #005a9e;
 }
 
 .instructions-table td {
-  padding: 5px;
-  border: 1px solid #ddd;
+  padding:        1px;
+  border:         1px solid #ddd;
   vertical-align: middle;
+  text-align: center;
+  font-size:  medium;
 }
 
 .instructions-table tbody tr:nth-child(even) {
@@ -752,79 +750,15 @@ async function proceedPendingAction() {
   background: #e8f4fd;
 }
 
-  
-.editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #007acc;
-}
-
-.editor-header h3 {
-  margin: 0;
-  color: #333;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  padding-right: 20px;
-}
-
-.program-info {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  padding: 10px;
-  background: #f5f5f5;
-  border-radius: 5px;
-  margin-right: 20px;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.info-row label {
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.name-input {
-  width: 200px;
-  padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: 14px;
-}
-
-.instruction-count {
-  font-weight: bold;
-  color: #007acc;
-  font-size: 16px;
-  padding: 5px 8px;
-}
-
-.instructions-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-  
-
 .table-input,
 .table-select {
-  width: 100%;
-  padding: 4px 6px;
-  border: 1px solid #ccc;
+  width:   100%;
+  padding: 2px 4px;
+  border:  1px solid #ccc;
   border-radius: 3px;
-  font-size: 13px;
+  font-size:  medium;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .table-select:disabled {
@@ -838,31 +772,31 @@ async function proceedPendingAction() {
 }
 
 .action-btn {
-  padding: 3px 8px;
+  padding: 1px 8px;
   margin: 0 2px;
   border: 1px solid #ccc;
   background: white;
-  border-radius: 3px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: medium;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #e8f4fd;
+  background:   #e8f4fd;
   border-color: #007acc;
 }
 
 .action-btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor:  not-allowed;
 }
 
 .action-btn.delete {
-  color: #d32f2f;
+  color:   #d32f2f;
 }
 
 .action-btn.delete:hover:not(:disabled) {
-  background: #ffebee;
+  background:   #ffebee;
   border-color: #d32f2f;
 }
 
