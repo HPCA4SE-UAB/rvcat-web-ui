@@ -73,14 +73,8 @@ function loadEditedProgram() {
       const [mainType, ...subTypeParts] = (inst.type || '').split('.');
       const subType = subTypeParts.join('.');
       return {
-        text:     inst.text || '',
-        type:     inst.type || '',
-        mainType: mainType || '',
-        subType:  subType || '',
-        destin:   inst.destin || '',
-        source1:  inst.source1 || '',
-        source2:  inst.source2 || '',
-        source3:  inst.source3 || '',
+        text:     inst.text || '',    type:  inst.type || '',   mainType: mainType || '',   subType:  subType || '',
+        destin:   inst.destin || '',  source1:  inst.source1 || '',  source2:  inst.source2 || '',   source3:  inst.source3 || '',
         constant: inst.constant || ''
       };
     });
