@@ -374,7 +374,7 @@ function snapshotProgram() {
 
   let uploadedProgramObject = null
 
-   async function downloadProgram() {
+  async function downloadProgram() {
     const jsonString  = localStorage.getItem(`program.${programOptions.currentProgram}`)
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
@@ -407,41 +407,8 @@ function snapshotProgram() {
       uploadedProgramObject = data;
       modalName.value       = data.name;
       showModalUp.value     = true;
-      saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
-      programOptions.currentProgram = data.name;
     }, 'program');
   };
-
-  function uploadProgramOld() {
-    const input  = document.createElement("input");
-    input.type   = "file";
-    input.accept = "application/json";
-    input.style.display = "none";
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      try {
-        const text   = await file.text();
-        const parsed = JSON.parse(text);
-
-        if (!parsed.name) {
-          alert("The JSON file must contain a 'name' field.");
-          return;
-        }
-
-        uploadedProgramObject = parsed;
-        modalName.value       = parsed.name;
-        showModalUp.value     = true;
-        saveToLocalStorage('program', parsed.name, parsed, programOptions.availablePrograms)
-        programOptions.currentProgram = parsed.name;
-      } catch (err) {
-        console.error("📄❌ Failed to parse JSON file:", err);
-        alert("Could not load program file.");
-      }
-    };
-    input.click();
-    input.remove();
-  }
 
   async function confirmModal() {
     const name = modalName.value.trim();
@@ -451,15 +418,10 @@ function snapshotProgram() {
     }
 
     nameError.value   = "";
-    showModalUp.value = false;
-
-    console.log('Modal confirmed')
-    uploadedProgramObject.name       = name;
-    const jsonText                   = JSON.stringify(uploadedProgramObject, null, 2);
-    const programKeys                = getKeys('program')
-    programOptions.availablePrograms = programKeys
-    programOptions.currentProgram    = name
-    localStorage.setItem(`program.${name}`, jsonText)
+    uploadedProgramObject.name   = name;
+    showModalUp.value            = false;
+    saveToLocalStorage('program', name, uploadedProgramObject, programOptions.availablePrograms)
+    programOptions.currentProgram = name;
     reloadProgram()
   }
 
@@ -653,43 +615,10 @@ async function downloadProgram2() {
 
 // Upload program from JSON
 function uploadProgram3(force = false) {
-  if (!force && !isProgramEmpty.value) {
-    pendingAction.value = 'upload';
-    showChangeModal.value = true;
-    return;
-  }
-
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json';
-  input.style.display = 'none';
-  
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    try {
-      const text = await file.text();
-      const programData = JSON.parse(text);
-
-      if (!programData.name) {
-        alert("The JSON file must contain a 'name' field.");
-        return;
-      }
-
-      const selectEl = document.getElementById('programs-list');
-      if (selectEl) {
-        const nameExists = Array.from(selectEl.options).some(opt => opt.value === programData.name);
-        if (nameExists) {
-          alert('A program with this name already exists. Please choose another name.');
-          return;
-        }
-      }
+  programName.value = programData.name || 'imported_program';
+  originalProgramName.value = '';
       
-      programName.value = programData.name || 'imported_program';
-      originalProgramName.value = '';
-      
-      instructions.value = (programData.instruction_list || []).map(inst => {
+  instructions.value = (programData.instruction_list || []).map(inst => {
         const [mainType, ...subTypeParts] = inst.type.split('.');
         const subType = subTypeParts.join('.');
         
@@ -704,23 +633,13 @@ function uploadProgram3(force = false) {
           source3: inst.source3 || '',
           constant: inst.constant || ''
         };
-      });
+  });
       
-      if (instructions.value.length === 0) {
-        addInstruction();
-      }
-
-      syncOriginalWithCurrent();
-      localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
-    } catch (err) {
-      console.error('Failed to parse JSON file:', err);
-      alert('Could not load program file.');
-    }
-  };
-  
-  document.body.appendChild(input);
-  input.click();
-  input.remove();
+  if (instructions.value.length === 0) {
+    addInstruction();
+  }
+  syncOriginalWithCurrent();
+  localStorage.setItem('rvcat_program_local', JSON.stringify(snapshotProgram()));
 }
 
 async function saveProgramJsonToFile(programData, name) {
