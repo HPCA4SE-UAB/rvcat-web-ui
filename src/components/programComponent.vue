@@ -311,24 +311,27 @@ function snapshotProgram() {
       programOptions.currentProgram = ''
   }
 
- // straightforward version: no modal
- const uploadProgram = (oldProgram) => {  
-    uploadJSON((data) => {
-      if (data) {
-        if (programOptions.availablePrograms.includes(data.name)) {
-           alert(`A program with name= ${data.name} has been already loaded.`)
-        }
-        else {
-          uploadedProgramObject = data
-          saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
-          programOptions.currentProgram = data.name;
-          reloadProgram()
-          return;
-        }
+  // straightforward version: no modal
+  const uploadProgram = async (oldProgram) => {  
+  try {
+    const data = await uploadJSON(null, 'program');
+    if (data) {
+      if (programOptions.availablePrograms.includes(data.name)) {
+        alert(`A program with name= ${data.name} has been already loaded.`)
       }
-      programOptions.currentProgram = oldProgram;     
-    }, 'program');
-  }; 
+      else {
+        uploadedProgramObject = data
+        saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
+        programOptions.currentProgram = data.name;
+        reloadProgram()
+        return;
+      }
+    }
+    programOptions.currentProgram = oldProgram;       
+  } catch (error) {
+    programOptions.currentProgram = oldProgram;
+  }
+};
   
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
