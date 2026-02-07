@@ -459,9 +459,7 @@ async function proceedPendingAction() {
           </option>
            <option value="__add_new__">Add new</option>
         </select>
-        <button class="blue-button" @click="removeProgram" title="Remove program from list (and local storage)">
-            Remove
-        </button>
+        <button class="blue-button" @click="removeProgram" title="Remove program from list (and local storage)">🧹</button>
       </div>
     </div>
     
