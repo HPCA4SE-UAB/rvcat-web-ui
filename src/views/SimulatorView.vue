@@ -77,7 +77,7 @@ function toggleFullScreen(key) {
     return
   }
   currentFullKey.value = key
-  document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' }); 
+  // document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' }); 
 }
 
 // ============================================================================
@@ -230,7 +230,7 @@ onUnmounted(() => {
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
-        <programComponent   :is-fullscreen="isProgramFullscreen"/>
+        <programComponent   :is-fullscreen="isProgramFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
       <div v-show="isTutorialFullscreen" 
@@ -248,7 +248,6 @@ onUnmounted(() => {
         <div v-else>Component not found</div>
       </div>
 
-      <!-- Tutorial System -->
       <tutorialComponent 
         :activeView="currentKey"
         :activeFull="currentFullKey"
@@ -256,7 +255,6 @@ onUnmounted(() => {
         @requestSwitchPanel="onRequestSwitch"
         @requestSwitchFull="toggleFullScreen"
       />
-      <programComponent  @requestSwitchFull="toggleFullScreen"/>
     </main>
   </body>
 </template>
