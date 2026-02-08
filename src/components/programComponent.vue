@@ -418,7 +418,7 @@ function clearProgram() {
           📝
         </button>
         <button class="blue-button" @click="removeProgram"
-            id="edit-program-button"
+            id="remove-program-button"
             title="Remove program from list (and local storage)">
           🧹
         </button>
