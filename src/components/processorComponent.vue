@@ -673,13 +673,6 @@ const uploadProcessor = async (oldProcessor) => {
       </div>
       
       <div class="settings-container fullscreen-settings">
-        <select v-model="processorOptions.processorName" id="processors-list" title="Select Processor">
-          <option value="" disabled>Select</option>
-          <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
-            {{ processor }}
-          </option>
-        </select>
-
         <div class="buttons">
           <button class="blue-button" 
                   id="apply-processorconfig-button"
@@ -690,7 +683,7 @@ const uploadProcessor = async (oldProcessor) => {
           </button>
           <input type="file" accept=".json"
                id="processor-file-upload" 
-               @change="uploadProcessor" 
+               @change="uploadProcessor2" 
                style="display: none;"
             />
           <button class="blue-button" 
