@@ -371,7 +371,7 @@ const uploadForEdition = async () => {
     if (uploadedProgramObject) {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
-      emit('requestSwitchFull', 'programComponent')
+      emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')
     }
   }
