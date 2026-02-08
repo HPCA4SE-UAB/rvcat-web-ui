@@ -76,9 +76,19 @@
 // ============================================================================
 // WATCHES: processor, globalState  HANDLERS: setProcessor
 // ============================================================================
+   const ADD_NEW_OPTION = '__add_new__'
+
   // Watch ALL processor options for changes
-  watch(processorOptions, () => {
-    try {     
+  watch( [
+    () => processorOptions.processorName,
+    () => processorOptions.ROBsize,
+    () => processorOptions.availableProcessors
+  ],
+  ([newName, newROBsize, newAvailable], [oldName, oldROBsize, oldAvailable]) => {
+    try {    
+      if (newProgram === ADD_NEW_OPTION)
+        return uploadProcessor(oldName)
+
       processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
       processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
       saveOptions()
@@ -163,7 +173,7 @@
   });
 
 // ============================================================================
-// PROGRAM ACTIONS: InitProcessor,  ReloadProcessor, updateProcessorSettings, 
+// PROGRAM ACTIONS: initProcessor,  reloadProcessor, updateProcessorSettings, 
 //                  updateProcessor, drawProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
@@ -554,7 +564,29 @@ function uploadProcessor(event) {
     };
     reader.readAsText(file);
   }
-  
+
+const uploadProcessor = async (oldProcessor) => {  
+  try {
+    const data = await uploadJSON(null, 'processor');
+    if (data) {
+      if (processorOptions.availableProcessors.includes(data.name)) {
+        alert(`A processor with name: "${data.name}" has been already loaded.`)
+      }
+      else {
+        // TODO: Check here if it is a valid processor
+        uploadedProgramObject = data
+        saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
+        processorOptions.processorName = data.name;
+        reloadProcessor()
+        return;
+      }
+    }
+     processorOptions.processorName = oldProcessor;       
+  } catch (error) {
+     processorOptions.processorName = = oldProcessor;
+  }
+};
+
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
@@ -592,7 +624,18 @@ function uploadProcessor(event) {
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
             </option>
+            <option value="__add_new__">Add new</option>
           </select>
+          <button class="blue-button" @click="editProcessor" 
+            id="edit-processor-button" 
+            title="Edit current program on full-screen as a new program">
+          📝
+          </button>
+          <button class="blue-button" @click="removeProcessor"
+            id="remove-processor-button"
+            title="Remove processor configuration from list (and local storage)">
+          🧹
+          </button>
           <div class="iters-group">
             <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB size:</span>
             <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
