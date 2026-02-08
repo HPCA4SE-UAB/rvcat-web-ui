@@ -62,7 +62,7 @@ const containerClasses = computed(() => ({
 // Functions to change panel/full-screen
 // ============================================================================
   
-// Handle requests from header (& tutorial engine)
+// Handle requests from header (& processor/program/tutorial engine)
 function onRequestSwitch(key) {
   const nextComp             = components[key]
   currentKey.value           = key
@@ -70,10 +70,10 @@ function onRequestSwitch(key) {
   currentFullKey.value       = 'none'
 }
 
-// Handle requests from header (& tutorial engine)
+// Handle requests from header (& processor/program/tutorial engine)
 function toggleFullScreen(key) {
   if (currentFullKey.value === key) {
-    currentFullKey.value       = 'none'
+    currentFullKey.value = 'none'
     return
   }
   currentFullKey.value = key
@@ -230,7 +230,7 @@ onUnmounted(() => {
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
-        <programComponent   :is-fullscreen="isProgramFullscreen"   @requestSwitchFull="toggleFullScreen"/>
+        <programComponent   :is-fullscreen="isProgramFullscreen"/>
       </div>
 
       <div v-show="isTutorialFullscreen" 
@@ -256,7 +256,7 @@ onUnmounted(() => {
         @requestSwitchPanel="onRequestSwitch"
         @requestSwitchFull="toggleFullScreen"
       />
-
+      <programComponent  @requestSwitchFull="toggleFullScreen"/>
     </main>
   </body>
 </template>
