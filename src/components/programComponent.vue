@@ -346,6 +346,8 @@ const uploadForEdition = async () => {
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
+const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
+
   const showModalUpload   = ref(false)
   const showModalDownload = ref(false)
   const showModalClear    = ref(false);
@@ -357,16 +359,18 @@ const uploadForEdition = async () => {
     const name   = modalName.value.trim();
     const stored = localStorage.getItem('programTemp');
     if (stored) {
-      const data = JSON.parse(stored);
+      const data = JSON.parse(stored)
+      data.name = name
       await downloadJSON(data, name, 'program')
     }
     showModalDownload.value = false;
   }
 
-  function copySelected () {
+  function editProgram () {
     if (uploadedProgramObject) {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
+      emit('requestSwitchFull', 'programComponent')
     }
   }
  
@@ -406,7 +410,16 @@ function clearProgram() {
           </option>
            <option value="__add_new__">Add new</option>
         </select>
-        <button class="blue-button" @click="removeProgram" title="Remove program from list (and local storage)">🧹</button>
+        <button class="blue-button" @click="editProgram" 
+            id="edit-program-button" 
+            title="Edit current program on full-screen as a new program">
+          📝
+        </button>
+        <button class="blue-button" @click="removeProgram"
+            id="edit-program-button"
+            title="Remove program from list (and local storage)">
+          🧹
+        </button>
       </div>
     </div>
     
@@ -439,15 +452,11 @@ function clearProgram() {
           </button>
         </div>
         <div class="buttons">
-          <button class="blue-button" @click="copySelected"
-                title="Edit current selected program as new program" 
-                id="edit-program-button">
-            Edit selected
-          </button>
           <button class="blue-button"   @click="showModalClear = true"
                 title="Clear edition and start new program from scratch" 
-                id="clear-program-button"
-            >Clear</button>
+                id="clear-program-button">
+            Clear
+          </button>
         </div>
       </div>
     </div>
