@@ -346,7 +346,8 @@ const uploadForEdition = async () => {
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
-const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
+
+  const emit = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
 
   const showModalUpload   = ref(false)
   const showModalDownload = ref(false)
@@ -371,6 +372,7 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
       emit('requestSwitchFull', 'programComponent')
+      console.log('📄 Emit requestSwitchFull for program edition:')
     }
   }
  
