@@ -583,7 +583,7 @@ const uploadProcessor = async (oldProcessor) => {
     }
      processorOptions.processorName = oldProcessor;       
   } catch (error) {
-     processorOptions.processorName = = oldProcessor;
+     processorOptions.processorName = oldProcessor;
   }
 };
 
