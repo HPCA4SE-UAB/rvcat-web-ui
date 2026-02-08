@@ -539,7 +539,7 @@ function handleUploadProcessor() {
     showModalUp.value   = false;
   }
   
-function uploadProcessor(event) {
+function uploadProcessor2(event) {
     const inputEl = event.target;
     const file    = event.target.files[0];
     if (!file) return;
