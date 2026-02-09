@@ -141,6 +141,8 @@ function loadEditedProcessor() {
       if (newROBsize !== oldROBsize) {
         processorOptions.ROBsize = newROBsize
         saveOptions()
+        if (simState.state < 2)  // processor still not loaded
+          return
         console.log(`💻✅ ROB size changed to "${newROBsize}"`);
         drawProcessor()
         simState.ROBsize = newROBsize // fires other components
