@@ -347,7 +347,7 @@ const uploadForEdition = async () => {
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
 
-  const emit = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
+  const emit = defineEmits(['requestSwitchFull']) 
 
   const showModalUpload   = ref(false)
   const showModalDownload = ref(false)
