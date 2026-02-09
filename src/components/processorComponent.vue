@@ -140,9 +140,9 @@ function loadEditedProcessor() {
           return
       }
 
+      saveOptions()
       if (newROBsize !== oldROBsize) {
         processorOptions.ROBsize = newROBsize
-        saveOptions()
         if (simState.state < 2)  // processor still not loaded
           return
         console.log(`💻✅ ROB size changed to "${newROBsize}"`);
@@ -167,6 +167,8 @@ function loadEditedProcessor() {
   watch(procConfig, () => {
     try {
       localStorage.setItem('processorTemp', JSON.stringify(procConfig));
+      if (simState.state < 2)  // processor still not loaded
+        return
       drawEditedProcessor()  
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor configuration:', error)
@@ -321,6 +323,12 @@ function loadEditedProcessor() {
       ];
     `;
 
+    for (let i = dispatch_width - 1; i >= 0; i--) {
+      dot_code += `
+      Fetch -> "Waiting Buffer" [label="", tooltip="Dispath Width: ${dispatch_width} instructions per cycle",
+        fontsize=14, fontname="Arial" ];`;
+    }
+    
     // --- WAITING BUFFER ---
     dot_code += `"Waiting Buffer" [label="Waiting\\nBuffer", tooltip="Instructions wait for execution", shape=box, height=1, width=1, fixedsize=true];\n`;
 
@@ -642,9 +650,9 @@ function loadEditedProcessor() {
                    id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"/>
 
-            <span>Scheduling Optimal:</span>
+            <span>Schedule Opt.:</span>
             <input type="checkbox" 
-                 title="Set if scheduling algorithm is optimal. Otherwise it is greedy"
+                 title="Set checkbox if scheduling algorithm is optimal. Otherwise it is greedy"
                  id="schedule-check"
                  :checked="procConfig.sched !== 'greedy'"
                  @change="toggleScheduler" />
