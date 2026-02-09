@@ -273,7 +273,8 @@ function snapshotProgram() {
   });
 
 // ============================================================================
-// PROGRAM ACTIONS: InitProgram, ReloadProgram
+// PROGRAM ACTIONS: InitProgram, reloadProgram, editProgram, removeProgram, 
+//               uploadForEdition
 // ============================================================================
   let uploadedProgramObject = null
   
@@ -295,6 +296,17 @@ function snapshotProgram() {
     }      
   }
 
+  const emit = defineEmits(['requestSwitchFull']) 
+
+  function editProgram () {
+    if (uploadedProgramObject) {
+      localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
+      loadEditedProgram()
+      emit('requestSwitchFull', 'program')
+      console.log('📄 Emit requestSwitchFull for program edition:')
+    }
+  }
+
   function removeProgram () {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
     if ( programOptions.availablePrograms.length > 0)
@@ -306,30 +318,7 @@ function snapshotProgram() {
     }
   }
 
- // UpLOAD from General Panel: straightforward version (no modal)
-const uploadProgram = async (oldProgram) => {  
-  try {
-    const data = await uploadJSON(null, 'program');
-    if (data) {
-      if (programOptions.availablePrograms.includes(data.name)) {
-        alert(`A program with name: "${data.name}" has been already loaded.`)
-      }
-      else {
-        // TODO: Check here if it is a valid program
-        uploadedProgramObject = data
-        saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
-        programOptions.currentProgram = data.name;
-        // reloadProgram()
-        return;
-      }
-    }
-    programOptions.currentProgram = oldProgram;       
-  } catch (error) {
-    programOptions.currentProgram = oldProgram;
-  }
-};
-
- // UpLOAD from Edition Panel: straightforward version (no modal)
+// UpLOAD from Edition Panel: straightforward version (no modal)
 const uploadForEdition = async () => { 
   try {
     const data = await uploadJSON(null, 'program');
@@ -346,8 +335,6 @@ const uploadForEdition = async () => {
 // ============================================================================
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
-
-  const emit = defineEmits(['requestSwitchFull']) 
 
   const showModalUpload   = ref(false)
   const showModalDownload = ref(false)
@@ -366,16 +353,29 @@ const uploadForEdition = async () => {
     }
     showModalDownload.value = false;
   }
-
-  function editProgram () {
-    if (uploadedProgramObject) {
-      localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
-      loadEditedProgram()
-      emit('requestSwitchFull', 'program')
-      console.log('📄 Emit requestSwitchFull for program edition:')
-    }
-  }
  
+ // UpLOAD from General Panel: straightforward version (no modal)
+const uploadProgram = async (oldProgram) => {  
+  try {
+    const data = await uploadJSON(null, 'program');
+    if (data) {
+      if (programOptions.availablePrograms.includes(data.name)) {
+        alert(`A program with name: "${data.name}" has been already loaded.`)
+      }
+      else {
+        // TODO: Check here if it is a valid program
+        uploadedProgramObject = data
+        saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
+        programOptions.currentProgram = data.name;
+        return;
+      }
+    }
+    programOptions.currentProgram = oldProgram;       
+  } catch (error) {
+    programOptions.currentProgram = oldProgram;
+  }
+};
+
 function clearProgram() {
   editedProgram.value = [];
   addInstruction();

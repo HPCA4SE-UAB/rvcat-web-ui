@@ -174,25 +174,13 @@
   });
 
 // ============================================================================
-// PROGRAM ACTIONS: initProcessor,  removeProcessor, reloadProcessor, 
-//    updateProcessorSettings, updateProcessor, drawProcessor, get_processor_dot
+// PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor, 
+//    updateProcessorSettings, updateProcessor, uploadForEdition, 
+//    drawProcessor, get_processor_dot
 // ============================================================================
-  const emit = defineEmits(['requestSwitchFull']) 
-  
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
   };
-
-  function removeProcessor () {
-    removeFromLocalStorage('processor', processorOptions.processorName, processorOptions.availableProcessors)
-    if ( processorOptions.availableProcessors.length > 0)
-      processorOptions.processorName = processorOptions.availableProcessors[0]
-    else {
-      processorOptions.availableProcessors = ''
-      alert("Removing all processor configurations forces to load the original processors provided in the distribution")
-      initProcessor()
-    }
-  }
 
   const reloadProcessor = async () => {
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
@@ -206,6 +194,8 @@
     }
   }
 
+  const emit = defineEmits(['requestSwitchFull']) 
+  
   function editProcessor () {
     if (processorInfo) {
       localStorage.setItem('processorTemp', jsonString);
@@ -214,6 +204,18 @@
       console.log('📄 Emit requestSwitchFull for processor edition')
     }
   }
+
+  function removeProcessor () {
+    removeFromLocalStorage('processor', processorOptions.processorName, processorOptions.availableProcessors)
+    if ( processorOptions.availableProcessors.length > 0)
+      processorOptions.processorName = processorOptions.availableProcessors[0]
+    else {
+      processorOptions.availableProcessors = ''
+      alert("Removing all processor configurations forces to load the original processors provided in the distribution")
+      initProcessor()
+    }
+  }
+
 
   // --- load & update processor settings ---
   const updateProcessorSettings = async (procInfo) => {
@@ -251,6 +253,22 @@
 
     return true  // processor replaced
   }
+
+
+ // UpLOAD from Edition Panel: straightforward version (no modal)
+const uploadForEdition = async () => { 
+  try {
+    const data = await uploadJSON(null, 'processor');
+    if (data) {
+      // TODO: Check here if it is a valid processor
+      jsonString = JSON.stringify(data)
+      localStorage.setItem('processorTemp', jsonString);
+      updateProcessorSettings(data)
+    }
+  } catch (error) {
+    console.error('📄❌ Failed to upload processor for edition:', error)
+  }
+};
 
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing processor');
@@ -475,8 +493,13 @@
 // DownLoad / UpLoad + Modal logic
 // ============================================================================
 
-const { showSaveModal, showUploadModal, showChangeModal, modalName, modalError, saveToFile } = modalState;
+const showModalDownload = ref(false)
+const showModalClear    = ref(false);
+const modalName   = ref("")
+let   nameOld     = ''
+const nameError   = ref("")
 
+/*****************************
 async function confirmSaveProcessor() {
   const name = modalName.value.trim();
   const error = validateResourceName(name, processorOptions.availableProcessors);
@@ -494,7 +517,38 @@ async function confirmSaveProcessor() {
   }
   
   closeAllModals();
+} 
+
+*******************/
+
+
+const uploadProcessor = async (oldProcessor) => {  
+  try {
+    const data = await uploadJSON(null, 'processor');
+    if (data) {
+      if (processorOptions.availableProcessors.includes(data.name)) {
+        alert(`A processor with name: "${data.name}" has been already loaded.`)
+      }
+      else {
+        // TODO: Check here if it is a valid processor
+        processorInfo = data
+        saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
+        processorOptions.processorName = data.name
+        return;
+      }
+    }
+    processorOptions.processorName = oldProcessor;       
+  } catch (error) {
+    processorOptions.processorName = oldProcessor;
+  }
+};
+
+  
+function clearProcessor() {
+  editedProgram.value = [];
+  showModalClear.value = false;
 }
+
 
 function handleUploadProcessor() {
   uploadJSON((data, filename) => {
@@ -504,13 +558,6 @@ function handleUploadProcessor() {
     showUploadModal.value = true;
   }, 'processor');
 }
-  
-  const showModalDown   = ref(false);
-  const showModalUp     = ref(false);
-  const modalDownload   = ref(true);
-  const nameError       = ref("");
-  const showModalChange = ref(false);
-  let   modalConfirmOperation = null;
   
   function openModal() {
     modalName.value     = name.value + "*";
@@ -561,69 +608,6 @@ function handleUploadProcessor() {
     showModalDown.value = false;
     showModalUp.value   = false;
   }
-  
-function uploadProcessor2(event) {
-    const inputEl = event.target;
-    const file    = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        updateProcessorSettings(data)
-        
-        // === now pop up the Save‐As dialog ===
-        // strip extension from filename for default
-        modalName.value     = file.name.replace(/\.[^.]+$/, "");
-        modalDownload.value = false;
-        nameError.value     = "";
-        showModalUp.value   = true;
-      } catch (err) {
-        console.error("💻❌ Invalid JSON:", err);
-        alert("Failed to load processor config. Please, check the file.");
-      }
-      inputEl.value = "";
-    };
-    reader.readAsText(file);
-  }
-
-const uploadProcessor = async (oldProcessor) => {  
-  try {
-    const data = await uploadJSON(null, 'processor');
-    if (data) {
-      if (processorOptions.availableProcessors.includes(data.name)) {
-        alert(`A processor with name: "${data.name}" has been already loaded.`)
-      }
-      else {
-        // TODO: Check here if it is a valid processor
-        processorInfo = data
-        saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-        processorOptions.processorName = data.name
-        // reloadProcessor()
-        return;
-      }
-    }
-    processorOptions.processorName = oldProcessor;       
-  } catch (error) {
-     processorOptions.processorName = oldProcessor;
-  }
-};
-
- // UpLOAD from Edition Panel: straightforward version (no modal)
-const uploadForEdition = async () => { 
-  try {
-    const data = await uploadJSON(null, 'processor');
-    if (data) {
-      // TODO: Check here if it is a valid processor
-      jsonString = JSON.stringify(data)
-      localStorage.setItem('processorTemp', jsonString);
-      updateProcessorSettings(data)
-    }
-  } catch (error) {
-    console.error('📄❌ Failed to upload processor for edition:', error)
-  }
-};
 
 
 /* ------------------------------------------------------------------ 
@@ -709,28 +693,30 @@ const uploadForEdition = async () => {
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Processor Settings - <strong>{{ processorOptions.processorName }}</strong></span>
+        <span class="header-title">Processor Settings - Editor</span>
       </div>
       
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
           <button class="blue-button" 
-                  id="apply-processorconfig-button"
-                  title="Apply/Save new processor configuration" 
-                  @click="openModal" 
+                  id="processor-download-button"
+                  title="Save edited processor configuration" 
+                  @click="showModalDownload = true" 
                   :disabled="!isModified"> 
-              Apply Changes 
+              Download 
           </button>
-          <input type="file" accept=".json"
-               id="processor-file-upload" 
-               @change="uploadProcessor2" 
-               style="display: none;"
-            />
-          <button class="blue-button" 
-                  id="upload-processorconfig-button"
-                  title="Load new Processor" 
-                  @click="openUploadModal"> 
+           <button class="blue-button" 
+                  id="processor-upload-button"
+                  title="Load new processor configuration from file system for edition" 
+                  @click="UploadForEdition"> 
               Upload 
+          </button>
+        </div>
+        <div class="buttons">
+          <button class="blue-button"   @click="showModalClear = true"
+                title="Clear edition and start new processor configuration from scratch" 
+                id="clear-processor-button">
+            Clear
           </button>
         </div>
       </div>
