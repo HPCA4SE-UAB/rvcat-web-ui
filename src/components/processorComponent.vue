@@ -676,7 +676,7 @@ const uploadForEdition = async () => {
             title="Remove processor configuration from list (and local storage)">
           🧹
           </button>
-          <div class="iters-group">
+          <div class="iters-group rob-group">
             <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB:</span>
             <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
                  v-model.number="processorOptions.ROBsize">
@@ -976,6 +976,10 @@ const uploadForEdition = async () => {
     align-items: stretch;
     height:      auto;
   }
+
+.iters-group rob-group {
+       gap:         0px;
+}
 
   .settings-group {
     display:        flex;
