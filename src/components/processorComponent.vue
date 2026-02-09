@@ -196,7 +196,7 @@ function loadEditedProcessor() {
       console.log('💻✅ Initialization step (2): processor configuration provided to RVCAT')
     }
     else
-       console.log('💻✅ new processor configuration set on RVCAT')
+      console.log('💻✅ new processor configuration set on RVCAT')
   }
 
 
@@ -233,6 +233,7 @@ function loadEditedProcessor() {
       jsonString    = localStorage.getItem(`processor.${processorOptions.processorName}`)
       processorInfo = JSON.parse(jsonString)
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
+      drawProcessor()  
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
       simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
@@ -319,14 +320,12 @@ function loadEditedProcessor() {
       Fetch -> "Waiting Buffer" [
         label="Dispatch = ${dispatch_width}",
         tooltip="Dispath Width: ${dispatch_width} instructions per cycle",
-        fontsize=14, fontname="Arial"
+        fontsize=12, fontname="Arial"
       ];
     `;
 
-    for (let i = dispatch_width - 1; i >= 0; i--) {
-      dot_code += `
-      Fetch -> "Waiting Buffer" [label="", tooltip="Dispath Width: ${dispatch_width} instructions per cycle",
-        fontsize=14, fontname="Arial" ];`;
+    for (let i = dispatch_width - 1; i > 0; i--) {
+      dot_code += 'Fetch -> "Waiting Buffer"; ';
     }
     
     // --- WAITING BUFFER ---
@@ -392,7 +391,10 @@ function loadEditedProcessor() {
     dot_code += `ROB [label="ROB: ${ROBsize} entries", tooltip="Reorder Buffer: maintains sequential program order", shape=box, height=0.6, width=5, fixedsize=true];\n`;
     dot_code += `{ rank=sink; ROB; }\n\n`;
 
-    dot_code += `Fetch -> ROB;\n`;
+    for (let i = dispatch_width - 1; i >= 0; i--) {
+      dot_code += 'Fetch -> ROB;\n';
+    }
+ 
     for (let i = 0; i < shown_ports.length; i++) {
       dot_code += `P${shown_ports[i]} -> ROB;\n`;
     }
@@ -403,6 +405,11 @@ function loadEditedProcessor() {
         fontsize=14, fontname="Arial"
       ];
     `;
+
+    for (let i = retire_width - 1; i > 0; i--) {
+      dot_code += 'ROB -> Registers; ";
+    }
+
 
     dot_code += `}\n`;
     return dot_code;
