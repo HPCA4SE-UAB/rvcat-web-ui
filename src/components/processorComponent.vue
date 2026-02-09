@@ -177,6 +177,8 @@
 // PROGRAM ACTIONS: initProcessor,  removeProcessor, reloadProcessor, 
 //    updateProcessorSettings, updateProcessor, drawProcessor, get_processor_dot
 // ============================================================================
+  const emit = defineEmits(['requestSwitchFull']) 
+  
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
   };
