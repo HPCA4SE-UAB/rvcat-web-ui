@@ -110,7 +110,7 @@
     background: #e6f0ff;
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
-    padding:    3px 8px;
+    padding:    3px 6px;
     font-size:  small;
     line-height:   1.2;
     border-radius: 6px;
@@ -144,7 +144,10 @@
     opacity: 0.5;
     cursor:  default;
   }
-
+  .small-btn {
+    padding: 3px 0px;
+  }
+  
   input {
     font-size: medium;
   }
