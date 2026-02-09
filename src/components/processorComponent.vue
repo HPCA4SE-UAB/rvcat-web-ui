@@ -599,8 +599,8 @@ const uploadProcessor = async (oldProcessor) => {
         // TODO: Check here if it is a valid processor
         processorInfo = data
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-        processorOptions.processorName = data.name;
-        reloadProcessor()
+        processorOptions.processorName = data.name
+        // reloadProcessor()
         return;
       }
     }

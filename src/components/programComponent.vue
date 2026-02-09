@@ -319,7 +319,7 @@ const uploadProgram = async (oldProgram) => {
         uploadedProgramObject = data
         saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
-        reloadProgram()
+        // reloadProgram()
         return;
       }
     }
