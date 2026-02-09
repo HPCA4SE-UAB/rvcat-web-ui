@@ -494,6 +494,7 @@ const uploadForEdition = async () => {
 // ============================================================================
 
 const showModalDownload = ref(false)
+const showModalUpload   = ref(false)
 const showModalClear    = ref(false);
 const modalName   = ref("")
 let   nameOld     = ''
@@ -545,10 +546,18 @@ const uploadProcessor = async (oldProcessor) => {
 
   
 function clearProcessor() {
-  editedProgram.value = [];
+  updateProcessorSettings( {
+    dispatch:   1,
+    retire:     1,
+    latencies:  {},
+    ports:      {0:[]},
+    nBlocks:    0,
+    blkSize:    1,
+    mPenalty:   1,
+    mIssueTime: 1
+  })
   showModalClear.value = false;
 }
-
 
 function handleUploadProcessor() {
   uploadJSON((data, filename) => {
@@ -559,54 +568,15 @@ function handleUploadProcessor() {
   }, 'processor');
 }
   
-  function openModal() {
-    modalName.value     = name.value + "*";
-    modalDownload.value = true;
-    nameError.value     = "";
-    showModalDown.value = true;
-  }
-
-  function closeModal() {
-    showModalDown.value = false;
-    showModalUp.value   = false;
-  }
-  
-  function confirmLeave(){
-    showModalChange.value = false;
-    if(modalConfirmOperation=='upload') {
-      document.getElementById('processor-file-upload').click();
-      console.log('💻✅ Uploaded processor:', modalName.value)
+  async function confirmDownload() {
+    const name   = modalName.value.trim();
+    const stored = localStorage.getItem('processorTemp');
+    if (stored) {
+      const data = JSON.parse(stored)
+      data.name = name
+      await downloadJSON(data, name, 'processor')
     }
-    else if(modalConfirmOperation=='change') {
-      updateProcessorSettings(processorInfo);
-    }
-  }
-
-  function cancelLeave() {
-    showModalChange.value = false;
-  }
-
-  function openUploadModal() {
-    if (isModified.value) {
-      showModalChange.value = true;
-      modalConfirmOperation = 'upload';
-    }
-    else {
-      document.getElementById('processor-file-upload').click();
-    }
-  }
-
-  async function confirmModal() {
-    if (!updateProcessor(modalName.value)) {
-      nameError.value = "A processor configuration with this name already exists. Please, choose another one.";
-      return;
-    }
-    if (modalDownload.value) {    // download JSON file
-      downloadJSON(modalName.value, jsonString)
-      console.log('💻✅ Downloaded processor:', modalName.value)
-    }
-    showModalDown.value = false;
-    showModalUp.value   = false;
+    showModalDownload.value = false;
   }
 
 
@@ -895,37 +865,8 @@ function handleUploadProcessor() {
     @close="closeHelp4"/>
 
   </Teleport>
-  
-  <!-- Modal Dialog -->
-  <div v-if="showModalDown" class="modal-overlay">
-    <div class="modal">
-      <h4>Save Configuration As</h4>
-      <label for="config-name">Name:</label>
-      <input v-model="modalName" type="text" 
-           id="config-name" 
-           title="file name of new processor configuration"
-        />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
 
-      <label class="download-checkbox">
-        <input type="checkbox" v-model="modalDownload" />
-        Download JSON file
-        <span class="warning-wrapper" aria-label="Info">
-          ⚠️
-          <div class="tooltip-text">
-            Saving a copy in your file system is recommended, even though modified settings persist during sessions.
-          </div>
-        </span>
-      </label>
-
-      <div class="modal-actions">
-        <button class="blue-button" title="Yes, I will save the current changes"          @click="confirmModal"> Apply </button>
-        <button class="blue-button" title="No, I do not want to save the current changes" @click="closeModal">  Cancel </button>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="showModalUp" class="modal-overlay">
+  <div v-if="showModalUpload" class="modal-overlay">
     <div class="modal">
       <h4>Load Configuration As</h4>
       <label for="config-name">Name:</label>
@@ -935,20 +876,33 @@ function handleUploadProcessor() {
         />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I want to load"   @click="confirmModal"> Load  </button>
-        <button class="blue-button" title="No, I want to cancel"  @click="closeModal">  Cancel </button>
+        <button class="blue-button" title="Yes, I want to load"   @click="uploadEditedProcessor"> Load  </button>
+        <button class="blue-button" title="No, I want to cancel"  @click="showModalUpload=false">  Cancel </button>
+      </div>
+    </div>
+  </div>
+  
+  <div v-if="showModalDownload" class="modal-overlay">
+    <div class="modal">
+      <h4>Save Configuration As</h4>
+      <label for="config-name">Name:</label>
+      <input v-model="modalName" type="text" id="save-processor-name"
+           title="file name of new processor configuration"
+        />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Apply </button>
+        <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">  Cancel </button>
       </div>
     </div>
   </div>
 
-  <div v-if="showModalChange" class="modal-overlay">
+  <div v-if="showModalClear" class="modal-overlay">
     <div class="modal">
-      <p>The processor settings have been modified, but not saved. 
-         Changes will be lost if you select or upload a new processor configuration.</p>
-      <p><b>Do you want to continue?</b></p>
+      <p>You may have unsaved changes. Do you want to clear current edited program?</p>
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, I want to continue" @click="confirmLeave">  OK   </button>
-        <button class="blue-button" title="No, I want to cancel"    @click="cancelLeave"> Cancel </button>
+        <button class="blue-button" title="Yes, clear!" @click="clearProcessor">  OK   </button>
+        <button class="blue-button" title="No, cancel!" @click="showModalClear = false"> Cancel </button>
       </div>
     </div>
   </div>   
