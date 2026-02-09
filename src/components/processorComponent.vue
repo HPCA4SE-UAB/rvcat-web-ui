@@ -113,6 +113,7 @@
   // Watch ALL processor configuration values for changes
   watch(procConfig, () => {
     try {
+      localStorage.setItem('processorTemp', JSON.stringify(procConfig));
       if (simState.state >= 2)  // RVCAT imported & processor loaded
         drawProcessor()  
     } catch (error) {
@@ -200,6 +201,15 @@
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
       pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+
+  function editProcessor () {
+    if (processorInfo) {
+      localStorage.setItem('processorTemp', jsonString);
+      updateProcessorSettings(processorInfo)
+      emit('requestSwitchFull', 'processor')
+      console.log('📄 Emit requestSwitchFull for processor edition')
     }
   }
 
@@ -598,6 +608,22 @@ const uploadProcessor = async (oldProcessor) => {
   }
 };
 
+ // UpLOAD from Edition Panel: straightforward version (no modal)
+const uploadForEdition = async () => { 
+  try {
+    const data = await uploadJSON(null, 'processor');
+    if (data) {
+      // TODO: Check here if it is a valid processor
+      jsonString = JSON.stringify(data)
+      localStorage.setItem('processorTemp', jsonString);
+      updateProcessorSettings(data)
+    }
+  } catch (error) {
+    console.error('📄❌ Failed to upload processor for edition:', error)
+  }
+};
+
+
 /* ------------------------------------------------------------------ 
  * Help support 
  * ------------------------------------------------------------------ */
@@ -640,7 +666,7 @@ const uploadProcessor = async (oldProcessor) => {
           </select>
           <button class="blue-button small-btn" @click="editProcessor" 
             id="edit-processor-button" 
-            title="Edit current program on full-screen as a new program">
+            title="Edit current processor on full-screen as a new program">
           📝
           </button>
           <button class="blue-button small-btn" @click="removeProcessor"
