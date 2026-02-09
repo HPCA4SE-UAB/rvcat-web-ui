@@ -76,7 +76,7 @@
 // ============================================================================
 // WATCHES: processor, globalState  HANDLERS: setProcessor
 // ============================================================================
-   const ADD_NEW_OPTION = '__add_new__'
+   const ADD_NEW_OPTION = '_add_new_'
 
   // Watch ALL processor options for changes
   watch( [
@@ -597,14 +597,14 @@ const uploadProcessor = async (oldProcessor) => {
       }
       else {
         // TODO: Check here if it is a valid processor
-        uploadedProgramObject = data
+        processorInfo = data
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
         processorOptions.processorName = data.name;
         reloadProcessor()
         return;
       }
     }
-     processorOptions.processorName = oldProcessor;       
+    processorOptions.processorName = oldProcessor;       
   } catch (error) {
      processorOptions.processorName = oldProcessor;
   }
@@ -664,7 +664,7 @@ const uploadForEdition = async () => {
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
             </option>
-            <option value="__add_new__">Add new</option>
+            <option value="_add_new_">Add new</option>
           </select>
           <button class="blue-button small-btn" @click="editProcessor" 
             id="edit-processor-button" 
@@ -1073,7 +1073,7 @@ const uploadForEdition = async () => {
   border-color: #4a6cf7;
 }
 
-.form-select option[value="__add_new__"] {
+.form-select option[value="_add_new_"] {
   color:            #4a6cf7;
   font-weight:      bold;
   background-color: #f0f5ff;

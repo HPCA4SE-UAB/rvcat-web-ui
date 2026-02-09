@@ -176,7 +176,7 @@ function snapshotProgram() {
 // ============================================================================
 // WATCHES: program, globalStat  HANDLERS: setProgram, showProgram
 // ============================================================================
- const ADD_NEW_OPTION = '__add_new__'
+ const ADD_NEW_OPTION = '_add_new_'
 
   // Watch for program changes
   watch(() => programOptions.currentProgram, (newProgram, oldProgram) => {
@@ -410,7 +410,7 @@ function clearProgram() {
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
           </option>
-           <option value="__add_new__">Add new</option>
+           <option value="_add_new_">Add new</option>
         </select>
         <button class="blue-button small-btn" @click="editProgram" 
             id="edit-program-button" 
@@ -846,7 +846,7 @@ function clearProgram() {
   border-color: #4a6cf7;
 }
 
-.form-select option[value="__add_new__"] {
+.form-select option[value="_add_new_"] {
   color:            #4a6cf7;
   font-weight:      bold;
   background-color: #f0f5ff;
