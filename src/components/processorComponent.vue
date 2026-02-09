@@ -1029,7 +1029,7 @@ const uploadForEdition = async () => {
   .settings-container {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 3px;
   }
 
   .fullscreen-settings {
