@@ -563,7 +563,10 @@ function clearProgram() {
     <div class="modal">
       <h4>Load Program As</h4>
       <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName" />
+      <input type="text" v-model="modalName" 
+             id="load-config-name"
+             title="name of loaded processor configuration" 
+       />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
         <button class="blue-button" title="Accept Upload" @click="uploadEditedProgram">Load</button>
@@ -576,7 +579,8 @@ function clearProgram() {
     <div class="modal">
       <h4>Save Program As</h4>
       <label for="config-name">Name:</label>
-      <input id="save-name" type="text" v-model="modalName" />
+      <input id="save-program-name" type="text" v-model="modalName"  
+          title="file name of new program" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
         <button class="blue-button" title="Accept Download" @click="downloadEditedProgram">Save</button>
