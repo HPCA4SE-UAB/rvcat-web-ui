@@ -600,7 +600,6 @@ function loadEditedProcessor() {
           <span>saturated</span>
         </div>
       </div>
-
     </div>
 
     <div v-if="isFullscreen" class="header">
