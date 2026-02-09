@@ -435,7 +435,7 @@ function clearProgram() {
       
       <div class="settings-container fullscreen-settings">
         <div class="section-header">
-          <button class="blue-button small add-btn" @click="addInstruction"
+          <button class="blue-button add-btn" @click="addInstruction"
               title="Add new instruction at the end of program" 
               id="add-instruction-button">
             + Add Instruction
