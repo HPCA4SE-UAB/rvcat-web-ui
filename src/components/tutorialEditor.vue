@@ -443,10 +443,12 @@ const validationButtonSelectors = [
   { label: 'Set timeline panel',         value: '#timeline-button' },
   { label: 'Set about panel',            value: '#about-button' },
   { label: 'Run Simulation',             value: '#run-simulation-button' },
-  { label: 'Apply Processor Config.',    value: '#apply-processorconfig-button' },
-  { label: 'Upload Processor Config.',   value: '#upload-processorconfig-button' },
+  { label: 'Download Processor Config.', value: '#processor-download-button' },
+  { label: 'Upload Processor Config.',   value: '#processor-upload-button' },
   { label: 'Download Program',           value: '#program-download-button' },
   { label: 'Upload Program',             value: '#program-upload-button' },
+  { label: 'Clear Edited Program',       value: '#clear-processor-button' },
+  { label: 'Clear Edited Proc. Config',  value: '#clear-program-button' },
   { label: 'Remove PortX',               value: '#remove-port0-button' },
   { label: 'Add Port',                   value: '#add-port-button' }
 ]
