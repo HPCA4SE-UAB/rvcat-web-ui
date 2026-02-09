@@ -86,7 +86,7 @@
   ],
   ([newName, newROBsize, newAvailable], [oldName, oldROBsize, oldAvailable]) => {
     try {    
-      if (newProgram === ADD_NEW_OPTION)
+      if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
 
       processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
@@ -626,12 +626,12 @@ const uploadProcessor = async (oldProcessor) => {
             </option>
             <option value="__add_new__">Add new</option>
           </select>
-          <button class="blue-button" @click="editProcessor" 
+          <button class="blue-button small-button" @click="editProcessor" 
             id="edit-processor-button" 
             title="Edit current program on full-screen as a new program">
           📝
           </button>
-          <button class="blue-button" @click="removeProcessor"
+          <button class="blue-button small-button" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
           🧹
@@ -1016,6 +1016,7 @@ const uploadProcessor = async (oldProcessor) => {
   .latency-group .table-container {
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
+  
   /* Input de latencia más compacto */
   .latency-input {
     width:     40px !important; /* Más estrecho */
