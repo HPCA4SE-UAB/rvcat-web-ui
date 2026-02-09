@@ -412,12 +412,12 @@ function clearProgram() {
           </option>
            <option value="__add_new__">Add new</option>
         </select>
-        <button class="blue-button" @click="editProgram" 
+        <button class="blue-button small-btn" @click="editProgram" 
             id="edit-program-button" 
             title="Edit current program on full-screen as a new program">
           📝
         </button>
-        <button class="blue-button" @click="removeProgram"
+        <button class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
             title="Remove program from list (and local storage)">
           🧹
