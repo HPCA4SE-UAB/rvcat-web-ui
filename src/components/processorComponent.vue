@@ -407,7 +407,7 @@ function loadEditedProcessor() {
     `;
 
     for (let i = retire_width - 1; i > 0; i--) {
-      dot_code += 'ROB -> Registers; ";
+      dot_code += 'ROB -> Registers; ';
     }
 
 
