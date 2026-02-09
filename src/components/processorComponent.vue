@@ -50,7 +50,7 @@
   })()
 
   const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
-  const pipelineSvg      = ref('')
+  const simulatedSvg     = ref('')
 
   const saveOptions = () => {
     try {
@@ -62,7 +62,7 @@
     
 
 // ============================================================================
-// Temporal in-edition processor 
+// Temporal in-edition processor:  updateProcessorSettings
 // ============================================================================
 
   const procConfig = reactive({
@@ -75,6 +75,8 @@
     mPenalty:   1,
     mIssueTime: 1
   });
+
+  const editedSvg = ref('')
 
   const portList = computed(() => 
     Object.keys(procConfig.ports)
@@ -98,11 +100,11 @@
       Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
         procConfig.latencies[k] = v;
       });
+      drawEditedProcessor()  
     } catch(e) {
       console.error("💻❌ Failed to update processor settings:", e);
     }
   };
-
 
 function loadEditedProcessor() {
   const stored = localStorage.getItem('processorTemp');
@@ -165,8 +167,7 @@ function loadEditedProcessor() {
   watch(procConfig, () => {
     try {
       localStorage.setItem('processorTemp', JSON.stringify(procConfig));
-      if (simState.state >= 2)  // RVCAT imported & processor loaded
-        drawProcessor()  
+      drawEditedProcessor()  
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor configuration:', error)
     } 
@@ -194,7 +195,6 @@ function loadEditedProcessor() {
     }
     else
        console.log('💻✅ new processor configuration set on RVCAT')
-    updateProcessorSettings(processorInfo);  // update graph & local variables and view
   }
 
 
@@ -219,7 +219,7 @@ function loadEditedProcessor() {
 
 // ============================================================================
 // PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor, 
-//     uploadForEdition, updateProcessorSettings, drawProcessor, get_processor_dot
+//     uploadForEdition, drawProcessor, drawEditedProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
@@ -233,7 +233,7 @@ function loadEditedProcessor() {
       setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
-      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
 
@@ -275,23 +275,35 @@ function loadEditedProcessor() {
   };
 
   const drawProcessor = async () => {
-    console.log('💻🔄Redrawing processor');
+    console.log('💻🔄Redrawing simulated processor');
     try {
-      const dotCode = get_processor_dot ()
+      const dotCode = get_processor_dot (processorInfo)
       const svg = await createGraphVizGraph(dotCode);  
-      pipelineSvg.value = svg.outerHTML;
+      simulatedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw processor:', error)
-      pipelineSvg.value = `<div class="error">Failed to render graph</div>`;
+      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
 
-  function get_processor_dot() {
-    const dispatch_width = procConfig.dispatch
-    const retire_width   = procConfig.retire
-    const sched          = procConfig.sched
+  const drawEditedProcessor = async () => {
+    console.log('💻🔄Redrawing edited processor');
+    try {
+      const dotCode = get_processor_dot (procConfig)
+      const svg = await createGraphVizGraph(dotCode);  
+      editedSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('💻❌ Failed to draw edited processor:', error)
+      editedSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+
+  function get_processor_dot(data) {
+    const dispatch_width = data.dispatch
+    const retire_width   = data.retire
+    const sched          = data.sched
     const ROBsize        = processorOptions.ROBsize
-    const num_ports      = Object.keys(procConfig.ports).length
+    const num_ports      = Object.keys(data.ports).length
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
@@ -558,9 +570,9 @@ function loadEditedProcessor() {
 
       <!--    Processor Graph with visual usage  -->
       <div class="graph-section">
-        <div class="pipeline-container">
-          <div class="pipeline-img">
-            <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+        <div class="processor-container">
+          <div class="processor-img">
+            <div v-html="simulatedSvg" v-if="simulatedSvg"></div>
           </div>
         </div>
       </div>
@@ -737,9 +749,9 @@ function loadEditedProcessor() {
           </div> <!--- Table Container -->
         </div> <!--- Latency & Port Settings Group -->
 
-        <div class="pipeline-side-container">
-          <div class="pipeline-img">
-            <div v-html="pipelineSvg" v-if="pipelineSvg"></div>
+        <div class="processor-side-container">
+          <div class="processor-img">
+            <div v-html="editedSvg" v-if="editedSvg"></div>
           </div>
         </div>
         
@@ -861,13 +873,13 @@ function loadEditedProcessor() {
     font-size: larger;
   }
   
-  .pipeline-container {
+  .processor-container {
     width:     100%;
     height:    100%;
     display:   flex;
     margin-top: 6px;
   }
-  .pipeline-side-container {
+  .processor-side-container {
     flex: 1 1 55%;
     min-width: 0;           /* Importante para evitar desbordamiento */
     box-sizing: border-box; /* Incluye padding y border en el cálculo */
@@ -985,7 +997,7 @@ function loadEditedProcessor() {
     border-radius: 5px;
   }
     
-  .pipeline-img {
+  .processor-img {
     width:        100%;
     height:       100%;
     max-width:    150%;
@@ -995,12 +1007,12 @@ function loadEditedProcessor() {
     transform-box: fill-box;
   }
 
-  .pipeline-img svg text {
+  .processor-img svg text {
     font-size:   12px !important;
     font-family: Arial, sans-serif !important;
   }
-  .pipeline-img svg polygon,
-  .pipeline-img svg path {
+  .processor-img svg polygon,
+  .processor-img svg path {
     stroke-width: 2px !important;
   }
 
