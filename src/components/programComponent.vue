@@ -11,16 +11,16 @@
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
 
-// Instruction type definitions with subtypes
-const instructionTypes = {
-  'INT': ['ARITH', 'LOGIC', 'SHIFT'],
-  'BRANCH': [],
-  'MEM': ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP', 'VLOAD', 'VSTR'],
-  'FLOAT': ['ADD.SP', 'ADD.DP', 'MUL.SP', 'MUL.DP', 'FMA.SP', 'FMA.DP', 'DIV.SP', 'DIV.DP', 'SQRT.SP', 'SQRT.DP'],
-  'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV']
-};
+  // Instruction type definitions with subtypes
+  const instructionTypes = {
+    'INT': ['ARITH', 'LOGIC', 'SHIFT'],
+    'BRANCH': [],
+    'MEM': ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP', 'VLOAD', 'VSTR'],
+    'FLOAT': ['ADD.SP', 'ADD.DP', 'MUL.SP', 'MUL.DP', 'FMA.SP', 'FMA.DP',
+              'DIV.SP', 'DIV.DP', 'SQRT.SP', 'SQRT.DP'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV']
+  };
   
-  // Usando Composition API con setup
   const props = defineProps({
     isFullscreen: {
       type: Boolean,
@@ -31,13 +31,16 @@ const instructionTypes = {
 // ============================================================================
 // Program options & localStorage
 // ============================================================================
-  const STORAGE_KEY = 'programOptions'
+
+const STORAGE_KEY = 'programOptions'
 
   const defaultOptions = {
     currentProgram:    '',
     availablePrograms: []
   }
-  
+
+  let uploadedProgramObject = null
+
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -48,8 +51,8 @@ const instructionTypes = {
     }
   })()
 
-  const programOptions  = reactive({ ...defaultOptions, ...savedOptions })
-  const programText     = ref('LOADING ...')
+  const programOptions = reactive({ ...defaultOptions, ...savedOptions })
+  const programText    = ref('LOADING ...')
 
   const saveOptions = () => {
     try {
@@ -59,9 +62,11 @@ const instructionTypes = {
     }
   }
 
+
 // ============================================================================
 // Temporal in-edition program 
 // ============================================================================
+
 const editedProgram = ref([]);
 
 function loadEditedProgram() {
@@ -82,95 +87,6 @@ function loadEditedProgram() {
   } catch (e) {
     console.error('📄❌ Failed to load edited program from localStorage:', e);
   }
-}
-
-// ============================================================================
-// Program handling: addInstruction, removeInstruction, moveInstructionUp, moveInstructionDown
-//       onMainTypeChange, onSubTypeChange, getSubTypes, normalizeInstruction, snapshotProgram
-// ============================================================================
-
-// Initialize with empty instruction
-function addInstruction() {
-  editedProgram.value.push({
-    text: '',
-    type: '',
-    mainType: '',
-    subType: '',
-    destin: '',
-    source1: '',
-    source2: '',
-    source3: '',
-    constant: ''
-  });
-}
-
-function removeInstruction(index) {
-  if (editedProgram.value.length > 1) {
-    editedProgram.value.splice(index, 1);
-  }
-}
-
-function moveInstructionUp(index) {
-  if (index > 0) {
-    const temp = editedProgram.value[index];
-    editedProgram.value[index] = editedProgram.value[index - 1];
-    editedProgram.value[index - 1] = temp;
-  }
-}
-
-function moveInstructionDown(index) {
-  if (index < editedProgram.value.length - 1) {
-    const temp = editedProgram.value[index];
-    editedProgram.value[index] = editedProgram.value[index + 1];
-    editedProgram.value[index + 1] = temp;
-  }
-}
-
-// Handle type selection
-function onMainTypeChange(instruction) {
-  instruction.subType = '';
-  // If the type has no subtypes (like BRANCH), set type directly
-  const subtypes = getSubTypes(instruction.mainType);
-  if (instruction.mainType && subtypes.length === 0) {
-    instruction.type = instruction.mainType;
-  } else {
-    instruction.type = '';
-  }
-}
-
-function onSubTypeChange(instruction) {
-  if (instruction.mainType && instruction.subType) {
-    instruction.type = `${instruction.mainType}.${instruction.subType}`;
-  } else if (instruction.mainType) {
-    // Subtype was cleared, clear the full type too
-    instruction.type = '';
-  }
-}
-
-// Get subtypes for selected main type
-function getSubTypes(mainType) {
-  return instructionTypes[mainType] || [];
-}
-
-function normalizeInstruction(inst) {
-  return {
-    text:     (inst.text || '').trim(),
-    type:     (inst.type || '').trim(),
-    mainType: (inst.mainType || '').trim(),
-    subType:  (inst.subType || '').trim(),
-    destin:   (inst.destin || '').trim(),
-    source1:  (inst.source1 || '').trim(),
-    source2:  (inst.source2 || '').trim(),
-    source3:  (inst.source3 || '').trim(),
-    constant: (inst.constant || '').trim()
-  };
-}
-
-function snapshotProgram() {
-  return {
-    name:             'programTemp',
-    instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
-  };
 }
 
 // ============================================================================
@@ -276,7 +192,6 @@ function snapshotProgram() {
 // PROGRAM ACTIONS: InitProgram, reloadProgram, editProgram, removeProgram, 
 //               uploadForEdition
 // ============================================================================
-  let uploadedProgramObject = null
   
   const initProgram = async () => {
     const savedProgram = programOptions.currentProgram
@@ -333,17 +248,108 @@ const uploadForEdition = async () => {
 };
 
 // ============================================================================
-// DownLoad / UpLoad + Modal logic
+// Program handling: addInstruction, removeInstruction, 
+//        moveInstructionUp, moveInstructionDown,
+//        onMainTypeChange, onSubTypeChange, getSubTypes, 
+//        normalizeInstruction, snapshotProgram
 // ============================================================================
 
-  const showModalUpload   = ref(false)
+// Initialize with empty instruction
+function addInstruction() {
+  editedProgram.value.push({
+    text: '',
+    type: '',
+    mainType: '',
+    subType: '',
+    destin: '',
+    source1: '',
+    source2: '',
+    source3: '',
+    constant: ''
+  });
+}
+
+function removeInstruction(index) {
+  if (editedProgram.value.length > 1) {
+    editedProgram.value.splice(index, 1);
+  }
+}
+
+function moveInstructionUp(index) {
+  if (index > 0) {
+    const temp = editedProgram.value[index];
+    editedProgram.value[index] = editedProgram.value[index - 1];
+    editedProgram.value[index - 1] = temp;
+  }
+}
+
+function moveInstructionDown(index) {
+  if (index < editedProgram.value.length - 1) {
+    const temp = editedProgram.value[index];
+    editedProgram.value[index] = editedProgram.value[index + 1];
+    editedProgram.value[index + 1] = temp;
+  }
+}
+
+// Handle type selection
+function onMainTypeChange(instruction) {
+  instruction.subType = '';
+  // If the type has no subtypes (like BRANCH), set type directly
+  const subtypes = getSubTypes(instruction.mainType);
+  if (instruction.mainType && subtypes.length === 0) {
+    instruction.type = instruction.mainType;
+  } else {
+    instruction.type = '';
+  }
+}
+
+function onSubTypeChange(instruction) {
+  if (instruction.mainType && instruction.subType) {
+    instruction.type = `${instruction.mainType}.${instruction.subType}`;
+  } else if (instruction.mainType) {
+    // Subtype was cleared, clear the full type too
+    instruction.type = '';
+  }
+}
+
+// Get subtypes for selected main type
+function getSubTypes(mainType) {
+  return instructionTypes[mainType] || [];
+}
+
+function normalizeInstruction(inst) {
+  return {
+    text:     (inst.text || '').trim(),
+    type:     (inst.type || '').trim(),
+    mainType: (inst.mainType || '').trim(),
+    subType:  (inst.subType || '').trim(),
+    destin:   (inst.destin || '').trim(),
+    source1:  (inst.source1 || '').trim(),
+    source2:  (inst.source2 || '').trim(),
+    source3:  (inst.source3 || '').trim(),
+    constant: (inst.constant || '').trim()
+  };
+}
+
+function snapshotProgram() {
+  return {
+    name:             'programTemp',
+    instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
+  };
+}
+
+
+
+// ============================================================================
+// confirmDownload, uploadProgram, clearProgram
+// ============================================================================
+
   const showModalDownload = ref(false)
   const showModalClear    = ref(false);
-  const modalName   = ref("")
-  let   nameOld     = ''
-  const nameError   = ref("")
+  const modalName         = ref("")
+  const nameError         = ref("")
 
-  async function downloadEditedProgram() {
+  async function confirmDownload() {
     const name   = modalName.value.trim();
     const stored = localStorage.getItem('programTemp');
     if (stored) {
@@ -354,33 +360,35 @@ const uploadForEdition = async () => {
     showModalDownload.value = false;
   }
  
- // UpLOAD from General Panel: straightforward version (no modal)
-const uploadProgram = async (oldProgram) => {  
-  try {
-    const data = await uploadJSON(null, 'program');
-    if (data) {
-      if (programOptions.availablePrograms.includes(data.name)) {
-        alert(`A program with name: "${data.name}" has been already loaded.`)
+  const uploadProgram = async (oldProgram) => {  
+    try {
+      const data = await uploadJSON(null, 'program');
+      if (data) {
+        if (programOptions.availablePrograms.includes(data.name)) {
+          alert(`A program with name: "${data.name}" has been already loaded.`)
+        }
+        else {
+          // TODO: Check here if it is a valid program
+          uploadedProgramObject = data
+          saveToLocalStorage('program', data.name, uploadedProgramObject, 
+                                        programOptions.availablePrograms)
+          programOptions.currentProgram = data.name;
+          return;
+        }
       }
-      else {
-        // TODO: Check here if it is a valid program
-        uploadedProgramObject = data
-        saveToLocalStorage('program', data.name, uploadedProgramObject, programOptions.availablePrograms)
-        programOptions.currentProgram = data.name;
-        return;
-      }
+      programOptions.currentProgram = oldProgram;       
+    } catch (error) {
+      programOptions.currentProgram = oldProgram;
     }
-    programOptions.currentProgram = oldProgram;       
-  } catch (error) {
-    programOptions.currentProgram = oldProgram;
-  }
-};
+  };
 
-function clearProgram() {
-  editedProgram.value = [];
-  addInstruction();
-  showModalClear.value = false;
-}
+  function clearProgram() {
+    editedProgram.value = [];
+    addInstruction();
+    showModalClear.value = false;
+  }
+
+  
 
 // ============================================================================
 // Help support 
@@ -559,22 +567,6 @@ function clearProgram() {
     </div>
   </div>
   
-  <div v-if="showModalUpload" class="modal-overlay">
-    <div class="modal">
-      <h4>Load Program As</h4>
-      <label for="config-name">Name:</label>
-      <input type="text" v-model="modalName" 
-             id="load-config-name"
-             title="name of loaded processor configuration" 
-       />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" title="Accept Upload" @click="uploadEditedProgram">Load</button>
-        <button class="blue-button" title="Cancel Upload" @click="showModalUpload=false">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <div v-if="showModalDownload" class="modal-overlay">
     <div class="modal">
       <h4>Save Program As</h4>
@@ -583,7 +575,7 @@ function clearProgram() {
           title="file name of new program" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Download" @click="downloadEditedProgram">Save</button>
+        <button class="blue-button" title="Accept Download" @click="confirmDownload">Save</button>
         <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">Cancel</button>
       </div>
     </div>

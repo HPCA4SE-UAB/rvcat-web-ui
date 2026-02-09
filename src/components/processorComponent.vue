@@ -10,7 +10,12 @@
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
-  // Usando Composition API con setup
+   // TO DO: obtain from a distribution/local file, or from Processor Configuration
+  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", 
+                                  "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA",
+                                  "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL",
+                                  "VFLOAT.FMA" ]
+
   const props = defineProps({
     isFullscreen: {
       type: Boolean,
@@ -18,14 +23,13 @@
     }
   })
   
-    // TO DO: obtain from a distribution/local file, or from Processor Configuration
-  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA", "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL", "VFLOAT.FMA" ]
 
 // ============================================================================
 // Processor options & localStorage
 // ============================================================================
 
   const STORAGE_KEY = 'processorOptions'
+
   const defaultOptions = {
     processorName:      '',
     ROBsize:            20,
@@ -35,23 +39,6 @@
   let jsonString    = ''
   let processorInfo = null
   
-  const procConfig = reactive({
-    dispatch:   1,
-    retire:     1,
-    latencies:  {},
-    ports:      {0:[]},
-    nBlocks:    0,
-    blkSize:    1,
-    mPenalty:   1,
-    mIssueTime: 1
-  });
-
-  const portList = computed(() => 
-    Object.keys(procConfig.ports)
-      .map(k => Number(k))
-      .sort((a, b) => a - b)
-  );
-
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -73,6 +60,62 @@
     }
   }
     
+
+// ============================================================================
+// Temporal in-edition processor 
+// ============================================================================
+
+  const procConfig = reactive({
+    dispatch:   1,
+    retire:     1,
+    latencies:  {},
+    ports:      {0:[]},
+    nBlocks:    0,
+    blkSize:    1,
+    mPenalty:   1,
+    mIssueTime: 1
+  });
+
+  const portList = computed(() => 
+    Object.keys(procConfig.ports)
+      .map(k => Number(k))
+      .sort((a, b) => a - b)
+  );
+
+  const updateProcessorSettings = async (procInfo) => {
+    try {
+      procConfig.dispatch   = procInfo.dispatch;
+      procConfig.retire     = procInfo.retire;
+      procConfig.retire     = procInfo.retire;
+      procConfig.sched      = procInfo.sched || 'optimal';
+      procConfig.nBlocks    = procInfo.nBlocks;
+      procConfig.blkSize    = procInfo.blkSize;
+      procConfig.mIssueTime = procInfo.mIssueTime;
+      procConfig.mPenalty   = procInfo.mPenalty;
+
+      // refresh latencies
+      Object.keys(procConfig.latencies).forEach(k => delete procConfig.latencies[k]);
+      Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
+        procConfig.latencies[k] = v;
+      });
+    } catch(e) {
+      console.error("💻❌ Failed to update processor settings:", e);
+    }
+  };
+
+
+function loadEditedProcessor() {
+  const stored = localStorage.getItem('processorTemp');
+  if (!stored) return;
+  try {
+    const data = JSON.parse(stored);
+    updateProcessorSettings(data)
+  } catch (e) {
+    console.error('📄❌ Failed to load edited processor from localStorage:', e);
+  }
+}
+
+
 // ============================================================================
 // WATCHES: processor, globalState  HANDLERS: setProcessor
 // ============================================================================
@@ -89,19 +132,26 @@
       if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
 
-      processorOptions.ROBsize = Math.min(processorOptions.ROBsize, 200);
-      processorOptions.ROBsize = Math.max(processorOptions.ROBsize, 1);
-      saveOptions()
+      if (newROBsize !== oldROBsize) {
+        newROBsize = Math.max(Math.min(newROBsize, 200), 1);
+        if (newROBsize === oldROBsize)
+          return
+      }
+
+      if (newROBsize !== oldROBsize) {
+        processorOptions.ROBsize = newROBsize
+        saveOptions()
+        console.log(`💻✅ ROB size changed to "${newROBsize}"`);
+        drawProcessor()
+        simState.ROBsize = newROBsize // fires other components
+        return
+      }
+
       if (simState.state > 0) {  // RVCAT already imported
-         if (processorOptions.processorName !== simState.selectedProcessor) {  // Processor changed
-            console.log(`💻✅ Processor changed from "${simState.selectedProcessor}" to "${processorOptions.processorName}"`);
-            reloadProcessor()
-            return
+         if (newName !== simState.selectedProcessor) {
+           console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
+           reloadProcessor()
          }
-         if (processorOptions.ROBsize !== simState.ROBsize)  { // ROB size changed
-          console.log(`💻✅ ROB size changed to "${processorOptions.ROBsize}"`);
-          drawProcessor()
-          simState.ROBsize = processorOptions.ROBsize // fires other components
         }
       }
     } catch (error) {
@@ -146,6 +196,7 @@
     updateProcessorSettings(processorInfo);  // update graph & local variables and view
   }
 
+
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
@@ -154,16 +205,7 @@
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
-    try {    // Load from localStorage
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        Object.assign(processorOptions, JSON.parse(saved))
-      }
-      if (simState.state != 0)
-        console.error('💻⚠️ RVCAT imported before mounting processor component')
-    } catch (error) {
-      console.error('💻❌ Failed to mount:', error)
-    }
+    loadEditedProcessor()
   });
 
   onUnmounted(() => {
@@ -173,10 +215,10 @@
     }
   });
 
+
 // ============================================================================
 // PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor, 
-//    updateProcessorSettings, updateProcessor, uploadForEdition, 
-//    drawProcessor, get_processor_dot
+//     uploadForEdition, updateProcessorSettings, drawProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
@@ -216,59 +258,20 @@
     }
   }
 
-
-  // --- load & update processor settings ---
-  const updateProcessorSettings = async (procInfo) => {
+  // UpLOAD from Edition Panel: straightforward version (no modal)
+  const uploadForEdition = async () => { 
     try {
-      procConfig.dispatch   = procInfo.dispatch;
-      procConfig.retire     = procInfo.retire;
-      procConfig.ports      = procInfo.ports || {};
-      procConfig.nBlocks    = procInfo.nBlocks;
-      procConfig.blkSize    = procInfo.blkSize;
-      procConfig.mIssueTime = procInfo.mIssueTime;
-      procConfig.mPenalty   = procInfo.mPenalty;
-
-      // refresh latencies
-      Object.keys(procConfig.latencies).forEach(k => delete procConfig.latencies[k]);
-      Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
-        procConfig.latencies[k] = v;
-      });
-    } catch(e) {
-      console.error("💻❌ Failed to update processor settings:", e);
+      const data = await uploadJSON(null, 'processor');
+      if (data) {
+        // TODO: Check here if it is a valid processor
+        jsonString = JSON.stringify(data)
+        localStorage.setItem('processorTemp', jsonString);
+        updateProcessorSettings(data)
+      }
+    } catch (error) {
+      console.error('📄❌ Failed to upload processor for edition:', error)
     }
   };
-
-  function updateProcessor(name) {
-    if ( processorOptions.availableProcessors.includes(name) )
-        return false   // choose another name
-    
-    processorInfo = getCurrentProcessorJSON(name);
-    jsonString    = JSON.stringify(processorInfo, null, 2)
-
-    setTimeout(()=>{
-      localStorage.setItem(`processor.${name}`, jsonString)
-      processorOptions.availableProcessors = getKeys('processor')
-      processorOptions.processorName = name;
-    }, 100);
-
-    return true  // processor replaced
-  }
-
-
- // UpLOAD from Edition Panel: straightforward version (no modal)
-const uploadForEdition = async () => { 
-  try {
-    const data = await uploadJSON(null, 'processor');
-    if (data) {
-      // TODO: Check here if it is a valid processor
-      jsonString = JSON.stringify(data)
-      localStorage.setItem('processorTemp', jsonString);
-      updateProcessorSettings(data)
-    }
-  } catch (error) {
-    console.error('📄❌ Failed to upload processor for edition:', error)
-  }
-};
 
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing processor');
@@ -285,6 +288,7 @@ const uploadForEdition = async () => {
   function get_processor_dot() {
     const dispatch_width = procConfig.dispatch
     const retire_width   = procConfig.retire
+    const sched          = procConfig.sched
     const ROBsize        = processorOptions.ROBsize
     const num_ports      = Object.keys(procConfig.ports).length
     let dot_code = `
@@ -384,72 +388,11 @@ const uploadForEdition = async () => {
   }
 
 // ============================================================================
-// Processor Edition LOGIC: getCurrentProcessorJSON, shallowEq, portsEq, isModified
-//                          addPort, removePort, togglePortInstruction, noPortAssigned
+// Processor Edition LOGIC: addPort, removePort
+//           togglePortInstruction, toggleScheduler, noPortAssigned
 // ============================================================================
- function getCurrentProcessorJSON(name) {  // return current processor configuration as JSON
-    return {
-      name:       name,
-      dispatch:   procConfig.dispatch,
-      retire:     procConfig.retire,
-      latencies:  { ...procConfig.latencies },
-      ports:      procConfig.ports,
-      nBlocks:    procConfig.nBlocks,
-      blkSize:    procConfig.blkSize,
-      mPenalty:   procConfig.mPenalty,
-      mIssueTime: procConfig.mIssueTime,
-    };
-  }
 
-  function shallowEq(a, b) {  
-    const ka = Object.keys(a), kb = Object.keys(b);
-    if (ka.length !== kb.length) return false;
-    for (let k of ka) {
-      if (a[k] !== b[k]) return false;
-    }
-    return true;
-  }
-  
-  function portsEq(a, b) {
-    const ka = Object.keys(a), kb = Object.keys(b);
-    
-    if (ka.length !== kb.length) return false;
-    
-    for (let k of ka) {
-      const arrA = a[k] || [], arrB = b[k] || [];
-      if (arrA.length !== arrB.length) return false;
-
-      // get frequencies as arrays could be in different order
-      const freq = new Map();
-      for (let v of arrA) {
-        freq.set(v, (freq.get(v) || 0) + 1);
-      }
-      for (let v of arrB) {
-        if (!freq.has(v)) return false;
-        freq.set(v, freq.get(v) - 1);
-        if (freq.get(v) === 0) freq.delete(v);
-      }
-      // after removing all arrB items, map should be empty
-      if (freq.size !== 0) return false;
-    }
-    return true;
-  }
-  
-  const isModified = computed(() => {
-    if (procConfig.dispatch   !== processorInfo.dispatch)    return true;
-    if (procConfig.retire     !== processorInfo.retire)      return true;
-    if (procConfig.nBlocks    !== processorInfo.nBlocks)     return true;
-    if (procConfig.blkSize    !== processorInfo.blkSize)     return true;
-    if (procConfig.mPenalty   !== processorInfo.mPenalty)    return true;
-    if (procConfig.mIssueTime !== processorInfo.mIssueTime)  return true;
-    if (!shallowEq(procConfig.latencies, processorInfo.latencies)) return true;
-    if (!portsEq(procConfig.ports, processorInfo.ports))           return true;
-    return false;
-  });
-
-  // --- port add/delete ---
-
-  function addPort() {
+ function addPort() {
     const existing = portList.value;
     let next = 0;
     for (; existing.includes(next); next++);
@@ -482,6 +425,14 @@ const uploadForEdition = async () => {
     }
   }
 
+  function toggleScheduler() {
+    if (procConfig.sched === 'greedy') {
+      procConfig.sched = 'optimal'
+    } else {
+      procConfig.sched = 'greedy'
+    }
+  }
+
   function noPortAssigned(instr) {
     if (!portList.value.some(p => procConfig.ports[p]?.includes(instr))) {
       procConfig.ports[0].push(instr)
@@ -490,95 +441,61 @@ const uploadForEdition = async () => {
   }
 
 // ============================================================================
-// DownLoad / UpLoad + Modal logic
+// confirmDownload, uploadProcessor, clearProcessor
 // ============================================================================
 
-const showModalDownload = ref(false)
-const showModalUpload   = ref(false)
-const showModalClear    = ref(false);
-const modalName   = ref("")
-let   nameOld     = ''
-const nameError   = ref("")
-
-/*****************************
-async function confirmSaveProcessor() {
-  const name = modalName.value.trim();
-  const error = validateResourceName(name, processorOptions.availableProcessors);
-  
-  if (error) {
-    modalError.value = error;
-    return;
-  }
-  
-  // Guardar en localStorage
-  const success = saveToLocalStorage('processor', name, processorInfo, processorOptions.availableProcessors);
-  
-  if (success && saveToFile.value) {
-    await downloadJSON(processorInfo, name, 'processor');
-  }
-  
-  closeAllModals();
-} 
-
-*******************/
-
-
-const uploadProcessor = async (oldProcessor) => {  
-  try {
-    const data = await uploadJSON(null, 'processor');
-    if (data) {
-      if (processorOptions.availableProcessors.includes(data.name)) {
-        alert(`A processor with name: "${data.name}" has been already loaded.`)
-      }
-      else {
-        // TODO: Check here if it is a valid processor
-        processorInfo = data
-        saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-        processorOptions.processorName = data.name
-        return;
-      }
-    }
-    processorOptions.processorName = oldProcessor;       
-  } catch (error) {
-    processorOptions.processorName = oldProcessor;
-  }
-};
-
-  
-function clearProcessor() {
-  updateProcessorSettings( {
-    dispatch:   1,
-    retire:     1,
-    latencies:  {},
-    ports:      {0:[]},
-    nBlocks:    0,
-    blkSize:    1,
-    mPenalty:   1,
-    mIssueTime: 1
-  })
-  showModalClear.value = false;
-}
-
-function handleUploadProcessor() {
-  uploadJSON((data, filename) => {
-    // Procesar datos subidos
-    updateProcessorSettings(data);
-    modalName.value       = filename;
-    showUploadModal.value = true;
-  }, 'processor');
-}
+  const showModalDownload = ref(false)
+  const showModalClear    = ref(false)
+  const modalName         = ref("")
+  const nameError         = ref("")
   
   async function confirmDownload() {
     const name   = modalName.value.trim();
     const stored = localStorage.getItem('processorTemp');
     if (stored) {
       const data = JSON.parse(stored)
-      data.name = name
+      data.name  = name
       await downloadJSON(data, name, 'processor')
     }
     showModalDownload.value = false;
   }
 
+  const uploadProcessor = async (oldProcessor) => {  
+    try {
+      const data = await uploadJSON(null, 'processor');
+      if (data) {
+        if (processorOptions.availableProcessors.includes(data.name)) {
+          alert(`A processor with name: "${data.name}" has been already loaded.`)
+        }
+        else {
+          // TODO: Check here if it is a valid processor
+          processorInfo = data
+          saveToLocalStorage('processor', data.name, data, 
+                                          processorOptions.availableProcessors)
+          processorOptions.processorName = data.name
+          return;
+        }
+      }
+      processorOptions.processorName = oldProcessor;       
+    } catch (error) {
+      processorOptions.processorName = oldProcessor;
+    }
+  };
+  
+  function clearProcessor() {
+    updateProcessorSettings( {
+      dispatch:   1,
+      retire:     1,
+      sched:      'optimal',
+      latencies:  {},
+      ports:      {0:[]},
+      nBlocks:    0,
+      blkSize:    1,
+      mPenalty:   1,
+      mIssueTime: 1
+    })
+    showModalClear.value = false;
+  }
 
 /* ------------------------------------------------------------------ 
  * Help support 
@@ -671,14 +588,13 @@ function handleUploadProcessor() {
           <button class="blue-button" 
                   id="processor-download-button"
                   title="Save edited processor configuration" 
-                  @click="showModalDownload = true" 
-                  :disabled="!isModified"> 
+                  @click="showModalDownload = true"> 
               Download 
           </button>
            <button class="blue-button" 
                   id="processor-upload-button"
                   title="Load new processor configuration from file system for edition" 
-                  @click="UploadForEdition"> 
+                  @click="uploadForEdition"> 
               Upload 
           </button>
         </div>
@@ -712,6 +628,14 @@ function handleUploadProcessor() {
             <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
                    id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"/>
+
+            <span>Scheduling Optimal:</span>
+            <input type="checkbox" 
+                 :title="Set if scheduling algorithm is optimal. Otherwise it is greedy"
+                 :id="schedule-check"
+                 :checked="procConfig.sched !== 'greedy'"
+                 @change="toggleScheduler" />
+
           </div>
         </div> 
 
@@ -866,22 +790,6 @@ function handleUploadProcessor() {
 
   </Teleport>
 
-  <div v-if="showModalUpload" class="modal-overlay">
-    <div class="modal">
-      <h4>Load Configuration As</h4>
-      <label for="config-name">Name:</label>
-      <input v-model="modalName" type="text" 
-          id="config-name" 
-          title="name of loaded processor configuration" 
-        />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" title="Yes, I want to load"   @click="uploadEditedProcessor"> Load  </button>
-        <button class="blue-button" title="No, I want to cancel"  @click="showModalUpload=false">  Cancel </button>
-      </div>
-    </div>
-  </div>
-  
   <div v-if="showModalDownload" class="modal-overlay">
     <div class="modal">
       <h4>Save Configuration As</h4>
@@ -891,8 +799,8 @@ function handleUploadProcessor() {
         />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Apply </button>
-        <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">  Cancel </button>
+        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Yes </button>
+        <button class="blue-button" title="Cancel Download"   @click="showModalDownload=false">  Cancel </button>
       </div>
     </div>
   </div>
