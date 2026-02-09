@@ -173,13 +173,24 @@
   });
 
 // ============================================================================
-// PROGRAM ACTIONS: initProcessor,  reloadProcessor, updateProcessorSettings, 
-//                  updateProcessor, drawProcessor, get_processor_dot
+// PROGRAM ACTIONS: initProcessor,  removeProcessor, reloadProcessor, 
+//    updateProcessorSettings, updateProcessor, drawProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
   };
-  
+
+  function removeProcessor () {
+    removeFromLocalStorage('processor', processorOptions.processorName, processorOptions.availableProcessors)
+    if ( processorOptions.availableProcessors.length > 0)
+      processorOptions.processorName = processorOptions.availableProcessors[0]
+    else {
+      processorOptions.availableProcessors = ''
+      alert("Removing all processor configurations forces to load the original processors provided in the distribution")
+      initProcessor()
+    }
+  }
+
   const reloadProcessor = async () => {
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
@@ -619,19 +630,20 @@ const uploadProcessor = async (oldProcessor) => {
           <span class="header-title">Processor</span>
         </div>
         <div class="settings-container">
-          <select v-model="processorOptions.processorName" id="processors-list" title="Select Processor">
+          <select v-model="processorOptions.processorName" class="form-select"
+              id="processors-list" title="Select Processor">
             <option value="" disabled>Select</option>
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
             </option>
             <option value="__add_new__">Add new</option>
           </select>
-          <button class="blue-button small-button" @click="editProcessor" 
+          <button class="blue-button small-btn" @click="editProcessor" 
             id="edit-processor-button" 
             title="Edit current program on full-screen as a new program">
           📝
           </button>
-          <button class="blue-button small-button" @click="removeProcessor"
+          <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
           🧹
@@ -1016,6 +1028,28 @@ const uploadProcessor = async (oldProcessor) => {
   .latency-group .table-container {
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
+  
+.form-select {
+  width:            100%;
+  padding:          1px 1px;
+  margin-bottom:    2px;
+  border:           2px solid #ddd;
+  border-radius:    6px;
+  font-size:        medium;
+  background-color: white;
+  transition:       border-color 0.3s;
+}
+
+.form-select:focus {
+  outline:      none;
+  border-color: #4a6cf7;
+}
+
+.form-select option[value="__add_new__"] {
+  color:            #4a6cf7;
+  font-weight:      bold;
+  background-color: #f0f5ff;
+}
   
   /* Input de latencia más compacto */
   .latency-input {
