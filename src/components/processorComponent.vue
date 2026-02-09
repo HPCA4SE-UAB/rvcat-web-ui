@@ -631,8 +631,8 @@ function loadEditedProcessor() {
 
             <span>Scheduling Optimal:</span>
             <input type="checkbox" 
-                 :title="Set if scheduling algorithm is optimal. Otherwise it is greedy"
-                 :id="schedule-check"
+                 title="Set if scheduling algorithm is optimal. Otherwise it is greedy"
+                 id="schedule-check"
                  :checked="procConfig.sched !== 'greedy'"
                  @change="toggleScheduler" />
 
