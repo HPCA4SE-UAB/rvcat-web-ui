@@ -677,7 +677,7 @@ const uploadForEdition = async () => {
           🧹
           </button>
           <div class="iters-group">
-            <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB size:</span>
+            <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB:</span>
             <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
                  v-model.number="processorOptions.ROBsize">
           </div>
