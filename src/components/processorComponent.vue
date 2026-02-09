@@ -152,7 +152,6 @@ function loadEditedProcessor() {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
            reloadProcessor()
          }
-        }
       }
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor:', error)
