@@ -66,14 +66,16 @@
 // ============================================================================
 
   const procConfig = reactive({
+    name:       'default',
+    sched:      'optimal',
     dispatch:   1,
     retire:     1,
-    latencies:  {},
-    ports:      {0:[]},
     nBlocks:    0,
     blkSize:    1,
     mPenalty:   1,
-    mIssueTime: 1
+    mIssueTime: 1,
+    latencies:  {},
+    ports:      {0:[]},
   });
 
   const editedSvg = ref('')
@@ -86,20 +88,7 @@
 
   const updateProcessorSettings = async (procInfo) => {
     try {
-      procConfig.dispatch   = procInfo.dispatch;
-      procConfig.retire     = procInfo.retire;
-      procConfig.retire     = procInfo.retire;
-      procConfig.sched      = procInfo.sched || 'optimal';
-      procConfig.nBlocks    = procInfo.nBlocks;
-      procConfig.blkSize    = procInfo.blkSize;
-      procConfig.mIssueTime = procInfo.mIssueTime;
-      procConfig.mPenalty   = procInfo.mPenalty;
-
-      // refresh latencies
-      Object.keys(procConfig.latencies).forEach(k => delete procConfig.latencies[k]);
-      Object.entries(procInfo.latencies || {}).forEach(([k,v]) => {
-        procConfig.latencies[k] = v;
-      });
+      procConfig = JSON.parse(JSON.stringify(procInfo))  // deep copy
       drawEditedProcessor()  
     } catch(e) {
       console.error("💻❌ Failed to update processor settings:", e);
