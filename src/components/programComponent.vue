@@ -126,7 +126,7 @@ function loadEditedProgram() {
   
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
-    if (simState.RVCAT_state > 2) {
+    if (simState.state > 2 && simState.selectedProgram != '') {
       console.log('📄🔄 Refreshing program visualization...');
       showProgram()
     }
