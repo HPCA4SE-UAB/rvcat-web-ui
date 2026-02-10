@@ -1,6 +1,5 @@
 {
   "name": "v2",
-  "n": 11,
   "instruction_list": [
     {
       "type": "MEM.LOAD.SP",
