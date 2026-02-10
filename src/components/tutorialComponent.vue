@@ -189,7 +189,7 @@
         </div>
         <div v-else class="tutorial-list">
           <button 
-            v-for="tutorial in tutorialProgress.available" 
+            v-for="tutorial in tutorialOptions.available" 
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
             title="Start this tutorial"
@@ -215,7 +215,7 @@ const simState = inject('simulationState');
 // ============================================================================
 // Tutorial progress & localStorage
 // ============================================================================
-const STORAGE_KEY = 'tutorialProgress'
+const STORAGE_KEY = 'tutorialOptions'
 
 const defaultOptions = {
   available:    [],
@@ -243,11 +243,11 @@ const savedOptions = (() => {
   }
 })()
 
-const tutorialProgress  = reactive({ ...defaultOptions, ...savedOptions })
+const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
   
 const saveOptions = () => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialProgress))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
     console.log('👨‍🎓✅ save options (core)')
   } catch (error) {
     console.error('👨‍🎓❌ Failed to save (core):', error)
@@ -263,6 +263,11 @@ const props = defineProps({ activeView: String, activeFull: String })
   
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
+
+const initTutorial = async () => {
+  await initResource('tutorial', tutorialOptions, null, 'available')
+};
+
 
 // ============================================================================
 // Tutorial STATE
@@ -467,12 +472,12 @@ const shuffleAnswers = () => {
 // ============================================================================
   
 const loadTutorials = async () => {
-  const inProgressID = tutorialProgress.inProgressID  // Copy before modification by InitResource 
-  await initResource('tutorial', tutorialProgress, 'inProgressID', 'available')
+  const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource 
+  await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
 
   // replace list of tutorial names by list of tutorial descriptions
   const tutorials = []  
-  for (const name of tutorialProgress.available) {
+  for (const name of tutorialOptions.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
       const tutorial   = JSON.parse(jsonString)
@@ -485,7 +490,7 @@ const loadTutorials = async () => {
       console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
     }
   }
-  tutorialProgress.available  = tutorials   // fire options saving
+  tutorialOptions.available  = tutorials   // fire options saving
   isLoading.value             = false
   await loadCurrentTutorial (inProgressID)
 }
@@ -493,11 +498,11 @@ const loadTutorials = async () => {
 const loadCurrentTutorial = async (ID) => {
   let tutorial = null
   if ( ID !== "")
-    tutorial = tutorialProgress.available.find(t => t.id === ID)
+    tutorial = tutorialOptions.available.find(t => t.id === ID)
     
   if ( ID === "" || tutorial === null) { // no tutorial in progress
-    tutorialProgress.inProgressID = ""
-    tutorialProgress.progressStep =  0
+    tutorialOptions.inProgressID = ""
+    tutorialOptions.progressStep =  0
     currentTutorial.value         = null
     stepIndex.value               = 0
     console.log('👨‍🎓🚦No tutorial in progress')
@@ -509,12 +514,28 @@ const loadCurrentTutorial = async (ID) => {
   fullTutorial.steps    = processStepActions(fullTutorial.steps)
   fullTutorial.id       = ID
   currentTutorial.value = fullTutorial
-  stepIndex.value       = (tutorialProgress.inProgressID === ID) ? tutorialProgress.progressStep : 0
-  tutorialProgress.inProgressID = ID
-  tutorialProgress.progressStep = stepIndex.value
+  stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
+  tutorialOptions.inProgressID = ID
+  tutorialOptions.progressStep = stepIndex.value
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
   
+// From OLD editor code
+const addTutorial = () => {
+  if (!showValidationErrors()) return
+  const filename = tutorial.id
+  const data     = buildTutorialData(filename)
+  const success  = saveToLocalStorage( 'tutorial', filename, data, tutorialOptions.available);
+   if (success) {
+    console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`);
+    simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
+    clearDraft(false);
+  } else {
+    console.error(`👨‍🎓❌ Failed to save tutorial: ${filename}`);
+  }
+}
+
+
 // ============================================================================
 // VALIDATION
 // ============================================================================
@@ -757,7 +778,7 @@ const startTutorial = async (tutorialId) => {
 
 const goToStep = async (newIndex) => {
   stepIndex.value = newIndex
-  tutorialProgress.progressStep =  newIndex  // fire options saving
+  tutorialOptions.progressStep =  newIndex  // fire options saving
   resetQuestionState()
   shuffleAnswers    ()
   await nextTick()
@@ -784,8 +805,8 @@ const endTutorial = (fullReset = false) => {
     currentTutorial.value  = null
     stepIndex.value        = 0
     highlightElement.value = null
-    tutorialProgress.inProgressID = ""   // fire options saving
-    tutorialProgress.progressStep =  0
+    tutorialOptions.inProgressID = ""   // fire options saving
+    tutorialOptions.progressStep =  0
   }
 }
 
@@ -823,9 +844,9 @@ watch(() => simState.state, (newValue, oldValue) => {
   
 watch(  // Watch for tutorial changes on specific properties
   () => ({
-    available:    tutorialProgress.available,
-    inProgressID: tutorialProgress.inProgressID,
-    progressStep: tutorialProgress.progressStep,
+    available:    tutorialOptions.available,
+    inProgressID: tutorialOptions.inProgressID,
+    progressStep: tutorialOptions.progressStep,
   }),
   () => {
     saveOptions()

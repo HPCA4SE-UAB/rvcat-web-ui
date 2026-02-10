@@ -3,31 +3,20 @@
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Tutorial - <strong>{{ tutorialOptions.inEditionID }}</strong></span>
+        <span class="header-title">Tutorial  Editor</span>
       </div>
    
       <div class="settings-container fullscreen-settings">
-        <select v-model="tutorialOptions.inEditionID" id="tutorials-list" title="Select tutorial in local storage for edition">
-          <option value="" disabled>Select</option>
-          <option v-for="tutorial in tutorialOptions.available" :key="tutorial" :value="tutorial">
-            {{ tutorial }}
-          </option>
-        </select>
-        <div class="buttons">
-          <button class="blue-button" title="Add edited tutorial to local storage (accessible for visualization)" 
-                @click="addTutorial"> Add to menu </button>
-          <button class="blue-button" title="Remove selected tutorial from local storage" 
-                @click="removeTutorial"> Remove from menu </button>
-        </div>
-        <div class="buttons">
-          <button class="blue-button" title="Clear current tutorial draft and start fresh"
-                @click="clearDraft">  Clear Draft  </button>
-        </div>
         <div class="buttons">
           <button class="blue-button" title="Save current tutorial on your local file system" 
                 @click="downloadTutorial">   Download </button>
           <button class="blue-button" title="Load new tutorial from your local file system" 
                 @click="uploadTutorial"> Upload   </button>
+        </div>
+
+        <div class="buttons">
+          <button class="blue-button" title="Clear current tutorial draft and start fresh"
+                @click="clearDraft">  Clear Draft  </button>
         </div>
       </div>
     </div>
@@ -305,49 +294,17 @@ import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateRes
 const simState = inject('simulationState');
  
 // ============================================================================
-// Tutorial options & LocalStorage
+// Edited Tutorial & LocalStorage
 // ============================================================================
-const STORAGE_KEY = 'tutorialOptions'
 
-const defaultOptions = { // save this & tutorialTemp
-  available:   [],
-  inEditionID: '',
-  selectedStep: -1
-}
-
-const tutorial        = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
-const tutorialSvg     = ref('')
+const tutorial    = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
+const stepNumber  = ref(0)
+const tutorialSvg = ref('')
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
-const savedOptions = (() => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    console.log('🎓load options (editor)')
-    return saved ? JSON.parse(saved) : defaultOptions
-  } catch {
-    return defaultOptions
-  }
-})()
-
-const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
-  
-const saveOptions = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
-    console.log('🎓✅ save options (editor)')
-  } catch (error) {
-    console.error('🎓❌ Failed to save (editor):', error)
-  }
-}
-
-const currentStep = computed(() => {
-  if (tutorialOptions.selectedStep < 0) return null
-  return tutorial.steps[tutorialOptions.selectedStep]
-});
-
-const stepNumber = computed(() => tutorialOptions.selectedStep)
-const maxSteps   = computed(() => tutorial.steps.length)
+const currentStep = computed(() => stepNumber >= 0? tutorial.steps[stepNumber]: null)
+const maxSteps    = computed(() => tutorial.steps.length)
 
 // Predefined CSS selectors for highlighting elements
 const predefinedSelectors = [
@@ -500,12 +457,12 @@ const addStep = (type = 'step', atIndex = -1) => {
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
 
   tutorial.steps.splice(insertIndex, 0, newStep);
-  tutorialOptions.selectedStep = insertIndex;
+  stepNumber = insertIndex;
 }
 
 const removeStep = (index) => {
   tutorial.steps.splice(index, 1)
-  tutorialOptions.selectedStep = index-1;
+  stepNumber = index-1;
 }
 
 // ============================================================================
@@ -705,48 +662,30 @@ const showValidationErrors = () => {
 
 
 // ============================================================================
-// TUTORIAL ACTIONS: initTutorial, reloadEditedTutorial, clearDraft, addTutorial, 
+// TUTORIAL ACTIONS: initTutorial, loadEditedTutorial, clearDraft 
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
 
 const { modalName, modalError, showSaveModal } = modalState;
   
-const initTutorial = async () => {
-  await initResource('tutorial', tutorialOptions, null, 'available')
-};
-
-const reloadEditedTutorial = async () => {
-  if (tutorialOptions.inEditionID === "") {
+function loadEditedTutorial() {
+  const stored = localStorage.getItem('tutorialTemp');
+  if (!stored) {
     clearDraft(false)
-    console.log('🎓🔄 Reloading edited tutorial with clear draft.');
+    console.log('🎓🔄 Reloading edited tutorial with clear draft.')
     return
   }
   try {
-    let data
-    let jsonString = localStorage.getItem('tutorialTemp');
-    if (jsonString)
-      data = JSON.parse(jsonString)
-    if (!jsonString || data.id !== tutorialOptions.inEditionID) {
-      jsonString = localStorage.getItem(`tutorial.${tutorialOptions.inEditionID}`)
-      if (jsonString)
-        data = JSON.parse(jsonString)
-    }
-    if (jsonString) {
-      tutorial.id          = tutorialOptions.inEditionID || ''
-      tutorial.name        = data.name        || ''
-      tutorial.description = data.description || ''
-      tutorial.steps       = data.steps       || []
-      tutorialOptions.selectedStep = 0
-      console.log('🎓🔄 Reloading Edited tutorial with:', tutorialOptions.inEditionID);
-    }
-    else {
-      clearDraft(false)
-      console.log('🎓🔄 Reloading edited tutorial with clear draft.');
-    }
-  } catch (error) {
-    clearDraft(false)
-    console.error('🎓❌ Failed to reload edited tutorial:', error)
-  }      
+    const data = JSON.parse(stored);
+    tutorial.id          = data.id || ''
+    tutorial.name        = data.name        || ''
+    tutorial.description = data.description || ''
+    tutorial.steps       = data.steps       || []
+    stepNumber = 0
+    console.log('🎓🔄 Reloading Edited tutorial with:', data.id);
+  } catch (e) {
+    console.error('📄❌ Failed to load edited tutorial from localStorage:', e);
+  }
 }
 
 const clearDraft = (check = true) => {
@@ -755,22 +694,7 @@ const clearDraft = (check = true) => {
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
-    tutorialOptions.inEditionID = "newTutorial"
-    tutorialOptions.selectedStep = -1
-  }
-}
-
-const addTutorial = () => {
-  if (!showValidationErrors()) return
-  const filename = tutorial.id
-  const data     = buildTutorialData(filename)
-  const success  = saveToLocalStorage( 'tutorial', filename, data, tutorialOptions.available);
-   if (success) {
-    console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`);
-    simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-    clearDraft(false);
-  } else {
-    console.error(`👨‍🎓❌ Failed to save tutorial: ${filename}`);
+    stepNumber = -1
   }
 }
 
@@ -784,31 +708,18 @@ const saveTutorialAs = () => {
 const confirmSaveTutorialAs = async () => {
   if (!showValidationErrors()) return
   const newName = modalName.value.trim();
-  
-  const error = validateResourceName(newName, tutorialOptions.available);
-  if (error) {
-    modalError.value = error;
-    return;
-  }
-  
+   
   // Guardar con nuevo nombre
   const oldId = tutorial.id;
   tutorial.id = newName;
   
   const data    = buildTutorialData(newName);
-  const success = saveToLocalStorage('tutorial', newName, data, tutorialOptions.available );
+  const success = saveToLocalStorage('tutorial', newName, data, null );
   
   if (success) {
     console.log(`👨‍🎓✅ Tutorial saved as: ${newName} (was: ${oldId})`);
-    
-    showSaveModal.value = false;
-    simState.state = 4;  // Signal tutorial engine to obtain list of tutorials from localStorage
-    
-    // Si estás editando este tutorial, actualizar el ID
-    if (tutorialOptions.inEditionID === oldId) {
-      tutorialOptions.inEditionID = newName;
-    }
-    
+    showSaveModal.value = false
+    tutorial.id         = newName
     return true;
   } else {
     modalError.value = 'Failed to save tutorial';
@@ -819,7 +730,7 @@ const confirmSaveTutorialAs = async () => {
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
   
-  const tutorialData = buildTutorialData();
+  const tutorialData = buildTutorialData(tutorial.id);
   downloadJSON(tutorialData, tutorial.id, 'tutorial');
 };
 
@@ -829,15 +740,13 @@ const uploadTutorial = () => {
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps.map(convertUploadedStep)
-    tutorialOptions.inEditionID  = data.id
-    tutorialOptions.selectedStep = 0
+    stepNumber = 0
   }, 'tutorial');
 };
 
 const removeTutorial = () => {
-  removeFromLocalStorage('tutorial', tutorial.id, tutorialOptions.available);
+  removeFromLocalStorage('tutorial', tutorial.id, null);
   clearDraft()
-  simState.state = 4;   // Signal tutorial engine to obtain new list of tutorials from localStorage
 }
 
 // ============================================================================
@@ -890,8 +799,8 @@ async function processTutorialUpdate(t) {
     localStorage.setItem('tutorialTemp', JSON.stringify(t));
     console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
-    if (t.id !== tutorialOptions.inEditionID)
-      tutorialOptions.inEditionID = t.id   // create reaction to save current options
+    if (t.id !== tutorial.id)
+      tutorial.id = t.id   // create reaction to save current options
       
     const dotCode = generateTutorialDot(t);
     console.log('🎓📥 Dot Code', dotCode);
@@ -960,16 +869,8 @@ watch(tutorial, (t) => {
   }, 100);
 }, { deep: true });
   
-watch (
-  [() => tutorialOptions.available, 
-   () => tutorialOptions.inEditionID,
-   () => tutorialOptions.selectedStep],
-  ([newList, newID, newStep], [oldList, oldID, oldStep] ) => {
-    saveOptions()
-    if (newList !== oldList || newID !== oldID) {
-      if (tutorialOptions.inEditionID !== tutorial.id)
-        reloadEditedTutorial()
-    } else if (newStep >= 0)
+watch (stepNumber, (newStep) => {
+    if (newStep >= 0)
       selectNodeByIndex(newStep)
   },
   { deep: true }
@@ -1022,7 +923,7 @@ const addClickListenersToSvg = () => {
         if (index > tutorial.steps.length)
           stepN = -1
 
-        tutorialOptions.selectedStep = stepN;
+        stepNumber = stepN;
       };
 
       const handleMouseEnter = () => {
@@ -1049,7 +950,7 @@ const addClickListenersToSvg = () => {
         leave: handleMouseLeave
       });
 
-      selectNodeByIndex(tutorialOptions.selectedStep)
+      selectNodeByIndex(stepNumber)
     });
   });
 };
@@ -1129,7 +1030,8 @@ const selectNodeByIndex = (index) => {
 
 onMounted(() => {
   console.log('🎓🎯 TutorialEditor mounted')
-  addClickListenersToSvg();
+  addClickListenersToSvg()
+  loadEditedTutorial()
 });
 
 onUnmounted(() => {
