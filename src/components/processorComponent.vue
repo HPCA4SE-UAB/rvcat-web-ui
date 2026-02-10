@@ -62,7 +62,7 @@
     
 
 // ============================================================================
-// Temporal in-edition processor:  updateProcessorSettings
+// Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
 // ============================================================================
 
   const procConfig = reactive({
@@ -88,23 +88,22 @@
 
   const updateProcessorSettings = async (procInfo) => {
     try {
-      procConfig.value = JSON.parse(JSON.stringify(procInfo))  // deep copy
-      drawEditedProcessor()  
+      procConfig.value = JSON.parse(JSON.stringify(procInfo))  // deep copy & fire draw-update
     } catch(e) {
       console.error("💻❌ Failed to update processor settings:", e);
     }
   };
 
-function loadEditedProcessor() {
-  const stored = localStorage.getItem('processorTemp');
-  if (!stored) return;
-  try {
-    const data = JSON.parse(stored);
-    updateProcessorSettings(data)
-  } catch (e) {
-    console.error('📄❌ Failed to load edited processor from localStorage:', e);
+  function loadEditedProcessor() {
+    const stored = localStorage.getItem('processorTemp');
+    if (!stored) return;
+    try {
+      const data = JSON.parse(stored);
+      updateProcessorSettings(data)
+    } catch (e) {
+      console.error('📄❌ Failed to load edited processor from localStorage:', e);
+    }
   }
-}
 
 
 // ============================================================================
@@ -233,9 +232,9 @@ function loadEditedProcessor() {
   
   function editProcessor () {
     if (processorInfo) {
-      localStorage.setItem('processorTemp', jsonString);
-      updateProcessorSettings(processorInfo)
       emit('requestSwitchFull', 'processor')
+      updateProcessorSettings(processorInfo)
+      // localStorage.setItem('processorTemp', jsonString);
       console.log('📄 Emit requestSwitchFull for processor edition')
     }
   }
@@ -258,7 +257,7 @@ function loadEditedProcessor() {
       if (data) {
         // TODO: Check here if it is a valid processor
         jsonString = JSON.stringify(data)
-        localStorage.setItem('processorTemp', jsonString);
+        // localStorage.setItem('processorTemp', jsonString);
         updateProcessorSettings(data)
       }
     } catch (error) {
@@ -504,12 +503,16 @@ function loadEditedProcessor() {
       dispatch:   1,
       retire:     1,
       sched:      'optimal',
-      latencies:  {},
-      ports:      {0:[]},
       nBlocks:    0,
       blkSize:    1,
       mPenalty:   1,
-      mIssueTime: 1
+      mIssueTime: 1,
+      latencies:  { "INT": 1, "BRANCH": 1, "MEM.LOAD": 5, "MEM.VLOAD": 5, "MEM.STR": 2, "MEM.VSTR": 2,
+                    "FLOAT.ADD": 3, "FLOAT.MUL": 5, "FLOAT.FMA": 5, "VFLOAT.ADD": 3, "VFLOAT.MUL": 5, "VFLOAT.FMA": 5,
+                    "FLOAT.DIV": 6, "FLOAT.SQRT": 8},
+      ports:      {0: ["INT", "FLOAT.MUL", "VFLOAT.MUL", "FLOAT.DIV", "FLOAT.SQRT", "MEM.STR", "MEM.VSTR", "BRANCH"],
+                   1: ["INT", "FLOAT.ADD", "VFLOAT.ADD", "FLOAT.FMA", "VFLOAT.FMA", "MEM.LOAD", "MEM.VLOAD"]}
+
     })
     showModalClear.value = false;
   }
