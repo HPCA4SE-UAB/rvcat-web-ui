@@ -491,7 +491,7 @@ const loadTutorials = async () => {
     }
   }
   tutorialOptions.available  = tutorials   // fire options saving
-  isLoading.value             = false
+  isLoading.value            = false
   await loadCurrentTutorial (inProgressID)
 }
 
@@ -526,10 +526,8 @@ const addTutorial = () => {
   const filename = tutorial.id
   const data     = buildTutorialData(filename)
   const success  = saveToLocalStorage( 'tutorial', filename, data, tutorialOptions.available);
-   if (success) {
+  if (success) {
     console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`);
-    simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-    clearDraft(false);
   } else {
     console.error(`👨‍🎓❌ Failed to save tutorial: ${filename}`);
   }
@@ -837,7 +835,7 @@ const toggleTutorialMenu = () => {
 watch(() => simState.state, (newValue, oldValue) => {
   if (newValue == 4) { // Tutorial Editor has set tutorial on localStorage
     console.log('👨‍🎓📥 Include tutorials in available list');
-    loadTutorials()
+    initTutorial()
     simState.state = 5;   // acknowledge tutorials have been included in list
   }
 });

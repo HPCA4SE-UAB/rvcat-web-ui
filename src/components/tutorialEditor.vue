@@ -662,7 +662,7 @@ const showValidationErrors = () => {
 
 
 // ============================================================================
-// TUTORIAL ACTIONS: initTutorial, loadEditedTutorial, clearDraft 
+// TUTORIAL ACTIONS: loadEditedTutorial, clearDraft 
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
 
@@ -879,11 +879,8 @@ watch (stepNumber, (newStep) => {
 // Watch for changes on Simulation state
 watch(() => simState.state, (newValue, oldValue) => {
   if (newValue == 3) { // Initialization Stage
-    (async () => {
-      await initTutorial();
-      simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
-      console.log('🎓📥 Initialization step (4): tutorials loaded')
-    })();
+    simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
+    console.log('🎓📥 Initialization step (4): tutorial editor')
   }
 });
 
