@@ -101,7 +101,7 @@ function loadEditedProgram() {
 
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
-    if (simState.state > 1 && newProgram !== oldProgram)
+    if (simState.state > 1)
       reloadProgram()
   });
 
@@ -126,7 +126,7 @@ function loadEditedProgram() {
   
   // Watch for changes on processor configuration
   watch(() => simState.selectedProcessor, (newValue, oldValue) => {
-    if (newValue != oldValue && simState.RVCAT_state > 2 && simState.selectedProgram != '') {
+    if (simState.RVCAT_state > 2) {
       console.log('📄🔄 Refreshing program visualization...');
       showProgram()
     }
