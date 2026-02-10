@@ -88,7 +88,7 @@
 
   const updateProcessorSettings = async (procInfo) => {
     try {
-      procConfig = JSON.parse(JSON.stringify(procInfo))  // deep copy
+      procConfig.value = JSON.parse(JSON.stringify(procInfo))  // deep copy
       drawEditedProcessor()  
     } catch(e) {
       console.error("💻❌ Failed to update processor settings:", e);
