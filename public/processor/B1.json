@@ -2,6 +2,7 @@
   "name": "B1",
   "dispatch": 1,
   "retire": 2,
+  "sched": 'optimal',
   "nBlocks": 0,
   "blkSize": 8,
   "mPenalty": 12,
