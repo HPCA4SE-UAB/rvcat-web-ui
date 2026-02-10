@@ -457,12 +457,12 @@ const addStep = (type = 'step', atIndex = -1) => {
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
 
   tutorial.steps.splice(insertIndex, 0, newStep);
-  stepNumber = insertIndex;
+  stepNumber.value = insertIndex;
 }
 
 const removeStep = (index) => {
   tutorial.steps.splice(index, 1)
-  stepNumber = index-1;
+  stepNumber.value = index-1;
 }
 
 // ============================================================================
@@ -681,7 +681,7 @@ function loadEditedTutorial() {
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps       || []
-    stepNumber = 0
+    stepNumber.value     = 0
     console.log('🎓🔄 Reloading Edited tutorial with:', data.id);
   } catch (e) {
     console.error('📄❌ Failed to load edited tutorial from localStorage:', e);
@@ -694,7 +694,7 @@ const clearDraft = (check = true) => {
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
-    stepNumber = -1
+    stepNumber.value     = -1
   }
 }
 
@@ -740,7 +740,7 @@ const uploadTutorial = () => {
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps.map(convertUploadedStep)
-    stepNumber = 0
+    stepNumber.value     = 0
   }, 'tutorial');
 };
 
@@ -923,7 +923,7 @@ const addClickListenersToSvg = () => {
         if (index > tutorial.steps.length)
           stepN = -1
 
-        stepNumber = stepN;
+        stepNumber.value = stepN;
       };
 
       const handleMouseEnter = () => {
