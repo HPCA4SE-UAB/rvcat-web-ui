@@ -28,10 +28,6 @@
         <div class="section tutorial-header">
           <div class="form-group left-column">
             <div class="label-input-row">
-              <label>ID <span class="required">*</span></label>
-              <input v-model="tutorial.id" type="text" title="Tutorial identifier, used as name of corresponding JSON file"  class="name-input">
-	          </div>
-            <div class="label-input-row">
               <label>Name <span class="required">*</span></label>
               <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name, used to identify tutorial" title="Tutorial name, used to identify tutorial" class="name-input">
             </div>
@@ -681,12 +677,11 @@ function loadEditedTutorial() {
   }
   try {
     const data = JSON.parse(stored);
-    tutorial.id          = data.id || ''
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps       || []
     stepNumber.value     = 0
-    console.log('🎓🔄 Reloading Edited tutorial with:', data.id);
+    console.log('🎓🔄 Reloading Edited tutorial with existing draft');
   } catch (e) {
     console.error('📄❌ Failed to load edited tutorial from localStorage:', e);
   }
@@ -694,7 +689,6 @@ function loadEditedTutorial() {
 
 const clearDraft = (check = true) => {
   if ( !check || confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
-    tutorial.id          = 'newTutorial'
     tutorial.name        = ''
     tutorial.description = ''
     tutorial.steps       = []
@@ -704,26 +698,21 @@ const clearDraft = (check = true) => {
 
 const saveTutorialAs = () => {
   // Open modal to input new name
-  modalName.value     = tutorial.id;
+  modalName.value     = "Name?";
   modalError.value    = '';
   showSaveModal.value = true;
 };
 
 const confirmSaveTutorialAs = async () => {
   if (!showValidationErrors()) return
-  const newName = modalName.value.trim();
+  const name = modalName.value.trim();
    
-  // Guardar con nuevo nombre
-  const oldId = tutorial.id;
-  tutorial.id = newName;
-  
-  const data    = buildTutorialData(newName);
-  const success = saveToLocalStorage('tutorial', newName, data, null );
+  const data    = buildTutorialData(name);
+  const success = saveToLocalStorage('tutorial', name, data, null );
   
   if (success) {
-    console.log(`👨‍🎓✅ Tutorial saved as: ${newName} (was: ${oldId})`);
+    console.log(`👨‍🎓✅ Tutorial saved as: ${name}`);
     showSaveModal.value = false
-    tutorial.id         = newName
     return true;
   } else {
     modalError.value = 'Failed to save tutorial';
@@ -734,13 +723,12 @@ const confirmSaveTutorialAs = async () => {
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
   
-  const tutorialData = buildTutorialData(tutorial.id);
-  downloadJSON(tutorialData, tutorial.id, 'tutorial');
+  const tutorialData = buildTutorialData('tempTut');
+  downloadJSON(tutorialData, 'tempTut', 'tutorial');
 };
 
 const uploadTutorial = () => {
   uploadJSON((data) => {
-    tutorial.id          = data.id          || ''
     tutorial.name        = data.name        || ''
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps.map(convertUploadedStep)
@@ -748,10 +736,6 @@ const uploadTutorial = () => {
   }, 'tutorial');
 };
 
-const removeTutorial = () => {
-  removeFromLocalStorage('tutorial', tutorial.id, null);
-  clearDraft()
-}
 
 // ============================================================================
 // Utilities: convertUploadedStep, processTutorialUpdate
@@ -803,9 +787,6 @@ async function processTutorialUpdate(t) {
     localStorage.setItem('tutorialTemp', JSON.stringify(t));
     console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
-    if (t.id !== tutorial.id)
-      tutorial.id = t.id   // create reaction to save current options
-      
     const dotCode = generateTutorialDot(t);
     console.log('🎓📥 Dot Code', dotCode);
       

@@ -491,8 +491,8 @@ const loadTutorials = async () => {
     }
   }
   tutorialOptions.available  = tutorials   // fire options saving
-  isLoading.value            = false
   await loadCurrentTutorial (inProgressID)
+  isLoading.value            = false
 }
 
 const loadCurrentTutorial = async (ID) => {
