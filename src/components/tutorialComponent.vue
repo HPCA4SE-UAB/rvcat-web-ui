@@ -525,7 +525,7 @@ const loadCurrentTutorial = async (ID) => {
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
   
-const addTutorial = () => {
+const addTutorial = async () => {
   try {
     const data   = await uploadJSON(null, 'tutorial');
     let included = false
