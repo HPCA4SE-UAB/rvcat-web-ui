@@ -200,7 +200,6 @@
               <p v-html="tutorial.description"></p>
             </div>
           </button>
-          <option value=>Add new</option>
           <button 
             @click="addTutorial"
             title="Upload new tutorial"
