@@ -488,7 +488,9 @@ const initTutorial = async () => {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
       const tutorial   = JSON.parse(jsonString)
+      tutorial.id      = name
       tutorials.push({
+        id:          name,
         name:        tutorial.name,
         description: tutorial.description
       })
@@ -532,23 +534,22 @@ const addTutorial = async () => {
     let included = false
 
     for (const tut of tutorialOptions.available) {
-      if (tut.name === data.name)
+      if (tut.id === data.id)
         included = true
     }
     if (included) {
-      alert(`A tutorial with name: "${data.name}" has been already loaded.`)
+      alert(`A tutorial with name: "${data.id}" has been already loaded.`)
       return
     }
     tutorialOptions.available.push({
+      id:          data.id,
       name:        data.name,
       description: data.description
     })
-    const name   = data.name.replace(/\.[^.]+$/, '')
-    data.id      = name
-    const key    = `tutorial.${name}`;
+    const key    = `tutorial.${data.id}`;
     const str    = JSON.stringify(data, null, 2);   
     localStorage.setItem(key, str);
-    console.log(`👨‍🎓✅ Added tutorial to local storage: ${name}`);
+    console.log(`👨‍🎓✅ Added tutorial to local storage: ${data.id}`);
   } catch (error) {
     console.error('👨‍🎓❌ Failed to upload/save tutorial', error);
   }
