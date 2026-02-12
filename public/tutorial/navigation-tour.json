@@ -1,4 +1,5 @@
 {
+  "id": "Nav-Tour",
   "name": "Navigation Tour",
   "description": "A tour through all the application tabs",
   "steps": [
