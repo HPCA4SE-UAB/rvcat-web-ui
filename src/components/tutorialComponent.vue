@@ -219,8 +219,9 @@
 <script setup>
   
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import {  initResource }                                                       from '@/common'
+import {  initResource, uploadJSON, removeFromLocalStorage }                   from '@/common'
 const simState = inject('simulationState');
+
 
 // ============================================================================
 // Tutorial progress & localStorage

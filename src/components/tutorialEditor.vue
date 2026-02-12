@@ -280,12 +280,9 @@
 
 <script setup>
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import HelpComponent  from '@/components/helpComponent.vue';
-
-import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
-          downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph
-       } from '@/common'
+import HelpComponent                                     from '@/components/helpComponent.vue'
+import {  modalState, downloadJSON, uploadJSON, saveToLocalStorage, initResource,
+          createGraphVizGraph                                                } from '@/common'
 
 const simState = inject('simulationState');
  
