@@ -547,11 +547,10 @@ const addTutorial = async () => {
     const str    = JSON.stringify(data, null, 2);   
     localStorage.setItem(key, str);
     console.log(`👨‍🎓✅ Added tutorial to local storage: ${name}`);
-  } else {
-    console.error('👨‍🎓❌ Failed to upload/save tutorial');
+  } catch (error) {
+    console.error('👨‍🎓❌ Failed to upload/save tutorial', error);
   }
 }
-
 
 // ============================================================================
 // VALIDATION
