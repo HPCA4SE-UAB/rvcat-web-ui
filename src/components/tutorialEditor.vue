@@ -303,7 +303,11 @@ const tutorialSvg = ref('')
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
-const currentStep = computed(() => stepNumber >= 0? tutorial.steps[stepNumber]: null)
+const currentStep = computed(() => 
+  stepNumber.value >= 0 && stepNumber.value < tutorial.steps.length
+    ? tutorial.steps[stepNumber.value] 
+    : null
+);
 const maxSteps    = computed(() => tutorial.steps.length)
 
 // Predefined CSS selectors for highlighting elements
