@@ -544,6 +544,7 @@ const addTutorial = async () => {
       description: data.description
     })
     const name   = data.name.replace(/\.[^.]+$/, '')
+    data.id      = name
     const key    = `tutorial.${name}`;
     const str    = JSON.stringify(data, null, 2);   
     localStorage.setItem(key, str);
