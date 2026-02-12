@@ -601,8 +601,7 @@ const convertStepForExport = (step) => {
   return s
 }
 
-const buildTutorialData = (filename) => ({
-  id:          filename,
+const buildTutorialData = () => ({
   name:        tutorial.name,
   description: tutorial.description,
   steps:       tutorial.steps
@@ -711,11 +710,11 @@ const confirmSaveTutorialAs = async () => {
   if (!showValidationErrors()) return
   const name = modalName.value.trim();
    
-  const data    = buildTutorialData(name);
+  const data    = buildTutorialData();
   const success = saveToLocalStorage('tutorial', name, data, null );
   
   if (success) {
-    console.log(`👨‍🎓✅ Tutorial saved as: ${name}`);
+    console.log(`🎓✅ Tutorial saved as: ${name}`);
     showSaveModal.value = false
     return true;
   } else {
@@ -727,7 +726,7 @@ const confirmSaveTutorialAs = async () => {
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
   
-  const tutorialData = buildTutorialData('tempTut');
+  const tutorialData = buildTutorialData();
   downloadJSON(tutorialData, 'tempTut', 'tutorial');
 };
 
@@ -739,7 +738,6 @@ const uploadTutorial = () => {
     stepNumber.value     = 0
   }, 'tutorial');
 };
-
 
 // ============================================================================
 // Utilities: convertUploadedStep, processTutorialUpdate

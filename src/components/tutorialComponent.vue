@@ -200,6 +200,17 @@
               <p v-html="tutorial.description"></p>
             </div>
           </button>
+          <option value=>Add new</option>
+          <button 
+            @click="addTutorial"
+            title="Upload new tutorial"
+            class="tutorial-menu-item"
+          >
+            <div class="tutorial-item-content">
+              <strong> ADD NEW TUTORIAL</strong>
+            </div>
+          </button>
+
         </div>
       </div>
     </div>
@@ -467,7 +478,6 @@ const shuffleAnswers = () => {
 // TUTORIAL LOADING
 // ============================================================================
   
-
 const initTutorial = async () => {
   const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource 
   await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
@@ -480,7 +490,6 @@ const initTutorial = async () => {
       const tutorial   = JSON.parse(jsonString)
       tutorials.push({
         name:        tutorial.name,
-        id:          name,
         description: tutorial.description
       })
     } catch (e) {
@@ -517,16 +526,30 @@ const loadCurrentTutorial = async (ID) => {
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
   
-// From OLD editor code
 const addTutorial = () => {
-  if (!showValidationErrors()) return
-  const filename = tutorial.id
-  const data     = buildTutorialData(filename)
-  const success  = saveToLocalStorage( 'tutorial', filename, data, tutorialOptions.available);
-  if (success) {
-    console.log(`👨‍🎓✅ Added tutorial to local storage: ${filename}`);
+  try {
+    const data   = await uploadJSON(null, 'tutorial');
+    let included = false
+
+    for (const tut of tutorialOptions.available) {
+      if (tut.name === data.name)
+        included = true
+    }
+    if (included) {
+      alert(`A tutorial with name: "${data.name}" has been already loaded.`)
+      return
+    }
+    tutorialOptions.available.push({
+      name:        data.name,
+      description: data.description
+    })
+    const name   = data.name.replace(/\.[^.]+$/, '')
+    const key    = `tutorial.${name}`;
+    const str    = JSON.stringify(data, null, 2);   
+    localStorage.setItem(key, str);
+    console.log(`👨‍🎓✅ Added tutorial to local storage: ${name}`);
   } else {
-    console.error(`👨‍🎓❌ Failed to save tutorial: ${filename}`);
+    console.error('👨‍🎓❌ Failed to upload/save tutorial');
   }
 }
 
