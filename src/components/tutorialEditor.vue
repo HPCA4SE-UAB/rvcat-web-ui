@@ -458,11 +458,14 @@ const addStep = (type = 'step', atIndex = -1) => {
 
   tutorial.steps.splice(insertIndex, 0, newStep);
   stepNumber.value = insertIndex;
+  // selectNodeByIndex(stepNumber)
 }
 
 const removeStep = (index) => {
   tutorial.steps.splice(index, 1)
   stepNumber.value = index-1;
+  // if (index > 0 )
+  //  selectNodeByIndex(index-1)
 }
 
 // ============================================================================
@@ -681,7 +684,8 @@ function loadEditedTutorial() {
     tutorial.description = data.description || ''
     tutorial.steps       = data.steps       || []
     stepNumber.value     = 0
-    console.log('🎓🔄 Reloading Edited tutorial with existing draft');
+    console.log('🎓🔄 Reloading Edited tutorial with existing draft')
+    // selectNodeByIndex(0)
   } catch (e) {
     console.error('📄❌ Failed to load edited tutorial from localStorage:', e);
   }
@@ -854,13 +858,6 @@ watch(tutorial, (t) => {
   }, 100);
 }, { deep: true });
   
-watch (stepNumber, (newStep) => {
-    if (newStep >= 0)
-      selectNodeByIndex(newStep)
-  },
-  { deep: true }
-)
-  
 // Watch for changes on Simulation state
 watch(() => simState.state, (newValue, oldValue) => {
   if (newValue == 3) { // Initialization Stage
@@ -906,6 +903,8 @@ const addClickListenersToSvg = () => {
           stepN = -1
 
         stepNumber.value = stepN;
+        if (stepN >= 0)
+          selectNodeByIndex(stepN)
       };
 
       const handleMouseEnter = () => {
@@ -931,9 +930,9 @@ const addClickListenersToSvg = () => {
         enter: handleMouseEnter,
         leave: handleMouseLeave
       });
-
-      selectNodeByIndex(stepNumber)
     });
+    
+    selectNodeByIndex(stepNumber)
   });
 };
 

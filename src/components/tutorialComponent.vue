@@ -264,10 +264,6 @@ const props = defineProps({ activeView: String, activeFull: String })
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
 
-const initTutorial = async () => {
-  await initResource('tutorial', tutorialOptions, null, 'available')
-};
-
 
 // ============================================================================
 // Tutorial STATE
@@ -471,7 +467,8 @@ const shuffleAnswers = () => {
 // TUTORIAL LOADING
 // ============================================================================
   
-const loadTutorials = async () => {
+
+const initTutorial = async () => {
   const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource 
   await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
 
