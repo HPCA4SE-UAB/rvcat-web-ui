@@ -31,7 +31,7 @@ export const resourceConfig = {
   tutorial: {
     storagePrefix: 'tutorial',
     resourceName:  'tutorial',
-    logPrefix:     '🎓'
+    logPrefix:     '👨‍🎓'
   }
 };
 
