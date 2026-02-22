@@ -368,34 +368,19 @@ function snapshotProgram() {
 // viewColumns
 // ============================================================================
 
-function toggleInOut  () { 
-  programOptions.showInOut           = !programOptions.showInOut
-  programOptions.visibleCols.destin  = !programOptions.visibleCols.destin
-  programOptions.visibleCols.source1 = !programOptions.visibleCols.source1
-  programOptions.visibleCols.source2 = !programOptions.visibleCols.source2
-  programOptions.visibleCols.source3 = !programOptions.visibleCols.source3
-  programOptions.visibleCols.constant= !programOptions.visibleCols.constant
-}
-
-function toggleActions() { 
-  programOptions.showActions         = !programOptions.showActions
-  programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
-}
-
-
-function updateEditedGraph() { 
-  console.log('📄🔄Redrawing edited program');
-
-  clearTimeout(graphTimeout)
-  try {
-    graphTimeout = setTimeout(() => {
-      getDependenceGraph( 1, true, false, true, true )
-    }, 75)
-    console.log('📄✅ generate dependence graph of edited program')
-  } catch (e) {
-    console.error('📄❌ Failed to call RVCAT for generating Dependence Graph:', e);
+  function toggleInOut  () { 
+    programOptions.showInOut           = !programOptions.showInOut
+    programOptions.visibleCols.destin  = !programOptions.visibleCols.destin
+    programOptions.visibleCols.source1 = !programOptions.visibleCols.source1
+    programOptions.visibleCols.source2 = !programOptions.visibleCols.source2
+    programOptions.visibleCols.source3 = !programOptions.visibleCols.source3
+    programOptions.visibleCols.constant= !programOptions.visibleCols.constant
   }
-}
+
+  function toggleActions() { 
+    programOptions.showActions         = !programOptions.showActions
+    programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
+  }
 
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {
@@ -406,6 +391,7 @@ function updateEditedGraph() {
     try {
        const svg        = await createGraphVizGraph(data);  
        programSvg.value = svg.outerHTML;
+       console.log('📄✅ generate dependence graph of edited program')
     } catch (error) {
       console.error('📄❌Failed to generate SVG for graphviz Dependence Graph:', error)
       programSvg.value = `<div class="error">Failed to render graph</div>`;
@@ -416,13 +402,10 @@ function updateEditedGraph() {
   function openFullScreen() {
     showFullScreen.value = true;
     nextTick(() => {
-      const src = document.getElementById("program-graph");
-      const dst = document.getElementById("program-graph-full");
-      if (src && dst) {
-        dst.innerHTML = "";
-        dst.appendChild(src.querySelector("svg").cloneNode(true));
-      }
-    });
+      console.log('📄🔄Drawing edited program');
+      clearTimeout(graphTimeout)
+      getDependenceGraph( 1, true, false, true, true )
+    }
   }
 
   function closeFullScreen()   { showFullScreen.value = false;  }
@@ -523,7 +506,7 @@ function updateEditedGraph() {
     
     <section v-if="!isFullscreen" class="main-box code-block"> <pre><code>{{ programText }}</code></pre> </section>
     
-    <div v-if="isFullscreen" class="header fullscreen-header">
+    <div v-if="isFullscreen" class="header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Program Editor</span>
@@ -552,12 +535,6 @@ function updateEditedGraph() {
             @click="toggleActions"> 
             <span v-if="programOptions.showActions">✔ </span>
             Actions
-          </button>
-
-          <button class="blue-button add-margin" @click="updateEditedGraph"
-              title="Update visualization of the Dependence Graph corresponding to the edited program" 
-              id="update-program-graph-button">
-            Refresh Graph
           </button>
 
           <button class="icon-button" @click="openFullScreen" 
@@ -706,8 +683,27 @@ function updateEditedGraph() {
         </div>
 
         <div class="program-side-container">
-          <div class="program-img" id="program-graph">
-            <div v-html="programSvg" v-if="programSvg"></div>
+
+          <div class="table-container">
+            <table class="instructions-table">
+              <thead>
+                <tr>
+                  <th v-if="programOptions.visibleCols.index"  style="width: 20px;">  #    </th>
+                  <th v-if="programOptions.visibleCols.text"   style="width: 240px;"> Text </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(inst, index) in editedProgram" :key="index">
+
+                  <td v-if="programOptions.visibleCols.index">{{ index }}</td>
+
+                  <td v-if="programOptions.visibleCols.text">
+                    <input type="text" v-model="inst.text" class="table-input" />
+                  </td>
+
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -1020,26 +1016,6 @@ function updateEditedGraph() {
   background-color: #f0f5ff;
 }
   
-
-  .program-img {
-    width:        100%;
-    height:       100%;
-    max-width:    150%;
-    max-height:   150%;
-    align-items:  center;
-    object-fit:   contain;
-    transform-box: fill-box;
-  }
-
-  .program-img svg text {
-    font-size:   12px !important;
-    font-family: Arial, sans-serif !important;
-  }
-  .program-img svg polygon,
-  .program-img svg path {
-    stroke-width: 2px !important;
-  }
-
   .instruction-side-container {
     display:        flex;
     min-width:      0;
