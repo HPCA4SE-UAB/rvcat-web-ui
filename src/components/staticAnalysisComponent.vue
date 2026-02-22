@@ -488,6 +488,11 @@ watch (
     outline:        2px solid #1a4fb3;  /* keypad */
     outline-offset: 2px;
   }
+
+  .btn-img {
+    height:2.5vh;
+  }
+
   .close-btn {
     background:  none;
     border:      none;
@@ -496,20 +501,18 @@ watch (
     cursor:      pointer;
     padding:     4px;
   }
-  .btn-img {
-    height:2.5vh;
+
+  .fullscreen-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
   }
 
-.fullscreen-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
   .fullscreen-content {
     background: white;
     margin:     10px;

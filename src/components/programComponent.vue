@@ -70,6 +70,7 @@ const STORAGE_KEY = 'programOptions'
   const programOptions = reactive({ ...defaultOptions, ...savedOptions })
   const programText    = ref('LOADING ...')
   const programSvg     = ref('')
+  const showFullScreen = ref(false);
   let graphTimeout     = null
 
   const saveOptions = () => {
@@ -412,6 +413,20 @@ function updateEditedGraph() {
   }
 
 
+  function openFullScreen() {
+    showFullScreen.value = true;
+    nextTick(() => {
+      const src = document.getElementById("program-graph");
+      const dst = document.getElementById("program-graph-full");
+      if (src && dst) {
+        dst.innerHTML = "";
+        dst.appendChild(src.querySelector("svg").cloneNode(true));
+      }
+    });
+  }
+
+  function closeFullScreen()   { showFullScreen.value = false;  }
+
 
 // ============================================================================
 // confirmDownload, uploadProgram, clearProgram
@@ -544,6 +559,14 @@ function updateEditedGraph() {
               id="update-program-graph-button">
             Refresh Graph
           </button>
+
+          <button class="icon-button" @click="openFullScreen" 
+             title="Open fullscreen"
+             id="open-full-dependence-graph"
+            >
+             <img src="/img/fullscreen.png" class="bt-img">
+          </button>
+
 
         </div>
         <div class="buttons">
@@ -683,11 +706,25 @@ function updateEditedGraph() {
         </div>
 
         <div class="program-side-container">
-          <div class="program-img">
+          <div class="program-img" id="program-graph">
             <div v-html="programSvg" v-if="programSvg"></div>
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+    <div class="fullscreen-content">
+      <div class="fullscreen-header">
+        <span>Data Dependence Graph (circular paths in red)</span>
+        <button class="close-btn" @click="closeFullScreen">×</button>
+      </div>
+      <div class="graph-container">
+        <div class="graph-wrapper" ref="graphContainer">
+          <div v-html="programSvg" v-if="programSvg" class="svg-content"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1033,5 +1070,123 @@ function updateEditedGraph() {
     border-radius: 8px;
   }
 
+  .fullscreen-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+
+  .fullscreen-content {
+    background: white;
+    margin:     10px;
+    padding:    10px;
+    border:     1px solid #ccc;
+    width:      95%;
+    height:     95%;
+    resize:     both;
+    overflow:   auto;
+    min-width:  300px;
+    min-height: 200px;
+    max-width:  99%;
+    max-height: 99%;
+    display:    flex;
+    border-radius:  8px;
+    flex-direction: column;
+    box-shadow:     0 4px 12px rgba(0,0,0,0.25);
+  }
+ 
+  .fullscreen-content .close-btn {
+    align-self: flex-end;
+    background: none;
+    border:     none;
+    font-size:  3vh;
+    cursor:     pointer;
+    margin-bottom: 8px;
+  }
+  
+  .fullscreen-header {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    margin-bottom:   10px;
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+ .fullscreen-title {
+    font-size:   1.5rem;
+    font-weight: 600;
+    margin:      0;
+  }
+
+  .close-btn {
+    background:  none;
+    border:      none;
+    font-size:   1.5em;
+    line-height: 1;
+    cursor:      pointer;
+    padding:     4px;
+  }
+
+.graph-container {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.graph-wrapper svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+  .icon-button {
+    border:      none;
+    cursor:      pointer;
+    padding:     6px;
+    display:     inline-flex;
+    align-items: center;
+    background:  #b0b0b0;
+    transition:  background 0.2s;
+    justify-content: center;
+    border-radius:   6px;
+    margin-left:     auto;
+  }
+  .icon-button img,
+  .icon-button svg {
+    width:  1.2em;
+    height: 1.2em;
+  }
+  .icon-button:hover {
+    background: #a0a0a0;      /* darker at hover */  
+  }
+  .icon-button:active {
+    background: #909090;      /* still darker */
+  }
+  .icon-button:focus {
+    outline:        2px solid #1a4fb3;  /* keypad */
+    outline-offset: 2px;
+  }
+
+  .btn-img {
+    height:2.5vh;
+  }
 
 </style>
