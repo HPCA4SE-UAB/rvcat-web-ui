@@ -774,6 +774,14 @@ function snapshotProgram() {
   width: 5px;
 }
 
+.horizontal-layout {
+  display:     flex;
+  gap:         6px; /* Espacio entre tabla e imagen */
+  margin-top:  2px;
+  align-items: stretch;
+  height:      auto;
+}
+
 .instructions-section {
   flex:           1;
   display:        flex;
