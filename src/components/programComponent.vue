@@ -686,8 +686,8 @@ function snapshotProgram() {
             <table class="instructions-table">
               <thead>
                 <tr>
-                  <th v-if="programOptions.visibleCols.index"  style="width: 20px;">  #    </th>
-                  <th v-if="programOptions.visibleCols.text"   style="width: 240px;"> Text </th>
+                  <th v-if="programOptions.visibleCols.index"  style="width: 40px;">  Array Name </th>
+                  <th v-if="programOptions.visibleCols.text"   style="width: 240px;"> Memory Pattern </th>
                 </tr>
               </thead>
               <tbody>
