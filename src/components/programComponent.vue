@@ -45,7 +45,8 @@ const STORAGE_KEY = 'programOptions'
       index:    true,
       text:     true,
       type:     true,
-      subtype:  true,
+      oper:     true,
+      size:     true,
       destin:   true,
       source1:  true,
       source2:  true,
@@ -587,16 +588,17 @@ function snapshotProgram() {
             <table class="instructions-table">
               <thead>
                 <tr>
-                  <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #        </th>
-                  <th v-if="programOptions.visibleCols.text"     style="width: 400px;"> Text     </th>
-                  <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type     </th>
-                  <th v-if="programOptions.visibleCols.subtype"  style="width: 120px;"> Subtype  </th>
-                  <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin   </th>
-                  <th v-if="programOptions.visibleCols.source1"  style="width: 80px;">  Source1  </th>
-                  <th v-if="programOptions.visibleCols.source2"  style="width: 80px;">  Source2  </th>
-                  <th v-if="programOptions.visibleCols.source3"  style="width: 80px;">  Source3  </th>
-                  <th v-if="programOptions.visibleCols.constant" style="width: 80px;">  Constant </th>
-                  <th v-if="programOptions.visibleCols.actions"  style="width: 100px;"> Actions  </th>
+                  <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #       </th>
+                  <th v-if="programOptions.visibleCols.text"     style="width: 600px;"> Text    </th>
+                  <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type    </th>
+                  <th v-if="programOptions.visibleCols.oper"     style="width: 100px;"> Oper    </th>
+                  <th v-if="programOptions.visibleCols.size"     style="width: 100px;"> Size    </th>
+                  <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin  </th>
+                  <th v-if="programOptions.visibleCols.source1"  style="width: 80px;">  Source1 </th>
+                  <th v-if="programOptions.visibleCols.source2"  style="width: 80px;">  Source2 </th>
+                  <th v-if="programOptions.visibleCols.source3"  style="width: 80px;">  Source3 </th>
+                  <th v-if="programOptions.visibleCols.constant" style="width: 80px;">  Constant</th>
+                  <th v-if="programOptions.visibleCols.actions"  style="width: 100px;"> Actions </th>
                 </tr>
               </thead>
               <tbody>
@@ -616,7 +618,25 @@ function snapshotProgram() {
                     </select>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.subtype">
+                  <td v-if="programOptions.visibleCols.oper">
+                    <select 
+                      v-model="inst.subType" 
+                      @change="onSubTypeChange(inst)" 
+                      :disabled="!inst.mainType || getSubTypes(inst.mainType).length === 0"
+                      class="table-select"
+                    >
+                      <option value="">Select...</option>
+                      <option 
+                        v-for="subtype in getSubTypes(inst.mainType)" 
+                        :key="subtype" 
+                        :value="subtype"
+                      >
+                        {{ subtype }}
+                      </option>
+                    </select>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.size">
                     <select 
                       v-model="inst.subType" 
                       @change="onSubTypeChange(inst)" 
@@ -919,7 +939,7 @@ function snapshotProgram() {
 }
 
 .add-margin {
-  margin-right: 20px;
+  margin-right: 50px;
 }
 
 /* Modal styles */
@@ -1162,7 +1182,7 @@ function snapshotProgram() {
   }
 
   .btn-img {
-    height:2.5vh;
+    height:2.0vh;
   }
 
 </style>
