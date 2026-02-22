@@ -401,11 +401,9 @@ function snapshotProgram() {
 
   function openFullScreen() {
     showFullScreen.value = true;
-    nextTick(() => {
-      console.log('📄🔄Drawing edited program');
-      clearTimeout(graphTimeout)
-      getDependenceGraph( 1, true, false, true, true )
-    }
+    console.log('📄🔄Drawing edited program');
+    clearTimeout(graphTimeout)
+    getDependenceGraph( 1, true, false, true, true )
   }
 
   function closeFullScreen()   { showFullScreen.value = false;  }
