@@ -550,109 +550,110 @@ const drawEditedProgram = async () => {
 
       <div class="horizontal-layout">
 
-        <div class="settings-group latency-group">
+        <div class="instruction-side-container">
 
-      <div class="table-container">
-        <table class="instructions-table">
-          <thead>
-            <tr>
-              <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #        </th>
-              <th v-if="programOptions.visibleCols.text"     style="width: 240px;"> Text     </th>
-              <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type     </th>
-              <th v-if="programOptions.visibleCols.subtype"  style="width: 120px;"> Subtype  </th>
-              <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin   </th>
-              <th v-if="programOptions.visibleCols.source1"  style="width: 80px;">  Source1  </th>
-              <th v-if="programOptions.visibleCols.source2"  style="width: 80px;">  Source2  </th>
-              <th v-if="programOptions.visibleCols.source3"  style="width: 80px;">  Source3  </th>
-              <th v-if="programOptions.visibleCols.constant" style="width: 80px;">  Constant </th>
-              <th v-if="programOptions.visibleCols.actions"  style="width: 100px;"> Actions  </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(inst, index) in editedProgram" :key="index">
-              <td v-if="programOptions.visibleCols.index">{{ index }}</td>
+          <div class="table-container">
+            <table class="instructions-table">
+              <thead>
+                <tr>
+                  <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #        </th>
+                  <th v-if="programOptions.visibleCols.text"     style="width: 240px;"> Text     </th>
+                  <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type     </th>
+                  <th v-if="programOptions.visibleCols.subtype"  style="width: 120px;"> Subtype  </th>
+                  <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin   </th>
+                  <th v-if="programOptions.visibleCols.source1"  style="width: 80px;">  Source1  </th>
+                  <th v-if="programOptions.visibleCols.source2"  style="width: 80px;">  Source2  </th>
+                  <th v-if="programOptions.visibleCols.source3"  style="width: 80px;">  Source3  </th>
+                  <th v-if="programOptions.visibleCols.constant" style="width: 80px;">  Constant </th>
+                  <th v-if="programOptions.visibleCols.actions"  style="width: 100px;"> Actions  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(inst, index) in editedProgram" :key="index">
+                  <td v-if="programOptions.visibleCols.index">{{ index }}</td>
 
-              <td v-if="programOptions.visibleCols.text">
-                <input type="text" v-model="inst.text" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.text">
+                    <input type="text" v-model="inst.text" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.type">
-                <select v-model="inst.mainType" @change="onMainTypeChange(inst)" class="table-select">
-                  <option value="">Select...</option>
-                  <option v-for="type in Object.keys(instructionTypes)" :key="type" :value="type">
-                    {{ type }}
-                  </option>
-                </select>
-              </td>
+                  <td v-if="programOptions.visibleCols.type">
+                    <select v-model="inst.mainType" @change="onMainTypeChange(inst)" class="table-select">
+                      <option value="">Select...</option>
+                      <option v-for="type in Object.keys(instructionTypes)" :key="type" :value="type">
+                        {{ type }}
+                      </option>
+                    </select>
+                  </td>
 
-              <td v-if="programOptions.visibleCols.subtype">
-                <select 
-                  v-model="inst.subType" 
-                  @change="onSubTypeChange(inst)" 
-                  :disabled="!inst.mainType || getSubTypes(inst.mainType).length === 0"
-                  class="table-select"
-                >
-                  <option value="">Select...</option>
-                  <option 
-                    v-for="subtype in getSubTypes(inst.mainType)" 
-                    :key="subtype" 
-                    :value="subtype"
-                  >
-                    {{ subtype }}
-                  </option>
-                </select>
-              </td>
+                  <td v-if="programOptions.visibleCols.subtype">
+                    <select 
+                      v-model="inst.subType" 
+                      @change="onSubTypeChange(inst)" 
+                      :disabled="!inst.mainType || getSubTypes(inst.mainType).length === 0"
+                      class="table-select"
+                    >
+                      <option value="">Select...</option>
+                      <option 
+                        v-for="subtype in getSubTypes(inst.mainType)" 
+                        :key="subtype" 
+                        :value="subtype"
+                      >
+                        {{ subtype }}
+                      </option>
+                    </select>
+                  </td>
 
-              <td v-if="programOptions.visibleCols.destin">
-                <input type="text" v-model="inst.destin" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.destin">
+                    <input type="text" v-model="inst.destin" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.source1">
-                <input type="text" v-model="inst.source1" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.source1">
+                    <input type="text" v-model="inst.source1" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.source2">
-                <input type="text" v-model="inst.source2" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.source2">
+                    <input type="text" v-model="inst.source2" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.source3">
-                <input type="text" v-model="inst.source3" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.source3">
+                    <input type="text" v-model="inst.source3" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.constant">
-                <input type="text" v-model="inst.constant" class="table-input" />
-              </td>
+                  <td v-if="programOptions.visibleCols.constant">
+                    <input type="text" v-model="inst.constant" class="table-input" />
+                  </td>
 
-              <td v-if="programOptions.visibleCols.actions" class="actions-cell">
-                <button 
-                  @click="moveInstructionUp(index)" 
-                  :disabled="index === 0"
-                  class="action-btn"
-                  title="Move up"
-                >
-                  ▲
-                </button>
-                <button 
-                  @click="moveInstructionDown(index)" 
-                  :disabled="index === editedProgram.length - 1"
-                  class="action-btn"
-                  title="Move down"
-                >
-                  ▼
-                </button>
-                <button 
-                  @click="removeInstruction(index)" 
-                  :disabled="editedProgram.length === 1"
-                  class="action-btn delete"
-                  title="Delete"
-                >
-                  ✕
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                  <td v-if="programOptions.visibleCols.actions" class="actions-cell">
+                    <button 
+                      @click="moveInstructionUp(index)" 
+                      :disabled="index === 0"
+                      class="action-btn"
+                      title="Move up"
+                    >
+                      ▲
+                    </button>
+                    <button 
+                      @click="moveInstructionDown(index)" 
+                      :disabled="index === editedProgram.length - 1"
+                      class="action-btn"
+                      title="Move down"
+                    >
+                      ▼
+                    </button>
+                    <button 
+                      @click="removeInstruction(index)" 
+                      :disabled="editedProgram.length === 1"
+                      class="action-btn delete"
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div class="program-side-container">
           <div class="program-img">
