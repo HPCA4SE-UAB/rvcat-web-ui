@@ -69,6 +69,7 @@ const STORAGE_KEY = 'programOptions'
 
   const programOptions = reactive({ ...defaultOptions, ...savedOptions })
   const programText    = ref('LOADING ...')
+  const programSvg     = ref('')
 
   const saveOptions = () => {
     try {
@@ -378,6 +379,18 @@ function toggleActions() {
   programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
 }
 
+const drawEditedProgram = async () => {
+  console.log('📄🔄Redrawing edited program');
+  try {
+    const dotCode    = get_program_dot (procConfig)
+    const svg        = await createGraphVizGraph(dotCode);  
+    programSvg.value = svg.outerHTML;
+  } catch (error) {
+    console.error('💻❌ Failed to draw edited processor:', error)
+    programSvg.value = `<div class="error">Failed to render graph</div>`;
+  }
+}
+
 
 // ============================================================================
 // confirmDownload, uploadProgram, clearProgram
@@ -534,6 +547,11 @@ function toggleActions() {
     </div>
 
     <div v-if="isFullscreen" class="instructions-section">
+
+      <div class="horizontal-layout">
+
+        <div class="settings-group latency-group">
+
       <div class="table-container">
         <table class="instructions-table">
           <thead>
@@ -635,6 +653,14 @@ function toggleActions() {
           </tbody>
         </table>
       </div>
+
+        <div class="program-side-container">
+          <div class="program-img">
+            <div v-html="programSvg" v-if="programSvg"></div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
   
@@ -721,6 +747,7 @@ function toggleActions() {
   color: #333;
 }
 
+/*
 .table-container {
   flex:          1;
   overflow:      auto;
@@ -728,7 +755,20 @@ function toggleActions() {
   border-radius: 5px;
   margin-right:  2px;
   max-height:    2000px;
-}
+}*/
+
+  .table-container {
+     width:      auto; /* Se ajusta al contenido */
+     max-width:  100%; /* Pero no más ancho que el contenedor */
+     overflow-x: auto; /* Scroll si es necesario */
+     overflow-y: auto; /* Scroll vertical si es necesario */
+     padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
+     border:        1px solid #ddd;
+     border-radius: 5px;
+     margin-right:  2px;
+  }
+
+
 
 .instructions-table {
   width:           100%;
@@ -818,7 +858,7 @@ function toggleActions() {
 }
 
 .add-btn {
-  margin-right: 50px;
+  margin-right: 10px;
 }
 
 /* Modal styles */
@@ -915,4 +955,55 @@ function toggleActions() {
   background-color: #f0f5ff;
 }
   
+
+  .program-img {
+    width:        100%;
+    height:       100%;
+    max-width:    150%;
+    max-height:   150%;
+    align-items:  center;
+    object-fit:   contain;
+    transform-box: fill-box;
+  }
+
+  .program-img svg text {
+    font-size:   12px !important;
+    font-family: Arial, sans-serif !important;
+  }
+  .program-img svg polygon,
+  .program-img svg path {
+    stroke-width: 2px !important;
+  }
+
+  .instruction-side-container {
+    display:        flex;
+    min-width:      0;
+    box-sizing:     border-box;
+    flex-direction: column;
+    align-items:    center;
+    border:         1px solid #ccc;
+    border-radius:  8px;
+    padding:        0.3rem;
+    background:     #fafafa;
+    flex:           1 1 45%;
+  }
+  
+  /* Para que la tabla no se expanda más allá de lo necesario */
+  .instruction-side-container .table-container {
+    flex: 0 0 auto; /* No crece, se ajusta al contenido */
+  }
+
+ .program-side-container {
+    flex: 1 1 55%;
+    min-width: 0;           /* Importante para evitar desbordamiento */
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
+    display:   flex;
+    padding:   3px;
+    flex-direction: column;
+    border:        1px solid #ddd;
+    background:    #f8f9fa;
+    border-radius: 8px;
+  }
+
+
 </style>

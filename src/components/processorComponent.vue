@@ -271,8 +271,8 @@
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing simulated processor');
     try {
-      const dotCode = get_processor_dot (processorInfo)
-      const svg = await createGraphVizGraph(dotCode);  
+      const dotCode      = get_processor_dot (processorInfo)
+      const svg          = await createGraphVizGraph(dotCode);  
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw processor:', error)
@@ -283,8 +283,8 @@
   const drawEditedProcessor = async () => {
     console.log('💻🔄Redrawing edited processor');
     try {
-      const dotCode = get_processor_dot (procConfig)
-      const svg = await createGraphVizGraph(dotCode);  
+      const dotCode   = get_processor_dot (procConfig)
+      const svg       = await createGraphVizGraph(dotCode);  
       editedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw edited processor:', error)
@@ -632,7 +632,9 @@
 
     <div v-if="isFullscreen" class="settings-sections">
       <div class="horizontal-layout">
+
         <div class="settings-group widths-group">
+
           <div class="section-title-and-info">
             <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
               <img src="/img/info.png" class="info-img">
@@ -641,24 +643,29 @@
           </div>
         
           <div class="iters-group">
+
             <span>Dispatch:</span>
             <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
                  id="dispatch-width"
-                 title="max. number of instructions dispatched per cycle (1 to 9)"/>
+                 title="max. number of instructions dispatched per cycle (1 to 9)"
+             />
         
             <span>Retire:</span>
             <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
                    id="retire-width"
-                   title="max. number of instructions retired per cycle(1 to 9)"/>
+                   title="max. number of instructions retired per cycle(1 to 9)"
+             />
 
             <span>Schedule Opt.:</span>
             <input type="checkbox" 
                  title="Set checkbox if scheduling algorithm is optimal. Otherwise it is greedy"
                  id="schedule-check"
                  :checked="procConfig.sched !== 'greedy'"
-                 @change="toggleScheduler" />
+                 @change="toggleScheduler" 
+             />
 
           </div>
+
         </div> 
 
         <div class="settings-group cache-group">
@@ -700,6 +707,7 @@
       
       <div class="horizontal-layout">
         <div class="settings-group latency-group">
+
           <div class="section-title-and-info">
             <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help" >
               <img src="/img/info.png" class="info-img">
