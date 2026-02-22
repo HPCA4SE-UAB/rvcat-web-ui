@@ -228,62 +228,83 @@ watch (
       </div>
     </div>
 
-<div class="performance-summary">
-  <div class="summary-card compact">
-    <div class="metrics-grid">
-      <div class="metric-item">
-        <span class="metric-label">Bound:</span>
-        <span class="metric-value" 
-          id="performance-bound"
-          title="Performance bound: can be latency (cyclic dependencies) or throughput (resources)"
-          :class="getBoundClass(performanceData['performance-bound'])">
-          {{ performanceData['performance-bound'] }}
-        </span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-label">Latency:</span>
-        <span class="metric-value"
-            id="latency-limit"
-            title="Minimum execution time (clock cycles per executed loop iteration) due to cyclic data dependencies among instructions"
-          >
-          {{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-label">Throughput:</span>
-        <span class="metric-value"
+  <div class="performance-summary">
+    <div class="summary-card compact">
+      <div class="metrics-grid">
+        <div class="metric-item">
+
+          <span class="metric-label">Bound:</span>
+
+          <span class="metric-value" 
+            id="performance-bound"
+            title="Performance bound: can be latency (cyclic dependencies) or throughput (resources)"
+            :class="getBoundClass(performanceData['performance-bound'])">
+            {{ performanceData['performance-bound'] }}
+          </span>
+
+        </div>
+        <div class="metric-item">
+
+          <span class="metric-label">Latency:</span>
+
+          <span class="metric-value"
+              id="latency-limit"
+              title="Minimum execution time (clock cycles per executed loop iteration) due to cyclic data dependencies among instructions"
+            >
+            {{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration
+          </span>
+
+        </div>
+        <div class="metric-item">
+ 
+          <span class="metric-label">Throughput:</span>
+
+          <span class="metric-value"
             id="throughput-limit"
             title="Minimum execution time (clock cycles per executed loop iteration) due to execution/dispatch/retire throughput limits"
-          >
-          {{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-label">Best possible time:</span>
-        <span class="metric-value highlight"
-            id="best-limit"
-            title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"          
-          >
-          {{ performanceData.BestTime.toFixed(2) }} cycles/iteration</span>
+            >
+            {{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration
+          </span>
+
+        </div>
+        <div class="metric-item">
+
+          <span class="metric-label">Best possible time:</span>
+
+          <span class="metric-value highlight"
+              id="best-limit"
+              title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"          
+            >
+            {{ performanceData.BestTime.toFixed(2) }} cycles/iteration
+          </span>
+
+        </div>
       </div>
     </div>
   </div>
-</div>
   
     <!-- Bottlenecks Section -->
     <div class="dropdown-wrapper">
+
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
         <img src="/img/info.png" class="info-img">
       </span>
+
       <button class="dropdown-header" @click="toggleThrough" 
               id="detailed-thorughput-limits"
               title="Show detailed throughput limits" 
               :aria-expanded="dependenceGraphOptions.showThrough">
+
         <span class="arrow" aria-hidden="true">
           {{ dependenceGraphOptions.showThrough ? '▼' : '▶' }}
         </span>
+
         <span class="dropdown-title">  
           Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
         </span>
+
       </button>
+
     </div>
 
     <Transition name="fold" appear>

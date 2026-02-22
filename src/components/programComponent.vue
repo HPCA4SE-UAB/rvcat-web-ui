@@ -13,12 +13,14 @@
 
   // Instruction type definitions with subtypes
   const instructionTypes = {
-    'INT': ['ARITH', 'LOGIC', 'SHIFT'],
     'BRANCH': [],
-    'MEM': ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP', 'VLOAD', 'VSTR'],
-    'FLOAT': ['ADD.SP', 'ADD.DP', 'MUL.SP', 'MUL.DP', 'FMA.SP', 'FMA.DP',
-              'DIV.SP', 'DIV.DP', 'SQRT.SP', 'SQRT.DP'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV']
+    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
+    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
+    'MEM':    ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP'],
+    'VMEM':   ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP'],
+    'FLOAT':  ['ADD.SP', 'ADD.DP', 'MUL.SP', 'MUL.DP', 'FMA.SP', 'FMA.DP',
+               'DIV.SP', 'DIV.DP', 'SQRT.SP', 'SQRT.DP'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
   };
   
   const props = defineProps({
@@ -36,7 +38,21 @@ const STORAGE_KEY = 'programOptions'
 
   const defaultOptions = {
     currentProgram:    '',
-    availablePrograms: []
+    availablePrograms: [],
+    showInOut:         true,
+    showActions:       true,
+    visibleCols: {
+      index:    true,
+      text:     true,
+      type:     true,
+      subtype:  true,
+      destin:   true,
+      source1:  true,
+      source2:  true,
+      source3:  true,
+      constant: true,
+      actions:  true
+    }
   }
 
   let uploadedProgramObject = null
@@ -104,6 +120,11 @@ function loadEditedProgram() {
     if (simState.state > 1)
       reloadProgram()
   });
+
+  watch(
+    () => [programOptions.showInOut, programOptions.showActions],
+    () => { saveOptions() }
+  )
 
   // Auto-save edits to localStorage
   watch(
@@ -339,6 +360,24 @@ function snapshotProgram() {
 }
 
 
+// ============================================================================
+// viewColumns
+// ============================================================================
+
+function toggleInOut  () { 
+  programOptions.showInOut           = !programOptions.showInOut
+  programOptions.visibleCols.destin  = !programOptions.visibleCols.destin
+  programOptions.visibleCols.source1 = !programOptions.visibleCols.source1
+  programOptions.visibleCols.source2 = !programOptions.visibleCols.source2
+  programOptions.visibleCols.source3 = !programOptions.visibleCols.source3
+  programOptions.visibleCols.constant= !programOptions.visibleCols.constant
+}
+
+function toggleActions() { 
+  programOptions.showActions         = !programOptions.showActions
+  programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
+}
+
 
 // ============================================================================
 // confirmDownload, uploadProgram, clearProgram
@@ -443,30 +482,53 @@ function snapshotProgram() {
       
       <div class="settings-container fullscreen-settings">
         <div class="section-header">
+
           <button class="blue-button add-btn" @click="addInstruction"
               title="Add new instruction at the end of program" 
               id="add-instruction-button">
             + Add Instruction
           </button>
+
+          <button class="blue-button" :class="{ active: programOptions.showInOut }"  
+              title="Show/Hide instruction Input/Output operands"
+              id="show-inout-operands"
+            @click="toggleInOut"> 
+            <span v-if="programOptions.showInOut">✔ </span>
+            InOut
+          </button>
+
+          <button class="blue-button" :class="{ active: programOptions.showActions }"  
+              title="Show/Hide column for instruction actions"
+              id="show-instruction-actions"
+            @click="toggleActions"> 
+            <span v-if="programOptions.showActions">✔ </span>
+            Actions
+          </button>
+
         </div>
         <div class="buttons">
+
           <button class="blue-button" @click="showModalDownload = true"
                title="Save current edited program" 
                id="program-download-button"> 
             Download 
           </button>
+
           <button class="blue-button" @click="uploadForEdition"
                title="Load new program from file system for edition"     
                id="program-upload-button">  
             Upload  
           </button>
+
         </div>
         <div class="buttons">
+
           <button class="blue-button"   @click="showModalClear = true"
                 title="Clear edition and start new program from scratch" 
                 id="clear-program-button">
             Clear
           </button>
+
         </div>
       </div>
     </div>
@@ -476,25 +538,27 @@ function snapshotProgram() {
         <table class="instructions-table">
           <thead>
             <tr>
-              <th style="width: 20px;">#</th>
-              <th style="width: 240px;">Text</th>
-              <th style="width: 100px;">Type</th>
-              <th style="width: 120px;">Subtype</th>
-              <th style="width: 80px;">Destin</th>
-              <th style="width: 80px;">Source1</th>
-              <th style="width: 80px;">Source2</th>
-              <th style="width: 80px;">Source3</th>
-              <th style="width: 80px;">Constant</th>
-              <th style="width: 100px;">Actions</th>
+              <th v-if="visibleCols.index"    style="width: 20px;">  #        </th>
+              <th v-if="visibleCols.text"     style="width: 240px;"> Text     </th>
+              <th v-if="visibleCols.type"     style="width: 100px;"> Type     </th>
+              <th v-if="visibleCols.subtype"  style="width: 120px;"> Subtype  </th>
+              <th v-if="visibleCols.destin"   style="width: 80px;">  Destin   </th>
+              <th v-if="visibleCols.source1"  style="width: 80px;">  Source1  </th>
+              <th v-if="visibleCols.source2"  style="width: 80px;">  Source2  </th>
+              <th v-if="visibleCols.source3"  style="width: 80px;">  Source3  </th>
+              <th v-if="visibleCols.constant" style="width: 80px;">  Constant </th>
+              <th v-if="visibleCols.actions"  style="width: 100px;"> Actions  </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(inst, index) in editedProgram" :key="index">
-              <td>{{ index }}</td>
-              <td>
+              <td v-if="visibleCols.index">{{ index }}</td>
+
+              <td v-if="visibleCols.text">
                 <input type="text" v-model="inst.text" class="table-input" />
               </td>
-              <td>
+
+              <td v-if="visibleCols.type">
                 <select v-model="inst.mainType" @change="onMainTypeChange(inst)" class="table-select">
                   <option value="">Select...</option>
                   <option v-for="type in Object.keys(instructionTypes)" :key="type" :value="type">
@@ -502,7 +566,8 @@ function snapshotProgram() {
                   </option>
                 </select>
               </td>
-              <td>
+
+              <td v-if="visibleCols.subtype">
                 <select 
                   v-model="inst.subType" 
                   @change="onSubTypeChange(inst)" 
@@ -519,22 +584,22 @@ function snapshotProgram() {
                   </option>
                 </select>
               </td>
-              <td>
+              <td v-if="visibleCols.destin">
                 <input type="text" v-model="inst.destin" class="table-input" />
               </td>
-              <td>
+              <td v-if="visibleCols.source1">
                 <input type="text" v-model="inst.source1" class="table-input" />
               </td>
-              <td>
+              <td v-if="visibleCols.source2">
                 <input type="text" v-model="inst.source2" class="table-input" />
               </td>
-              <td>
+              <td v-if="visibleCols.source3">
                 <input type="text" v-model="inst.source3" class="table-input" />
               </td>
-              <td>
+              <td v-if="visibleCols.constant">
                 <input type="text" v-model="inst.constant" class="table-input" />
               </td>
-              <td class="actions-cell">
+              <td v-if="visibleCols.actions" class="actions-cell">
                 <button 
                   @click="moveInstructionUp(index)" 
                   :disabled="index === 0"
