@@ -625,10 +625,6 @@ function snapshotProgram() {
   overflow:       hidden;
 }
   
-#programs-list {
-  font-size: larger;
-}
-
 .settings-container {
   display:     flex;
   align-items: center;
