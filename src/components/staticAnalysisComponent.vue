@@ -147,7 +147,7 @@ watch (
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('Failed to get dependence graph:', data);
+      console.error('🔎❌Failed to get dependence graph:', data);
       return;
     }
     try {

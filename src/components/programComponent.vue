@@ -7,7 +7,7 @@
           loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
           initResource, createGraphVizGraph                                   } from '@/common'
 
-  const { setProgram, showProgram } = useRVCAT_Api();
+  const { getDependenceGraph, setProgram, showProgram } = useRVCAT_Api();
   const { registerHandler }         = inject('worker');
   const simState                    = inject('simulationState');
 
@@ -70,6 +70,7 @@ const STORAGE_KEY = 'programOptions'
   const programOptions = reactive({ ...defaultOptions, ...savedOptions })
   const programText    = ref('LOADING ...')
   const programSvg     = ref('')
+  let graphTimeout     = null
 
   const saveOptions = () => {
     try {
@@ -133,6 +134,7 @@ function loadEditedProgram() {
     (val) => {
       try {
         localStorage.setItem('programTemp', JSON.stringify(val));
+        console.log('📄✅ Saved edited program')
       } catch (e) {
         console.error('📄❌ Failed to persist program to localStorage:', e);
       }
@@ -379,17 +381,36 @@ function toggleActions() {
   programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
 }
 
-const drawEditedProgram = async () => {
+
+function updateEditedGraph() { 
   console.log('📄🔄Redrawing edited program');
+
+  clearTimeout(graphTimeout)
   try {
-    const dotCode    = get_program_dot (procConfig)
-    const svg        = await createGraphVizGraph(dotCode);  
-    programSvg.value = svg.outerHTML;
-  } catch (error) {
-    console.error('💻❌ Failed to draw edited processor:', error)
-    programSvg.value = `<div class="error">Failed to render graph</div>`;
+    graphTimeout = setTimeout(() => {
+      getDependenceGraph( 1, true, false, true, true )
+    }, 75)
+    console.log('📄✅ generate dependence graph of edited program')
+  } catch (e) {
+    console.error('📄❌ Failed to call RVCAT for generating Dependence Graph:', e);
   }
 }
+
+  // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
+  const handleGraph = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('📄❌Failed to get dependence graph:', data);
+      return;
+    }
+    try {
+       const svg        = await createGraphVizGraph(data);  
+       programSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('📄❌Failed to generate SVG for graphviz Dependence Graph:', error)
+      programSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+
 
 
 // ============================================================================
@@ -496,7 +517,7 @@ const drawEditedProgram = async () => {
       <div class="settings-container fullscreen-settings">
         <div class="section-header">
 
-          <button class="blue-button add-btn" @click="addInstruction"
+          <button class="blue-button add-margin" @click="addInstruction"
               title="Add new instruction at the end of program" 
               id="add-instruction-button">
             + Add Instruction
@@ -510,12 +531,18 @@ const drawEditedProgram = async () => {
             InOut
           </button>
 
-          <button class="blue-button" :class="{ active: programOptions.showActions }"  
+          <button class="blue-button add-margin" :class="{ active: programOptions.showActions }"  
               title="Show/Hide column for instruction actions"
               id="show-instruction-actions"
             @click="toggleActions"> 
             <span v-if="programOptions.showActions">✔ </span>
             Actions
+          </button>
+
+          <button class="blue-button add-margin" @click="updateEditedGraph"
+              title="Update visualization of the Dependence Graph corresponding to the edited program" 
+              id="update-program-graph-button">
+            Refresh Graph
           </button>
 
         </div>
@@ -858,8 +885,8 @@ const drawEditedProgram = async () => {
   border-color: #d32f2f;
 }
 
-.add-btn {
-  margin-right: 10px;
+.add-margin {
+  margin-right: 20px;
 }
 
 /* Modal styles */
