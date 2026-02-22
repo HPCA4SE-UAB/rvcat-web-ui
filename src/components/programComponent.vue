@@ -196,11 +196,14 @@ function loadEditedProgram() {
 // ============================================================================
   let cleanupHandleSet  = null
   let cleanupHandleShow = null
+  let cleanupHandleGraph= null
 
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
     cleanupHandleShow= registerHandler('show_program', handleShowProgram)
+    cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
+
     loadEditedProgram()
   });
 
@@ -208,10 +211,13 @@ function loadEditedProgram() {
     if (cleanupHandleSet) {
       cleanupHandleSet()
       cleanupHandleShow()
-      cleanupHandleSet = null
-      cleanupHandleShow= null
-  }
+      cleanupHandleGraph();
+      cleanupHandleSet  = null
+      cleanupHandleShow = null
+      cleanupHandleGraph= null
+    }
   });
+
 
 // ============================================================================
 // PROGRAM ACTIONS: InitProgram, reloadProgram, editProgram, removeProgram, 
@@ -582,7 +588,7 @@ function snapshotProgram() {
               <thead>
                 <tr>
                   <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #        </th>
-                  <th v-if="programOptions.visibleCols.text"     style="width: 240px;"> Text     </th>
+                  <th v-if="programOptions.visibleCols.text"     style="width: 400px;"> Text     </th>
                   <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type     </th>
                   <th v-if="programOptions.visibleCols.subtype"  style="width: 120px;"> Subtype  </th>
                   <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin   </th>
