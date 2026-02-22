@@ -680,7 +680,7 @@ function snapshotProgram() {
           </div>
         </div>
 
-        <div class="program-side-container">
+        <div class="memory-side-container">
 
           <div class="table-container">
             <table class="instructions-table">
@@ -814,16 +814,6 @@ function snapshotProgram() {
   color: #333;
 }
 
-/*
-.table-container {
-  flex:          1;
-  overflow:      auto;
-  border:        1px solid #ddd;
-  border-radius: 5px;
-  margin-right:  2px;
-  max-height:    2000px;
-}*/
-
   .table-container {
      width:      auto; /* Se ajusta al contenido */
      max-width:  100%; /* Pero no más ancho que el contenedor */
@@ -834,8 +824,6 @@ function snapshotProgram() {
      border-radius: 5px;
      margin-right:  2px;
   }
-
-
 
 .instructions-table {
   width:           100%;
@@ -896,13 +884,13 @@ function snapshotProgram() {
 }
 
 .action-btn {
-  padding: 1px 8px;
-  margin: 0 2px;
-  border: 1px solid #ccc;
-  background: white;
+  padding:       1px 4px;
+  margin:        0 1px;
+  border:        1px solid #ccc;
+  background:    white;
   border-radius: 8px;
-  cursor: pointer;
-  font-size: medium;
+  cursor:        pointer;
+  font-size:     medium;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -1032,24 +1020,24 @@ function snapshotProgram() {
     border-radius:  8px;
     padding:        0.3rem;
     background:     #fafafa;
-    flex:           1 1 45%;
-  }
-  
-  /* Para que la tabla no se expanda más allá de lo necesario */
-  .instruction-side-container .table-container {
-    flex: 0 0 auto; /* No crece, se ajusta al contenido */
+    flex:           1 1 70%;
   }
 
- .program-side-container {
-    flex: 1 1 55%;
-    min-width: 0;           /* Importante para evitar desbordamiento */
-    box-sizing: border-box; /* Incluye padding y border en el cálculo */
-    display:   flex;
-    padding:   3px;
+  .memory-side-container {
+    flex:       1 1 30%;
+    min-width:  0;           
+    box-sizing: border-box; 
+    display:    flex;
+    padding:    3px;
     flex-direction: column;
     border:        1px solid #ddd;
     background:    #f8f9fa;
     border-radius: 8px;
+  }
+
+  .instruction-side-container .table-container,
+  .memory-side-container      .table-container {
+    flex: 0 0 auto; 
   }
 
   .fullscreen-overlay {
