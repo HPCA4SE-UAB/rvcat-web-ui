@@ -624,7 +624,7 @@ function snapshotProgram() {
                   <td v-if="programOptions.visibleCols.type">
                     <select v-model="inst.type" class="table-select" title="Select instruction type">
                       <option value="">Select...</option>
-                      <option v-for="type in Object.keys(instructionTypes)" :key="type" :value="type">
+                      <option v-for="type in instructionTypes" :key="type" :value="type">
                         {{ type }}
                       </option>
                     </select>
