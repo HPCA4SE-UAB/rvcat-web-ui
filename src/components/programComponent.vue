@@ -83,11 +83,10 @@ function loadEditedProgram() {
   try {
     const data = JSON.parse(stored);
     editedProgram.value = (data.instruction_list || []).map(inst => {
-      const [type = '', oper = '', size = ''] = (inst.type || '').split('.');
       return {
-        text:     inst.text     || '',  type:    type || '',          oper:    oper || '',           size:    size || '',
-        destin:   inst.destin   || '',  source1: inst.source1 || '',  source2: inst.source2 || '',   source3: inst.source3 || '',
-        constant: inst.constant || ''
+        text:    inst.text || '',    type:    inst.type    || '',  oper:     inst.oper    || '',  
+        size:    inst.size || '',    destin:  inst.destin  || '',  source1:  inst.source1 || '',
+        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || ''
       };
     });
   } catch (e) {
