@@ -317,8 +317,7 @@ function addFinalBranch() {
 
 // Add just before the final branch 
 function addInstruction() {
-  editedProgram.value.splice( editedProgram.value.length - 1, 0,  
-    {
+  editedProgram.value.push( {
       text:    '',
       type:    '',
       oper:    '',
@@ -519,14 +518,12 @@ function snapshotProgram() {
     
     <div v-if="isFullscreen" class="header">
       <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help">
+           <img src="/img/info.png" class="info-img">
+        </span>
         <span class="header-title">Program Editor</span>
       </div>
-      
-      <div class="settings-container fullscreen-settings">
-        <div class="section-header">
-
-          <button class="blue-button add-margin" @click="addInstruction"
+           <button class="blue-button add-margin" @click="addInstruction"
               title="Add new instruction at the end of program" 
               id="add-instruction-button">
             + Add Instruction
@@ -554,6 +551,10 @@ function snapshotProgram() {
             >
              <img src="/img/fullscreen.png" class="bt-img">
           </button>
+     
+      <div class="settings-container fullscreen-settings">
+        <div class="section-header">
+
 
 
         </div>
@@ -873,27 +874,27 @@ function snapshotProgram() {
 }
 
 .section-header {
-  display: flex;
+  display:         flex;
   justify-content: space-between;
-  align-items:   center;
-  margin-bottom: 2px;
-  margin-right:  20px;
+  align-items:     center;
+  margin-bottom:   2px;
+  margin-right:    20px;
 }
 
 .section-header h4 {
   margin: 0;
-  color: #333;
+  color:  #333;
 }
 
   .table-container {
-     width:      auto; /* Se ajusta al contenido */
-     max-width:  100%; /* Pero no más ancho que el contenedor */
-     overflow-x: auto; /* Scroll si es necesario */
-     overflow-y: auto; /* Scroll vertical si es necesario */
+     width:          auto; /* Se ajusta al contenido */
+     max-width:      100%; /* Pero no más ancho que el contenedor */
+     overflow-x:     auto; /* Scroll si es necesario */
+     overflow-y:     auto; /* Scroll vertical si es necesario */
      padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
-     border:        1px solid #ddd;
-     border-radius: 5px;
-     margin-right:  2px;
+     border:         1px solid #ddd;
+     border-radius:  5px;
+     margin-right:   2px;
   }
 
 .instructions-table {
@@ -903,11 +904,11 @@ function snapshotProgram() {
 }
 
 .instructions-table thead {
-  position: sticky;
-  top: 0;
+  position:   sticky;
+  top:        0;
   background: #007acc;
-  color: white;
-  z-index: 1;
+  color:      white;
+  z-index:    1;
 }
 
 .instructions-table th {
@@ -921,8 +922,8 @@ function snapshotProgram() {
   padding:        1px;
   border:         1px solid #ddd;
   vertical-align: middle;
-  text-align: center;
-  font-size:  medium;
+  text-align:     center;
+  font-size:      medium;
 }
 
 .instructions-table tbody tr:nth-child(even) {
@@ -935,22 +936,22 @@ function snapshotProgram() {
 
 .table-input,
 .table-select {
-  width:   100%;
-  padding: 2px 4px;
-  border:  1px solid #ccc;
-  border-radius: 3px;
+  width:      100%;
+  padding:    2px 4px;
+  border:     1px solid #ccc;
   font-size:  medium;
   box-sizing: border-box;
   text-align: center;
+  border-radius: 3px;
 }
 
 .table-select:disabled {
   background: #f0f0f0;
-  cursor: not-allowed;
+  cursor:     not-allowed;
 }
 
 .actions-cell {
-  text-align: center;
+  text-align:  center;
   white-space: nowrap;
 }
 
@@ -983,7 +984,6 @@ function snapshotProgram() {
   border-color: #d32f2f;
 }
 
-
 .readonly {
   display:    inline-block;
   width:      100%;
@@ -1009,8 +1009,6 @@ function snapshotProgram() {
   font-weight: inherit;
 }
 
-
-
 .add-margin {
   margin-right: 50px;
 }
@@ -1018,72 +1016,72 @@ function snapshotProgram() {
 /* Modal styles */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
+  top:      0;
+  left:     0;
+  width:    100%;
+  height:   100%;
+  display:  flex;
+  z-index:  1000;
+  background:      rgba(0, 0, 0, 0.5);
   justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  align-items:     center;
 }
 
 .modal {
-  background: white;
-  padding: 25px;
+  background:    white;
+  padding:       25px;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  min-width: 400px;
+  box-shadow:    0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width:     400px;
 }
 
 .modal h4 {
   margin: 0 0 15px 0;
-  color: #007acc;
+  color:  #007acc;
 }
 
 .modal label {
-  display: block;
+  display:       block;
   margin-bottom: 5px;
-  font-weight: bold;
+  font-weight:   bold;
 }
 
 .checkbox-row {
-  display: flex;
+  display:     flex;
   align-items: center;
-  gap: 8px;
-  margin: 10px 0;
+  gap:         8px;
+  margin:      10px 0;
   font-weight: normal;
 }
 
 .checkbox-row input[type="checkbox"] {
-  width: 16px;
+  width:  16px;
   height: 16px;
 }
 
 .modal input {
-  width: 100%;
-  padding: 8px;
+  width:         100%;
+  padding:       8px;
   margin-bottom: 10px;
-  border: 1px solid #ccc;
+  border:        1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box;
-  font-size: 14px;
+  box-sizing:    border-box;
+  font-size:     14px;
 }
 
 .modal-actions {
-  display: flex;
+  display:         flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  gap:             10px;
+  margin-top:      20px;
 }
 
 .error {
-  color: #d32f2f;
-  font-size: 13px;
+  color:         #d32f2f;
+  font-size:     13px;
   margin-bottom: 10px;
-  padding: 8px;
-  background: #ffebee;
+  padding:       8px;
+  background:    #ffebee;
   border-radius: 4px;
 }
   
