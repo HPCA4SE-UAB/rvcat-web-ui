@@ -90,7 +90,6 @@ function loadEditedProgram() {
         constant: inst.constant || ''
       };
     });
-    if (editedProgram.value.length === 0) addInstruction();
   } catch (e) {
     console.error('📄❌ Failed to load edited program from localStorage:', e);
   }
@@ -236,6 +235,8 @@ function loadEditedProgram() {
     if (uploadedProgramObject) {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
+      editedProgram.value.pop();
+      localStorage.setItem('programTemp', JSON.stringify(editedProgram));
       emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')
     }
@@ -258,6 +259,7 @@ const uploadForEdition = async () => {
     const data = await uploadJSON(null, 'program');
     if (data) {
       // TODO: Check here if it is a valid program
+      data.pop();   // remove last branch
       localStorage.setItem('programTemp', JSON.stringify(data));
       loadEditedProgram()
     }
@@ -295,7 +297,24 @@ const uploadForEdition = async () => {
   };
 
 
-// Initialize with empty instruction in last
+// Insert final branch 
+function addFinalBranch() {
+  editedProgram.value.push( {
+      text:    'if c go back',
+      type:    'BRANCH',
+      oper:    '',
+      size:    '',
+      destin:  '',
+      source1: 'c',
+      source2: '',
+      source3: '',
+      constant: ''
+    }
+  );
+}
+
+
+// Add just before the final branch 
 function addInstruction() {
   editedProgram.value.splice( editedProgram.value.length - 1, 0,  
     {
@@ -422,6 +441,7 @@ function snapshotProgram() {
     const stored = localStorage.getItem('programTemp');
     if (stored) {
       const data = JSON.parse(stored)
+      addFinalBranch()
       data.name = name
       await downloadJSON(data, name, 'program')
     }
@@ -978,13 +998,21 @@ function snapshotProgram() {
   color:      #555;
 }
 
-.fixed-row {
-  background-color: #fafafa;
-}
-
 .fixed-row .actions-cell {
   pointer-events: none;
   opacity:        0.4;
+}
+
+.fixed-row {
+  font-weight: bold;
+  color:       #0b2e5c; /* azul oscuro */
+}
+
+.fixed-row .table-input,
+.fixed-row .table-select,
+.fixed-row .readonly {
+  color:       inherit;
+  font-weight: inherit;
 }
 
 
