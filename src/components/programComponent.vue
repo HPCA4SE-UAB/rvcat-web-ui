@@ -541,7 +541,7 @@ function snapshotProgram() {
       </button>
 
       <button class="icon-button add-prev-margin" @click="openFullScreen" 
-         title="Open fullscreen"
+         title="View program's dependence graph on full-screen"
          id="open-full-dependence-graph"
         >
          <img src="/img/fullscreen.png" class="btn-img">
@@ -1237,12 +1237,10 @@ function snapshotProgram() {
     cursor:      pointer;
     padding:     6px;
     display:     inline-flex;
-    align-items: left;
     background:  #b0b0b0;
     transition:  background 0.2s;
     justify-content: left;
     border-radius:   6px;
-    margin-left:     auto;
   }
   .icon-button img,
   .icon-button svg {
