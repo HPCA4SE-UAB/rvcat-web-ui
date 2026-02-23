@@ -272,7 +272,6 @@ const uploadForEdition = async () => {
 // Program handling: 
 //        addInstruction,       removeInstruction, 
 //        moveInstructionUp,    moveInstructionDown,
-//        getOperations,        getSizes, 
 //        normalizeInstruction, snapshotProgram
 // ============================================================================
 
@@ -353,13 +352,6 @@ function moveInstructionDown(index) {
   }
 }
 
-function getOperations(type) {
-  return typeOperations[type] || [];
-}
-
-function getSizes(type) {
-  return typeSizes[type] || [];
-}
 
 function normalizeInstruction(inst) {
   return {
@@ -631,13 +623,13 @@ function snapshotProgram() {
                   </td>
 
                   <td v-if="programOptions.visibleCols.oper">
-                    <select v-model="inst.oper" :disabled="!inst.type || getOperations(inst.type).length === 0"
+                    <select v-model="inst.oper" :disabled="!inst.type || typeOperations[inst.type].length === 0"
                       class="table-select" title="Select operation for this type"
                     >
                       <option value="">Select...</option>
                       <option 
-                        v-for="operation in getOperations(inst.type)" 
-                        :key="operation" 
+                        v-for="operation in typeOperations[inst.type]" 
+                        :key="operation"
                         :value="operation"
                       >
                         {{ operations }}
@@ -646,12 +638,12 @@ function snapshotProgram() {
                   </td>
 
                   <td v-if="programOptions.visibleCols.size">
-                    <select v-model="inst.size" :disabled="!inst.type || !inst.oper || getSizes(inst.type).length === 0"
+                    <select v-model="inst.size" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
                       class="table-select" title="Select size for this instruction type & operations"
                     >
                       <option value="">Select...</option>
                       <option 
-                        v-for="size in getSizes(inst.type)" 
+                        v-for="size in typeSizes[inst.type]" 
                         :key="size" 
                         :value="size"
                       >
