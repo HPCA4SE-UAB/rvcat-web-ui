@@ -235,10 +235,9 @@ function loadEditedProgram() {
     if (uploadedProgramObject) {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
-      if (editedProgram.value.length > 0) { 
-        editedProgram.value.instruction_list.pop();
-        localStorage.setItem('programTemp', JSON.stringify(editedProgram));
-      }
+      if (editedProgram.value.length > 0)
+        editedProgram.value.pop()
+      localStorage.setItem('programTemp', JSON.stringify(editedProgram.value));
       emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')
     }
@@ -261,9 +260,11 @@ const uploadForEdition = async () => {
     const data = await uploadJSON(null, 'program');
     if (data) {
       // TODO: Check here if it is a valid program
-      data.instruction_list.pop();   // remove last branch
       localStorage.setItem('programTemp', JSON.stringify(data));
       loadEditedProgram()
+      if (editedProgram.value.length > 0)
+        editedProgram.value.pop()
+      localStorage.setItem('programTemp', JSON.stringify(editedProgram.value));
     }
   } catch (error) {
     console.error('📄❌ Failed to upload program for edition:', error)
