@@ -1,31 +1,19 @@
 <script setup>
   import { ref, computed, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
-  import { useRVCAT_Api }                                                     from '@/rvcatAPI'
+  import { useRVCAT_Api }                                                      from '@/rvcatAPI'
   import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
           downloadJSON, uploadJSON, 
           loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph                                   } from '@/common'
+          initResource, createGraphVizGraph                                   }  from '@/common'
 
-  const { getDependenceGraph, setProgram, showProgram } = useRVCAT_Api();
-  const { registerHandler }         = inject('worker');
-  const simState                    = inject('simulationState');
-
-  // Instruction type definitions with subtypes
-  const instructionTypes = {
-    'BRANCH': [],
-    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
-    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
-    'MEM':    ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP'],
-    'VMEM':   ['STR.SP', 'STR.DP', 'LOAD.SP', 'LOAD.DP'],
-    'FLOAT':  ['ADD.SP', 'ADD.DP', 'MUL.SP', 'MUL.DP', 'FMA.SP', 'FMA.DP',
-               'DIV.SP', 'DIV.DP', 'SQRT.SP', 'SQRT.DP'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
-  };
+  const { getProgGraph, setProgram, showProgram } = useRVCAT_Api();
+  const { registerHandler }                       = inject('worker');
+  const simState                                  = inject('simulationState');
   
   const props = defineProps({
     isFullscreen: {
-      type: Boolean,
+      type:    Boolean,
       default: false
     }
   })
@@ -72,8 +60,8 @@ const STORAGE_KEY = 'programOptions'
   const programText    = ref('LOADING ...')
   const programSvg     = ref('')
   const showFullScreen = ref(false);
-  let graphTimeout     = null
-
+  let   graphTimeout   = null
+ 
   const saveOptions = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(programOptions))
@@ -95,11 +83,10 @@ function loadEditedProgram() {
   try {
     const data = JSON.parse(stored);
     editedProgram.value = (data.instruction_list || []).map(inst => {
-      const [mainType, ...subTypeParts] = (inst.type || '').split('.');
-      const subType = subTypeParts.join('.');
+      const [type = '', oper = '', size = ''] = (inst.type || '').split('.');
       return {
-        text:     inst.text || '',    type:  inst.type || '',   mainType: mainType || '',   subType:  subType || '',
-        destin:   inst.destin || '',  source1:  inst.source1 || '',  source2:  inst.source2 || '',   source3:  inst.source3 || '',
+        text:     inst.text     || '',  type:    type || '',          oper:    oper || '',           size:    size || '',
+        destin:   inst.destin   || '',  source1: inst.source1 || '',  source2: inst.source2 || '',   source3: inst.source3 || '',
         constant: inst.constant || ''
       };
     });
@@ -201,9 +188,9 @@ function loadEditedProgram() {
 
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
-    cleanupHandleSet = registerHandler('set_program',  handleSetProgram)
-    cleanupHandleShow= registerHandler('show_program', handleShowProgram)
-    cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
+    cleanupHandleSet   = registerHandler('set_program',   handleSetProgram)
+    cleanupHandleShow  = registerHandler('show_program',  handleShowProgram)
+    cleanupHandleGraph = registerHandler('get_prg_graph', handleGraph);
 
     loadEditedProgram()
   });
@@ -280,25 +267,49 @@ const uploadForEdition = async () => {
 };
 
 // ============================================================================
-// Program handling: addInstruction, removeInstruction, 
-//        moveInstructionUp, moveInstructionDown,
-//        onMainTypeChange, onSubTypeChange, getSubTypes, 
+// Program handling: 
+//        addInstruction,       removeInstruction, 
+//        moveInstructionUp,    moveInstructionDown,
+//        getOperations,        getSizes, 
 //        normalizeInstruction, snapshotProgram
 // ============================================================================
 
-// Initialize with empty instruction
+  const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT']
+
+  const typeOperations = {
+    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
+    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
+    'MEM':    ['STORE', 'LOAD'],
+    'VMEM':   ['STORE', 'LOAD'],
+    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
+  };
+
+  const typeSizes = {
+    'INT':    ['byte', 'word', 'long'],
+    'VINT':   ['byte', 'word', 'long'],
+    'MEM':    ['byte', 'word', 'long'],
+    'VMEM':   [],
+    'FLOAT':  ['single', 'double'],
+    'VFLOAT': ['single', 'double']
+  };
+
+
+// Initialize with empty instruction in last
 function addInstruction() {
-  editedProgram.value.push({
-    text: '',
-    type: '',
-    mainType: '',
-    subType: '',
-    destin: '',
-    source1: '',
-    source2: '',
-    source3: '',
-    constant: ''
-  });
+  editedProgram.value.splice( editedProgram.value.length - 1, 0,  
+    {
+      text:    '',
+      type:    '',
+      oper:    '',
+      size:    '',
+      destin:  '',
+      source1: '',
+      source2: '',
+      source3: '',
+      constant: ''
+    }
+  );
 }
 
 function removeInstruction(index) {
@@ -310,7 +321,7 @@ function removeInstruction(index) {
 function moveInstructionUp(index) {
   if (index > 0) {
     const temp = editedProgram.value[index];
-    editedProgram.value[index] = editedProgram.value[index - 1];
+    editedProgram.value[index]     = editedProgram.value[index - 1];
     editedProgram.value[index - 1] = temp;
   }
 }
@@ -318,47 +329,29 @@ function moveInstructionUp(index) {
 function moveInstructionDown(index) {
   if (index < editedProgram.value.length - 1) {
     const temp = editedProgram.value[index];
-    editedProgram.value[index] = editedProgram.value[index + 1];
+    editedProgram.value[index]     = editedProgram.value[index + 1];
     editedProgram.value[index + 1] = temp;
   }
 }
 
-// Handle type selection
-function onMainTypeChange(instruction) {
-  instruction.subType = '';
-  // If the type has no subtypes (like BRANCH), set type directly
-  const subtypes = getSubTypes(instruction.mainType);
-  if (instruction.mainType && subtypes.length === 0) {
-    instruction.type = instruction.mainType;
-  } else {
-    instruction.type = '';
-  }
+function getOperations(type) {
+  return typeOperations[type] || [];
 }
 
-function onSubTypeChange(instruction) {
-  if (instruction.mainType && instruction.subType) {
-    instruction.type = `${instruction.mainType}.${instruction.subType}`;
-  } else if (instruction.mainType) {
-    // Subtype was cleared, clear the full type too
-    instruction.type = '';
-  }
-}
-
-// Get subtypes for selected main type
-function getSubTypes(mainType) {
-  return instructionTypes[mainType] || [];
+function getSizes(type) {
+  return typeSizes[type] || [];
 }
 
 function normalizeInstruction(inst) {
   return {
-    text:     (inst.text || '').trim(),
-    type:     (inst.type || '').trim(),
-    mainType: (inst.mainType || '').trim(),
-    subType:  (inst.subType || '').trim(),
-    destin:   (inst.destin || '').trim(),
-    source1:  (inst.source1 || '').trim(),
-    source2:  (inst.source2 || '').trim(),
-    source3:  (inst.source3 || '').trim(),
+    text:     (inst.text     || '').trim(),
+    type:     (inst.type     || '').trim(),
+    oper:     (inst.oper     || '').trim(),
+    size:     (inst.size     || '').trim(),
+    destin:   (inst.destin   || '').trim(),
+    source1:  (inst.source1  || '').trim(),
+    source2:  (inst.source2  || '').trim(),
+    source3:  (inst.source3  || '').trim(),
     constant: (inst.constant || '').trim()
   };
 }
@@ -389,7 +382,7 @@ function snapshotProgram() {
     programOptions.visibleCols.actions = !programOptions.visibleCols.actions   
   }
 
-  // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
+  // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
   const handleGraph = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('📄❌Failed to get dependence graph:', data);
@@ -405,12 +398,11 @@ function snapshotProgram() {
     }
   }
 
-
   function openFullScreen() {
     showFullScreen.value = true;
     console.log('📄🔄Drawing edited program');
     clearTimeout(graphTimeout)
-    getDependenceGraph( 1, true, false, true, true )
+    getProgGraph( 1, true, false, true, true )
   }
 
   function closeFullScreen()   { showFullScreen.value = false;  }
@@ -606,11 +598,11 @@ function snapshotProgram() {
                   <td v-if="programOptions.visibleCols.index">{{ index }}</td>
 
                   <td v-if="programOptions.visibleCols.text">
-                    <input type="text" v-model="inst.text" class="table-input" />
+                    <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
                   </td>
 
                   <td v-if="programOptions.visibleCols.type">
-                    <select v-model="inst.mainType" @change="onMainTypeChange(inst)" class="table-select">
+                    <select v-model="inst.type" class="table-select" title="Select instruction type">
                       <option value="">Select...</option>
                       <option v-for="type in Object.keys(instructionTypes)" :key="type" :value="type">
                         {{ type }}
@@ -619,37 +611,31 @@ function snapshotProgram() {
                   </td>
 
                   <td v-if="programOptions.visibleCols.oper">
-                    <select 
-                      v-model="inst.subType" 
-                      @change="onSubTypeChange(inst)" 
-                      :disabled="!inst.mainType || getSubTypes(inst.mainType).length === 0"
-                      class="table-select"
+                    <select v-model="inst.oper" :disabled="!inst.type || getOperations(inst.type).length === 0"
+                      class="table-select" title="Select operation for this type"
                     >
                       <option value="">Select...</option>
                       <option 
-                        v-for="subtype in getSubTypes(inst.mainType)" 
-                        :key="subtype" 
-                        :value="subtype"
+                        v-for="operation in getOperations(inst.type)" 
+                        :key="operation" 
+                        :value="operation"
                       >
-                        {{ subtype }}
+                        {{ operations }}
                       </option>
                     </select>
                   </td>
 
                   <td v-if="programOptions.visibleCols.size">
-                    <select 
-                      v-model="inst.subType" 
-                      @change="onSubTypeChange(inst)" 
-                      :disabled="!inst.mainType || getSubTypes(inst.mainType).length === 0"
-                      class="table-select"
+                    <select v-model="inst.size" :disabled="!inst.type || !inst.oper || getSizes(inst.type).length === 0"
+                      class="table-select" title="Select size for this instruction type & operations"
                     >
                       <option value="">Select...</option>
                       <option 
-                        v-for="subtype in getSubTypes(inst.mainType)" 
-                        :key="subtype" 
-                        :value="subtype"
+                        v-for="size in getSizes(inst.type)" 
+                        :key="size" 
+                        :value="size"
                       >
-                        {{ subtype }}
+                        {{ size }}
                       </option>
                     </select>
                   </td>
@@ -699,6 +685,51 @@ function snapshotProgram() {
                     >
                       ✕
                     </button>
+                  </td>
+                </tr>
+
+                <!-- 🔒 Fila fija final -->
+                <tr class="fixed-row">
+                  <td v-if="programOptions.visibleCols.index"> {{editedProgram.length}} </td>
+
+                  <td v-if="programOptions.visibleCols.text" title="This final conditional branch is fixed">
+                    <span class="table-input readonly">if c go back</span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.type">
+                    <span class="table-select readonly">BRANCH</span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.oper">
+                    <span class="table-select readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.size">
+                    <span class="table-select readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.destin">
+                    <span class="table-input readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.source1">
+                    <span class="table-input readonly">c</span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.source2">
+                    <span class="table-input readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.source3">
+                    <span class="table-input readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.constant">
+                    <span class="table-input readonly"> </span>
+                  </td>
+
+                  <td v-if="programOptions.visibleCols.actions" class="actions-cell">
+                    <span class="table-input readonly"> 🔒 </span>
                   </td>
                 </tr>
               </tbody>
@@ -937,6 +968,26 @@ function snapshotProgram() {
   background:   #ffebee;
   border-color: #d32f2f;
 }
+
+
+.readonly {
+  display:    inline-block;
+  width:      100%;
+  padding:    4px 6px;
+  box-sizing: border-box;
+  color:      #555;
+}
+
+.fixed-row {
+  background-color: #fafafa;
+}
+
+.fixed-row .actions-cell {
+  pointer-events: none;
+  opacity:        0.4;
+}
+
+
 
 .add-margin {
   margin-right: 50px;
