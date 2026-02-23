@@ -39,7 +39,7 @@
       "FLOAT.ADD",
       "FLOAT.FMA",
       "VFLOAT.ADD",
-      "VFLOAT.FMA",
+      "VFLOAT.FMA"
     ],
     "2": [
       "INT",
