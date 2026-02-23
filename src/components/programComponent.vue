@@ -315,9 +315,9 @@ function addFinalBranch() {
 }
 
 
-// Add just before the final branch 
-function addInstruction() {
-  editedProgram.value.push( {
+// Add just at index position 
+function addInstruction( index ) {
+  editedProgram.value.splice( index, 0, {
       text:    '',
       type:    '',
       oper:    '',
@@ -465,7 +465,7 @@ function snapshotProgram() {
 
   function clearProgram() {
     editedProgram.value = [];
-    addInstruction();
+    addInstruction(0);
     showModalClear.value = false;
   }
 
@@ -523,41 +523,31 @@ function snapshotProgram() {
         </span>
         <span class="header-title">Program Editor</span>
       </div>
-           <button class="blue-button add-margin" @click="addInstruction"
-              title="Add new instruction at the end of program" 
-              id="add-instruction-button">
-            + Add Instruction
-          </button>
 
-          <button class="blue-button" :class="{ active: programOptions.showInOut }"  
-              title="Show/Hide instruction Input/Output operands"
-              id="show-inout-operands"
-            @click="toggleInOut"> 
-            <span v-if="programOptions.showInOut">✔ </span>
-            InOut
-          </button>
+      <button class="blue-button add-prev-margin" :class="{ active: programOptions.showInOut }"  
+          title="Show/Hide instruction Input/Output operands"
+          id="show-inout-operands"
+        @click="toggleInOut"> 
+        <span v-if="programOptions.showInOut">✔ </span>
+        InOut
+      </button>
 
-          <button class="blue-button add-margin" :class="{ active: programOptions.showActions }"  
-              title="Show/Hide column for instruction actions"
-              id="show-instruction-actions"
-            @click="toggleActions"> 
-            <span v-if="programOptions.showActions">✔ </span>
-            Actions
-          </button>
+      <button class="blue-button add-margin" :class="{ active: programOptions.showActions }"  
+          title="Show/Hide column for instruction actions"
+          id="show-instruction-actions"
+         @click="toggleActions"> 
+        <span v-if="programOptions.showActions">✔ </span>
+        Actions
+      </button>
 
-          <button class="icon-button" @click="openFullScreen" 
-             title="Open fullscreen"
-             id="open-full-dependence-graph"
-            >
-             <img src="/img/fullscreen.png" class="bt-img">
-          </button>
+      <button class="icon-button add-margin" @click="openFullScreen" 
+         title="Open fullscreen"
+         id="open-full-dependence-graph"
+        >
+         <img src="/img/fullscreen.png" class="bt-img">
+      </button>
      
       <div class="settings-container fullscreen-settings">
-        <div class="section-header">
-
-
-
-        </div>
         <div class="buttons">
 
           <button class="blue-button" @click="showModalDownload = true"
@@ -575,7 +565,7 @@ function snapshotProgram() {
         </div>
         <div class="buttons">
 
-          <button class="blue-button"   @click="showModalClear = true"
+          <button class="blue-button  add-margin" @click="showModalClear = true"
                 title="Clear edition and start new program from scratch" 
                 id="clear-program-button">
             Clear
@@ -676,6 +666,7 @@ function snapshotProgram() {
                   </td>
 
                   <td v-if="programOptions.visibleCols.actions" class="actions-cell">
+
                     <button 
                       @click="moveInstructionUp(index)" 
                       :disabled="index === 0"
@@ -684,6 +675,7 @@ function snapshotProgram() {
                     >
                       ▲
                     </button>
+
                     <button 
                       @click="moveInstructionDown(index)" 
                       :disabled="index === editedProgram.length - 1"
@@ -692,6 +684,7 @@ function snapshotProgram() {
                     >
                       ▼
                     </button>
+
                     <button 
                       @click="removeInstruction(index)" 
                       :disabled="editedProgram.length === 1"
@@ -700,6 +693,16 @@ function snapshotProgram() {
                     >
                       ✕
                     </button>
+
+                    <button 
+                      @click="addInstruction(index)" 
+                      :disabled="editedProgram.length === 1"
+                      class="action-btn"
+                      title="Insert new instruction before this one"
+                    >
+                      ▶️
+                    </button>
+
                   </td>
                 </tr>
 
@@ -1012,6 +1015,11 @@ function snapshotProgram() {
 .add-margin {
   margin-right: 50px;
 }
+
+.add-prev-margin {
+  margin-left: 100px;
+}
+
 
 /* Modal styles */
 .modal-overlay {
