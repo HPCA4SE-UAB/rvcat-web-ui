@@ -235,8 +235,10 @@ function loadEditedProgram() {
     if (uploadedProgramObject) {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
-      editedProgram.pop();
-      localStorage.setItem('programTemp', JSON.stringify(editedProgram));
+      if (editedProgram.value.length > 0) { 
+        editedProgram.value.pop();
+        localStorage.setItem('programTemp', JSON.stringify(editedProgram));
+      ]
       emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')
     }
