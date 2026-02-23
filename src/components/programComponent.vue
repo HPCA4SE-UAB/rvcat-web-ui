@@ -236,7 +236,7 @@ function loadEditedProgram() {
       localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
       loadEditedProgram()
       if (editedProgram.value.length > 0) { 
-        editedProgram.value.pop();
+        editedProgram.value.instruction_list.pop();
         localStorage.setItem('programTemp', JSON.stringify(editedProgram));
       }
       emit('requestSwitchFull', 'program')
@@ -261,7 +261,7 @@ const uploadForEdition = async () => {
     const data = await uploadJSON(null, 'program');
     if (data) {
       // TODO: Check here if it is a valid program
-      data.pop();   // remove last branch
+      data.instruction_list.pop();   // remove last branch
       localStorage.setItem('programTemp', JSON.stringify(data));
       loadEditedProgram()
     }
