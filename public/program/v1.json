@@ -1,9 +1,11 @@
 {
-  "name": "v1",
+  "name": "V1",
   "instruction_list": [
     {
-      "type": "MEM.LOAD.SP",
       "text": "tmp = V[i]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
       "destin": "tmp",
       "source1": "i",
       "source2": "",
@@ -11,8 +13,10 @@
       "constant": "V"
     },
     {
-      "type": "MEM.LOAD.SP",
       "text": "tmp2 = W[i]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
       "destin": "tmp2",
       "source1": "i",
       "source2": "",
@@ -20,8 +24,10 @@
       "constant": "W"
     },
     {
-      "type": "FLOAT.ADD.SP",
       "text": "tmp = tmp + tmp2",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "single",
       "destin": "tmp",
       "source1": "tmp",
       "source2": "tmp2",
@@ -29,8 +35,10 @@
       "constant": ""
     },
     {
-      "type": "FLOAT.ADD.SP",
       "text": "sum = sum + tmp",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "single",
       "destin": "sum",
       "source1": "sum",
       "source2": "tmp",
@@ -38,8 +46,10 @@
       "constant": ""
     },
     {
-      "type": "INT.ARITH",
       "text": "i = i + 1",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
       "destin": "i",
       "source1": "i",
       "source2": "",
@@ -47,8 +57,10 @@
       "constant": "1"
     },
     {
-      "type": "INT.ARITH",
       "text": "c = i != N",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
       "destin": "c",
       "source1": "i",
       "source2": "N",
@@ -56,8 +68,10 @@
       "constant": ""
     },
     {
-      "type": "BRANCH",
       "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
       "destin": "",
       "source1": "c",
       "source2": "",

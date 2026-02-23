@@ -5,9 +5,9 @@
     "B3"
   ],
   "program": [
-    "base",
-    "v1",
-    "v2"
+    "Base",
+    "V1",
+    "V2"
   ],
    "tutorial": [
     "TutProcessor",
