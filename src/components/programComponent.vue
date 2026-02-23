@@ -632,7 +632,7 @@ function snapshotProgram() {
                         :key="operation"
                         :value="operation"
                       >
-                        {{ operations }}
+                        {{ operation }}
                       </option>
                     </select>
                   </td>
