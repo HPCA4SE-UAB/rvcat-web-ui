@@ -2,19 +2,14 @@
   import { ref, unref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent                                            from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                             from '@/rvcatAPI'
-  import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
-          downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph                                           } from '@/common'
+
+  import { downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
+          initResource, createGraphVizGraph,       
+          instructionTypes, typeOperations, typeSizes                                 } from '@/common'
   
   const { setProcessor }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
-
-   // TO DO: obtain from a distribution/local file, or from Processor Configuration
-  const availableInstructions = [ "INT", "BRANCH", "MEM.STR", "MEM.LOAD", "MEM.VLOAD", 
-                                  "MEM.VSTR", "FLOAT.ADD", "FLOAT.MUL", "FLOAT.FMA",
-                                  "FLOAT.DIV", "FLOAT.SQRT", "VFLOAT.ADD", "VFLOAT.MUL",
-                                  "VFLOAT.FMA" ]
 
   const props = defineProps({
     isFullscreen: {
@@ -742,7 +737,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="instr in availableInstructions" :key="instr" style="background: #f0f0f0;">
+                <tr v-for="instr in instructionTypes" :key="instr" style="background: #f0f0f0;">
                   <td>{{ instr }}</td>
                   <td>
                     <div class="latency-group">

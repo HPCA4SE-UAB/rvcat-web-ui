@@ -281,8 +281,7 @@
 <script setup>
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
-import {  modalState, downloadJSON, uploadJSON, saveToLocalStorage, initResource,
-          createGraphVizGraph                                                } from '@/common'
+import {  downloadJSON, uploadJSON, saveToLocalStorage, createGraphVizGraph  } from '@/common'
 
 const simState = inject('simulationState');
  
@@ -665,7 +664,9 @@ const showValidationErrors = () => {
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
 
-const { modalName, modalError, showSaveModal } = modalState;
+const showSaveModal ref(false)
+const modalName     ref('')
+const modalError    ref('')
   
 function loadEditedTutorial() {
   const stored = localStorage.getItem('tutorialTemp');

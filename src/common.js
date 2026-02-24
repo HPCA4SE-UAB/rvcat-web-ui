@@ -1,22 +1,25 @@
 import { ref } from 'vue';
 
-/* ------------------------------------------------------------------ 
- * Estado reactivo compartido para modales
- * ------------------------------------------------------------------ */
-export const modalState = {
-  showSaveModal:    ref(false),
-  showUploadModal:  ref(false),
-  showChangeModal:  ref(false),
-  modalName:        ref(''),
-  modalError:       ref(''),
-  saveToFile:       ref(true),
-  pendingAction:    ref(null),
-  confirmOperation: ref(null)
-};
+export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT']
 
-/* ------------------------------------------------------------------ 
- * Configuraciones específicas por tipo de recurso
- * ------------------------------------------------------------------ */
+export const typeOperations = {
+    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
+    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
+    'MEM':    ['STORE', 'LOAD'],
+    'VMEM':   ['STORE', 'LOAD'],
+    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
+  };
+
+export const typeSizes = {
+    'INT':    ['byte', 'word', 'long'],
+    'VINT':   ['byte', 'word', 'long'],
+    'MEM':    ['byte', 'word', 'long'],
+    'VMEM':   [],
+    'FLOAT':  ['single', 'double'],
+    'VFLOAT': ['single', 'double']
+  };
+
 export const resourceConfig = {
   processor: {
     storagePrefix: 'processor',
@@ -36,69 +39,10 @@ export const resourceConfig = {
 };
 
 /**
- * Open Save/Upload Modal    @param {String} defaultName   @param {String} resourceType 
- */
-export function openSaveModal(defaultName, resourceType) {
-  modalState.modalName.value     = defaultName;
-  modalState.modalError.value    = '';
-  modalState.saveToFile.value    = true;
-  modalState.showSaveModal.value = true;
-  console.log(`${resourceConfig[resourceType]?.logPrefix}💾❓Opening save modal`);
-}
-export function openUploadModal(defaultName, resourceType) {
-  modalState.modalName.value       = defaultName;
-  modalState.modalError.value      = '';
-  modalState.showUploadModal.value = true;
-  console.log(`${resourceConfig[resourceType]?.logPrefix}📤❓ Opening upload modal`);
-}
-
-/**
- * Close all Modals 
- */
-export function closeAllModals() {
-  modalState.showSaveModal.value   = false;
-  modalState.showUploadModal.value = false;
-  modalState.showChangeModal.value = false;
-  modalState.modalError.value      = '';
-  modalState.pendingAction.value   = null;
-}
-
-/**
- *  handlePendingAction  @param {Boolean} isModified + @param {Function} actionCallback + @param {String} actionType 
-            - Tipo de acción ('upload', 'load', 'clear', etc.)
- */
-export function handlePendingAction(isModified, actionCallback, actionType) {
-  if (isModified) {
-    modalState.pendingAction.value    = actionType;
-    modalState.showChangeModal.value  = true;
-    modalState.confirmOperation.value = actionCallback;
-  } else {
-    actionCallback();
-  }
-}
-
-/**
- * Confirma una operación pendiente
- */
-export function confirmPendingAction() {
-  if (modalState.confirmOperation.value) {
-    modalState.confirmOperation.value();
-  }
-  closeAllModals();
-}
-
-/**
- * Cancela una operación pendiente
- */
-export function cancelPendingAction() {
-  closeAllModals();
-}
-
-/**
  * validateResourceName Valida si un nombre ya existe en la lista de recursos disponibles
  *     @param {String} name + @param {Array} availableList - Lista de nombres disponibles
  *       @returns {String} Mensaje de error vacío si es válido, mensaje de error si no
- */
+
 export function validateResourceName(name, availableList) {
   if (!name.trim()) return 'Name is required';
   
@@ -106,6 +50,9 @@ export function validateResourceName(name, availableList) {
     return 'A resource with this name already exists. Please choose another one.';
   return '';
 }
+ */
+
+
 
 /**
  * @param {Object} data +  @param {String} filename + @param {String} resourceType
@@ -297,11 +244,8 @@ export function loadFromLocalStorage(resourceType, id) {
   }
 }
 
-/**
- * getResourceKeys @param {String} resourceType 
- *       @returns {Array} Lista de IDs disponibles
- */
-export function getResourceKeys(prefix) {
+
+function getResourceKeys(prefix) {
   const keys = [];
   
   for (let i = 0; i < localStorage.length; i++) {

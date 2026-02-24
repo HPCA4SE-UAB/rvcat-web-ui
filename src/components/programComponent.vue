@@ -2,10 +2,9 @@
   import { ref, computed, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                      from '@/rvcatAPI'
-  import {  modalState, resourceConfig, openSaveModal, closeAllModals, validateResourceName,
-          downloadJSON, uploadJSON, 
-          loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph                                   }  from '@/common'
+  import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
+           saveToLocalStorage, removeFromLocalStorage,
+           instructionTypes, typeOperations, typeSizes                        }  from '@/common'
 
   const { getProgGraph, setProgram, showProgram } = useRVCAT_Api();
   const { registerHandler }                       = inject('worker');
@@ -276,27 +275,6 @@ const uploadForEdition = async () => {
 //        moveInstructionUp,    moveInstructionDown,
 //        normalizeInstruction, snapshotProgram
 // ============================================================================
-
-  const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT']
-
-  const typeOperations = {
-    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
-    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
-    'MEM':    ['STORE', 'LOAD'],
-    'VMEM':   ['STORE', 'LOAD'],
-    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
-  };
-
-  const typeSizes = {
-    'INT':    ['byte', 'word', 'long'],
-    'VINT':   ['byte', 'word', 'long'],
-    'MEM':    ['byte', 'word', 'long'],
-    'VMEM':   [],
-    'FLOAT':  ['single', 'double'],
-    'VFLOAT': ['single', 'double']
-  };
-
 
 // Add just at index position 
 function addInstruction( index ) {
