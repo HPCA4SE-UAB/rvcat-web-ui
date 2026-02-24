@@ -69,7 +69,7 @@
     blkSize:    1,
     mPenalty:   1,
     mIssueTime: 1,
-    latencies:  {},
+    latencies:  Object.fromEntries( instructionTypes.map(t => [t, 1]) ),
     ports:      {0:[]},
   });
 
@@ -232,7 +232,6 @@
     if (processorInfo) {
       emit('requestSwitchFull', 'processor')
       updateProcessorSettings(processorInfo)
-      // localStorage.setItem('processorTemp', jsonString);
       console.log('📄 Emit requestSwitchFull for processor edition')
     }
   }
@@ -255,7 +254,6 @@
       if (data) {
         // TODO: Check here if it is a valid processor
         jsonString = JSON.stringify(data)
-        // localStorage.setItem('processorTemp', jsonString);
         updateProcessorSettings(data)
       }
     } catch (error) {
