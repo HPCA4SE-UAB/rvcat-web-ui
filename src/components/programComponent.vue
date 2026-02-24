@@ -298,23 +298,6 @@ const uploadForEdition = async () => {
   };
 
 
-// Insert final branch 
-function addFinalBranch() {
-  editedProgram.value.push( {
-      text:    'if c go back',
-      type:    'BRANCH',
-      oper:    '',
-      size:    '',
-      destin:  '',
-      source1: 'c',
-      source2: '',
-      source3: '',
-      constant: ''
-    }
-  );
-}
-
-
 // Add just at index position 
 function addInstruction( index ) {
   editedProgram.value.splice( index, 0, {
@@ -434,8 +417,18 @@ function snapshotProgram() {
     const stored = localStorage.getItem('programTemp');
     if (stored) {
       const data = JSON.parse(stored)
-      addFinalBranch()
       data.name = name
+      data.instruction_list.push( {
+        text:    'if c go back',
+        type:    'BRANCH',
+        oper:    '',
+        size:    '',
+        destin:  '',
+        source1: 'c',
+        source2: '',
+        source3: '',
+        constant: ''
+      } );
       await downloadJSON(data, name, 'program')
     }
     showModalDownload.value = false;
