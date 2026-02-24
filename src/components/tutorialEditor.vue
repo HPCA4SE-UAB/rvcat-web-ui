@@ -651,9 +651,9 @@ const showValidationErrors = () => {
 // ============================================================================
 // HELP
 // ============================================================================
-  const showHelp     = ref(false);
-  const helpPosition = ref({ top: '0%', left: '40%' });
-  const helpIcon     = ref(null);
+  const showHelp     = ref(false)
+  const helpPosition = ref({ top: '0%', left: '40%' })
+  const helpIcon     = ref(null)
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
@@ -664,9 +664,9 @@ const showValidationErrors = () => {
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
 
-const showSaveModal ref(false)
-const modalName     ref('')
-const modalError    ref('')
+const showSaveModal = ref(false)
+const modalName     = ref('')
+const modalError    = ref('')
   
 function loadEditedTutorial() {
   const stored = localStorage.getItem('tutorialTemp');
