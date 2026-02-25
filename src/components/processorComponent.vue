@@ -404,9 +404,15 @@
   }
 
 // ============================================================================
-// Processor Edition LOGIC: addPort, removePort
+// Processor Edition LOGIC:      addPort, removePort
 //           togglePortInstruction, toggleScheduler, noPortAssigned
 // ============================================================================
+
+  const expandedTypes = reactive({});
+
+  function toggleType(type) {
+    expandedTypes[type] = !expandedTypes[type];
+  }
 
  function addPort() {
     const existing = portList.value;
@@ -724,15 +730,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="type in instructionTypes" :key="instr" style="background: #f0f0f0;">
-                  <td>{{ type }}</td>
-                  <td>{{ type }}</td>
-                  <td>{{ type }}</td>
+                <tr v-for="type in instructionTypes" 
+                    :key="type" 
+                    class="type-row"
+                >
+                  <td @click="toggleType(type)" class="type-cell">
+                    ▶ {{ type }}
+                  </td>
+                  <td><em>All operations<em></td>
+                  <td> - </td>
+
                   <td>
                     <div class="latency-group">
-                      <input type="number" v-model.number="procConfig.latencies[instr]" class="latency-input" min="1" max="99"
-                         :id="`${instr}-latency`"
-                         :title="`Execution latency in clock cycles for the ${instr} instruction type (1 to 99)`"/>
+                      <input 
+                         type="number" 
+                         v-model.number="procConfig.latencies[type].default" 
+                         class="latency-input" 
+                         min="1" 
+                         max="99"
+                         :id="`${type}-latency`"
+                         :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`"/>
                     </div>
                   </td>
                   <td v-for="port in portList" :key="port" class="port-checkbox">
@@ -745,6 +762,31 @@
                     </label>
                   </td>
                 </tr>
+
+                                         <tr
+                                                  v-for="op in typeOperations[type]"
+                                                  v-if="expandedTypes[type]"
+                                                  :key="`${type}-${op}`"
+                                                 class="op-row"
+                                         >
+                                               <td></td>
+                                               <td class="op-cell">
+                                                  {{ op }}
+                                              </td>
+
+                                              <td>—</td>
+
+                                               <td>
+                                                  <input
+                                                     type="number"
+                                                     v-model.number="procConfig.latencies[type][op]"
+                                                     min="1"
+                                                    max="99"
+                                                    class="latency-input"
+                                                 />
+                                               </td>
+                  <td v-for="port in portList" :key="port"></td>
+                                         </tr>
               </tbody>
             </table>
           </div> <!--- Table Container -->
@@ -1150,5 +1192,25 @@
     visibility: visible;
     opacity: 1;
   }
+
+.type-row {
+  background: #e6f2ff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.op-row {
+  background: #f9fbff;
+}
+
+.op-cell {
+  padding-left: 24px;
+  font-style: italic;
+}
+
+.type-cell {
+  user-select: none;
+}
+
 
 </style>
