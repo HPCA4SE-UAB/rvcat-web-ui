@@ -743,63 +743,68 @@
                     :key="type" 
                     class="type-row"
                 >
-                                               <button class="dropdown-header" @click="toggleType(type)"
-                                                       title="Show Operations of this type"
-                                                      id   ="show-critical-button">
-                                                  <span class="arrow" aria-hidden="true">
-                                                     {{ processorOptions.expandedTypes[type] ? '▼' : '▶' } }{{ type }}
-                                                  </span>
-                                               </button>
-                  <td class="small-cell">All operations</td>
+                  <button class="dropdown-header" @click="toggleType(type)"
+                    title="Show Operations of this type"
+                    id   ="show-critical-button">
+		    <span class="arrow" aria-hidden="true">
+                      {{ processorOptions.expandedTypes[type]  ?  '▼'  :  '▶'  } } {{ type }}
+		    </span>
+		  </button>
+
+		  <td class="small-cell">All operations</td>
                   <td> - </td>
 
                   <td>
                     <div class="latency-group">
                       <input 
-                         type="number" 
-                         v-model.number="procConfig.latencies[type].default" 
-                         class="latency-input" 
-                         min="1" 
-                         max="99"
-                         :id="`${type}-latency`"
-                         :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`"/>
+                        type="number" 
+                        v-model.number="procConfig.latencies[type].default" 
+                        class="latency-input" 
+                        min="1" 
+                        max="99"
+                        :id="`${type}-latency`"
+                        :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`"
+		      />
                     </div>
                   </td>
-                  <td v-for="port in portList" :key="port" class="port-checkbox">
+
+		  <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
                       <input type="checkbox" 
                        :title="`Set if Port P${port} can execute ${instr} instructions`"
                        :id="`Port${port}-${instr}-check`"
-                      :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
-                      @change="togglePortInstruction(port, instr, $event.target.checked)" />
+                       :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
+                       @change="togglePortInstruction(port, instr, $event.target.checked)" 
+		      />
                     </label>
                   </td>
                 </tr>
 
-                                         <tr
-                                                  v-for="op in typeOperations[type]"
-                                                  v-if="processorOptions.expandedTypes[type]"
-                                                  :key="`${type}-${op}`"
-                                                 class="op-row"
-                                         >
-                                               <td></td>
-                                               <td class="op-cell">
-                                                  {{ op }}
-                                              </td>
+		<tr
+		   v-for="op in typeOperations[type]"
+		  v-if="processorOptions.expandedTypes[type]"
+		  :key="`${type}-${op}`"
+		  class="op-row"
+		>
+		  <td></td>
+		  <td class="op-cell">
+		         {{ op }}
+		  </td>
+		  <td> - </td>
 
-                                              <td>—</td>
+		  <td>
+		    <input
+		      type="number"
+		      v-model.number="procConfig.latencies[type][op]"
+		      min="1"
+		      max="99"
+		      class="latency-input"
+		    />
+  		  </td>
 
-                                               <td>
-                                                  <input
-                                                     type="number"
-                                                     v-model.number="procConfig.latencies[type][op]"
-                                                     min="1"
-                                                    max="99"
-                                                    class="latency-input"
-                                                 />
-                                               </td>
-                  <td v-for="port in portList" :key="port"></td>
-                                         </tr>
+		  <td v-for="port in portList" :key="port"></td>
+
+	        </tr>
               </tbody>
             </table>
           </div> <!--- Table Container -->
