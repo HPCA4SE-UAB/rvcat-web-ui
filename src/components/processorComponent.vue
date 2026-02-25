@@ -737,7 +737,7 @@
                   <td @click="toggleType(type)" class="type-cell">
                     ▶ {{ type }}
                   </td>
-                  <td><em>All operations<em></td>
+                  <td><em>All operations</em></td>
                   <td> - </td>
 
                   <td>
