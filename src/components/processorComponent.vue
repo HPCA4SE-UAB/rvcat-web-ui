@@ -26,9 +26,10 @@
   const STORAGE_KEY = 'processorOptions'
 
   const defaultOptions = {
-    processorName:      '',
-    ROBsize:            20,
-    availableProcessors: []
+    processorName:       '',
+    ROBsize:             20,
+    availableProcessors: [],
+    expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false]))
   }
 
   let jsonString    = ''
@@ -418,10 +419,8 @@
 //           togglePortInstruction, toggleScheduler, noPortAssigned
 // ============================================================================
 
-  const expandedTypes = reactive({});
-
   function toggleType(type) {
-    expandedTypes[type] = !expandedTypes[type];
+    processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
   }
 
  function addPort() {
