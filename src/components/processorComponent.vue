@@ -60,20 +60,22 @@
 // Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
 // ============================================================================
 
-  const default_config = {
-    name:       'default',
-    sched:      'optimal',
-    dispatch:   1,
-    retire:     1,
-    nBlocks:    0,
-    blkSize:    1,
-    mPenalty:   1,
-    mIssueTime: 1,
-    latencies:  Object.fromEntries( instructionTypes.map(t => [t, 1]) ),
-    ports:      {0:[]},
+  function createDefaultConfig() {
+    return {
+      name:       'default',
+      sched:      'optimal',
+      dispatch:   1,
+      retire:     1,
+      nBlocks:    0,
+      blkSize:    1,
+      mPenalty:   1,
+      mIssueTime: 1,
+      latencies:  Object.fromEntries(instructionTypes.map(t => [t, 1])),
+      ports:      { 0: [] },
+    };
   }
 
-  const procConfig = reactive(null);
+  const procConfig = reactive(createDefaultConfig());
 
   const editedSvg = ref('')
 
@@ -497,7 +499,7 @@
   };
   
   function clearProcessor() {
-    updateProcessorSettings(default_config)
+    updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
   }
 
