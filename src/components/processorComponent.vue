@@ -747,7 +747,7 @@
                                                        title="Show Operations of this type"
                                                       id   ="show-critical-button">
                                                   <span class="arrow" aria-hidden="true">
-                                                     {{ simulationOptions.showCritical ? '▼' : '▶' }{ type } }
+                                                     {{ processorOptions.expandedTypes[type] ? '▼' : '▶' } }{{ type }}
                                                   </span>
                                                </button>
                   <td class="small-cell">All operations</td>
