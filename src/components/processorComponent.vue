@@ -743,10 +743,14 @@
                     :key="type" 
                     class="type-row"
                 >
-                  <td @click="toggleType(type)" class="type-cell">
-                    ▶ {{ type }}
-                  </td>
-                  <td><em>All operations</em></td>
+                                               <button class="dropdown-header" @click="toggleType(type)"
+                                                       title="Show Operations of this type"
+                                                      id   ="show-critical-button">
+                                                  <span class="arrow" aria-hidden="true">
+                                                     {{ simulationOptions.showCritical ? '▼' : '▶' }{ type } }
+                                                  </span>
+                                               </button>
+                  <td class="small-cell">All operations</td>
                   <td> - </td>
 
                   <td>
@@ -1203,9 +1207,9 @@
   }
 
 .type-row {
-  background: #e6f2ff;
-  font-weight: bold;
-  cursor: pointer;
+  background:     #e6f2ff;
+  font-weight:   bold;
+  cursor:               pointer;
 }
 
 .op-row {
@@ -1213,13 +1217,16 @@
 }
 
 .op-cell {
-  padding-left: 24px;
-  font-style: italic;
+  padding-left:   2px;
+  font-style:        italic;
 }
 
 .type-cell {
-  user-select: none;
+  user-select:  none;
 }
 
+.small-cell {
+ font-size: smaller;
+}
 
 </style>
