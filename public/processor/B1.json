@@ -8,26 +8,13 @@
   "mPenalty":   12,
   "mIssueTime": 8,
 
-  "latencies": {
-    "INT":         1,
-    "VINT":        1,
-    "BRANCH":      1,
-    "MEM.STORE":   2,
-    "MEM.LOAD":    4,
-    "VMEM.LOAD":   5,
-    "VMEM.STORE":  3,
-    "FLOAT.ADD":   2,
-    "FLOAT.MUL":   4,
-    "FLOAT.FMA":   4,
-    "FLOAT.DIV":   6,
-    "FLOAT.SQRT":  8,
-    "VFLOAT.ADD":  3,
-    "VFLOAT.MUL":  4,
-    "VFLOAT.FMA":  4,
-    "VFLOAT.DIV":  8,
-    "VFLOAT.SQRT": 10
-  },
-
+  "latencies": { INT:    {default: 1, ARITH: 1, LOGIC: 1, SHIFT: 1},
+                 VINT:   {default: 1, ARITH: 1, LOGIC: 1, SHIFT: 1},
+                 MEM:    {default: 4, STORE: 2, LOAD: 4},
+                 VMEM:   {default: 5, STORE: 3, LOAD: 5},
+                 FLOAT:  {default: 2, ADD: 2,   MUL: 4,   FMA: 5, DIV: 8, SQRT: 12}, 
+                 VFLOAT: {default: 2, ADD: 2,   MUL: 5,   FMA: 5, DIV: 8, SQRT: 16}
+               },
   "ports": {
     "0": [
       "INT",
