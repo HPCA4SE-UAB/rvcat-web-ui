@@ -743,14 +743,14 @@
                     :key="type" 
                     class="type-row"
                 >
-                  <button class="dropdown-header" @click="toggleType(type)"
-                    title="Show Operations of this type"
-                    id   ="show-critical-button">
+		  <button class="dropdown-header"
+		     @click="toggleType(type)"
+		    title="Show Operations of this type"
+		          id="show-critical-button">
 		    <span class="arrow" aria-hidden="true">
-                      {{ processorOptions.expandedTypes[type]  ?  '▼'  :  '▶'  } } {{ type }}
+			{{ processorOptions.expandedTypes[type] ? '▼' : '▶' }} {{ type }}
 		    </span>
 		  </button>
-
 		  <td class="small-cell">All operations</td>
                   <td> - </td>
 
