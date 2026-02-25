@@ -60,7 +60,7 @@
 // Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
 // ============================================================================
 
-  const default_config {
+  const default_config = {
     name:       'default',
     sched:      'optimal',
     dispatch:   1,
