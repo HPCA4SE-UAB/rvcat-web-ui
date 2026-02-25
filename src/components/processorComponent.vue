@@ -70,7 +70,17 @@
       blkSize:    1,
       mPenalty:   1,
       mIssueTime: 1,
-      latencies:  Object.fromEntries(instructionTypes.map(t => [t, 1])),
+      latencies:  Object.fromEntries(
+                    instructionTypes.map(type => [
+                      type,
+                      {
+                        default: 1,
+                        ...Object.fromEntries(
+                          typeOperations[type].map(op => [op, 1])
+                        )
+                      }
+                   ])
+                  )
       ports:      { 0: [] },
     };
   }
