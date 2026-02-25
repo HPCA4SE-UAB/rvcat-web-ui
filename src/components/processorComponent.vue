@@ -774,7 +774,7 @@
 
                                          <tr
                                                   v-for="op in typeOperations[type]"
-                                                  v-if="expandedTypes[type]"
+                                                  v-if="processorOptions.expandedTypes[type]"
                                                   :key="`${type}-${op}`"
                                                  class="op-row"
                                          >
