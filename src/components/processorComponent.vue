@@ -60,7 +60,7 @@
 // Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
 // ============================================================================
 
-  const procConfig = reactive({
+  const default_config {
     name:       'default',
     sched:      'optimal',
     dispatch:   1,
@@ -71,7 +71,9 @@
     mIssueTime: 1,
     latencies:  Object.fromEntries( instructionTypes.map(t => [t, 1]) ),
     ports:      {0:[]},
-  });
+  }
+
+  const procConfig = reactive(null);
 
   const editedSvg = ref('')
 
@@ -495,21 +497,7 @@
   };
   
   function clearProcessor() {
-    updateProcessorSettings( {
-      dispatch:   1,
-      retire:     1,
-      sched:      'optimal',
-      nBlocks:    0,
-      blkSize:    1,
-      mPenalty:   1,
-      mIssueTime: 1,
-      latencies:  { "INT": 1, "BRANCH": 1, "MEM.LOAD": 5, "MEM.VLOAD": 5, "MEM.STR": 2, "MEM.VSTR": 2,
-                    "FLOAT.ADD": 3, "FLOAT.MUL": 5, "FLOAT.FMA": 5, "VFLOAT.ADD": 3, "VFLOAT.MUL": 5, "VFLOAT.FMA": 5,
-                    "FLOAT.DIV": 6, "FLOAT.SQRT": 8},
-      ports:      {0: ["INT", "FLOAT.MUL", "VFLOAT.MUL", "FLOAT.DIV", "FLOAT.SQRT", "MEM.STR", "MEM.VSTR", "BRANCH"],
-                   1: ["INT", "FLOAT.ADD", "VFLOAT.ADD", "FLOAT.FMA", "VFLOAT.FMA", "MEM.LOAD", "MEM.VLOAD"]}
-
-    })
+    updateProcessorSettings(default_config)
     showModalClear.value = false;
   }
 
@@ -725,18 +713,19 @@
             </button>
           </div>
             
-          <!-- Tabla -->
           <div class="table-container">
             <table class="instr-table" style="border: 3px solid green;">
               <thead>
                 <tr style="background: cyan;">
-                  <th>TYPE</th><th>LATENCY</th>
+                  <th>Type</th><th>Operation</th><th>Size</th><th>Latency</th>
                   <th v-for="port in portList" :key="port">P{{ port }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="instr in instructionTypes" :key="instr" style="background: #f0f0f0;">
-                  <td>{{ instr }}</td>
+                <tr v-for="type in instructionTypes" :key="instr" style="background: #f0f0f0;">
+                  <td>{{ type }}</td>
+                  <td>{{ type }}</td>
+                  <td>{{ type }}</td>
                   <td>
                     <div class="latency-group">
                       <input type="number" v-model.number="procConfig.latencies[instr]" class="latency-input" min="1" max="99"
