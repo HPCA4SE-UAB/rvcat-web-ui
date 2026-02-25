@@ -128,9 +128,10 @@
   watch( [
     () => processorOptions.processorName,
     () => processorOptions.ROBsize,
-    () => processorOptions.availableProcessors
+    () => processorOptions.availableProcessors,
+    () => processorOptions.expandedType
   ],
-  ([newName, newROBsize, newAvailable], [oldName, oldROBsize, oldAvailable]) => {
+  ([newName, newROBsize, newAvailable, newExpanded], [oldName, oldROBsize, oldAvailable, oldExpanded]) => {
     try {    
       if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
@@ -739,53 +740,48 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="type in instructionTypes" 
-                    :key="type" 
-                    class="type-row"
-                >
-		  <button class="dropdown-header"
-		     @click="toggleType(type)"
-		    title="Show Operations of this type"
-		          id="show-critical-button">
-		    <span class="arrow" aria-hidden="true">
+		<template v-for="type in instructionTypes" :key="type">
+
+		<tr class="type-row">
+		  <td>
+  		    <button class="dropdown-header"
+		       @click="toggleType(type)"
+		      title="Show Operations of this type"
+		      id="show-critical-button">
+		      <span class="arrow" aria-hidden="true">
 			{{ processorOptions.expandedTypes[type] ? '▼' : '▶' }} {{ type }}
-		    </span>
-		  </button>
+		      </span>
+		    </button>
+		  </td>
 		  <td class="small-cell">All operations</td>
                   <td> - </td>
 
                   <td>
-                    <div class="latency-group">
-                      <input 
-                        type="number" 
+                    <input type="number" 
                         v-model.number="procConfig.latencies[type].default" 
                         class="latency-input" 
-                        min="1" 
-                        max="99"
+                        min="1" max="99"
                         :id="`${type}-latency`"
-                        :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`"
-		      />
-                    </div>
+                        :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`" />
                   </td>
 
 		  <td v-for="port in portList" :key="port" class="port-checkbox">
                     <label class="port-label">
                       <input type="checkbox" 
-                       :title="`Set if Port P${port} can execute ${instr} instructions`"
-                       :id="`Port${port}-${instr}-check`"
-                       :checked="(procConfig.ports[port] || []).includes(instr) || (port === portList[0] && noPortAssigned(instr))"
-                       @change="togglePortInstruction(port, instr, $event.target.checked)" 
-		      />
+                       :title="`Set if Port P${port} can execute ${type} instructions`"
+                       :id="`Port${port}-${type}-check`"
+                       :checked="(procConfig.ports[port] || []).includes(type) || (port === portList[0] && noPortAssigned(type))"
+                       @change="togglePortInstruction(port, type, $event.target.checked)" />
                     </label>
                   </td>
                 </tr>
 
 		<tr
-		   v-for="op in typeOperations[type]"
 		  v-if="processorOptions.expandedTypes[type]"
+		  v-for="op in typeOperations[type]"
 		  :key="`${type}-${op}`"
-		  class="op-row"
-		>
+		  class="op-row">
+
 		  <td></td>
 		  <td class="op-cell">
 		         {{ op }}
@@ -793,18 +789,17 @@
 		  <td> - </td>
 
 		  <td>
-		    <input
-		      type="number"
+		    <input type="number"
 		      v-model.number="procConfig.latencies[type][op]"
-		      min="1"
-		      max="99"
-		      class="latency-input"
-		    />
+		      min="1" max="99"
+		      class="latency-input" />
   		  </td>
 
 		  <td v-for="port in portList" :key="port"></td>
 
 	        </tr>
+		</template>
+	
               </tbody>
             </table>
           </div> <!--- Table Container -->
