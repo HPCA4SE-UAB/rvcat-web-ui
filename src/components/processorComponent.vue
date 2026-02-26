@@ -76,7 +76,9 @@
                       }
                    ])
                   ),
-      ports:      { 0: [] },
+      ports:      { 0:
+                    instructionTypes.map(type => [type])
+                  },
     };
   }
 
@@ -116,7 +118,7 @@
 // ============================================================================
 // WATCHES: processor, globalState  HANDLERS: setProcessor
 // ============================================================================
-   const ADD_NEW_OPTION = '_add_new_'
+  const ADD_NEW_OPTION = '_add_new_'
 
   // Watch ALL processor options for changes
   watch( [ () => processorOptions.processorName ], (newName, oldName) => {
@@ -403,7 +405,6 @@
       dot_code += 'ROB -> Registers; ';
     }
 
-
     dot_code += `}\n`;
     return dot_code;
   }
@@ -416,7 +417,6 @@
   function toggleTypeExpand(type) {
     processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
   }
-
 
   function typeOpKey(type, op) {
     return `${type}.${op}`;
@@ -452,8 +452,7 @@
       });
     } else {
       // desmarcar TODAS
-      procConfig.ports[port] =
-        assigned.filter(x => !x.startsWith(type + '.'));
+      procConfig.ports[port] = assigned.filter(x => !x.startsWith(type + '.'));
     }
   }
 
@@ -564,8 +563,8 @@
   const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
   const helpPosition = ref({ top: '0%', left: '40%' });
 
-  function openHelp()  { nextTick(() => { showHelp.value = true }) }
-  function closeHelp() { showHelp.value  = false }
+  function openHelp()   { nextTick(() => { showHelp.value = true }) }
+  function closeHelp()  { showHelp.value  = false }
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
   function closeHelp1() { showHelp1.value  = false }
   function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
@@ -923,17 +922,18 @@
 </template>
 
 <style scoped>
+
   .horizontal-layout {
     display:     flex;
-    gap:         6px; /* Espacio entre tabla e imagen */
+    gap:         6px;
     margin-top:  2px;
     align-items: stretch;
     height:      auto;
   }
 
-.iters-group rob-group {
-       gap:         0px;
-}
+  .iters-group rob-group {
+        gap:         0px;
+  }
 
   .settings-group {
     display:        flex;
@@ -957,9 +957,8 @@
     flex: 1 1 65%;
   }
 
-  /* Para que la tabla no se expanda más allá de lo necesario */
   .settings-group.latency-group .table-container {
-    flex: 0 0 auto; /* No crece, se ajusta al contenido */
+    flex: 0 0 auto;
   }
 
   .processor-container {
@@ -968,6 +967,7 @@
     display:   flex;
     margin-top: 2px;
   }
+
   .processor-side-container {
     flex: 1 1 55%;
     min-width: 0;           /* Importante para evitar desbordamiento */
@@ -1011,46 +1011,47 @@
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
 
-.form-select {
-  width:            100%;
-  padding:          1px 1px;
-  margin-bottom:    2px;
-  border:           2px solid #ddd;
-  border-radius:    6px;
-  font-size:        medium;
-  background-color: white;
-  transition:       border-color 0.3s;
-}
+  .form-select {
+    width:            100%;
+    padding:          1px 1px;
+    margin-bottom:    2px;
+    border:           2px solid #ddd;
+    border-radius:    6px;
+    font-size:        medium;
+    background-color: white;
+    transition:       border-color 0.3s;
+  }
 
-.form-select:focus {
-  outline:      none;
-  border-color: #4a6cf7;
-}
+  .form-select:focus {
+    outline:      none;
+    border-color: #4a6cf7;
+  }
 
-.form-select option[value="_add_new_"] {
-  color:            #4a6cf7;
-  font-weight:      bold;
-  background-color: #f0f5ff;
-}
+  .form-select option[value="_add_new_"] {
+    color:            #4a6cf7;
+    font-weight:      bold;
+    background-color: #f0f5ff;
+  }
 
-  /* Input de latencia más compacto */
+
   .latency-input {
     width:     40px !important; /* Más estrecho */
-    max-width: 60px;
+    max-width: 70px;
     padding:   3px !important;
     margin:    0 auto !important;
   }
 
- /* Asegurar que los checkboxes sean pequeños */
- .port-checkbox {
-   text-align: center;
- }
- .port-label {
-    display: block;
-    margin:  0;
-    padding: 0;
- }
- .port-label input[type="checkbox"] {
+  .port-checkbox {
+    text-align: center;
+  }
+
+  .port-label {
+      display: block;
+      margin:  0;
+      padding: 0;
+  }
+
+  port-label input[type="checkbox"] {
     width:  12px;
     height: 14px;
     margin: 0;
@@ -1077,6 +1078,7 @@
     font-size:   12px !important;
     font-family: Arial, sans-serif !important;
   }
+
   .processor-img svg polygon,
   .processor-img svg path {
     stroke-width: 2px !important;
@@ -1093,6 +1095,7 @@
   table {
     display: table !important;
   }
+
   .instr-table {
     width:           auto;
     white-space:     nowrap;
@@ -1120,23 +1123,24 @@
     min-width:    60px;
     max-width:   100px;
     text-align:  center;
-    font-size:   larger;
+    font-size:   medium;
     padding:     0px;
   }
 
   .instr-table th:nth-child(2),  /* Columna Operation */
   .instr-table td:nth-child(2) {
-    min-width: 70px;
+    min-width: 90px;
     max-width: 100px;
-    width: auto;
-    padding: 0px;
+    width:     auto;
+    padding:   0px;
+    font-size: medium;
   }
 
   .instr-table th:nth-child(3),  /* Columna Size */
   .instr-table td:nth-child(3) {
     width: auto;
-    min-width: 60px;
-    max-width: 60px;
+    min-width:  60px;
+    max-width:  60px;
     padding:    0px;
   }
 
@@ -1144,17 +1148,17 @@
   .instr-table td:nth-child(4) {
     min-width: 70px;
     max-width: 100px;
-    width: auto;
-    padding: 0px;
+    width:     auto;
+    padding:   0px;
   }
 
   /* Columnas de puertos - muy estrechas */
   .instr-table th:nth-child(n+5),  /* Todas las columnas de puertos */
   .instr-table td:nth-child(n+5) {
-    width: auto;
-    min-width: 22px;
+    width:     auto;
+    min-width: 26px;
     max-width: 60px;
-    padding: 0px;
+    padding:   0px;
   }
 
   /* Chrome, Safari, Edge, Opera */

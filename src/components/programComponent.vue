@@ -474,7 +474,7 @@ function snapshotProgram() {
               <td v-if="programOptions.visibleCols.size" title="Operation size">
                 {{ inst.size}}
               </td>
-            </tr>i
+            </tr>
           </tbody>
         </table>
       </div>
