@@ -462,68 +462,17 @@ function snapshotProgram() {
             <tr v-for="(inst, index) in simState.simulatedProgram.instruction_list" :key="index">
               <td v-if="programOptions.visibleCols.index">{{ index }}</td>
 
-              <td v-if="programOptions.visibleCols.text">
-                <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
+              <td v-if="programOptions.visibleCols.text" title="Instruction description">
+                 {{ inst.text }}
               </td>
-
-              <td v-if="programOptions.visibleCols.type">
-                <select v-model="inst.type" class="table-select" title="Select instruction type">
-                  <option value="">Select...</option>
-                  <option v-for="type in instructionTypes" :key="type" :value="type">
-                    {{ type }}
-                  </option>
-                </select>
+              <td v-if="programOptions.visibleCols.type" title="Instruction type">
+                {{ inst.type }}
               </td>
-
-              <td v-if="programOptions.visibleCols.oper">
-                <select v-model="inst.oper" :disabled="!inst.type || typeOperations[inst.type].length === 0"
-                  class="table-select" title="Select operation for this type"
-                >
-                  <option value="">Select...</option>
-                  <option
-                    v-for="operation in typeOperations[inst.type]"
-                    :key="operation"
-                    :value="operation"
-                  >
-                    {{ operation }}
-                  </option>
-                </select>
+              <td v-if="programOptions.visibleCols.oper" title="Operation type">
+                {{ inst.oper }}
               </td>
-
-              <td v-if="programOptions.visibleCols.size">
-                <select v-model="inst.size" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
-                  class="table-select" title="Select size for this instruction type & operations"
-                >
-                  <option value="">Select...</option>
-                  <option
-                    v-for="size in typeSizes[inst.type]"
-                    :key="size"
-                    :value="size"
-                  >
-                    {{ size }}
-                  </option>
-                </select>
-              </td>
-            </tr>
-            <tr class="fixed-row">
-              <td v-if="programOptions.visibleCols.index">
-                 {{simState.simulatedProgram.instruction_list.length}}
-              </td>
-
-              <td v-if="programOptions.visibleCols.text" title="This final conditional branch is fixed">
-                <span class="table-input readonly">if c go back</span>
-              </td>
-
-              <td v-if="programOptions.visibleCols.type">
-                <span class="table-select readonly">BRANCH</span>
-              </td>
-
-              <td v-if="programOptions.visibleCols.oper">
-                <span class="table-select readonly"> </span>
-              </td>
-
-              <td v-if="programOptions.visibleCols.size">
-                <span class="table-select readonly"> </span>
+              <td v-if="programOptions.visibleCols.size" title="Operation size">
+                {{ inst.size }}>
               </td>
             </tr>
           </tbody>
