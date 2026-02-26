@@ -1,9 +1,8 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent                                            from '@/components/helpComponent.vue'
-  import { useRVCAT_Api }                                                             from '@/rvcatAPI'
-
-  import { downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
+ 
+  import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
           initResource, createGraphVizGraph,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
 
@@ -182,38 +181,19 @@
     }
   });
 
-  // Handler for 'set_processor' message (fired by this component)
-  const handleSetProcessor = (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('💻❌ Failed to set processor:', data);
-      return;
-    }
-    simState.selectedProcessor = processorOptions.processorName;  // fire other components
-    if (simState.state == 1) {  // This is an initialization step
-      simState.state = 2;       // Change to next initialization step
-      console.log('💻✅ Initialization step (2): processor configuration provided to RVCAT')
-    }
-    else
-      console.log('💻✅ new processor configuration set on RVCAT')
-  }
-
-
+  
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
-  let cleanupHandleSet = null
-
+  
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
-    cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
     loadEditedProcessor()
   });
 
   onUnmounted(() => {
-    if (cleanupHandleSet) {
-      cleanupHandleSet()
-      cleanupHandleSet = null
-    }
+    console.log('💻👋 ProcessorComponent unmounted')
+    localStorage.removeItem('processorTemp')
   });
 
 

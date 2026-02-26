@@ -133,71 +133,29 @@ function loadEditedProgram() {
   });
 
   // Watch for changes on processor configuration
-  watch(() => simState.selectedProcessor, (newValue, oldValue) => {
+  watch(() => simState.simulatedProcessor, () => {
     if (simState.state > 2 && simState.selectedProgram != '') {
       console.log('📄🔄 Refreshing program visualization...');
-      // showProgram()
+      // showProgram() & recompute instruction latencies & ports
     }
   });
 
-   // Handler for 'set_program' message (fired by this component)
-  const handleSetProgram = async (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('📄❌ Failed to set program:', data);
-      return;
-    }
-    try {
-      simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
-      if (simState.state == 2) {  // This is an initialization step
-        simState.state = 3;       // Change to next initialization step
-        console.log('📄✅ Initialization step (3): program provided to RVCAT')
-      }
-      //if (simState.selectedProgram != '')
-        // showProgram()  // obtain text from RVCAT API (id= 'show_program')
-
-    } catch (error) {
-      console.error('📄❌ Failed to set program:', error)
-    }
-  }
-
-   // Handler for 'show_program' message (fired by this component)
-  const handleShowProgram = async (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('📄❌ Failed to show program:', data)
-      return;
-    }
-    try {
-      programText.value = data
-        console.log('📄🔄 Program visualization updated');
-    } catch (error) {
-      console.error('📄❌ Failed to show program:', error)
-    }
-  }
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
-  let cleanupHandleSet  = null
-  let cleanupHandleShow = null
   let cleanupHandleGraph= null
 
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
-    cleanupHandleSet   = registerHandler('set_program',   handleSetProgram)
-    cleanupHandleShow  = registerHandler('show_program',  handleShowProgram)
     cleanupHandleGraph = registerHandler('get_prg_graph', handleGraph);
-
     loadEditedProgram()
   });
 
   onUnmounted(() => {
-    if (cleanupHandleSet) {
-      cleanupHandleSet()
-      cleanupHandleShow()
-      cleanupHandleGraph();
-      cleanupHandleSet  = null
-      cleanupHandleShow = null
-      cleanupHandleGraph= null
+    if (cleanupHandleGraph) {
+       cleanupHandleGraph();
+       cleanupHandleGraph= null
     }
   });
 
@@ -219,15 +177,11 @@ function loadEditedProgram() {
     try {
       const jsonString      = localStorage.getItem(`program.${programOptions.currentProgram}`)
       simState.simulatedProgram = JSON.parse(jsonString)
-      // setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
-
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
-        console.log('📄✅ Initialization step (3): program provided to RVCAT')
+        console.log('📄✅ Initialization step (3): program loaded')
       }
-      // if (simState.selectedProgram != '')
-        // showProgram()  // obtain text from RVCAT API (id= 'show_program')
     } catch (error) {
       console.error('📄❌ Failed to set program:', error)
     }
