@@ -457,6 +457,17 @@
     }
   }
 
+  function togglePortOperation(portNum, type, oper, isChecked) {
+    if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
+   const typeOper = type + "." + oper;
+    if (isChecked) {
+      if (!procConfig.ports[portNum].includes(typeOper))
+        procConfig.ports[portNum].push(typeOper);
+    } else {
+      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== typeOper);
+    }
+  }
+
   function toggleScheduler() {
     if (procConfig.sched === 'greedy') {
       procConfig.sched = 'optimal'
