@@ -4,9 +4,9 @@
   import { useRVCAT_Api }                                                             from '@/rvcatAPI'
 
   import { downloadJSON, uploadJSON, loadFromLocalStorage, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph,       
+          initResource, createGraphVizGraph,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
-  
+
   const { setProcessor }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
@@ -17,7 +17,7 @@
       default: false
     }
   })
-  
+
 
 // ============================================================================
 // Processor options & localStorage
@@ -34,7 +34,7 @@
 
   let jsonString    = ''
   let processorInfo = null
-  
+
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -55,7 +55,7 @@
       console.error('💻❌ Failed to save processor options:', error)
     }
   }
-    
+
 
 // ============================================================================
 // Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
@@ -90,7 +90,7 @@
 
   const editedSvg = ref('')
 
-  const portList = computed(() => 
+  const portList = computed(() =>
     Object.keys(procConfig.ports)
       .map(k => Number(k))
       .sort((a, b) => a - b)
@@ -132,7 +132,7 @@
     () => processorOptions.expandedType
   ],
   ([newName, newROBsize, newAvailable, newExpanded], [oldName, oldROBsize, oldAvailable, oldExpanded]) => {
-    try {    
+    try {
       if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
 
@@ -161,7 +161,7 @@
       }
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor:', error)
-    } 
+    }
   },
   { deep: true, immediate: true })
 
@@ -171,10 +171,10 @@
       localStorage.setItem('processorTemp', JSON.stringify(procConfig));
       if (simState.state < 2)  // processor still not loaded
         return
-      drawEditedProcessor()  
+      drawEditedProcessor()
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor configuration:', error)
-    } 
+    }
   },
   { deep: true, immediate: true })
 
@@ -188,7 +188,7 @@
 
   // Handler for 'set_processor' message (fired by this component)
   const handleSetProcessor = (data, dataType) => {
-    if (dataType === 'error') {    
+    if (dataType === 'error') {
       console.error('💻❌ Failed to set processor:', data);
       return;
     }
@@ -206,7 +206,7 @@
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
   let cleanupHandleSet = null
-  
+
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
     cleanupHandleSet = registerHandler('set_processor',  handleSetProcessor);
@@ -222,7 +222,7 @@
 
 
 // ============================================================================
-// PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor, 
+// PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor,
 //     uploadForEdition, drawProcessor, drawEditedProcessor, get_processor_dot
 // ============================================================================
   const initProcessor = async () => {
@@ -234,16 +234,22 @@
     try {
       jsonString    = localStorage.getItem(`processor.${processorOptions.processorName}`)
       processorInfo = JSON.parse(jsonString)
-      setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
-      drawProcessor()  
+      // setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
+
+      simState.selectedProcessor = processorOptions.processorName;  // fire other components
+      if (simState.state == 1) {  // This is an initialization step
+        simState.state = 2;       // Change to next initialization step
+        console.log('💻✅ Initialization step (2): processor configuration loaded')
+      }
+      drawProcessor()
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
       simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
 
-  const emit = defineEmits(['requestSwitchFull']) 
-  
+  const emit = defineEmits(['requestSwitchFull'])
+
   function editProcessor () {
     if (processorInfo) {
       emit('requestSwitchFull', 'processor')
@@ -264,7 +270,7 @@
   }
 
   // UpLOAD from Edition Panel: straightforward version (no modal)
-  const uploadForEdition = async () => { 
+  const uploadForEdition = async () => {
     try {
       const data = await uploadJSON(null, 'processor');
       if (data) {
@@ -281,7 +287,7 @@
     console.log('💻🔄Redrawing simulated processor');
     try {
       const dotCode      = get_processor_dot (processorInfo)
-      const svg          = await createGraphVizGraph(dotCode);  
+      const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw processor:', error)
@@ -293,7 +299,7 @@
     console.log('💻🔄Redrawing edited processor');
     try {
       const dotCode   = get_processor_dot (procConfig)
-      const svg       = await createGraphVizGraph(dotCode);  
+      const svg       = await createGraphVizGraph(dotCode);
       editedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw edited processor:', error)
@@ -327,7 +333,7 @@
     for (let i = dispatch_width - 1; i > 0; i--) {
       dot_code += 'Fetch -> "Waiting Buffer"; ';
     }
-    
+
     // --- WAITING BUFFER ---
     dot_code += `"Waiting Buffer" [label="Waiting\\nBuffer", tooltip="Instructions wait for execution", shape=box, height=1, width=1, fixedsize=true];\n`;
 
@@ -394,7 +400,7 @@
     for (let i = dispatch_width - 1; i >= 0; i--) {
       dot_code += 'Fetch -> ROB;\n';
     }
- 
+
     for (let i = 0; i < shown_ports.length; i++) {
       dot_code += `P${shown_ports[i]} -> ROB;\n`;
     }
@@ -428,25 +434,25 @@
     const existing = portList.value;
     let next = 0;
     for (; existing.includes(next); next++);
-    procConfig.ports[next] = [];  
+    procConfig.ports[next] = [];
   }
 
   function removePort(port) {
     const idx = Number(port);
     delete procConfig.ports[idx];
-  
+
     // Si quedan puertos, reindexar
     const ports = Object.entries(procConfig.ports)
       .map(([k, v]) => [Number(k), v])
       .sort((a, b) => a[0] - b[0]);
-  
+
     // Limpiar y reasignar
     Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
     ports.forEach(([oldIdx, portArr], newIdx) => {
       procConfig.ports[newIdx] = portArr;
     });
   }
-  
+
   function togglePortType(portNum, type, isChecked) {
     if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
     if (isChecked) {
@@ -491,7 +497,7 @@
   const showModalClear    = ref(false)
   const modalName         = ref("")
   const nameError         = ref("")
-  
+
   async function confirmDownload() {
     const name   = modalName.value.trim();
     const stored = localStorage.getItem('processorTemp');
@@ -503,7 +509,7 @@
     showModalDownload.value = false;
   }
 
-  const uploadProcessor = async (oldProcessor) => {  
+  const uploadProcessor = async (oldProcessor) => {
     try {
       const data = await uploadJSON(null, 'processor');
       if (data) {
@@ -513,29 +519,29 @@
         else {
           // TODO: Check here if it is a valid processor
           processorInfo = data
-          saveToLocalStorage('processor', data.name, data, 
+          saveToLocalStorage('processor', data.name, data,
                                           processorOptions.availableProcessors)
           processorOptions.processorName = data.name
           return;
         }
       }
-      processorOptions.processorName = oldProcessor;       
+      processorOptions.processorName = oldProcessor;
     } catch (error) {
       processorOptions.processorName = oldProcessor;
     }
   };
-  
+
   function clearProcessor() {
     updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
   }
 
-/* ------------------------------------------------------------------ 
- * Help support 
+/* ------------------------------------------------------------------
+ * Help support
  * ------------------------------------------------------------------ */
   const showHelp  = ref(false); const helpIcon  = ref(null);
-  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false); 
-  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null); 
+  const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false);
+  const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
   const helpPosition = ref({ top: '0%', left: '40%' });
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
@@ -569,8 +575,8 @@
             </option>
             <option value="_add_new_">Add new</option>
           </select>
-          <button class="blue-button small-btn" @click="editProcessor" 
-            id="edit-processor-button" 
+          <button class="blue-button small-btn" @click="editProcessor"
+            id="edit-processor-button"
             title="Edit current processor on full-screen as a new program">
           📝
           </button>
@@ -581,7 +587,7 @@
           </button>
           <div class="iters-group rob-group">
             <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB:</span>
-            <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)" 
+            <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)"
                  v-model.number="processorOptions.ROBsize">
           </div>
         </div>
@@ -613,25 +619,25 @@
         </span>
         <span class="header-title">Processor Settings - Editor</span>
       </div>
-      
+
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
-          <button class="blue-button" 
+          <button class="blue-button"
               id="processor-download-button"
-              title="Save edited processor configuration" 
-              @click="showModalDownload = true"> 
-            Download 
+              title="Save edited processor configuration"
+              @click="showModalDownload = true">
+            Download
           </button>
-          <button class="blue-button" 
+          <button class="blue-button"
               id="processor-upload-button"
-              title="Load new processor configuration from file system for edition" 
-              @click="uploadForEdition"> 
-            Upload 
+              title="Load new processor configuration from file system for edition"
+              @click="uploadForEdition">
+            Upload
           </button>
         </div>
         <div class="buttons">
           <button class="blue-button"   @click="showModalClear = true"
-              title="Clear edition and start new processor configuration from scratch" 
+              title="Clear edition and start new processor configuration from scratch"
               id="clear-processor-button">
             Clear
           </button>
@@ -650,32 +656,32 @@
             </span>
             <span class="header-title">Stage Width Settings</span>
           </div>
-        
+
           <div class="iters-group">
 
             <span>Dispatch:</span>
-            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9" 
+            <input type="number" v-model.number="procConfig.dispatch" min="1" max="9"
                  id="dispatch-width"
                  title="max. number of instructions dispatched per cycle (1 to 9)"
              />
-        
+
             <span>Retire:</span>
-            <input type="number" v-model.number="procConfig.retire" min="1" max="9" 
+            <input type="number" v-model.number="procConfig.retire" min="1" max="9"
                    id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"
              />
 
             <span>Schedule Opt.:</span>
-            <input type="checkbox" 
+            <input type="checkbox"
                  title="Set checkbox if scheduling algorithm is optimal. Otherwise it is greedy"
                  id="schedule-check"
                  :checked="procConfig.sched !== 'greedy'"
-                 @change="toggleScheduler" 
+                 @change="toggleScheduler"
              />
 
           </div>
 
-        </div> 
+        </div>
 
         <div class="settings-group cache-group">
           <div class="section-title-and-info">
@@ -687,33 +693,33 @@
 
           <div class="iters-group">
             <span>Number of Blocks:</span>
-            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32" 
+            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32"
                  id="cache-blocks"
                  title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
-            
+
             <span>Block Size:</span>
             <div class="button-group">
               <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
-              <input type="number" v-model.number="procConfig.blkSize" readonly 
+              <input type="number" v-model.number="procConfig.blkSize" readonly
                    id="block-size"
                    title="Size of Memory block: must be a power of two (1 to 128)"
                />
               <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
             </div>
-            
+
             <span>Miss Penalty:</span>
-            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99" 
+            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99"
                  id="miss-penalty"
                  title="Extra latency due to cache miss (1 to 99)"/>
 
             <span>Miss Issue Time:</span>
-            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99" 
+            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99"
                  id="miss-issue-time"
                  title="Minimum time between Memory accesses (1 to 99)"/>
           </div>
         </div>
-      </div>      
-      
+      </div>
+
       <div class="horizontal-layout">
         <div class="settings-group latency-group">
 
@@ -728,19 +734,19 @@
           <div class="ports-toolbar">
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
-              <button v-if="portList.length > 1" class="delete-port"  @click="removePort(port)" 
+              <button v-if="portList.length > 1" class="delete-port"  @click="removePort(port)"
                       :title="`Remove port P${port} from the Execution Engine`"
                       :id="`remove-port${port}-button`" >
                 <img src="/img/delete.png" class="delete-icon" width="16px">
               </button>
             </span>
-            <button v-if="portList.length < 10" title="Add new port to the Execution Engine" 
+            <button v-if="portList.length < 10" title="Add new port to the Execution Engine"
                     id="add-port-button"
                     class="add-port" @click="addPort">
               + Add Port
             </button>
           </div>
-            
+
           <div class="table-container">
             <table class="instr-table" style="border: 3px solid green;">
               <thead>
@@ -765,16 +771,16 @@
                     <td class="small-cell">default</td>
                     <td> - </td>
                     <td>
-                      <input type="number" 
-                          v-model.number="procConfig.latencies[type].default" 
-                          class="latency-input" 
+                      <input type="number"
+                          v-model.number="procConfig.latencies[type].default"
+                          class="latency-input"
                           min="1" max="99"
                           :id="`${type}-latency`"
                           :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`" />
                     </td>
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
-                        <input type="checkbox" 
+                        <input type="checkbox"
                           :title="`Set if Port P${port} can execute ${type} instructions`"
                           :id="`Port${port}-${type}-check`"
                           :checked="(procConfig.ports[port] || []).includes(type) || (port === portList[0] && noPortAssigned(type))"
@@ -804,7 +810,7 @@
 
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
-                        <input type="checkbox" 
+                        <input type="checkbox"
                           :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
                           :id="`Port${port}-${type}-${op}-check`"
                           @change="togglePortOperation(port, type, op, $event.target.checked)" />
@@ -824,48 +830,48 @@
             <div v-html="editedSvg" v-if="editedSvg"></div>
           </div>
         </div>
-        
+
       </div>
     </div>
   </div>
-  
+
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
         <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
         Pin the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>
         <p>After simulating the execution of a program, the graphical view of the processor provides utilization information:
-        hover over the <em>execution ports</em> to inspect their individual <em>utilization</em>. 
+        hover over the <em>execution ports</em> to inspect their individual <em>utilization</em>.
         <strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
     title="Processor MicroArchitecture and Usage"
     @close="closeHelp" />
-    
-    <HelpComponent v-if="showHelp1" :position="helpPosition" 
+
+    <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
       (2) <em>Cache Memory</em>; (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
       (4) <em>Execution Latencies</em>"
     title="Processor Settings"
     @close="closeHelp1"/>
 
-    <HelpComponent v-if="showHelp2" :position="helpPosition" 
-    text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths. 
+    <HelpComponent v-if="showHelp2" :position="helpPosition"
+    text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths.
        They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
       <p>They may impose a throughput-bound performace limit.</p>"
     title="Dispatch/Retire Width Settings"
     @close="closeHelp2"/>
 
-    <HelpComponent v-if="showHelp3" :position="helpPosition" 
-    text="Modify the <strong>Cache Memory</strong> settings. Setting a Number of Blocks = 0 means all data accesses 
+    <HelpComponent v-if="showHelp3" :position="helpPosition"
+    text="Modify the <strong>Cache Memory</strong> settings. Setting a Number of Blocks = 0 means all data accesses
       will always hit in the cache, and, therefore, the latency of memory loads and stores will always be the same.
       <p>The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
-      The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory. 
+      The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
       It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
     title="Cache Memory Settings"
     @close="closeHelp3"/>
 
-  <HelpComponent v-if="showHelp4" :position="helpPosition" 
+  <HelpComponent v-if="showHelp4" :position="helpPosition"
     text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Throughput</strong> of instruction types.
-      <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports 
+      <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports
          (only one is used for execution each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Instruction Latency and Throughput Settings"
@@ -896,10 +902,10 @@
         <button class="blue-button" title="No, cancel!" @click="showModalClear = false"> Cancel </button>
       </div>
     </div>
-  </div>   
+  </div>
 </template>
 
-<style scoped> 
+<style scoped>
   .horizontal-layout {
     display:     flex;
     gap:         6px; /* Espacio entre tabla e imagen */
@@ -922,8 +928,8 @@
     border-radius:  8px;
     padding:        0.3rem;
     background:     #fafafa;
-  } 
-  
+  }
+
   .settings-group.widths-group {
     flex:           1 1 35%;
   }
@@ -933,12 +939,12 @@
   .settings-group.cache-group {
     flex: 1 1 65%;
   }
-  
+
   /* Para que la tabla no se expanda más allá de lo necesario */
   .settings-group.latency-group .table-container {
     flex: 0 0 auto; /* No crece, se ajusta al contenido */
   }
-  
+
   .processor-container {
     width:     100%;
     height:    100%;
@@ -956,7 +962,7 @@
     background:    #f8f9fa;
     border-radius: 8px;
   }
-  
+
   .settings-container {
     display: flex;
     align-items: center;
@@ -987,7 +993,7 @@
   .latency-group .table-container {
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
   }
-  
+
 .form-select {
   width:            100%;
   padding:          1px 1px;
@@ -1009,7 +1015,7 @@
   font-weight:      bold;
   background-color: #f0f5ff;
 }
-  
+
   /* Input de latencia más compacto */
   .latency-input {
     width:     40px !important; /* Más estrecho */
@@ -1039,7 +1045,7 @@
     justify-content: center;
     align-items:     center;
   }
-  
+
   .scale-container {
     width:      30%;
     margin:     0 auto;
@@ -1062,7 +1068,7 @@
     background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
     border-radius: 5px;
   }
-    
+
   .processor-img {
     width:        100%;
     height:       100%;
@@ -1111,7 +1117,7 @@
     background-color: #f5f5f5;
     position: sticky;
     top:      0;
-  } 
+  }
 
   /* Ajusta el ancho específico de las columnas */
   .instr-table th:first-child,  /* Columna TYPE */
@@ -1123,7 +1129,7 @@
   .instr-table th:nth-child(2),  /* Columna LATENCY */
   .instr-table td:nth-child(2) {
     min-width: 50px;
-    max-width: 100px; 
+    max-width: 100px;
     width: auto;
     padding: 2px;
   }
@@ -1189,7 +1195,7 @@
     display:    block;
     margin-top: 10px;
   }
-  
+
   .warning-wrapper {
     position: relative;
     display: inline-block;
