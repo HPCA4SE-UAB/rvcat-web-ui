@@ -32,9 +32,6 @@
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false]))
   }
 
-  let jsonString    = ''
-  let processorInfo = null
-
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -232,8 +229,8 @@
   const reloadProcessor = async () => {
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
-      jsonString    = localStorage.getItem(`processor.${processorOptions.processorName}`)
-      processorInfo = JSON.parse(jsonString)
+      const jsonString  = localStorage.getItem(`processor.${processorOptions.processorName}`)
+      simState.simulatedProcessor = JSON.parse(jsonString)
       // setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
 
       simState.selectedProcessor = processorOptions.processorName;  // fire other components
@@ -251,9 +248,9 @@
   const emit = defineEmits(['requestSwitchFull'])
 
   function editProcessor () {
-    if (processorInfo) {
+    if (simState.simulatedProcessor) {
       emit('requestSwitchFull', 'processor')
-      updateProcessorSettings(processorInfo)
+      updateProcessorSettings(simState.simulatedProcessor)
       console.log('📄 Emit requestSwitchFull for processor edition')
     }
   }
@@ -275,7 +272,6 @@
       const data = await uploadJSON(null, 'processor');
       if (data) {
         // TODO: Check here if it is a valid processor
-        jsonString = JSON.stringify(data)
         updateProcessorSettings(data)
       }
     } catch (error) {
@@ -286,7 +282,7 @@
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing simulated processor');
     try {
-      const dotCode      = get_processor_dot (processorInfo)
+      const dotCode      = get_processor_dot (simState.simulatedProcessor)
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -518,7 +514,7 @@
         }
         else {
           // TODO: Check here if it is a valid processor
-          processorInfo = data
+          simState.simulatedProcessor = data
           saveToLocalStorage('processor', data.name, data,
                                           processorOptions.availableProcessors)
           processorOptions.processorName = data.name
