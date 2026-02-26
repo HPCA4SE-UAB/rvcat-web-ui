@@ -1,13 +1,12 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent                                            from '@/components/helpComponent.vue'
- 
+
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
           initResource, createGraphVizGraph,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
 
-  const { registerHandler } = inject('worker');
-  const simState            = inject('simulationState');
+  const simState = inject('simulationState');
 
   const props = defineProps({
     isFullscreen: {
@@ -82,8 +81,7 @@
   }
 
   const procConfig = reactive(createDefaultConfig());
-
-  const editedSvg = ref('')
+  const editedSvg  = ref('')
 
   const portList = computed(() =>
     Object.keys(procConfig.ports)
@@ -95,8 +93,9 @@
     try {
       Object.assign(procConfig, JSON.parse(JSON.stringify(procInfo)))   // deep copy & fire draw-update
       if (!procConfig.ports || typeof procConfig.ports !== 'object') {
-        procConfig.ports = { 0: [] };
-    }
+        procConfig= createDefaultConfig()
+        console.warn('💻⚠️ Invalid processor configuration: missing or malformed "ports" property. Resetting to default configuration.')
+      }
     } catch(e) {
       console.error("💻❌ Failed to update processor settings:", e);
     }
@@ -181,11 +180,11 @@
     }
   });
 
-  
+
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
-  
+
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
     loadEditedProcessor()
