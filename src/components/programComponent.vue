@@ -864,220 +864,220 @@ function snapshotProgram() {
      margin-right:   2px;
   }
 
-.instructions-table {
-  width:           100%;
-  border-collapse: collapse;
-  font-size:       small;
-}
+  .instructions-table {
+    width:           100%;
+    border-collapse: collapse;
+    font-size:       small;
+    padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
+  }
 
-.instructions-table thead {
-  position:   sticky;
-  top:        0;
-  background: #007acc;
-  color:      white;
-  z-index:    1;
-}
+  .instructions-table thead {
+    position:   sticky;
+    top:        0;
+    background: #007acc;
+    color:      white;
+    z-index:    1;
+  }
 
-.instructions-table th {
-  padding:     3px 3px;
-  text-align:  center;
-  font-weight: bold;
-  border:      1px solid #005a9e;
-}
+  .instructions-table th {
+    padding:     3px 3px;
+    text-align:  center;
+    font-weight: bold;
+    border:      1px solid #005a9e;
+  }
 
-.instructions-table td {
-  padding:        1px;
-  border:         1px solid #ddd;
-  vertical-align: middle;
-  text-align:     center;
-  font-size:      medium;
-}
+  .instructions-table td {
+    padding:        1px;
+    border:         1px solid #ddd;
+    vertical-align: middle;
+    text-align:     center;
+    font-size:      medium;
+  }
 
-.instructions-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
-}
+  .instructions-table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
 
-.instructions-table tbody tr:hover {
-  background: #e8f4fd;
-}
+  .instructions-table tbody tr:hover {
+    background: #e8f4fd;
+  }
 
-.table-input,
-.table-select {
-  width:      100%;
-  padding:    2px 4px;
-  border:     1px solid #ccc;
-  font-size:  medium;
-  box-sizing: border-box;
-  text-align: center;
-  border-radius: 3px;
-}
+  .table-input,
+  .table-select {
+    width:      100%;
+    padding:    2px 4px;
+    border:     1px solid #ccc;
+    font-size:  medium;
+    box-sizing: border-box;
+    text-align: center;
+    border-radius: 3px;
+  }
 
-.table-select:disabled {
-  background: #f0f0f0;
-  cursor:     not-allowed;
-}
+  .table-select:disabled {
+    background: #f0f0f0;
+    cursor:     not-allowed;
+  }
 
-.actions-cell {
-  text-align:  center;
-  white-space: nowrap;
-}
+  .actions-cell {
+    text-align:  center;
+    white-space: nowrap;
+  }
 
-.action-btn {
-  padding:       1px 4px;
-  margin:        0 1px;
-  border:        1px solid #ccc;
-  background:    white;
-  border-radius: 8px;
-  cursor:        pointer;
-  font-size:     medium;
-}
+  .action-btn {
+    padding:       1px 4px;
+    margin:        0 1px;
+    border:        1px solid #ccc;
+    background:    white;
+    border-radius: 8px;
+    cursor:        pointer;
+    font-size:     medium;
+  }
 
-.action-btn:hover:not(:disabled) {
-  background:   #e8f4fd;
-  border-color: #007acc;
-}
+  .action-btn:hover:not(:disabled) {
+    background:   #e8f4fd;
+    border-color: #007acc;
+  }
 
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor:  not-allowed;
-}
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor:  not-allowed;
+  }
 
-.action-btn.delete {
-  color:   #d32f2f;
-}
+  .action-btn.delete {
+    color:   #d32f2f;
+  }
 
-.action-btn.delete:hover:not(:disabled) {
-  background:   #ffebee;
-  border-color: #d32f2f;
-}
+  .action-btn.delete:hover:not(:disabled) {
+    background:   #ffebee;
+    border-color: #d32f2f;
+  }
 
-.readonly {
-  display:    inline-block;
-  width:      100%;
-  padding:    4px 6px;
-  box-sizing: border-box;
-  color:      #555;
-}
+  .readonly {
+    display:    inline-block;
+    width:      100%;
+    padding:    4px 6px;
+    box-sizing: border-box;
+    color:      #555;
+  }
 
-.fixed-row .actions-cell {
-  pointer-events: none;
-  opacity:        0.4;
-}
+  .fixed-row .actions-cell {
+    pointer-events: none;
+    opacity:        0.4;
+  }
 
-.fixed-row {
-  font-weight: bold;
-  color:       #0b2e5c; /* azul oscuro */
-}
+  .fixed-row {
+    font-weight: bold;
+    color:       #0b2e5c; /* azul oscuro */
+  }
 
-.fixed-row .table-input,
-.fixed-row .table-select,
-.fixed-row .readonly {
-  color:       inherit;
-  font-weight: inherit;
-}
+  .fixed-row .table-input,
+  .fixed-row .table-select,
+  .fixed-row .readonly {
+    color:       inherit;
+    font-weight: inherit;
+  }
 
-.add-margin {
-  margin-right: 50px;
-}
+  .add-margin {
+    margin-right: 50px;
+  }
 
-.add-prev-margin {
-  margin-left: 100px;
-}
+  .add-prev-margin {
+    margin-left: 100px;
+  }
 
+  /* Modal styles */
+  .modal-overlay {
+    position: fixed;
+    top:      0;
+    left:     0;
+    width:    100%;
+    height:   100%;
+    display:  flex;
+    z-index:  1000;
+    background:      rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items:     center;
+  }
 
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top:      0;
-  left:     0;
-  width:    100%;
-  height:   100%;
-  display:  flex;
-  z-index:  1000;
-  background:      rgba(0, 0, 0, 0.5);
-  justify-content: center;
-  align-items:     center;
-}
+  .modal {
+    background:    white;
+    padding:       25px;
+    border-radius: 8px;
+    box-shadow:    0 4px 20px rgba(0, 0, 0, 0.3);
+    min-width:     400px;
+  }
 
-.modal {
-  background:    white;
-  padding:       25px;
-  border-radius: 8px;
-  box-shadow:    0 4px 20px rgba(0, 0, 0, 0.3);
-  min-width:     400px;
-}
+  .modal h4 {
+    margin: 0 0 15px 0;
+    color:  #007acc;
+  }
 
-.modal h4 {
-  margin: 0 0 15px 0;
-  color:  #007acc;
-}
+  .modal label {
+    display:       block;
+    margin-bottom: 5px;
+    font-weight:   bold;
+  }
 
-.modal label {
-  display:       block;
-  margin-bottom: 5px;
-  font-weight:   bold;
-}
+  .checkbox-row {
+    display:     flex;
+    align-items: center;
+    gap:         8px;
+    margin:      10px 0;
+    font-weight: normal;
+  }
 
-.checkbox-row {
-  display:     flex;
-  align-items: center;
-  gap:         8px;
-  margin:      10px 0;
-  font-weight: normal;
-}
+  .checkbox-row input[type="checkbox"] {
+    width:  16px;
+    height: 16px;
+  }
 
-.checkbox-row input[type="checkbox"] {
-  width:  16px;
-  height: 16px;
-}
+  .modal input {
+    width:         100%;
+    padding:       8px;
+    margin-bottom: 10px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+    box-sizing:    border-box;
+    font-size:     14px;
+  }
 
-.modal input {
-  width:         100%;
-  padding:       8px;
-  margin-bottom: 10px;
-  border:        1px solid #ccc;
-  border-radius: 4px;
-  box-sizing:    border-box;
-  font-size:     14px;
-}
+  .modal-actions {
+    display:         flex;
+    justify-content: flex-end;
+    gap:             10px;
+    margin-top:      20px;
+  }
 
-.modal-actions {
-  display:         flex;
-  justify-content: flex-end;
-  gap:             10px;
-  margin-top:      20px;
-}
+  .error {
+    color:         #d32f2f;
+    font-size:     13px;
+    margin-bottom: 10px;
+    padding:       8px;
+    background:    #ffebee;
+    border-radius: 4px;
+  }
 
-.error {
-  color:         #d32f2f;
-  font-size:     13px;
-  margin-bottom: 10px;
-  padding:       8px;
-  background:    #ffebee;
-  border-radius: 4px;
-}
+  .form-select {
+    width:            100%;
+    padding:          1px 1px;
+    margin-bottom:    2px;
+    border:           2px solid #ddd;
+    border-radius:    6px;
+    font-size:        medium;
+    background-color: white;
+    transition:       border-color 0.3s;
+  }
 
-.form-select {
-  width:            100%;
-  padding:          1px 1px;
-  margin-bottom:    2px;
-  border:           2px solid #ddd;
-  border-radius:    6px;
-  font-size:        medium;
-  background-color: white;
-  transition:       border-color 0.3s;
-}
+  .form-select:focus {
+    outline:      none;
+    border-color: #4a6cf7;
+  }
 
-.form-select:focus {
-  outline:      none;
-  border-color: #4a6cf7;
-}
-
-.form-select option[value="_add_new_"] {
-  color:            #4a6cf7;
-  font-weight:      bold;
-  background-color: #f0f5ff;
-}
+  .form-select option[value="_add_new_"] {
+    color:            #4a6cf7;
+    font-weight:      bold;
+    background-color: #f0f5ff;
+  }
 
   .instruction-side-container {
     display:        flex;

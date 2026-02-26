@@ -769,7 +769,7 @@
                 <template v-for="type in instructionTypes" :key="type">
                   <tr class="type-row">
                     <td>
-                      <button class="dropdown-header"
+                      <button class="dropdown-type"
                         @click="toggleTypeExpand(type)"
                         title="Show Operations of this type"
                         id="show-critical-button">
@@ -778,8 +778,8 @@
                         </span>
                       </button>
                     </td>
-                    <td class="small-cell">default</td>
-                    <td> - </td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>
                       <input type="number"
                           v-model.number="procConfig.latencies[type].default"
@@ -1139,14 +1139,14 @@
   .instr-table th:nth-child(3),  /* Columna Size */
   .instr-table td:nth-child(3) {
     width: auto;
-    min-width:  60px;
+    min-width:  50px;
     max-width:  60px;
     padding:    0px;
   }
 
   .instr-table th:nth-child(4),  /* Columna LATENCY */
   .instr-table td:nth-child(4) {
-    min-width: 70px;
+    min-width: 68px;
     max-width: 100px;
     width:     auto;
     padding:   0px;
@@ -1156,7 +1156,7 @@
   .instr-table th:nth-child(n+5),  /* Todas las columnas de puertos */
   .instr-table td:nth-child(n+5) {
     width:     auto;
-    min-width: 26px;
+    min-width: 24px;
     max-width: 60px;
     padding:   0px;
   }
@@ -1203,7 +1203,7 @@
     background:    #4caf50;
     color:         white;
     border:        none;
-    padding:       2px 42x;
+    padding:       2px 42px;
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
@@ -1248,8 +1248,18 @@
     user-select:  none;
   }
 
-  .small-cell {
-    font-size: smaller;
+  .dropdown-type {
+    all:         unset;  /* button reset */
+    width:       auto;
+    cursor:      pointer;
+    padding:     6px 0px;
+    display:     inline-flex;
+    align-items: center;
+    font-size:   medium
   }
+  .dropdown-type:hover {
+    background: #eaeaea;
+  }
+
 
 </style>
