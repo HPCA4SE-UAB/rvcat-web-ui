@@ -43,8 +43,6 @@ const STORAGE_KEY = 'programOptions'
     }
   }
 
-  let uploadedProgramObject = null
-
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -220,7 +218,7 @@ function loadEditedProgram() {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
       const jsonString      = localStorage.getItem(`program.${programOptions.currentProgram}`)
-      uploadedProgramObject = JSON.parse(jsonString)
+      simState.simulatedProgram = JSON.parse(jsonString)
       // setProgram( jsonString ) // Call Python RVCAT to load new program --> id= 'set-program'
 
       simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
@@ -240,8 +238,8 @@ function loadEditedProgram() {
   const emit = defineEmits(['requestSwitchFull'])
 
   function editProgram () {
-    if (uploadedProgramObject) {
-      localStorage.setItem('programTemp', JSON.stringify(uploadedProgramObject));
+    if (simState.simulatedProgram) {
+      localStorage.setItem('programTemp', JSON.stringify(simState.simulatedProgram));
       loadEditedProgram()
       if (editedProgram.value.length > 0)
         editedProgram.value.pop()
@@ -431,8 +429,8 @@ function snapshotProgram() {
         }
         else {
           // TODO: Check here if it is a valid program
-          uploadedProgramObject = data
-          saveToLocalStorage('program', data.name, uploadedProgramObject,
+          simState.simulatedProgram = data
+          saveToLocalStorage('program', data.name, simState.simulatedProgram,
                                         programOptions.availablePrograms)
           programOptions.currentProgram = data.name;
           return;
