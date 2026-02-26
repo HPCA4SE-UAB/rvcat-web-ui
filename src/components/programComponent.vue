@@ -157,6 +157,8 @@ function loadEditedProgram() {
        cleanupHandleGraph();
        cleanupHandleGraph= null
     }
+    console.log('📄👋 ProgramComponent unmounted')
+    localStorage.removeItem('programTemp')
   });
 
 

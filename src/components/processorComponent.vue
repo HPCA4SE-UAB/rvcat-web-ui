@@ -119,33 +119,12 @@
    const ADD_NEW_OPTION = '_add_new_'
 
   // Watch ALL processor options for changes
-  watch( [
-    () => processorOptions.processorName,
-    () => processorOptions.ROBsize,
-    () => processorOptions.availableProcessors,
-    () => processorOptions.expandedType
-  ],
-  ([newName, newROBsize, newAvailable, newExpanded], [oldName, oldROBsize, oldAvailable, oldExpanded]) => {
+  watch( [ () => processorOptions.processorName ], (newName, oldName) => {
     try {
       if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
 
-      if (newROBsize !== oldROBsize) {
-        newROBsize = Math.max(Math.min(newROBsize, 200), 1);
-        if (newROBsize === oldROBsize)
-          return
-      }
-
       saveOptions()
-      if (newROBsize !== oldROBsize) {
-        processorOptions.ROBsize = newROBsize
-        if (simState.state < 2)  // processor still not loaded
-          return
-        console.log(`💻✅ ROB size changed to "${newROBsize}"`);
-        drawProcessor()
-        simState.ROBsize = newROBsize // fires other components
-        return
-      }
 
       if (simState.state > 0) {  // RVCAT already imported
          if (newName !== simState.selectedProcessor) {
@@ -154,10 +133,45 @@
          }
       }
     } catch (error) {
+      console.error('💻❌ Failed when changing processor name:', error)
+    }
+  },
+  { deep: true, immediate: true })
+
+
+// Watch ALL processor options for changes
+  watch( [() => processorOptions.ROBsize ], (newROBsize, oldROBsize) => {
+    try {
+      if (newROBsize !== oldROBsize) {
+        newROBsize = Math.max(Math.min(newROBsize, 200), 1);
+        if (newROBsize === oldROBsize)
+          return
+      }
+
+      saveOptions()
+      processorOptions.ROBsize = newROBsize
+      if (simState.state < 2)  // processor still not loaded
+        return
+      console.log(`💻✅ ROB size changed to "${newROBsize}"`);
+      drawProcessor()
+      simState.ROBsize = newROBsize // fires other components
+    } catch (error) {
       console.error('💻❌ Failed to handle changes on processor:', error)
     }
   },
   { deep: true, immediate: true })
+
+
+// Watch ALL processor options for changes
+  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedType], () => {
+    try {
+      saveOptions()
+    } catch (error) {
+      console.error('💻❌ Failed to handle changes on processor:', error)
+    }
+  },
+  { deep: true, immediate: true })
+
 
   // Watch ALL processor configuration values for changes
   watch(procConfig, () => {
@@ -209,9 +223,7 @@
     try {
       const jsonString  = localStorage.getItem(`processor.${processorOptions.processorName}`)
       simState.simulatedProcessor = JSON.parse(jsonString)
-      // setProcessor( jsonString )  // Call Python RVCAT to load new processor config --> 'set-processor'
-
-      simState.selectedProcessor = processorOptions.processorName;  // fire other components
+      simState.selectedProcessor  = processorOptions.processorName;  // fire other components
       if (simState.state == 1) {  // This is an initialization step
         simState.state = 2;       // Change to next initialization step
         console.log('💻✅ Initialization step (2): processor configuration loaded')
@@ -396,39 +408,18 @@
   }
 
 // ============================================================================
-// Processor Edition LOGIC:      addPort, removePort
-//           togglePortType, togglePortOperation, toggleScheduler, noPortAssigned
+// Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
+//      togglePortType, togglePortOperation, toggleScheduler, noPortAssigned
 // ============================================================================
 
-  function toggleType(type) {
+  function toggleTypeExpand(type) {
     processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
   }
 
- function addPort() {
-    const existing = portList.value;
-    let next = 0;
-    for (; existing.includes(next); next++);
-    procConfig.ports[next] = [];
-  }
-
-  function removePort(port) {
-    const idx = Number(port);
-    delete procConfig.ports[idx];
-
-    // Si quedan puertos, reindexar
-    const ports = Object.entries(procConfig.ports)
-      .map(([k, v]) => [Number(k), v])
-      .sort((a, b) => a[0] - b[0]);
-
-    // Limpiar y reasignar
-    Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
-    ports.forEach(([oldIdx, portArr], newIdx) => {
-      procConfig.ports[newIdx] = portArr;
-    });
-  }
-
   function togglePortType(portNum, type, isChecked) {
-    if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
+    if (!procConfig.ports[portNum])
+      procConfig.ports[portNum] = [];
+
     if (isChecked) {
       if (!procConfig.ports[portNum].includes(type))
         procConfig.ports[portNum].push(type);
@@ -438,7 +429,9 @@
   }
 
   function togglePortOperation(portNum, type, oper, isChecked) {
-    if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
+    if (!procConfig.ports[portNum])
+      procConfig.ports[portNum] = [];
+
    const typeOper = type + "." + oper;
     if (isChecked) {
       if (!procConfig.ports[portNum].includes(typeOper))
@@ -456,11 +449,34 @@
     }
   }
 
-  function noPortAssigned(instr) {
-    if (!portList.value.some(p => procConfig.ports[p]?.includes(instr))) {
-      procConfig.ports[0].push(instr)
+  function noPortAssigned(type) {
+    if (!portList.value.some(p => procConfig.ports[p]?.includes(type))) {
+      procConfig.ports[0].push(type)
     }
-    return !portList.value.some(p => procConfig.ports[p]?.includes(instr))
+    return !portList.value.some(p => procConfig.ports[p]?.includes(type))
+  }
+
+  function addPort() {
+    const existing = portList.value;
+    let   next     = 0;
+    for (; existing.includes(next); next++);
+    procConfig.ports[next] = [];
+  }
+
+  function removePort(port) {
+    const  idx = Number(port);
+    delete procConfig.ports[idx];
+
+    // Si quedan puertos, reindexar
+    const ports = Object.entries(procConfig.ports)
+      .map(([k, v]) => [Number(k), v])
+      .sort((a, b) => a[0] - b[0]);
+
+    // Limpiar y reasignar
+    Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
+    ports.forEach(([oldIdx, portArr], newIdx) => {
+      procConfig.ports[newIdx] = portArr;
+    });
   }
 
 // ============================================================================
@@ -734,7 +750,7 @@
                   <tr class="type-row">
                     <td>
                       <button class="dropdown-header"
-                        @click="toggleType(type)"
+                        @click="toggleTypeExpand(type)"
                         title="Show Operations of this type"
                         id="show-critical-button">
                         <span class="arrow" aria-hidden="true">
@@ -787,7 +803,9 @@
                         <input type="checkbox"
                           :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
                           :id="`Port${port}-${type}-${op}-check`"
-                          @change="togglePortOperation(port, type, op, $event.target.checked)" />
+                          :checked="(procConfig.ports[port] || []).includes(`${type}.${op}`)"
+                          @change="togglePortOperation(port, type, op, $event.target.checked)"
+                          />
                       </label>
                     </td>
 
@@ -1076,7 +1094,7 @@
   .instr-table {
     width:           auto;
     white-space:     nowrap;
-    marginn-top:     1px;
+    margin-top:      1px;
     border-collapse: collapse;
   }
 
