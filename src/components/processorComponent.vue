@@ -416,17 +416,46 @@
     processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
   }
 
-  function togglePortType(portNum, type, isChecked) {
-    if (!procConfig.ports[portNum])
-      procConfig.ports[portNum] = [];
 
-    if (isChecked) {
-      if (!procConfig.ports[portNum].includes(type))
-        procConfig.ports[portNum].push(type);
+  function typeOpKey(type, op) {
+    return `${type}.${op}`;
+  }
+
+  function opsOfTypeAssigned(port, type) {
+    const ops      = typeOperations[type];
+    const assigned = procConfig.ports[port] || [];
+    return ops.filter(op => assigned.includes(typeOpKey(type, op)));
+  }
+
+  function isTypeChecked(port, type) {
+    return opsOfTypeAssigned(port, type).length === typeOperations[type].length;
+  }
+
+  function isTypeIndeterminate(port, type) {
+    const n = opsOfTypeAssigned(port, type).length;
+    return n > 0 && n < typeOperations[type].length;
+  }
+
+  function toggleTypeForPort(port, type, checked) {
+    if (!procConfig.ports[port])
+      procConfig.ports[port] = [];
+
+    const ops      = typeOperations[type];
+    const assigned = procConfig.ports[port];
+
+    if (checked) {
+      // marcar TODAS las operaciones
+      ops.forEach(op => {
+        const k = typeOpKey(type, op);
+        if (!assigned.includes(k)) assigned.push(k);
+      });
     } else {
-      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== type);
+      // desmarcar TODAS
+      procConfig.ports[port] =
+        assigned.filter(x => !x.startsWith(type + '.'));
     }
   }
+
 
   function togglePortOperation(portNum, type, oper, isChecked) {
     if (!procConfig.ports[portNum])
@@ -770,17 +799,21 @@
                     </td>
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
-                        <input type="checkbox"
-                          :title="`Set if Port P${port} can execute ${type} instructions`"
+
+                        <input
+                          type="checkbox"
+                          :checked="isTypeChecked(port, type) || (port === portList[0] && noPortAssigned(type))"
+                          :ref="el => el && (el.indeterminate = isTypeIndeterminate(port, type))"
+                          @change="toggleTypeForPort(port, type, $event.target.checked)"
                           :id="`Port${port}-${type}-check`"
-                          :checked="(procConfig.ports[port] || []).includes(type) || (port === portList[0] && noPortAssigned(type))"
-                          @change="togglePortType(port, type, $event.target.checked)" />
+                          :title="`Set if Port P${port} can execute ${type} instructions`"
+                        />
                       </label>
                     </td>
                   </tr>
 
                   <tr
-                    v-if="processorOptions.expandedTypes[type]"
+                    v-if="processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
                     v-for="op in typeOperations[type]"
                     :key="`${type}-${op}`"
                     class="op-row">
