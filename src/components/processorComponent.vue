@@ -417,7 +417,7 @@
 
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort
-//           togglePortInstruction, toggleScheduler, noPortAssigned
+//           togglePortType, togglePortOperation, toggleScheduler, noPortAssigned
 // ============================================================================
 
   function toggleType(type) {
@@ -447,13 +447,13 @@
     });
   }
   
-  function togglePortInstruction(portNum, instruction, isChecked) {
+  function togglePortType(portNum, type, isChecked) {
     if (!procConfig.ports[portNum]) procConfig.ports[portNum] = [];
     if (isChecked) {
-      if (!procConfig.ports[portNum].includes(instruction))
-        procConfig.ports[portNum].push(instruction);
+      if (!procConfig.ports[portNum].includes(type))
+        procConfig.ports[portNum].push(type);
     } else {
-      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== instruction);
+      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== type);
     }
   }
 
@@ -541,7 +541,6 @@
 
 <template>
   <div class="main">
-
     <div v-if="!isFullscreen">
       <div class="header">
         <div class="section-title-and-info">
@@ -607,22 +606,22 @@
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
           <button class="blue-button" 
-                  id="processor-download-button"
-                  title="Save edited processor configuration" 
-                  @click="showModalDownload = true"> 
-              Download 
+              id="processor-download-button"
+              title="Save edited processor configuration" 
+              @click="showModalDownload = true"> 
+            Download 
           </button>
-           <button class="blue-button" 
-                  id="processor-upload-button"
-                  title="Load new processor configuration from file system for edition" 
-                  @click="uploadForEdition"> 
-              Upload 
+          <button class="blue-button" 
+              id="processor-upload-button"
+              title="Load new processor configuration from file system for edition" 
+              @click="uploadForEdition"> 
+            Upload 
           </button>
         </div>
         <div class="buttons">
           <button class="blue-button"   @click="showModalClear = true"
-                title="Clear edition and start new processor configuration from scratch" 
-                id="clear-processor-button">
+              title="Clear edition and start new processor configuration from scratch" 
+              id="clear-processor-button">
             Clear
           </button>
         </div>
@@ -740,66 +739,70 @@
                 </tr>
               </thead>
               <tbody>
-		<template v-for="type in instructionTypes" :key="type">
+                <template v-for="type in instructionTypes" :key="type">
+                  <tr class="type-row">
+                    <td>
+                      <button class="dropdown-header"
+                        @click="toggleType(type)"
+                        title="Show Operations of this type"
+                        id="show-critical-button">
+                        <span class="arrow" aria-hidden="true">
+                          {{ processorOptions.expandedTypes[type] ? '▼' : '▶' }} {{ type }}
+                        </span>
+                      </button>
+                    </td>
+                    <td class="small-cell">default</td>
+                    <td> - </td>
+                    <td>
+                      <input type="number" 
+                          v-model.number="procConfig.latencies[type].default" 
+                          class="latency-input" 
+                          min="1" max="99"
+                          :id="`${type}-latency`"
+                          :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`" />
+                    </td>
+                    <td v-for="port in portList" :key="port" class="port-checkbox">
+                      <label class="port-label">
+                        <input type="checkbox" 
+                          :title="`Set if Port P${port} can execute ${type} instructions`"
+                          :id="`Port${port}-${type}-check`"
+                          :checked="(procConfig.ports[port] || []).includes(type) || (port === portList[0] && noPortAssigned(type))"
+                          @change="togglePortType(port, type, $event.target.checked)" />
+                      </label>
+                    </td>
+                  </tr>
 
-		<tr class="type-row">
-		  <td>
-  		    <button class="dropdown-header"
-		       @click="toggleType(type)"
-		      title="Show Operations of this type"
-		      id="show-critical-button">
-		      <span class="arrow" aria-hidden="true">
-			{{ processorOptions.expandedTypes[type] ? '▼' : '▶' }} {{ type }}
-		      </span>
-		    </button>
-		  </td>
-		  <td class="small-cell">default</td>
-                  <td> - </td>
+                  <tr
+                    v-if="processorOptions.expandedTypes[type]"
+                    v-for="op in typeOperations[type]"
+                    :key="`${type}-${op}`"
+                    class="op-row">
 
-                  <td>
-                    <input type="number" 
-                        v-model.number="procConfig.latencies[type].default" 
-                        class="latency-input" 
+                    <td></td>
+                    <td class="op-cell">
+                      {{ op }}
+                    </td>
+                    <td> - </td>
+
+                    <td>
+                      <input type="number"
+                        v-model.number="procConfig.latencies[type][op]"
                         min="1" max="99"
-                        :id="`${type}-latency`"
-                        :title="`Execution latency in clock cycles for the ${type} instruction type (1 to 99)`" />
-                  </td>
+                        class="latency-input" />
+                    </td>
 
-		  <td v-for="port in portList" :key="port" class="port-checkbox">
-                    <label class="port-label">
-                      <input type="checkbox" 
-                       :title="`Set if Port P${port} can execute ${type} instructions`"
-                       :id="`Port${port}-${type}-check`"
-                       :checked="(procConfig.ports[port] || []).includes(type) || (port === portList[0] && noPortAssigned(type))"
-                       @change="togglePortInstruction(port, type, $event.target.checked)" />
-                    </label>
-                  </td>
-                </tr>
+                    <td v-for="port in portList" :key="port" class="port-checkbox">
+                      <label class="port-label">
+                        <input type="checkbox" 
+                          :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
+                          :id="`Port${port}-${type}-${op}-check`"
+                          @change="togglePortOperation(port, type, op, $event.target.checked)" />
+                      </label>
+                    </td>
 
-		<tr
-		  v-if="processorOptions.expandedTypes[type]"
-		  v-for="op in typeOperations[type]"
-		  :key="`${type}-${op}`"
-		  class="op-row">
 
-		  <td></td>
-		  <td class="op-cell">
-		         {{ op }}
-		  </td>
-		  <td> - </td>
-
-		  <td>
-		    <input type="number"
-		      v-model.number="procConfig.latencies[type][op]"
-		      min="1" max="99"
-		      class="latency-input" />
-  		  </td>
-
-		  <td v-for="port in portList" :key="port"></td>
-
-	        </tr>
-		</template>
-	
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div> <!--- Table Container -->
@@ -1206,27 +1209,28 @@
     opacity: 1;
   }
 
-.type-row {
-  background:     #e6f2ff;
-  font-weight:   bold;
-  cursor:               pointer;
-}
+  .type-row {
+    background:     #e6f2ff;
+    font-weight:    bold;
+    cursor:         pointer;
+  }
 
-.op-row {
-  background: #f9fbff;
-}
+  .op-row {
+    background: #f9fbff;
+  }
 
-.op-cell {
-  padding-left:   2px;
-  font-style:        italic;
-}
+  .op-cell {
+    padding-left:   2px;
+    font-size:      smaller;
+    font-style:     italic;
+  }
 
-.type-cell {
-  user-select:  none;
-}
+  .type-cell {
+    user-select:  none;
+  }
 
-.small-cell {
- font-size: smaller;
-}
+  .small-cell {
+    font-size: smaller;
+  }
 
 </style>
