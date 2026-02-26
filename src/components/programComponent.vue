@@ -1,12 +1,12 @@
 <script setup>
-  import { ref, computed, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
+  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                      from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
            saveToLocalStorage, removeFromLocalStorage,
            instructionTypes, typeOperations, typeSizes                        }  from '@/common'
 
-  const { getProgGraph, setProgram, showProgram } = useRVCAT_Api();
+  const { getProgGraph } = useRVCAT_Api();
   const { registerHandler }                       = inject('worker');
   const simState                                  = inject('simulationState');
 

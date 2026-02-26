@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, unref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
+  import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent                                            from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                             from '@/rvcatAPI'
 
@@ -7,7 +7,6 @@
           initResource, createGraphVizGraph,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
 
-  const { setProcessor }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
