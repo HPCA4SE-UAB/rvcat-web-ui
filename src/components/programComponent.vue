@@ -152,7 +152,7 @@ function loadEditedProgram() {
         simState.state = 3;       // Change to next initialization step
         console.log('📄✅ Initialization step (3): program provided to RVCAT')
       }
-      if (simState.selectedProgram != '')
+      //if (simState.selectedProgram != '')
         // showProgram()  // obtain text from RVCAT API (id= 'show_program')
 
     } catch (error) {
