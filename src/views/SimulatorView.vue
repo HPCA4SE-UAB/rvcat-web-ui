@@ -6,12 +6,12 @@ import programComponent        from '@/components/programComponent.vue';
 
 import tutorialComponent       from '@/components/tutorialComponent.vue';
 import tutorialEditor          from '@/components/tutorialEditor.vue';
-  
+
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
-  
+
 import { useRVCAT_Api }        from '@/rvcatAPI';
 
 const simState                      = inject('simulationState');
@@ -28,7 +28,7 @@ const components = {
   aboutComponent,
   simulationComponent
 };
-  
+
 // Navigation state
 const currentFullKey    = ref('none')
 const currentKey        = ref('simulationComponent')
@@ -41,7 +41,7 @@ const isProgramFullscreen   = computed(() => currentFullKey.value === 'program')
 const isTutorialFullscreen  = computed(() => currentFullKey.value === 'tutorial');
 
 const getButtonText = (key, baseText) => {
-  return computed(() => 
+  return computed(() =>
     currentFullKey.value === key ? `📍${baseText}` : `📌${baseText}`
   );
 };
@@ -61,7 +61,7 @@ const containerClasses = computed(() => ({
 // ============================================================================
 // Functions to change panel/full-screen
 // ============================================================================
-  
+
 // Handle requests from header (& processor/program/tutorial engine)
 function onRequestSwitch(key) {
   const nextComp             = components[key]
@@ -77,7 +77,7 @@ function toggleFullScreen(key) {
     return
   }
   currentFullKey.value = key
-  // document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' }); 
+  // document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' });
 }
 
 // ============================================================================
@@ -87,10 +87,10 @@ function toggleFullScreen(key) {
 // Navigation state
 const showOverlay = ref(true);
 
-function closeLoadingOverlay() { 
-   showOverlay.value = false 
+function closeLoadingOverlay() {
+   showOverlay.value = false
 }
-  
+
 // ============================================================================
 // EVENT HANDLERS: import_rvcat     WATCH: isReady
 // ============================================================================
@@ -113,12 +113,12 @@ watch(isReady, (ready) => {
       importRVCAT();       // call RVCAT API
   }
 })
-  
+
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
 let  cleanupRVCAT = null
-  
+
 onMounted(() => {
   console.log('🔵🎯 Main Component mounted')
   nextTick(() => {
@@ -134,38 +134,38 @@ onUnmounted(() => {
      cleanupRVCAT = null
   }
 });
-  
+
 </script>
 
 <!----  Id's on the template are used for tutorial linking of panels and buttons: do not change them! -->
 <template>
   <body>
     <header>
-     <div id="top" class="header-title"> 
-       <img src="/img/favicon.png" class="title-img"> 
+     <div id="top" class="header-title">
+       <img src="/img/favicon.png" class="title-img">
        <h1>RVCAT-WEB</h1>
        <nav>
         <ul>
           <li>
             <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
-               id="processor-button" 
-               title="Open full window for processor configuration" 
+               id="processor-button"
+               title="Open full window for processor configuration"
                @click="toggleFullScreen('processor')" >
                 {{ fullProcessorButtonText }}
             </button>
           </li>
           <li>
             <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
-               id="program-button"   
-               title="Open full window for program edition" 
+               id="program-button"
+               title="Open full window for program edition"
                @click="toggleFullScreen('program')" >
                 {{ fullProgramButtonText }}
             </button>
           </li>
           <li>
             <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
-               id="tutorial-button"  
-               title="Open full window for tutorial edition" 
+               id="tutorial-button"
+               title="Open full window for tutorial edition"
                @click="toggleFullScreen('tutorial')" >
                 {{ fullTutorialButtonText }}
             </button>
@@ -175,15 +175,15 @@ onUnmounted(() => {
 
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
-               id="simulation-button" 
+               id="simulation-button"
                title="Simulate Program's execution and collect performance metrics"
-               @click="onRequestSwitch('simulationComponent')" > 
+               @click="onRequestSwitch('simulationComponent')" >
                 Simulation
             </button>
           </li>
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
-               id="analysis-button"   
+               id="analysis-button"
                title="Static Performance Analysis -> identify potential bottleneck, either throughput or latency (depnedencies)"
                @click="onRequestSwitch('staticAnalysisComponent')" >
                 Static Analysis
@@ -191,7 +191,7 @@ onUnmounted(() => {
           </li>
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
-               id="timeline-button"   
+               id="timeline-button"
                title="Detailed Timeline of Program's execution"
                @click="onRequestSwitch('timelineComponent')" >
                 Timeline
@@ -199,7 +199,7 @@ onUnmounted(() => {
           </li>
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
-               id="about-button"      
+               id="about-button"
                title="Credits on the design and development for this tool"
                @click="onRequestSwitch('aboutComponent')" >
                 About
@@ -216,31 +216,31 @@ onUnmounted(() => {
       <p>{{ loadingMessage }}</p>
       <p>Please wait. Loading can take several seconds</p>
     </div>
-    
+
     <main class="container" :class="containerClasses">
-      
-      <div v-show="isProcessorFullscreen || isNotFullscreen" 
+
+      <div v-show="isProcessorFullscreen || isNotFullscreen"
           class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }"
-          id="processor-panel"      
+          id="processor-panel"
         >
         <processorComponent :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
-      
-      <div v-show="isProgramFullscreen || isNotFullscreen" 
+
+      <div v-show="isProgramFullscreen || isNotFullscreen"
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
         <programComponent   :is-fullscreen="isProgramFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-show="isTutorialFullscreen" 
+      <div v-show="isTutorialFullscreen"
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
         >
         <tutorialEditor     :is-fullscreen="isTutorialFullscreen"  @requestSwitchFull="toggleFullScreen"/>
       </div>
-      
-      <div v-show= "isNotFullscreen" 
+
+      <div v-show= "isNotFullscreen"
         class="grid-item results"
         id="right-panel"
         >
@@ -248,7 +248,7 @@ onUnmounted(() => {
         <div v-else>Component not found</div>
       </div>
 
-      <tutorialComponent 
+      <tutorialComponent
         :activeView="currentKey"
         :activeFull="currentFullKey"
         id="tutorial-activation"
@@ -280,7 +280,7 @@ h1 {
   margin:    0;
   font-size: large;
 }
-  
+
 nav ul {
   list-style: none;
   padding:    0;
@@ -301,12 +301,12 @@ nav ul li {
   margin: 0 20px;
   height: 60%; /* Porcentaje de la altura del contenedor */
 }
-  
+
 .title-img {
   height:     4vh;
   margin-top: 0.25vh;
 }
-  
+
 .header-title {
   display:flex;
   gap:    5px;
@@ -316,7 +316,7 @@ nav ul li {
   position:              relative;
   display:               grid;
   grid-template-columns: 34% 65.5%;
-  grid-auto-rows:        48% 52%;
+  grid-auto-rows:        35% 64.5%;
   gap:          0.5vh;
   width:        100vw;
   height:        98vh;
@@ -327,24 +327,24 @@ nav ul li {
   box-sizing:   border-box;
   transition:   all 0.3s ease;
 }
-  
+
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 2; }
 .tutorial  { grid-column: 1; grid-row: 1; }
 .results   { grid-column: 2; grid-row: 1 / 3; min-width: 0;}
 
-.container.processor-fullscreen, 
+.container.processor-fullscreen,
 .container.program-fullscreen,
 .container.tutorial-fullscreen {
   grid-template-columns: 1fr;
   grid-template-rows:    1fr;
-  position: fixed; 
-  top:      40px;  
+  position: fixed;
+  top:      40px;
   left:     0;
   right:    0;
   bottom:   0;
   z-index:  999;
-  padding:  0; 
+  padding:  0;
   background: white;
 }
 
@@ -355,7 +355,7 @@ nav ul li {
   min-width:     0;
 }
 
-.grid-item.processor,  
+.grid-item.processor,
 .grid-item.program,
 .grid-item.results,
 .grid-item.tutorial {
@@ -380,7 +380,7 @@ nav ul li {
   border:        none;
   box-shadow:    0 0 10px rgba(0,0,0,0.3);
 }
-    
+
 /* Ocultar otros componentes en pantalla completa */
 .container.processor-fullscreen .grid-item.program,
 .container.processor-fullscreen .grid-item.tutorial,
@@ -393,7 +393,7 @@ nav ul li {
 .container.tutorial-fullscreen .grid-item.results {
   display: none;
 }
-  
+
 .blur-overlay {
   top:      0;
   left:     0;
