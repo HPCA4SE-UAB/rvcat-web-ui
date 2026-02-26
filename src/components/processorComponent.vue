@@ -1114,28 +1114,47 @@
     top:      0;
   }
 
-  /* Ajusta el ancho específico de las columnas */
+    /* Ajusta el ancho específico de las columnas */
   .instr-table th:first-child,  /* Columna TYPE */
   .instr-table td:first-child {
+    min-width:    60px;
+    max-width:   100px;
     text-align:  center;
-    padding:     1px;
+    font-size:   larger;
+    padding:     0px;
   }
 
-  .instr-table th:nth-child(2),  /* Columna LATENCY */
+  .instr-table th:nth-child(2),  /* Columna Operation */
   .instr-table td:nth-child(2) {
-    min-width: 50px;
+    min-width: 70px;
     max-width: 100px;
     width: auto;
-    padding: 1px;
+    padding: 0px;
+  }
+
+  .instr-table th:nth-child(3),  /* Columna Size */
+  .instr-table td:nth-child(3) {
+    width: auto;
+    min-width: 60px;
+    max-width: 60px;
+    padding:    0px;
+  }
+
+  .instr-table th:nth-child(4),  /* Columna LATENCY */
+  .instr-table td:nth-child(4) {
+    min-width: 70px;
+    max-width: 100px;
+    width: auto;
+    padding: 0px;
   }
 
   /* Columnas de puertos - muy estrechas */
-  .instr-table th:nth-child(n+3),  /* Todas las columnas de puertos */
-  .instr-table td:nth-child(n+3) {
+  .instr-table th:nth-child(n+5),  /* Todas las columnas de puertos */
+  .instr-table td:nth-child(n+5) {
     width: auto;
-    min-width: 18px;
+    min-width: 22px;
     max-width: 60px;
-    padding: 1px;
+    padding: 0px;
   }
 
   /* Chrome, Safari, Edge, Opera */
