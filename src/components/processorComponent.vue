@@ -411,7 +411,7 @@
 
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
-//      togglePortType, togglePortOperation, toggleScheduler, noPortAssigned
+//    toggleTypeForPor, togglePortOperation, toggleScheduler, noPortAssigned
 // ============================================================================
 
   function toggleTypeExpand(type) {
@@ -455,7 +455,6 @@
       procConfig.ports[port] = assigned.filter(x => !x.startsWith(type + '.'));
     }
   }
-
 
   function togglePortOperation(portNum, type, oper, isChecked) {
     if (!procConfig.ports[portNum])
