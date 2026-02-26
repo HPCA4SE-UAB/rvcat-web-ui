@@ -216,6 +216,7 @@
 // ============================================================================
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
+    reloadProcessor()
   };
 
   const reloadProcessor = async () => {

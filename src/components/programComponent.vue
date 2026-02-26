@@ -458,7 +458,7 @@ function snapshotProgram() {
               <th v-if="programOptions.visibleCols.size"  style="width: 100px;"> Size </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody v-if="simState.simulatedProgram !== null">
             <tr v-for="(inst, index) in simState.simulatedProgram.instruction_list" :key="index">
               <td v-if="programOptions.visibleCols.index">{{ index }}</td>
 
@@ -472,9 +472,9 @@ function snapshotProgram() {
                 {{ inst.oper }}
               </td>
               <td v-if="programOptions.visibleCols.size" title="Operation size">
-                {{ inst.size }}>
+                {{ inst.size}}
               </td>
-            </tr>
+            </tr>i
           </tbody>
         </table>
       </div>
@@ -802,10 +802,10 @@ function snapshotProgram() {
 .main-box {
   overflow:      auto;
   scroll-behavior: smooth;
-  margin-top:    5px;
+  margin-top:    0px;
   background:    #f0f0f0;
-  padding:       5px;
-  font-size:     2.2vh;
+  padding:       0px;
+  font-size:     2.0vh;
   border-radius: 10px;
 }
 
