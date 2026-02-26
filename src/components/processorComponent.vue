@@ -753,7 +753,7 @@
 		      </span>
 		    </button>
 		  </td>
-		  <td class="small-cell">All operations</td>
+		  <td class="small-cell">default</td>
                   <td> - </td>
 
                   <td>
