@@ -758,9 +758,9 @@
           </div>
 
           <div class="table-container">
-            <table class="instr-table" style="border: 3px solid green;">
+            <table class="instr-table">
               <thead>
-                <tr style="background: cyan;">
+                <tr class="type-row">
                   <th>Type</th><th>Operation</th><th>Size</th><th>Latency</th>
                   <th v-for="port in portList" :key="port">P{{ port }}</th>
                 </tr>
@@ -1097,13 +1097,14 @@
     white-space:     nowrap;
     margin-top:      1px;
     border-collapse: collapse;
+    border: 3px solid green;
   }
 
   .instr-table th,
   .instr-table td {
     padding:    1px;
     text-align: center;
-    border:     1px solid #ddd;
+    border:     1px solid #d86868;
   }
 
   .instr-table th {
