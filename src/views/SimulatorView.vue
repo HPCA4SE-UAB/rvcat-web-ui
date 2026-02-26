@@ -316,7 +316,7 @@ nav ul li {
   position:              relative;
   display:               grid;
   grid-template-columns: 34% 65.5%;
-  grid-auto-rows:        35% 64.5%;
+  grid-auto-rows:        40% 60%;
   gap:          0.5vh;
   width:        100vw;
   height:        98vh;

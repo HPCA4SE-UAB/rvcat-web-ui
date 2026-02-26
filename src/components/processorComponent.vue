@@ -620,15 +620,6 @@
           </div>
         </div>
       </div>
-
-      <div class="scale-container">
-        <div class="color-scale"></div>
-        <div class="scale-labels">
-          <span>underutilized</span>
-          <span></span>
-          <span>saturated</span>
-        </div>
-      </div>
     </div>
 
     <div v-if="isFullscreen" class="header">
@@ -974,7 +965,7 @@
     width:     100%;
     height:    100%;
     display:   flex;
-    margin-top: 6px;
+    margin-top: 2px;
   }
   .processor-side-container {
     flex: 1 1 55%;
@@ -1071,29 +1062,6 @@
     align-items:     center;
   }
 
-  .scale-container {
-    width:      30%;
-    margin:     0 auto;
-    margin-top: 2%;
-    text-align: center;
-    display:    block;
-  }
-  .scale-labels {
-    width:      100%;
-    display:    flex;
-    margin-top: 2px;
-    font-size:  x-small;
-    justify-content: space-between;
-  }
-  .color-scale {
-    width:       100%;
-    height:      8px;
-    border:      1px solid black;
-    position:    relative;
-    background:    linear-gradient(to right, white, #6bff6b, #ffc400, #ce0000);
-    border-radius: 5px;
-  }
-
   .processor-img {
     width:        100%;
     height:       100%;
@@ -1148,7 +1116,7 @@
   .instr-table th:first-child,  /* Columna TYPE */
   .instr-table td:first-child {
     text-align:  center;
-    padding:     2px;
+    padding:     1px;
   }
 
   .instr-table th:nth-child(2),  /* Columna LATENCY */
@@ -1156,16 +1124,16 @@
     min-width: 50px;
     max-width: 100px;
     width: auto;
-    padding: 2px;
+    padding: 1px;
   }
 
   /* Columnas de puertos - muy estrechas */
   .instr-table th:nth-child(n+3),  /* Todas las columnas de puertos */
   .instr-table td:nth-child(n+3) {
     width: auto;
-    min-width: 20px;
+    min-width: 18px;
     max-width: 60px;
-    padding: 2px;
+    padding: 1px;
   }
 
   /* Chrome, Safari, Edge, Opera */
@@ -1174,7 +1142,7 @@
     -webkit-appearance: auto;
     width:      6ch;
     padding:    1px;
-    margin:     0 2px;
+    margin:     0 0px;
     text-align: right;
   }
 
@@ -1184,12 +1152,12 @@
     -moz-appearance: number-input;
     width:      6ch;
     padding:    1px;
-    margin:     0 2px;
+    margin:     0 0px;
     text-align: right;
   }
 
   .ports-toolbar {
-    margin: 4px 0;
+    margin: 2px 0;
   }
   .port-tag {
     display:       inline-flex;
@@ -1197,7 +1165,7 @@
     border-radius: 4px;
     padding:       1px;
     margin-right:  1px;
-    margin-bottom: 3px;
+    margin-bottom: 1px;
     font-size:     0.9em;
   }
   .delete-port {
@@ -1210,21 +1178,10 @@
     background:    #4caf50;
     color:         white;
     border:        none;
-    padding:       2px 4px;
+    padding:       2px 42x;
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
-  }
-
-  .download-checkbox {
-    display:    block;
-    margin-top: 10px;
-  }
-
-  .warning-wrapper {
-    position: relative;
-    display: inline-block;
-    cursor: default;
   }
 
   .tooltip-text {
@@ -1244,11 +1201,6 @@
     border-radius: 4px;
     transition:    opacity 0.2s ease-in-out;
     background-color: rgba(0, 0, 0, 0.7);
-  }
-
-  .warning-wrapper:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
   }
 
   .type-row {
