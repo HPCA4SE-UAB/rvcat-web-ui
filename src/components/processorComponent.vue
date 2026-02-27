@@ -76,9 +76,7 @@
                       }
                    ])
                   ),
-      ports:      { 0:
-                    instructionTypes.map(type => [type])
-                  },
+      ports:      { 0: instructionTypes.flatMap(type => typeOperations[type].map(op => `${type}.${op}`)) }
     };
   }
 
@@ -478,11 +476,26 @@
     }
   }
 
-  function noPortAssigned(type) {
-    if (!portList.value.some(p => procConfig.ports[p]?.includes(type))) {
-      procConfig.ports[0].push(type)
+  function ensureTypeOperationsAssigned(type) {
+    const ops = typeOperations[type];
+
+    if (!procConfig.ports[0]) {
+      procConfig.ports[0] = [];
     }
-    return !portList.value.some(p => procConfig.ports[p]?.includes(type))
+
+    ops.forEach(op => {
+      const key = `${type}.${op}`;
+
+      // ¿Esta operación está en ALGÚN puerto?
+      const assignedSomewhere = portList.value.some(port =>
+        procConfig.ports[port]?.includes(key)
+      );
+
+      // Si no está en ningún puerto → asignarla al puerto 0
+      if (!assignedSomewhere) {
+        procConfig.ports[0].push(key);
+      }
+    });
   }
 
   function addPort() {
@@ -505,6 +518,10 @@
     Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
     ports.forEach(([oldIdx, portArr], newIdx) => {
       procConfig.ports[newIdx] = portArr;
+    });
+
+    instructionTypes.forEach(type => {
+      ensureTypeOperationsAssigned(type);
     });
   }
 
@@ -793,7 +810,7 @@
 
                         <input
                           type="checkbox"
-                          :checked="isTypeChecked(port, type) || (port === portList[0] && noPortAssigned(type))"
+                          :checked="isTypeChecked(port, type)"
                           :ref="el => el && (el.indeterminate = isTypeIndeterminate(port, type))"
                           @change="toggleTypeForPort(port, type, $event.target.checked)"
                           :id="`Port${port}-${type}-check`"
