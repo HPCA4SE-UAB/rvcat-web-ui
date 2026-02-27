@@ -7,41 +7,99 @@
   "blkSize":    8,
   "mPenalty":  12,
   "mIssueTime": 8,
-  "latencies": { "INT":    {"default": 1, "ARITH": 1, "LOGIC": 1, "SHIFT": 1},
-                 "VINT":   {"default": 1, "ARITH": 1, "LOGIC": 1, "SHIFT": 1},
-                 "MEM":    {"default": 4, "STORE": 2, "LOAD": 4},
-                 "VMEM":   {"default": 5, "STORE": 3, "LOAD": 5},
-                 "FLOAT":  {"default": 2, "ADD": 2,   "MUL": 4,   "FMA": 5, "DIV": 8, "SQRT": 12}, 
-                 "VFLOAT": {"default": 2, "ADD": 2,   "MUL": 5,   "FMA": 5, "DIV": 8, "SQRT": 16}
-               },
+  "latencies": {
+    "INT": {
+      "default": 1,
+      "ARITH": 1,
+      "LOGIC": 1,
+      "SHIFT": 1
+    },
+    "VINT": {
+      "default": 1,
+      "ARITH": 1,
+      "LOGIC": 1,
+      "SHIFT": 1
+    },
+    "MEM": {
+      "default": 4,
+      "STORE": 2,
+      "LOAD": 4
+    },
+    "VMEM": {
+      "default": 5,
+      "STORE": 3,
+      "LOAD": 5
+    },
+    "FLOAT": {
+      "default": 2,
+      "ADD": 2,
+      "MUL": 4,
+      "FMA": 5,
+      "DIV": 8,
+      "SQRT": 12
+    },
+    "VFLOAT": {
+      "default": 2,
+      "ADD": 2,
+      "MUL": 5,
+      "FMA": 5,
+      "DIV": 8,
+      "SQRT": 16
+    },
+    "BRANCH": {
+      "default": 1
+    }
+  },
   "ports": {
     "0": [
-      "INT",
-      "MEM",
-      "VMEM"
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "MEM.LOAD",
+      "MEM.STORE",
+      "VMEM.STORE",
+      "VMEM.LOAD",
+      "FLOAT.ADD",
+      "FLOAT.MUL",
+      "FLOAT.FMA",
+      "FLOAT.DIV",
+      "FLOAT.SQRT",
+      "VFLOAT.ADD",
+      "VFLOAT.MUL",
+      "VFLOAT.FMA",
+      "VFLOAT.DIV",
+      "VFLOAT.SQRT"
     ],
     "1": [
-      "INT",
       "FLOAT.ADD",
       "FLOAT.FMA",
       "VFLOAT.ADD",
-      "VFLOAT.FMA"
+      "VFLOAT.FMA",
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT"
     ],
     "2": [
-      "INT",
-      "VINT",
       "FLOAT.MUL",
-      "VFLOAT.MUL"
+      "VFLOAT.MUL",
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT"
     ],
     "3": [
       "BRANCH",
-      "VINT",
       "FLOAT.ADD",
       "FLOAT.FMA",
       "FLOAT.DIV",
       "FLOAT.SQRT",
       "VFLOAT.DIV",
-      "VFLOAT.SQRT"
+      "VFLOAT.SQRT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT']
+export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 
 export const typeOperations = {
     'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
@@ -8,7 +8,8 @@ export const typeOperations = {
     'MEM':    ['STORE', 'LOAD'],
     'VMEM':   ['STORE', 'LOAD'],
     'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT']
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
+    'BRANCH': []
   };
 
 export const typeSizes = {
@@ -17,7 +18,8 @@ export const typeSizes = {
     'MEM':    ['byte', 'word', 'long'],
     'VMEM':   [],
     'FLOAT':  ['single', 'double'],
-    'VFLOAT': ['single', 'double']
+    'VFLOAT': ['single', 'double'],
+    'BRANCH': []
   };
 
 
@@ -48,7 +50,7 @@ export async function downloadJSON(data, filename, resourceType) {
     const jsonString   = JSON.stringify(data, null, 2);
     const config       = resourceConfig[resourceType];
     const fullFilename = `${filename}.json`;
-    
+
     // File System Access API -> force a Save As...
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
@@ -72,7 +74,7 @@ export async function downloadJSON(data, filename, resourceType) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    }   
+    }
     console.log(`${config?.logPrefix}💾✅ Downloaded ${config?.resourceName}: ${filename}`);
     return true;
   } catch (error) {
@@ -84,7 +86,7 @@ export async function downloadJSON(data, filename, resourceType) {
 }
 
 /**
- * uploadJSON  @param {Function} onSuccess (Callback) @param {String} resourceType 
+ * uploadJSON  @param {Function} onSuccess (Callback) @param {String} resourceType
  *             @returns {Promise<Object|null>}
  */
 export async function uploadJSON(onSuccess, resourceType) {
@@ -93,27 +95,27 @@ export async function uploadJSON(onSuccess, resourceType) {
     input.type          = 'file';
     input.accept        = 'application/json';
     input.style.display = 'none';
-    
+
     input.onchange = async (event) => {
       const file = event.target.files[0];
       if (!file) {
         resolve(null);
         return;
       }
-      
+
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        
+
         if (!data.name && !data.id) {
           alert(`The JSON file must contain a 'name' or 'id' field.`);
           resolve(null);
           return;
         }
-        
+
         const config = resourceConfig[resourceType];
         console.log(`${config?.logPrefix}📥✅ Uploaded ${config?.resourceName}:`, data.name || data.id);
-        
+
         if (onSuccess)
           onSuccess(data, file.name.replace(/\.[^.]+$/, ''));
         resolve(data);
@@ -123,7 +125,7 @@ export async function uploadJSON(onSuccess, resourceType) {
         resolve(null);
       }
     };
-    
+
     document.body.appendChild(input);
     input.click();
     setTimeout(() => document.body.removeChild(input), 1000);
@@ -131,7 +133,7 @@ export async function uploadJSON(onSuccess, resourceType) {
 }
 
 /**
- * saveToLocalStorage @param {String} resourceType + @param {String} id + @param {Object} data + @param {Array} availableList 
+ * saveToLocalStorage @param {String} resourceType + @param {String} id + @param {Object} data + @param {Array} availableList
  *                @returns {Boolean} True si se guardó exitosamente
  */
 export function saveToLocalStorage(resourceType, id, data, availableList) {
@@ -141,16 +143,16 @@ export function saveToLocalStorage(resourceType, id, data, availableList) {
       console.error(`Unknown resource type: ${resourceType}`);
       return false;
     }
-    
+
     const key        = `${config.storagePrefix}.${id}`;
-    const jsonString = JSON.stringify(data, null, 2);   
+    const jsonString = JSON.stringify(data, null, 2);
     localStorage.setItem(key, jsonString);
-    
+
     // Update available list
     if (availableList && !availableList.includes(id)) {
       availableList.push(id);
     }
-    
+
     console.log(`${config.logPrefix}✅ Saved ${config.resourceName}: ${id}`);
     return true;
   } catch (error) {
@@ -170,10 +172,10 @@ export function removeFromLocalStorage(resourceType, id, availableList) {
       console.error(`Unknown resource type: ${resourceType}`);
       return false;
     }
-    
+
     const key = `${config.storagePrefix}.${id}`;
     localStorage.removeItem(key);
-    
+
     // Remover de la lista de disponibles
     if (availableList) {
       const index = availableList.indexOf(id);
@@ -181,7 +183,7 @@ export function removeFromLocalStorage(resourceType, id, availableList) {
         availableList.splice(index, 1);
       }
     }
-    
+
     // Delete related keys
     const relatedKeys = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -190,12 +192,12 @@ export function removeFromLocalStorage(resourceType, id, availableList) {
         relatedKeys.push(storageKey);
       }
     }
-    
+
     relatedKeys.forEach(relatedKey => {
       localStorage.removeItem(relatedKey);
       console.log(`${config.logPrefix}🗑️ Removed related: ${relatedKey}`);
     });
-    
+
     console.log(`${config.logPrefix}🧹 Removed ${config.resourceName}: ${id}`);
     return true;
   } catch (error) {
@@ -215,12 +217,12 @@ export function loadFromLocalStorage(resourceType, id) {
       console.error(`Unknown resource type: ${resourceType}`);
       return null;
     }
-    
+
     const key        = `${config.storagePrefix}.${id}`;
     const jsonString = localStorage.getItem(key);
-    
+
     if (!jsonString) return null;
-    
+
     const data = JSON.parse(jsonString);
     console.log(`${config.logPrefix}📥 Loaded ${config.resourceName}: ${id}`);
     return data;
@@ -233,7 +235,7 @@ export function loadFromLocalStorage(resourceType, id) {
 
 function getResourceKeys(prefix) {
   const keys = [];
-  
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key.startsWith(prefix)) {
@@ -241,13 +243,13 @@ function getResourceKeys(prefix) {
       keys.push(id);
     }
   }
-  
+
   return keys;
 }
 
 
-/* ------------------------------------------------------------------ 
- * Initialize Programs/Processors/Tutorials resources using data from 
+/* ------------------------------------------------------------------
+ * Initialize Programs/Processors/Tutorials resources using data from
  *  distribution files if not already in localStorage
  * ------------------------------------------------------------------ */
 export async function initResource (resourceType, optionsObj, currentKey, availableKey) {
@@ -258,7 +260,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   }
   const storagePrefix = config.storagePrefix;
   const logPrefix     = config.logPrefix;
-  
+
   console.log(`${logPrefix}🔄 Loading ${resourceType}s ...`);
   try {
     let keys = getResourceKeys(`${storagePrefix}.`);
@@ -290,7 +292,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   }
 };
 
-/* ------------------------------------------------------------------ 
+/* ------------------------------------------------------------------
  * GraphViz conversion to SVG
  * ------------------------------------------------------------------ */
 
@@ -314,7 +316,7 @@ export async function createGraphVizGraph(dotCode) {
     svg.style.maxWidth  = "100%"
     svg.style.maxHeight = "100%"
     svg.style.display   = "block"
-  
+
     return svg;
     } catch(error) {
       console.error("🕸️❌ GraphVizGraph: rendering error.", error);
