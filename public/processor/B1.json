@@ -54,16 +54,32 @@
   
   "ports": {
     "0": [
-      "INT",
-      "BRANCH",
-      "MEM",
-      "VMEM"
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "MEM.LOAD",
+      "MEM.STORE",
+      "VMEM.STORE",
+      "VMEM.LOAD",
+      "BRANCH"
     ],
     "1": [
-      "INT",
-      "VINT",
-      "FLOAT",
-      "VFLOAT"
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT",
+      "FLOAT.ADD",
+      "FLOAT.FMA",
+      "FLOAT.MUL",
+      "FLOAT.DIV",
+      "FLOAT.SQRT",
+      "VFLOAT.ADD",
+      "VFLOAT.FMA",
+      "VFLOAT.MUL",
+      "VFLOAT.DIV",
+      "VFLOAT.SQRT"
     ]
   }
 }
