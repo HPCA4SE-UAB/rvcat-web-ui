@@ -359,6 +359,7 @@
     if (num_ports>4) {
       dot_code += `"Waiting Buffer" -> "..." [style=invis];\n`;
     }
+
     // REGISTERS
     dot_code += `Registers [shape=box, height=1, width=1, fixedsize=true, tooltip="Architectural state: updated on instruction retirement"];\n`;
 
