@@ -778,8 +778,8 @@
                         </span>
                       </button>
                     </td>
-                    <td>-</td>
-                    <td>-</td>
+                    <td></td>
+                    <td></td>
                     <td>
                       <input type="number"
                           v-model.number="procConfig.latencies[type].default"
@@ -1120,7 +1120,7 @@
     /* Ajusta el ancho específico de las columnas */
   .instr-table th:first-child,  /* Columna TYPE */
   .instr-table td:first-child {
-    min-width:    60px;
+    min-width:    70px;
     max-width:   100px;
     text-align:  center;
     font-size:   medium;
