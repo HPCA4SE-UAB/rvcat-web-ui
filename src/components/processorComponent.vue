@@ -439,14 +439,6 @@
     );
   }
 
-  function allOpsAssignedSomewhere(type) {
-    return typeOperations[type].every(op =>
-      portList.value.some(p =>
-        procConfig.ports[p]?.includes(`${type}.${op}`)
-      )
-    );
-  }
-
   function isTypeChecked(port, type) {
     // 🔹 Tipo sin operaciones → check directo
     if (!hasOperations(type)) {
@@ -486,7 +478,7 @@
   }
 
 
-  function togglePortType(port, type, isChecked) {
+  function togglePortType(port, type, isChecked, event) {
     if (!procConfig.ports[port]) procConfig.ports[port] = [];
 
     // 🔹 BRANCH u otros tipos sin operaciones
@@ -494,7 +486,12 @@
       if (isChecked) {
         if (!procConfig.ports[port].includes(type))
           procConfig.ports[port].push(type);
-      } else if (isAssignedElsewhere(type, port)) {
+      } else {
+        if (!isAssignedElsewhere(type, port)) {
+          // ❌ NO se puede desmarcar → revertir checkbox
+          event.target.checked = true;   // 🔥 clave
+          return;
+        }
         procConfig.ports[port] =
           procConfig.ports[port].filter(i => i !== type);
       }
@@ -901,7 +898,7 @@
                           type="checkbox"
                           :checked="isTypeChecked(port, type)"
                           :indeterminate="isTypeIndeterminate(port, type)"
-                          @change="togglePortType(port, type, $event.target.checked)"
+                          @change="togglePortType(port, type, $event.target.checked, $event)"
                           :id="`Port${port}-${type}-check`"
                           :title="`Set if Port P${port} can execute ${type} instructions`"
                         />
