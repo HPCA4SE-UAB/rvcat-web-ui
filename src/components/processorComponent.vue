@@ -436,46 +436,6 @@
     return n > 0 && n < typeOperations[type].length;
   }
 
-  function toggleTypeForPort(port, type, checked) {
-    if (!procConfig.ports[port])
-      procConfig.ports[port] = [];
-
-    const ops      = typeOperations[type];
-    const assigned = procConfig.ports[port];
-
-    if (checked) {
-      // marcar TODAS las operaciones
-      ops.forEach(op => {
-        const k = typeOpKey(type, op);
-        if (!assigned.includes(k)) assigned.push(k);
-      });
-    } else {
-      // desmarcar TODAS
-      procConfig.ports[port] = assigned.filter(x => !x.startsWith(type + '.'));
-    }
-  }
-
-  function togglePortOperation(portNum, type, oper, isChecked) {
-    if (!procConfig.ports[portNum])
-      procConfig.ports[portNum] = [];
-
-   const typeOper = type + "." + oper;
-    if (isChecked) {
-      if (!procConfig.ports[portNum].includes(typeOper))
-        procConfig.ports[portNum].push(typeOper);
-    } else {
-      procConfig.ports[portNum] = procConfig.ports[portNum].filter(i => i !== typeOper);
-    }
-  }
-
-  function toggleScheduler() {
-    if (procConfig.sched === 'greedy') {
-      procConfig.sched = 'optimal'
-    } else {
-      procConfig.sched = 'greedy'
-    }
-  }
-
   function ensureTypeOperationsAssigned(type) {
     const ops = typeOperations[type];
 
@@ -496,6 +456,51 @@
         procConfig.ports[0].push(key);
       }
     });
+  }
+
+
+  function toggleTypeForPort(port, type, checked) {
+    if (!procConfig.ports[port])
+      procConfig.ports[port] = [];
+
+    const ops      = typeOperations[type];
+    const assigned = procConfig.ports[port];
+
+    if (checked) {
+      // marcar TODAS las operaciones
+      ops.forEach(op => {
+        const k = typeOpKey(type, op);
+        if (!assigned.includes(k)) assigned.push(k);
+      });
+    } else {
+      // desmarcar TODAS
+      procConfig.ports[port] = assigned.filter(x => !x.startsWith(type + '.'));
+      // asignar a port P0 las operaciones de ese tipo que no estén asignadas
+      ensureTypeOperationsAssigned(type)
+    }
+  }
+
+  function togglePortOperation(port, type, oper, isChecked) {
+    if (!procConfig.ports[port])
+      procConfig.ports[port] = [];
+
+    const typeOper = type + "." + oper;
+    if (isChecked) {
+      if (!procConfig.ports[port].includes(typeOper))
+        procConfig.ports[port].push(typeOper);
+    } else {
+      procConfig.ports[port] = procConfig.ports[port].filter(i => i !== typeOper);
+       // asignar a port P0 la operación, si queda sin asignar
+      ensureTypeOperationsAssigned(type)
+   }
+  }
+
+  function toggleScheduler() {
+    if (procConfig.sched === 'greedy') {
+      procConfig.sched = 'optimal'
+    } else {
+      procConfig.sched = 'greedy'
+    }
   }
 
   function addPort() {
