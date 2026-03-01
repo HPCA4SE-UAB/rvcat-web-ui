@@ -479,32 +479,47 @@
     }
   }
 
-  function togglePortOperation(port, type, oper, isChecked) {
-    if (!procConfig.ports[port])
-      procConfig.ports[port] = [];
-
-    const typeOper = type + "." + oper;
-    if (isChecked) {
-      if (!procConfig.ports[port].includes(typeOper))
-        procConfig.ports[port].push(typeOper);
-    } else {
-      procConfig.ports[port] = procConfig.ports[port].filter(i => i !== typeOper);
-       // asignar a port P0 la operación, si queda sin asignar
-      ensureTypeOperationsAssigned(type)
-   }
+  function isPortOperationChecked(port, type, op) {
+    return procConfig.ports[port]?.includes(`${type}.${op}`) ?? false;
   }
 
-  function portOperationModel(port, type, op) {
+  function onTogglePortOperation(port, type, op, event) {
+    const checked = event.target.checked;
+
+    const changed = togglePortOperation(port, type, op, checked);
+
+    // 🔴 si NO se ha permitido el cambio, revertimos el checkbox
+    if (!changed) {
+      event.target.checked = !checked;
+    }
+  }
+
+  function togglePortOperation(port, type, op, isChecked) {
     const key = `${type}.${op}`;
 
-    return computed({
-      get() {
-        return procConfig.ports[port]?.includes(key) ?? false;
-      },
-      set(checked) {
-        togglePortOperation(port, type, op, checked);
+    if (!procConfig.ports[port]) procConfig.ports[port] = [];
+
+    if (!isChecked) {
+      // ❗ si la operación debe seguir estando en algún puerto
+      if (!canUnassignOperation(type, op, port)) {
+        return false;
       }
-    });
+      procConfig.ports[port] =
+        procConfig.ports[port].filter(i => i !== key);
+    } else {
+      if (!procConfig.ports[port].includes(key)) {
+        procConfig.ports[port].push(key);
+      }
+    }
+
+    return true;
+  }
+
+  function canUnassignOperation(type, op, excludingPort) {
+    const key = `${type}.${op}`;
+    return portList.value.some(port =>
+      port !== excludingPort && procConfig.ports[port]?.includes(key)
+    );
   }
 
   function toggleScheduler() {
@@ -858,8 +873,10 @@
 
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
-                        <input type="checkbox"
-                          v-model="portOperationModel(port, type, op)"
+                        <input
+                          type="checkbox"
+                          :checked="isPortOperationChecked(port, type, op)"
+                          @change="onTogglePortOperation(port, type, op, $event)"
                           :id="`Port${port}-${type}-${op}-check`"
                           :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
                         />
