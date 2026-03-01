@@ -76,7 +76,13 @@
                       }
                    ])
                   ),
-      ports:      { 0: instructionTypes.flatMap(type => typeOperations[type].map(op => `${type}.${op}`)) }
+      ports:      { 0:  instructionTypes.flatMap(type => {
+                          const ops = typeOperations[type] || [];
+                          return ops.length > 0
+                            ? ops.map(op => `${type}.${op}`)
+                            : [type];               // 👈 tipos sin operaciones
+                        })
+                  }
     };
   }
 
@@ -427,6 +433,12 @@
     return typeOperations[type] && typeOperations[type].length > 0;
   }
 
+  function isAssignedElsewhere(type, port) {
+    return portList.value.some(p =>
+      p !== port && procConfig.ports[p]?.includes(type)
+    );
+  }
+
   function allOpsAssignedSomewhere(type) {
     return typeOperations[type].every(op =>
       portList.value.some(p =>
@@ -436,11 +448,10 @@
   }
 
   function isTypeChecked(port, type) {
-    /*// 🔹 Tipo sin operaciones → check directo
+    // 🔹 Tipo sin operaciones → check directo
     if (!hasOperations(type)) {
       return procConfig.ports[port]?.includes(type) ?? false;
     }
-    */
 
     // 🔹 Tipo con operaciones
     const ops = opsOfTypeAssigned(port, type);
@@ -478,18 +489,17 @@
   function togglePortType(port, type, isChecked) {
     if (!procConfig.ports[port]) procConfig.ports[port] = [];
 
-    /*
     // 🔹 BRANCH u otros tipos sin operaciones
     if (!hasOperations(type)) {
       if (isChecked) {
         if (!procConfig.ports[port].includes(type))
           procConfig.ports[port].push(type);
-      } else {
+      } else if isAssignedElsewhere(type, port) {
         procConfig.ports[port] =
           procConfig.ports[port].filter(i => i !== type);
       }
       return;
-    }*/
+    }
 
     // 🔹 Tipos con operaciones
     const ops = typeOperations[type].map(op => `${type}.${op}`);
