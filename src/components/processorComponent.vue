@@ -458,7 +458,6 @@
     });
   }
 
-
   function toggleTypeForPort(port, type, checked) {
     if (!procConfig.ports[port])
       procConfig.ports[port] = [];
@@ -493,6 +492,19 @@
        // asignar a port P0 la operación, si queda sin asignar
       ensureTypeOperationsAssigned(type)
    }
+  }
+
+  function portOperationModel(port, type, op) {
+    const key = `${type}.${op}`;
+
+    return computed({
+      get() {
+        return procConfig.ports[port]?.includes(key) ?? false;
+      },
+      set(checked) {
+        togglePortOperation(port, type, op, checked);
+      }
+    });
   }
 
   function toggleScheduler() {
@@ -847,11 +859,10 @@
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
                         <input type="checkbox"
-                          :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
+                          v-model="portOperationModel(port, type, op)"
                           :id="`Port${port}-${type}-${op}-check`"
-                          :checked="(procConfig.ports[port] || []).includes(`${type}.${op}`)"
-                          @change="togglePortOperation(port, type, op, $event.target.checked)"
-                          />
+                          :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
+                        />
                       </label>
                     </td>
 
