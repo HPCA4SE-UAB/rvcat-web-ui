@@ -1353,10 +1353,9 @@
   /* 🔹 Tipos sin operaciones (BRANCH) */
   .type-label.no-ops {
     font-weight:  600;
-    color:     #555;
-    padding-left: 1.3em; /* alinea con tipos con flecha */
+    color:     #261515;
     cursor:     default;
-    opacity:        0.9;
+    opacity:      0.9;
   }
 
 </style>
