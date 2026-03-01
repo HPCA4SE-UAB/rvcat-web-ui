@@ -837,16 +837,27 @@
               <tbody>
                 <template v-for="type in instructionTypes" :key="type">
                   <tr class="type-row">
-                    <td>
-                      <button class="dropdown-type"
+                    <td class="type-cell">
+                      <button
                         v-if="hasOperations(type)"
+                        class="dropdown-header"
                         @click="toggleTypeExpand(type)"
-                        title="Show Operations of this type"
+                        title="Show operations of this type"
                         id="show-critical-button">
                         <span class="arrow" aria-hidden="true">
-                          {{ processorOptions.expandedTypes[type] ? '▼' : '▶' }} {{ type }}
+                          {{ processorOptions.expandedTypes[type] ? '▼' : '▶' }}
                         </span>
+                        <span class="type-name">{{ type }}</span>
                       </button>
+
+                      <!-- Tipo SIN operaciones (ej. BRANCH) -->
+                      <span
+                        v-else
+                        class="type-label no-ops"
+                        title="This instruction type has no sub-operations"
+                      >
+                        {{ type }}
+                      </span>
                     </td>
                     <td></td>
                     <td></td>
@@ -1315,21 +1326,37 @@
   }
 
   .type-cell {
-    user-select:  none;
+    white-space: nowrap;
   }
 
-  .dropdown-type {
-    all:         unset;  /* button reset */
-    width:       auto;
-    cursor:      pointer;
-    padding:     6px 0px;
-    display:     inline-flex;
+  .dropdown-header {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    display: inline-flex;
     align-items: center;
-    font-size:   medium
-  }
-  .dropdown-type:hover {
-    background: #eaeaea;
+    gap: 6px;
+    padding: 0;
   }
 
+  .arrow {
+    width: 1em;
+    text-align: center;
+    color: #444;
+  }
+
+  .type-name {
+    font-weight: 600;
+  }
+
+  /* 🔹 Tipos sin operaciones (BRANCH) */
+  .type-label.no-ops {
+    font-weight:  600;
+    color:     #555;
+    padding-left: 1.3em; /* alinea con tipos con flecha */
+    cursor:     default;
+    opacity:        0.9;
+  }
 
 </style>
