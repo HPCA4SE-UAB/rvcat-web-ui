@@ -858,7 +858,7 @@ function snapshotProgram() {
      max-width:      100%; /* Pero no más ancho que el contenedor */
      overflow-x:     auto; /* Scroll si es necesario */
      overflow-y:     auto; /* Scroll vertical si es necesario */
-     padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
+     padding-bottom: 37px; /* permite mover el contenedor y verlo completo */
      border:         1px solid #ddd;
      border-radius:  5px;
      margin-right:   2px;
