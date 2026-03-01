@@ -163,7 +163,7 @@
 
 
 // Watch ALL processor options for changes
-  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedType], () => {
+  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedTypes], () => {
     try {
       saveOptions()
     } catch (error) {
@@ -427,8 +427,19 @@
     return ops.filter(op => assigned.includes(typeOpKey(type, op)));
   }
 
+  function hasOperations(type) {
+    return typeOperations[type] && typeOperations[type].length > 0;
+  }
+
   function isTypeChecked(port, type) {
-    return opsOfTypeAssigned(port, type).length === typeOperations[type].length;
+    // 🔹 Tipo sin operaciones → check directo
+    if (!hasOperations(type)) {
+      return procConfig.ports[port]?.includes(type) ?? false;
+    }
+
+    // 🔹 Tipo con operaciones
+    const ops = opsOfTypeAssigned(port, type);
+    return ops.length === typeOperations[type].length;
   }
 
   function isTypeIndeterminate(port, type) {
@@ -458,24 +469,33 @@
     });
   }
 
-  function toggleTypeForPort(port, type, checked) {
-    if (!procConfig.ports[port])
-      procConfig.ports[port] = [];
 
-    const ops      = typeOperations[type];
-    const assigned = procConfig.ports[port];
+  function togglePortType(port, type, isChecked) {
+    if (!procConfig.ports[port]) procConfig.ports[port] = [];
 
-    if (checked) {
-      // marcar TODAS las operaciones
-      ops.forEach(op => {
-        const k = typeOpKey(type, op);
-        if (!assigned.includes(k)) assigned.push(k);
+    // 🔹 BRANCH u otros tipos sin operaciones
+    if (!hasOperations(type)) {
+      if (isChecked) {
+        if (!procConfig.ports[port].includes(type))
+          procConfig.ports[port].push(type);
+      } else {
+        procConfig.ports[port] =
+          procConfig.ports[port].filter(i => i !== type);
+      }
+      return;
+    }
+
+    // 🔹 Tipos con operaciones
+    const ops = typeOperations[type].map(op => `${type}.${op}`);
+
+    if (isChecked) {
+      ops.forEach(k => {
+        if (!procConfig.ports[port].includes(k))
+          procConfig.ports[port].push(k);
       });
     } else {
-      // desmarcar TODAS
-      procConfig.ports[port] = assigned.filter(x => !x.startsWith(type + '.'));
-      // asignar a port P0 las operaciones de ese tipo que no estén asignadas
-      ensureTypeOperationsAssigned(type)
+      procConfig.ports[port] =
+        procConfig.ports[port].filter(i => !i.startsWith(type + '.'));
     }
   }
 
@@ -819,6 +839,7 @@
                   <tr class="type-row">
                     <td>
                       <button class="dropdown-type"
+                        v-if="hasOperations(type)"
                         @click="toggleTypeExpand(type)"
                         title="Show Operations of this type"
                         id="show-critical-button">
@@ -844,16 +865,15 @@
                           type="checkbox"
                           :checked="isTypeChecked(port, type)"
                           :ref="el => el && (el.indeterminate = isTypeIndeterminate(port, type))"
-                          @change="toggleTypeForPort(port, type, $event.target.checked)"
+                          @change="togglePortType(port, type, $event.target.checked)"
                           :id="`Port${port}-${type}-check`"
                           :title="`Set if Port P${port} can execute ${type} instructions`"
                         />
                       </label>
                     </td>
                   </tr>
-
                   <tr
-                    v-if="processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
+                    v-if="hasOperations(type) && processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
                     v-for="op in typeOperations[type]"
                     :key="`${type}-${op}`"
                     class="op-row">
