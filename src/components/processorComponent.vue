@@ -436,10 +436,11 @@
   }
 
   function isTypeChecked(port, type) {
-    // 🔹 Tipo sin operaciones → check directo
+    /*// 🔹 Tipo sin operaciones → check directo
     if (!hasOperations(type)) {
       return procConfig.ports[port]?.includes(type) ?? false;
     }
+    */
 
     // 🔹 Tipo con operaciones
     const ops = opsOfTypeAssigned(port, type);
@@ -477,6 +478,7 @@
   function togglePortType(port, type, isChecked) {
     if (!procConfig.ports[port]) procConfig.ports[port] = [];
 
+    /*
     // 🔹 BRANCH u otros tipos sin operaciones
     if (!hasOperations(type)) {
       if (isChecked) {
@@ -487,7 +489,7 @@
           procConfig.ports[port].filter(i => i !== type);
       }
       return;
-    }
+    }*/
 
     // 🔹 Tipos con operaciones
     const ops = typeOperations[type].map(op => `${type}.${op}`);
