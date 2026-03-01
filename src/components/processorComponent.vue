@@ -417,18 +417,22 @@
     processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
   }
 
-  function typeOpKey(type, op) {
-    return `${type}.${op}`;
-  }
-
   function opsOfTypeAssigned(port, type) {
-    const ops      = typeOperations[type];
-    const assigned = procConfig.ports[port] || [];
-    return ops.filter(op => assigned.includes(typeOpKey(type, op)));
+    return typeOperations[type]
+      .map(op => `${type}.${op}`)
+      .filter(tOp => procConfig.ports[port]?.includes(tOp));
   }
 
   function hasOperations(type) {
     return typeOperations[type] && typeOperations[type].length > 0;
+  }
+
+  function allOpsAssignedSomewhere(type) {
+    return typeOperations[type].every(op =>
+      portList.value.some(p =>
+        procConfig.ports[p]?.includes(`${type}.${op}`)
+      )
+    );
   }
 
   function isTypeChecked(port, type) {
@@ -489,13 +493,22 @@
     const ops = typeOperations[type].map(op => `${type}.${op}`);
 
     if (isChecked) {
-      ops.forEach(k => {
-        if (!procConfig.ports[port].includes(k))
-          procConfig.ports[port].push(k);
+      ops.forEach(op => {
+        if (!procConfig.ports[port].includes(op))
+          procConfig.ports[port].push(op);
       });
     } else {
-      procConfig.ports[port] =
-        procConfig.ports[port].filter(i => !i.startsWith(type + '.'));
+      // ❌ desmarcar → solo si no deja operaciones huérfanas
+      ops.forEach(op => {
+        const assignedElsewhere = portList.value.some(p =>
+          p !== port && procConfig.ports[p]?.includes(op)
+        );
+
+        if (assignedElsewhere) {
+          procConfig.ports[port] =
+            procConfig.ports[port].filter(x => x !== op);
+        }
+      });
     }
   }
 
@@ -875,7 +888,7 @@
                         <input
                           type="checkbox"
                           :checked="isTypeChecked(port, type)"
-                          :ref="el => el && (el.indeterminate = isTypeIndeterminate(port, type))"
+                          :indeterminate="isTypeIndeterminate(port, type)"
                           @change="togglePortType(port, type, $event.target.checked)"
                           :id="`Port${port}-${type}-check`"
                           :title="`Set if Port P${port} can execute ${type} instructions`"
