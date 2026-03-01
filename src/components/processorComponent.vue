@@ -494,7 +494,7 @@
       if (isChecked) {
         if (!procConfig.ports[port].includes(type))
           procConfig.ports[port].push(type);
-      } else if isAssignedElsewhere(type, port) {
+      } else if (isAssignedElsewhere(type, port)) {
         procConfig.ports[port] =
           procConfig.ports[port].filter(i => i !== type);
       }
