@@ -124,7 +124,6 @@
 // ============================================================================
   const ADD_NEW_OPTION = '_add_new_'
 
-  // Watch ALL processor options for changes
   watch( () => processorOptions.processorName, (newName, oldName) => {
     try {
       if (newName === ADD_NEW_OPTION)
@@ -141,11 +140,8 @@
     } catch (error) {
       console.error('💻❌ Failed when changing processor name:', error)
     }
-  },
-  { immediate: true })
+  })
 
-
-// Watch ALL processor options for changes
   watch( [() => processorOptions.ROBsize ], (newROBsize, oldROBsize) => {
     try {
       if (newROBsize !== oldROBsize) {
@@ -164,11 +160,8 @@
     } catch (error) {
       console.error('💻❌ Failed to handle changes on processor:', error)
     }
-  },
-  { deep: true, immediate: true })
+  })
 
-
-// Watch ALL processor options for changes
   watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedTypes], () => {
     try {
       saveOptions()
@@ -178,8 +171,6 @@
   },
   { deep: true, immediate: true })
 
-
-  // Watch ALL processor configuration values for changes
   watch(procConfig, () => {
     try {
       localStorage.setItem('processorTemp', JSON.stringify(procConfig));
@@ -192,13 +183,12 @@
   },
   { deep: true, immediate: true })
 
-  // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
     if (newValue == 1) { // This is an initialization step
       console.log('💻✅ Initialization Step (1): RVCAT imported')
       initProcessor()
     }
-  });
+  })
 
 
 // ============================================================================
@@ -1306,7 +1296,7 @@
     background:    #4caf50;
     color:         white;
     border:        none;
-    padding:       2px 42px;
+    padding:       2px 4px;
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
