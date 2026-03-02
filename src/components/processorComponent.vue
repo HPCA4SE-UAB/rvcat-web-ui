@@ -26,7 +26,11 @@
     processorName:       '',
     ROBsize:             20,
     availableProcessors: [],
-    expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false]))
+    expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
+    expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
+                                                typeOperations[type].map(op => [`${type}.${op}`, false])
+                                              )
+                                            )
   }
 
   const savedOptions = (() => {
@@ -162,7 +166,10 @@
     }
   })
 
-  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedTypes], () => {
+  watch( [
+    () => processorOptions.availableProcessors,
+    () => processorOptions.expandedTypes,
+    () => processorOptions.expandedOperations], () => {
     try {
       saveOptions()
     } catch (error) {
@@ -411,6 +418,10 @@
 
   function toggleTypeExpand(type) {
     processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
+  }
+
+  function toggleOperationExpand(type, oper) {
+    processorOptions.expandedOperations[`${type}.${oper}`] = ! processorOptions.expandedOperations[`${type}.${oper}`];
   }
 
   function opsOfTypeAssigned(port, type) {
@@ -906,7 +917,16 @@
 
                     <td></td>
                     <td class="op-cell">
-                      {{ op }}
+                      <button
+                        class="dropdown-header"
+                        @click="toggleOperationExpand(type, op)"
+                        title="Show data sizes of this type-operation"
+                        id="show-critical-button">
+                        <span class="arrow" aria-hidden="true">
+                          {{ processorOptions.expandedOperations[`${type}-${op}`] ? '▼' : '▶' }}
+                        </span>
+                        <span class="op-name">{{ op }}</span>
+                      </button>
                     </td>
                     <td> - </td>
 
@@ -1371,6 +1391,10 @@
     color:     #261515;
     cursor:     default;
     opacity:      0.9;
+  }
+
+  .op-name {
+    font-weight: 600;
   }
 
 </style>
