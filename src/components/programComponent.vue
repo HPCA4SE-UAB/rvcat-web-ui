@@ -104,14 +104,13 @@ function loadEditedProgram() {
     saveOptions()
     if (simState.state > 1)
       reloadProgram()
-  });
+  })
 
   watch(
     () => [programOptions.showInOut, programOptions.showActions],
     () => { saveOptions() }
   )
 
-  // Auto-save edits to localStorage
   watch(
     () => snapshotProgram(),
     (val) => {
@@ -123,21 +122,19 @@ function loadEditedProgram() {
       }
     },
     { deep: true }
-  );
+  )
 
-  // Watch for changes on RVCAT state
   watch(() => simState.state, (newValue, oldValue) => {
     if (newValue == 2)   // This is an initialization step
        initProgram()  // --> generates reloadProgram
-  });
+  })
 
-  // Watch for changes on processor configuration
   watch(() => simState.simulatedProcessor, () => {
     if (simState.state > 2 && simState.selectedProgram != '') {
       console.log('📄🔄 Refreshing program visualization...');
       // showProgram() & recompute instruction latencies & ports
     }
-  });
+  })
 
 
 // ============================================================================
@@ -799,59 +796,59 @@ function snapshotProgram() {
 </template>
 
 <style scoped>
-.main-box {
-  overflow:      auto;
-  scroll-behavior: smooth;
-  margin-top:    0px;
-  background:    #f0f0f0;
-  padding:       0px;
-  font-size:     2.0vh;
-  border-radius: 10px;
-}
+  .main-box {
+    overflow:      auto;
+    scroll-behavior: smooth;
+    margin-top:    0px;
+    background:    #f0f0f0;
+    padding:       0px;
+    font-size:     2.0vh;
+    border-radius: 10px;
+  }
 
-::-webkit-scrollbar {
-  width: 5px;
-}
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
 
-.horizontal-layout {
-  display:     flex;
-  gap:         6px; /* Espacio entre tabla e imagen */
-  margin-top:  2px;
-  align-items: stretch;
-  height:      auto;
-}
+  .horizontal-layout {
+    display:     flex;
+    gap:         6px; /* Espacio entre tabla e imagen */
+    margin-top:  2px;
+    align-items: stretch;
+    height:      auto;
+  }
 
-.instructions-section {
-  flex:           1;
-  display:        flex;
-  flex-direction: column;
-  overflow:       hidden;
-}
+  .instructions-section {
+    flex:           1;
+    display:        flex;
+    flex-direction: column;
+    overflow:       hidden;
+  }
 
-.settings-container {
-  display:     flex;
-  align-items: center;
-  gap:         3px;
-}
+  .settings-container {
+    display:     flex;
+    align-items: center;
+    gap:         3px;
+  }
 
-.fullscreen-settings {
-  display:     flex;
-  align-items: center;
-  gap:         10px;
-}
+  .fullscreen-settings {
+    display:     flex;
+    align-items: center;
+    gap:         10px;
+  }
 
-.section-header {
-  display:         flex;
-  justify-content: space-between;
-  align-items:     center;
-  margin-bottom:   2px;
-  margin-right:    20px;
-}
+  .section-header {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    margin-bottom:   2px;
+    margin-right:    20px;
+  }
 
-.section-header h4 {
-  margin: 0;
-  color:  #333;
-}
+  .section-header h4 {
+    margin: 0;
+    color:  #333;
+  }
 
   .table-container {
      width:          auto; /* Se ajusta al contenido */
