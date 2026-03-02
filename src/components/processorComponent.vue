@@ -125,7 +125,7 @@
   const ADD_NEW_OPTION = '_add_new_'
 
   // Watch ALL processor options for changes
-  watch( [ () => processorOptions.processorName ], (newName, oldName) => {
+  watch( () => processorOptions.processorName, (newName, oldName) => {
     try {
       if (newName === ADD_NEW_OPTION)
         return uploadProcessor(oldName)
@@ -142,7 +142,7 @@
       console.error('💻❌ Failed when changing processor name:', error)
     }
   },
-  { deep: true, immediate: true })
+  { immediate: true })
 
 
 // Watch ALL processor options for changes
@@ -1232,7 +1232,7 @@
 
   .instr-table th:nth-child(2),  /* Columna Operation */
   .instr-table td:nth-child(2) {
-    min-width: 90px;
+    min-width: 74px;
     max-width: 100px;
     width:     auto;
     padding:   0px;
@@ -1249,7 +1249,7 @@
 
   .instr-table th:nth-child(4),  /* Columna LATENCY */
   .instr-table td:nth-child(4) {
-    min-width: 68px;
+    min-width: 66px;
     max-width: 100px;
     width:     auto;
     padding:   0px;
