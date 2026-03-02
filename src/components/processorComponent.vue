@@ -441,6 +441,11 @@
     return typeOperations[type] && typeOperations[type].length > 0;
   }
 
+  function hasSizes(type) {
+    return typeSizes[type] && typeSizes[type].length > 0;
+  }
+
+
   function isAssignedElsewhere(type, port) {
     return portList.value.some(p =>
       p !== port && procConfig.ports[p]?.includes(type)
@@ -968,7 +973,7 @@
                       </td>
                     </tr>
                     <tr
-                      v-if="processorOptions.expandedOperations[`${type}.${op}`]"
+                      v-if="processorOptions.expandedOperations[`${type}.${op}`] && hasSizes(type)"
                       v-for="size in typeSizes[type]"
                       :key="`${type}-${op}-${size}`"
                       class="op-row"
