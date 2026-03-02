@@ -944,10 +944,10 @@
                         <span
                           v-else
                           class="type-label no-ops"
-                          title="This instruction type has no sizes"
+                          :title="`Operations for instructions of type ${type} have no size`"
                         >
-                          {{ type }}
-                      </span>
+                          <span class="op-name">{{ op }}</span>
+                        </span>
                       </td>
 
                       <td> - </td>
