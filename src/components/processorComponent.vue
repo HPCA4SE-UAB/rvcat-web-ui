@@ -506,6 +506,9 @@
         if (assignedElsewhere) {
           procConfig.ports[port] =
             procConfig.ports[port].filter(x => x !== op);
+        } else { // ❌ NO se puede desmarcar → revertir checkbox
+          event.target.checked = true;   // 🔥 clave
+          return;
         }
       });
     }
