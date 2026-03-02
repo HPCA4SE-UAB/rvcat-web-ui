@@ -75,7 +75,14 @@
                       {
                         default: 1,
                         ...Object.fromEntries(
-                          typeOperations[type].map(op => [op, 1])
+                          typeOperations[type].map(op => [
+                            op,
+                            {
+                              default: 1,
+                              ...Object.fromEntries(
+                                typeSizes[type].map(size => [size, 1])
+                              )
+                            }])
                         )
                       }
                    ])
@@ -84,7 +91,7 @@
                           const ops = typeOperations[type] || [];
                           return ops.length > 0
                             ? ops.map(op => `${type}.${op}`)
-                            : [type];               // 👈 tipos sin operaciones
+                            : [type];    // 👈 tipos sin operaciones
                         })
                   }
     };
@@ -920,7 +927,7 @@
                         <button
                           class="dropdown-header"
                           @click="toggleOperationExpand(type, op)"
-                          title="Show data sizes of this type-operation"
+                          :title="`Show data sizes of ${type}.${op} operation`"
                           >
                           <span class="arrow" aria-hidden="true">
                             {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
@@ -934,7 +941,7 @@
                         v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
                         >
                         <input type="number"
-                          v-model.number="procConfig.latencies[type][op]"
+                          v-model.number="procConfig.latencies[type][op].default"
                           min="1" max="99"
                           class="latency-input" />
                       </td>
@@ -949,6 +956,29 @@
                             :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
                           />
                         </label>
+                      </td>
+                    </tr>
+                    <tr
+                      v-if="processorOptions.expandedOperations[`${type}.${op}`]"
+                      v-for="size in typeSizes[type]"
+                      :key="`${type}-${op}-${size}`"
+                      class="op-row"
+                    >
+                      <td></td>
+                      <td></td>
+                      <td>
+                        <span class="op-name">{{ size }}</span>
+                      </td>
+                      <td>
+                        <input type="number"
+                          v-model.number="procConfig.latencies[type][op][size]"
+                          min="1" max="99"
+                          class="latency-input"
+                          :id="`${type}-${op}-latency`"
+                          :title="`Execution latency in clock cycles for ${type}.${op}.${size} (1 to 99)`" />
+                      </td>
+                      <td v-for="port in portList" :key="port" class="port-checkbox">
+                        -
                       </td>
                     </tr>
                   </template>
