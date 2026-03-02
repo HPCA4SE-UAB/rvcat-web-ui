@@ -938,7 +938,7 @@
                         min="1" max="99"
                         class="latency-input" />
                     </td>
-
+                    <td v-else></td>
                     <td v-for="port in portList" :key="port" class="port-checkbox">
                       <label class="port-label">
                         <input
