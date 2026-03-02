@@ -921,7 +921,7 @@
                         class="dropdown-header"
                         @click="toggleOperationExpand(type, op)"
                         title="Show data sizes of this type-operation"
-                        id="show-critical-button">
+                        >
                         <span class="arrow" aria-hidden="true">
                           {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
                         </span>
@@ -930,7 +930,9 @@
                     </td>
                     <td> - </td>
 
-                    <td>
+                    <td
+                      v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
+                      >
                       <input type="number"
                         v-model.number="procConfig.latencies[type][op]"
                         min="1" max="99"
