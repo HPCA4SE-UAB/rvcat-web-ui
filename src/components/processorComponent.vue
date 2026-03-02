@@ -909,50 +909,49 @@
                       </label>
                     </td>
                   </tr>
-                  <tr
-                    v-if="hasOperations(type) && processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
-                    v-for="op in typeOperations[type]"
-                    :key="`${type}-${op}`"
-                    class="op-row">
+                  <template
+                      v-if="hasOperations(type) && processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
+                      v-for="op in typeOperations[type]"
+                      :key="`${type}-${op}`"
+                    >
+                    <tr class="op-row">
+                      <td></td>
+                      <td class="op-cell">
+                        <button
+                          class="dropdown-header"
+                          @click="toggleOperationExpand(type, op)"
+                          title="Show data sizes of this type-operation"
+                          >
+                          <span class="arrow" aria-hidden="true">
+                            {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
+                          </span>
+                          <span class="op-name">{{ op }}</span>
+                        </button>
+                      </td>
+                      <td> - </td>
 
-                    <td></td>
-                    <td class="op-cell">
-                      <button
-                        class="dropdown-header"
-                        @click="toggleOperationExpand(type, op)"
-                        title="Show data sizes of this type-operation"
+                      <td
+                        v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
                         >
-                        <span class="arrow" aria-hidden="true">
-                          {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
-                        </span>
-                        <span class="op-name">{{ op }}</span>
-                      </button>
-                    </td>
-                    <td> - </td>
-
-                    <td
-                      v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
-                      >
-                      <input type="number"
-                        v-model.number="procConfig.latencies[type][op]"
-                        min="1" max="99"
-                        class="latency-input" />
-                    </td>
-                    <td v-else></td>
-                    <td v-for="port in portList" :key="port" class="port-checkbox">
-                      <label class="port-label">
-                        <input
-                          type="checkbox"
-                          :checked="isPortOperationChecked(port, type, op)"
-                          @change="onTogglePortOperation(port, type, op, $event)"
-                          :id="`Port${port}-${type}-${op}-check`"
-                          :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
-                        />
-                      </label>
-                    </td>
-
-
-                  </tr>
+                        <input type="number"
+                          v-model.number="procConfig.latencies[type][op]"
+                          min="1" max="99"
+                          class="latency-input" />
+                      </td>
+                      <td v-else></td>
+                      <td v-for="port in portList" :key="port" class="port-checkbox">
+                        <label class="port-label">
+                          <input
+                            type="checkbox"
+                            :checked="isPortOperationChecked(port, type, op)"
+                            @change="onTogglePortOperation(port, type, op, $event)"
+                            :id="`Port${port}-${type}-${op}-check`"
+                            :title="`Set if Port P${port} can execute ${type}.${op} instructions`"
+                          />
+                        </label>
+                      </td>
+                    </tr>
+                  </template>
                 </template>
               </tbody>
             </table>
