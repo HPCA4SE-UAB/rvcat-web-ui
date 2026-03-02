@@ -875,7 +875,7 @@
                         v-if="hasOperations(type)"
                         class="dropdown-header"
                         @click="toggleTypeExpand(type)"
-                        title="Show operations of this type"
+                        :title="`Show operations of type ${type}`"
                         id="show-critical-button">
                         <span class="arrow" aria-hidden="true">
                           {{ processorOptions.expandedTypes[type] ? '▼' : '▶' }}
@@ -925,6 +925,7 @@
                       <td></td>
                       <td class="op-cell">
                         <button
+                          v-if="hasSizes(type)"
                           class="dropdown-header"
                           @click="toggleOperationExpand(type, op)"
                           :title="`Show data sizes of ${type}.${op} operation`"
@@ -934,9 +935,17 @@
                           </span>
                           <span class="op-name">{{ op }}</span>
                         </button>
+                        <!-- Tipo SIN sizes (ej. VMEM) -->
+                        <span
+                          v-else
+                          class="type-label no-ops"
+                          title="This instruction type has no sizes"
+                        >
+                          {{ type }}
+                      </span>
                       </td>
-                      <td> - </td>
 
+                      <td> - </td>
                       <td
                         v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
                         >
