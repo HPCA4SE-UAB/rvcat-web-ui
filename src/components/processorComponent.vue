@@ -923,7 +923,7 @@
                         title="Show data sizes of this type-operation"
                         id="show-critical-button">
                         <span class="arrow" aria-hidden="true">
-                          {{ processorOptions.expandedOperations[`${type}-${op}`] ? '▼' : '▶' }}
+                          {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
                         </span>
                         <span class="op-name">{{ op }}</span>
                       </button>
