@@ -66,7 +66,7 @@
       if (saved) {
         Object.assign(dependenceGraphOptions, JSON.parse(saved))
       }
-      getPerformanceAnalysis(simState.simulatedProcess);
+      getPerformanceAnalysis(JSON.stringify(simState.simulatedProcess));
     } catch (error) {
       console.error('🔎❌ Failed to load:', error)
     }
@@ -100,7 +100,7 @@
       saveOptions()
       graphTimeout = setTimeout(() => {
         getDependenceGraph(
-          simState.simulatedProcess,
+          JSON.stringify(simState.simulatedProcess),
           dependenceGraphOptions.iters,
           dependenceGraphOptions.showIntern,
           dependenceGraphOptions.showLaten,
@@ -120,9 +120,9 @@
     [() => simState.simulatedProgram, () => simState.simulatedProcessor], () => {
       clearTimeout(graphTimeout)
       graphTimeout = setTimeout(() => {
-        getPerformanceAnalysis(simState.simulatedProcess)
+        getPerformanceAnalysis(JSON.stringify(simState.simulatedProcess))
         getDependenceGraph(
-          simState.simulatedProcess,
+          JSON.stringify(simState.simulatedProcess),
           dependenceGraphOptions.iters,
           dependenceGraphOptions.showIntern,
           dependenceGraphOptions.showLaten,

@@ -22,7 +22,7 @@ export function useRVCAT_Api() {
     }
   };
 
-  const getDependenceGraph = async (process, n,i,l,s,f) => {
+  const getDependenceGraph = async (JSONprocessText, n,i,l,s,f) => {
     try {
       let internal = "True";
       let latency  = "True";
@@ -32,7 +32,7 @@ export function useRVCAT_Api() {
       if (!l) {latency  = "False"}
       if (!s) {small    = "False"}
       if (!f) {full     = "False"}
-      const code = `rvcat._program.show_graphviz(${process},${n}, ${internal}, ${latency}, ${small}, ${full})`
+      const code = `rvcat._program.show_graphviz(${JSONprocessText},${n}, ${internal}, ${latency}, ${small}, ${full})`
       const result = await safeExecute(code, 'get_dependence_graph');
       console.log('🧠 RVCAT: dependence Graph (GRAPHVIZ) obtained');
       return result;
@@ -42,9 +42,9 @@ export function useRVCAT_Api() {
     }
   };
 
-  const getPerformanceAnalysis = async (process) => {
+  const getPerformanceAnalysis = async (JSONprocessText) => {
     try {
-      const code = `rvcat._program.get_performance_analysis(${process})`
+      const code = `rvcat._program.get_performance_analysis(${JSONprocessText})`
       const result = await safeExecute(code, 'get_performance_analysis');
       console.log('🧠 RVCAT: performance analysis obtained');
       return result;
@@ -54,9 +54,9 @@ export function useRVCAT_Api() {
     }
   };
 
-  const getExecutionResults = async (process, n_iters, rob_size) => {
+  const getExecutionResults = async (JSONprocessText, n_iters, rob_size) => {
     try {
-      const code = `rvcat._scheduler.get_results(${process}, ${n_iters}, ${rob_size})`
+      const code = `rvcat._scheduler.get_results(${JSONprocessText}, ${n_iters}, ${rob_size})`
       const result = await safeExecute(code, 'get_execution_results');
       console.log('🧠 RVCAT: execution results obtained');
       return result;
@@ -66,9 +66,9 @@ export function useRVCAT_Api() {
     }
   };
 
-   const getTimeline = async (process, n_iters, rob_size) => {
+   const getTimeline = async (JSONprocessText, n_iters, rob_size) => {
     try {
-      const code = `rvcat._scheduler.get_timeline(${process}, ${n_iters}, ${rob_size})`
+      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, ${n_iters}, ${rob_size})`
       const result = await safeExecute(code, 'get_timeline');
       console.log('🧠 RVCAT: timeline obtained');
       return result;
