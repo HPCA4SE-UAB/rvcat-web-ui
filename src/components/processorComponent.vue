@@ -211,7 +211,7 @@
         console.error('📄❌ Failed to load edited processor from localStorage:', e);
       }
     }
-    procConfig= createDefaultConfig()
+    drawEditedProcessor()
   });
 
   onUnmounted(() => {
