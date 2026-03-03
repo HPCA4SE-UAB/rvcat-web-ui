@@ -41,6 +41,49 @@ export const resourceConfig = {
   }
 };
 
+function updateProcess(process) {
+
+  const { latencies, ports, instruction_list } = process
+
+  // 🔹 Precalcular mapa op → bitmask
+  const opToMask = {}
+
+  Object.entries(ports).forEach(([portIdStr, supportedOps]) => {
+
+    const portId = Number(portIdStr)
+    const bit    = (1 << portId)
+
+    supportedOps.forEach(op => {
+      if (!opToMask[op]) opToMask[op] = 0
+      opToMask[op] |= bit
+    })
+  })
+
+  // 🔹 Recalcular cada instrucción
+  instruction_list.forEach(instr => {
+
+    const keyFull  = `${instr.type}.${instr.oper}.${instr.size}`
+    const keyOp    = `${instr.type}.${instr.oper}`
+    const keyType  = instr.type
+
+    // Latency
+    instr.latency =
+      latencies[keyFull] ??
+      latencies[keyOp]   ??
+      latencies[keyType] ??
+      1
+
+    // Ports
+    instr.ports =
+      opToMask[keyOp] ??
+      opToMask[keyType] ??
+      0
+
+    if (instr.ports === 0) {
+      console.warn(`⚠️ No ports found for instruction ${instr.id} (${keyOp}). Check processor configuration.`)
+    }
+  })
+}
 
 /**
  * @param {Object} data +  @param {String} filename + @param {String} resourceType

@@ -3,7 +3,7 @@
   import HelpComponent                                            from '@/components/helpComponent.vue'
 
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph,
+          initResource, createGraphVizGraph, updateProcess,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
 
   const simState = inject('simulationState');
@@ -194,8 +194,9 @@
 
   watch(() => simState.simulatedProcess, () => {
     if (simState.state > 2 && simState.programName != '') {
-      console.log('📄🔄 Refreshing program latencies & ports...');
-      // ToDo updateProcessorOnProcess: recompute instruction latencies & ports
+      console.log('💻🔄 Refreshing program latencies & ports on simulated process');
+      updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
+      simState.processorName= processorOptions.processorName;
     }
   })
 
@@ -240,13 +241,13 @@
     try {
       const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
       const data       = JSON.parse(jsonString)
-      updateProcessorOnProcess(data)
-      simState.processorName  = processorOptions.processorName;  // fire other components
+
       if (simState.state == 1) {  // This is an initialization step
         simState.state = 2;       // Change to next initialization step
         console.log('💻✅ Initialization step (2): processor configuration loaded')
         drawEditedProcessor()
       }
+      Object.assign(simState.simulatedProcess, data)
       drawProcessor()
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
@@ -665,8 +666,8 @@
         else {
           // TODO: Check here if it is a valid processor
           saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-          processorOptions.processorName = data.name
-          updateProcessorOnProcess(data)
+          Object.assign(simState.simulatedProcess, data)
+          simState.processorName = data.name
           return;
         }
       }
@@ -679,12 +680,6 @@
   function clearProcessor() {
     updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
-  }
-
-  function updateProcessorOnProcess(data) {
-    Object.assign(simState.simulatedProcess, data)
-    // ToDo: add latencies and port masks to each instruction in the instruction list,
-    // so they can be used by the simulator without checking the processor configuration every cycle
   }
 
 /* ------------------------------------------------------------------

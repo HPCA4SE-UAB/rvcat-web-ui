@@ -143,6 +143,7 @@ function loadEditedProgram() {
     saveSimState()
     if (simState.state > 2 && simState.programName != '') {
       console.log('📄🔄 Refreshing program visualization...');
+      simState.programName= programOptions.currentProgram;
       // ToDo showProgram() & recompute instruction latencies & ports
     }
   })
