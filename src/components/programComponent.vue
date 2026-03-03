@@ -205,12 +205,14 @@ function loadEditedProgram() {
 
   function editProgram () {
     if (simState.simulatedProcess) {
+
       const cleanProgram = {
         name: simState.simulatedProcess.name,
-        instruction_list: structuredClone(
-          simState.simulatedProcess.instruction_list
+        instruction_list: JSON.parse(
+          JSON.stringify(simState.simulatedProcess.instruction_list)
         )
       }
+
       localStorage.setItem('programTemp', JSON.stringify(cleanProgram));
       loadEditedProgram()
       if (editedProgram.value.length > 0)
