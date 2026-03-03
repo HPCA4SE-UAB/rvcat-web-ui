@@ -3,12 +3,12 @@
   import HelpComponent                           from '@/components/helpComponent.vue'
   import { createGraphVizGraph }                                       from '@/common'
   import { useRVCAT_Api }                                            from '@/rvcatAPI'
- 
+
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
-  /* ------------------------------------------------------------------ 
+  /* ------------------------------------------------------------------
    * Dependence Graph options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'dependentGraphOptions'
@@ -20,7 +20,7 @@
     showFull:    false,
     showThrough: false
   }
-  
+
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -33,7 +33,6 @@
 
   const dependenceGraphOptions = reactive({ ...defaultOptions, ...savedOptions })
   const dependenceGraphSvg     = ref('')
-  const fullDependenceGraphSvg = ref('')  
   const showFullScreen         = ref(false);
 
   let graphTimeout          = null
@@ -48,8 +47,7 @@
     BestTime:            0.0,
     "Throughput-Bottlenecks": []
   })
-  
-  // Save on changes
+
   const saveOptions = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dependenceGraphOptions))
@@ -57,8 +55,7 @@
       console.error('🔎❌ Failed to save:', error)
     }
   }
-  
-  // Load from localStorage
+
   onMounted(() => {
     console.log('🔎🎯 Static Analysis Component mounted')
     cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
@@ -85,8 +82,8 @@
     }
   })
 
- /* ------------------------------------------------------------------ 
-  * Dependence Graph options: UI actions 
+ /* ------------------------------------------------------------------
+  * Dependence Graph options: UI actions
   * ------------------------------------------------------------------ */
   function toggleIntern () { dependenceGraphOptions.showIntern  = !dependenceGraphOptions.showIntern  }
   function toggleLaten  () { dependenceGraphOptions.showLaten   = !dependenceGraphOptions.showLaten   }
@@ -113,37 +110,28 @@
       console.log('🔎✅ Saved graph options')
     } catch (error) {
       console.error('🔎❌Failed to save dependence graph options:', error)
-    } 
+    }
   },
   { deep: true, immediate: true })
 
-// Watch multiple reactive sources
-watch (
-  [() => simState.selectedProgram, () => simState.selectedProcessor],
-  ([newProgram, newProcessor], [oldProgram, oldProcessor]) => {
-    // Check if either changed meaningfully
-    const programChanged   = newProgram   && newProgram   !== oldProgram
-    const processorChanged = newProcessor && newProcessor !== oldProcessor
-    
-    if (!programChanged && !processorChanged) return
-    
-    getPerformanceAnalysis();
-    
-    clearTimeout(graphTimeout)
-    graphTimeout = setTimeout(() => {
-      getDependenceGraph(
-        dependenceGraphOptions.iters,
-        dependenceGraphOptions.showIntern,
-        dependenceGraphOptions.showLaten,
-        dependenceGraphOptions.showSmall,
-        dependenceGraphOptions.showFull
-      )
-    }, 75)
-    
-    console.log('🔎✅ Graph updated')
-  },
-  { immediate: false })
-  
+  // Watch for changes on processor or program
+  watch (
+    [() => simState.simulatedProgram, () => simState.simulatedProcessor], () => {
+      clearTimeout(graphTimeout)
+      graphTimeout = setTimeout(() => {
+        getPerformanceAnalysis()
+        getDependenceGraph(
+          dependenceGraphOptions.iters,
+          dependenceGraphOptions.showIntern,
+          dependenceGraphOptions.showLaten,
+          dependenceGraphOptions.showSmall,
+          dependenceGraphOptions.showFull
+        )
+      }, 75)
+      console.log('🔎✅ Graph updated')
+    },
+    { deep: true, immediate: false })
+
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {
     if (dataType === 'error') {
@@ -151,8 +139,9 @@ watch (
       return;
     }
     try {
-       const svg = await createGraphVizGraph(data);  
-       dependenceGraphSvg.value = svg.outerHTML;
+      const svg = await createGraphVizGraph(data);
+      dependenceGraphSvg.value = svg.outerHTML;
+      console.log('🔎✅ Dependence Graph updated')
     } catch (error) {
       console.error('🔎❌Failed to generate SVG for graphviz Dependence Graph:', error)
       dependenceGraphSvg.value = `<div class="error">Failed to render graph</div>`;
@@ -172,10 +161,10 @@ watch (
       console.error('🔎❌Error handling performance analysis:', error)
     }
   }
-  
-/* ------------------------------------------------------------------ 
- * Fullscreen graph 
- * ------------------------------------------------------------------ */  
+
+/* ------------------------------------------------------------------
+ * Fullscreen graph
+ * ------------------------------------------------------------------ */
   function openFullScreen() {
     showFullScreen.value = true;
     nextTick(() => {
@@ -187,10 +176,12 @@ watch (
       }
     });
   }
-  function closeFullScreen()   { showFullScreen.value = false;  }
+  function closeFullScreen()  {
+    showFullScreen.value = false;
+  }
 
-/* ------------------------------------------------------------------ 
- * Help support 
+/* ------------------------------------------------------------------
+ * Help support
  * ------------------------------------------------------------------ */
   const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
   const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
@@ -214,7 +205,7 @@ watch (
         return 'both'
     }
   }
-  
+
 </script>
 
 <template>
@@ -232,10 +223,8 @@ watch (
     <div class="summary-card compact">
       <div class="metrics-grid">
         <div class="metric-item">
-
           <span class="metric-label">Bound:</span>
-
-          <span class="metric-value" 
+          <span class="metric-value"
             id="performance-bound"
             title="Performance bound: can be latency (cyclic dependencies) or throughput (resources)"
             :class="getBoundClass(performanceData['performance-bound'])">
@@ -244,9 +233,7 @@ watch (
 
         </div>
         <div class="metric-item">
-
           <span class="metric-label">Latency:</span>
-
           <span class="metric-value"
               id="latency-limit"
               title="Minimum execution time (clock cycles per executed loop iteration) due to cyclic data dependencies among instructions"
@@ -256,9 +243,7 @@ watch (
 
         </div>
         <div class="metric-item">
- 
           <span class="metric-label">Throughput:</span>
-
           <span class="metric-value"
             id="throughput-limit"
             title="Minimum execution time (clock cycles per executed loop iteration) due to execution/dispatch/retire throughput limits"
@@ -268,12 +253,10 @@ watch (
 
         </div>
         <div class="metric-item">
-
           <span class="metric-label">Best possible time:</span>
-
           <span class="metric-value highlight"
               id="best-limit"
-              title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"          
+              title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"
             >
             {{ performanceData.BestTime.toFixed(2) }} cycles/iteration
           </span>
@@ -282,7 +265,7 @@ watch (
       </div>
     </div>
   </div>
-  
+
     <!-- Bottlenecks Section -->
     <div class="dropdown-wrapper">
 
@@ -290,21 +273,19 @@ watch (
         <img src="/img/info.png" class="info-img">
       </span>
 
-      <button class="dropdown-header" @click="toggleThrough" 
+      <button class="dropdown-header" @click="toggleThrough"
               id="detailed-thorughput-limits"
-              title="Show detailed throughput limits" 
+              title="Show detailed throughput limits"
               :aria-expanded="dependenceGraphOptions.showThrough">
 
         <span class="arrow" aria-hidden="true">
           {{ dependenceGraphOptions.showThrough ? '▼' : '▶' }}
         </span>
 
-        <span class="dropdown-title">  
+        <span class="dropdown-title">
           Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
         </span>
-
       </button>
-
     </div>
 
     <Transition name="fold" appear>
@@ -315,7 +296,7 @@ watch (
         </div>
       </div>
     </Transition>
-          
+
     <div class="output-block-wrapper" id="simulation-output-container">
       <div class="graph-toolbar">
         <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
@@ -332,36 +313,36 @@ watch (
             >
           </div>
           <div class="iters-group">
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"  
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"
                 title="Show/Hide Nodes with only internal data dependencies"
                 id="show-internal-dependences"
-              @click="toggleIntern"> 
+              @click="toggleIntern">
               <span v-if="dependenceGraphOptions.showIntern">✔ </span>
               Internal
             </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"   
-                 title="Show/Hide Execution Latencies" 
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"
+                 title="Show/Hide Execution Latencies"
                  id="show-latency-dependences"
-              @click="toggleLaten"> 
+              @click="toggleLaten">
               <span v-if="dependenceGraphOptions.showLaten">✔ </span>
               Latencies
             </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"   
-                 title="Show/Hide Instruction Text" 
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"
+                 title="Show/Hide Instruction Text"
                  id="show-instruction-dependences"
-              @click="toggleSmall"> 
+              @click="toggleSmall">
               <span v-if="dependenceGraphOptions.showSmall">✔ </span>
               Small
             </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }" 
+            <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }"
                  title="Show/Hide constant and read-only input data dependencies"
                  id="show-full-dependences"
-              @click="toggleFull">  
+              @click="toggleFull">
               <span v-if="dependenceGraphOptions.showFull">✔ </span>
               Full
             </button>
           </div>
-          <button class="icon-button" @click="openFullScreen" 
+          <button class="icon-button" @click="openFullScreen"
              title="Open fullscreen"
              id="open-full-dependence-graph"
             >
@@ -369,7 +350,7 @@ watch (
           </button>
         </div>
       </div>
-   
+
       <div class="output-block" id="dependence-graph">
         <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
       </div>
@@ -389,29 +370,29 @@ watch (
       </div>
     </div>
   </div>
-  
+
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>, 
-      meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p> 
+    text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>,
+      meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p>
       <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
     title="Static Performance Analysis"
     @close="closeHelp1"/>
   </Teleport>
-  
+
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource, 
+    text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource,
          such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
     title="Throughput-bound execution time"
     @close="closeHelp2"/>
   </Teleport>
-  
-  <Teleport to="body">  
+
+  <Teleport to="body">
     <HelpComponent v-if="showHelp3" :position="helpPosition"
     text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
-      <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.
-      Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
+      <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.</p>
+      <p>Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
     title="Latency-bound execution time"
     @close="closeHelp3"/>
     </Teleport>
@@ -451,7 +432,7 @@ watch (
     overflow:   hidden;
     border:     1px solid #e0e0e0;
     border-radius: 6px;
-  } 
+  }
   .output-block svg {
     position: absolute;
     inset:    0;
@@ -479,7 +460,7 @@ watch (
     height: 1.2em;
   }
   .icon-button:hover {
-    background: #a0a0a0;      /* darker at hover */  
+    background: #a0a0a0;      /* darker at hover */
   }
   .icon-button:active {
     background: #909090;      /* still darker */
@@ -531,7 +512,7 @@ watch (
     flex-direction: column;
     box-shadow:     0 4px 12px rgba(0,0,0,0.25);
   }
- 
+
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
@@ -540,7 +521,7 @@ watch (
     cursor:     pointer;
     margin-bottom: 8px;
   }
-  
+
   .fullscreen-header {
     display:         flex;
     justify-content: space-between;
@@ -559,152 +540,152 @@ watch (
     font-weight: 600;
     margin:      0;
   }
-  
-.graph-container {
-  flex: 1;
-  overflow: auto;
-  padding: 10px;
-}
 
-.graph-wrapper {
-  width: 100%;
-  height: 100%;
-  min-height: 200px;
-}
+  .graph-container {
+    flex: 1;
+    overflow: auto;
+    padding: 10px;
+  }
 
-.graph-wrapper svg {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-}
+  .graph-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+  }
 
-.performance-analysis {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-}
+  .graph-wrapper svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+  }
 
-.performance-summary {
-  margin: 0.2rem 0;
-}
+  .performance-analysis {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
 
-.summary-card {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 2px;
-  padding: 0.2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+  .performance-summary {
+    margin: 0.2rem 0;
+  }
 
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-  padding-bottom: 0.2rem;
-  border-bottom: 2px solid #e9ecef;
-}
+  .summary-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 2px;
+    padding: 0.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
 
-/* CSS para diseño horizontal */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.5rem;
-  align-items: center;
-}
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    padding-bottom: 0.2rem;
+    border-bottom: 2px solid #e9ecef;
+  }
 
-.metric-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 0.3rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
+  /* CSS para diseño horizontal */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    align-items: center;
+  }
 
-.metric-label {
-  font-size: 0.95em;
-  color: #6c757d;
-  margin-bottom: 0.1rem;
-}
+  .metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.3rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
 
-.metric-value {
-  font-size: 1em;
-  font-weight: 600;
-}
-  
-.metric-value.highlight {
-  color: #1a73e8;
-  font-size: 1.1em;
-}
+  .metric-label {
+    font-size: 0.95em;
+    color: #6c757d;
+    margin-bottom: 0.1rem;
+  }
 
-.metric-value.latency-bound {
-  color:         #d93025;
-  background:    #fce8e6;
-  padding:       0 4px;
-  border-radius: 3px;
-}
+  .metric-value {
+    font-size: 1em;
+    font-weight: 600;
+  }
 
-.metric-value.throughput-bound {
-  color:         #188038;
-  background:    #e6f4ea;
-  padding:       0 4px;
-  border-radius: 3px;
-}
+  .metric-value.highlight {
+    color: #1a73e8;
+    font-size: 1.1em;
+  }
 
-.metric-value.both {
-  color:         #488038;
-  background:    #eff4ea;
-  padding:       0 4px;
-  border-radius: 3px;
-}
-  
-.bottlenecks-list {
-  background: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 3px;
-  overflow: hidden;
-}
+  .metric-value.latency-bound {
+    color:         #d93025;
+    background:    #fce8e6;
+    padding:       0 4px;
+    border-radius: 3px;
+  }
 
-.bottleneck-item {
-  display: flex;
-  padding: 0.25rem 1rem;
-  border-bottom: 1px solid #f1f3f4;
-  background: #f8f9fa;
-}
+  .metric-value.throughput-bound {
+    color:         #188038;
+    background:    #e6f4ea;
+    padding:       0 4px;
+    border-radius: 3px;
+  }
 
-.bottleneck-item:last-child {
-  border-bottom: none;
-}
+  .metric-value.both {
+    color:         #488038;
+    background:    #eff4ea;
+    padding:       0 4px;
+    border-radius: 3px;
+  }
 
-.bottleneck-index {
-  min-width: 20px;
-  color: #5f6368;
-  font-weight: 600;
-  font-size: 0.95em;
-}
+  .bottlenecks-list {
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
 
-.bottleneck-text {
-  flex: 1;
-  color: #202124;
-  font-size: 0.9em;
-  line-height: 1.4;
-}
+  .bottleneck-item {
+    display: flex;
+    padding: 0.25rem 1rem;
+    border-bottom: 1px solid #f1f3f4;
+    background: #f8f9fa;
+  }
 
-.annotations-box {
-  margin-top: 0.5rem;
-}
+  .bottleneck-item:last-child {
+    border-bottom: none;
+  }
 
-/* Fold transition */
-.fold-enter-active, .fold-leave-active {
-  transition: all 0.3s ease;
-  max-height: 500px;
-  overflow: hidden;
-}
+  .bottleneck-index {
+    min-width: 20px;
+    color: #5f6368;
+    font-weight: 600;
+    font-size: 0.95em;
+  }
 
-.fold-enter-from, .fold-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
+  .bottleneck-text {
+    flex: 1;
+    color: #202124;
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
+
+  .annotations-box {
+    margin-top: 0.5rem;
+  }
+
+  /* Fold transition */
+  .fold-enter-active, .fold-leave-active {
+    transition: all 0.3s ease;
+    max-height: 500px;
+    overflow: hidden;
+  }
+
+  .fold-enter-from, .fold-leave-to {
+    opacity: 0;
+    max-height: 0;
+  }
 </style>

@@ -131,7 +131,7 @@
       saveOptions()
 
       if (simState.state > 1) {  // Processor already initialized
-         if (newName !== simState.selectedProcessor) {
+         if (newName !== simState.processorName) {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
            reloadProcessor()
          }
@@ -192,6 +192,12 @@
     }
   })
 
+  watch(() => simState.simulatedProcess, () => {
+    if (simState.state > 2 && simState.programName != '') {
+      console.log('📄🔄 Refreshing program latencies & ports...');
+      // ToDo updateProcessorOnProcess: recompute instruction latencies & ports
+    }
+  })
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
@@ -223,6 +229,7 @@
 // PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor,
 //     uploadForEdition, drawProcessor, drawEditedProcessor, get_processor_dot
 // ============================================================================
+
   const initProcessor = async () => {
     await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
     reloadProcessor()
@@ -231,9 +238,10 @@
   const reloadProcessor = async () => {
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
-      const jsonString  = localStorage.getItem(`processor.${processorOptions.processorName}`)
-      simState.simulatedProcessor = JSON.parse(jsonString)
-      simState.selectedProcessor  = processorOptions.processorName;  // fire other components
+      const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
+      const data       = JSON.parse(jsonString)
+      updateProcessorOnProcess(data)
+      simState.processorName  = processorOptions.processorName;  // fire other components
       if (simState.state == 1) {  // This is an initialization step
         simState.state = 2;       // Change to next initialization step
         console.log('💻✅ Initialization step (2): processor configuration loaded')
@@ -249,10 +257,11 @@
   const emit = defineEmits(['requestSwitchFull'])
 
   function editProcessor () {
-    if (simState.simulatedProcessor) {
+    if (simState.simulatedProcess) {
       emit('requestSwitchFull', 'processor')
-      updateProcessorSettings(simState.simulatedProcessor)
-      console.log('📄 Emit requestSwitchFull for processor edition')
+      const { name, instruction_list, ...cleanProcConfig } = procConfig
+      updateProcessorSettings(cleanProcConfig)
+      console.log('💻📄 Emit requestSwitchFull for processor edition')
     }
   }
 
@@ -283,7 +292,7 @@
   const drawProcessor = async () => {
     console.log('💻🔄Redrawing simulated processor');
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcessor)
+      const dotCode      = get_processor_dot (simState.simulatedProcess)
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -644,10 +653,9 @@
         }
         else {
           // TODO: Check here if it is a valid processor
-          simState.simulatedProcessor = data
-          saveToLocalStorage('processor', data.name, data,
-                                          processorOptions.availableProcessors)
+          saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
           processorOptions.processorName = data.name
+          updateProcessorOnProcess(data)
           return;
         }
       }
@@ -660,6 +668,12 @@
   function clearProcessor() {
     updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
+  }
+
+  function updateProcessorOnProcess(data) {
+    Object.assign(simState.simulatedProcess, data)
+    // ToDo: add latencies and port masks to each instruction in the instruction list,
+    // so they can be used by the simulator without checking the processor configuration every cycle
   }
 
 /* ------------------------------------------------------------------

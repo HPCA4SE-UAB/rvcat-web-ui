@@ -129,10 +129,10 @@ function loadEditedProgram() {
        initProgram()  // --> generates reloadProgram
   })
 
-  watch(() => simState.simulatedProcessor, () => {
-    if (simState.state > 2 && simState.selectedProgram != '') {
+  watch(() => simState.simulatedProcess, () => {
+    if (simState.state > 2 && simState.programName != '') {
       console.log('📄🔄 Refreshing program visualization...');
-      // showProgram() & recompute instruction latencies & ports
+      // ToDo showProgram() & recompute instruction latencies & ports
     }
   })
 
@@ -173,9 +173,10 @@ function loadEditedProgram() {
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
-      const jsonString      = localStorage.getItem(`program.${programOptions.currentProgram}`)
-      simState.simulatedProgram = JSON.parse(jsonString)
-      simState.selectedProgram = programOptions.currentProgram;  // fire other components, watching for a change
+      const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
+      const data       = JSON.parse(jsonString)
+      updateProgramOnProcess(data)
+      simState.programName  = programOptions.currentProgram;  // fire other components
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
         console.log('📄✅ Initialization step (3): program loaded')
@@ -188,8 +189,14 @@ function loadEditedProgram() {
   const emit = defineEmits(['requestSwitchFull'])
 
   function editProgram () {
-    if (simState.simulatedProgram) {
-      localStorage.setItem('programTemp', JSON.stringify(simState.simulatedProgram));
+    if (simState.simulatedProcess) {
+      const cleanProgram = {
+        name: simState.simulatedProcess.name,
+        instruction_list: structuredClone(
+          simState.simulatedProcess.instruction_list
+        )
+      }
+      localStorage.setItem('programTemp', JSON.stringify(cleanProgram));
       loadEditedProgram()
       if (editedProgram.value.length > 0)
         editedProgram.value.pop()
@@ -210,22 +217,28 @@ function loadEditedProgram() {
     }
   }
 
-// UpLOAD from Edition Panel: straightforward version (no modal)
-const uploadForEdition = async () => {
-  try {
-    const data = await uploadJSON(null, 'program');
-    if (data) {
-      // TODO: Check here if it is a valid program
-      localStorage.setItem('programTemp', JSON.stringify(data));
-      loadEditedProgram()
-      if (editedProgram.value.length > 0)
-        editedProgram.value.pop()
-      localStorage.setItem('programTemp', JSON.stringify(editedProgram.value));
-    }
-  } catch (error) {
-    console.error('📄❌ Failed to upload program for edition:', error)
+  function updateProgramOnProcess(data) {
+    Object.assign(simState.simulatedProcess, data)
+    // ToDo: add latencies and port masks to each instruction in the instruction list,
+    // so they can be used by the simulator without checking the processor configuration every cycle
   }
-};
+
+  // UpLOAD from Edition Panel: straightforward version (no modal)
+  const uploadForEdition = async () => {
+    try {
+      const data = await uploadJSON(null, 'program');
+      if (data) {
+        // TODO: Check here if it is a valid program
+        localStorage.setItem('programTemp', JSON.stringify(data));
+        loadEditedProgram()
+        if (editedProgram.value.length > 0)
+          editedProgram.value.pop()
+        localStorage.setItem('programTemp', JSON.stringify(editedProgram.value));
+      }
+    } catch (error) {
+      console.error('📄❌ Failed to upload program for edition:', error)
+    }
+  };
 
 // ============================================================================
 // Program handling:
@@ -379,10 +392,9 @@ function snapshotProgram() {
         }
         else {
           // TODO: Check here if it is a valid program
-          simState.simulatedProgram = data
-          saveToLocalStorage('program', data.name, simState.simulatedProgram,
-                                        programOptions.availablePrograms)
+          saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
           programOptions.currentProgram = data.name;
+          updateProgramOnProcess(data)
           return;
         }
       }
@@ -455,8 +467,8 @@ function snapshotProgram() {
               <th v-if="programOptions.visibleCols.size"  style="width: 100px;"> Size </th>
             </tr>
           </thead>
-          <tbody v-if="simState.simulatedProgram !== null">
-            <tr v-for="(inst, index) in simState.simulatedProgram.instruction_list" :key="index">
+          <tbody v-if="simState.simulatedProcess !== null">
+            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index">
               <td v-if="programOptions.visibleCols.index">{{ index }}</td>
 
               <td v-if="programOptions.visibleCols.text" title="Instruction description">
