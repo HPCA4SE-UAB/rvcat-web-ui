@@ -56,7 +56,7 @@
 
 
 // ============================================================================
-// Temporal in-edition processor:  updateProcessorSettings, loadEditedProcessor
+// Temporal in-edition processor:  createDefaultConfig, updateProcessorSettings
 // ============================================================================
 
   function createDefaultConfig() {
@@ -117,18 +117,6 @@
       console.error("💻❌ Failed to update processor settings:", e);
     }
   };
-
-  function loadEditedProcessor() {
-    const stored = localStorage.getItem('processorTemp');
-    if (!stored) return;
-    try {
-      const data = JSON.parse(stored);
-      updateProcessorSettings(data)
-    } catch (e) {
-      console.error('📄❌ Failed to load edited processor from localStorage:', e);
-    }
-  }
-
 
 // ============================================================================
 // WATCHES: processor, globalState  HANDLERS: setProcessor
@@ -211,7 +199,19 @@
 
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
-    loadEditedProcessor()
+
+    // load Edited Processor
+    const stored = localStorage.getItem('processorTemp');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        updateProcessorSettings(data)
+        return
+      } catch (e) {
+        console.error('📄❌ Failed to load edited processor from localStorage:', e);
+      }
+    }
+    procConfig= createDefaultConfig()
   });
 
   onUnmounted(() => {
