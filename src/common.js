@@ -41,7 +41,7 @@ export const resourceConfig = {
   }
 };
 
-function updateProcess(process) {
+export function updateProcess(process) {
 
   const { latencies, ports, instruction_list } = process
 
