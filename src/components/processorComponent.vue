@@ -197,7 +197,8 @@
       console.log('💻🔄 Refreshing program latencies & ports on simulated process');
       updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
     }
-  })
+  },
+  { deep: true, immediate: true })
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
@@ -668,6 +669,7 @@
           saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
           Object.assign(simState.simulatedProcess, data)
           simState.processorName = data.name
+          processorOptions.processorName = data.name;
           return;
         }
       }
