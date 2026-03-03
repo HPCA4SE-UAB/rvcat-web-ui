@@ -259,7 +259,18 @@
   function editProcessor () {
     if (simState.simulatedProcess) {
       emit('requestSwitchFull', 'processor')
-      const { name, instruction_list, ...cleanProcConfig } = procConfig
+      const cleanProcConfig = {
+        name:       'edit',
+        sched:      simState.simulatedProcess.sched      || 'optimal',
+        dispatch:   simState.simulatedProcess.dispatch   || 1,
+        retire:     simState.simulatedProcess.retire     || 1,
+        nBlocks:    simState.simulatedProcess.nBlocks    || 0,
+        blkSize:    simState.simulatedProcess.blkSize    || 1,
+        mPenalty:   simState.simulatedProcess.mPenalty   || 1,
+        mIssueTime: simState.simulatedProcess.mIssueTime || 1,
+        latencies:  JSON.parse(JSON.stringify(simState.simulatedProcess.latencies)),
+        ports:      JSON.parse(JSON.stringify(simState.simulatedProcess.ports))
+      }
       updateProcessorSettings(cleanProcConfig)
       console.log('💻📄 Emit requestSwitchFull for processor edition')
     }
