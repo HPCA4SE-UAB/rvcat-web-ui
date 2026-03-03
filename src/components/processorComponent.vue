@@ -130,7 +130,7 @@
 
       saveOptions()
 
-      if (simState.state > 0) {  // RVCAT already imported
+      if (simState.state > 1) {  // Processor already initialized
          if (newName !== simState.selectedProcessor) {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
            reloadProcessor()
@@ -211,7 +211,6 @@
         console.error('📄❌ Failed to load edited processor from localStorage:', e);
       }
     }
-    drawEditedProcessor()
   });
 
   onUnmounted(() => {
@@ -238,6 +237,7 @@
       if (simState.state == 1) {  // This is an initialization step
         simState.state = 2;       // Change to next initialization step
         console.log('💻✅ Initialization step (2): processor configuration loaded')
+        drawEditedProcessor()
       }
       drawProcessor()
     } catch (error) {
