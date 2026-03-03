@@ -196,7 +196,6 @@
     if (simState.state > 2 && simState.programName != '') {
       console.log('💻🔄 Refreshing program latencies & ports on simulated process');
       updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
-      simState.processorName= processorOptions.processorName;
     }
   })
 
@@ -248,6 +247,7 @@
         drawEditedProcessor()
       }
       Object.assign(simState.simulatedProcess, data)
+      simState.processorName= processorOptions.processorName;
       drawProcessor()
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
@@ -921,7 +921,7 @@
                     <td></td>
                     <td>
                       <input type="number"
-                          v-model.number="procConfig.latencies[type].default"
+                          v-model.number="procConfig.latencies[type]"
                           class="latency-input"
                           min="1" max="99"
                           :id="`${type}-latency`"
@@ -975,7 +975,7 @@
                         v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
                         >
                         <input type="number"
-                          v-model.number="procConfig.latencies[type][op].default"
+                          v-model.number="procConfig.latencies[`${type}.${op}`]"
                           min="1" max="99"
                           class="latency-input" />
                       </td>
@@ -1005,7 +1005,7 @@
                       </td>
                       <td>
                         <input type="number"
-                          v-model.number="procConfig.latencies[type][op][size]"
+                          v-model.number="procConfig.latencies[`${type}-${op}-${size}`]"
                           min="1" max="99"
                           class="latency-input"
                           :id="`${type}-${op}-latency`"

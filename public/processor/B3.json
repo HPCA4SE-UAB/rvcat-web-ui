@@ -7,49 +7,30 @@
   "blkSize":    8,
   "mPenalty":  12,
   "mIssueTime": 8,
+
   "latencies": {
-    "INT": {
-      "default": 1,
-      "ARITH": 1,
-      "LOGIC": 1,
-      "SHIFT": 1
-    },
-    "VINT": {
-      "default": 1,
-      "ARITH": 1,
-      "LOGIC": 1,
-      "SHIFT": 1
-    },
-    "MEM": {
-      "default": 4,
-      "STORE": 2,
-      "LOAD": 4
-    },
-    "VMEM": {
-      "default": 5,
-      "STORE": 3,
-      "LOAD": 5
-    },
-    "FLOAT": {
-      "default": 2,
-      "ADD": 2,
-      "MUL": 4,
-      "FMA": 5,
-      "DIV": 8,
-      "SQRT": 12
-    },
-    "VFLOAT": {
-      "default": 2,
-      "ADD": 2,
-      "MUL": 5,
-      "FMA": 5,
-      "DIV": 8,
-      "SQRT": 16
-    },
-    "BRANCH": {
-      "default": 1
-    }
+    "INT":         1,
+    "INT.ARITH":   1,
+    "INT.LOGIC":   1,
+    "INT.SHIFT":   1,
+    "VINT":        1,
+    "MEM.STORE":   2,
+    "MEM.LOAD":    4,
+    "VMEM.STORE":  3,
+    "VMEM.LOAD":   5,
+    "FLOAT.ADD":   2,
+    "FLOAT.MUL":   4,
+    "FLOAT.FMA":   5,
+    "FLOAT.DIV":   8,
+    "FLOAT.SQRT":  12,
+    "VFLOAT.ADD":  2,
+    "VFLOAT.MUL":  5,
+    "VFLOAT.FMA":  5,
+    "VFLOAT.DIV":  8,
+    "VFLOAT.SQRT": 16,
+    "BRANCH":      1
   },
+  
   "ports": {
     "0": [
       "INT.ARITH",
