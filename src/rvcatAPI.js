@@ -22,7 +22,7 @@ export function useRVCAT_Api() {
     }
   };
 
-  const getDependenceGraph = async (JSONprocessText, n,i,l,s,f) => {
+  const getDependenceGraph = async (JSONprogramText, n,i,l,s,f) => {
     try {
       let internal = "True";
       let latency  = "True";
@@ -32,7 +32,7 @@ export function useRVCAT_Api() {
       if (!l) {latency  = "False"}
       if (!s) {small    = "False"}
       if (!f) {full     = "False"}
-      const code = `rvcat._program.show_graphviz(${JSONprocessText},${n}, ${internal}, ${latency}, ${small}, ${full})`
+      const code = `rvcat._program.show_graphviz(${JSONprogramText},${n}, ${internal}, ${latency}, ${small}, ${full})`
       const result = await safeExecute(code, 'get_dependence_graph');
       console.log('🧠 RVCAT: dependence Graph (GRAPHVIZ) obtained');
       return result;

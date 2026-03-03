@@ -1,8 +1,8 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
-  import HelpComponent                           from '@/components/helpComponent.vue'
-  import { createGraphVizGraph }                                       from '@/common'
-  import { useRVCAT_Api }                                            from '@/rvcatAPI'
+  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
+  import HelpComponent                                  from '@/components/helpComponent.vue'
+  import { createGraphVizGraph }                                              from '@/common'
+  import { useRVCAT_Api }                                                   from '@/rvcatAPI'
 
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -66,7 +66,8 @@
       if (saved) {
         Object.assign(dependenceGraphOptions, JSON.parse(saved))
       }
-      getPerformanceAnalysis(JSON.stringify(simState.simulatedProcess));
+      const { dispatch, retire, instruction_list } = simState.simulatedProcess
+      getPerformanceAnalysis(JSON.stringify( { dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
     } catch (error) {
       console.error('🔎❌ Failed to load:', error)
     }
@@ -100,7 +101,7 @@
       saveOptions()
       graphTimeout = setTimeout(() => {
         getDependenceGraph(
-          JSON.stringify(simState.simulatedProcess),
+          JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
           dependenceGraphOptions.iters,
           dependenceGraphOptions.showIntern,
           dependenceGraphOptions.showLaten,
@@ -120,9 +121,10 @@
     [() => simState.simulatedProgram, () => simState.simulatedProcessor], () => {
       clearTimeout(graphTimeout)
       graphTimeout = setTimeout(() => {
-        getPerformanceAnalysis(JSON.stringify(simState.simulatedProcess))
+        const { dispatch, retire, instruction_list } = simState.simulatedProcess
+        getPerformanceAnalysis(JSON.stringify( { dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
         getDependenceGraph(
-          JSON.stringify(simState.simulatedProcess),
+          JSON.stringify( toRaw(instruction_list), null, 2),
           dependenceGraphOptions.iters,
           dependenceGraphOptions.showIntern,
           dependenceGraphOptions.showLaten,
