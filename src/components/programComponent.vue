@@ -6,9 +6,9 @@
            saveToLocalStorage, removeFromLocalStorage,
            instructionTypes, typeOperations, typeSizes                        }  from '@/common'
 
-  const { getProgGraph } = useRVCAT_Api();
-  const { registerHandler }                       = inject('worker');
-  const simState                                  = inject('simulationState');
+  const { getProgGraph }    = useRVCAT_Api();
+  const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
 
   const props = defineProps({
     isFullscreen: {
@@ -16,6 +16,15 @@
       default: false
     }
   })
+
+  const saveSimState = () => {
+    try {
+      localStorage.setItem('SimulationState', JSON.stringify(simState))
+      console.log('🚀✅ SimulationState saved');
+    } catch (error) {
+      console.error('🚀❌ Failed to save SimulationState:', error)
+    }
+  }
 
 // ============================================================================
 // Program options & localStorage
@@ -125,15 +134,21 @@ function loadEditedProgram() {
   )
 
   watch(() => simState.state, (newValue, oldValue) => {
+    saveSimState()
     if (newValue == 2)   // This is an initialization step
        initProgram()  // --> generates reloadProgram
   })
 
   watch(() => simState.simulatedProcess, () => {
+    saveSimState()
     if (simState.state > 2 && simState.programName != '') {
       console.log('📄🔄 Refreshing program visualization...');
       // ToDo showProgram() & recompute instruction latencies & ports
     }
+  })
+
+  watch(() => simState, () => {
+    saveSimState()
   })
 
 
