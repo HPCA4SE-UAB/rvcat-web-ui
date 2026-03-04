@@ -15,7 +15,6 @@
     }
   })
 
-
 // ============================================================================
 // Processor options & localStorage
 // ============================================================================
@@ -24,7 +23,6 @@
 
   const defaultOptions = {
     processorName:       '',
-    ROBsize:             20,
     availableProcessors: [],
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
@@ -141,26 +139,6 @@
     }
   })
 
-  watch( [() => processorOptions.ROBsize ], (newROBsize, oldROBsize) => {
-    try {
-      if (newROBsize !== oldROBsize) {
-        newROBsize = Math.max(Math.min(newROBsize, 200), 1);
-        if (newROBsize === oldROBsize)
-          return
-      }
-
-      saveOptions()
-      processorOptions.ROBsize = newROBsize
-      if (simState.state < 2)  // processor still not loaded
-        return
-      console.log(`💻✅ ROB size changed to "${newROBsize}"`);
-      drawProcessor()
-      simState.ROBsize = newROBsize // fires other components
-    } catch (error) {
-      console.error('💻❌ Failed to handle changes on processor:', error)
-    }
-  })
-
   watch( [
     () => processorOptions.availableProcessors,
     () => processorOptions.expandedTypes,
@@ -193,9 +171,16 @@
   })
 
   watch(() => simState.simulatedProcess, () => {
+    // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
+    const oldROBsize = simState.simulatedProcess?.ROBsize || 20;
+    const newROBsize = Math.max(Math.min(oldROBsize, 200), 1);
+    if (newROBsize !== oldROBsize)
+      simState.simulatedProcess.ROBsize = newROBsize;
+
     if (simState.state > 2 && simState.programName != '') {
       console.log('💻🔄 Refreshing program latencies & ports on simulated process');
       updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
+      drawProcessor()
     }
   },
   { deep: true, immediate: true })
@@ -247,7 +232,9 @@
         console.log('💻✅ Initialization step (2): processor configuration loaded')
         drawEditedProcessor()
       }
+      const currentROBsize = simState.simulatedProcess?.ROBsize || 20;
       Object.assign(simState.simulatedProcess, data)
+      simState.simulatedProcess.ROBsize = currentROBsize;  // Preserve current ROBsize if it was modified
       simState.processorName= processorOptions.processorName;
       drawProcessor()
     } catch (error) {
@@ -326,12 +313,12 @@
     }
   }
 
-  function get_processor_dot(data) {
-    const dispatch_width = data.dispatch
-    const retire_width   = data.retire
-    const sched          = data.sched
-    const ROBsize        = processorOptions.ROBsize
-    const num_ports      = Object.keys(data.ports).length
+  function get_processor_dot(process) {
+    const dispatch_width = process.dispatch
+    const retire_width   = process.retire
+    const sched          = process.sched
+    const ROBsize        = process.ROBsize || 20
+    const num_ports      = Object.keys(process.ports).length
     let dot_code = `
     digraph "Processor Pipeline" {
       rankdir=TB;
@@ -667,7 +654,11 @@
         else {
           // TODO: Check here if it is a valid processor
           saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
+
+          const currentROBsize = simState.simulatedProcess?.ROBsize || 20;
           Object.assign(simState.simulatedProcess, data)
+          simState.simulatedProcess.ROBsize = currentROBsize;  // Preserve current ROBsize if it was modified
+
           simState.processorName = data.name
           processorOptions.processorName = data.name;
           return;
@@ -736,7 +727,7 @@
           <div class="iters-group rob-group">
             <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB:</span>
             <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)"
-                 v-model.number="processorOptions.ROBsize">
+                 v-model.number="simState.simulatedProcess.ROBsize">
           </div>
         </div>
       </div>

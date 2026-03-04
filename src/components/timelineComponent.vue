@@ -58,10 +58,10 @@
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
 
     try {    // Load from localStorage
-      if (!timelineData.value && simState.RVCAT_state == 3)  // on mount
+      if (!timelineData.value && simState.state >= 3)  // on mount
          getTimelineAndDraw()
     } catch (error) {
-      console.error('📍📈❌ Failed on timeline:', error)
+      console.error('📈❌ Failed on timeline:', error)
     }
   });
 
@@ -122,27 +122,15 @@
   },
   { deep: true, immediate: true })
 
-  // Watch multiple reactive sources
   watch (
-    [() => simState.selectedProgram,
-     () => simState.selectedProcessor,
-     () => simState.ROBsize],
-    ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
-      // Check if any changed meaningfully
-      const programChanged   =   newProgram   !== oldProgram
-      const processorChanged =   newProcessor !== oldProcessor
-      const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
-
-      if (!programChanged && !processorChanged && !ROBsizeChanged) return
-
-      getTimelineAndDraw()
-    },
-  { immediate: false })
+    [() => simState.simulatedProcess], () => { getTimelineAndDraw() },
+  { deep: true, immediate: false })
 
   async function getTimelineAndDraw() {
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline')
-      await getTimeline(timelineOptions.iters, simState.ROBsize )
+      const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
+      await getTimeline(timelineOptions.iters, JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2))
     }
   }
 
@@ -709,16 +697,12 @@
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
-  const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
-  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
+  const showHelp1 = ref(false);
+  const helpIcon1 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
   function closeHelp1() { showHelp1.value  = false }
-  function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
-  function closeHelp2() { showHelp2.value  = false }
-  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
-  function closeHelp3() { showHelp3.value  = false }
 
 </script>
 
@@ -737,7 +721,7 @@
             <span class="iters-label">Iterations:</span>
             <input type="number" min="1" max="9"  v-model.number="timelineOptions.iters"
                title="# loop iterations (1 to 9)"
-                id="timeline-iterations"
+               id="timeline-iterations">
          </div>
 
          <div class="iters-group">
