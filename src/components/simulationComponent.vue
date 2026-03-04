@@ -2,12 +2,12 @@
   import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue";
   import HelpComponent from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
- 
+
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
- /* ------------------------------------------------------------------ 
+ /* ------------------------------------------------------------------
    * Simulation Results options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'simulationOptions'
@@ -16,7 +16,7 @@
     iters:        1,
     showCritical: false
   }
-  
+
   const savedOptions = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -33,7 +33,7 @@
   let cleanupHandleResults  = null
   let executionGraphDotCode = null
   let resultsTimeout        = null
-  
+
   // Save on changes
   const saveOptions = () => {
     try {
@@ -42,12 +42,12 @@
       console.error('🕐❌ Failed to save:', error)
     }
   }
-  
+
   // Load from localStorage
   onMounted(() => {
     cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
     console.log('🕐🎯 SimulationComponent mounted')
-  
+
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -105,15 +105,15 @@
           i++;
       }
       /* createProcessorSimulationGraph(
-          processorInfo.stages.dispatch, 
-          Object.keys(processorInfo.ports).length, 
-          processorInfo.stages.retire, 
+          processorInfo.stages.dispatch,
+          Object.keys(processorInfo.ports).length,
+          processorInfo.stages.retire,
           usage);
        */
-      
+
       // fullGraphDotCode = get_execution_processor_dot(dispatch, execute, retire, simState.ROBsize, usage);
       // svg    = createGraphVizGraph(fullGraphDotCode);
-            
+
       document.getElementById('run-simulation-spinner').style.display = 'none';
       document.getElementById('simulation-running').style.display     = 'none';
       document.getElementById('critical-path-section').style.display  = 'block';
@@ -123,8 +123,8 @@
     }
   }
 
- /* ------------------------------------------------------------------ 
-  * Simulation options: UI actions 
+ /* ------------------------------------------------------------------
+  * Simulation options: UI actions
   * ------------------------------------------------------------------ */
 
   function toggleCritical() { simulationOptions.showCritical = !simulationOptions.showCritical }
@@ -151,10 +151,10 @@
     }
   }
 
-/****************** 
+/******************
    TODO:  do not change when only showCritical is changed, and there is no other change, and results are available
    ********************/
-  
+
   // Watch ALL simulation options for changes
   watch(simulationOptions, () => {
     try {
@@ -166,22 +166,22 @@
       }
     } catch (error) {
       console.error('🕐❌Failed when simulation options modified:', error)
-    } 
+    }
   },
   { deep: true, immediate: true })
 
 
   // Watch multiple reactive sources
   watch (
-    [() => simState.selectedProgram, 
-     () => simState.selectedProcessor, 
+    [() => simState.selectedProgram,
+     () => simState.selectedProcessor,
      () => simState.ROBsize],
     ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
       // Check if any changed meaningfully
       const programChanged   =   newProgram      && newProgram   !== oldProgram
       const processorChanged =   newProcessor    && newProcessor !== oldProcessor
       const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
- 
+
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
       if (simState.state >= 3 && newProgram && newProcessor) {
@@ -190,7 +190,7 @@
     },
   { immediate: false })
 
-  
+
 function get_execution_processor_dot(dispatch_width, num_ports, retire_width, rob_size, usage = null) {
   let dot_code = `
   digraph "Usage of Processor Pipeline"{
@@ -287,7 +287,7 @@ function get_execution_processor_dot(dispatch_width, num_ports, retire_width, ro
   return dot_code;
 }
 
-  
+
 function createCriticalPathList(data) {
   const COLORS = [
     "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
@@ -313,7 +313,7 @@ function createCriticalPathList(data) {
     <li style="background-color:${getColor(percentage)}; list-style:none; margin:0; padding:0">
       <div style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
          <div style="width:100%; text-align:center;">
-            ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b> 
+            ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b>
         </div>
       </div>
     </li>
@@ -335,9 +335,9 @@ function createCriticalPathList(data) {
   return out
 }
 
-  
-/* ------------------------------------------------------------------ 
- * Help support 
+
+/* ------------------------------------------------------------------
+ * Help support
  * ------------------------------------------------------------------ */
   const showHelp1 = ref(false);  const showHelp2 = ref(false); const showHelp3 = ref(false);
   const helpIcon1 = ref(null);   const helpIcon2 = ref(null);  const helpIcon3 = ref(null);
@@ -349,7 +349,7 @@ function createCriticalPathList(data) {
   function closeHelp2() { showHelp2.value  = false }
   function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
   function closeHelp3() { showHelp3.value  = false }
-  
+
 </script>
 
 <template>
@@ -359,15 +359,15 @@ function createCriticalPathList(data) {
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Simulate Execution of <strong>{{ simState.selectedProgram }}</strong></span>
+        <span class="header-title">Simulate Execution of <strong>{{ simState.programName }}</strong></span>
       </div>
       <div class="iters-run">
         <div class="iters-group">
           <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="5000" v-model.number="simulationOptions.iters" 
+          <input type="number" min="1" max="5000" v-model.number="simulationOptions.iters"
                  title="# loop iterations (1 to 5000)" id="simulation-iterations" >
         </div>
-        <button class="blue-button" @click="reloadExecutionResults" 
+        <button class="blue-button" @click="reloadExecutionResults"
                 title="Run Simulation"  id="run-simulation-button" >
            Run
         </button>
@@ -400,7 +400,7 @@ function createCriticalPathList(data) {
         </div>
       </div>
     </div>
-    
+
     <div class="sim-running-msg">
       <div class="running-group">
         <div id="run-simulation-spinner" class="spinner" style="display: none;"></div>
@@ -413,7 +413,7 @@ function createCriticalPathList(data) {
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
          <img src="/img/info.png" class="info-img">
       </span>
-      <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical" 
+      <button class="dropdown-header" @click="toggleCritical" :aria-expanded="showCritical"
         title="Show Critical % Info"
         id   ="show-critical-button">
         <span class="arrow" aria-hidden="true">
@@ -422,7 +422,7 @@ function createCriticalPathList(data) {
         <span class="dropdown-title">Critical Execution Path</span>
       </button>
     </div>
-      
+
     <Transition name="fold" appear>
       <prev v-show="simulationOptions.showCritical" id="critical-path"></prev>
     </Transition>
@@ -430,22 +430,22 @@ function createCriticalPathList(data) {
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<strong>Simulate</strong> the execution of a specified number of program 
-      loop iterations and view aggregate performance metrics, including the total number of executed 
+    text="<strong>Simulate</strong> the execution of a specified number of program
+      loop iterations and view aggregate performance metrics, including the total number of executed
       <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure that you simulate a representative 
-      number of loop iterations. 
-      <p>The sections below provide detailed statistics on the critical execution path and 
+      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure that you simulate a representative
+      number of loop iterations.
+      <p>The sections below provide detailed statistics on the critical execution path and
       the utilization of core processor resources.</p>"
     title="Overall Simulation Results"
     @close="closeHelp1"/>
   </Teleport>
-  
-  <Teleport to="body">    
+
+  <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Open this tab to visualize the <strong>time distribution of instructions</strong>,
-      along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>. 
-      <p>You can also explore the critical execution path in a detailed timeline view for a limited number 
+      along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>.
+      <p>You can also explore the critical execution path in a detailed timeline view for a limited number
       of loop iterations in the <strong>Timeline</strong> tab.</p>"
     title="Critical execution path breakdown"
     @close="closeHelp2"/>
@@ -503,7 +503,7 @@ function createCriticalPathList(data) {
     height: 15px;
     width:  5vh;
     height: 5vh;
-    margin: auto; 
+    margin: auto;
     animation:  spin 1s linear infinite;
     border:     8px solid #f0f0f0;
     border-top: 8px solid #0085dd;

@@ -2,12 +2,12 @@
   import { ref, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue';
   import HelpComponent  from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
- 
+
   const { getTimeline }      = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
-  /* ------------------------------------------------------------------ 
+  /* ------------------------------------------------------------------
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
@@ -52,7 +52,7 @@
       console.error('📈❌ Failed to save:', error)
     }
   }
-  
+
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
@@ -87,15 +87,15 @@
       console.error('📈❌Failed to obtain execution results:', error)
     }
   }
-  
-/* ------------------------------------------------------------------ 
-* UI actions 
+
+/* ------------------------------------------------------------------
+* UI actions
 * ------------------------------------------------------------------ */
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
   function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 6) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
- 
+
   // Watch ALL graph options for changes
   watch(timelineOptions, () => {
     clearTimeout(canvasTimeout)
@@ -108,9 +108,9 @@
         lastTimelineIters = timelineOptions.iters
         timelineData.value = null
       }
-      
+
       canvasTimeout = setTimeout(() => {
-        if (timelineData.value) 
+        if (timelineData.value)
           drawTimeline(timelineData.value);
         else
           getTimelineAndDraw()
@@ -118,21 +118,21 @@
       console.log('📈✅ Modified timeline options')
     } catch (error) {
       console.error('📈❌Failed to save dependence graph options:', error)
-    } 
+    }
   },
   { deep: true, immediate: true })
 
   // Watch multiple reactive sources
   watch (
-    [() => simState.selectedProgram, 
-     () => simState.selectedProcessor, 
+    [() => simState.selectedProgram,
+     () => simState.selectedProcessor,
      () => simState.ROBsize],
     ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
       // Check if any changed meaningfully
       const programChanged   =   newProgram   !== oldProgram
       const processorChanged =   newProcessor !== oldProcessor
       const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
- 
+
       if (!programChanged && !processorChanged && !ROBsizeChanged) return
 
       getTimelineAndDraw()
@@ -146,7 +146,7 @@
     }
   }
 
-/* ------------------------------------------------------------------ 
+/* ------------------------------------------------------------------
  * CANVAS: timeline
  * ------------------------------------------------------------------ */
 
@@ -675,7 +675,7 @@
 
   async function showCellInfo(instrID, cycle) {
   }
-  
+
   async function handleCellClick(instrID, cycle) {
     //TO DO: Create Python function that returs additional info
     const text = 'To DO';
@@ -706,8 +706,8 @@
     return msg;
   }
 
-/* ------------------------------------------------------------------ 
- * Help support 
+/* ------------------------------------------------------------------
+ * Help support
  * ------------------------------------------------------------------ */
   const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
   const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
@@ -719,9 +719,9 @@
   function closeHelp2() { showHelp2.value  = false }
   function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
   function closeHelp3() { showHelp3.value  = false }
-  
+
 </script>
- 
+
 <template>
   <div class="main">
     <div class="header">
@@ -729,9 +729,9 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Execution Timeline - <strong>{{  simState.selectedProgram }}</strong></span>
+        <span class="header-title">Execution Timeline - <strong>{{  simState.programName }}</strong></span>
       </div>
-      
+
       <div class="timeline-controls">
          <div class="iters-group">
             <span class="iters-label">Iterations:</span>
@@ -739,10 +739,10 @@
                title="# loop iterations (1 to 9)"
                 id="timeline-iterations"
          </div>
-        
+
          <div class="iters-group">
             <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-                title="Zoom Out (6 levels)" id="timeline-zoom-out" 
+                title="Zoom Out (6 levels)" id="timeline-zoom-out"
                 @click="zoomIncrease">
                 <img src="/img/zoom-out.png">
             </button>
@@ -752,30 +752,30 @@
                 <img src="/img/zoom-in.png">
             </button>
          </div>
- 
+
          <div class="iters-group">
-           <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts" 
-              title="Show/Hide Resource Usage" 
+           <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts"
+              title="Show/Hide Resource Usage"
               id="timeline-show-ports"
-              @click="togglePorts"> 
+              @click="togglePorts">
              <span v-if="timelineOptions.showPorts">✔ </span>
              Port Usage
            </button>
-           <button class="blue-button" :class="{ active: timelineOptions.showInstr }" :aria-pressed="timelineOptions.showInstr"  
-              title="Show/Hide Instructions" 
+           <button class="blue-button" :class="{ active: timelineOptions.showInstr }" :aria-pressed="timelineOptions.showInstr"
+              title="Show/Hide Instructions"
               id="timeline-show-instructions"
-              @click="toggleInstr"> 
+              @click="toggleInstr">
              <span v-if="timelineOptions.showInstr">✔ </span>
              Instructions
            </button>
          </div>
       </div>
     </div>
-    
+
     <div class="output-block-wrapper" id="simulation-output-container">
       <section class="simulation-results-controls" id="dependencies-controls"></section>
       <canvas ref="timelineCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-      
+
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
         <div v-if="hoverInfo.instr!='N/A'"><strong>Instruction:</strong> {{ hoverInfo.instr }}</div>
@@ -789,12 +789,12 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
-       text= "<p>The <strong>Timeline</strong> section shows the program execution over time. 
+       text= "<p>The <strong>Timeline</strong> section shows the program execution over time.
                 The number of <em>loop iterations</em> can be modified, and the timeline can be <strong>zoomed in/out</strong>.</p>
              <p><strong>Click</strong> on the timeline to activate it, then use the <strong>arrow keys</strong> to move left/right and up/down. Hover over the grid to see basic info about the selected cell, and <em>click</em> to obtain more detailed information.</p>"
        @close="closeHelp1" />
   </Teleport>
-  
+
   <div v-if="clickedCellInfo" class="modal-overlay" @click.self="clickedCellInfo = null">
     <div class="modal">
       <div class="modal-header">
@@ -806,7 +806,7 @@
       <p>{{ clickedCellInfo.text }}</p>
     </div>
   </div>
-  
+
 </template>
 
 <style scoped>

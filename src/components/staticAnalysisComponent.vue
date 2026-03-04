@@ -219,7 +219,7 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Static Performance Analysis: <strong>{{  simState.selectedProgram }}</strong></span>
+        <span class="header-title">Static Performance Analysis: <strong>{{  simState.programName }}</strong></span>
       </div>
     </div>
 
