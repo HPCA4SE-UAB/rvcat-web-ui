@@ -66,8 +66,8 @@
       if (saved) {
         Object.assign(dependenceGraphOptions, JSON.parse(saved))
       }
-      const { dispatch, retire, instruction_list } = simState.simulatedProcess
-      getPerformanceAnalysis(JSON.stringify( { dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
+      const { name, dispatch, retire, instruction_list } = simState.simulatedProcess
+      getPerformanceAnalysis(JSON.stringify( { name, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
     } catch (error) {
       console.error('🔎❌ Failed to load:', error)
     }
@@ -121,8 +121,8 @@
     [() => simState.simulatedProgram, () => simState.simulatedProcessor], () => {
       clearTimeout(graphTimeout)
       graphTimeout = setTimeout(() => {
-        const { dispatch, retire, instruction_list } = simState.simulatedProcess
-        getPerformanceAnalysis(JSON.stringify( { dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
+        const { name, dispatch, retire, instruction_list } = simState.simulatedProcess
+        getPerformanceAnalysis(JSON.stringify( { name, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
         getDependenceGraph(
           JSON.stringify( toRaw(instruction_list), null, 2),
           dependenceGraphOptions.iters,
