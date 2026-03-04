@@ -150,7 +150,8 @@ function loadEditedProgram() {
 
   watch(() => simState, () => {
     saveSimState()
-  })
+  },
+  { deep: true, immediate: true });
 
 
 // ============================================================================
