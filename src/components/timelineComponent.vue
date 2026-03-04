@@ -1,9 +1,9 @@
 <script setup>
-  import { ref, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue';
-  import HelpComponent  from '@/components/helpComponent.vue';
+  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue';
+  import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
-  const { getTimeline }      = useRVCAT_Api();
+  const { getTimeline }     = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
 
