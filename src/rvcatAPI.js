@@ -54,9 +54,9 @@ export function useRVCAT_Api() {
     }
   };
 
-  const getExecutionResults = async (JSONprocessText, n_iters, rob_size) => {
+  const getExecutionResults = async (JSONprocessText, n_iters) => {
     try {
-      const code = `rvcat._scheduler.get_results(${JSONprocessText}, ${n_iters}, ${rob_size})`
+      const code = `rvcat._scheduler.get_results(${JSONprocessText}, ${n_iters})`
       const result = await safeExecute(code, 'get_execution_results');
       console.log('🧠 RVCAT: execution results obtained');
       return result;
@@ -66,9 +66,9 @@ export function useRVCAT_Api() {
     }
   };
 
-   const getTimeline = async (JSONprocessText, n_iters, rob_size) => {
+   const getTimeline = async (JSONprocessText, n_iters) => {
     try {
-      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, ${n_iters}, ${rob_size})`
+      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, ${n_iters})`
       const result = await safeExecute(code, 'get_timeline');
       console.log('🧠 RVCAT: timeline obtained');
       return result;

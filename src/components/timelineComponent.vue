@@ -130,7 +130,8 @@
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline')
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-      await getTimeline(timelineOptions.iters, JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2))
+      await getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
+                        timelineOptions.iters) // Call Python RVCAT
     }
   }
 
