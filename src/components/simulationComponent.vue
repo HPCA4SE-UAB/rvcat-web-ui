@@ -1,11 +1,11 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue";
-  import HelpComponent from '@/components/helpComponent.vue';
+  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue";
+  import HelpComponent    from '@/components/helpComponent.vue';
   import { useRVCAT_Api } from '@/rvcatAPI';
 
   const { getExecutionResults } = useRVCAT_Api();
-  const { registerHandler } = inject('worker');
-  const simState            = inject('simulationState');
+  const { registerHandler }     = inject('worker');
+  const simState                = inject('simulationState');
 
  /* ------------------------------------------------------------------
    * Simulation Results options (persistent in localStorage)
