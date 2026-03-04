@@ -17,15 +17,6 @@
     }
   })
 
-  const saveSimState = () => {
-    try {
-      localStorage.setItem('SimulationState', JSON.stringify(simState))
-      console.log('🚀✅ SimulationState saved');
-    } catch (error) {
-      console.error('🚀❌ Failed to save SimulationState:', error)
-    }
-  }
-
 // ============================================================================
 // Program options & localStorage
 // ============================================================================
