@@ -133,26 +133,28 @@ function loadEditedProgram() {
     { deep: true }
   )
 
-  watch(() => simState.state, (newValue, oldValue) => {
-    saveSimState()
-    if (newValue == 2)   // This is an initialization step
-       initProgram()  // --> generates reloadProgram
-  })
-
-  watch(() => simState.simulatedProcess, () => {
-    saveSimState()
-    if (simState.state > 2 && simState.programName != '') {
-      console.log('📄🔄 Refreshing program visualization...');
-      simState.programName= programOptions.currentProgram;
-      // ToDo showProgram() & recompute instruction latencies & ports
+  // 🔹 Inicialización
+  watch(
+    () => simState.state,
+    (newValue, oldValue) => {
+      if (newValue === 2 && oldValue !== 2) {
+        initProgram()
+      }
     }
-  })
+  )
 
-  watch(() => simState, () => {
-    saveSimState()
-  },
-  { deep: true, immediate: true });
-
+  // 🔹 Refresco
+  watch(
+    () => simState.simulatedProcess,
+    () => {
+      if (simState.state > 2) {
+        console.log('📄🔄 Refreshing program latencies & ports on simulated process');
+        updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
+        simState.programName = programOptions.currentProgram
+        // tODO REFRESH VISUALIZATION OF prOGRAM in SIMULATION PANEL
+      }
+    }
+  )
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount

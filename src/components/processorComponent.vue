@@ -163,12 +163,22 @@
   },
   { deep: true, immediate: true })
 
-  watch(() => simState.state, (newValue, oldValue) => {
-    if (newValue == 1) { // This is an initialization step
-      console.log('💻✅ Initialization Step (1): RVCAT imported')
-      initProcessor()
+  // 🔹 Persistencia global
+  watch(
+    () => simState,
+    saveSimState,
+    { deep: true }
+  )
+
+  watch(
+    () => simState.state,
+    (newValue, oldValue) => {
+      if (newValue === 1 && oldValue !== 1) {
+        console.log('💻✅ Initialization Step (1): RVCAT imported')
+        initProcessor()
+      }
     }
-  })
+  )
 
   watch(() => simState.simulatedProcess, () => {
     // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
@@ -177,9 +187,7 @@
     if (newROBsize !== oldROBsize)
       simState.simulatedProcess.ROBsize = newROBsize;
 
-    if (simState.state > 2 && simState.programName != '') {
-      console.log('💻🔄 Refreshing program latencies & ports on simulated process');
-      updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
+    if (simState.state > 1) {
       drawProcessor()
     }
   },
