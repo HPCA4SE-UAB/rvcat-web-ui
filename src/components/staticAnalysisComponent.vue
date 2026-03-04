@@ -118,7 +118,7 @@
 
   // Watch for changes on processor or program
   watch (
-    [() => simState.simulatedProgram, () => simState.simulatedProcessor], () => {
+    [() => simState.simulatedProcess], () => {
       clearTimeout(graphTimeout)
       graphTimeout = setTimeout(() => {
         const { name, dispatch, retire, instruction_list } = simState.simulatedProcess
