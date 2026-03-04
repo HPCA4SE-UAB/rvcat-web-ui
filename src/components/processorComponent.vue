@@ -3,7 +3,7 @@
   import HelpComponent                                            from '@/components/helpComponent.vue'
 
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph, updateProcess,
+          initResource, createGraphVizGraph,
           instructionTypes, typeOperations, typeSizes                                 } from '@/common'
 
   const simState = inject('simulationState');
@@ -77,15 +77,7 @@
       mPenalty:   1,
       mIssueTime: 1,
       latencies:  Object.fromEntries(
-                    instructionTypes.flatMap(type => {
-                      const ops = typeOperations[type] || [];
-
-                      if (ops.length > 0) {
-                        return ops.map(op => [`${type}.${op}`, 1]);
-                      } else {
-                        return [[type, 1]];
-                      }
-                    })
+                    instructionTypes.flatMap(type => { return [[type, 1]]; })
                   ),
       ports:      { 0:  instructionTypes.flatMap(type => {
                           const ops = typeOperations[type] || [];

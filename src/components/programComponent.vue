@@ -3,7 +3,7 @@
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                      from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
-           saveToLocalStorage, removeFromLocalStorage,
+           saveToLocalStorage, removeFromLocalStorage, updateProcess,
            instructionTypes, typeOperations, typeSizes                        }  from '@/common'
 
   const { getProgGraph }    = useRVCAT_Api();
