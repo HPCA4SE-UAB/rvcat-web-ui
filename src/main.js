@@ -9,7 +9,6 @@ const app = createApp(App)
 const SimulationState = reactive({
   // 0: uninitialized, 1: RVCAT imported, 2: processor-loaded, 3: program-loaded, 4: tutorials-loaded, 5: new-tutorial edited
   state:               0,
-  ROBsize:            20,
   processorName:      '',
   programName:        '',
   simulatedProcess:   {}

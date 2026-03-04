@@ -143,7 +143,7 @@
         document.getElementById('critical-path-section').style.display  = 'none';
         document.getElementById('run-simulation-button').disabled       = true;
 
-        getExecutionResults(simulationOptions.iters, simState.ROBsize) // Call Python RVCAT --> 'get_execution_results'
+        getExecutionResults(simulationOptions.iters, simState.simulatedProcess) // Call Python RVCAT --> 'get_execution_results'
         console.log('🕐✅ Reloading execution results')
        }, 200)
     } catch (error) {
@@ -161,7 +161,7 @@
       simulationOptions.iters = Math.min(simulationOptions.iters, 5000);
       simulationOptions.iters = Math.max(simulationOptions.iters, 1);
       saveOptions()
-      if (simState.state >= 3 && simState.ROBsize > 0 && simState.selectedProgram && simState.selectedProcessor) {
+      if (simState.state >= 3) {
         reloadExecutionResults()
       }
     } catch (error) {
@@ -170,170 +170,160 @@
   },
   { deep: true, immediate: true })
 
-
-  // Watch multiple reactive sources
-  watch (
-    [() => simState.selectedProgram,
-     () => simState.selectedProcessor,
-     () => simState.ROBsize],
-    ([newProgram, newProcessor, newValue], [oldProgram, oldProcessor, oldValue] ) => {
-      // Check if any changed meaningfully
-      const programChanged   =   newProgram      && newProgram   !== oldProgram
-      const processorChanged =   newProcessor    && newProcessor !== oldProcessor
-      const ROBsizeChanged   = (newValue !== 0 ) && newValue     !== oldValue
-
-      if (!programChanged && !processorChanged && !ROBsizeChanged) return
-
-      if (simState.state >= 3 && newProgram && newProcessor) {
+  watch(
+    () => simState.simulatedProcess,
+    () => {
+      if (simState.state >= 3 && simState.simulatedProcess) {
+        console.log('📄🔄 Refreshing program latencies & ports on simulated process');
         reloadExecutionResults()
       }
     },
-  { immediate: false })
+    { deep: true, immediate: false }
+  )
 
+  function get_execution_processor_dot(dispatch_width, num_ports, retire_width, rob_size, usage = null) {
+    let dot_code = `
+    digraph "Usage of Processor Pipeline"{
+      rankdir=TB;
+      node [fontsize=14, fontname="Arial"];
+    `;
 
-function get_execution_processor_dot(dispatch_width, num_ports, retire_width, rob_size, usage = null) {
-  let dot_code = `
-  digraph "Usage of Processor Pipeline"{
-    rankdir=TB;
-    node [fontsize=14, fontname="Arial"];
-  `;
-
-  // Colorscale from white to red
-  const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
-                  "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
-                  "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
-  ];
-
-  let dispatch_color = color[Math.floor(usage.dispatch/5)];
-  // --- FETCH ---
-  dot_code += `Fetch [
-        shape=point
-        width=0
-        height=0
-        fixedsize=true
-        label=""
-        margin=0
-        style=invis
-      ];`;
-
-  dot_code += `
-    Fetch -> "Waiting Buffer" [
-      label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${dispatch_color}"><TR><TD>Dispatch = ${dispatch_width} (${usage.dispatch.toFixed(1)}%)</TD></TR></TABLE>>,
-      fontsize=14,
-      fontname="Arial",
-      tooltip="Usage: ${usage.dispatch.toFixed(1)}%"
+    // Colorscale from white to red
+    const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
+                    "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
+                    "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
     ];
-  `;
 
-  // --- WAITING BUFFER ---
-  dot_code += `  "Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1.2, width=1.2, tooltip="Instructions wait for input data and port availability", fixedsize=true];\n`;
+    let dispatch_color = color[Math.floor(usage.dispatch/5)];
+    // --- FETCH ---
+    dot_code += `Fetch [
+          shape=point
+          width=0
+          height=0
+          fixedsize=true
+          label=""
+          margin=0
+          style=invis
+        ];`;
 
-  dot_code += `subgraph cluster_execute {
-      rankdir="TB";
-  `
-  for (let i = num_ports-1; i >= 0; i--) {
-    if (usage !== null && usage.ports[i]!==0.0) {
-        let execute_color = color[Math.floor(usage.ports[i] / 5)];
-        dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, style=filled, fillcolor="${execute_color}", tooltip="Usage: ${usage.ports[i].toFixed(1)}%"];\n`
-    } else {
-        dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, tooltip="Usage: 0.0%"];\n`
+    dot_code += `
+      Fetch -> "Waiting Buffer" [
+        label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${dispatch_color}"><TR><TD>Dispatch = ${dispatch_width} (${usage.dispatch.toFixed(1)}%)</TD></TR></TABLE>>,
+        fontsize=14,
+        fontname="Arial",
+        tooltip="Usage: ${usage.dispatch.toFixed(1)}%"
+      ];
+    `;
+
+    // --- WAITING BUFFER ---
+    dot_code += `  "Waiting Buffer" [label="Waiting\\nBuffer", shape=box, height=1.2, width=1.2, tooltip="Instructions wait for input data and port availability", fixedsize=true];\n`;
+
+    dot_code += `subgraph cluster_execute {
+        rankdir="TB";
+    `
+    for (let i = num_ports-1; i >= 0; i--) {
+      if (usage !== null && usage.ports[i]!==0.0) {
+          let execute_color = color[Math.floor(usage.ports[i] / 5)];
+          dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, style=filled, fillcolor="${execute_color}", tooltip="Usage: ${usage.ports[i].toFixed(1)}%"];\n`
+      } else {
+          dot_code += `P${i} [shape=box3d,height=0.2,width=0.4, tooltip="Usage: 0.0%"];\n`
+      }
+      dot_code += `"Waiting Buffer" -> P${i};\n`;
     }
-    dot_code += `"Waiting Buffer" -> P${i};\n`;
+
+    dot_code += `label = "Execute";\n
+    fontname="Arial";
+    fontsize=12;
+    }\n`
+
+    dot_code += `  Registers [shape=box, height=1.2, width=1.2, fixedsize=true,tooltip="Architectural state: updated on instruction retirement"];\n`;
+
+    // Align top row
+    dot_code += `
+      {
+        rank=same;
+        Fetch;
+        "Waiting Buffer";
+        ${[...Array(num_ports).keys()].map(i => `P${i}`).join("; ")};
+        Registers;
+      }
+    `;
+
+    // --- ROB ---
+    dot_code += `
+      ROB [label="ROB: ${rob_size} entries", tooltip="Reorder Buffer: maintains program order", shape=box, height=0.6, width=5, fixedsize=true];
+      {
+        rank=sink;
+        ROB;
+      }
+    `;
+
+    dot_code += `  Fetch -> ROB;\n`;
+    for (let i = 0; i < num_ports; i++) {
+      dot_code += `  P${i} -> ROB;\n`;
+    }
+
+    let retire_color = color[Math.floor(usage.retire/5)];
+    dot_code += `
+      ROB -> Registers [
+        label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${retire_color}"><TR><TD>Retire = ${retire_width} (${usage.retire.toFixed(1)}%)</TD></TR></TABLE>>,
+        fontsize=14,
+        fontname="Arial",
+        tooltip="Usage: ${usage.retire.toFixed(1)}%"
+      ];
+    `;
+
+    dot_code += `}`;
+    return dot_code;
   }
 
-  dot_code += `label = "Execute";\n
-  fontname="Arial";
-  fontsize=12;
-  }\n`
 
-  dot_code += `  Registers [shape=box, height=1.2, width=1.2, fixedsize=true,tooltip="Architectural state: updated on instruction retirement"];\n`;
+  function createCriticalPathList(data) {
+    const COLORS = [
+      "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
+      "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
+      "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
+      "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
+    ]
 
-  // Align top row
-  dot_code += `
-    {
-      rank=same;
-      Fetch;
-      "Waiting Buffer";
-      ${[...Array(num_ports).keys()].map(i => `P${i}`).join("; ")};
-      Registers;
-    }
-  `;
+    const baseStyle = `
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding:         2px;
+      border-top:      1px solid black;
+      border-left:     1px solid black;
+      border-right:    1px solid black;
+      box-sizing:      border-box;
+    `
+    const getColor = (p) =>
+      p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
 
-  // --- ROB ---
-  dot_code += `
-    ROB [label="ROB: ${rob_size} entries", tooltip="Reorder Buffer: maintains program order", shape=box, height=0.6, width=5, fixedsize=true];
-    {
-      rank=sink;
-      ROB;
-    }
-  `;
-
-  dot_code += `  Fetch -> ROB;\n`;
-  for (let i = 0; i < num_ports; i++) {
-    dot_code += `  P${i} -> ROB;\n`;
-  }
-
-  let retire_color = color[Math.floor(usage.retire/5)];
-  dot_code += `
-    ROB -> Registers [
-      label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" BGCOLOR="${retire_color}"><TR><TD>Retire = ${retire_width} (${usage.retire.toFixed(1)}%)</TD></TR></TABLE>>,
-      fontsize=14,
-      fontname="Arial",
-      tooltip="Usage: ${usage.retire.toFixed(1)}%"
-    ];
-  `;
-
-  dot_code += `}`;
-  return dot_code;
-}
-
-
-function createCriticalPathList(data) {
-  const COLORS = [
-    "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
-    "#ffb6b6", "#ffaaaa", "#ff9e9e", "#ff9292", "#ff8686", "#ff7979",
-    "#ff6d6d", "#ff6161", "#ff5555", "#ff4949", "#ff3d3d", "#ff3131",
-    "#ff2424", "#ff1818", "#ff0c0c", "#ff0000"
-  ]
-
-  const baseStyle = `
-    display:         flex;
-    align-items:     center;
-    justify-content: space-between;
-    padding:         2px;
-    border-top:      1px solid black;
-    border-left:     1px solid black;
-    border-right:    1px solid black;
-    box-sizing:      border-box;
-  `
-  const getColor = (p) =>
-    p && p !== 0 ? COLORS[Math.floor(p / 5)] : "white"
-
-  const row = (label, percentage, isLast = false) => `
-    <li style="background-color:${getColor(percentage)}; list-style:none; margin:0; padding:0">
-      <div style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
-         <div style="width:100%; text-align:center;">
-            ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b>
+    const row = (label, percentage, isLast = false) => `
+      <li style="background-color:${getColor(percentage)}; list-style:none; margin:0; padding:0">
+        <div style="${baseStyle}${isLast ? "border-bottom:1px solid black;" : ""}">
+          <div style="width:100%; text-align:center;">
+              ${label}    &nbsp; <···············································>   &nbsp  <b>${percentage.toFixed(1)}%</b>
+          </div>
         </div>
-      </div>
-    </li>
-  `
-  let out = "<list>"
+      </li>
+    `
+    let out = "<list>"
 
-  // DISPATCH
-  out += row("DISPATCH", data.dispatch)
+    // DISPATCH
+    out += row("DISPATCH", data.dispatch)
 
-  // INSTRUCTIONS
-  out += data.instructions
-    .map(i => row(i.instruction, i.percentage))
-    .join("")
+    // INSTRUCTIONS
+    out += data.instructions
+      .map(i => row(i.instruction, i.percentage))
+      .join("")
 
-  // RETIRE
-  out += row("RETIRE", data.retire, true)
+    // RETIRE
+    out += row("RETIRE", data.retire, true)
 
-  out += "</list>"
-  return out
-}
+    out += "</list>"
+    return out
+  }
 
 
 /* ------------------------------------------------------------------

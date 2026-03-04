@@ -144,7 +144,8 @@ function loadEditedProgram() {
         simState.programName = programOptions.currentProgram
         // tODO REFRESH VISUALIZATION OF prOGRAM in SIMULATION PANEL
       }
-    }
+    },
+    { deep: true, immediate: false }
   )
 
 // ============================================================================
