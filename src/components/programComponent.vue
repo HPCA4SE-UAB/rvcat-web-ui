@@ -1,10 +1,21 @@
 <script setup>
   import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, reactive, watch }  from "vue"
+  import { useDraggable } from '@vueuse/core'
   import HelpComponent                                   from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                    from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
            saveToLocalStorage, removeFromLocalStorage, updateProcess,
            instructionTypes, typeOperations, typeSizes                      }  from '@/common'
+
+  const contentRef = ref(null)
+  const { x, y, isDragging } = useDraggable(contentRef, {
+    initialValue: { x: 100, y: 100 }, // Initial position
+    preventDefault: true,
+    onMove: (position) => {
+      console.log('Moving to:', position) // debug
+    }
+  })
+
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -363,10 +374,24 @@ function snapshotProgram() {
     clearTimeout(graphTimeout)
     try {
       graphTimeout = setTimeout(() => {
+
+        editedProgram.value.push( {
+          text:    'if c go back',
+          type:    'BRANCH',
+          oper:    '',
+          size:    '',
+          destin:  '',
+          source1: 'c',
+          source2: '',
+          source3: '',
+          constant: ''
+        } );
+
         getProgGraph(
           JSON.stringify( toRaw(editedProgram.value), null, 2),
           1, true, false, false, true
         )
+        editedProgram.value.pop()
       }, 75)
       console.log('📄✅ Graph drawn')
     } catch (error) {
@@ -783,9 +808,9 @@ function snapshotProgram() {
   </div>
 
   <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div class="fullscreen-content">
+    <div class="fullscreen-content" ref="contentRef" >
       <div class="fullscreen-header">
-        <span>Data Dependence Graph (circular paths in red)</span>
+        <span>Dependence Graph of Edited program (circular paths in red) </span>
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
       <div class="graph-container">
@@ -1145,34 +1170,37 @@ function snapshotProgram() {
 
   .fullscreen-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Permite clicks a través del overlay */
   }
 
   .fullscreen-content {
+    position: fixed; /* Cambia a fixed para poder posicionarlo */
+    top: 0;
+    left: 0;
     background: white;
-    margin:     10px;
-    padding:    10px;
-    border:     1px solid #ccc;
-    width:      95%;
-    height:     95%;
-    resize:     both;
-    overflow:   auto;
-    min-width:  300px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: 95%;
+    height: 95%;
+    resize: both;
+    overflow: auto;
+    min-width: 300px;
     min-height: 200px;
-    max-width:  99%;
+    max-width: 99%;
     max-height: 99%;
-    display:    flex;
-    border-radius:  8px;
+    display: flex;
+    border-radius: 8px;
     flex-direction: column;
-    box-shadow:     0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    pointer-events: auto; /* El contenido puede recibir clicks */
+    cursor: default;
   }
 
+  /*
   .fullscreen-content .close-btn {
     align-self: flex-end;
     background: none;
@@ -1180,25 +1208,26 @@ function snapshotProgram() {
     font-size:  3vh;
     cursor:     pointer;
     margin-bottom: 8px;
-  }
+  } */
 
   .fullscreen-header {
     display:         flex;
     justify-content: space-between;
     align-items:     center;
+    text-align:      center;
     margin-bottom:   10px;
-    background: #2c3e50;
-    color: white;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 1;
+    background:    #2c3e50;
+    color:         white;
+    font-weight:     600;
+    position:        sticky;
+    top:             0;
+    z-index:         1;
+    cursor:          grab;
+    user-select:     none;
   }
 
- .fullscreen-title {
-    font-size:   1.5rem;
-    font-weight: 600;
-    margin:      0;
+  .fullscreen-header:active {
+    cursor: grabbing;
   }
 
   .close-btn {
@@ -1210,25 +1239,25 @@ function snapshotProgram() {
     padding:     4px;
   }
 
-.graph-container {
-  flex: 1;
-  overflow: auto;
-  padding: 10px;
-}
+  .graph-container {
+    flex: 1;
+    overflow: auto;
+    padding: 10px;
+  }
 
-.graph-wrapper {
-  width: 100%;
-  height: 100%;
-  min-height: 200px;
-}
+  .graph-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+  }
 
-.graph-wrapper svg {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-}
+  .graph-wrapper svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+  }
 
   .icon-button {
     border:      none;
