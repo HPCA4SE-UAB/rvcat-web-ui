@@ -143,8 +143,9 @@
         document.getElementById('critical-path-section').style.display  = 'none';
         document.getElementById('run-simulation-button').disabled       = true;
 
-        const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-        getExecutionResults(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
+        const { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
+        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, 
+                                              instruction_list: toRaw(instruction_list)}, null, 2),
                             simulationOptions.iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')
        }, 200)
