@@ -1,10 +1,10 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch } from "vue"
-  import HelpComponent                                     from '@/components/helpComponent.vue'
-  import { useRVCAT_Api }                                                      from '@/rvcatAPI'
+  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, reactive, watch }  from "vue"
+  import HelpComponent                                   from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                                    from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
            saveToLocalStorage, removeFromLocalStorage, updateProcess,
-           instructionTypes, typeOperations, typeSizes                        }  from '@/common'
+           instructionTypes, typeOperations, typeSizes                      }  from '@/common'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
