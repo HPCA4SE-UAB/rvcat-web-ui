@@ -157,7 +157,7 @@ function loadEditedProgram() {
 
   onMounted(() => {
     console.log('📄🎯 ProgramComponent mounted')
-    cleanupHandleGraph = registerHandler('get_prg_graph', handleGraph);
+    cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
     loadEditedProgram()
   });
 
