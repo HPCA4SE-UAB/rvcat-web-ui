@@ -34,6 +34,8 @@ const STORAGE_KEY = 'programOptions'
       type:     true,
       oper:     true,
       size:     true,
+      latency:  true,
+      portMask: true,
       destin:   true,
       source1:  true,
       source2:  true,
@@ -359,7 +361,17 @@ function snapshotProgram() {
     showFullScreen.value = true;
     console.log('📄🔄Drawing edited program');
     clearTimeout(graphTimeout)
-    getProgGraph( 1, true, false, true, true )
+    try {
+      graphTimeout = setTimeout(() => {
+        getProgGraph(
+          JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
+          1, true, false, false, true
+        )
+      }, 75)
+      console.log('📄✅ Graph drawn')
+    } catch (error) {
+      console.error('📄❌Failed to generate program graph:', error)
+    }
   }
 
   function closeFullScreen()   { showFullScreen.value = false;  }

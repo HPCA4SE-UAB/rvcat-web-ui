@@ -42,6 +42,26 @@ export function useRVCAT_Api() {
     }
   };
 
+  const getProgGraph = async (JSONprogramText, n,i,l,s,f) => {
+    try {
+      let internal = "True";
+      let latency  = "True";
+      let small    = "True";
+      let full     = "True";
+      if (!i) {internal = "False"}
+      if (!l) {latency  = "False"}
+      if (!s) {small    = "False"}
+      if (!f) {full     = "False"}
+      const code = `rvcat._program.show_graphviz(${JSONprogramText},${n}, ${internal}, ${latency}, ${small}, ${full})`
+      const result = await safeExecute(code, 'get_prog_graph');
+      console.log('🧠 RVCAT: program Graph (GRAPHVIZ) obtained');
+      return result;
+    } catch (error) {
+      console.error('🧠❌ RVCAT: failed to get program graph:', error);
+      throw error;
+    }
+  };
+
   const getPerformanceAnalysis = async (JSONprocessText) => {
     try {
       const code = `rvcat._program.get_performance_analysis(${JSONprocessText})`
@@ -83,6 +103,7 @@ export function useRVCAT_Api() {
     importRVCAT,
     getPerformanceAnalysis,
     getDependenceGraph,
+    getProgGraph,
     getExecutionResults,
     getTimeline
   };
