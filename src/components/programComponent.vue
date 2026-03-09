@@ -364,7 +364,7 @@ function snapshotProgram() {
     try {
       graphTimeout = setTimeout(() => {
         getProgGraph(
-          JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
+          JSON.stringify( toRaw(editedProgram.value), null, 2),
           1, true, false, false, true
         )
       }, 75)
