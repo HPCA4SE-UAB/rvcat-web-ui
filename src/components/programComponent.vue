@@ -7,16 +7,6 @@
            saveToLocalStorage, removeFromLocalStorage, updateProcess,
            instructionTypes, typeOperations, typeSizes                      }  from '@/common'
 
-  const contentRef = ref(null)
-  const { x, y, isDragging } = useDraggable(contentRef, {
-    initialValue: { x: 100, y: 100 }, // Initial position
-    preventDefault: true,
-    onMove: (position) => {
-      console.log('Moving to:', position) // debug
-    }
-  })
-
-
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
   const simState            = inject('simulationState');
@@ -25,6 +15,20 @@
     isFullscreen: {
       type:    Boolean,
       default: false
+    }
+  })
+
+  const contentRef = ref(null)
+
+  // Estado para dimensiones
+  const width = ref(800)
+  const height = ref(600)
+
+  const { x, y, isDragging } = useDraggable(contentRef, {
+    initialValue: { x: 100, y: 100 }, // Initial position
+    preventDefault: true,
+    onMove: (position) => {
+      console.log('Moving to:', position) // debug
     }
   })
 
@@ -807,19 +811,30 @@ function snapshotProgram() {
     </div>
   </div>
 
-  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div class="fullscreen-content" ref="contentRef" >
-      <div class="fullscreen-header">
-        <span>Dependence Graph of Edited program (circular paths in red) </span>
-        <button class="close-btn" @click="closeFullScreen">×</button>
-      </div>
-      <div class="graph-container">
-        <div class="graph-wrapper" ref="graphContainer">
-          <div v-html="programSvg" v-if="programSvg" class="svg-content"></div>
+  <template>
+    <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+      <div
+        class="fullscreen-content"
+        ref="contentRef"
+        :style="{
+          left: x + 'px',
+          top: y + 'px',
+          width: width + 'px',
+          height: height + 'px'
+        }"
+      >
+        <div class="fullscreen-header">
+          <span>Dependence Graph of Edited program (circular paths in red)</span>
+          <button class="close-btn" @click="closeFullScreen">×</button>
+        </div>
+        <div class="graph-container">
+          <div class="graph-wrapper">
+            <div v-html="programSvg" v-if="programSvg"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </template>
 
   <div v-if="showModalDownload" class="modal-overlay">
     <div class="modal">
@@ -1168,96 +1183,93 @@ function snapshotProgram() {
     flex: 0 0 auto;
   }
 
-  .fullscreen-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Permite clicks a través del overlay */
-  }
 
-  .fullscreen-content {
-    position: fixed; /* Cambia a fixed para poder posicionarlo */
-    top: 0;
-    left: 0;
-    background: white;
-    padding: 10px;
-    border: 1px solid #ccc;
-    width: 95%;
-    height: 95%;
-    resize: both;
-    overflow: auto;
-    min-width: 300px;
-    min-height: 200px;
-    max-width: 99%;
-    max-height: 99%;
-    display: flex;
-    border-radius: 8px;
-    flex-direction: column;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    pointer-events: auto; /* El contenido puede recibir clicks */
-    cursor: default;
-  }
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent; /* Sin fondo para no ocultar nada */
+  pointer-events: none; /* Permite clicks a través del overlay */
+  z-index: 999;
+}
 
-  /*
-  .fullscreen-content .close-btn {
-    align-self: flex-end;
-    background: none;
-    border:     none;
-    font-size:  3vh;
-    cursor:     pointer;
-    margin-bottom: 8px;
-  } */
+.fullscreen-content {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  min-height: 300px;
+  width: 800px; /* Tamaño fijo inicial */
+  height: 600px;
+  resize: both;
+  overflow: auto;
+  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
+  z-index: 1000;
+}
 
-  .fullscreen-header {
-    display:         flex;
-    justify-content: space-between;
-    align-items:     center;
-    text-align:      center;
-    margin-bottom:   10px;
-    background:    #2c3e50;
-    color:         white;
-    font-weight:     600;
-    position:        sticky;
-    top:             0;
-    z-index:         1;
-    cursor:          grab;
-    user-select:     none;
-  }
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2c3e50;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0; /* Evita que el header se encoja */
+}
 
-  .fullscreen-header:active {
-    cursor: grabbing;
-  }
+.fullscreen-header:active {
+  cursor: grabbing;
+}
 
-  .close-btn {
-    background:  none;
-    border:      none;
-    font-size:   1.5em;
-    line-height: 1;
-    cursor:      pointer;
-    padding:     4px;
-  }
+.fullscreen-header span {
+  flex: 1;
+  text-align: center;
+}
 
-  .graph-container {
-    flex: 1;
-    overflow: auto;
-    padding: 10px;
-  }
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.8;
+}
 
-  .graph-wrapper {
-    width: 100%;
-    height: 100%;
-    min-height: 200px;
-  }
+.close-btn:hover {
+  opacity: 1;
+}
 
-  .graph-wrapper svg {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-  }
+.graph-container {
+  flex: 1;
+  padding: 10px;
+  overflow: auto;
+  background: #f8f9fa;
+  min-height: 0; /* IMPORTANTE para flexbox children */
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.graph-wrapper svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
   .icon-button {
     border:      none;
