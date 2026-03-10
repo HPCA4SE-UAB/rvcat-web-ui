@@ -29,6 +29,7 @@ const STORAGE_KEY = 'programOptions'
     availablePrograms: [],
     showInOut:         true,
     showActions:       true,
+    showGraph:        false,
     windowWidth:       800,
     windowHeight:      600,
     visibleCols: {
@@ -178,6 +179,8 @@ function loadEditedProgram() {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
     loadEditedProgram()
+    if (programOptions.showGraph)
+      openFullScreen()
   });
 
   onUnmounted(() => {
@@ -402,12 +405,13 @@ function snapshotProgram() {
         editedProgram.value.pop()
       }, 75)
       console.log('📄✅ Graph drawn')
+      programOptions.showGraph = true
     } catch (error) {
       console.error('📄❌Failed to generate program graph:', error)
     }
   }
 
-  function closeFullScreen()   { showFullScreen.value = false;  }
+  function closeFullScreen()   { showFullScreen.value = false;  programOptions.showGraph = false}
 
 
 // ============================================================================
@@ -566,16 +570,17 @@ function snapshotProgram() {
       <button class="blue-button add-margin" :class="{ active: programOptions.showActions }"
           title="Show/Hide column with buttons for moving/adding/removing instructions"
           id="show-instruction-actions"
-         @click="toggleActions">
+          @click="toggleActions">
         <span v-if="programOptions.showActions">✔ </span>
         Actions
       </button>
 
-      <button class="icon-button add-prev-margin" @click="openFullScreen"
-         title="View program's dependence graph on full-screen"
-         id="open-full-dependence-graph"
-        >
-         <img src="/img/fullscreen.png" class="btn-img">
+      <button class="blue-button add-prev-margin" :class="{ active: programOptions.showGraph }"
+          title="View/Update program's dependence graph on full-screen"
+          id="open-edited-program-graph"
+          @click="openFullScreen">
+        <span v-if="programOptions.showGraph">✔ </span>
+        View Graph
       </button>
 
       <div class="settings-container fullscreen-settings">
@@ -1272,35 +1277,5 @@ function snapshotProgram() {
   height: 100%;
   display: block;
 }
-
-  .icon-button {
-    border:      none;
-    cursor:      pointer;
-    padding:     6px;
-    display:     inline-flex;
-    background:  #b0b0b0;
-    transition:  background 0.2s;
-    justify-content: left;
-    border-radius:   6px;
-  }
-  .icon-button img,
-  .icon-button svg {
-    width:  1.2em;
-    height: 1.2em;
-  }
-  .icon-button:hover {
-    background: #a0a0a0;      /* darker at hover */
-  }
-  .icon-button:active {
-    background: #909090;      /* still darker */
-  }
-  .icon-button:focus {
-    outline:        2px solid #1a4fb3;  /* keypad */
-    outline-offset: 2px;
-  }
-
-  .btn-img {
-    height:2.0vh;
-  }
 
 </style>
