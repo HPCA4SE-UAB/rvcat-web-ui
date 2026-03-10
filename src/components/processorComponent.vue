@@ -294,8 +294,8 @@
   const drawProcessor = async () => {
     try {
       const dotCode      = get_processor_dot (simState.simulatedProcess)
-      const svg          = await createGraphVizGraph(dotCode);
       console.log('💻🔄Redrawing simulated processor', dotCode);
+      const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
       console.error('💻❌ Failed to draw processor:', error)
