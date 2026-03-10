@@ -842,8 +842,8 @@ function snapshotMemory() {
             <table class="instructions-table">
               <thead>
                 <tr>
-                  <th v-if="programOptions.visibleCols.name"     style="width: 40px;">  Array Name </th>
-                  <th v-if="programOptions.visibleCols.pattern"  style="width: 240px;"> Memory Pattern </th>
+                  <th v-if="programOptions.visibleCols.name"     style="width: 60px;">  Name </th>
+                  <th v-if="programOptions.visibleCols.pattern"  style="width: 200px;"> Memory Pattern </th>
                 </tr>
               </thead>
               <tbody>
