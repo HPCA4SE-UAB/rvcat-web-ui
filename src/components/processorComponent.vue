@@ -315,127 +315,158 @@
     }
   }
 
-  function get_processor_dot(process) {
+function get_processor_dot(process) {
     const dispatch_width = process.dispatch
     const retire_width   = process.retire
-    const sched          = process.sched
     const ROBsize        = process.ROBsize || 20
     const num_ports      = Object.keys(process.ports).length
+    const sched          = process.sched
     let dot_code = `
-    digraph "Processor Pipeline" {
-      rankdir=TB;
-      node [fontsize=14, fontname="Arial"];
-      Fetch [shape=point width=0 height=0 fixedsize=true label="" margin=0 style=invis ];
-    `;
+  digraph "Processor Pipeline" {
+    rankdir=TB;
+    nodesep=0.5;
+    ranksep=0.6;
+    node [fontsize=14, fontname="Arial"];
 
-    // --- FETCH  ---
-    dot_code += `  Fetch [style=invis, shape=box, height=0, width=0];\n`;
+    left_anchor  [shape=point width=0 style=invis];
+    right_anchor [shape=point width=0 style=invis];
+  `
+    // --- FETCH ---
     dot_code += `
-      Fetch -> "Waiting Buffer" [
-        label="Dispatch = ${dispatch_width}",
-        tooltip="Dispath Width: ${dispatch_width} instructions per cycle",
-        fontsize=12, fontname="Arial"
-      ];
-    `;
-
-    for (let i = dispatch_width - 1; i > 0; i--) {
-      dot_code += 'Fetch -> "Waiting Buffer"; ';
-    }
-
+    Fetch [shape=box, label="Fetch", tooltip="Instruction fetch stage"];
+  `
     // --- WAITING BUFFER ---
-    dot_code += `"Waiting Buffer" [label="Waiting\\nBuffer", tooltip="Instructions wait for execution", shape=box, height=1, width=1, fixedsize=true];\n`;
+    dot_code += `
+    "Waiting Buffer" [
+      label="Waiting\\nBuffer",
+      tooltip="Instructions wait for execution",
+      shape=box,
+      width=1,
+      height=1,
+      fixedsize=true
+    ];
+  `
+    // Dispatch edges
+    dot_code += `
+    Fetch -> "Waiting Buffer" [
+      label="Dispatch = ${dispatch_width}",
+      tooltip="Dispatch Width: ${dispatch_width} instructions per cycle"
+    ];
+  `
+    for (let i = 1; i < dispatch_width; i++)
+      dot_code += `Fetch -> "Waiting Buffer";\n`
 
-    // --- EXECUTE PORTS ---
-    dot_code += `subgraph cluster_execute {
-        rankdir=TB;
-        node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
-        tooltip="Execution Ports: one instruction per cycle, per port";
-    `;
+    // --- EXECUTION PORTS ---
+    dot_code += `
+  subgraph cluster_execute {
+    rankdir=TB;
+    node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
+    tooltip="Execution Ports: one instruction per cycle, per port";
+  `
+    let shown_ports = []
 
-    let shown_ports = [];
     if (num_ports >= 4) {
-      shown_ports = [0, 1, 2, num_ports - 1];
+      shown_ports = [0,1,2,num_ports-1]
 
-      dot_code += `P${num_ports - 1} [label="P${num_ports - 1}",tooltip="Execution Port: one instruction per cycle"];\n`;
-      if (num_ports > 4) {
-        dot_code += `"..." [label="...", tooltip="Remaining execution ports: one instruction per cycle and port"];\n`;
-      }
-      dot_code += `P2 [label="P2", tooltip="Execution Port: one instruction per cycle"];\n`;
-      dot_code += `P1 [label="P1", tooltip="Execution Port: one instruction per cycle"];\n`;
-      dot_code += `P0 [label="P0", tooltip="Execution Port: one instruction per cycle"];\n`;
+      dot_code += `P${num_ports-1} [label="P${num_ports-1}"];\n`
+      if (num_ports > 4)
+        dot_code += `"..." [label="..."];\n`
+
+      dot_code += `P2 [label="P2"];\n`
+      dot_code += `P1 [label="P1"];\n`
+      dot_code += `P0 [label="P0"];\n`
+
     } else {
-      for (let i = num_ports - 1; i >= 0; i--) {
-        shown_ports.push(i);
-        dot_code += `P${i} [label="P${i}", tooltip="Execution Port: one instruction per cycle"];\n`;
+      for (let i=num_ports-1;i>=0;i--) {
+        shown_ports.push(i)
+        dot_code += `P${i} [label="P${i}"];\n`
       }
     }
 
-    dot_code += `}\n`;
+    dot_code += `}\n`
 
-    for (let idx = 0; idx < shown_ports.length; idx++) {
-      dot_code += `"Waiting Buffer" -> P${shown_ports[idx]}[tooltip="One instruction per cycle and port"];\n`;
-    }
-    if (num_ports>4) {
-      dot_code += `"Waiting Buffer" -> "..." [style=invis];\n`;
-    }
+    // edges waiting buffer -> ports
+    shown_ports.forEach(p=>{
+      dot_code += `"Waiting Buffer" -> P${p} [tooltip="One instruction per cycle and port"];\n`
+    })
 
-    // REGISTERS
-    dot_code += `Registers [shape=box, height=1, width=1, fixedsize=true, tooltip="Architectural state: updated on instruction retirement"];\n`;
+    if (num_ports > 4)
+      dot_code += `"Waiting Buffer" -> "..." [style=invis];\n`
+
+    // --- REGISTERS ---
+    dot_code += `
+  Registers [
+    shape=box,
+    width=1,
+    height=1,
+    fixedsize=true,
+    tooltip="Architectural state updated at retirement"
+  ];
+  `
+    // --- TOP RANK (pipeline row) ---
+    dot_code += `
+  {
+    rank=same;
+    left_anchor;
+    Fetch;
+    "Waiting Buffer";
+  `
+    shown_ports.forEach(p=>{
+      dot_code += `P${p};\n`
+    })
+
+    if (num_ports > 4)
+      dot_code += `"..." ;\n`
 
     dot_code += `
-    {
-      rank=same; Fetch; "Waiting Buffer"; tooltip="Instructions wait for input data and available port"
-    `;
-
-    if (num_ports >= 4) {
-      dot_code += `P0; P1; P2;\n`;
-
-      if (num_ports > 4) {
-        dot_code += `"...";\n`;
-      }
-      dot_code += `P${num_ports - 1};\n`;
-    } else {
-      for (let i = 0; i < shown_ports.length; i++) {
-        dot_code += `P${shown_ports[i]};\n`;
-      }
-    }
-
-    dot_code += `Registers;\n  }\n`;
-
+    Registers;
+    right_anchor;
+  }
+  `
+    // invisible edges to stabilize layout
+    dot_code += `
+  left_anchor -> Fetch [style=invis];
+  Registers -> right_anchor [style=invis];
+  `
     // --- ROB ---
-    dot_code += `ROB [label="ROB: ${ROBsize} entries",
-                  tooltip="Reorder Buffer: maintains sequential program order",
-                  shape=box,
-                  height=0.6,
-                  width=8,
-                  fixedsize=false];\n`;
-    dot_code += `{ rank=sink; Fetch; ROB; Registers; }\n`;
-
-    for (let i = dispatch_width - 1; i >= 0; i--) {
-      dot_code += 'Fetch -> ROB;\n';
-    }
-
-    for (let i = 0; i < shown_ports.length; i++) {
-      dot_code += `P${shown_ports[i]} -> ROB;\n`;
-    }
     dot_code += `
-      Fetch -> ROB [style=invis, weight=10];
-      Registers -> ROB [style=invis, weight=10];
-      `;
+  ROB [
+    label="ROB: ${ROBsize} entries",
+    tooltip="Reorder Buffer: maintains sequential program order",
+    shape=box,
+    height=0.6
+  ];
+  `
+    dot_code += `{ rank=sink; ROB; }\n`
+
+    // stretch ROB across diagram
     dot_code += `
-      ROB -> Registers [
-        label="Retire = ${retire_width}",
-        tooltip="Instructions update registers in program order"
-        fontsize=14, fontname="Arial"
-      ];
-    `;
+  left_anchor -> ROB [style=invis, weight=10];
+  right_anchor -> ROB [style=invis, weight=10];
+  `
 
-    for (let i = retire_width - 1; i > 0; i--) {
-      dot_code += 'ROB -> Registers; ';
-    }
+    // Fetch -> ROB
+    for (let i=0;i<dispatch_width;i++)
+      dot_code += `Fetch -> ROB;\n`
 
-    dot_code += `}\n`;
-    return dot_code;
+    // Ports -> ROB
+    shown_ports.forEach(p=>{
+      dot_code += `P${p} -> ROB;\n`
+    })
+
+    // ROB -> Registers
+    dot_code += `
+  ROB -> Registers [
+    label="Retire = ${retire_width}",
+    tooltip="Instructions update registers in program order"
+  ];
+  `
+    for (let i=1;i<retire_width;i++)
+      dot_code += `ROB -> Registers;\n`
+
+    dot_code += `}`
+
+    return dot_code
   }
 
 // ============================================================================
