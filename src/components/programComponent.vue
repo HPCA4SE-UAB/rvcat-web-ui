@@ -29,7 +29,8 @@ const STORAGE_KEY = 'programOptions'
     availablePrograms: [],
     showInOut:         true,
     showActions:       true,
-    showGraph:        false,
+    showGraph:         false,
+    showLat:           true,
     windowWidth:       800,
     windowHeight:      600,
     visibleCols: {
