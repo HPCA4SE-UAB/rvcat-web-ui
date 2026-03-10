@@ -316,6 +316,93 @@
   }
 
 function get_processor_dot(process) {
+
+  const ports = process.ports
+  const port_ids = Object.keys(ports)
+  const ROBsize = process.ROBsize || 20
+  const sched          = process.sched
+
+  function color_for_op(op) {
+    if (op.startsWith("INT")) return "#d0e1ff"
+    if (op.startsWith("BRANCH")) return "#ffd0d0"
+    if (op.startsWith("MEM")) return "#d0ffd0"
+    if (op.startsWith("FLOAT")) return "#fff0b3"
+    if (op.startsWith("VFLOAT")) return "#ffe0ff"
+    return "white"
+  }
+
+  let header = `
+<TD PORT="fetch" BGCOLOR="#eeeeee"><B>Fetch</B></TD>
+<TD PORT="wb" BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B></TD>
+`
+
+  for (let p of port_ids)
+    header += `<TD PORT="p${p}" BGCOLOR="#f8f8f8"><B>P${p}</B></TD>\n`
+
+  header += `<TD PORT="regs" BGCOLOR="#eeeeee"><B>Registers</B></TD>`
+
+  let ports_row = `<TD></TD><TD></TD>`
+
+  for (let p of port_ids) {
+
+    let ops = ports[p]
+
+    let cell = `<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">`
+
+    for (let op of ops)
+      cell += `<TR><TD BGCOLOR="${color_for_op(op)}">${op}</TD></TR>`
+
+    cell += `</TABLE>`
+
+    ports_row += `<TD>${cell}</TD>`
+  }
+
+  ports_row += `<TD></TD>`
+
+  const total_cols = 2 + port_ids.length + 1
+
+  const dot = `
+digraph CPU {
+
+node [shape=plain fontname="Arial"]
+
+pipeline [
+label=<
+<TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
+
+<TR>
+${header}
+</TR>
+
+<TR>
+${ports_row}
+</TR>
+
+<TR>
+<TD PORT="rob" COLSPAN="${total_cols}" BGCOLOR="#f0f0f0">
+<B>ROB: ${ROBsize} entries</B>
+</TD>
+</TR>
+
+</TABLE>
+>
+]
+
+pipeline:fetch -> pipeline:wb
+
+${port_ids.map(p => `pipeline:wb -> pipeline:p${p}`).join("\n")}
+
+${port_ids.map(p => `pipeline:p${p} -> pipeline:rob`).join("\n")}
+
+pipeline:rob -> pipeline:regs
+
+}
+`
+  return dot
+}
+
+
+function get_processor_dot2(process) {
     const dispatch_width = process.dispatch
     const retire_width   = process.retire
     const ROBsize        = process.ROBsize || 20
