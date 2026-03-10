@@ -403,8 +403,13 @@
     dot_code += `Registers;\n  }\n`;
 
     // --- ROB ---
-    dot_code += `ROB [label="ROB: ${ROBsize} entries", tooltip="Reorder Buffer: maintains sequential program order", shape=box, height=0.6, width=5, fixedsize=true];\n`;
-    dot_code += `{ rank=sink; ROB; }\n\n`;
+    dot_code += `ROB [label="ROB: ${ROBsize} entries",
+                  tooltip="Reorder Buffer: maintains sequential program order",
+                  shape=box,
+                  height=0.6,
+                  width=8,
+                  fixedsize=false];\n`;
+    dot_code += `{ rank=sink; Fetch; ROB; Registers; }\n`;
 
     for (let i = dispatch_width - 1; i >= 0; i--) {
       dot_code += 'Fetch -> ROB;\n';
@@ -413,6 +418,10 @@
     for (let i = 0; i < shown_ports.length; i++) {
       dot_code += `P${shown_ports[i]} -> ROB;\n`;
     }
+    dot_code += `
+      Fetch -> ROB [style=invis, weight=10];
+      Registers -> ROB [style=invis, weight=10];
+      `;
     dot_code += `
       ROB -> Registers [
         label="Retire = ${retire_width}",
