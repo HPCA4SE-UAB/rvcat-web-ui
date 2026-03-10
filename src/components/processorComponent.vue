@@ -411,7 +411,7 @@ function get_processor_dot(process) {
       const tooltip = latency_tooltip(op)
 
       op_rows += `
-<TD BGCOLOR="${color}" tooltip="${tooltip}">
+<TD BGCOLOR="${color}" title="${tooltip}">
 <FONT POINT-SIZE="10">${op}</FONT>
 </TD>`
     }
@@ -434,6 +434,7 @@ digraph CPU {
 node [shape=plain fontname="Arial"]
 
 pipeline [
+tooltip=""
 label=<
 <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
 
@@ -475,13 +476,13 @@ function get_processor_dot2(process) {
       `
     // --- FETCH ---
     dot_code += `
-      Fetch [shape=box, label="Fetch", tooltip="Instruction fetch stage"];
+      Fetch [shape=box, label="Fetch", title="Instruction fetch stage"];
     `
     // --- WAITING BUFFER ---
     dot_code += `
       "Waiting Buffer" [
         label="Waiting\\nBuffer",
-        tooltip="Instructions wait for execution",
+        title="Instructions wait for execution",
         shape=box,
         width=1,
         height=1,
