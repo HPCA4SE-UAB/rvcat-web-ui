@@ -329,10 +329,10 @@ function get_processor_dot(process) {
   const max_ops = Math.max(...port_ids.map(p => ports[p].length))
 
   function op_type(op) {
-    if (op.startsWith("MEM")) return "MEM"
+    if (op.startsWith("MEM")   || op.startsWith("VMEM")  ) return "MEM"
     if (op.startsWith("FLOAT") || op.startsWith("VFLOAT")) return "FP"
     if (op.startsWith("BRANCH")) return "BR"
-    if (op.startsWith("INT")) return "INT"
+    if (op.startsWith("INT"))    return "INT"
     return "OTHER"
   }
 
@@ -448,7 +448,6 @@ ${reg_row}
 
 }
 `
-
   return dot
 }
 
