@@ -317,19 +317,20 @@
 
 function get_processor_dot(process) {
 
-  const ports = process.ports
-  const lat = process.latencies
+  const ports    = process.ports
+  const lat      = process.latencies
   const port_ids = Object.keys(ports)
-  const ROBsize = process.ROBsize || 20
+  const ROBsize  = process.ROBsize || 20
 
+  const sched    = process.sched
   const dispatch = process.dispatch
   const retire   = process.retire
 
   function op_type(op) {
-    if (op.startsWith("MEM")) return "MEM"
+    if (op.startsWith("MEM")   || op.startsWith("VMEM"))   return "MEM"
     if (op.startsWith("FLOAT") || op.startsWith("VFLOAT")) return "FP"
     if (op.startsWith("BRANCH")) return "BR"
-    if (op.startsWith("INT")) return "INT"
+    if (op.startsWith("INT"))    return "INT"
     return "OTHER"
   }
 
@@ -341,45 +342,69 @@ function get_processor_dot(process) {
     return "#f0f0f0"
   }
 
-  function dominant_type(ops) {
-    const count = {}
-    for (let op of ops) {
-      const t = op_type(op)
-      count[t] = (count[t] || 0) + 1
+  // ---- construir tooltip de latencias ----
+
+  function latency_tooltip(op) {
+
+    const base = lat[op]
+
+    const variants = Object.keys(lat)
+      .filter(k => k.startsWith(op + "."))
+
+    if (variants.length === 0) {
+      if (base !== undefined)
+        return `${op} latency: ${base}`
+      else
+        return ""
     }
-    return Object.entries(count).sort((a,b)=>b[1]-a[1])[0][0]
+
+    let txt = `${op} latencies:\n`
+
+    if (base !== undefined)
+      txt += `base: ${base}\n`
+
+    for (let v of variants)
+      txt += `${v.split(".").slice(-1)}: ${lat[v]}\n`
+
+    return txt
   }
 
-  // ----- HEADER ROW -----
+  // ---- columna de ROB ----
 
-  let header = `
-<TD BGCOLOR="#eeeeee"><B>Fetch</B></TD>
-<TD BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B><BR/><FONT POINT-SIZE="10">Dispatch ${dispatch}</FONT></TD>
-`
-
-  for (let p of port_ids) {
-
-    const ops = ports[p]
-    const type = dominant_type(ops)
-    const color = type_color(type)
-
-    header += `
-<TD BGCOLOR="${color}">
-<B>P${p}</B><BR/>
-<FONT POINT-SIZE="9">${type}</FONT>
-</TD>`
-  }
-
-  header += `
-<TD BGCOLOR="#eeeeee">
-<B>Registers</B><BR/>
-<FONT POINT-SIZE="10">Retire ${retire}</FONT>
+  const rob_col = `
+<TD ROWSPAN="${3 + port_ids.length}" BGCOLOR="#f0f0f0">
+<B>ROB</B><BR/>
+${ROBsize} entries
 </TD>
 `
 
-  // ----- PORT CONTENT -----
+  // ---- fila decode ----
 
-  let ports_row = `<TD></TD><TD></TD>`
+  let decode_row = `
+<TR>
+<TD BGCOLOR="#eeeeee"><B>Decode</B></TD>
+${rob_col}
+</TR>
+`
+
+  // ---- waiting buffer ----
+
+  let wb_row = `
+<TR>
+<TD BGCOLOR="#eeeeee">
+<B>Waiting Buffer</B><BR/>
+<FONT POINT-SIZE="10">Dispatch ${dispatch}/cycle</FONT>
+</TD>
+</TR>
+`
+
+  // ---- fila label ports ----
+
+  let ports_header = `<TR><TD BGCOLOR="#eeeeee"><B>Ports</B></TD></TR>`
+
+  // ---- filas de cada puerto ----
+
+  let ports_rows = ""
 
   for (let p of port_ids) {
 
@@ -389,26 +414,38 @@ function get_processor_dot(process) {
 
     for (let op of ops) {
 
-      const latency = lat[op] ?? ""
-      const label = latency ? `${op} (${latency})` : op
       const color = type_color(op_type(op))
+      const tooltip = latency_tooltip(op)
 
       cell += `
 <TR>
-<TD BGCOLOR="${color}">
-<FONT POINT-SIZE="10">${label}</FONT>
+<TD BGCOLOR="${color}" TOOLTIP="${tooltip}">
+<FONT POINT-SIZE="10">${op}</FONT>
 </TD>
 </TR>`
     }
 
     cell += `</TABLE>`
 
-    ports_row += `<TD>${cell}</TD>`
+    ports_rows += `
+<TR>
+<TD BGCOLOR="#f5f5f5">
+<B>P${p}</B><BR/>
+${cell}
+</TD>
+</TR>`
   }
 
-  ports_row += `<TD></TD>`
+  // ---- registers ----
 
-  const total_cols = 2 + port_ids.length + 1
+  let reg_row = `
+<TR>
+<TD BGCOLOR="#eeeeee">
+<B>Registers</B><BR/>
+<FONT POINT-SIZE="10">Retire ${retire}/cycle</FONT>
+</TD>
+</TR>
+`
 
   const dot = `
 digraph CPU {
@@ -419,19 +456,11 @@ pipeline [
 label=<
 <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
 
-<TR>
-${header}
-</TR>
-
-<TR>
-${ports_row}
-</TR>
-
-<TR>
-<TD COLSPAN="${total_cols}" BGCOLOR="#f0f0f0">
-<B>ROB: ${ROBsize} entries</B>
-</TD>
-</TR>
+${decode_row}
+${wb_row}
+${ports_header}
+${ports_rows}
+${reg_row}
 
 </TABLE>
 >
