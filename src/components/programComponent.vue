@@ -1,6 +1,6 @@
 <script setup>
   import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, reactive, watch }  from "vue"
-  import { useDraggable } from '@vueuse/core'
+  import { useDraggable, useResizeObserver}                                from '@vueuse/core'
   import HelpComponent                                   from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                    from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
@@ -18,20 +18,6 @@
     }
   })
 
-  const contentRef = ref(null)
-
-  // Estado para dimensiones
-  const width = ref(800)
-  const height = ref(600)
-
-  const { x, y, isDragging } = useDraggable(contentRef, {
-    initialValue: { x: 100, y: 100 }, // Initial position
-    preventDefault: true,
-    onMove: (position) => {
-      console.log('Moving to:', position) // debug
-    }
-  })
-
 // ============================================================================
 // Program options & localStorage
 // ============================================================================
@@ -43,6 +29,8 @@ const STORAGE_KEY = 'programOptions'
     availablePrograms: [],
     showInOut:         true,
     showActions:       true,
+    windowWidth:       800,
+    windowHeight:      600,
     visibleCols: {
       index:    true,
       text:     true,
@@ -83,6 +71,22 @@ const STORAGE_KEY = 'programOptions'
     }
   }
 
+// ============================================================================
+// Draggable & resizable full-screen graph container
+// ============================================================================
+
+  const headerRef  = ref(null)
+  const contentRef = ref(null)
+
+  const { x, y } = useDraggable(headerRef, {
+    initialValue: { x: 10, y: 10 }
+  })
+
+  useResizeObserver(contentRef, (entries) => {
+    const { width: w, height: h } = entries[0].contentRect
+    programOptions.windowWidth = w
+    programOptions.windowHeight = h
+  })
 
 // ============================================================================
 // Temporal in-edition program
@@ -818,11 +822,11 @@ function snapshotProgram() {
       :style="{
         left: x + 'px',
         top: y + 'px',
-        width: width + 'px',
-        height: height + 'px'
+        width: programOptions.windowWidth + 'px',
+        height: programOptions.windowHeight + 'px'
       }"
     >
-      <div class="fullscreen-header">
+      <div class="fullscreen-header" ref="headerRef">
         <span>Dependence Graph of Edited program (circular paths in red)</span>
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
