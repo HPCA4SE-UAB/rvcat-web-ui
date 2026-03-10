@@ -811,30 +811,28 @@ function snapshotProgram() {
     </div>
   </div>
 
-  <template>
-    <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-      <div
-        class="fullscreen-content"
-        ref="contentRef"
-        :style="{
-          left: x + 'px',
-          top: y + 'px',
-          width: width + 'px',
-          height: height + 'px'
-        }"
-      >
-        <div class="fullscreen-header">
-          <span>Dependence Graph of Edited program (circular paths in red)</span>
-          <button class="close-btn" @click="closeFullScreen">×</button>
-        </div>
-        <div class="graph-container">
-          <div class="graph-wrapper">
-            <div v-html="programSvg" v-if="programSvg"></div>
-          </div>
+  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+    <div
+      class="fullscreen-content"
+      ref="contentRef"
+      :style="{
+        left: x + 'px',
+        top: y + 'px',
+        width: width + 'px',
+        height: height + 'px'
+      }"
+    >
+      <div class="fullscreen-header">
+        <span>Dependence Graph of Edited program (circular paths in red)</span>
+        <button class="close-btn" @click="closeFullScreen">×</button>
+      </div>
+      <div class="graph-container">
+        <div class="graph-wrapper">
+          <div v-html="programSvg" v-if="programSvg"></div>
         </div>
       </div>
     </div>
-  </template>
+  </div>
 
   <div v-if="showModalDownload" class="modal-overlay">
     <div class="modal">
