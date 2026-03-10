@@ -142,7 +142,7 @@ function loadEditedMemory() {
 
   watch(
     () => [programOptions.showInOut, programOptions.showActions, programOptions.showGraph,
-           programOptions.windowWidth, programOptions.windowHeight],
+           programOptions.showLat,   programOptions.windowWidth, programOptions.windowHeight],
     () => { saveOptions() }
   )
 
@@ -206,8 +206,6 @@ function loadEditedMemory() {
     cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
     loadEditedProgram()
     loadEditedMemory()
-    if (programOptions.showGraph)
-      openFullScreen()
   });
 
   onUnmounted(() => {
@@ -391,7 +389,7 @@ function snapshotMemory() {
 
   function toggleInOut  () { programOptions.showInOut   = !programOptions.showInOut }
   function toggleActions() { programOptions.showActions = !programOptions.showActions }
-  function toggleLatency() { programOptions.showLat = !programOptions.showLat }
+  function toggleLatency() { programOptions.showLat     = !programOptions.showLat }
 
   // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
   const handleGraph = async (data, dataType) => {
