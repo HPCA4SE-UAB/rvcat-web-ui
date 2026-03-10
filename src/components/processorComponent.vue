@@ -321,48 +321,53 @@ function get_processor_dot(process) {
     const ROBsize        = process.ROBsize || 20
     const num_ports      = Object.keys(process.ports).length
     const sched          = process.sched
-    let dot_code = `
-  digraph "Processor Pipeline" {
-    rankdir=TB;
-    nodesep=0.5;
-    ranksep=0.6;
-    node [fontsize=14, fontname="Arial"];
 
-    left_anchor  [shape=point width=0 style=invis];
-    right_anchor [shape=point width=0 style=invis];
-  `
+    const visible_ports  = num_ports > 4 ? 5 : num_ports
+    const width_cells    = visible_ports + 2
+
+    let cells = ""
+    for (let i = 0; i < width_cells; i++)
+      cells += `<TD WIDTH="80"></TD>`
+
+    let dot_code = `
+      digraph "Processor Pipeline" {
+        rankdir=TB;
+        nodesep=0.5;
+        ranksep=0.6;
+        node [fontsize=14, fontname="Arial"];
+      `
     // --- FETCH ---
     dot_code += `
-    Fetch [shape=box, label="Fetch", tooltip="Instruction fetch stage"];
-  `
+      Fetch [shape=box, label="Fetch", tooltip="Instruction fetch stage"];
+    `
     // --- WAITING BUFFER ---
     dot_code += `
-    "Waiting Buffer" [
-      label="Waiting\\nBuffer",
-      tooltip="Instructions wait for execution",
-      shape=box,
-      width=1,
-      height=1,
-      fixedsize=true
-    ];
-  `
+      "Waiting Buffer" [
+        label="Waiting\\nBuffer",
+        tooltip="Instructions wait for execution",
+        shape=box,
+        width=1,
+        height=1,
+        fixedsize=true
+      ];
+    `
     // Dispatch edges
     dot_code += `
-    Fetch -> "Waiting Buffer" [
-      label="Dispatch = ${dispatch_width}",
-      tooltip="Dispatch Width: ${dispatch_width} instructions per cycle"
-    ];
-  `
+      Fetch -> "Waiting Buffer" [
+        label="Dispatch = ${dispatch_width}",
+        tooltip="Dispatch Width: ${dispatch_width} instructions per cycle"
+      ];
+    `
     for (let i = 1; i < dispatch_width; i++)
       dot_code += `Fetch -> "Waiting Buffer";\n`
 
     // --- EXECUTION PORTS ---
     dot_code += `
-  subgraph cluster_execute {
-    rankdir=TB;
-    node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
-    tooltip="Execution Ports: one instruction per cycle, per port";
-  `
+      subgraph cluster_execute {
+        rankdir=TB;
+        node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
+        tooltip="Execution Ports: one instruction per cycle, per port";
+      `
     let shown_ports = []
 
     if (num_ports >= 4) {
@@ -395,22 +400,21 @@ function get_processor_dot(process) {
 
     // --- REGISTERS ---
     dot_code += `
-  Registers [
-    shape=box,
-    width=1,
-    height=1,
-    fixedsize=true,
-    tooltip="Architectural state updated at retirement"
-  ];
-  `
+      Registers [
+        shape=box,
+        width=1,
+        height=1,
+        fixedsize=true,
+        tooltip="Architectural state updated at retirement"
+      ];
+      `
     // --- TOP RANK (pipeline row) ---
     dot_code += `
-  {
-    rank=same;
-    left_anchor;
-    Fetch;
-    "Waiting Buffer";
-  `
+      {
+        rank=same;
+        Fetch;
+        "Waiting Buffer";
+      `
     shown_ports.forEach(p=>{
       dot_code += `P${p};\n`
     })
@@ -419,31 +423,25 @@ function get_processor_dot(process) {
       dot_code += `"..." ;\n`
 
     dot_code += `
-    Registers;
-    right_anchor;
-  }
-  `
-    // invisible edges to stabilize layout
-    dot_code += `
-  left_anchor -> Fetch [style=invis];
-  Registers -> right_anchor [style=invis];
-  `
+      Registers;
+    }
+    `
     // --- ROB ---
     dot_code += `
-  ROB [
-    label="ROB: ${ROBsize} entries",
-    tooltip="Reorder Buffer: maintains sequential program order",
-    shape=box,
-    height=0.6
-  ];
-  `
+    ROB [
+      shape=plain
+      label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0">
+          <TR><TD COLSPAN="${width_cells}">ROB: ${ROBsize} entries</TD></TR>
+          <TR>${cells}</TR>
+        </TABLE>
+      >
+      tooltip="Reorder Buffer: maintains sequential program order",
+      shape=box,
+      height=0.6
+    ];
+    `
     dot_code += `{ rank=sink; ROB; }\n`
-
-    // stretch ROB across diagram
-    dot_code += `
-  left_anchor -> ROB [style=invis, weight=10];
-  right_anchor -> ROB [style=invis, weight=10];
-  `
 
     // Fetch -> ROB
     for (let i=0;i<dispatch_width;i++)
