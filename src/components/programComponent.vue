@@ -33,19 +33,14 @@ const STORAGE_KEY = 'programOptions'
     windowWidth:       800,
     windowHeight:      600,
     visibleCols: {
-      index:    true,
       text:     true,
       type:     true,
       oper:     true,
       size:     true,
+      name:     true,
+      pattern:  true,
       latency:  true,
-      portMask: true,
-      destin:   true,
-      source1:  true,
-      source2:  true,
-      source3:  true,
-      constant: true,
-      actions:  true
+      portMask: true
     }
   }
 
@@ -94,6 +89,7 @@ const STORAGE_KEY = 'programOptions'
 // ============================================================================
 
 const editedProgram = ref([]);
+const editedMemory  = ref([]);
 
 function loadEditedProgram() {
   const stored = localStorage.getItem('programTemp');
@@ -109,6 +105,21 @@ function loadEditedProgram() {
     });
   } catch (e) {
     console.error('📄❌ Failed to load edited program from localStorage:', e);
+  }
+}
+
+function loadEditedMemory() {
+  const stored = localStorage.getItem('memoryTemp');
+  if (!stored) return;
+  try {
+    const data = JSON.parse(stored);
+    editedMemory.value = (data.memory_list || []).map(mem => {
+      return {
+        name:    mem.name || '',    pattern:    mem.pattern    || ''
+      };
+    });
+  } catch (e) {
+    console.error('📄❌ Failed to load edited memory from localStorage:', e);
   }
 }
 
@@ -129,7 +140,8 @@ function loadEditedProgram() {
   })
 
   watch(
-    () => [programOptions.showInOut, programOptions.showActions],
+    () => [programOptions.showInOut, programOptions.showActions, programOptions.showGraph,
+           programOptions.windowWidth, programOptions.windowHeight],
     () => { saveOptions() }
   )
 
@@ -141,6 +153,19 @@ function loadEditedProgram() {
         console.log('📄✅ Saved edited program')
       } catch (e) {
         console.error('📄❌ Failed to persist program to localStorage:', e);
+      }
+    },
+    { deep: true }
+  )
+
+    watch(
+    () => snapshotMemory(),
+    (val) => {
+      try {
+        localStorage.setItem('memoryTemp', JSON.stringify(val));
+        console.log('📄✅ Saved edited memory')
+      } catch (e) {
+        console.error('📄❌ Failed to persist memory to localStorage:', e);
       }
     },
     { deep: true }
@@ -179,6 +204,7 @@ function loadEditedProgram() {
     console.log('📄🎯 ProgramComponent mounted')
     cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
     loadEditedProgram()
+    loadEditedMemory()
     if (programOptions.showGraph)
       openFullScreen()
   });
@@ -281,7 +307,8 @@ function loadEditedProgram() {
 // Program handling:
 //        addInstruction,       removeInstruction,
 //        moveInstructionUp,    moveInstructionDown,
-//        normalizeInstruction, snapshotProgram
+//        normalizeInstruction, snapshotProgram,
+//        normalizeMemory,      snapshotMemory
 // ============================================================================
 
 // Add just at index position
@@ -322,7 +349,6 @@ function moveInstructionDown(index) {
   }
 }
 
-
 function normalizeInstruction(inst) {
   return {
     text:     (inst.text     || '').trim(),
@@ -344,24 +370,27 @@ function snapshotProgram() {
   };
 }
 
+function normalizeMemory(mem) {
+  return {
+    name:     (mem.name    || '').trim(),
+    pattern:  (mem.pattern || '').trim()
+  };
+}
+
+function snapshotMemory() {
+  return {
+    name:       'memoryTemp',
+    memory_list: editedMemory.value.map(mem => normalizeMemory(mem))
+  };
+}
 
 // ============================================================================
 // viewColumns
 // ============================================================================
 
-  function toggleInOut  () {
-    programOptions.showInOut           = !programOptions.showInOut
-    programOptions.visibleCols.destin  = !programOptions.visibleCols.destin
-    programOptions.visibleCols.source1 = !programOptions.visibleCols.source1
-    programOptions.visibleCols.source2 = !programOptions.visibleCols.source2
-    programOptions.visibleCols.source3 = !programOptions.visibleCols.source3
-    programOptions.visibleCols.constant= !programOptions.visibleCols.constant
-  }
-
-  function toggleActions() {
-    programOptions.showActions         = !programOptions.showActions
-    programOptions.visibleCols.actions = !programOptions.visibleCols.actions
-  }
+  function toggleInOut  () { programOptions.showInOut   = !programOptions.showInOut }
+  function toggleActions() { programOptions.showActions = !programOptions.showActions }
+  function toggleLatency() { programOptions.showLat = !programOptions.showLat }
 
   // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
   const handleGraph = async (data, dataType) => {
@@ -467,9 +496,10 @@ function snapshotProgram() {
   };
 
   function clearProgram() {
-    editedProgram.value = [];
-    addInstruction(0);
+    editedProgram.value  = [];
+    editedMemory.value   = [];
     showModalClear.value = false;
+    addInstruction(0);
   }
 
 
@@ -496,8 +526,15 @@ function snapshotProgram() {
       </div>
 
       <div class="settings-container">
+        <button class="blue-button add-prev-margin" :class="{ active: programOptions.showLat }"
+            title="Show/Hide instruction Input/Output operands"
+            id="show-inout-operands"
+          @click="toggleLatency">
+          <span v-if="programOptions.showLat">✔ </span>
+          latency
+        </button>
         <select v-model="programOptions.currentProgram" class="form-select"
-               id="programs-list" title="Select Program">
+            id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
           <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
             {{ program }}
@@ -522,28 +559,36 @@ function snapshotProgram() {
         <table class="instructions-table">
           <thead>
             <tr>
-              <th v-if="programOptions.visibleCols.index" style="width: 20px;">  #    </th>
-              <th v-if="programOptions.visibleCols.text"  style="width: 600px;"> Inst </th>
-              <th v-if="programOptions.visibleCols.type"  style="width: 100px;"> Type </th>
-              <th v-if="programOptions.visibleCols.oper"  style="width: 100px;"> Oper </th>
-              <th v-if="programOptions.visibleCols.size"  style="width: 100px;"> Size </th>
+              <th style="width: 20px;">  #    </th>
+              <th style="width: 600px;"> Inst </th>
+              <th v-if="!programOptions.showLat"  style="width: 100px;"> Type </th>
+              <th v-if="!programOptions.showLat"  style="width: 100px;"> Oper </th>
+              <th v-if="!programOptions.showLat"  style="width: 100px;"> Size </th>
+              <th v-if="programOptions.showLat"   style="width: 100px;"> Lat </th>
+              <th v-if="programOptions.showLat"   style="width: 200px;"> Ports </th>
             </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
             <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index">
-              <td v-if="programOptions.visibleCols.index">{{ index }}</td>
+              <td>{{ index }}</td>
 
-              <td v-if="programOptions.visibleCols.text" title="Instruction description">
+              <td title="Instruction description">
                  {{ inst.text }}
               </td>
-              <td v-if="programOptions.visibleCols.type" title="Instruction type">
+              <td v-if="!programOptions.showLat" title="Instruction type">
                 {{ inst.type }}
               </td>
-              <td v-if="programOptions.visibleCols.oper" title="Operation type">
+              <td v-if="!programOptions.showLat" title="Operation type">
                 {{ inst.oper }}
               </td>
-              <td v-if="programOptions.visibleCols.size" title="Operation size">
+              <td v-if="!programOptions.showLat" title="Operation size">
                 {{ inst.size}}
+              </td>
+              <td v-if="programOptions.showLat" title="Latency">
+                {{ inst.latency }}
+              </td>
+              <td v-if="programOptions.showLat" title="Available execution ports">
+                {{ inst.portMask}}
               </td>
             </tr>
           </tbody>
@@ -621,22 +666,22 @@ function snapshotProgram() {
             <table class="instructions-table">
               <thead>
                 <tr>
-                  <th v-if="programOptions.visibleCols.index"    style="width: 20px;">  #       </th>
+                  <th style="width: 20px;">  # </th>
                   <th v-if="programOptions.visibleCols.text"     style="width: 600px;"> Text    </th>
                   <th v-if="programOptions.visibleCols.type"     style="width: 100px;"> Type    </th>
                   <th v-if="programOptions.visibleCols.oper"     style="width: 100px;"> Oper    </th>
                   <th v-if="programOptions.visibleCols.size"     style="width: 100px;"> Size    </th>
-                  <th v-if="programOptions.visibleCols.destin"   style="width: 80px;">  Destin  </th>
-                  <th v-if="programOptions.visibleCols.source1"  style="width: 80px;">  Source1 </th>
-                  <th v-if="programOptions.visibleCols.source2"  style="width: 80px;">  Source2 </th>
-                  <th v-if="programOptions.visibleCols.source3"  style="width: 80px;">  Source3 </th>
-                  <th v-if="programOptions.visibleCols.constant" style="width: 80px;">  Constant</th>
-                  <th v-if="programOptions.visibleCols.actions"  style="width: 100px;"> Actions </th>
+                  <th v-if="programOptions.showInOut"   style="width: 80px;">  Destin  </th>
+                  <th v-if="programOptions.showInOut"   style="width: 80px;">  Source1 </th>
+                  <th v-if="programOptions.showInOut"   style="width: 80px;">  Source2 </th>
+                  <th v-if="programOptions.showInOut"   style="width: 80px;">  Source3 </th>
+                  <th v-if="programOptions.showInOut"   style="width: 80px;">  Constant</th>
+                  <th v-if="programOptions.showActions" style="width: 100px;"> Actions </th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(inst, index) in editedProgram" :key="index">
-                  <td v-if="programOptions.visibleCols.index">{{ index }}</td>
+                  <td>{{ index }}</td>
 
                   <td v-if="programOptions.visibleCols.text">
                     <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
@@ -681,27 +726,27 @@ function snapshotProgram() {
                     </select>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.destin">
+                  <td v-if="programOptions.showInOut">
                     <input type="text" v-model="inst.destin" class="table-input" />
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source1">
+                  <td v-if="programOptions.showInOut">
                     <input type="text" v-model="inst.source1" class="table-input" />
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source2">
+                  <td v-if="programOptions.showInOut">
                     <input type="text" v-model="inst.source2" class="table-input" />
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source3">
+                  <td v-if="programOptions.showInOut">
                     <input type="text" v-model="inst.source3" class="table-input" />
                   </td>
 
-                  <td v-if="programOptions.visibleCols.constant">
+                  <td v-if="programOptions.showInOut">
                     <input type="text" v-model="inst.constant" class="table-input" />
                   </td>
 
-                  <td v-if="programOptions.visibleCols.actions" class="actions-cell">
+                  <td v-if="programOptions.showActions" class="actions-cell">
 
                     <button
                       @click="moveInstructionUp(index)"
@@ -744,7 +789,7 @@ function snapshotProgram() {
 
                 <!-- 🔒 Fila fija final -->
                 <tr class="fixed-row">
-                  <td v-if="programOptions.visibleCols.index"> {{editedProgram.length}} </td>
+                  <td> {{editedProgram.length}} </td>
 
                   <td v-if="programOptions.visibleCols.text" title="This final conditional branch is fixed">
                     <span class="table-input readonly">if c go back</span>
@@ -762,27 +807,27 @@ function snapshotProgram() {
                     <span class="table-select readonly"> </span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.destin">
+                  <td v-if="programOptions.showInOut">
                     <span class="table-input readonly"> </span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source1">
+                  <td v-if="programOptions.showInOut">
                     <span class="table-input readonly">c</span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source2">
+                  <td v-if="programOptions.showInOut">
                     <span class="table-input readonly"> </span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.source3">
+                  <td v-if="programOptions.showInOut">
                     <span class="table-input readonly"> </span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.constant">
+                  <td v-if="programOptions.showInOut">
                     <span class="table-input readonly"> </span>
                   </td>
 
-                  <td v-if="programOptions.visibleCols.actions" class="actions-cell">
+                  <td v-if="programOptions.showActions" class="actions-cell">
                     <span class="table-input readonly"> 🔒 </span>
                   </td>
                 </tr>
@@ -797,17 +842,20 @@ function snapshotProgram() {
             <table class="instructions-table">
               <thead>
                 <tr>
-                  <th v-if="programOptions.visibleCols.index"  style="width: 40px;">  Array Name </th>
-                  <th v-if="programOptions.visibleCols.text"   style="width: 240px;"> Memory Pattern </th>
+                  <th v-if="programOptions.visibleCols.name"     style="width: 40px;">  Array Name </th>
+                  <th v-if="programOptions.visibleCols.pattern"  style="width: 240px;"> Memory Pattern </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(inst, index) in editedProgram" :key="index">
+                <tr v-for="(mem, index) in editedMemory" :key="index">
 
-                  <td v-if="programOptions.visibleCols.index">{{ index }}</td>
-
-                  <td v-if="programOptions.visibleCols.text">
-                    <input type="text" v-model="inst.text" class="table-input" />
+                  <td v-if="programOptions.visibleCols.name"
+                      title="Memory array name">
+                    <input type="text" v-model="mem.name" class="table-input" />
+                  </td>
+                  <td v-if="programOptions.visibleCols.pattern"
+                      title="Memory access pattern for this array">
+                    <input type="text" v-model="mem.pattern" class="table-input" />
                   </td>
 
                 </tr>
