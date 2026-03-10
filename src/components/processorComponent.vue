@@ -317,53 +317,70 @@
 
 function get_processor_dot(process) {
 
-  const ports = process.ports
+  const ports    = process.ports
+  const lat      = process.latencies
   const port_ids = Object.keys(ports)
-  const ROBsize = process.ROBsize || 20
-  const sched          = process.sched
+  const ROBsize  = process.ROBsize || 20
+
+  const dispatch = process.dispatch
+  const retire   = process.retire
+  const sched    = process.sched
 
   function color_for_op(op) {
-    if (op.startsWith("INT")) return "#d0e1ff"
-    if (op.startsWith("BRANCH")) return "#ffd0d0"
-    if (op.startsWith("MEM")) return "#d0ffd0"
-    if (op.startsWith("FLOAT")) return "#fff0b3"
-    if (op.startsWith("VFLOAT")) return "#ffe0ff"
-    return "white"
+    if (op.startsWith("INT")) return "#d6e4ff"
+    if (op.startsWith("BRANCH")) return "#ffd6d6"
+    if (op.startsWith("MEM")) return "#d6ffd6"
+    if (op.startsWith("FLOAT")) return "#fff2b3"
+    if (op.startsWith("VFLOAT")) return "#f3d6ff"
+    return "#ffffff"
   }
 
+  // ----- HEADER ROW -----
+
   let header = `
-<TD PORT="fetch" BGCOLOR="#eeeeee"><B>Fetch</B></TD>
-<TD PORT="wb" BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B></TD>
+<TD BGCOLOR="#eeeeee"><B>Fetch</B></TD>
+<TD BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B><BR/><FONT POINT-SIZE="10">Dispatch ${dispatch}/cycle</FONT></TD>
 `
 
   for (let p of port_ids)
-    header += `<TD PORT="p${p}" BGCOLOR="#f8f8f8"><B>P${p}</B></TD>\n`
+    header += `<TD BGCOLOR="#f5f5f5"><B>P${p}</B></TD>\n`
 
-  header += `<TD PORT="regs" BGCOLOR="#eeeeee"><B>Registers</B></TD>`
+  header += `<TD BGCOLOR="#eeeeee"><B>Registers</B><BR/><FONT POINT-SIZE="10">Retire ${retire}/cycle</FONT></TD>`
+
+  // ----- PORT CONTENT ROW -----
 
   let ports_row = `<TD></TD><TD></TD>`
 
   for (let p of port_ids) {
 
     let ops = ports[p]
-
     let cell = `<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">`
 
-    for (let op of ops)
-      cell += `<TR><TD BGCOLOR="${color_for_op(op)}">${op}</TD></TR>`
+    for (let op of ops) {
+      let latency = lat[op] ?? ""
+      let label   = latency ? `${op} (${latency})` : op
+      cell += `
+<TR>
+<TD BGCOLOR="${color_for_op(op)}">
+<FONT POINT-SIZE="10">${label}</FONT>
+</TD>
+</TR>`
+    }
 
-    cell += `</TABLE>`
-
+    cell      += `</TABLE>`
     ports_row += `<TD>${cell}</TD>`
   }
 
   ports_row += `<TD></TD>`
 
+  // total columns
   const total_cols = 2 + port_ids.length + 1
 
+  // ----- DOT GRAPH -----
   const dot = `
 digraph CPU {
 
+rankdir=TB
 node [shape=plain fontname="Arial"]
 
 pipeline [
@@ -379,7 +396,7 @@ ${ports_row}
 </TR>
 
 <TR>
-<TD PORT="rob" COLSPAN="${total_cols}" BGCOLOR="#f0f0f0">
+<TD COLSPAN="${total_cols}" BGCOLOR="#f0f0f0">
 <B>ROB: ${ROBsize} entries</B>
 </TD>
 </TR>
@@ -388,19 +405,11 @@ ${ports_row}
 >
 ]
 
-pipeline:fetch -> pipeline:wb
-
-${port_ids.map(p => `pipeline:wb -> pipeline:p${p}`).join("\n")}
-
-${port_ids.map(p => `pipeline:p${p} -> pipeline:rob`).join("\n")}
-
-pipeline:rob -> pipeline:regs
-
 }
 `
+
   return dot
 }
-
 
 function get_processor_dot2(process) {
     const dispatch_width = process.dispatch
