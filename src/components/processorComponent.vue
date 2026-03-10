@@ -377,8 +377,8 @@ function get_processor_dot(process) {
   // ---- Waiting Buffer ----
   let wb_row = `<TR>
 <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-<B>Waiting Buffer</B><BR/>
-<FONT POINT-SIZE="10">Dispatch ${dispatch}/cycle</FONT>
+ <FONT POINT-SIZE="12">Dispatch ${dispatch}/cycle</FONT><BR/>
+ <B>Waiting Buffer</B>
 </TD>
 </TR>`
 
@@ -411,7 +411,7 @@ function get_processor_dot(process) {
       const tooltip = latency_tooltip(op)
 
       op_rows += `
-<TD BGCOLOR="${color}" TOOLTIP="${tooltip}">
+<TD BGCOLOR="${color}" tooltip="${tooltip}">
 <FONT POINT-SIZE="10">${op}</FONT>
 </TD>`
     }
@@ -422,8 +422,9 @@ function get_processor_dot(process) {
   // ---- Registers ----
   let reg_row = `<TR>
 <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-<B>Registers</B><BR/>
-<FONT POINT-SIZE="10">Retire ${retire}/cycle</FONT>
+  <FONT POINT-SIZE="12">Retire ${retire}/cycle</FONT>
+  <BR/>
+  <B>Registers</B>
 </TD>
 </TR>`
 
