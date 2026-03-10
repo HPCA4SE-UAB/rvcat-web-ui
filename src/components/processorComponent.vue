@@ -317,70 +317,102 @@
 
 function get_processor_dot(process) {
 
-  const ports    = process.ports
-  const lat      = process.latencies
+  const ports = process.ports
+  const lat = process.latencies
   const port_ids = Object.keys(ports)
-  const ROBsize  = process.ROBsize || 20
+  const ROBsize = process.ROBsize || 20
 
   const dispatch = process.dispatch
   const retire   = process.retire
-  const sched    = process.sched
 
-  function color_for_op(op) {
-    if (op.startsWith("INT")) return "#d6e4ff"
-    if (op.startsWith("BRANCH")) return "#ffd6d6"
-    if (op.startsWith("MEM")) return "#d6ffd6"
-    if (op.startsWith("FLOAT")) return "#fff2b3"
-    if (op.startsWith("VFLOAT")) return "#f3d6ff"
-    return "#ffffff"
+  function op_type(op) {
+    if (op.startsWith("MEM")) return "MEM"
+    if (op.startsWith("FLOAT") || op.startsWith("VFLOAT")) return "FP"
+    if (op.startsWith("BRANCH")) return "BR"
+    if (op.startsWith("INT")) return "INT"
+    return "OTHER"
+  }
+
+  function type_color(type) {
+    if (type === "INT") return "#d6e4ff"
+    if (type === "MEM") return "#d6ffd6"
+    if (type === "FP")  return "#fff2b3"
+    if (type === "BR")  return "#ffd6d6"
+    return "#f0f0f0"
+  }
+
+  function dominant_type(ops) {
+    const count = {}
+    for (let op of ops) {
+      const t = op_type(op)
+      count[t] = (count[t] || 0) + 1
+    }
+    return Object.entries(count).sort((a,b)=>b[1]-a[1])[0][0]
   }
 
   // ----- HEADER ROW -----
 
   let header = `
 <TD BGCOLOR="#eeeeee"><B>Fetch</B></TD>
-<TD BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B><BR/><FONT POINT-SIZE="10">Dispatch ${dispatch}/cycle</FONT></TD>
+<TD BGCOLOR="#eeeeee"><B>Waiting<br/>Buffer</B><BR/><FONT POINT-SIZE="10">Dispatch ${dispatch}</FONT></TD>
 `
 
-  for (let p of port_ids)
-    header += `<TD BGCOLOR="#f5f5f5"><B>P${p}</B></TD>\n`
+  for (let p of port_ids) {
 
-  header += `<TD BGCOLOR="#eeeeee"><B>Registers</B><BR/><FONT POINT-SIZE="10">Retire ${retire}/cycle</FONT></TD>`
+    const ops = ports[p]
+    const type = dominant_type(ops)
+    const color = type_color(type)
 
-  // ----- PORT CONTENT ROW -----
+    header += `
+<TD BGCOLOR="${color}">
+<B>P${p}</B><BR/>
+<FONT POINT-SIZE="9">${type}</FONT>
+</TD>`
+  }
+
+  header += `
+<TD BGCOLOR="#eeeeee">
+<B>Registers</B><BR/>
+<FONT POINT-SIZE="10">Retire ${retire}</FONT>
+</TD>
+`
+
+  // ----- PORT CONTENT -----
 
   let ports_row = `<TD></TD><TD></TD>`
 
   for (let p of port_ids) {
 
-    let ops = ports[p]
+    const ops = ports[p]
+
     let cell = `<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">`
 
     for (let op of ops) {
-      let latency = lat[op] ?? ""
-      let label   = latency ? `${op} (${latency})` : op
+
+      const latency = lat[op] ?? ""
+      const label = latency ? `${op} (${latency})` : op
+      const color = type_color(op_type(op))
+
       cell += `
 <TR>
-<TD BGCOLOR="${color_for_op(op)}">
+<TD BGCOLOR="${color}">
 <FONT POINT-SIZE="10">${label}</FONT>
 </TD>
 </TR>`
     }
 
-    cell      += `</TABLE>`
+    cell += `</TABLE>`
+
     ports_row += `<TD>${cell}</TD>`
   }
 
   ports_row += `<TD></TD>`
 
-  // total columns
   const total_cols = 2 + port_ids.length + 1
 
-  // ----- DOT GRAPH -----
   const dot = `
 digraph CPU {
 
-rankdir=TB
 node [shape=plain fontname="Arial"]
 
 pipeline [
