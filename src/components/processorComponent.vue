@@ -478,6 +478,8 @@ function get_processor_dot(process) {
 
   const total_rows = max_ops
 
+  const cellPadding = 20 / total_rows
+
   // ---- Decode ----
 
   let decode_row = `<TR>
@@ -566,7 +568,7 @@ function get_processor_dot(process) {
       node [shape=plain fontname="Arial"]
       pipeline [
         label=<
-          <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+          <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="${cellPadding}">
             ${decode_row}
             ${wb_row}
             ${port_header}
