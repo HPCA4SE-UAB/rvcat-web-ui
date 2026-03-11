@@ -983,9 +983,7 @@ function get_processor_dot2(process) {
       <!--    Processor Graph with visual usage  -->
       <div class="graph-section">
         <div class="processor-container">
-          <div class="processor-img">
-            <div v-html="simulatedSvg" v-if="simulatedSvg"></div>
-          </div>
+          <div class="processor-img" v-html="simulatedSvg" v-if="simulatedSvg"></div>
         </div>
       </div>
     </div>
@@ -1272,9 +1270,7 @@ function get_processor_dot2(process) {
         </div> <!--- Latency & Port Settings Group -->
 
         <div class="processor-side-container">
-          <div class="processor-img">
-            <div v-html="editedSvg" v-if="editedSvg"></div>
-          </div>
+          <div class="processor-img" v-html="editedSvg" v-if="editedSvg"></div>
         </div>
 
       </div>
@@ -1297,9 +1293,7 @@ function get_processor_dot2(process) {
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
       <div class="graph-container">
-        <div class="graph-wrapper">
-          <div v-html="editedSvg" v-if="editedSvg"></div>
-        </div>
+        <div class="graph-wrapper" v-html="editedSvg" v-if="editedSvg"></div>
       </div>
     </div>
   </div>
