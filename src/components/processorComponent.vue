@@ -388,21 +388,13 @@ function get_processor_dot(process) {
   const ports    = process.ports
   const lat      = process.latencies
   const port_ids = Object.keys(ports)
+
   const ROBsize  = process.ROBsize || 20
   const sched    = process.sched
-
   const dispatch = process.dispatch
   const retire   = process.retire
 
-  const max_ops = Math.max(...port_ids.map(p => ports[p].length))
-
-  function op_type(op) {
-    if (op.startsWith("MEM")   || op.startsWith("VMEM")  ) return "MEM"
-    if (op.startsWith("FLOAT") || op.startsWith("VFLOAT")) return "FP"
-    if (op.startsWith("INT")   || op.startsWith("VINT"))   return "INT"
-    if (op.startsWith("BRANCH")) return "BR"
-    return "OTHER"
-  }
+  const TARGET_ROWS = 12
 
   function type_color(type) {
     if (type === "INT") return "#d6e4ff"
@@ -412,6 +404,10 @@ function get_processor_dot(process) {
     return "#f0f0f0"
   }
 
+  function op_type(op) {
+    return op.split(".")[0]
+  }
+
   function latency_tooltip(op) {
 
     const base = lat[op]
@@ -419,9 +415,8 @@ function get_processor_dot(process) {
     const variants = Object.keys(lat)
       .filter(k => k.startsWith(op + "."))
 
-    if (variants.length === 0) {
+    if (variants.length === 0)
       return base !== undefined ? `${op} latency: ${base}` : ""
-    }
 
     let txt = `${op} latencies:\n`
 
@@ -434,14 +429,62 @@ function get_processor_dot(process) {
     return txt
   }
 
-  const total_cols = port_ids.length + 1
+  function compress_ops(ops) {
+
+    const grouped = {}
+
+    for (let op of ops) {
+
+      const [type, sub] = op.split(".")
+
+      if (!grouped[type]) grouped[type] = new Set()
+      if (sub) grouped[type].add(sub)
+    }
+
+    const result = []
+
+    for (let type in grouped) {
+
+      const all_ops = typeOperations[type] || []
+
+      if (all_ops.length && grouped[type].size === all_ops.length) {
+
+        result.push({
+          label: type,
+          big: true
+        })
+
+      } else {
+
+        for (let sub of grouped[type]) {
+
+          result.push({
+            label: `${type}.${sub}`,
+            big: false
+          })
+        }
+      }
+    }
+
+    return result
+  }
+
+  const port_ops = {}
+
+  for (let p of port_ids)
+    port_ops[p] = compress_ops(ports[p])
+
+  const max_ops = Math.max(...Object.values(port_ops).map(o => o.length))
+
+  const total_rows = Math.max(TARGET_ROWS, max_ops)
 
   // ---- Decode ----
+
   let decode_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Dispatch:&nbsp;${dispatch}/cycle</B>
     </TD>
-    <TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE">
+    <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE">
       <B>ROB</B>
       <BR/><BR/>
       <FONT POINT-SIZE="16"><B>${ROBsize}</B></FONT>
@@ -451,16 +494,17 @@ function get_processor_dot(process) {
   </TR>`
 
   // ---- Waiting Buffer ----
+
   let wb_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Waiting Buffer</B>
-      &nbsp;
-      Scheduler policy:
+      &nbsp;&nbsp;Scheduler:
       <B>${sched}</B>
     </TD>
   </TR>`
 
   // ---- Port headers ----
+
   let port_header = "<TR>"
 
   for (let p of port_ids)
@@ -469,63 +513,69 @@ function get_processor_dot(process) {
   port_header += "</TR>"
 
   // ---- Operation rows ----
+
   let op_rows = ""
 
-  for (let i = 0; i < max_ops; i++) {
+  for (let i = 0; i < total_rows; i++) {
 
     op_rows += "<TR>"
 
     for (let p of port_ids) {
 
-      const ops = ports[p]
-      const op = ops[i]
+      const op = port_ops[p][i]
 
       if (!op) {
         op_rows += "<TD></TD>"
         continue
       }
 
-      const color   = type_color(op_type(op))
-      const tooltip = latency_tooltip(op)
+      const type = op_type(op.label)
+      const color = type_color(type)
 
-      op_rows += `
-        <TD BGCOLOR="${color}" title="${tooltip}">
-        <FONT POINT-SIZE="10">${op}</FONT>
-        </TD>`
+      if (op.big) {
+
+        op_rows += `
+          <TD BGCOLOR="${color}">
+            <FONT POINT-SIZE="14"><B>${op.label}</B></FONT>
+          </TD>`
+
+      } else {
+
+        const tooltip = latency_tooltip(op.label)
+
+        op_rows += `
+          <TD BGCOLOR="${color}" TITLE="${tooltip}">
+            <FONT POINT-SIZE="10">${op.label}</FONT>
+          </TD>`
+      }
     }
 
     op_rows += "</TR>"
   }
 
   // ---- Registers ----
+
   let reg_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Retire: ${retire}/cycle&nbsp;&nbsp;&nbsp;(Architected Registers)</B>
+      <B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B>
     </TD>
-  </TR>`
+   </TR>`
 
   const dot = `
-digraph CPU {
-
-node [shape=plain fontname="Arial"]
-
-pipeline [
-tooltip=""
-label=<
-<TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0">
-
-${decode_row}
-${wb_row}
-${port_header}
-${op_rows}
-${reg_row}
-
-</TABLE>
->
-]
-
-}
-`
+    digraph CPU {
+      node [shape=plain fontname="Arial"]
+      pipeline [
+        label=<
+          <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+            ${decode_row}
+            ${wb_row}
+            ${port_header}
+            ${op_rows}
+            ${reg_row}
+          </TABLE>
+        >
+      ]
+    }  `
   return dot
 }
 
