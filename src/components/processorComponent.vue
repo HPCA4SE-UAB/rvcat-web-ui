@@ -438,17 +438,21 @@ function get_processor_dot(process) {
 
   // ---- Decode ----
   let decode_row = `<TR>
-<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><B>Dispatch</B>${dispatch}/cycle>
-</TD>
-<TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0"><B>ROB</B><BR/>${ROBsize}<BR/>entries</TD>
-</TR>`
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+      <B>Dispatch</B><B>${dispatch}/cycle</B>
+    </TD>
+    <TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0">
+      <B>ROB</B><BR/><B>${ROBsize}</B><BR/><B>entries</B>
+    </TD>
+  </TR>`
 
   // ---- Waiting Buffer ----
   let wb_row = `<TR>
-<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"> <B>Waiting Buffer</B>
-  <FONT POINT-SIZE="10"><B>Scheduler policy:</B>${sched}</FONT>
-</TD>
-</TR>`
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+      <B>Waiting Buffer</B>
+      <FONT POINT-SIZE="10"><B>Scheduler policy:</B><B>${sched}</B></FONT>
+    </TD>
+  </TR>`
 
   // ---- Port headers ----
   let port_header = "<TR>"
@@ -479,9 +483,9 @@ function get_processor_dot(process) {
       const tooltip = latency_tooltip(op)
 
       op_rows += `
-<TD BGCOLOR="${color}" title="${tooltip}">
-<FONT POINT-SIZE="10">${op}</FONT>
-</TD>`
+        <TD BGCOLOR="${color}" title="${tooltip}">
+        <FONT POINT-SIZE="10">${op}</FONT>
+        </TD>`
     }
 
     op_rows += "</TR>"
@@ -489,10 +493,10 @@ function get_processor_dot(process) {
 
   // ---- Registers ----
   let reg_row = `<TR>
-<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-  <B>Retire</B>${retire}/cycle<B>(</B><B>Registers</B><B>)</B>
-</TD>
-</TR>`
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+      <B>Retire</B><B>${retire}/cycle</B><B>(</B><B>Registers</B><B>)</B>
+    </TD>
+  </TR>`
 
   const dot = `
 digraph CPU {
