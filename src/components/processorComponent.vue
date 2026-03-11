@@ -1826,7 +1826,6 @@ function get_processor_dot2(process) {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  display: block;
 }
 
 </style>
