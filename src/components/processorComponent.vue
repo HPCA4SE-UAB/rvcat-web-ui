@@ -1,5 +1,6 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
+  import { useDraggable, useResizeObserver}                                from '@vueuse/core'
   import HelpComponent                                            from '@/components/helpComponent.vue'
 
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
