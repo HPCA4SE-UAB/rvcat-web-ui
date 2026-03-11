@@ -1337,20 +1337,23 @@ function snapshotMemory() {
 .graph-container {
   flex: 1;
   padding: 10px;
-  overflow: auto;
+  overflow: hidden;
   background: #f8f9fa;
-  min-height: 0; /* IMPORTANTE para flexbox children */
+  min-height: 0;
 }
 
 .graph-wrapper {
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .graph-wrapper svg {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
 }
 
