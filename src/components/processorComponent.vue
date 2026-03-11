@@ -442,8 +442,10 @@ function get_processor_dot(process) {
       <B>Dispatch:&nbsp;${dispatch}/cycle</B>
     </TD>
     <TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE">
-      <B>ROB</B><BR/>
-      <FONT POINT-SIZE="16"><B>${ROBsize}</B></FONT><BR/>
+      <B>ROB</B>
+      <BR/><BR/>
+      <FONT POINT-SIZE="16"><B>${ROBsize}</B></FONT>
+      <BR/>
       entries
     </TD>
   </TR>`
@@ -451,8 +453,9 @@ function get_processor_dot(process) {
   // ---- Waiting Buffer ----
   let wb_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Waiting Buffer</B>&nbsp;
-      <FONT POINT-SIZE="10"><B>Scheduler policy:</FONT>
+      <B>Waiting Buffer</B>
+      &nbsp;
+      Scheduler policy:
       <B>${sched}</B>
     </TD>
   </TR>`
