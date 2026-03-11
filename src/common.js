@@ -342,23 +342,26 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
 export async function createGraphVizGraph(dotCode) {
   try {
     const viz = new Viz();
+
     const svg = await viz.renderSVGElement(dotCode, { engine: "dot" })
 
-    // 🔧 Make SVG responsive
-    const width  = svg.getAttribute("width")
-    const height = svg.getAttribute("height")
+    // Make SVG responsive
+    let width  = svg.getAttribute("width")
+    let height = svg.getAttribute("height")
 
     if (!svg.getAttribute("viewBox") && width && height) {
+
+      // quitar unidades como "pt"
+      width  = parseFloat(width)
+      height = parseFloat(height)
+
       svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
     }
 
+    // dejar que CSS controle el tamaño
     svg.removeAttribute("width")
     svg.removeAttribute("height")
-    //svg.style.width     = "100%"
-    //svg.style.height    = "100%"
-    //svg.style.maxWidth  = "100%"
-    //svg.style.maxHeight = "100%"
-    //svg.style.display   = "block"
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet")
 
     return svg;
     } catch(error) {
