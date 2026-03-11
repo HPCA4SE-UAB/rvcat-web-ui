@@ -120,8 +120,10 @@
     const svg = document.querySelector(".graph-wrapper svg")
     const container = document.querySelector(".graph-wrapper")
 
-    if (svg && container)
+    if (svg && container) {
       fitSvgToContainer(svg, container)
+      console.log("💻✅ SVG fitted", svg);
+    }
   })
 
 // ============================================================================
