@@ -1288,7 +1288,7 @@ function get_processor_dot2(process) {
     </div>
   </div>
 
-  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+  <div v-if="showFullScreen && isFullscreen" class="fullscreen-overlay" @click.self="closeFullScreen">
     <div
       class="fullscreen-content"
       ref="contentRef"
