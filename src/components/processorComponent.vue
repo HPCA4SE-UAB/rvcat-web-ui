@@ -394,13 +394,13 @@ function get_processor_dot(process) {
   const dispatch = process.dispatch
   const retire   = process.retire
 
-  const TARGET_ROWS = 12
+  const TARGET_ROWS = 8
 
   function type_color(type) {
-    if (type === "INT") return "#d6e4ff"
-    if (type === "MEM") return "#d6ffd6"
-    if (type === "FP")  return "#fff2b3"
-    if (type === "BR")  return "#ffd6d6"
+    if ((type === "INT")   || (type === "VINT"))   return "#d6e4ff"
+    if ((type === "MEM")   || (type === "VMEM"))   return "#d6ffd6"
+    if ((type === "FLOAT") || (type === "VFLOAT")) return "#fff2b3"
+    if (type === "BR")                             return "#ffd6d6"
     return "#f0f0f0"
   }
 
@@ -476,7 +476,7 @@ function get_processor_dot(process) {
 
   const max_ops = Math.max(...Object.values(port_ops).map(o => o.length))
 
-  const total_rows = Math.max(TARGET_ROWS, max_ops)
+  const total_rows = max_ops
 
   // ---- Decode ----
 
