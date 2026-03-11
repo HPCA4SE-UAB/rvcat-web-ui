@@ -399,8 +399,8 @@ function get_processor_dot(process) {
   function op_type(op) {
     if (op.startsWith("MEM")   || op.startsWith("VMEM")  ) return "MEM"
     if (op.startsWith("FLOAT") || op.startsWith("VFLOAT")) return "FP"
+    if (op.startsWith("INT")   || op.startsWith("VINT"))   return "INT"
     if (op.startsWith("BRANCH")) return "BR"
-    if (op.startsWith("INT"))    return "INT"
     return "OTHER"
   }
 
@@ -438,15 +438,15 @@ function get_processor_dot(process) {
 
   // ---- Decode ----
   let decode_row = `<TR>
-<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><B>Decode</B></TD>
-<TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0"><B>ROB</B><BR/>${ROBsize} entries</TD>
+<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><B>Dispatch</B>${dispatch}/cycle>
+</TD>
+<TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0"><B>ROB</B><BR/>${ROBsize}<BR/>entries</TD>
 </TR>`
 
   // ---- Waiting Buffer ----
   let wb_row = `<TR>
-<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
- <FONT POINT-SIZE="12">Dispatch ${dispatch}/cycle</FONT><BR/>
- <B>Waiting Buffer</B>
+<TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"> <B>Waiting Buffer</B>
+  <FONT POINT-SIZE="10"><B>Scheduler policy:</B>${sched}</FONT>
 </TD>
 </TR>`
 
@@ -475,7 +475,7 @@ function get_processor_dot(process) {
         continue
       }
 
-      const color = type_color(op_type(op))
+      const color   = type_color(op_type(op))
       const tooltip = latency_tooltip(op)
 
       op_rows += `
@@ -490,9 +490,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
   let reg_row = `<TR>
 <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-  <FONT POINT-SIZE="12">Retire ${retire}/cycle</FONT>
-  <BR/>
-  <B>Registers</B>
+  <B>Retire</B>${retire}/cycle<B>(</B><B>Registers</B><B>)</B>
 </TD>
 </TR>`
 
@@ -520,158 +518,6 @@ ${reg_row}
 `
   return dot
 }
-
-function get_processor_dot2(process) {
-    const dispatch_width = process.dispatch
-    const retire_width   = process.retire
-    const ROBsize        = process.ROBsize || 20
-    const num_ports      = Object.keys(process.ports).length
-    const sched          = process.sched
-
-    const visible_ports  = num_ports > 4 ? 5 : num_ports
-    const width_cells    = visible_ports + 2
-
-    let cells = ""
-    for (let i = 0; i < width_cells; i++)
-      cells += `<TD WIDTH="80"></TD>`
-
-    let dot_code = `
-      digraph "Processor Pipeline" {
-        rankdir=TB;
-        nodesep=0.5;
-        ranksep=0.6;
-        node [fontsize=14, fontname="Arial"];
-      `
-    // --- FETCH ---
-    dot_code += `
-      Fetch [shape=box, label="Fetch", title="Instruction fetch stage"];
-    `
-    // --- WAITING BUFFER ---
-    dot_code += `
-      "Waiting Buffer" [
-        label="Waiting\\nBuffer",
-        title="Instructions wait for execution",
-        shape=box,
-        width=1,
-        height=1,
-        fixedsize=true
-      ];
-    `
-    // Dispatch edges
-    dot_code += `
-      Fetch -> "Waiting Buffer" [
-        label="Dispatch = ${dispatch_width}",
-        tooltip="Dispatch Width: ${dispatch_width} instructions per cycle"
-      ];
-    `
-    for (let i = 1; i < dispatch_width; i++)
-      dot_code += `Fetch -> "Waiting Buffer";\n`
-
-    // --- EXECUTION PORTS ---
-    dot_code += `
-      subgraph cluster_execute {
-        rankdir=TB;
-        node [shape=box3d, height=0.4, width=0.6, fixedsize=true];
-        tooltip="Execution Ports: one instruction per cycle, per port";
-      `
-    let shown_ports = []
-
-    if (num_ports >= 4) {
-      shown_ports = [0,1,2,num_ports-1]
-
-      dot_code += `P${num_ports-1} [label="P${num_ports-1}"];\n`
-      if (num_ports > 4)
-        dot_code += `"..." [label="..."];\n`
-
-      dot_code += `P2 [label="P2"];\n`
-      dot_code += `P1 [label="P1"];\n`
-      dot_code += `P0 [label="P0"];\n`
-
-    } else {
-      for (let i=num_ports-1;i>=0;i--) {
-        shown_ports.push(i)
-        dot_code += `P${i} [label="P${i}"];\n`
-      }
-    }
-
-    dot_code += `}\n`
-
-    // edges waiting buffer -> ports
-    shown_ports.forEach(p=>{
-      dot_code += `"Waiting Buffer" -> P${p} [tooltip="One instruction per cycle and port"];\n`
-    })
-
-    if (num_ports > 4)
-      dot_code += `"Waiting Buffer" -> "..." [style=invis];\n`
-
-    // --- REGISTERS ---
-    dot_code += `
-      Registers [
-        shape=box,
-        width=1,
-        height=1,
-        fixedsize=true,
-        tooltip="Architectural state updated at retirement"
-      ];
-      `
-    // --- TOP RANK (pipeline row) ---
-    dot_code += `
-      {
-        rank=same;
-        Fetch;
-        "Waiting Buffer";
-      `
-    shown_ports.forEach(p=>{
-      dot_code += `P${p};\n`
-    })
-
-    if (num_ports > 4)
-      dot_code += `"..." ;\n`
-
-    dot_code += `
-      Registers;
-    }
-    `
-    // --- ROB ---
-    dot_code += `
-    ROB [
-      shape=plain
-      label=<
-        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0">
-          <TR><TD COLSPAN="${width_cells}">ROB: ${ROBsize} entries</TD></TR>
-          <TR>${cells}</TR>
-        </TABLE>
-      >
-      tooltip="Reorder Buffer: maintains sequential program order",
-      shape=box,
-      height=0.6
-    ];
-    `
-    dot_code += `{ rank=sink; ROB; }\n`
-
-    // Fetch -> ROB
-    for (let i=0;i<dispatch_width;i++)
-      dot_code += `Fetch -> ROB;\n`
-
-    // Ports -> ROB
-    shown_ports.forEach(p=>{
-      dot_code += `P${p} -> ROB;\n`
-    })
-
-    // ROB -> Registers
-    dot_code += `
-  ROB -> Registers [
-    label="Retire = ${retire_width}",
-    tooltip="Instructions update registers in program order"
-  ];
-  `
-    for (let i=1;i<retire_width;i++)
-      dot_code += `ROB -> Registers;\n`
-
-    dot_code += `}`
-
-    return dot_code
-  }
 
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
