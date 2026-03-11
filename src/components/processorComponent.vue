@@ -439,10 +439,10 @@ function get_processor_dot(process) {
   // ---- Decode ----
   let decode_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Dispatch</B><B>${dispatch}/cycle</B>
+      <B>Dispatch ${dispatch}/cycle</B>
     </TD>
     <TD ROWSPAN="${4 + max_ops}" BGCOLOR="#f0f0f0">
-      <B>ROB</B><BR/><B>${ROBsize}</B><BR/><B>entries</B>
+      <B>ROB<BR/>${ROBsize}<BR/>entries</B>
     </TD>
   </TR>`
 
@@ -450,7 +450,7 @@ function get_processor_dot(process) {
   let wb_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Waiting Buffer</B>
-      <FONT POINT-SIZE="10"><B>Scheduler policy:</B><B>${sched}</B></FONT>
+      <FONT POINT-SIZE="10"><B>Scheduler policy: ${sched}</FONT>
     </TD>
   </TR>`
 
@@ -494,7 +494,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
   let reg_row = `<TR>
     <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Retire</B><B>${retire}/cycle</B><B>(</B><B>Registers</B><B>)</B>
+      <B>Retire ${retire}/cycle (Registers)</B>
     </TD>
   </TR>`
 
