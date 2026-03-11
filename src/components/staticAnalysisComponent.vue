@@ -355,8 +355,10 @@
         </div>
       </div>
 
-      <div class="output-block" id="dependence-graph">
-        <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg"></div>
+      <div class="output-block"
+           id="dependence-graph"
+           v-html="dependenceGraphSvg"
+           v-if="dependenceGraphSvg">
       </div>
     </div>
   </div>
@@ -368,8 +370,9 @@
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
       <div class="graph-container">
-        <div class="graph-wrapper" ref="graphContainer">
-          <div v-html="dependenceGraphSvg" v-if="dependenceGraphSvg" class="svg-content"></div>
+        <div class="graph-wrapper"
+             v-html="dependenceGraphSvg"
+             v-if="dependenceGraphSvg">
         </div>
       </div>
     </div>
@@ -478,15 +481,6 @@
     height:2.5vh;
   }
 
-  .close-btn {
-    background:  none;
-    border:      none;
-    font-size:   1.5em;
-    line-height: 1;
-    cursor:      pointer;
-    padding:     4px;
-  }
-
   .fullscreen-overlay {
     position: fixed;
     top: 0; left: 0;
@@ -498,72 +492,96 @@
     z-index: 10000;
   }
 
-  .fullscreen-content {
-    background: white;
-    margin:     10px;
-    padding:    10px;
-    border:     1px solid #ccc;
-    width:      95%;
-    height:     95%;
-    resize:     both;
-    overflow:   auto;
-    min-width:  300px;
-    min-height: 200px;
-    max-width:  99%;
-    max-height: 99%;
-    display:    flex;
-    border-radius:  8px;
-    flex-direction: column;
-    box-shadow:     0 4px 12px rgba(0,0,0,0.25);
-  }
+ .fullscreen-content {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  min-height: 300px;
+  width: 800px; /* Tamaño fijo inicial */
+  height: 600px;
+  resize: both;
+  overflow: auto;
+  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
+  z-index: 1000;
+}
 
-  .fullscreen-content .close-btn {
-    align-self: flex-end;
-    background: none;
-    border:     none;
-    font-size:  3vh;
-    cursor:     pointer;
-    margin-bottom: 8px;
-  }
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2c3e50;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0; /* Evita que el header se encoja */
+}
 
-  .fullscreen-header {
-    display:         flex;
-    justify-content: space-between;
-    align-items:     center;
-    margin-bottom:   10px;
-    background: #2c3e50;
-    color: white;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
+.fullscreen-header:active {
+  cursor: grabbing;
+}
 
- .fullscreen-title {
-    font-size:   1.5rem;
-    font-weight: 600;
-    margin:      0;
-  }
+.fullscreen-header span {
+  flex: 1;
+  text-align: center;
+}
 
-  .graph-container {
-    flex: 1;
-    overflow: auto;
-    padding: 10px;
-  }
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.8;
+}
 
-  .graph-wrapper {
-    width: 100%;
-    height: 100%;
-    min-height: 200px;
-  }
+.close-btn:hover {
+  opacity: 1;
+}
 
-  .graph-wrapper svg {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-  }
+.graph-container {
+  flex: 1;
+  padding: 10px;
+  overflow: hidden;
+  background: #f8f9fa;
+  min-height: 0;
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-wrapper svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
   .performance-analysis {
     font-family: 'Segoe UI', system-ui, sans-serif;
@@ -692,4 +710,5 @@
     opacity: 0;
     max-height: 0;
   }
+
 </style>
