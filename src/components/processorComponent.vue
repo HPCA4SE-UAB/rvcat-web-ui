@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
+  import { ref, toRef, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import { useDraggable, useResizeObserver}                                  from '@vueuse/core'
   import HelpComponent                                     from '@/components/helpComponent.vue'
 
@@ -28,6 +28,8 @@
     showGraph:           false,
     windowWidth:         516,
     windowHeight:        400,
+    x_pos:                10,
+    y_pos:                10,
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
                                                 typeOperations[type].map(op => [`${type}.${op}`, false])
@@ -72,15 +74,17 @@
 // ============================================================================
 
   const HEADER_HEIGHT = 48
+  const MIN_W = 200
+  const MIN_H = 200
 
   const headerRef  = ref(null)
   const contentRef = ref(null)
 
-  const x = ref(10)
-  const y = ref(10)
+  const x = toRef(processorOptions, 'x_pos')
+  const y = toRef(processorOptions, 'y_pos')
 
   const { isDragging } = useDraggable(headerRef, {
-    initialValue: { x: 10, y: 10 },
+    initialValue: { x: processorOptions.x_pos, y: processorOptions.y_pos },
 
     onMove(pos) {
 
@@ -97,8 +101,12 @@
 
   useResizeObserver(contentRef, (entries) => {
     const { width: w, height: h } = entries[0].contentRect
-    processorOptions.windowWidth  = w
-    processorOptions.windowHeight = h
+
+    const maxWidth  = window.innerWidth  - processorOptions.x_pos
+    const maxHeight = window.innerHeight - processorOptions.y_pos
+
+    processorOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
+    processorOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
   })
 
   window.addEventListener("resize", () => {
@@ -921,7 +929,10 @@ function get_processor_dot2(process) {
     }
   }
 
-  function closeFullScreen()   { showFullScreen.value = false;  processorOptions.showGraph = false}
+  function closeFullScreen()   {
+    showFullScreen.value = false;
+    processorOptions.showGraph = false
+  }
 
 /* ------------------------------------------------------------------
  * Help support
