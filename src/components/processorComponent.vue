@@ -1,11 +1,11 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
-  import { useDraggable, useResizeObserver}                                from '@vueuse/core'
-  import HelpComponent                                            from '@/components/helpComponent.vue'
+  import { useDraggable, useResizeObserver}                                  from '@vueuse/core'
+  import HelpComponent                                     from '@/components/helpComponent.vue'
 
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
           initResource, createGraphVizGraph,
-          instructionTypes, typeOperations, typeSizes                                 } from '@/common'
+          instructionTypes, typeOperations, typeSizes                          } from '@/common'
 
   const simState = inject('simulationState');
 
@@ -71,17 +71,43 @@
 // Draggable & resizable full-screen graph container
 // ============================================================================
 
+  const HEADER_HEIGHT = 48
+
   const headerRef  = ref(null)
   const contentRef = ref(null)
 
-  const { x, y } = useDraggable(headerRef, {
-    initialValue: { x: 10, y: 10 }
+  const x = ref(10)
+  const y = ref(10)
+
+  const { isDragging } = useDraggable(headerRef, {
+    initialValue: { x: 10, y: 10 },
+
+    onMove(pos) {
+
+      const w = processorOptions.windowWidth
+      const h = processorOptions.windowHeight
+
+      const maxX = window.innerWidth  - w
+      const maxY = window.innerHeight - HEADER_HEIGHT
+
+      x.value = Math.min(Math.max(pos.x, 0), maxX)
+      y.value = Math.min(Math.max(pos.y, 0), maxY)
+    }
   })
 
   useResizeObserver(contentRef, (entries) => {
     const { width: w, height: h } = entries[0].contentRect
-    processorOptions.windowWidth = w
+    processorOptions.windowWidth  = w
     processorOptions.windowHeight = h
+  })
+
+  window.addEventListener("resize", () => {
+
+    const w = processorOptions.windowWidth
+    const h = processorOptions.windowHeight
+
+    x.value = Math.min(x.value, window.innerWidth - w)
+    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
 // ============================================================================
