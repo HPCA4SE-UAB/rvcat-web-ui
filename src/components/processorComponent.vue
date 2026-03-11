@@ -24,6 +24,9 @@
   const defaultOptions = {
     processorName:       '',
     availableProcessors: [],
+    showGraph:           false,
+    windowWidth:         800,
+    windowHeight:        600,
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
                                                 typeOperations[type].map(op => [`${type}.${op}`, false])
@@ -43,6 +46,8 @@
 
   const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
   const simulatedSvg     = ref('')
+  const showFullScreen   = ref(false);
+  let   graphTimeout     = null
 
   const saveOptions = () => {
     try {
@@ -61,6 +66,22 @@
     }
   }
 
+// ============================================================================
+// Draggable & resizable full-screen graph container
+// ============================================================================
+
+  const headerRef  = ref(null)
+  const contentRef = ref(null)
+
+  const { x, y } = useDraggable(headerRef, {
+    initialValue: { x: 10, y: 10 }
+  })
+
+  useResizeObserver(contentRef, (entries) => {
+    const { width: w, height: h } = entries[0].contentRect
+    processorOptions.windowWidth = w
+    processorOptions.windowHeight = h
+  })
 
 // ============================================================================
 // Temporal in-edition processor:  createDefaultConfig, updateProcessorSettings
@@ -135,6 +156,7 @@
 
   watch( [
     () => processorOptions.availableProcessors,
+    () => processorOptions.showGraph,
     () => processorOptions.expandedTypes,
     () => processorOptions.expandedOperations], () => {
     try {
@@ -853,6 +875,24 @@ function get_processor_dot2(process) {
     showModalClear.value = false;
   }
 
+
+  function openFullScreen() {
+    showFullScreen.value = true;
+    console.log('💻🔄Drawing edited processor');
+    clearTimeout(graphTimeout)
+    try {
+      graphTimeout = setTimeout(() => {
+        drawEditedProcessor()
+      }, 75)
+      console.log('💻✅ Graph drawn')
+      processorOptions.showGraph = true
+    } catch (error) {
+      console.error('💻❌Failed to generate processor graph:', error)
+    }
+  }
+
+  function closeFullScreen()   { showFullScreen.value = false;  processorOptions.showGraph = false}
+
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
@@ -927,6 +967,14 @@ function get_processor_dot2(process) {
         </span>
         <span class="header-title">Processor Settings - Editor</span>
       </div>
+
+      <button class="blue-button add-prev-margin" :class="{ active: processorOptions.showGraph }"
+          title="View/Update program's processor graph on full-screen"
+          id="open-edited-program-graph"
+          @click="openFullScreen">
+        <span v-if="processorOptions.showGraph">✔ </span>
+        View Graph
+      </button>
 
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
@@ -1199,6 +1247,29 @@ function get_processor_dot2(process) {
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+    <div
+      class="fullscreen-content"
+      ref="contentRef"
+      :style="{
+        left: x + 'px',
+        top: y + 'px',
+        width:  processorOptions.windowWidth + 'px',
+        height: processorOptions.windowHeight + 'px'
+      }"
+    >
+      <div class="fullscreen-header" ref="headerRef">
+        <span>Table description of Edited Processor</span>
+        <button class="close-btn" @click="closeFullScreen">×</button>
+      </div>
+      <div class="graph-container">
+        <div class="graph-wrapper">
+          <div v-html="editedSvg" v-if="editedSvg"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1632,5 +1703,93 @@ function get_processor_dot2(process) {
   .op-name {
     font-weight: 600;
   }
+
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent; /* Sin fondo para no ocultar nada */
+  pointer-events: none; /* Permite clicks a través del overlay */
+  z-index: 999;
+}
+
+.fullscreen-content {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  min-height: 300px;
+  width: 800px; /* Tamaño fijo inicial */
+  height: 600px;
+  resize: both;
+  overflow: auto;
+  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
+  z-index: 1000;
+}
+
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2c3e50;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0; /* Evita que el header se encoja */
+}
+
+.fullscreen-header:active {
+  cursor: grabbing;
+}
+
+.fullscreen-header span {
+  flex: 1;
+  text-align: center;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.8;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+.graph-container {
+  flex: 1;
+  padding: 10px;
+  overflow: auto;
+  background: #f8f9fa;
+  min-height: 0; /* IMPORTANTE para flexbox children */
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.graph-wrapper svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 
 </style>

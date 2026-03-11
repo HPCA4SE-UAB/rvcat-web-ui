@@ -400,17 +400,16 @@ function snapshotMemory() {
 
   function portsMaskToString(mask) {
     const ports = []
-
-    let i = 0
+    let   i     = 0
     while (mask > 0) {
       if (mask & 1)
         ports.push(`P${i}`)
       mask >>= 1
       i++
     }
-
     return ports.join(',')
   }
+
   function openFullScreen() {
     showFullScreen.value = true;
     console.log('📄🔄Drawing edited program');
