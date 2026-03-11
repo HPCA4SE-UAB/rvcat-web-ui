@@ -510,7 +510,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD  WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
 
   port_header += "</TR>"
 
