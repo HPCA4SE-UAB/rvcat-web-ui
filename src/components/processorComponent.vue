@@ -26,8 +26,8 @@
     processorName:       '',
     availableProcessors: [],
     showGraph:           false,
-    windowWidth:         800,
-    windowHeight:        600,
+    windowWidth:         516,
+    windowHeight:        400,
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
                                                 typeOperations[type].map(op => [`${type}.${op}`, false])
@@ -185,7 +185,9 @@
     () => processorOptions.availableProcessors,
     () => processorOptions.showGraph,
     () => processorOptions.expandedTypes,
-    () => processorOptions.expandedOperations], () => {
+    () => processorOptions.expandedOperations,
+    () => processorOptions.windowWidth,
+    () => processorOptions.windowHeight], () => {
     try {
       saveOptions()
     } catch (error) {

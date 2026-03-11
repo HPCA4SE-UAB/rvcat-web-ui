@@ -70,17 +70,43 @@ const STORAGE_KEY = 'programOptions'
 // Draggable & resizable full-screen graph container
 // ============================================================================
 
+  const HEADER_HEIGHT = 48
+
   const headerRef  = ref(null)
   const contentRef = ref(null)
 
-  const { x, y } = useDraggable(headerRef, {
-    initialValue: { x: 10, y: 10 }
+  const x = ref(10)
+  const y = ref(10)
+
+  const { isDragging } = useDraggable(headerRef, {
+    initialValue: { x: 10, y: 10 },
+
+    onMove(pos) {
+
+      const w = programOptions.windowWidth
+      const h = programOptions.windowHeight
+
+      const maxX = window.innerWidth  - w
+      const maxY = window.innerHeight - HEADER_HEIGHT
+
+      x.value = Math.min(Math.max(pos.x, 0), maxX)
+      y.value = Math.min(Math.max(pos.y, 0), maxY)
+    }
   })
 
   useResizeObserver(contentRef, (entries) => {
     const { width: w, height: h } = entries[0].contentRect
-    programOptions.windowWidth = w
+    programOptions.windowWidth  = w
     programOptions.windowHeight = h
+  })
+
+  window.addEventListener("resize", () => {
+
+    const w = programOptions.windowWidth
+    const h = programOptions.windowHeight
+
+    x.value = Math.min(x.value, window.innerWidth - w)
+    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
 // ============================================================================
