@@ -31,8 +31,10 @@ const STORAGE_KEY = 'programOptions'
     showActions:       true,
     showGraph:         false,
     showLat:           true,
-    windowWidth:       800,
-    windowHeight:      600,
+    windowWidth:       500,
+    windowHeight:      300,
+    x_pos:             10,
+    y_pos:             10,
     visibleCols: {
       text:     true,
       type:     true,
@@ -71,15 +73,17 @@ const STORAGE_KEY = 'programOptions'
 // ============================================================================
 
   const HEADER_HEIGHT = 48
+  const MIN_W = 200
+  const MIN_H = 200
 
   const headerRef  = ref(null)
   const contentRef = ref(null)
 
-  const x = ref(10)
-  const y = ref(10)
+  const x = toRef(programOptions, 'x_pos')
+  const y = toRef(programOptions, 'y_pos')
 
   const { isDragging } = useDraggable(headerRef, {
-    initialValue: { x: 10, y: 10 },
+    initialValue: { x: programOptions.x_pos, y: programOptions.y_pos },
 
     onMove(pos) {
 
@@ -96,8 +100,12 @@ const STORAGE_KEY = 'programOptions'
 
   useResizeObserver(contentRef, (entries) => {
     const { width: w, height: h } = entries[0].contentRect
-    programOptions.windowWidth  = w
-    programOptions.windowHeight = h
+
+    const maxWidth  = window.innerWidth  - programOptions.x_pos
+    const maxHeight = window.innerHeight - programOptions.y_pos
+
+    programOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
+    programOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
   })
 
   window.addEventListener("resize", () => {
@@ -1265,7 +1273,6 @@ function snapshotMemory() {
   .memory-side-container      .table-container {
     flex: 0 0 auto;
   }
-
 
 .fullscreen-overlay {
   position: fixed;
