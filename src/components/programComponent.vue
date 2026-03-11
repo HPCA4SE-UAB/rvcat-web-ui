@@ -39,9 +39,7 @@ const STORAGE_KEY = 'programOptions'
       oper:     true,
       size:     true,
       name:     true,
-      pattern:  true,
-      latency:  true,
-      portMask: true
+      pattern:  true
     }
   }
 
@@ -190,7 +188,6 @@ function loadEditedMemory() {
         console.log('📄🔄 Refreshing program latencies & ports on simulated process');
         updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
         simState.programName = programOptions.currentProgram
-        // tODO REFRESH VISUALIZATION OF prOGRAM in SIMULATION PANEL
       }
     },
     { deep: true, immediate: false }
@@ -235,7 +232,7 @@ function loadEditedMemory() {
     try {
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
-      updateProgramOnProcess(data)
+      Object.assign(simState.simulatedProcess, data)
       simState.programName  = programOptions.currentProgram;  // fire other components
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
@@ -277,12 +274,6 @@ function loadEditedMemory() {
       alert("Removing all programs forces to load the original programs provided in the distribution")
       initProgram()
     }
-  }
-
-  function updateProgramOnProcess(data) {
-    Object.assign(simState.simulatedProcess, data)
-    // ToDo: add latencies and port masks to each instruction in the instruction list,
-    // so they can be used by the simulator without checking the processor configuration every cycle
   }
 
   // UpLOAD from Edition Panel: straightforward version (no modal)
@@ -484,7 +475,7 @@ function snapshotMemory() {
           // TODO: Check here if it is a valid program
           saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
           programOptions.currentProgram = data.name;
-          updateProgramOnProcess(data)
+          Object.assign(simState.simulatedProcess, data)
           return;
         }
       }
@@ -587,7 +578,7 @@ function snapshotMemory() {
                 {{ inst.latency }}
               </td>
               <td v-if="programOptions.showLat" title="Available execution ports">
-                {{ inst.portMask}}
+                {{ inst.ports}}
               </td>
             </tr>
           </tbody>
