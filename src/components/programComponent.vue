@@ -1360,7 +1360,9 @@ function snapshotMemory() {
 .graph-wrapper svg {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  width: auto;
+  height: auto;
+  display: block;
 }
 
 </style>

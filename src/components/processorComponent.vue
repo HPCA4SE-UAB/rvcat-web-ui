@@ -1825,7 +1825,9 @@ function get_processor_dot2(process) {
 .graph-wrapper svg {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  width: auto;
+  height: auto;
+  display: block;
 }
 
 </style>
