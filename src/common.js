@@ -354,11 +354,11 @@ export async function createGraphVizGraph(dotCode) {
 
     svg.removeAttribute("width")
     svg.removeAttribute("height")
-    svg.style.width     = "100%"
-    svg.style.height    = "100%"
-    svg.style.maxWidth  = "100%"
-    svg.style.maxHeight = "100%"
-    svg.style.display   = "block"
+    //svg.style.width     = "100%"
+    //svg.style.height    = "100%"
+    //svg.style.maxWidth  = "100%"
+    //svg.style.maxHeight = "100%"
+    //svg.style.display   = "block"
 
     return svg;
     } catch(error) {
