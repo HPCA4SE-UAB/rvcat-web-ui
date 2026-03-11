@@ -369,3 +369,25 @@ export async function createGraphVizGraph(dotCode) {
       throw error;
     }
 }
+
+export function fitSvgToContainer(svg, container) {
+
+  const vb        = svg.viewBox.baseVal
+  const svgWidth  = vb.width
+  const svgHeight = vb.height
+
+  const containerWidth  = container.clientWidth
+  const containerHeight = container.clientHeight
+
+  const scale = Math.min(
+    containerWidth  / svgWidth,
+    containerHeight / svgHeight
+  )
+
+  svg.style.transformOrigin = "top left"
+  svg.style.transform = `scale(${scale})`
+
+  // ajustar tamaño del wrapper para centrar
+  svg.style.width  = svgWidth + "px"
+  svg.style.height = svgHeight + "px"
+}

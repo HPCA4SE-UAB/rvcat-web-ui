@@ -4,7 +4,7 @@
   import HelpComponent                                     from '@/components/helpComponent.vue'
 
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph,
+          initResource, createGraphVizGraph, fitSvgToContainer,
           instructionTypes, typeOperations, typeSizes                          } from '@/common'
 
   const simState = inject('simulationState');
@@ -116,6 +116,12 @@
 
     x.value = Math.min(x.value, window.innerWidth - w)
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
+
+    const svg = document.querySelector(".graph-wrapper svg")
+    const container = document.querySelector(".graph-wrapper")
+
+    if (svg && container)
+      fitSvgToContainer(svg, container)
   })
 
 // ============================================================================
@@ -1817,17 +1823,12 @@ function get_processor_dot2(process) {
 .graph-wrapper {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
 
 .graph-wrapper svg {
-  width: 100%;
-  height: 100%;
-  width: auto;
-  height: auto;
-  display: block;
+  position: absolute;
 }
 
 </style>
