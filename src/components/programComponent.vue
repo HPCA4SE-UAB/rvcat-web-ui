@@ -912,8 +912,8 @@ function snapshotMemory() {
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
       <div class="graph-container">
-        <div class="graph-wrapper">
-          <div v-html="programSvg" v-if="programSvg"></div>
+        <div class="graph-wrapper"
+            v-if="programSvg" v-html="programSvg">
         </div>
       </div>
     </div>
