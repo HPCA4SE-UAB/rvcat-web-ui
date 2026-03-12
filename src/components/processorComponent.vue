@@ -477,7 +477,7 @@ function get_processor_dot(process) {
   // ---- Decode ----
 
   let decode_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+    <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Dispatch:&nbsp;${dispatch}/cycle</B>
     </TD>
     <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE">
@@ -492,7 +492,7 @@ function get_processor_dot(process) {
   // ---- Waiting Buffer ----
 
   let wb_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+    <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Waiting Buffer</B>
       &nbsp;&nbsp;Scheduler:
       <B>${sched}</B>
@@ -504,7 +504,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD ALIGN="LEFT" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
 
   port_header += "</TR>"
 
@@ -531,7 +531,7 @@ function get_processor_dot(process) {
       if (op.big) {
 
         op_rows += `
-          <TD BGCOLOR="${color}">
+          <TD ALIGN="LEFT" BGCOLOR="${color}">
             <FONT POINT-SIZE="16"><B>${op.label}</B></FONT>
           </TD>`
 
@@ -540,7 +540,7 @@ function get_processor_dot(process) {
         const tooltip = latency_tooltip(op.label)
 
         op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}">
+          <TD ALIGN="LEFT" BGCOLOR="${color}" TITLE="${tooltip}">
             <FONT POINT-SIZE="14">${op.label}</FONT>
           </TD>`
       }
@@ -552,7 +552,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
 
   let reg_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
+    <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
       <B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B>
     </TD>
    </TR>`
