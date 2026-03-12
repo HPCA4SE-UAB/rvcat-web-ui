@@ -388,13 +388,10 @@ function get_processor_dot(process) {
   const ports    = process.ports
   const lat      = process.latencies
   const port_ids = Object.keys(ports)
-
   const ROBsize  = process.ROBsize || 20
   const sched    = process.sched
   const dispatch = process.dispatch
   const retire   = process.retire
-
-  const TARGET_ROWS = 8
 
   function type_color(type) {
     if ((type === "INT")   || (type === "VINT"))   return "#d6e4ff"
@@ -474,10 +471,7 @@ function get_processor_dot(process) {
   for (let p of port_ids)
     port_ops[p] = compress_ops(ports[p])
 
-  const max_ops = Math.max(...Object.values(port_ops).map(o => o.length))
-
-  const total_rows = max_ops
-
+  const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
   const cellPadding = 20 / total_rows
 
   // ---- Decode ----
@@ -510,7 +504,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD  WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
 
   port_header += "</TR>"
 
@@ -527,7 +521,7 @@ function get_processor_dot(process) {
       const op = port_ops[p][i]
 
       if (!op) {
-        op_rows += "<TD></TD>"
+        op_rows += `<TD WIDTH="60" FIXEDSIZE="TRUE"></TD>`
         continue
       }
 
@@ -537,7 +531,7 @@ function get_processor_dot(process) {
       if (op.big) {
 
         op_rows += `
-          <TD BGCOLOR="${color}">
+          <TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="${color}">
             <FONT POINT-SIZE="14"><B>${op.label}</B></FONT>
           </TD>`
 
@@ -546,7 +540,7 @@ function get_processor_dot(process) {
         const tooltip = latency_tooltip(op.label)
 
         op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}">
+          <TD WIDTH="60" FIXEDSIZE="TRUE"BGCOLOR="${color}" TITLE="${tooltip}">
             <FONT POINT-SIZE="10">${op.label}</FONT>
           </TD>`
       }
