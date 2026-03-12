@@ -517,15 +517,13 @@ function get_processor_dot(process) {
       const color = type_color(type)
 
       if (op.big) {
-        op_rows += `
-          <TD BGCOLOR="${color}"><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
-      } else {
-
         const tooltip = latency_tooltip(op.label)
-
-        //
         op_rows += `
-          <TD BGCOLOR="${color}"" TITLE="${tooltip}"><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
+          <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
+      } else {
+        const tooltip = latency_tooltip(op.label)
+        op_rows += `
+          <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
       }
     }
 
