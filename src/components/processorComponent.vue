@@ -447,13 +447,11 @@ function get_processor_dot(process) {
 
       const all_ops = typeOperations[type] || []
 
-      if (all_ops.length && grouped[type].size === all_ops.length) {
-
+      if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
         result.push({
           label: type,
           big: true
         })
-
       } else {
 
         for (let sub of grouped[type]) {
