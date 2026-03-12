@@ -540,7 +540,7 @@ function get_processor_dot(process) {
         const tooltip = latency_tooltip(op.label)
 
         op_rows += `
-          <TD WIDTH="60" FIXEDSIZE="TRUE"BGCOLOR="${color}" TITLE="${tooltip}">
+          <TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="${color}" TITLE="${tooltip}">
             <FONT POINT-SIZE="10">${op.label}</FONT>
           </TD>`
       }
