@@ -537,7 +537,7 @@ function get_processor_dot(process) {
       node [shape=plain fontname="Arial" width=0 height=0 margin=0]
       pipeline [
         label=<
-          <TABLE WIDTH="500" HEIGHT="300" FIXEDSIZE="TRUE" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
+          <TABLE WIDTH="500" HEIGHT="300" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
             ${decode_row}
             ${wb_row}
             ${port_header}
