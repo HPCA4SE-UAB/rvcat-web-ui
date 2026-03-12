@@ -394,10 +394,13 @@ function get_processor_dot(process) {
   const retire   = process.retire
 
   function type_color(type) {
-    if ((type === "INT")   || (type === "VINT"))   return "#d6e4ff"
-    if ((type === "MEM")   || (type === "VMEM"))   return "#d6ffd6"
-    if ((type === "FLOAT") || (type === "VFLOAT")) return "#fff2b3"
-    if (type === "BR")                             return "#ffd6d6"
+    if (type === "INT")    return "#d6e4ff"
+    if (type === "MEM")    return "#d6ffd6"
+    if (type === "FLOAT")  return "#fff2b3"
+    if (type === "VINT")   return "#e6e4ff"
+    if (type === "VMEM")   return "#e6ffd6"
+    if (type === "VFLOAT") return "#eff2b3"
+    if (type === "BRANCH") return "#ffd6d6"
     return "#f0f0f0"
   }
 
