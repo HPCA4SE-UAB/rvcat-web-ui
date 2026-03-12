@@ -504,7 +504,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD WIDTH="60" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
 
   port_header += "</TR>"
 
@@ -521,7 +521,7 @@ function get_processor_dot(process) {
       const op = port_ops[p][i]
 
       if (!op) {
-        op_rows += `<TD WIDTH="60"></TD>`
+        op_rows += `<TD></TD>`
         continue
       }
 
@@ -531,8 +531,8 @@ function get_processor_dot(process) {
       if (op.big) {
 
         op_rows += `
-          <TD WIDTH="60" BGCOLOR="${color}">
-            <FONT POINT-SIZE="14"><B>${op.label}</B></FONT>
+          <TD BGCOLOR="${color}">
+            <FONT POINT-SIZE="16"><B>${op.label}</B></FONT>
           </TD>`
 
       } else {
@@ -540,8 +540,8 @@ function get_processor_dot(process) {
         const tooltip = latency_tooltip(op.label)
 
         op_rows += `
-          <TD WIDTH="60" BGCOLOR="${color}" TITLE="${tooltip}">
-            <FONT POINT-SIZE="10">${op.label}</FONT>
+          <TD BGCOLOR="${color}" TITLE="${tooltip}">
+            <FONT POINT-SIZE="14">${op.label}</FONT>
           </TD>`
       }
     }
@@ -559,10 +559,10 @@ function get_processor_dot(process) {
 
   const dot = `
     digraph CPU {
-      node [shape=plain fontname="Arial"]
+      node [shape=plain fontname="Arial" width=0 height=0 margin=0]
       pipeline [
         label=<
-          <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="${cellPadding}">
+          <TABLE BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="${cellPadding}">
             ${decode_row}
             ${wb_row}
             ${port_header}
