@@ -529,7 +529,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
 
   let reg_row = `<TR>
-    <TD WIDTH="438" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire</B>:&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
+    <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire</B>:&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
    </TR>`
 
   const dot = `
@@ -537,7 +537,7 @@ function get_processor_dot(process) {
       node [shape=plain fontname="Arial" width=0 height=0 margin=0]
       pipeline [
         label=<
-          <TABLE WIDTH="500" HEIGHT="300" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
+          <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
             ${decode_row}
             ${wb_row}
             ${port_header}
