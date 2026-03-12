@@ -504,7 +504,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD WIDTH="60" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
 
   port_header += "</TR>"
 
@@ -521,7 +521,7 @@ function get_processor_dot(process) {
       const op = port_ops[p][i]
 
       if (!op) {
-        op_rows += `<TD WIDTH="60" FIXEDSIZE="TRUE"></TD>`
+        op_rows += `<TD WIDTH="60"></TD>`
         continue
       }
 
@@ -531,7 +531,7 @@ function get_processor_dot(process) {
       if (op.big) {
 
         op_rows += `
-          <TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="${color}">
+          <TD WIDTH="60" BGCOLOR="${color}">
             <FONT POINT-SIZE="14"><B>${op.label}</B></FONT>
           </TD>`
 
@@ -540,7 +540,7 @@ function get_processor_dot(process) {
         const tooltip = latency_tooltip(op.label)
 
         op_rows += `
-          <TD WIDTH="60" FIXEDSIZE="TRUE" BGCOLOR="${color}" TITLE="${tooltip}">
+          <TD WIDTH="60" BGCOLOR="${color}" TITLE="${tooltip}">
             <FONT POINT-SIZE="10">${op.label}</FONT>
           </TD>`
       }
