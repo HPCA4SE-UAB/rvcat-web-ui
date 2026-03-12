@@ -529,7 +529,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
 
   let reg_row = `<TR>
-    <TD WIDTH="500" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire</B>:&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
+    <TD WIDTH="438" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire</B>:&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
    </TR>`
 
   const dot = `
