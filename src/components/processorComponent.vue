@@ -1,11 +1,8 @@
 <script setup>
-  import { ref, toRef, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
-  import { useDraggable, useResizeObserver}                                  from '@vueuse/core'
+  import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
   import HelpComponent                                     from '@/components/helpComponent.vue'
-
-  import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage,
-          initResource, createGraphVizGraph, fitSvgToContainer,
-          instructionTypes, typeOperations, typeSizes                          } from '@/common'
+  import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
+            createGraphVizGraph, instructionTypes, typeOperations, typeSizes   } from '@/common'
 
   const simState = inject('simulationState');
 
@@ -25,11 +22,6 @@
   const defaultOptions = {
     processorName:       '',
     availableProcessors: [],
-    showGraph:           false,
-    windowWidth:         516,
-    windowHeight:        400,
-    x_pos:                10,
-    y_pos:                10,
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
                                                 typeOperations[type].map(op => [`${type}.${op}`, false])
@@ -49,8 +41,6 @@
 
   const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
   const simulatedSvg     = ref('')
-  const showFullScreen   = ref(false);
-  let   graphTimeout     = null
 
   const saveOptions = () => {
     try {
@@ -70,63 +60,6 @@
   }
 
 // ============================================================================
-// Draggable & resizable full-screen graph container
-// ============================================================================
-
-  const HEADER_HEIGHT = 48
-  const MIN_W = 200
-  const MIN_H = 200
-
-  const headerRef  = ref(null)
-  const contentRef = ref(null)
-
-  const x = toRef(processorOptions, 'x_pos')
-  const y = toRef(processorOptions, 'y_pos')
-
-  const { isDragging } = useDraggable(headerRef, {
-    initialValue: { x: processorOptions.x_pos, y: processorOptions.y_pos },
-
-    onMove(pos) {
-
-      const w = processorOptions.windowWidth
-      const h = processorOptions.windowHeight
-
-      const maxX = window.innerWidth  - w
-      const maxY = window.innerHeight - HEADER_HEIGHT
-
-      x.value = Math.min(Math.max(pos.x, 0), maxX)
-      y.value = Math.min(Math.max(pos.y, 0), maxY)
-    }
-  })
-
-  useResizeObserver(contentRef, (entries) => {
-    const { width: w, height: h } = entries[0].contentRect
-
-    const maxWidth  = window.innerWidth  - processorOptions.x_pos
-    const maxHeight = window.innerHeight - processorOptions.y_pos
-
-    processorOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
-    processorOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
-  })
-
-  window.addEventListener("resize", () => {
-
-    const w = processorOptions.windowWidth
-    const h = processorOptions.windowHeight
-
-    x.value = Math.min(x.value, window.innerWidth - w)
-    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
-
-    const svg = document.querySelector(".graph-wrapper svg")
-    const container = document.querySelector(".graph-wrapper")
-
-    if (svg && container) {
-      fitSvgToContainer(svg, container)
-      console.log("💻✅ SVG fitted", svg);
-    }
-  })
-
-// ============================================================================
 // Temporal in-edition processor:  createDefaultConfig, updateProcessorSettings
 // ============================================================================
 
@@ -136,6 +69,7 @@
       sched:      'optimal',
       dispatch:   1,
       retire:     1,
+      ROBsize:    20,
       nBlocks:    0,
       blkSize:    1,
       mPenalty:   1,
@@ -199,11 +133,8 @@
 
   watch( [
     () => processorOptions.availableProcessors,
-    () => processorOptions.showGraph,
     () => processorOptions.expandedTypes,
-    () => processorOptions.expandedOperations,
-    () => processorOptions.windowWidth,
-    () => processorOptions.windowHeight], () => {
+    () => processorOptions.expandedOperations], () => {
     try {
       saveOptions()
     } catch (error) {
@@ -243,7 +174,7 @@
 
   watch(() => simState.simulatedProcess, () => {
     // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
-    const oldROBsize = simState.simulatedProcess?.ROBsize || 20;
+    const oldROBsize = simState.simulatedProcess.ROBsize;
     const newROBsize = Math.max(Math.min(oldROBsize, 200), 1);
     if (newROBsize !== oldROBsize)
       simState.simulatedProcess.ROBsize = newROBsize;
@@ -301,9 +232,7 @@
         console.log('💻✅ Initialization step (2): processor configuration loaded')
         drawEditedProcessor()
       }
-      const currentROBsize = simState.simulatedProcess?.ROBsize || 20;
       Object.assign(simState.simulatedProcess, data)
-      simState.simulatedProcess.ROBsize = currentROBsize;  // Preserve current ROBsize if it was modified
       simState.processorName= processorOptions.processorName;
       drawProcessor()
     } catch (error) {
@@ -322,6 +251,7 @@
         sched:      simState.simulatedProcess.sched      || 'optimal',
         dispatch:   simState.simulatedProcess.dispatch   || 1,
         retire:     simState.simulatedProcess.retire     || 1,
+        ROBsize:    simState.simulatedProcess.ROBsize    || 20,
         nBlocks:    simState.simulatedProcess.nBlocks    || 0,
         blkSize:    simState.simulatedProcess.blkSize    || 1,
         mPenalty:   simState.simulatedProcess.mPenalty   || 1,
@@ -345,12 +275,10 @@
     }
   }
 
-  // UpLOAD from Edition Panel: straightforward version (no modal)
   const uploadForEdition = async () => {
     try {
       const data = await uploadJSON(null, 'processor');
       if (data) {
-        // TODO: Check here if it is a valid processor
         updateProcessorSettings(data)
       }
     } catch (error) {
@@ -476,7 +404,7 @@ function get_processor_dot(process) {
 
   // ---- Decode ----
   let decode_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:</B>&nbsp;${dispatch}/cycle</FONT></TD>
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
     <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
   </TR>`
 
@@ -775,13 +703,8 @@ function get_processor_dot(process) {
           alert(`A processor with name: "${data.name}" has been already loaded.`)
         }
         else {
-          // TODO: Check here if it is a valid processor
           saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-
-          const currentROBsize = simState.simulatedProcess?.ROBsize || 20;
           Object.assign(simState.simulatedProcess, data)
-          simState.simulatedProcess.ROBsize = currentROBsize;  // Preserve current ROBsize if it was modified
-
           simState.processorName = data.name
           processorOptions.processorName = data.name;
           return;
@@ -796,27 +719,6 @@ function get_processor_dot(process) {
   function clearProcessor() {
     updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
-  }
-
-
-  function openFullScreen() {
-    showFullScreen.value = true;
-    console.log('💻🔄Drawing edited processor');
-    clearTimeout(graphTimeout)
-    try {
-      graphTimeout = setTimeout(() => {
-        drawEditedProcessor()
-      }, 75)
-      console.log('💻✅ Graph drawn')
-      processorOptions.showGraph = true
-    } catch (error) {
-      console.error('💻❌Failed to generate processor graph:', error)
-    }
-  }
-
-  function closeFullScreen()   {
-    showFullScreen.value = false;
-    processorOptions.showGraph = false
   }
 
 /* ------------------------------------------------------------------
@@ -892,14 +794,6 @@ function get_processor_dot(process) {
         <span class="header-title">Processor Settings - Editor</span>
       </div>
 
-      <button class="blue-button add-prev-margin" :class="{ active: processorOptions.showGraph }"
-          title="View/Update program's processor graph on full-screen"
-          id="open-edited-program-graph"
-          @click="openFullScreen">
-        <span v-if="processorOptions.showGraph">✔ </span>
-        View Graph
-      </button>
-
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
           <button class="blue-button"
@@ -949,6 +843,12 @@ function get_processor_dot(process) {
             <input type="number" v-model.number="procConfig.retire" min="1" max="9"
                    id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"
+             />
+
+            <span>ROB size:</span>
+            <input type="number" v-model.number="procConfig.ROBsize" min="1" max="200"
+                   id="rob-size"
+                   title="max. number of instructions in ROB (1 to 200)"
              />
 
             <span>Schedule Opt.:</span>
@@ -1173,27 +1073,6 @@ function get_processor_dot(process) {
     </div>
   </div>
 
-  <div v-if="showFullScreen && isFullscreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div
-      class="fullscreen-content"
-      ref="contentRef"
-      :style="{
-        left: x + 'px',
-        top: y + 'px',
-        width:  processorOptions.windowWidth + 'px',
-        height: processorOptions.windowHeight + 'px'
-      }"
-    >
-      <div class="fullscreen-header" ref="headerRef">
-        <span>Table description of Edited Processor</span>
-        <button class="close-btn" @click="closeFullScreen">×</button>
-      </div>
-      <div class="graph-container">
-        <div class="graph-wrapper" v-html="editedSvg" v-if="editedSvg"></div>
-      </div>
-    </div>
-  </div>
-
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
     text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
@@ -1291,13 +1170,13 @@ function get_processor_dot(process) {
   }
 
   .settings-group.widths-group {
-    flex:           1 1 35%;
+    flex:           1 1 45%;
   }
   .settings-group.latency-group {
     flex:           1 1 45%;
   }
   .settings-group.cache-group {
-    flex: 1 1 65%;
+    flex: 1 1 55%;
   }
 
   .settings-group.latency-group .table-container {
@@ -1612,7 +1491,6 @@ function get_processor_dot(process) {
     font-weight: 600;
   }
 
-  /* 🔹 Tipos sin operaciones (BRANCH) */
   .type-label.no-ops {
     font-weight:  600;
     color:     #261515;
@@ -1623,91 +1501,5 @@ function get_processor_dot(process) {
   .op-name {
     font-weight: 600;
   }
-
-.fullscreen-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent; /* Sin fondo para no ocultar nada */
-  pointer-events: none; /* Permite clicks a través del overlay */
-  z-index: 999;
-}
-
-.fullscreen-content {
-  position: fixed;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
-  min-height: 300px;
-  width: 800px; /* Tamaño fijo inicial */
-  height: 600px;
-  resize: both;
-  overflow: auto;
-  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
-  z-index: 1000;
-}
-
-.fullscreen-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #2c3e50;
-  color: white;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0; /* Evita que el header se encoja */
-}
-
-.fullscreen-header:active {
-  cursor: grabbing;
-}
-
-.fullscreen-header span {
-  flex: 1;
-  text-align: center;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.8;
-}
-
-.close-btn:hover {
-  opacity: 1;
-}
-
-.graph-container {
-  flex: 1;
-  padding: 10px;
-  overflow: hidden;
-  background: #f8f9fa;
-  min-height: 0;
-}
-
-.graph-wrapper {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-}
-
-.graph-wrapper svg {
-  position: absolute;
-}
 
 </style>
