@@ -478,14 +478,14 @@ function get_processor_dot(process) {
 
   let decode_row = `<TR>
     <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Dispatch:&nbsp;${dispatch}/cycle</B>
+      <FONT POINT-SIZE="20"><B>Dispatch:&nbsp;${dispatch}/cycle</B></FONT>
     </TD>
     <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE">
-      <B>ROB</B>
+      <FONT POINT-SIZE="20"><B>ROB</B>
       <BR/><BR/>
-      <FONT POINT-SIZE="16"><B>${ROBsize}</B></FONT>
+      <B>${ROBsize}</B></FONT>
       <BR/>
-      entries
+      <FONT POINT-SIZE="16">entries</FONT>
     </TD>
   </TR>`
 
@@ -493,9 +493,9 @@ function get_processor_dot(process) {
 
   let wb_row = `<TR>
     <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Waiting Buffer</B>
-      &nbsp;&nbsp;Scheduler:
-      <B>${sched}</B>
+      <FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>
+      <FONT POINT-SIZE="16">&nbsp;&nbsp;Scheduler:</FONT>
+      <FONT POINT-SIZE="18"><B>${sched}</B></FONT>
     </TD>
   </TR>`
 
@@ -504,7 +504,7 @@ function get_processor_dot(process) {
   let port_header = "<TR>"
 
   for (let p of port_ids)
-    port_header += `<TD ALIGN="LEFT" BGCOLOR="#f5f5f5"><B>P${p}</B></TD>`
+    port_header += `<TD ALIGN="LEFT" BGCOLOR="#f5f5f5"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
 
   port_header += "</TR>"
 
@@ -525,7 +525,7 @@ function get_processor_dot(process) {
         continue
       }
 
-      const type = op_type(op.label)
+      const type  = op_type(op.label)
       const color = type_color(type)
 
       if (op.big) {
@@ -539,8 +539,10 @@ function get_processor_dot(process) {
 
         const tooltip = latency_tooltip(op.label)
 
+
+        // TITLE="${tooltip}"
         op_rows += `
-          <TD ALIGN="LEFT" BGCOLOR="${color}" TITLE="${tooltip}">
+          <TD ALIGN="LEFT" BGCOLOR="${color}">
             <FONT POINT-SIZE="14">${op.label}</FONT>
           </TD>`
       }
@@ -553,7 +555,7 @@ function get_processor_dot(process) {
 
   let reg_row = `<TR>
     <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee">
-      <B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B>
+      <FONT POINT-SIZE="20"><B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B></FONT>
     </TD>
    </TR>`
 
