@@ -476,7 +476,7 @@ function get_processor_dot(process) {
 
   // ---- Decode ----
   let decode_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;${dispatch}/cycle</B></FONT></TD>
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:</B>&nbsp;${dispatch}/cycle</FONT></TD>
     <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
   </TR>`
 
@@ -528,9 +528,8 @@ function get_processor_dot(process) {
   }
 
   // ---- Registers ----
-
   let reg_row = `<TR>
-    <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire</B>:&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
+    <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
    </TR>`
 
   const dot = `
