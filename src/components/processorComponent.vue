@@ -472,13 +472,12 @@ function get_processor_dot(process) {
     port_ops[p] = compress_ops(ports[p])
 
   const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
-  const cellPadding = 20 / total_rows
 
   // ---- Decode ----
 
   let decode_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;${dispatch}/cycle</B></FONT></TD>
-    <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+    <TD COLSPAN="${port_ids.length}" WIDTH="400" FIXEDSIZE="TRUE" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;${dispatch}/cycle</B></FONT></TD>
+    <TD ROWSPAN="${total_rows+4}" HEIGHT="300" FIXEDSIZE="TRUE" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
   </TR>`
 
   // ---- Waiting Buffer ----
@@ -533,7 +532,7 @@ function get_processor_dot(process) {
   // ---- Registers ----
 
   let reg_row = `<TR>
-    <TD ALIGN="LEFT" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B></FONT></TD>
+    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire: ${retire}/cycle&nbsp;&nbsp;(Architected Registers)</B></FONT></TD>
    </TR>`
 
   const dot = `
@@ -541,7 +540,7 @@ function get_processor_dot(process) {
       node [shape=plain fontname="Arial" width=0 height=0 margin=0]
       pipeline [
         label=<
-          <TABLE BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="${cellPadding}">
+          <TABLE BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="3">
             ${decode_row}
             ${wb_row}
             ${port_header}
