@@ -229,9 +229,7 @@
 
   async function updateTimeline(timelineDict) {
      try {
-      console.log('📈🔄 timeline:', timelineDict)
       timelineDict.portUsage = getPortUsage(timelineDict);
-      console.log('📈🔄 timeline:', timelineDict)
       Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
       console.log('📈🔄 timeline updated.', timelineDict)
     } catch(e) {
@@ -248,6 +246,39 @@
                         timelineOptions.iters) // Call Python RVCAT
     }
   }
+
+// ============================================================================
+// confirmDownload, uploadTimeline
+// ============================================================================
+
+  const showModalDownload = ref(false)
+  const modalName         = ref("")
+  const nameError         = ref("")
+
+  async function confirmDownload() {
+    const name   = modalName.value.trim();
+    const stored = localStorage.getItem('timelineTemp');
+    if (stored) {
+      const data = JSON.parse(stored)
+      data.name  = name
+      await downloadJSON(data, name, 'timeline')
+    }
+    showModalDownload.value = false;
+  }
+
+  const uploadTimeline = async () => {
+    try {
+      const data = await uploadJSON(null, 'timeline');
+      if (data) {
+        data.portUsage = getPortUsage(data);
+        Object.assign(timeline, JSON.parse(JSON.stringify(data)))   // deep copy & fire draw-update
+        return;
+      }
+    } catch (error) {
+      console.error('📈❌ Failed on upload:', error)
+    }
+  };
+
 
 /* ------------------------------------------------------------------
  * CANVAS: DRAW timeline (using RVCAT text)
@@ -909,35 +940,45 @@
       </div>
 
       <div class="timeline-controls">
-         <div class="iters-group">
-            <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="9"  v-model.number="timelineOptions.iters"
-               title="# loop iterations (1 to 9)"
-               id="timeline-iterations">
-         </div>
+        <div class="iters-group">
+          <span class="iters-label">Iterations:</span>
+          <input type="number" min="1" max="9"  v-model.number="timelineOptions.iters"
+            title="# loop iterations (1 to 9)"
+            id="timeline-iterations">
+        </div>
 
-         <div class="iters-group">
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-                title="Zoom Out (6 levels)" id="timeline-zoom-out"
-                @click="zoomIncrease">
-                <img src="/img/zoom-out.png">
-            </button>
-            <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 6 }" :disabled="timelineOptions.zoomLevel == 6"
-                title="Zoom In (6 levels)" id="timeline-zoom-in"
-                @click="zoomReduce">
-                <img src="/img/zoom-in.png">
-            </button>
-         </div>
+        <div class="iters-group">
+          <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
+              title="Zoom Out (6 levels)" id="timeline-zoom-out"
+              @click="zoomIncrease">
+              <img src="/img/zoom-out.png">
+          </button>
+          <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 6 }" :disabled="timelineOptions.zoomLevel == 6"
+              title="Zoom In (6 levels)" id="timeline-zoom-in"
+              @click="zoomReduce">
+              <img src="/img/zoom-in.png">
+          </button>
+        </div>
 
-         <div class="iters-group">
-           <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts"
-              title="Show/Hide Resource Usage"
-              id="timeline-show-ports"
-              @click="togglePorts">
-             <span v-if="timelineOptions.showPorts">✔ </span>
-             Port Usage
-           </button>
-         </div>
+        <div class="iters-group">
+          <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts"
+            title="Show/Hide Resource Usage"
+            id="timeline-show-ports"
+            @click="togglePorts">
+            <span v-if="timelineOptions.showPorts">✔ </span>
+            Port Usage
+          </button>
+        </div>
+
+        <div class="iters-group">
+          <button class="blue-button"
+            id="timeline-download-button"
+            title="Save timeline"
+            @click="showModalDownload = true">
+            Download
+          </button>
+        </div>
+
       </div>
     </div>
 
@@ -975,6 +1016,22 @@
       <p>{{ clickedCellInfo.text }}</p>
     </div>
   </div>
+
+  <div v-if="showModalDownload" class="modal-overlay">
+    <div class="modal">
+      <h4>Save Timeline As</h4>
+      <label for="timeline-name">Name:</label>
+      <input v-model="modalName" type="text" id="save-timeline-name"
+           title="file name of timeline"
+        />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Yes </button>
+        <button class="blue-button" title="Cancel Download"   @click="showModalDownload=false">  Cancel </button>
+      </div>
+    </div>
+  </div>
+
 
 </template>
 
