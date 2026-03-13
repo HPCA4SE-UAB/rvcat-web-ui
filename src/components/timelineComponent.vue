@@ -977,6 +977,13 @@
             @click="showModalDownload = true">
             Download
           </button>
+          <button class="blue-button"
+            id="timeline-upload-button"
+            title="Upload timeline"
+            @click="uploadTimeline()">
+            Upload
+          </button>
+
         </div>
 
       </div>
