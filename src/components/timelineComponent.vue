@@ -232,7 +232,7 @@
      try {
       timelineDict.portUsage = getPortUsage(timelineDict);
       Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
-      console.log('📈🔄 timeline updated.', timeline)
+      console.log('📈🔄 timeline updated.')
     } catch(e) {
       timeline = createDefaultTimeline()
       console.error("📈❌ Failed to update timeline:", e);
@@ -273,7 +273,7 @@
       if (data) {
         data.portUsage = getPortUsage(data);
         Object.assign(timeline, JSON.parse(JSON.stringify(data)))   // deep copy & fire draw-update
-        console.log('📈🔄 timeline updated.', timeline)
+        console.log('📈🔄 timeline updated.')
         return;
       }
     } catch (error) {
@@ -283,7 +283,7 @@
 
 
 /* ------------------------------------------------------------------
- * CANVAS: DRAW timeline (using RVCAT text)
+ * CANVAS: DRAW timeline
  * ------------------------------------------------------------------ */
   const canvasWidth    = 1200;
   const canvasHeight   = 10000;
@@ -307,7 +307,7 @@
     const { cycles, instructions, portUsage } = timeline
 
     canvas.width  = padX * 2 + cycles * cellW;
-    canvas.height = padY * 2 + instructions.length * cellH;
+    canvas.height = padY * 2 + (instructions.length+1) * cellH;
 
     // Draw each row + build interactiveCells
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -315,6 +315,21 @@
     ctx.textBaseline          = 'top';
     ctx.imageSmoothingEnabled = false;
 
+    // First line: 0 1 2 3 ...   start on (0,0)
+    let   x = padX
+    const y = padY
+    for (let i = 0; i < cycles; ) {
+      let ch          = '1'
+      ctx.fillStyle   = "#ffffff";
+      ctx.strokeStyle = "#bbb";
+      ctx.lineWidth   = 1;
+      ctx.fillRect    (x, y, cellW, cellH);
+      ctx.strokeRect  (x, y, cellW, cellH);
+
+      ctx.fillStyle = "#000";
+      ctx.fillText    (ch, x + 2, y + fontYOffset);
+      x += cellW;
+    }
     const interactiveCells = [];
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
     {
@@ -323,7 +338,7 @@
 
       //  Draw line starting on (x,y)
       let   x    = padX;
-      const y    = padY + rowIdx * cellH;
+      const y    = padY + (rowIdx+1) * cellH;
 
       for (let i = 0; i < cycles; ) {
         let ch        = ' '
@@ -802,7 +817,7 @@
         hoverInfo.value = null;
         return;
       }
-      let instrID   = hitCell.instrID;
+      let instrID = hitCell.instrID;
       // If it is a Port cell, find which instruction the X corresponds to
       if (hitCell.kind === 'port') {
         if (hitCell.char === 'X') {
@@ -832,8 +847,7 @@
         cycle: hitCell.colIndexVis - headerStart,
         port:  displayPort != null ? displayPort : "N/A",
         state: hitCell.state ?? "N/A",
-        instr: instrID ?? "N/A",
-        kind:  hitCell.kind,
+        instr: instrID ?? "N/A"
       };
 
       canvas.onclick = e => {
