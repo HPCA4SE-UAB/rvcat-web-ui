@@ -93,9 +93,9 @@
   { deep: true, immediate: false })
 
   watch(timeline, () => {
-    if (timelineCanvas.value && timeline.value)
+    if (timelineCanvas.value && timeline)
       try {
-        localStorage.setItem('timelineTemp', JSON.stringify(timeline.value));
+        localStorage.setItem('timelineTemp', JSON.stringify(timeline));
         console.log('📈✅ Draw Timeline with dict')
         drawTimeline()
       } catch (error) {
@@ -232,7 +232,7 @@
      try {
       timelineDict.portUsage = getPortUsage(timelineDict);
       Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
-      console.log('📈🔄 timeline updated.', timelineDict)
+      console.log('📈🔄 timeline updated.', timeline)
     } catch(e) {
       timeline = createDefaultTimeline()
       console.error("📈❌ Failed to update timeline:", e);
@@ -273,6 +273,7 @@
       if (data) {
         data.portUsage = getPortUsage(data);
         Object.assign(timeline, JSON.parse(JSON.stringify(data)))   // deep copy & fire draw-update
+        console.log('📈🔄 timeline updated.', timeline)
         return;
       }
     } catch (error) {
