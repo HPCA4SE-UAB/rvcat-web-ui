@@ -345,13 +345,10 @@
         let ch        = ' '
         let currColor = "#000"
 
-        // If belongs to state: register interactive cell & check critical
+        // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+states.length) {
-
           ch  = states[i-startCycle];
-
           let kind='instr';
-
           interactiveCells.push({ kind, x, y,
             width:      cellW,
             height:     cellH,
@@ -361,8 +358,10 @@
             port,
             state:       charToState(ch),
             instrIdx
-          });
-          // if critical currColor = ansiMatch[1] === "91" ? "red" : "#000";
+          })
+
+          if (i-startCycle in critical_cycles)
+            currColor = "red"
         }
 
         ctx.fillStyle   = rowBg;
