@@ -144,7 +144,7 @@
         document.getElementById('run-simulation-button').disabled       = true;
 
         const { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, 
+        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
                                               instruction_list: toRaw(instruction_list)}, null, 2),
                             simulationOptions.iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')
@@ -155,7 +155,7 @@
   }
 
 /******************
-   TODO:  do not change when only showCritical is changed, and there is no other change, and results are available
+   TODO: do not change when only showCritical is changed, and there is no other change, and results are available
    ********************/
 
   // Watch ALL simulation options for changes
@@ -280,7 +280,6 @@
     return dot_code;
   }
 
-
   function createCriticalPathList(data) {
     const COLORS = [
       "#ffffff", "#fff3f3", "#ffe7e7", "#ffdbdb", "#ffcece", "#ffc2c2",
@@ -328,20 +327,17 @@
     return out
   }
 
-
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
-  const showHelp1 = ref(false);  const showHelp2 = ref(false); const showHelp3 = ref(false);
-  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);  const helpIcon3 = ref(null);
+  const showHelp1 = ref(false);  const showHelp2 = ref(false);
+  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
   function closeHelp1() { showHelp1.value  = false }
   function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
   function closeHelp2() { showHelp2.value  = false }
-  function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
-  function closeHelp3() { showHelp3.value  = false }
 
 </script>
 

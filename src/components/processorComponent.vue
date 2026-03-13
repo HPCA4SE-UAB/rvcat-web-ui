@@ -109,7 +109,7 @@
   };
 
 // ============================================================================
-// WATCHES: processor, globalState  HANDLERS: setProcessor
+// WATCHES: processor, globalState
 // ============================================================================
   const ADD_NEW_OPTION = '_add_new_'
 
@@ -131,9 +131,7 @@
     }
   })
 
-  watch( [
-    () => processorOptions.availableProcessors,
-    () => processorOptions.expandedTypes,
+  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedTypes,
     () => processorOptions.expandedOperations], () => {
     try {
       saveOptions()
@@ -155,16 +153,12 @@
   },
   { deep: true, immediate: true })
 
-  // 🔹 Persistencia global
-  watch(
-    () => simState,
+  watch( () => simState,
     saveSimState,
     { deep: true }
   )
 
-  watch(
-    () => simState.state,
-    (newValue, oldValue) => {
+  watch( () => simState.state, (newValue, oldValue) => {
       if (newValue === 1 && oldValue !== 1) {
         console.log('💻✅ Initialization Step (1): RVCAT imported')
         initProcessor()
@@ -505,7 +499,6 @@ function get_processor_dot(process) {
     return typeSizes[type] && typeSizes[type].length > 0;
   }
 
-
   function isAssignedElsewhere(type, port) {
     return portList.value.some(p =>
       p !== port && procConfig.ports[p]?.includes(type)
@@ -549,7 +542,6 @@ function get_processor_dot(process) {
       }
     });
   }
-
 
   function togglePortType(port, type, isChecked, event) {
     if (!procConfig.ports[port]) procConfig.ports[port] = [];

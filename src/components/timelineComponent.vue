@@ -29,21 +29,6 @@
 
   const timelineOptions = reactive({ ...defaultOptions, ...savedOptions })
 
-  let lastTimelineIters     = 1
-  let canvasTimeout         = null
-  let cleanupHandleTimeline = null
-
-  const canvasWidth    = 1200;
-  const canvasHeight   = 10000;
-  const hoverInfo      = ref(null);
-  const timelineCanvas = ref(null);
-  const tooltipRef     = ref(null);
-  let   timelineData   = ref(null);
-
-  const infoIcon        = ref(null);
-  const clickedCellInfo = ref(null);
-
-  // Save on changes
   const saveOptions = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineOptions))
@@ -52,12 +37,109 @@
     }
   }
 
+  function createDefaultTimeline() {
+    return {
+      cycles:       10,
+      instructions: [ [0, 0, 0, "0", "DEWR", [0,1]],
+                      [0, 1, 1, "0", "DEWR", [1]],
+                      [0, 2, 2, "1", "DEWR", [1]],
+                      [1, 0, 3, "0", "DEWR", [1]],
+                      [1, 1, 4, "0", "DEWR", [1]],
+                      [1, 2, 5, "1", "DEWR", [1,2,3]]
+                    ],
+      portUsage:    { "0": [1,2,4,5], "1": [3,6] }
+    };
+  }
+
+  const timeline     = reactive(createDefaultTimeline())  // DICT object from JSON
+  let   timelineText = ref(null);                         // Text from RVCAT
+
+// ============================================================================
+// WATCHES: timelineOptions, simulatedProcess  HANDLERS: getTimeline
+// ============================================================================
+  let lastTimelineIters     = 1
+
+  // Watch ALL graph options for changes
+  watch(timelineOptions, () => {
+    let canvasTimeout = null
+    clearTimeout(canvasTimeout)
+    try {
+      timelineOptions.iters = Math.min(timelineOptions.iters, 9);
+      timelineOptions.iters = Math.max(timelineOptions.iters, 1);
+      saveOptions()
+
+      if (lastTimelineIters !== timelineOptions.iters) {
+        lastTimelineIters = timelineOptions.iters
+        timelineText.value = null
+      }
+
+      // OLD way: use timeline Text
+      canvasTimeout = setTimeout(() => {
+        if (timelineText.value)
+          drawTimelineText(timelineText.value);
+        else
+          getTimelineAndDraw()
+      }, 75)
+      console.log('📈✅ Modified timeline options')
+    } catch (error) {
+      console.error('📈❌Failed to save dependence graph options:', error)
+    }
+  },
+  { deep: true, immediate: true })
+
+  watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },
+  { deep: true, immediate: false })
+
+  watch(timeline, () => {
+    try {
+      localStorage.setItem('timelineTemp', JSON.stringify(timeline));
+      console.log('📈✅ Draw Timeline with dict')
+      drawTimeline()
+    } catch (error) {
+      console.error('💻❌ Failed to handle changes on processor configuration:', error)
+    }
+  },
+  { deep: true, immediate: true })
+
+  // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
+  const handleTimeline = async (data, dataType) => {
+    if (dataType === 'error') {
+      console.error('📈❌Failed to get timeline:', data);
+      return;
+    }
+    try {
+      console.log('📈✅ Draw Timeline with text')
+      timelineText.value = data
+      drawTimelineText(data);
+    } catch (error) {
+      console.error('📈❌Failed to obtain execution results:', error)
+    }
+  }
+
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
+  let cleanupHandleTimeline = null
+
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
+    console.log('📈🎯 Timeline Component mounted')
 
-    try {    // Load from localStorage
-      if (!timelineData.value && simState.state >= 3)  // on mount
+    // load stored timeline
+    const stored = localStorage.getItem('timelineTemp');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        updateTimeline(data)
+        return
+      } catch (e) {
+        console.error('📈❌ Failed to load timeline from localStorage:', e);
+      }
+    }
+
+    try {    // generate timeline using RVCAT
+      if (!timelineText.value && simState.state >= 3)  // on mount
          getTimelineAndDraw()
     } catch (error) {
       console.error('📈❌ Failed on timeline:', error)
@@ -72,21 +154,6 @@
     }
   })
 
- // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
-  const handleTimeline = async (data, dataType) => {
-    if (dataType === 'error') {
-      console.error('📈❌Failed to get timeline:', data);
-      return;
-    }
-    try {
-      console.log('📈✅ Draw Timeline')
-      timelineData.value = data
-      drawTimeline(data);
-    } catch (error) {
-      console.error('📈❌Failed to obtain execution results:', error)
-    }
-  }
-
 /* ------------------------------------------------------------------
 * UI actions
 * ------------------------------------------------------------------ */
@@ -94,39 +161,84 @@
   function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 6) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
 
-  // Watch ALL graph options for changes
-  watch(timelineOptions, () => {
-    clearTimeout(canvasTimeout)
-    try {
-      timelineOptions.iters = Math.min(timelineOptions.iters, 9);
-      timelineOptions.iters = Math.max(timelineOptions.iters, 1);
-      saveOptions()
-
-      if (lastTimelineIters !== timelineOptions.iters) {
-        lastTimelineIters = timelineOptions.iters
-        timelineData.value = null
-      }
-
-      canvasTimeout = setTimeout(() => {
-        if (timelineData.value)
-          drawTimeline(timelineData.value);
-        else
-          getTimelineAndDraw()
-      }, 75)
-      console.log('📈✅ Modified timeline options')
-    } catch (error) {
-      console.error('📈❌Failed to save dependence graph options:', error)
+  function getPortUsage(timeline) {
+    const usage = {};
+    for (const [iter, instrIdx, startCycle, port, states] of timeline.instructions) {
+      const eIndex = states.indexOf("E");
+      if (eIndex < 0) continue;
+      const cycle = startCycle + eIndex;
+      (usage[port] ??= []).push(cycle);
     }
-  },
-  { deep: true, immediate: true })
+    for (const p in usage) {
+      usage[p].sort((a,b)=>a-b);
+    }
+    return usage;
+  }
 
-  watch (
-    [() => simState.simulatedProcess], () => { getTimelineAndDraw() },
-  { deep: true, immediate: false })
+  function buildPortTimelineMatrix(timeline) {
+
+    const portUsage = timeline.portUsage || getPortUsage(timeline);
+
+    // Determinar número de ciclos
+    const maxCycle = Math.max(
+      ...Object.values(portUsage).flat(),
+      0
+    );
+
+    const cycles = maxCycle + 1;
+    const ports = Object.keys(portUsage).sort((a,b)=>Number(a)-Number(b));
+    const matrix = {};
+
+    for (const p of ports) {
+      matrix[p] = new Array(cycles).fill(0);
+    }
+
+    for (const [port, usedCycles] of Object.entries(portUsage)) {
+      for (const c of usedCycles) {
+        matrix[port][c]++;
+      }
+    }
+
+    return { cycles, ports, matrix };
+    // {  cycles: 4, ports: ["0","1"], matrix: { "0": [0,1,1,0], "1": [0,0,0,1] }
+  }
+
+  function renderPortUsageASCII(portMatrix) {
+    //     0123
+    // P0  .XX.
+    // P1  ...X
+    const { cycles, ports, matrix } = portMatrix;
+    const lines = [];
+    let header = "    ";
+    for (let c = 0; c < cycles; c++) {
+      header += (c % 10);
+    }
+    lines.push(header);
+
+    for (const p of ports) {
+      let row = `P${p}  `;
+      for (let c = 0; c < cycles; c++) {
+        row += matrix[p][c] > 0 ? "X" : ".";
+      }
+      lines.push(row);
+    }
+    return lines.join("\n");
+  }
+
+  async function updateTimeline(timelineDict) {
+     try {
+      timelineDict[portUsage] = getPortUsage(timelineDict);
+      Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
+      console.log('📈🔄 timeline updated.')
+    } catch(e) {
+      timeline= createDefaultTimeline()
+      console.error("📈❌ Failed to update timeline:", e);
+    }
+  }
 
   async function getTimelineAndDraw() {
     if (simState.state >= 3) {
-      console.log('📈🔄 Request timeline')
+      console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
       await getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
                         timelineOptions.iters) // Call Python RVCAT
@@ -134,10 +246,93 @@
   }
 
 /* ------------------------------------------------------------------
- * CANVAS: timeline
+ * CANVAS: DRAW timeline (using RVCAT text)
  * ------------------------------------------------------------------ */
+  const canvasWidth    = 1200;
+  const canvasHeight   = 10000;
+  const hoverInfo      = ref(null);
+  const timelineCanvas = ref(null);
+  const tooltipRef     = ref(null);
 
-  function drawTimeline(data) {
+  // const infoIcon        = ref(null);
+  const clickedCellInfo = ref(null);
+
+  function drawTimeline() {
+
+    const Zoom        = (1+timelineOptions.zoomLevel)/4;
+    const canvas      = timelineCanvas.value;
+    const ctx         = canvas.getContext('2d');
+    const cellW       = 14 * Zoom;
+    const cellH       = 20 * Zoom;
+    const padX        = 20 * Zoom;
+    const padY        = 10 * Zoom;
+    const fontSize    = 14 * Zoom;
+    const fontYOffset =  3 * Zoom;
+
+    const { cycles, instructions, portUsage } = timeline
+
+    canvas.width  = padX * 2 + cycles * cellW;
+    canvas.height = padY * 2 + instructions.length * cellH;
+
+    // Draw each row + build interactiveCells
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font                  = `${fontSize}px monospace`;
+    ctx.textBaseline          = 'top';
+    ctx.imageSmoothingEnabled = false;
+
+    const interactiveCells = [];
+    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
+    {
+      // Compute background color based on iteration number
+      const rowBg = iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
+
+      //  Draw line starting on (x,y)
+      let   x    = padX;
+      const y    = padY + rowIdx * cellH;
+
+      for (let i = 0; i < cycles; ) {
+        let ch        = ' '
+        let currColor = "#000"
+
+        // If belongs to state: register interactive cell & check critical
+        if (i >= startCycle && i < startCycle+states.length) {
+
+          ch  = states[i-startCycle];
+
+          let kin='instr';
+
+          interactiveCells.push({ kind, x, y,
+            width:      cellW,
+            height:     cellH,
+            char:       ch,
+            rowIdx,
+            colIndexVis: i,
+            port,
+            state:       charToState(ch),
+            instrIdx
+          });
+          // if critical currColor = ansiMatch[1] === "91" ? "red" : "#000";
+        }
+
+        ctx.fillStyle   = rowBg;
+        ctx.strokeStyle = "#bbb";
+        ctx.lineWidth   = 1;
+        ctx.fillRect    (x, y, cellW, cellH);
+        ctx.strokeRect  (x, y, cellW, cellH);
+
+        ctx.fillStyle = currColor;
+        ctx.fillText    (ch, x + 2, y + fontYOffset);
+
+        i++;
+        x += cellW;
+      }
+    }
+
+    // Attach mousemove to show hover info
+    attachHover(canvas, interactiveCells, 0);
+  }
+
+  function drawTimelineText(data) {
     const Zoom        = (1+timelineOptions.zoomLevel)/4;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
@@ -181,25 +376,25 @@
 
     const interactiveCells = [];
     visibleRows.forEach(({ raw, instrID, portNumber, type }, rowIndex) => {
-    drawOneRow({
-      ctx,
-      raw,
-      port: portNumber,
-      instrType: type,
-      instrID,
-      rowIndex,
-      padX, padY, cellW, cellH,
-      headerStart, cycleCount,
-      fontYOffset,
-      interactiveCells
+      drawOneRow({
+        ctx,
+        raw,
+        port: portNumber,
+        instrType: type,
+        instrID,
+        rowIndex,
+        padX, padY, cellW, cellH,
+        headerStart, cycleCount,
+        fontYOffset,
+        interactiveCells
+      });
     });
-  });
 
     // Attach mousemove to show hover info
     attachHover(canvas, interactiveCells, headerStart);
   }
 
-  // get the esecution port of each instruction
+  // get the execution port of each instruction
   function extractRowInfo(rawLines) {
     const idToType = {};    // will map instrID → mnemonic string
 
@@ -572,7 +767,6 @@
         hoverInfo.value = null;
         return;
       }
-      let instrType = hitCell.instrType;
       let instrID   = hitCell.instrID;
       // If it is a Port cell, find which instruction the X corresponds to
       if (hitCell.kind === 'port') {
