@@ -1,11 +1,12 @@
 <script setup>
-  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue';
-  import HelpComponent    from '@/components/helpComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
+  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
+  import HelpComponent                                 from '@/components/helpComponent.vue'
+  import { downloadJSON, uploadJSON }                                        from '@/common'
+  import { useRVCAT_Api }                                                  from '@/rvcatAPI'
 
-  const { getTimeline }     = useRVCAT_Api();
-  const { registerHandler } = inject('worker');
-  const simState            = inject('simulationState');
+  const { getTimeline }     = useRVCAT_Api()
+  const { registerHandler } = inject('worker')
+  const simState            = inject('simulationState')
 
   /* ------------------------------------------------------------------
    * Timeline options (persistent in localStorage)
