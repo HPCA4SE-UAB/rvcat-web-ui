@@ -51,8 +51,8 @@
     };
   }
 
-  const timeline     = reactive(createDefaultTimeline())  // DICT object from JSON
-  const timelineText = ref(null);                         // Text from RVCAT
+  const timeline       = reactive(createDefaultTimeline())  // DICT object from JSON
+  const timelineText   = ref(null);                         // Text from RVCAT
   const timelineCanvas = ref(null);
 
 // ============================================================================
@@ -92,9 +92,9 @@
   { deep: true, immediate: false })
 
   watch(timeline, () => {
-    if (timelineCanvas.value && timeline)
+    if (timelineCanvas.value && timeline.value)
       try {
-        localStorage.setItem('timelineTemp', JSON.stringify(timeline));
+        localStorage.setItem('timelineTemp', JSON.stringify(timeline.value));
         console.log('📈✅ Draw Timeline with dict')
         drawTimeline()
       } catch (error) {
@@ -230,10 +230,10 @@
   async function updateTimeline(timelineDict) {
      try {
       timelineDict[portUsage] = getPortUsage(timelineDict);
-      Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
+      Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
       console.log('📈🔄 timeline updated.')
     } catch(e) {
-      timeline= createDefaultTimeline()
+      timeline.value = createDefaultTimeline()
       console.error("📈❌ Failed to update timeline:", e);
     }
   }
@@ -269,7 +269,7 @@
     const fontSize    = 14 * Zoom;
     const fontYOffset =  3 * Zoom;
 
-    const { cycles, instructions, portUsage } = timeline
+    const { cycles, instructions, portUsage } = timeline.value
 
     canvas.width  = padX * 2 + cycles * cellW;
     canvas.height = padY * 2 + instructions.length * cellH;
