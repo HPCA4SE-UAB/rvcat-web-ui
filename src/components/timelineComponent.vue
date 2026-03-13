@@ -262,7 +262,7 @@
     if (stored) {
       const data = JSON.parse(stored)
       data.name  = name
-      await downloadJSON(data, name, 'timeline')
+      await downloadJSON(data, name, 'timeline') // <<--- Define 'timeline'
     }
     showModalDownload.value = false;
   }
@@ -813,7 +813,6 @@
             c.char == 'E' && isFirstE(interactiveCells, c)
           );
           if (match){
-            instrType = match.instrType;
             instrID   = match.instrID;
           }
         }
@@ -822,13 +821,7 @@
       // For instruction rows, only show port on first 'E'
       let displayPort = null;
 
-      if (hitCell.kind === 'port') {
-        displayPort = hitCell.port;
-      } else if (
-        hitCell.kind === 'instr' &&
-        hitCell.char === 'E' &&
-        isFirstE(interactiveCells, hitCell)
-      ) {
+      if (hitCell.char === 'E' && isFirstE(interactiveCells, hitCell)) {
         displayPort = hitCell.port;
       }
 
