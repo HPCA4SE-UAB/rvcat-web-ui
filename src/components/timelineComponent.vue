@@ -262,8 +262,7 @@
     if (stored) {
       const data = JSON.parse(stored)
       data.name  = name
-      await downloadJSON(data, name, 'timeline') // <<--- Define 'timeline'
-    }
+      await downloadJSON(data, name, 'timeline')
     showModalDownload.value = false;
   }
 

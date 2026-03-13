@@ -39,6 +39,11 @@ export const resourceConfig = {
     resourceName:  'tutorial',
     logPrefix:     '👨‍🎓'
   }
+ timeline: {
+    storagePrefix: 'timeline',
+    resourceName:  'timeline',
+    logPrefix:     '📈'
+  }
 };
 
 export function updateProcess(process) {
