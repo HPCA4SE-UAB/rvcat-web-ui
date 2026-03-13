@@ -38,8 +38,8 @@ export const resourceConfig = {
     storagePrefix: 'tutorial',
     resourceName:  'tutorial',
     logPrefix:     '👨‍🎓'
-  }
- timeline: {
+  },
+  timeline: {
     storagePrefix: 'timeline',
     resourceName:  'timeline',
     logPrefix:     '📈'
