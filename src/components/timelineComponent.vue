@@ -319,17 +319,17 @@
     let   x = padX
     const y = padY
     for (let i = 0; i < cycles; ) {
-      let ch          = '1'
-      ctx.fillStyle   = "#ffffff";
-      ctx.strokeStyle = "#bbb";
-      ctx.lineWidth   = 1;
-      ctx.fillRect    (x, y, cellW, cellH);
-      ctx.strokeRect  (x, y, cellW, cellH);
+      let ch          = String(i % 10)
+      ctx.fillStyle   = "#ffffff"
+      ctx.strokeStyle = "#bbb"
+      ctx.lineWidth   = 1
+      ctx.fillRect    (x, y, cellW, cellH)
+      ctx.strokeRect  (x, y, cellW, cellH)
 
-      ctx.fillStyle = "#000";
-      ctx.fillText    (ch, x + 2, y + fontYOffset);
-      i++;
-      x += cellW;
+      ctx.fillStyle = "#000"
+      ctx.fillText    (ch, x + 2, y + fontYOffset)
+      i++
+      x += cellW
     }
     const interactiveCells = [];
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
@@ -1004,8 +1004,6 @@
 
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
-        <div v-if="hoverInfo.instr!='N/A'"><strong>Instruction:</strong> {{ hoverInfo.instr }}</div>
-        <div v-if="hoverInfo.type!='N/A'"> <strong> Type:</strong> {{ hoverInfo.type }}</div>
         <div v-if="hoverInfo.state!='N/A'"><strong>State:</strong> {{ hoverInfo.state }}</div>
         <div v-if="hoverInfo.port!='N/A'"> <strong> Port:</strong> P{{ hoverInfo.port }}</div>
         <div v-if="hoverInfo.kind==='mem'">Block read from main memory</div>
