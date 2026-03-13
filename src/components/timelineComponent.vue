@@ -831,7 +831,6 @@
         cycle: hitCell.colIndexVis - headerStart,
         port:  displayPort != null ? displayPort : "N/A",
         state: hitCell.state ?? "N/A",
-        type:  instrType ?? "N/A",
         instr: instrID ?? "N/A",
         kind:  hitCell.kind,
       };
