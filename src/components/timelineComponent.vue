@@ -304,7 +304,7 @@
     const fontSize    = 14 * Zoom;
     const fontYOffset =  3 * Zoom;
 
-    const { cycles, instructions, portUsage } = timeline.value
+    const { cycles, instructions, portUsage } = timeline
 
     canvas.width  = padX * 2 + cycles * cellW;
     canvas.height = padY * 2 + instructions.length * cellH;
