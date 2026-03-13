@@ -328,6 +328,7 @@
 
       ctx.fillStyle = "#000";
       ctx.fillText    (ch, x + 2, y + fontYOffset);
+      i++;
       x += cellW;
     }
     const interactiveCells = [];
