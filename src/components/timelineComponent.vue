@@ -229,7 +229,9 @@
 
   async function updateTimeline(timelineDict) {
      try {
+      console.log('📈🔄 timeline:', timelineDict)
       timelineDict["portUsage"] = getPortUsage(timelineDict);
+      console.log('📈🔄 timeline:', timelineDict)
       Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
       console.log('📈🔄 timeline updated.')
     } catch(e) {
