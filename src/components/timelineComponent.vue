@@ -14,8 +14,7 @@
   const defaultOptions = {
     iters:     1,
     zoomLevel: 1,
-    showPorts: false,
-    showInstr: false
+    showPorts: false
   }
 
   const savedOptions = (() => {
@@ -92,7 +91,6 @@
 * UI actions
 * ------------------------------------------------------------------ */
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
-  function toggleInstr()  { timelineOptions.showInstr = !timelineOptions.showInstr }
   function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 6) }
   function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
 
@@ -171,7 +169,7 @@
     const visibleRows = filterVisibleRows(processed, rowPorts, timelineOptions.showPorts);
 
     // Measure & resize canvas based on visibleRows and zoomLevel and show/hide instructions
-    const measured = measureLines(visibleRows, timelineOptions.showInstr);
+    const measured = measureLines(visibleRows);
     canvas.width  = padX * 2 + measured.maxCols * cellW;
     canvas.height = padY * 2 + visibleRows.length * cellH;
 
@@ -193,7 +191,6 @@
       padX, padY, cellW, cellH,
       headerStart, cycleCount,
       fontYOffset,
-      showInstructions: timelineOptions.showInstr,
       interactiveCells
     });
   });
@@ -429,13 +426,11 @@
   }
 
   // Remove instructions if necessary and compute canvas size
-  function measureLines(visibleRows, showInstructions) {
+  function measureLines(visibleRows) {
     const cleaned = visibleRows.map(({ raw }) => {
-      let line    = raw;
-      if (!showInstructions) {
-        const rIdx = line.indexOf("R");
-        if (rIdx > -1) line = line.slice(0, rIdx + 1);
-      }
+      let line   = raw;
+      const rIdx = line.indexOf("R");
+      if (rIdx > -1) line = line.slice(0, rIdx + 1);
       return line.replace(/\x1b\[91m/g, "").replace(/\x1b\[0m/g, "");
     });
     const maxCols = cleaned.reduce((mx, l) => Math.max(mx, l.length), 0);
@@ -745,13 +740,6 @@
               @click="togglePorts">
              <span v-if="timelineOptions.showPorts">✔ </span>
              Port Usage
-           </button>
-           <button class="blue-button" :class="{ active: timelineOptions.showInstr }" :aria-pressed="timelineOptions.showInstr"
-              title="Show/Hide Instructions"
-              id="timeline-show-instructions"
-              @click="toggleInstr">
-             <span v-if="timelineOptions.showInstr">✔ </span>
-             Instructions
            </button>
          </div>
       </div>
