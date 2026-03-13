@@ -229,7 +229,7 @@
 
   async function updateTimeline(timelineDict) {
      try {
-      timelineDict[portUsage] = getPortUsage(timelineDict);
+      timelineDict["portUsage"] = getPortUsage(timelineDict);
       Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
       console.log('📈🔄 timeline updated.')
     } catch(e) {
@@ -299,7 +299,7 @@
 
           ch  = states[i-startCycle];
 
-          let kin='instr';
+          let kind='instr';
 
           interactiveCells.push({ kind, x, y,
             width:      cellW,
