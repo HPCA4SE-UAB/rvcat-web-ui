@@ -360,7 +360,7 @@
             instrIdx
           })
 
-          if (i-startCycle in critical_cycles)
+          if ((i-startCycle) in critical_cycles)
             currColor = "red"
         }
 
