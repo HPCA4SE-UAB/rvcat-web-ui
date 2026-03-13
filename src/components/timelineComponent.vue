@@ -52,7 +52,8 @@
   }
 
   const timeline     = reactive(createDefaultTimeline())  // DICT object from JSON
-  let   timelineText = ref(null);                         // Text from RVCAT
+  const timelineText = ref(null);                         // Text from RVCAT
+  const timelineCanvas = ref(null);
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess  HANDLERS: getTimeline
@@ -91,13 +92,14 @@
   { deep: true, immediate: false })
 
   watch(timeline, () => {
-    try {
-      localStorage.setItem('timelineTemp', JSON.stringify(timeline));
-      console.log('📈✅ Draw Timeline with dict')
-      drawTimeline()
-    } catch (error) {
-      console.error('💻❌ Failed to handle changes on processor configuration:', error)
-    }
+    if (timelineCanvas.value && timeline)
+      try {
+        localStorage.setItem('timelineTemp', JSON.stringify(timeline));
+        console.log('📈✅ Draw Timeline with dict')
+        drawTimeline()
+      } catch (error) {
+        console.error('💻❌ Failed to handle changes on processor configuration:', error)
+      }
   },
   { deep: true, immediate: true })
 
@@ -251,14 +253,12 @@
   const canvasWidth    = 1200;
   const canvasHeight   = 10000;
   const hoverInfo      = ref(null);
-  const timelineCanvas = ref(null);
   const tooltipRef     = ref(null);
 
   // const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
 
   function drawTimeline() {
-
     const Zoom        = (1+timelineOptions.zoomLevel)/4;
     const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
