@@ -744,16 +744,16 @@
         // Register interactive cell
         if ((colIdxVis >= dVisIdx && colIdxVis <= rVisIdx) || (kind==='port' && ch==="X") || (kind==='mem' && ch==="#")) {
           interactiveCells.push({
-            kind,
-            x, y,
+            kind, x, y,
             width:      cellW,
             height:     cellH,
             char:       ch,
-            rowIndex,
+            state:      charToState(ch),
             colIndexVis: colIdxVis,
+            first_exec_stage: false,
             port,
             instrType,
-            state:      charToState(ch),
+            rowIndex,
             instrID
           });
         }
@@ -830,7 +830,7 @@
           const match = interactiveCells.find(c =>
             c.kind == 'instr' &&
             c.port == hitCell.port &&
-            c.colIndexVis == hitCell.colIndexVis && first_exec_stage
+            c.colIndexVis == hitCell.colIndexVis && c.first_exec_stage
           );
           if (match){
             instrID = match.instrID;
@@ -841,7 +841,7 @@
       // For instruction rows, only show port on first 'E'
       let displayPort = null;
 
-      if (first_exec_stage) {
+      if (c.first_exec_stage) {
         displayPort = hitCell.port;
       }
 
