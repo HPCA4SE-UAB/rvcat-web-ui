@@ -71,7 +71,6 @@
 
       if (lastTimelineIters !== timelineOptions.iters) {
         lastTimelineIters = timelineOptions.iters
-        timelineText.value = null
       }
 
       canvasTimeout = setTimeout(() => {
