@@ -90,7 +90,7 @@ export function useRVCAT_Api() {
     try {
       const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, ${n_iters})`
       const result = await safeExecute(code, 'get_timeline');
-      console.log('🧠 RVCAT: timeline obtained');
+      console.log('🧠 RVCAT: timeline JSON obtained');
       return result;
     } catch (error) {
       console.error('🧠❌ RVCAT: failed to get timeline:', error);
