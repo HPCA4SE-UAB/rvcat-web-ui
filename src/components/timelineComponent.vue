@@ -348,9 +348,9 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+states.length) {
           ch  = states[i-startCycle];
-          let kind='instr'
-          let critical= critical_cycles.includes(i - startCycle)
-          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E'=)
+          let kind = 'instr'
+          let critical         = critical_cycles.includes(i - startCycle)
+          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E')
           if (critical)
             currColor = "red"
           interactiveCells.push({ kind, x, y,
