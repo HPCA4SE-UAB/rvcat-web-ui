@@ -846,13 +846,13 @@
       }
 
       hoverInfo.value = {
-        x: e.clientX + 10,
-        y: e.clientY + 10,
-        cycle: hitCell.colIndexVis - headerStart,
-        port:  displayPort != null ? displayPort : "N/A",
-        state: hitCell.state ?? "N/A",
-        instr: instrID ?? "N/A",
-        critic: critical
+        x:      e.clientX + 10,
+        y:      e.clientY + 10,
+        cycle:  hitCell.colIndexVis - headerStart,
+        port:   displayPort != null ? displayPort : "N/A",
+        state:  hitCell.state ?? "N/A",
+        instr:  instrID ?? "N/A",
+        critic: hitCell.critical
       };
 
       canvas.onclick = e => {
