@@ -830,7 +830,7 @@
           const match = interactiveCells.find(c =>
             c.kind == 'instr' &&
             c.port == hitCell.port &&
-            c.colIndexVis == hitCell.colIndexVis && c.first_exec_stage
+            c.colIndexVis == hitCell.colIndexVis && hitCell.first_exec_stage
           );
           if (match){
             instrID = match.instrID;
@@ -841,7 +841,7 @@
       // For instruction rows, only show port on first 'E'
       let displayPort = null;
 
-      if (c.first_exec_stage) {
+      if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
       }
 
