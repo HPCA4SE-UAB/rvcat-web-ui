@@ -348,20 +348,25 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+states.length) {
           ch  = states[i-startCycle];
-          let kind='instr';
+          let kind='instr'
+          let critical= critical_cycles.includes(i - startCycle)
+          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E'=)
+          if (critical)
+            currColor = "red"
           interactiveCells.push({ kind, x, y,
-            width:      cellW,
-            height:     cellH,
-            char:       ch,
-            rowIdx,
-            colIndexVis: i,
-            port,
+            width:       cellW,
+            height:      cellH,
             state:       charToState(ch),
+            colIndexVis: i,
+            char:        ch,
+            critical,
+            first_exec_stage,
+            rowIdx,
+            port,
             instrIdx
           })
 
-          if (critical_cycles.includes(i - startCycle))
-            currColor = "red"
+
         }
 
         ctx.fillStyle   = rowBg;
@@ -825,11 +830,10 @@
           const match = interactiveCells.find(c =>
             c.kind == 'instr' &&
             c.port == hitCell.port &&
-            c.colIndexVis == hitCell.colIndexVis &&
-            c.char == 'E' && isFirstE(interactiveCells, c)
+            c.colIndexVis == hitCell.colIndexVis && first_exec_stage
           );
           if (match){
-            instrID   = match.instrID;
+            instrID = match.instrID;
           }
         }
       }
@@ -837,7 +841,7 @@
       // For instruction rows, only show port on first 'E'
       let displayPort = null;
 
-      if (hitCell.char === 'E' && isFirstE(interactiveCells, hitCell)) {
+      if (first_exec_stage) {
         displayPort = hitCell.port;
       }
 
@@ -847,7 +851,8 @@
         cycle: hitCell.colIndexVis - headerStart,
         port:  displayPort != null ? displayPort : "N/A",
         state: hitCell.state ?? "N/A",
-        instr: instrID ?? "N/A"
+        instr: instrID ?? "N/A",
+        critic: critical
       };
 
       canvas.onclick = e => {
@@ -1005,6 +1010,7 @@
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
         <div v-if="hoverInfo.state!='N/A'"><strong>State:</strong> {{ hoverInfo.state }}</div>
         <div v-if="hoverInfo.port!='N/A'"> <strong> Port:</strong> P{{ hoverInfo.port }}</div>
+        <div v-if="hoverInfo.critical"> <strong style="color:red">In Critical Path</strong></div>
         <div v-if="hoverInfo.kind==='mem'">Block read from main memory</div>
       </div>
     </div>
