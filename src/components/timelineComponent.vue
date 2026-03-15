@@ -99,17 +99,6 @@
   },
   { deep: true, immediate: true })
 
-  watch(timelineFull, () => {
-    if (fullCanvas.value && timelineFull)
-      try {
-        console.log('📈✅ Draw FullTimeline')
-        drawTimeline(fullCanvas.value, timelineFull)
-      } catch (error) {
-        console.error('💻❌ Failed to handle changes on processor configuration:', error)
-      }
-  },
-  { deep: true, immediate: true })
-
   // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {
     if (dataType === 'error') {
@@ -324,9 +313,10 @@
       data.portUsage = getPortUsage(data);
       // deep copy & fire draw-update
       Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
-      console.log('📈✅ Full Timeline drawn')
+      drawTimeline(fullCanvas.value, timelineFull)
       timelineOptions.showFull = true
-      showFullScreen.value     = true;
+      showFullScreen.value     = true
+      console.log('📈✅ Full Timeline drawn')
     } catch (e) {
       timelineFull = createDefaultTimeline()
       console.error("📈❌ Failed to update timeline:", e);
