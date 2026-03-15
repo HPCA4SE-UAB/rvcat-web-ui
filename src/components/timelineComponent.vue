@@ -53,7 +53,6 @@
   }
 
   const timeline       = reactive(createDefaultTimeline())
-  const timelineFull   = reactive(createDefaultTimeline())
   const timelineCanvas = ref(null)
   const fullCanvas     = ref(null)
   const showFullScreen = ref(false)
@@ -95,17 +94,6 @@
         drawTimeline(timelineCanvas.value, timeline)
       } catch (error) {
         console.error('📈❌ Failed to handle changes on timeline:', error)
-      }
-  },
-  { deep: true, immediate: true })
-
-  watch(timelineFull, () => {
-    if (fullCanvas.value && timelineFull)
-      try {
-        drawTimeline(fullCanvas.value, timelineFull)
-        console.log('📈✅ Full Timeline drawn')
-      } catch (error) {
-        console.error('📈❌ Failed to handle changes on timelineFull:', error)
       }
   },
   { deep: true, immediate: true })
@@ -303,34 +291,29 @@
       if (data) {
         data.portUsage = getPortUsage(data);
         localStorage.setItem('timelineTemp', JSON.stringify(data));
-        openFullScreen()
+        openFullScreen(true)
       }
     } catch (error) {
       console.error('📈❌ Failed on upload:', error)
     }
   };
 
-  async function openFullScreen() {
+  async function openFullScreen(useLocal) {
     timelineOptions.showFull = true
-    showFullScreen.value     = true   // Do it early, to update DOM
-    let stored = localStorage.getItem('timelineTemp')
-    if (!stored) {
-      localStorage.setItem('timelineTemp', JSON.stringify(timeline))
-      stored = localStorage.getItem('timelineTemp')
-    }
+    showFullScreen.value     = true
     await nextTick()   // ← wait Vue to rebuild DOM
-    try {
-      let data       = JSON.parse(stored)
-      data.portUsage = getPortUsage(data);
 
-      if (fullCanvas.value )
-      {
+    try {
+      if (useLocal) {
+        let stored = localStorage.getItem('timelineTemp')
+        let data       = JSON.parse(stored)
+        data.portUsage = getPortUsage(data);
         drawTimeline(fullCanvas.value, data)
-        console.log('📈✅ Full Timeline drawn')
       }
-      // deep copy & fire draw-update
-      //Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
-      //console.log('📈🔄 Opening timeline full screen')
+      else {
+        drawTimeline(fullCanvas.value, timeline)
+      }
+      console.log('📈✅ Full Timeline drawn')
     } catch (e) {
       console.error("📈❌ Failed to update timeline:", e);
     }
