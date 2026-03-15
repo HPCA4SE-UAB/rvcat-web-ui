@@ -23,7 +23,7 @@ export const typeSizes = {
   };
 
 export function charToProcessingState(ch, port) {
-    if (port) {
+    if (port != null) {
       return `Starting Execution on Port P${port}`
     }
     switch (ch) {
@@ -38,7 +38,6 @@ export function charToProcessingState(ch, port) {
       case "2": return "Secondary cache miss";
       default:  return "";
     }
-    return msg;
   }
 
 export const resourceConfig = {
