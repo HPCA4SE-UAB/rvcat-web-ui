@@ -322,9 +322,15 @@
     try {
       let data       = JSON.parse(stored)
       data.portUsage = getPortUsage(data);
+
+      if (fullCanvas.value )
+      {
+        drawTimeline(fullCanvas.value, data)
+        console.log('📈✅ Full Timeline drawn')
+      }
       // deep copy & fire draw-update
-      Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
-      console.log('📈🔄 Opening timeline full screen')
+      //Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
+      //console.log('📈🔄 Opening timeline full screen')
     } catch (e) {
       console.error("📈❌ Failed to update timeline:", e);
     }
