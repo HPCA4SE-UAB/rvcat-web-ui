@@ -103,8 +103,6 @@
     if (fullCanvas.value && timelineFull)
       try {
         drawTimeline(fullCanvas.value, timelineFull)
-        timelineOptions.showFull = true
-        showFullScreen.value     = true
         console.log('📈✅ Full Timeline drawn')
       } catch (error) {
         console.error('📈❌ Failed to handle changes on timelineFull:', error)
@@ -313,6 +311,8 @@
   };
 
   function openFullScreen() {
+    timelineOptions.showFull = true
+    showFullScreen.value     = true   // Do it early, to update DOM
     let stored = localStorage.getItem('timelineTemp')
     if (!stored) {
       localStorage.setItem('timelineTemp', JSON.stringify(timeline))
