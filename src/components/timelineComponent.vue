@@ -313,9 +313,6 @@
   };
 
   function openFullScreen() {
-
-    console.log('📈🔄 Opening timeline full screen')
-
     let stored = localStorage.getItem('timelineTemp')
     if (!stored) {
       localStorage.setItem('timelineTemp', JSON.stringify(timeline))
@@ -326,8 +323,9 @@
       data.portUsage = getPortUsage(data);
       // deep copy & fire draw-update
       Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
+      console.log('📈🔄 Opening timeline full screen')
     } catch (e) {
-         console.error("📈❌ Failed to update timeline:", e);
+      console.error("📈❌ Failed to update timeline:", e);
     }
   }
 
