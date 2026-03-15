@@ -310,7 +310,7 @@
     }
   };
 
-  function openFullScreen() {
+  async function openFullScreen() {
     timelineOptions.showFull = true
     showFullScreen.value     = true   // Do it early, to update DOM
     let stored = localStorage.getItem('timelineTemp')
@@ -318,6 +318,7 @@
       localStorage.setItem('timelineTemp', JSON.stringify(timeline))
       stored = localStorage.getItem('timelineTemp')
     }
+    await nextTick()   // ← wait Vue to rebuild DOM
     try {
       let data       = JSON.parse(stored)
       data.portUsage = getPortUsage(data);
