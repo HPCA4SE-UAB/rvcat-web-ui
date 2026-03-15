@@ -24,14 +24,14 @@ export const typeSizes = {
 
 export function charToProcessingState(ch, port) {
   if (port != null) {
-    return `Starting Execution on Port P${port}`
+    return `starting Execution on port P${port}`
   }
   switch (ch) {
     case "E": return "Execution continues on pipeline";
-    case "R": return "Retire: update architected output register";
-    case "D": return "Dispatch: enter execution engine and waits in buffer";
-    case "-": return "Waiting to retire for older instructions";
-    case "W": return "Write back output result on ROB";
+    case "R": return "Retire: write to architected register";
+    case "D": return "Dispatch: enter execution engine";
+    case "-": return "Waiting for older instructions to retire ";
+    case "W": return "Write back result on ROB";
     case ".": return "Waiting due to data dependencies";
     case "*": return "Waiting due to port collision";
     case "!": return "Cache miss";

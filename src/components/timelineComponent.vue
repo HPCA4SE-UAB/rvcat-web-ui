@@ -598,6 +598,7 @@
     height:     100%;
     position:   relative;
   }
+
   .output-block-wrapper canvas {
     display:    inline-block;
     width:      auto;
@@ -620,7 +621,8 @@
     padding:    4px;
     z-index:    10;
     font-size:  medium;
-    width:      20%;
+    width:      15%;
+    text-align: center;
     background: #f9f9f9;
     border:     1px solid #ccc;
     border-radius:  4px;
