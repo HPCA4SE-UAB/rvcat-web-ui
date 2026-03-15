@@ -410,7 +410,7 @@
         y:        e.clientY + 10,
         cycle:    hitCell.colIndexVis,
         port:     displayPort != null ? displayPort : "",
-        state:    charToProcessingState(hitCell.ch, displayPort),
+        state:    charToProcessingState(hitCell.char, displayPort),
         instr:    instrID ?? "",
         critical: hitCell.critical
       };
@@ -540,13 +540,9 @@
 
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-        <div v-if="hoverInfo.state!= null">
-          <div v-if="hoverInfo.critical">
-            <strong style="color:red">{{ hoverInfo.state }} (In Critical Path)</strong>
-          </div>
-          <div v-else>
-            <div v-if="hoverInfo.state!=''"><strong>{{ hoverInfo.state }}</strong></div>
-          </div>
+        <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
+            {{ hoverInfo.state }}
+            <span v-if="hoverInfo.critical"> (in Critical Path)</span>
         </div>
       </div>
     </div>
@@ -664,4 +660,10 @@
     cursor:     pointer;
     margin-bottom: 8px;
   }
+
+  .critical {
+    color: red;
+    font-weight: bold;
+  }
+
 </style>

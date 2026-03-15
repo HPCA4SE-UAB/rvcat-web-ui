@@ -23,22 +23,22 @@ export const typeSizes = {
   };
 
 export function charToProcessingState(ch, port) {
-    if (port != null) {
-      return `Starting Execution on Port P${port}`
-    }
-    switch (ch) {
-      case "E": return "Execution continues on pipeline";
-      case "R": return "Retire: update architected output register";
-      case "D": return "Dispatch: enter execution engine and waits in buffer";
-      case "-": return "Waiting to retire for older instructions";
-      case "W": return "Write back output result on ROB";
-      case ".": return "Waiting due to data dependencies";
-      case "*": return "Waiting due to port collision";
-      case "!": return "Cache miss";
-      case "2": return "Secondary cache miss";
-      default:  return null;
-    }
+  if (port != null) {
+    return `Starting Execution on Port P${port}`
   }
+  switch (ch) {
+    case "E": return "Execution continues on pipeline";
+    case "R": return "Retire: update architected output register";
+    case "D": return "Dispatch: enter execution engine and waits in buffer";
+    case "-": return "Waiting to retire for older instructions";
+    case "W": return "Write back output result on ROB";
+    case ".": return "Waiting due to data dependencies";
+    case "*": return "Waiting due to port collision";
+    case "!": return "Cache miss";
+    case "2": return "Secondary cache miss";
+    default:  return null;
+  }
+}
 
 export const resourceConfig = {
   processor: {
