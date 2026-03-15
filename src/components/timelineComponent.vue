@@ -333,7 +333,6 @@
           interactiveCells.push({ kind, x, y,
             width:       cellW,
             height:      cellH,
-            state:       charToProcessingState(ch),
             colIndexVis: i,
             char:        ch,
             critical,
@@ -358,10 +357,10 @@
     }
 
     // Attach mousemove to show hover info
-    attachHover(canvas, interactiveCells, 0);
+    attachHover(canvas, interactiveCells);
   }
 
-  function attachHover(canvas, interactiveCells, headerStart) {
+  function attachHover(canvas, interactiveCells) {
     canvas.onmousemove = e => {
       const rect   = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -402,7 +401,6 @@
 
       // For instruction rows, only show port on first 'E'
       let displayPort = null;
-
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
       }
@@ -410,10 +408,10 @@
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        cycle:    hitCell.colIndexVis - headerStart,
-        port:     displayPort != null ? displayPort : "N/A",
-        state:    hitCell.state ?? "N/A",
-        instr:    instrID ?? "N/A",
+        cycle:    hitCell.colIndexVis,
+        port:     displayPort != null ? displayPort : "",
+        state:    charToProcessingState(hitCell.ch, displayPort),
+        instr:    instrID ?? "",
         critical: hitCell.critical
       };
 
@@ -429,7 +427,7 @@
             mouseY >= cell.y &&
             mouseY <= cell.y + cell.height
           ) {
-            handleCellClick(cell.instrID, cell.colIndexVis - headerStart);
+            handleCellClick(cell.instrID, cell.colIndexVis);
             break;
           }
         }
@@ -460,12 +458,8 @@
   }
 
   async function handleCellClick(instrID, cycle) {
-    //TO DO: Create Python function that returs additional info
     const text = 'To DO';
     clickedCellInfo.value = { instrID, cycle, text };
-  }
-
-  async function showCellInfo(instrID, cycle) {
   }
 
 /* ------------------------------------------------------------------
@@ -546,11 +540,14 @@
 
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-        <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
-        <div v-if="hoverInfo.state!='N/A'"><strong>State:</strong> {{ hoverInfo.state }}</div>
-        <div v-if="hoverInfo.port!='N/A'"> <strong> Port:</strong> P{{ hoverInfo.port }}</div>
-        <div v-if="hoverInfo.critical"> <strong style="color:red">In Critical Path</strong></div>
-        <div v-if="hoverInfo.kind==='mem'">Block read from main memory</div>
+        <div v-if="hoverInfo.state!=''">
+          <div v-if="hoverInfo.critical">
+            <strong style="color:red">{{ hoverInfo.state }}(In Critical Path)</strong>
+          </div>
+          <div v-else>
+            <div v-if="hoverInfo.state!=''"><strong>{{ hoverInfo.state }}</strong></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

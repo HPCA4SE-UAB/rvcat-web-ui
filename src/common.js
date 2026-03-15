@@ -22,19 +22,21 @@ export const typeSizes = {
     'BRANCH': []
   };
 
-export function charToProcessingState(ch) {
-    let msg = ""
+export function charToProcessingState(ch, port) {
+    if (port) {
+      return `Starting Execution on Port P${port}`
+    }
     switch (ch) {
-      case "E": msg = "Execution";                      break;
-      case "R": msg = "Retire";                         break;
-      case "D": msg = "Dispatch";                       break;
-      case "-": msg = "Waiting to retire";              break;
-      case "W": msg = "Write back";                     break;
-      case ".": msg = "Waiting due to dependencies";    break;
-      case "*": msg = "Waiting due to port collision";  break;
-      case "!": msg = "Cache miss";                     break;
-      case "2": msg+= "Secondary cache miss";           break;
-      default:  msg = "N/A";                            break;
+      case "E": return "Execution continues on pipeline";
+      case "R": return "Retire: update architected output register";
+      case "D": return "Dispatch: enter execution engine and waits in buffer";
+      case "-": return "Waiting to retire for older instructions";
+      case "W": return "Write back output result on ROB";
+      case ".": return "Waiting due to data dependencies";
+      case "*": return "Waiting due to port collision";
+      case "!": return "Cache miss";
+      case "2": return "Secondary cache miss";
+      default:  return "";
     }
     return msg;
   }
