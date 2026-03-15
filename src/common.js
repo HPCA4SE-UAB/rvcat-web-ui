@@ -23,6 +23,7 @@ export const typeSizes = {
   };
 
 export function charToProcessingState(ch) {
+    let msg = ""
     switch (ch) {
       case "E": msg = "Execution";                      break;
       case "R": msg = "Retire";                         break;
