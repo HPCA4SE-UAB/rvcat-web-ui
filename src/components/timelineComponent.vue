@@ -53,7 +53,6 @@
   }
 
   const timeline       = reactive(createDefaultTimeline())
-  const timelineFull   = reactive(createDefaultTimeline())
   const timelineCanvas = ref(null)
   const fullCanvas     = ref(null)
   const showFullScreen = ref(false)
@@ -309,17 +308,14 @@
       stored = localStorage.getItem('timelineTemp')
     }
     try {
-      const data = JSON.parse(stored)
+      let data       = JSON.parse(stored)
       data.portUsage = getPortUsage(data);
-      // deep copy & fire draw-update
-      Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
-      drawTimeline(fullCanvas.value, timelineFull)
+      drawTimeline(fullCanvas.value, data)
       timelineOptions.showFull = true
       showFullScreen.value     = true
       console.log('📈✅ Full Timeline drawn')
     } catch (e) {
-      timelineFull = createDefaultTimeline()
-      console.error("📈❌ Failed to update timeline:", e);
+         console.error("📈❌ Failed to update timeline:", e);
     }
   }
 
