@@ -616,18 +616,22 @@
     overflow-x: auto;
   }
 
-  .tooltip {
-    position:   fixed;
-    padding:    4px;
-    z-index:    10;
-    font-size:  medium;
-    width:      15%;
-    text-align: center;
-    background: #f9f9f9;
-    border:     1px solid #ccc;
-    border-radius:  4px;
-    pointer-events: none;
-  }
+.tooltip {
+  position: fixed;
+  padding: 4px 8px;
+  z-index: 10;
+  font-size:  medium;
+  display:    inline-block;
+  width:      max-content;     /* se ajusta al texto */
+  max-width:  250px;       /* evita tooltips demasiado anchos */
+  text-align: center;
+
+  background:     #f9f9f9;
+  border:         1px solid #ccc;
+  border-radius:  4px;
+  pointer-events: none;
+}
+
 
   .timeline-controls {
     display:     flex;
