@@ -540,9 +540,9 @@
 
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-        <div v-if="hoverInfo.state!=''">
+        <div v-if="hoverInfo.state!= null">
           <div v-if="hoverInfo.critical">
-            <strong style="color:red">{{ hoverInfo.state }}(In Critical Path)</strong>
+            <strong style="color:red">{{ hoverInfo.state }} (In Critical Path)</strong>
           </div>
           <div v-else>
             <div v-if="hoverInfo.state!=''"><strong>{{ hoverInfo.state }}</strong></div>

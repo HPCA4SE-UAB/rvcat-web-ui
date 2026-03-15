@@ -36,7 +36,7 @@ export function charToProcessingState(ch, port) {
       case "*": return "Waiting due to port collision";
       case "!": return "Cache miss";
       case "2": return "Secondary cache miss";
-      default:  return "";
+      default:  return null;
     }
   }
 
