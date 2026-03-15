@@ -172,15 +172,12 @@ function loadEditedMemory() {
       reloadProgram()
   })
 
-  watch(
-    () => [programOptions.showInOut, programOptions.showActions, programOptions.showGraph,
+  watch( () => [programOptions.showInOut, programOptions.showActions, programOptions.showGraph,
            programOptions.showLat,   programOptions.windowWidth, programOptions.windowHeight],
     () => { saveOptions() }
   )
 
-  watch(
-    () => snapshotProgram(),
-    (val) => {
+  watch( () => snapshotProgram(), (val) => {
       try {
         localStorage.setItem('programTemp', JSON.stringify(val));
         console.log('📄✅ Saved edited program')
@@ -191,9 +188,7 @@ function loadEditedMemory() {
     { deep: true }
   )
 
-    watch(
-    () => snapshotMemory(),
-    (val) => {
+  watch( () => snapshotMemory(), (val) => {
       try {
         localStorage.setItem('memoryTemp', JSON.stringify(val));
         console.log('📄✅ Saved edited memory')
@@ -478,11 +473,9 @@ function snapshotMemory() {
 
   function closeFullScreen()   { showFullScreen.value = false;  programOptions.showGraph = false}
 
-
 // ============================================================================
 // confirmDownload, uploadProgram, clearProgram
 // ============================================================================
-
   const showModalDownload = ref(false)
   const showModalClear    = ref(false);
   const modalName         = ref("")
@@ -537,8 +530,6 @@ function snapshotMemory() {
     showModalClear.value = false;
     addInstruction(0);
   }
-
-
 
 // ============================================================================
 // Help support

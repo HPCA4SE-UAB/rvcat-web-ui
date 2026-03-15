@@ -1,7 +1,7 @@
 <script setup>
-  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue";
-  import HelpComponent    from '@/components/helpComponent.vue';
-  import { useRVCAT_Api } from '@/rvcatAPI';
+  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue"
+  import HelpComponent                                   from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                                    from '@/rvcatAPI'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');

@@ -1,8 +1,9 @@
 <script setup>
-  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
-  import HelpComponent                                 from '@/components/helpComponent.vue'
-  import { downloadJSON, uploadJSON, charToProcessingState }                 from '@/common'
-  import { useRVCAT_Api }                                                  from '@/rvcatAPI'
+  import { ref, toRef, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
+  import { useDraggable, useResizeObserver}                                     from '@vueuse/core'
+  import HelpComponent                                        from '@/components/helpComponent.vue'
+  import { downloadJSON, uploadJSON, charToProcessingState }                        from '@/common'
+  import { useRVCAT_Api }                                                         from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
   const { registerHandler } = inject('worker')
@@ -13,9 +14,14 @@
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
   const defaultOptions = {
-    iters:     1,
-    zoomLevel: 1,
-    showPorts: false
+    iters:        1,
+    zoomLevel:    1,
+    showPorts:    false,
+    showFull:     false,
+    windowWidth:  500,
+    windowHeight: 300,
+    x_pos:        10,
+    y_pos:        10
   }
 
   const savedOptions = (() => {
@@ -47,14 +53,17 @@
   }
 
   const timeline       = reactive(createDefaultTimeline())
-  const timelineCanvas = ref(null);
+  const timelineFull   = reactive(createDefaultTimeline())
+  const timelineCanvas = ref(null)
+  const fullCanvas     = ref(null)
+  const showFullScreen = ref(false)
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess  HANDLERS: getTimeline
 // ============================================================================
   let lastTimelineIters = 1
 
-  // Watch ALL graph options for changes
+  // Watch ALL graph options for changes: do not redraw if changes showFull, generate only if changes #iters
   watch(timelineOptions, () => {
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
@@ -82,9 +91,19 @@
   watch(timeline, () => {
     if (timelineCanvas.value && timeline)
       try {
-        localStorage.setItem('timelineTemp', JSON.stringify(timeline));
         console.log('📈✅ Draw Timeline')
-        drawTimeline()
+        drawTimeline(timelineCanvas.value, timeline)
+      } catch (error) {
+        console.error('💻❌ Failed to handle changes on processor configuration:', error)
+      }
+  },
+  { deep: true, immediate: true })
+
+  watch(timelineFull, () => {
+    if (fullCanvas.value && timelineFull)
+      try {
+        console.log('📈✅ Draw FullTimeline')
+        drawTimeline(fullCanvas.value, timelineFull)
       } catch (error) {
         console.error('💻❌ Failed to handle changes on processor configuration:', error)
       }
@@ -116,7 +135,8 @@
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
     console.log('📈🎯 Timeline Component mounted')
-
+    if (timelineOptions.showFull)
+      openFullScreen()
     try {    // generate timeline using RVCAT (if previous components are mounted)
       getTimelineAndDraw()
     } catch (error) {
@@ -203,23 +223,6 @@
     return lines.join("\n");
   }
 
-  async function updateTimeline(timelineDict) {
-    // load stored timeline
-    const stored = localStorage.getItem('timelineTemp');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored)
-        data.portUsage = getPortUsage(data);
-        // deep copy & fire draw-update
-        Object.assign(timeline, JSON.parse(JSON.stringify(data)))
-        console.log('📈🔄 timeline updated.')
-      } catch (e) {
-        timeline = createDefaultTimeline()
-        console.error("📈❌ Failed to update timeline:", e);
-      }
-    }
-  }
-
   async function getTimelineAndDraw() {
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline from RVCAT')
@@ -228,6 +231,56 @@
                         timelineOptions.iters) // Call Python RVCAT
     }
   }
+
+// ============================================================================
+// Draggable & resizable full-screen graph container
+// ============================================================================
+
+  const HEADER_HEIGHT = 48
+  const MIN_W = 200
+  const MIN_H = 200
+
+  const headerRef  = ref(null)
+  const contentRef = ref(null)
+
+  const x = toRef(timelineOptions, 'x_pos')
+  const y = toRef(timelineOptions, 'y_pos')
+
+  const { isDragging } = useDraggable(headerRef, {
+    initialValue: { x: timelineOptions.x_pos, y: timelineOptions.y_pos },
+
+    onMove(pos) {
+
+      const w = timelineOptions.windowWidth
+      const h = timelineOptions.windowHeight
+
+      const maxX = window.innerWidth  - w
+      const maxY = window.innerHeight - HEADER_HEIGHT
+
+      x.value = Math.min(Math.max(pos.x, 0), maxX)
+      y.value = Math.min(Math.max(pos.y, 0), maxY)
+    }
+  })
+
+  useResizeObserver(contentRef, (entries) => {
+    const { width: w, height: h } = entries[0].contentRect
+
+    const maxWidth  = window.innerWidth  - timelineOptions.x_pos
+    const maxHeight = window.innerHeight - timelineOptions.y_pos
+
+    timelineOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
+    timelineOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
+  })
+
+  window.addEventListener("resize", () => {
+
+    const w = timelineOptions.windowWidth
+    const h = timelineOptions.windowHeight
+
+    x.value = Math.min(x.value, window.innerWidth - w)
+    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
+  })
+
 
 // ============================================================================
 // confirmDownload, uploadTimeline
@@ -249,15 +302,39 @@
       const data = await uploadJSON(null, 'timeline');
       if (data) {
         data.portUsage = getPortUsage(data);
-        // deep copy & fire draw-update
-        Object.assign(timeline, JSON.parse(JSON.stringify(data)))
-        console.log('📈🔄 timeline updated.')
-        return;
+        localStorage.setItem('timelineTemp', JSON.stringify(data));
+        openFullScreen()
       }
     } catch (error) {
       console.error('📈❌ Failed on upload:', error)
     }
   };
+
+  function openFullScreen() {
+
+    console.log('📈🔄 Opening timeline full screen')
+
+    let stored = localStorage.getItem('timelineTemp')
+    if (!stored) {
+      localStorage.setItem('timelineTemp', JSON.stringify(timeline))
+      stored = localStorage.getItem('timelineTemp')
+    }
+    try {
+      const data = JSON.parse(stored)
+      data.portUsage = getPortUsage(data);
+      // deep copy & fire draw-update
+      Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
+      console.log('📈✅ Full Timeline drawn')
+      timelineOptions.showFull = true
+      showFullScreen.value     = true;
+    } catch (e) {
+      timelineFull = createDefaultTimeline()
+      console.error("📈❌ Failed to update timeline:", e);
+    }
+  }
+
+  function closeFullScreen()   { showFullScreen.value = false;  timelineOptions.showFull = false}
+
 
 /* ------------------------------------------------------------------
  * CANVAS: DRAW timeline
@@ -270,9 +347,8 @@
   // const infoIcon        = ref(null);
   const clickedCellInfo = ref(null);
 
-  function drawTimeline() {
+  function drawTimeline(canvas, timeJson) {
     const Zoom        = (1+timelineOptions.zoomLevel)/4;
-    const canvas      = timelineCanvas.value;
     const ctx         = canvas.getContext('2d');
     const cellW       = 14 * Zoom;
     const cellH       = 20 * Zoom;
@@ -281,7 +357,7 @@
     const fontSize    = 14 * Zoom;
     const fontYOffset =  3 * Zoom;
 
-    const { cycles, instructions, portUsage } = timeline
+    const { cycles, instructions, portUsage } = timeJson
 
     canvas.width  = padX * 2 + cycles * cellW;
     canvas.height = padY * 2 + (instructions.length+1) * cellH;
@@ -528,6 +604,13 @@
             @click="uploadTimeline()">
             Upload
           </button>
+          <button class="blue-button add-prev-margin" :class="{ active: timelineOptions.showGraph }"
+              title="View timeline on full-screen"
+              id="open-timeline-window"
+              @click="openFullScreen">
+            <span v-if="timelineOptions.showGraph">✔ </span>
+            Full Screen
+          </button>
 
         </div>
 
@@ -587,6 +670,36 @@
     </div>
   </div>
 
+  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
+    <div
+      class="fullscreen-content"
+      ref="contentRef"
+      :style="{
+        left: x + 'px',
+        top:  y + 'px',
+        width:  timelineOptions.windowWidth + 'px',
+        height: timelineOptions.windowHeight + 'px'
+      }"
+    >
+      <div class="fullscreen-header" ref="headerRef">
+        <span>Timeline (uploaded/current)</span>
+        <button class="close-btn" @click="closeFullScreen">×</button>
+      </div>
+      <div class="output-block-wrapper" id="simulation-output-container">
+        <section class="simulation-results-controls" id="dependencies-controls"></section>
+        <canvas ref="fullCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+
+        <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
+            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
+          <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
+              {{ hoverInfo.state }}
+              <span v-if="hoverInfo.critical"> (in Critical Path)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 </template>
 
@@ -671,5 +784,72 @@
     color: red;
     font-weight: bold;
   }
+
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent; /* Sin fondo para no ocultar nada */
+  pointer-events: none; /* Permite clicks a través del overlay */
+  z-index: 999;
+}
+
+.fullscreen-content {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  min-height: 300px;
+  width: 800px; /* Tamaño fijo inicial */
+  height: 600px;
+  resize: both;
+  overflow: auto;
+  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
+  z-index: 1000;
+}
+
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2c3e50;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0; /* Evita que el header se encoja */
+}
+
+.fullscreen-header:active {
+  cursor: grabbing;
+}
+
+.fullscreen-header span {
+  flex: 1;
+  text-align: center;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.8;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
 
 </style>
