@@ -1,7 +1,7 @@
 <script setup>
   import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
   import HelpComponent                                 from '@/components/helpComponent.vue'
-  import { downloadJSON, uploadJSON }                                        from '@/common'
+  import { downloadJSON, uploadJSON, charToProcessingState }                 from '@/common'
   import { useRVCAT_Api }                                                  from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -40,25 +40,19 @@
 
   function createDefaultTimeline() {
     return {
-      cycles:       10,
-      instructions: [ [0, 0, 0, "0", "DEWR", [0,1]],
-                      [0, 1, 1, "0", "DEWR", [1]],
-                      [0, 2, 2, "1", "DEWR", [1]],
-                      [1, 0, 3, "0", "DEWR", [1]],
-                      [1, 1, 4, "0", "DEWR", [1]],
-                      [1, 2, 5, "1", "DEWR", [1,2,3]]
-                    ],
-      portUsage:    { "0": [1,2,4,5], "1": [3,6] }
+      cycles:       4,
+      instructions: [ [0, 0, 0, "0", "DEWR", [0,1,2,3]]],
+      portUsage:    { "0": [1], "1": [] }
     };
   }
 
-  const timeline       = reactive(createDefaultTimeline())  // DICT object from JSON
+  const timeline       = reactive(createDefaultTimeline())
   const timelineCanvas = ref(null);
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess  HANDLERS: getTimeline
 // ============================================================================
-  let lastTimelineIters     = 1
+  let lastTimelineIters = 1
 
   // Watch ALL graph options for changes
   watch(timelineOptions, () => {
@@ -69,15 +63,11 @@
       timelineOptions.iters = Math.max(timelineOptions.iters, 1);
       saveOptions()
 
-      if (lastTimelineIters !== timelineOptions.iters) {
+      if (lastTimelineIters !== timelineOptions.iters)
         lastTimelineIters = timelineOptions.iters
-      }
 
       canvasTimeout = setTimeout(() => {
-        if (timeline)
-          drawTimeline();
-        else
-          getTimelineAndDraw()
+        getTimelineAndDraw()
       }, 75)
       console.log('📈✅ Modified timeline options')
     } catch (error) {
@@ -93,7 +83,7 @@
     if (timelineCanvas.value && timeline)
       try {
         localStorage.setItem('timelineTemp', JSON.stringify(timeline));
-        console.log('📈✅ Draw Timeline with dict')
+        console.log('📈✅ Draw Timeline')
         drawTimeline()
       } catch (error) {
         console.error('💻❌ Failed to handle changes on processor configuration:', error)
@@ -108,12 +98,12 @@
       return;
     }
     try {
-      console.log('📈✅ Draw Timeline from RVCAT')
-      let timelineRVCAT = JSON.parse(data)
+      let timelineRVCAT      = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
-      Object.assign(timeline, JSON.parse(JSON.stringify(timelineRVCAT)))   // deep copy & fire draw-update
+      // deep copy & fire draw-update
+      Object.assign(timeline, JSON.parse(JSON.stringify(timelineRVCAT)))
     } catch (error) {
-      console.error('📈❌Failed to obtain execution results:', error)
+      console.error('📈❌Failed to process JSON timeline:', error)
     }
   }
 
@@ -127,21 +117,8 @@
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
     console.log('📈🎯 Timeline Component mounted')
 
-    // load stored timeline
-    const stored = localStorage.getItem('timelineTemp');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored)
-        updateTimeline(data)
-        return
-      } catch (e) {
-        console.error('📈❌ Failed to load timeline from localStorage:', e);
-      }
-    }
-
-    try {    // generate timeline using RVCAT
-      if (simState.state >= 3)  // on mount
-         getTimelineAndDraw()
+    try {    // generate timeline using RVCAT (if previous components are mounted)
+      getTimelineAndDraw()
     } catch (error) {
       console.error('📈❌ Failed on timeline:', error)
     }
@@ -227,13 +204,19 @@
   }
 
   async function updateTimeline(timelineDict) {
-     try {
-      timelineDict.portUsage = getPortUsage(timelineDict);
-      Object.assign(timeline, JSON.parse(JSON.stringify(timelineDict)))   // deep copy & fire draw-update
-      console.log('📈🔄 timeline updated.')
-    } catch(e) {
-      timeline = createDefaultTimeline()
-      console.error("📈❌ Failed to update timeline:", e);
+    // load stored timeline
+    const stored = localStorage.getItem('timelineTemp');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        data.portUsage = getPortUsage(data);
+        // deep copy & fire draw-update
+        Object.assign(timeline, JSON.parse(JSON.stringify(data)))
+        console.log('📈🔄 timeline updated.')
+      } catch (e) {
+        timeline = createDefaultTimeline()
+        console.error("📈❌ Failed to update timeline:", e);
+      }
     }
   }
 
@@ -255,14 +238,10 @@
   const nameError         = ref("")
 
   async function confirmDownload() {
-    const name   = modalName.value.trim();
-    const stored = localStorage.getItem('timelineTemp');
-    if (stored) {
-      const data = JSON.parse(stored)
-      data.name  = name
-      await downloadJSON(data, name, 'timeline')
-    }
-    showModalDownload.value = false;
+    const name    = modalName.value.trim();
+    timeline.name = name
+    await downloadJSON(timeline, name, 'timeline')
+    showModalDownload.value = false
   }
 
   const uploadTimeline = async () => {
@@ -270,7 +249,8 @@
       const data = await uploadJSON(null, 'timeline');
       if (data) {
         data.portUsage = getPortUsage(data);
-        Object.assign(timeline, JSON.parse(JSON.stringify(data)))   // deep copy & fire draw-update
+        // deep copy & fire draw-update
+        Object.assign(timeline, JSON.parse(JSON.stringify(data)))
         console.log('📈🔄 timeline updated.')
         return;
       }
@@ -353,7 +333,7 @@
           interactiveCells.push({ kind, x, y,
             width:       cellW,
             height:      cellH,
-            state:       charToState(ch),
+            state:       charToProcessingState(ch),
             colIndexVis: i,
             char:        ch,
             critical,
@@ -362,8 +342,6 @@
             port,
             instrIdx
           })
-
-
         }
 
         ctx.fillStyle   = rowBg;
@@ -371,7 +349,6 @@
         ctx.lineWidth   = 1;
         ctx.fillRect    (x, y, cellW, cellH);
         ctx.strokeRect  (x, y, cellW, cellH);
-
         ctx.fillStyle = currColor;
         ctx.fillText    (ch, x + 2, y + fontYOffset);
 
@@ -384,7 +361,6 @@
     attachHover(canvas, interactiveCells, 0);
   }
 
-  // Attach hover and click event to cells
   function attachHover(canvas, interactiveCells, headerStart) {
     canvas.onmousemove = e => {
       const rect   = canvas.getBoundingClientRect();
@@ -483,31 +459,13 @@
     };
   }
 
-  async function showCellInfo(instrID, cycle) {
-  }
-
   async function handleCellClick(instrID, cycle) {
     //TO DO: Create Python function that returs additional info
     const text = 'To DO';
     clickedCellInfo.value = { instrID, cycle, text };
   }
 
-  // Get state from char in cell
-  function charToState(ch) {
-    let msg="";
-    switch (ch) {
-      case "E": msg += "Execution";         break;
-      case "R": msg += "Retire";            break;
-      case "D": msg += "Dispatch";          break;
-      case "-": msg += "Waiting to retire"; break;
-      case "W": msg += "Write back";        break;
-      case ".": msg += "Waiting due to dependencies";   break;
-      case "*": msg += "Waiting due to port collision"; break;
-      case "!": msg += "Cache miss";           break;
-      case "2": msg += "Secondary cache miss"; break;
-      default:  msg = "N/A";                   break;
-    }
-    return msg;
+  async function showCellInfo(instrID, cycle) {
   }
 
 /* ------------------------------------------------------------------
@@ -586,7 +544,8 @@
       <section class="simulation-results-controls" id="dependencies-controls"></section>
       <canvas ref="timelineCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
 
-      <div v-if="hoverInfo" ref="tooltipRef" class="tooltip" :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
+      <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
+           :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div><strong>Cycle: </strong> {{ hoverInfo.cycle }}</div>
         <div v-if="hoverInfo.state!='N/A'"><strong>State:</strong> {{ hoverInfo.state }}</div>
         <div v-if="hoverInfo.port!='N/A'"> <strong> Port:</strong> P{{ hoverInfo.port }}</div>
@@ -625,8 +584,12 @@
         />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Yes </button>
-        <button class="blue-button" title="Cancel Download"   @click="showModalDownload=false">  Cancel </button>
+        <button class="blue-button" title="Accept Download" @click="confirmDownload">
+          Yes
+        </button>
+        <button class="blue-button" title="Cancel Download" @click="showModalDownload=false">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -660,15 +623,15 @@
   }
 
   .tooltip {
-    position: fixed;
+    position:   fixed;
+    padding:    4px;
+    z-index:    10;
+    font-size:  medium;
+    width:      20%;
     background: #f9f9f9;
-    border: 1px solid #ccc;
-    padding: 8px;
-    border-radius: 4px;
+    border:     1px solid #ccc;
+    border-radius:  4px;
     pointer-events: none;
-    z-index: 10;
-    font-size: 2vh;
-    width: 10%;
   }
 
   .timeline-controls {

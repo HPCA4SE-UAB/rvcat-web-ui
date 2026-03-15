@@ -22,6 +22,21 @@ export const typeSizes = {
     'BRANCH': []
   };
 
+export function charToProcessingState(ch) {
+    switch (ch) {
+      case "E": msg = "Execution";                      break;
+      case "R": msg = "Retire";                         break;
+      case "D": msg = "Dispatch";                       break;
+      case "-": msg = "Waiting to retire";              break;
+      case "W": msg = "Write back";                     break;
+      case ".": msg = "Waiting due to dependencies";    break;
+      case "*": msg = "Waiting due to port collision";  break;
+      case "!": msg = "Cache miss";                     break;
+      case "2": msg+= "Secondary cache miss";           break;
+      default:  msg = "N/A";                            break;
+    }
+    return msg;
+  }
 
 export const resourceConfig = {
   processor: {
@@ -280,7 +295,6 @@ export function loadFromLocalStorage(resourceType, id) {
   }
 }
 
-
 function getResourceKeys(prefix) {
   const keys = [];
 
@@ -294,7 +308,6 @@ function getResourceKeys(prefix) {
 
   return keys;
 }
-
 
 /* ------------------------------------------------------------------
  * Initialize Programs/Processors/Tutorials resources using data from
@@ -343,7 +356,6 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
 /* ------------------------------------------------------------------
  * GraphViz conversion to SVG
  * ------------------------------------------------------------------ */
-
 export async function createGraphVizGraph(dotCode) {
   try {
     const viz = new Viz();
