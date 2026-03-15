@@ -53,6 +53,7 @@
   }
 
   const timeline       = reactive(createDefaultTimeline())
+  const timelineFull   = reactive(createDefaultTimeline())
   const timelineCanvas = ref(null)
   const fullCanvas     = ref(null)
   const showFullScreen = ref(false)
@@ -93,7 +94,20 @@
         console.log('📈✅ Draw Timeline')
         drawTimeline(timelineCanvas.value, timeline)
       } catch (error) {
-        console.error('💻❌ Failed to handle changes on processor configuration:', error)
+        console.error('📈❌ Failed to handle changes on timeline:', error)
+      }
+  },
+  { deep: true, immediate: true })
+
+  watch(timelineFull, () => {
+    if (fullCanvas.value && timelineFull)
+      try {
+        drawTimeline(fullCanvas.value, timelineFull)
+        timelineOptions.showFull = true
+        showFullScreen.value     = true
+        console.log('📈✅ Full Timeline drawn')
+      } catch (error) {
+        console.error('📈❌ Failed to handle changes on timelineFull:', error)
       }
   },
   { deep: true, immediate: true })
@@ -310,10 +324,8 @@
     try {
       let data       = JSON.parse(stored)
       data.portUsage = getPortUsage(data);
-      drawTimeline(fullCanvas.value, data)
-      timelineOptions.showFull = true
-      showFullScreen.value     = true
-      console.log('📈✅ Full Timeline drawn')
+      // deep copy & fire draw-update
+      Object.assign(timelineFull, JSON.parse(JSON.stringify(data)))
     } catch (e) {
          console.error("📈❌ Failed to update timeline:", e);
     }
