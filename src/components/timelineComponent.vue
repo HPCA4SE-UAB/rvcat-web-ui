@@ -594,6 +594,7 @@
 
   .output-block-wrapper canvas {
       position: absolute;
+      object-fit: contain;
       inset: 0;
       width: 100%;
       height: 100%;
