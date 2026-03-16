@@ -64,7 +64,7 @@
 
       canvasTimeout = setTimeout(() => {
         getTimelineAndDraw()
-      }, 75)
+      }, 150)
       console.log('📈✅ Modified timeline options (iters or showPorts)')
       saveOptions()
     } catch (error) {
@@ -80,7 +80,7 @@
       try {
         canvasTimeout = setTimeout(() => {
           drawTimeline(timelineCanvas.value, timeline)
-        }, 75)
+        }, 150)
         saveOptions()
         console.log('📈✅ Timeline drawn: new/resized/moved')
       } catch (error) {
@@ -118,6 +118,11 @@
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
+
+    const container = document.getElementById("canvas-container")
+    const observer = new ResizeObserver(() => {resizeCanvas()})
+    observer.observe(container)
+    resizeCanvas()
     addCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
     try {    // generate timeline using RVCAT (if previous components are mounted)
@@ -305,12 +310,6 @@
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
     )
-    /* ctx.clearRect(
-      -timelineOptions.canvasOffsetX/timelineOptions.canvasScale,
-      -timelineOptions.canvasOffsetY/timelineOptions.canvasScale,
-      canvas.width/timelineOptions.canvasScale,
-      canvas.height/timelineOptions.canvasScale
-    ) */
 
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
@@ -382,6 +381,18 @@
 
     // Attach mousemove to show hover info
     attachHover(canvas, interactiveCells);
+  }
+
+  function resizeCanvas() {
+
+    const container = document.getElementById("canvas-container")
+    const canvas    = timelineCanvas.value
+    const rect      = container.getBoundingClientRect()
+
+    canvas.width  = rect.width
+    canvas.height = rect.height
+
+    drawTimeline(canvas, timeline)
   }
 
   function attachHover(canvas, interactiveCells) {
@@ -564,7 +575,7 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow:        auto;
+    overflow:        hidden;
     width:           100%;
     height:          100%;
     position:        relative;
@@ -582,11 +593,10 @@
   }
 
   .output-block-wrapper canvas {
-    display:    inline-block;
-    width:      auto;
-    height:     auto;
-    max-width:  none;
-    max-height: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
   }
 
   .tooltip {
