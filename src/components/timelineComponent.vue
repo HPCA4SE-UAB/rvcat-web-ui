@@ -270,39 +270,65 @@
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
-
   function addCanvasDragWrappers () {
-    const wrapper = document.getElementById("simulation-output-container")
+    const wrapper1 = document.getElementById("canvas-container")
+    const wrapper2 = document.getElementById("full-canvas-container")
 
-    let isDown = false
-    let startX
-    let startY
-    let scrollLeft
-    let scrollTop
+    let isDown1 = false
+    let startX1
+    let startY1
+    let scrollLeft1
+    let scrollTop1
 
-    wrapper.addEventListener("mousedown", (e) => {
-      isDown = true
-      wrapper.style.cursor = "grabbing"
+    let isDown2 = false
+    let startX2
+    let startY2
+    let scrollLeft2
+    let scrollTop2
 
-      startX = e.pageX
-      startY = e.pageY
-      scrollLeft = wrapper.scrollLeft
-      scrollTop  = wrapper.scrollTop
+    wrapper1.addEventListener("mousedown", (e) => {
+      isDown1 = true
+      wrapper1.style.cursor = "grabbing"
+
+      startX1 = e.pageX
+      startY1 = e.pageY
+      scrollLeft1 = wrapper.scrollLeft
+      scrollTop1 = wrapper.scrollTop
+    })
+    wrapper2.addEventListener("mousedown", (e) => {
+      isDown2 = true
+      wrapper2.style.cursor = "grabbing"
+
+      startX2 = e.pageX
+      startY2 = e.pageY
+      scrollLeft2 = wrapper.scrollLeft
+      scrollTop2 = wrapper.scrollTop
     })
 
     window.addEventListener("mouseup", () => {
-      isDown = false
-      wrapper.style.cursor = "grab"
+      isDown1 = false
+      isDown2 = false
+      wrapper1.style.cursor = "grab"
+      wrapper2.style.cursor = "grab"
     })
 
-    wrapper.addEventListener("mousemove", (e) => {
-      if (!isDown) return
+    wrapper1.addEventListener("mousemove", (e) => {
+      if (!isDown1) return
 
-      const dx = e.pageX - startX
-      const dy = e.pageY - startY
+      const dx = e.pageX - startX1
+      const dy = e.pageY - startY1
 
-      wrapper.scrollLeft = scrollLeft - dx
-      wrapper.scrollTop  = scrollTop  - dy
+      wrapper1.scrollLeft1 = scrollLeft1 - dx
+      wrapper1.scrollTop1  = scrollTop1  - dy
+    })
+    wrapper2.addEventListener("mousemove", (e) => {
+      if (!isDown2) return
+
+      const dx = e.pageX - startX2
+      const dy = e.pageY - startY2
+
+      wrapper2.scrollLeft2 = scrollLeft2 - dx
+      wrapper2.scrollTop2  = scrollTop2  - dy
     })
   }
 
@@ -639,7 +665,7 @@
       </div>
     </div>
 
-    <div class="output-block-wrapper" id="simulation-output-container">
+    <div class="output-block-wrapper" id="canvas-container">
       <canvas ref="timelineCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
@@ -705,7 +731,7 @@
         <span>Timeline (uploaded/current)</span>
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
-      <div class="output-block-wrapper" id="simulation-output-container">
+      <div class="output-block-wrapper" id="full-canvas-container">
         <canvas ref="fullCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
 
         <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"

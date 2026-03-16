@@ -12,7 +12,7 @@
     overflow:   hidden;
     background: #e3e3e3;
   }
-  
+
   ::-webkit-scrollbar {
     width: 0.75vh;
     height:0.75vh;
@@ -33,15 +33,15 @@
   .main {
     height:   100%;
     width:    100%;
-    overflow: auto;
+    overflow: hidden;
     padding:  2px 2px;
-    z-index:  10;       
+    z-index:  10;
     position: relative;
     background:    white;
     border-radius: 5px;
     box-shadow:    0 1px 0 rgba(0,0,0,0.08);
   }
-  
+
   .header {
     display:     flex;
     align-items: center;
@@ -52,10 +52,10 @@
   .section-title-and-info {
     display:     flex;
     align-items: center;
-    gap:         3px; 
+    gap:         3px;
     flex-wrap:   wrap;
   }
- 
+
   .header-title {
     font-size:    large;
     font-weight:  600
@@ -105,7 +105,7 @@
     font-size:  medium;
     text-align: center;
   }
- 
+
   .blue-button {
     background: #e6f0ff;
     color:      #1a4fb3;
@@ -121,12 +121,12 @@
     max-height:   fit-content;
     max-width:    fit-content;
 
-    transition: 
-      background 0.15s ease, 
+    transition:
+      background 0.15s ease,
       color 0.15s ease,
       box-shadow 0.15s ease,
-      transform 0.05s ease;  
-  } 
+      transform 0.05s ease;
+  }
   .blue-button.active {
     background:   #1a4fb3;
     border-color: #1a4fb3;
@@ -147,7 +147,7 @@
   .small-btn {
     padding: 3px 0px;
   }
-  
+
   input {
     font-size: medium;
   }
