@@ -240,14 +240,12 @@
       const dx = e.clientX - startX
       const dy = e.clientY - startY
 
-      timelineOptions.canvasOffsetX += dx
-      timelineOptions.canvasOffsetY += dy
-
       startX = e.clientX
       startY = e.clientY
 
-      // TO DO: generate change on timeline to fire Canvas update with debouncing
-      drawTimeline(timelineCanvas.value, timeline)
+      // fire drawTimeline reaction
+      timelineOptions.canvasOffsetX += dx
+      timelineOptions.canvasOffsetY += dy
     })
 
     wrapper.addEventListener("wheel", (e) => {
@@ -263,6 +261,7 @@
       const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
       const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
 
+      // fire drawTimeline reaction
       if (e.deltaY < 0) {
         timelineOptions.canvasScale *= zoomFactor
       } else {
@@ -271,10 +270,6 @@
 
       timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
       timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
-
-      // TO DO: generate change on timeline to fire Canvas update with debouncing
-      drawTimeline(timelineCanvas.value, timeline)
-
     }, { passive:false })
   }
 
@@ -401,13 +396,16 @@
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
+      const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+      const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+
       let hitCell = null;
       for (const cell of interactiveCells) {
         if (
-          mouseX >= cell.x &&
-          mouseX <= cell.x + cell.width &&
-          mouseY >= cell.y &&
-          mouseY <= cell.y + cell.height
+          worldX >= cell.x &&
+          worldX <= cell.x + cell.width &&
+          worldY >= cell.y &&
+          worldY <= cell.y + cell.height
         ) {
           hitCell = cell;
           break;
