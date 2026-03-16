@@ -122,8 +122,8 @@
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
-    addCanvasDragWrapper()
-    addFullCanvasDragWrapper()
+    addCanvasWrapper()
+    addFullCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
     if (timelineOptions.showFull)
       openFullScreen()
@@ -271,14 +271,12 @@
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
-  function addCanvasDragWrapper () {
+  function addCanvasWrapper () {
     const wrapper = document.getElementById("canvas-container")
 
     let isDown = false
-    let startX
-    let startY
-    let scrollLeft
-    let scrollTop
+    let startX, startY
+    let scrollLeft, scrollTop
 
     wrapper.addEventListener("mousedown", (e) => {
       isDown = true
@@ -306,37 +304,35 @@
     })
   }
 
-  function addFullCanvasDragWrapper () {
-    const wrapper2 = document.getElementById("full-canvas-container")
-    let isDown2 = false
-    let startX2
-    let startY2
-    let scrollLeft2
-    let scrollTop2
+  function addFullCanvasWrapper () {
+    const wrapper = document.getElementById("full-canvas-container")
+    let isDown = false
+    let startX, startY
+    let scrollLeft, scrollTop
 
-    wrapper2.addEventListener("mousedown", (e) => {
-      isDown2 = true
-      wrapper2.style.cursor = "grabbing"
+    wrapper.addEventListener("mousedown", (e) => {
+      isDown = true
+      wrapper.style.cursor = "grabbing"
 
-      startX2 = e.pageX
-      startY2 = e.pageY
-      scrollLeft2 = wrapper2.scrollLeft
-      scrollTop2  = wrapper2.scrollTop
+      startX = e.pageX
+      startY = e.pageY
+      scrollLeft = wrapper.scrollLeft
+      scrollTop  = wrapper.scrollTop
     })
 
     window.addEventListener("mouseup", () => {
-      isDown2 = false
-       wrapper2.style.cursor = "grab"
+      isDown = false
+       wrapper.style.cursor = "grab"
     })
 
-    wrapper2.addEventListener("mousemove", (e) => {
-      if (!isDown2) return
+    wrapper.addEventListener("mousemove", (e) => {
+      if (!isDown) return
 
-      const dx = e.pageX - startX2
-      const dy = e.pageY - startY2
+      const dx = e.pageX - startX
+      const dy = e.pageY - startY
 
-      wrapper2.scrollLeft = scrollLeft2 - dx
-      wrapper2.scrollTop  = scrollTop2  - dy
+      wrapper.scrollLeft = scrollLeft - dx
+      wrapper.scrollTop  = scrollTop  - dy
     })
   }
 
@@ -390,8 +386,10 @@
     }
   }
 
-  function closeFullScreen()   { showFullScreen.value = false;  timelineOptions.showFull = false}
-
+  function closeFullScreen() {
+     showFullScreen.value = false;
+     timelineOptions.showFull = false
+  }
 
 /* ------------------------------------------------------------------
  * CANVAS: DRAW timeline
@@ -758,13 +756,13 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow:        auto;
+    overflow:        hidden;
     width:           100%;
     height:          100%;
     position:        relative;
     cursor:          grab;  /* <--- */
     scrollbar-width: none;  /* Firefox */
-    user-select: none;
+    user-select:     none;
   }
 
   .output-block-wrapper::-webkit-scrollbar {
