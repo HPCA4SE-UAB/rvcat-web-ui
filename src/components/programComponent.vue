@@ -305,7 +305,6 @@ function loadEditedMemory() {
     }
   }
 
-  // UpLOAD from Edition Panel: straightforward version (no modal)
   const uploadForEdition = async () => {
     try {
       const data = await uploadJSON(null, 'program');
@@ -657,22 +656,18 @@ function snapshotMemory() {
 
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
-
           <button class="blue-button" @click="showModalDownload = true"
                title="Save current edited program"
                id="program-download-button">
             Download
           </button>
-
           <button class="blue-button" @click="uploadForEdition"
                title="Load new program from file system for edition"
                id="program-upload-button">
             Upload
           </button>
-
         </div>
         <div class="buttons">
-
           <button class="blue-button  add-margin" @click="showModalClear = true"
                 title="Clear edition and start new program from scratch"
                 id="clear-program-button">
@@ -684,7 +679,6 @@ function snapshotMemory() {
     </div>
 
     <div v-if="isFullscreen" class="instructions-section">
-
       <div class="horizontal-layout">
 
         <div class="instruction-side-container">

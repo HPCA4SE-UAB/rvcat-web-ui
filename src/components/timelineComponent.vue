@@ -55,27 +55,25 @@
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  watch(timelineOptions, () => {
+  watch(() => [timelineOptions.iters, timelineOptions.showPorts], () => {
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
     try {
       timelineOptions.iters = Math.min(timelineOptions.iters, 9);
       timelineOptions.iters = Math.max(timelineOptions.iters, 1);
-      saveOptions()
+
       canvasTimeout = setTimeout(() => {
         getTimelineAndDraw()
       }, 75)
-      console.log('📈✅ Modified timeline options')
+      console.log('📈✅ Modified timeline options (iters or showPorts)')
+      saveOptions()
     } catch (error) {
       console.error('📈❌Failed to save timeline options:', error)
     }
   },
   { deep: true, immediate: true })
 
-  watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },
-  { deep: true, immediate: false })
-
-  watch(timeline, () => {
+  watch(() => [timeline, timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (timelineCanvas.value && timeline) {
       let canvasTimeout = null
       clearTimeout(canvasTimeout)
@@ -83,13 +81,18 @@
         canvasTimeout = setTimeout(() => {
           drawTimeline(timelineCanvas.value, timeline)
         }, 75)
-        console.log('📈✅ Draw Timeline')
+        saveOptions()
+        console.log('📈✅ Timeline drawn: new/resized/moved')
       } catch (error) {
-        console.error('📈❌ Failed to draw timeline:', error)
+        console.error('📈❌Failed to draw timeline', error)
       }
     }
   },
   { deep: true, immediate: true })
+
+
+  watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },
+  { deep: true, immediate: false })
 
   // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {

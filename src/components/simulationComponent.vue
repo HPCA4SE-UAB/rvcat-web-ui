@@ -397,7 +397,6 @@
       </div>
     </div>
 
-    <!--- Critical Path Breakdown (percentages) ---->
     <div class="dropdown-wrapper" id="critical-path-section">
       <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
          <img src="/img/info.png" class="info-img">

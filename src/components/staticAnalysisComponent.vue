@@ -92,7 +92,6 @@
   function toggleFull   () { dependenceGraphOptions.showFull    = !dependenceGraphOptions.showFull    }
   function toggleThrough() { dependenceGraphOptions.showThrough = !dependenceGraphOptions.showThrough }
 
-  // Watch ALL graph options for changes
   watch(dependenceGraphOptions, () => {
     clearTimeout(graphTimeout)
     try {

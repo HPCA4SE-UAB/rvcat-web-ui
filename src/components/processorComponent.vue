@@ -182,7 +182,6 @@
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
-
   onMounted(() => {
     console.log('💻🎯 ProcessorComponent mounted')
 
@@ -203,7 +202,6 @@
     console.log('💻👋 ProcessorComponent unmounted')
     localStorage.removeItem('processorTemp')
   });
-
 
 // ============================================================================
 // PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor,
@@ -305,172 +303,172 @@
     }
   }
 
-function get_processor_dot(process) {
+  function get_processor_dot(process) {
 
-  const ports    = process.ports
-  const lat      = process.latencies
-  const port_ids = Object.keys(ports)
-  const ROBsize  = process.ROBsize || 20
-  const sched    = process.sched
-  const dispatch = process.dispatch
-  const retire   = process.retire
+    const ports    = process.ports
+    const lat      = process.latencies
+    const port_ids = Object.keys(ports)
+    const ROBsize  = process.ROBsize || 20
+    const sched    = process.sched
+    const dispatch = process.dispatch
+    const retire   = process.retire
 
-  function type_color(type) {
-    if (type === "INT")    return "#d6e4ff"
-    if (type === "MEM")    return "#d6ffd6"
-    if (type === "FLOAT")  return "#fff2b3"
-    if (type === "VINT")   return "#e6e4ff"
-    if (type === "VMEM")   return "#e6ffd6"
-    if (type === "VFLOAT") return "#eff2b3"
-    if (type === "BRANCH") return "#ffd6d6"
-    return "#f0f0f0"
-  }
-
-  function op_type(op) {
-    return op.split(".")[0]
-  }
-
-  function latency_tooltip(op) {
-
-    const base = lat[op]
-
-    const variants = Object.keys(lat)
-      .filter(k => k.startsWith(op + "."))
-
-    if (variants.length === 0)
-      return base !== undefined ? `${op} latency: ${base}` : ""
-
-    let txt = `${op} latencies:\n`
-
-    if (base !== undefined)
-      txt += `base: ${base}\n`
-
-    for (let v of variants)
-      txt += `${v}: ${lat[v]}\n`
-
-    return txt
-  }
-
-  function compress_ops(ops) {
-
-    const grouped = {}
-
-    for (let op of ops) {
-
-      const [type, sub] = op.split(".")
-
-      if (!grouped[type]) grouped[type] = new Set()
-      if (sub) grouped[type].add(sub)
+    function type_color(type) {
+      if (type === "INT")    return "#d6e4ff"
+      if (type === "MEM")    return "#d6ffd6"
+      if (type === "FLOAT")  return "#fff2b3"
+      if (type === "VINT")   return "#e6e4ff"
+      if (type === "VMEM")   return "#e6ffd6"
+      if (type === "VFLOAT") return "#eff2b3"
+      if (type === "BRANCH") return "#ffd6d6"
+      return "#f0f0f0"
     }
 
-    const result = []
+    function op_type(op) {
+      return op.split(".")[0]
+    }
 
-    for (let type in grouped) {
+    function latency_tooltip(op) {
 
-      const all_ops = typeOperations[type] || []
+      const base = lat[op]
 
-      if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
-        result.push({
-          label: type,
-          big: true
-        })
-      } else {
+      const variants = Object.keys(lat)
+        .filter(k => k.startsWith(op + "."))
 
-        for (let sub of grouped[type]) {
+      if (variants.length === 0)
+        return base !== undefined ? `${op} latency: ${base}` : ""
 
+      let txt = `${op} latencies:\n`
+
+      if (base !== undefined)
+        txt += `base: ${base}\n`
+
+      for (let v of variants)
+        txt += `${v}: ${lat[v]}\n`
+
+      return txt
+    }
+
+    function compress_ops(ops) {
+
+      const grouped = {}
+
+      for (let op of ops) {
+
+        const [type, sub] = op.split(".")
+
+        if (!grouped[type]) grouped[type] = new Set()
+        if (sub) grouped[type].add(sub)
+      }
+
+      const result = []
+
+      for (let type in grouped) {
+
+        const all_ops = typeOperations[type] || []
+
+        if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
           result.push({
-            label: `${type}.${sub}`,
-            big: false
+            label: type,
+            big: true
           })
+        } else {
+
+          for (let sub of grouped[type]) {
+
+            result.push({
+              label: `${type}.${sub}`,
+              big: false
+            })
+          }
         }
       }
+
+      return result
     }
 
-    return result
-  }
+    const port_ops = {}
 
-  const port_ops = {}
+    for (let p of port_ids)
+      port_ops[p] = compress_ops(ports[p])
 
-  for (let p of port_ids)
-    port_ops[p] = compress_ops(ports[p])
+    const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
 
-  const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
+    // ---- Decode ----
+    let decode_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+    </TR>`
 
-  // ---- Decode ----
-  let decode_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-    <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
-  </TR>`
+    // ---- Waiting Buffer ----
+    let wb_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${sched}</B></FONT></TD>
+    </TR>`
 
-  // ---- Waiting Buffer ----
-  let wb_row = `<TR>
-    <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${sched}</B></FONT></TD>
-  </TR>`
+    // ---- Port headers ----
+    let port_header = "<TR>"
 
-  // ---- Port headers ----
-  let port_header = "<TR>"
+    for (let p of port_ids)
+      port_header += `<TD BGCOLOR="#f5f5f5"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
 
-  for (let p of port_ids)
-    port_header += `<TD BGCOLOR="#f5f5f5"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+    port_header += "</TR>"
 
-  port_header += "</TR>"
+    // ---- Operation rows ----
 
-  // ---- Operation rows ----
+    let op_rows = ""
 
-  let op_rows = ""
+    for (let i = 0; i < total_rows; i++) {
 
-  for (let i = 0; i < total_rows; i++) {
+      op_rows += "<TR>"
 
-    op_rows += "<TR>"
+      for (let p of port_ids) {
 
-    for (let p of port_ids) {
+        const op = port_ops[p][i]
 
-      const op = port_ops[p][i]
+        if (!op) {
+          op_rows += `<TD></TD>`
+          continue
+        }
 
-      if (!op) {
-        op_rows += `<TD></TD>`
-        continue
+        const type  = op_type(op.label)
+        const color = type_color(type)
+
+        if (op.big) {
+          const tooltip = latency_tooltip(op.label)
+          op_rows += `
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
+        } else {
+          const tooltip = latency_tooltip(op.label)
+          op_rows += `
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
+        }
       }
 
-      const type  = op_type(op.label)
-      const color = type_color(type)
-
-      if (op.big) {
-        const tooltip = latency_tooltip(op.label)
-        op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
-      } else {
-        const tooltip = latency_tooltip(op.label)
-        op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
-      }
+      op_rows += "</TR>"
     }
 
-    op_rows += "</TR>"
+    // ---- Registers ----
+    let reg_row = `<TR>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
+    </TR>`
+
+    const dot = `
+      digraph CPU {
+        node [shape=plain fontname="Arial" width=0 height=0 margin=0]
+        pipeline [
+          label=<
+            <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
+              ${decode_row}
+              ${wb_row}
+              ${port_header}
+              ${op_rows}
+              ${reg_row}
+            </TABLE>
+          >
+        ]
+      }  `
+    return dot
   }
-
-  // ---- Registers ----
-  let reg_row = `<TR>
-    <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
-   </TR>`
-
-  const dot = `
-    digraph CPU {
-      node [shape=plain fontname="Arial" width=0 height=0 margin=0]
-      pipeline [
-        label=<
-          <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
-            ${decode_row}
-            ${wb_row}
-            ${port_header}
-            ${op_rows}
-            ${reg_row}
-          </TABLE>
-        >
-      ]
-    }  `
-  return dot
-}
 
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
@@ -670,7 +668,6 @@ function get_processor_dot(process) {
 // ============================================================================
 // confirmDownload, uploadProcessor, clearProcessor
 // ============================================================================
-
   const showModalDownload = ref(false)
   const showModalClear    = ref(false)
   const modalName         = ref("")
@@ -813,36 +810,29 @@ function get_processor_dot(process) {
 
     <div v-if="isFullscreen" class="settings-sections">
       <div class="horizontal-layout">
-
         <div class="settings-group widths-group">
-
           <div class="section-title-and-info">
             <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
               <img src="/img/info.png" class="info-img">
             </span>
             <span class="header-title">Stage Width Settings</span>
           </div>
-
           <div class="iters-group">
-
             <span>Dispatch:</span>
             <input type="number" v-model.number="procConfig.dispatch" min="1" max="9"
                  id="dispatch-width"
                  title="max. number of instructions dispatched per cycle (1 to 9)"
              />
-
             <span>Retire:</span>
             <input type="number" v-model.number="procConfig.retire" min="1" max="9"
                    id="retire-width"
                    title="max. number of instructions retired per cycle(1 to 9)"
              />
-
             <span>ROB size:</span>
             <input type="number" v-model.number="procConfig.ROBsize" min="1" max="200"
                    id="rob-size"
                    title="max. number of instructions in ROB (1 to 200)"
              />
-
             <span>Schedule Opt.:</span>
             <input type="checkbox"
                  title="Set checkbox if scheduling algorithm is optimal. Otherwise it is greedy"
@@ -850,9 +840,7 @@ function get_processor_dot(process) {
                  :checked="procConfig.sched !== 'greedy'"
                  @change="toggleScheduler"
              />
-
           </div>
-
         </div>
 
         <div class="settings-group cache-group">
@@ -862,7 +850,6 @@ function get_processor_dot(process) {
             </span>
             <span class="header-title">Cache Memory Settings</span>
           </div>
-
           <div class="iters-group">
             <span>Number of Blocks:</span>
             <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32"
