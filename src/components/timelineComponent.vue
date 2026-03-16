@@ -59,8 +59,13 @@
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
     try {
-      timelineOptions.iters = Math.min(timelineOptions.iters, 9);
-      timelineOptions.iters = Math.max(timelineOptions.iters, 1);
+      timelineOptions.iters = Math.min(timelineOptions.iters, 9)
+      timelineOptions.iters = Math.max(timelineOptions.iters, 1)
+
+      // re-position
+      timelineOptions.canvasScale  = 1
+      timelineOptions.canvasOffsetX= 0
+      timelineOptions.canvasOffsetY= 0
 
       canvasTimeout = setTimeout(() => {
         getTimelineAndDraw()
@@ -541,7 +546,7 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow:        hidden;
+    overflow:        auto;
     width:           100%;
     height:          100%;
     position:        relative;
@@ -559,7 +564,7 @@
   }
 
   .output-block-wrapper canvas {
-      position: absolute;
+      position: relative;
       object-fit: contain;
       inset: 0;
       width: 100%;
