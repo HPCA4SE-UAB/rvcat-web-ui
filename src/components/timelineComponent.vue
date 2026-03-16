@@ -305,15 +305,16 @@
 
     try {
       if (useLocal) {
-        let stored = localStorage.getItem('timelineTemp')
+        let stored     = localStorage.getItem('timelineTemp')
         let data       = JSON.parse(stored)
         data.portUsage = getPortUsage(data);
         drawTimeline(fullCanvas.value, data)
+        console.log('📈✅ Full Timeline drawn from local storage')
       }
       else {
         drawTimeline(fullCanvas.value, timeline)
+        console.log('📈✅ Full Timeline drawn from timeline')
       }
-      console.log('📈✅ Full Timeline drawn')
     } catch (e) {
       console.error("📈❌ Failed to update timeline:", e);
     }
@@ -590,11 +591,10 @@
             @click="uploadTimeline()">
             Upload
           </button>
-          <button class="blue-button add-prev-margin" :class="{ active: timelineOptions.showGraph }"
-              title="View timeline on full-screen"
+          <button class="blue-button add-prev-margin" :class="{ active: timelineOptions.showFull }"
+              title="View/refresh timeline on full-screen"
               id="open-timeline-window"
-              @click="openFullScreen">
-            <span v-if="timelineOptions.showGraph">✔ </span>
+              @click="openFullScreen(false)">
             Full Screen
           </button>
 
@@ -679,7 +679,7 @@
             :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
           <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
               {{ hoverInfo.state }}
-              <span v-if="hoverInfo.critical"> (in Critical Path)</span>
+              <span v-if="hoverInfo.critical"> (in critical path)</span>
           </div>
         </div>
       </div>
@@ -768,7 +768,6 @@
 
   .critical {
     color: red;
-    font-weight: bold;
   }
 
 .fullscreen-overlay {
