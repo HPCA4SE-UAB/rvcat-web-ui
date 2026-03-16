@@ -123,7 +123,6 @@
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
     addCanvasWrapper()
-    addFullCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
     if (timelineOptions.showFull)
       openFullScreen()
@@ -367,6 +366,7 @@
   async function openFullScreen(useLocal) {
     timelineOptions.showFull = true
     showFullScreen.value     = true
+    addFullCanvasWrapper()
     await nextTick()   // ← wait Vue to rebuild DOM
 
     try {
