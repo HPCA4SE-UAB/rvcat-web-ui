@@ -546,7 +546,7 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow:        auto;
+    overflow:        hidden;
     width:           100%;
     height:          100%;
     position:        relative;
