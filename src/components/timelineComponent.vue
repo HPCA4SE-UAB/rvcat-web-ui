@@ -563,12 +563,18 @@
     cursor: grabbing;
   }
 
-  .output-block-wrapper canvas {
-      position: relative;
-      object-fit: contain;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+  #canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #canvas-container canvas {
+    position: absolute;
+    inset: 0;       /* top:0 left:0 right:0 bottom:0 */
+    width: 100%;
+    height: 100%;
   }
 
   .tooltip {
