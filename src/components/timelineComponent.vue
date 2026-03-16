@@ -273,8 +273,8 @@
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
-  function addCanvasWrapper () {
-    const wrapper = document.getElementById("canvas-container")
+  function addFullCanvasWrapper () {
+    const wrapper = document.getElementById("full-canvas-container")
 
     let isDown = false
     let startX, startY
@@ -306,8 +306,8 @@
     })
   }
 
-  function addFullCanvasWrapper () {
-    const wrapper = document.getElementById("full-canvas-container")
+  function addCanvasWrapper () {
+    const wrapper = document.getElementById("canvas-container")
     let dragging = false
     let startX, startY
 
@@ -334,7 +334,7 @@
       startX = e.clientX
       startY = e.clientY
 
-      drawTimeline(fullCanvas, timeline)
+      drawTimeline(timelineCanvas, timeline)
     })
 
     wrapper.addEventListener("wheel", (e) => {
@@ -342,7 +342,7 @@
       e.preventDefault()
 
       const zoomFactor = 1.1
-      const rect = fullCanvas.getBoundingClientRect()
+      const rect = timelineCanvas.getBoundingClientRect()
 
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
@@ -359,7 +359,7 @@
       timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
       timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
 
-      drawTimeline(fullCanvas, timeline)
+      drawTimeline(timelineCanvas, timeline)
 
     }, { passive:false })
 
