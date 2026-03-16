@@ -84,6 +84,7 @@
       clearTimeout(canvasTimeout)
       try {
         canvasTimeout = setTimeout(() => {
+          console.log('📈✅ Timeline drawn: previous size', timelineCanvas.value.width, timelineCanvas.value.height)
           drawTimeline()
         }, 150)
         saveOptions()
