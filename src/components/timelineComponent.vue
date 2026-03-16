@@ -1,9 +1,8 @@
 <script setup>
-  import { ref, toRef, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
-  import { useDraggable, useResizeObserver}                                     from '@vueuse/core'
-  import HelpComponent                                        from '@/components/helpComponent.vue'
-  import { downloadJSON, uploadJSON, charToProcessingState }                        from '@/common'
-  import { useRVCAT_Api }                                                         from '@/rvcatAPI'
+  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
+  import HelpComponent                                 from '@/components/helpComponent.vue'
+  import { charToProcessingState }                                           from '@/common'
+  import { useRVCAT_Api }                                                  from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
   const { registerHandler } = inject('worker')
@@ -13,18 +12,13 @@
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
+
   const defaultOptions = {
     iters:         1,
-    zoomLevel:     1,
     showPorts:     false,
-    showFull:      false,
     canvasScale:   1,
     canvasOffsetX: 0,
-    canvasOffsetY: 0,
-    windowWidth:   500,
-    windowHeight:  300,
-    x_pos:         10,
-    y_pos:         10
+    canvasOffsetY: 0
   }
 
   const savedOptions = (() => {
@@ -57,15 +51,10 @@
 
   const timeline       = reactive(createDefaultTimeline())
   const timelineCanvas = ref(null)
-  const fullCanvas     = ref(null)
-  const showFullScreen = ref(false)
 
 // ============================================================================
-// WATCHES: timelineOptions, simulatedProcess  HANDLERS: getTimeline
+// WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  let lastTimelineIters = 1
-
-  // Watch ALL graph options for changes: do not redraw if changes showFull, generate only if changes #iters
   watch(timelineOptions, () => {
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
@@ -73,16 +62,12 @@
       timelineOptions.iters = Math.min(timelineOptions.iters, 9);
       timelineOptions.iters = Math.max(timelineOptions.iters, 1);
       saveOptions()
-
-      if (lastTimelineIters !== timelineOptions.iters)
-        lastTimelineIters = timelineOptions.iters
-
       canvasTimeout = setTimeout(() => {
         getTimelineAndDraw()
       }, 75)
       console.log('📈✅ Modified timeline options')
     } catch (error) {
-      console.error('📈❌Failed to save dependence graph options:', error)
+      console.error('📈❌Failed to save timeline options:', error)
     }
   },
   { deep: true, immediate: true })
@@ -91,13 +76,18 @@
   { deep: true, immediate: false })
 
   watch(timeline, () => {
-    if (timelineCanvas.value && timeline)
+    if (timelineCanvas.value && timeline) {
+      let canvasTimeout = null
+      clearTimeout(canvasTimeout)
       try {
+        canvasTimeout = setTimeout(() => {
+          drawTimeline(timelineCanvas.value, timeline)
+        }, 75)
         console.log('📈✅ Draw Timeline')
-        drawTimeline(timelineCanvas.value, timeline)
       } catch (error) {
-        console.error('📈❌ Failed to handle changes on timeline:', error)
+        console.error('📈❌ Failed to draw timeline:', error)
       }
+    }
   },
   { deep: true, immediate: true })
 
@@ -127,8 +117,6 @@
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
     addCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
-    if (timelineOptions.showFull)
-      openFullScreen()
     try {    // generate timeline using RVCAT (if previous components are mounted)
       getTimelineAndDraw()
     } catch (error) {
@@ -148,8 +136,6 @@
 * UI actions
 * ------------------------------------------------------------------ */
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
-  function zoomReduce()   { timelineOptions.zoomLevel = Math.min(timelineOptions.zoomLevel + 1, 6) }
-  function zoomIncrease() { timelineOptions.zoomLevel = Math.max(timelineOptions.zoomLevel - 1, 1) }
 
   function getPortUsage(timeline) {
     const usage = {};
@@ -224,91 +210,9 @@
     }
   }
 
-// ============================================================================
-// Draggable & resizable full-screen graph container
-// ============================================================================
-
-  const HEADER_HEIGHT = 48
-  const MIN_W = 200
-  const MIN_H = 200
-
-  const headerRef  = ref(null)
-  const contentRef = ref(null)
-
-  const x = toRef(timelineOptions, 'x_pos')
-  const y = toRef(timelineOptions, 'y_pos')
-
-  const { isDragging } = useDraggable(headerRef, {
-    initialValue: { x: timelineOptions.x_pos, y: timelineOptions.y_pos },
-
-    onMove(pos) {
-
-      const w = timelineOptions.windowWidth
-      const h = timelineOptions.windowHeight
-
-      const maxX = window.innerWidth  - w
-      const maxY = window.innerHeight - HEADER_HEIGHT
-
-      x.value = Math.min(Math.max(pos.x, 0), maxX)
-      y.value = Math.min(Math.max(pos.y, 0), maxY)
-    }
-  })
-
-  useResizeObserver(contentRef, (entries) => {
-    const { width: w, height: h } = entries[0].contentRect
-
-    const maxWidth  = window.innerWidth  - timelineOptions.x_pos
-    const maxHeight = window.innerHeight - timelineOptions.y_pos
-
-    timelineOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
-    timelineOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
-  })
-
-  window.addEventListener("resize", () => {
-
-    const w = timelineOptions.windowWidth
-    const h = timelineOptions.windowHeight
-
-    x.value = Math.min(x.value, window.innerWidth - w)
-    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
-  })
-
-  function addFullCanvasWrapper () {
-    const wrapper = document.getElementById("full-canvas-container")
-
-    let isDown = false
-    let startX, startY
-    let scrollLeft, scrollTop
-
-    wrapper.addEventListener("mousedown", (e) => {
-      isDown = true
-      wrapper.style.cursor = "grabbing"
-
-      startX = e.pageX
-      startY = e.pageY
-      scrollLeft = wrapper.scrollLeft
-      scrollTop  = wrapper.scrollTop
-    })
-
-    window.addEventListener("mouseup", () => {
-      isDown = false
-      wrapper.style.cursor = "grab"
-    })
-
-    wrapper.addEventListener("mousemove", (e) => {
-      if (!isDown) return
-
-      const dx = e.pageX - startX
-      const dy = e.pageY - startY
-
-      wrapper.scrollLeft = scrollLeft - dx
-      wrapper.scrollTop  = scrollTop  - dy
-    })
-  }
-
   function addCanvasWrapper () {
     const wrapper = document.getElementById("canvas-container")
-    let dragging = false
+    let dragging  = false
     let startX, startY
 
     wrapper.addEventListener("mousedown", (e) => {
@@ -334,7 +238,8 @@
       startX = e.clientX
       startY = e.clientY
 
-      drawTimeline(timelineCanvas.value , timeline)
+      // TO DO: generate change on timeline to fire Canvas update with debouncing
+      drawTimeline(timelineCanvas.value, timeline)
     })
 
     wrapper.addEventListener("wheel", (e) => {
@@ -359,66 +264,10 @@
       timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
       timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
 
+      // TO DO: generate change on timeline to fire Canvas update with debouncing
       drawTimeline(timelineCanvas.value, timeline)
 
     }, { passive:false })
-
-  }
-
-// ============================================================================
-// confirmDownload, uploadTimeline
-// ============================================================================
-
-  const showModalDownload = ref(false)
-  const modalName         = ref("")
-  const nameError         = ref("")
-
-  async function confirmDownload() {
-    const name    = modalName.value.trim();
-    timeline.name = name
-    await downloadJSON(timeline, name, 'timeline')
-    showModalDownload.value = false
-  }
-
-  const uploadTimeline = async () => {
-    try {
-      const data = await uploadJSON(null, 'timeline');
-      if (data) {
-        data.portUsage = getPortUsage(data);
-        localStorage.setItem('timelineTemp', JSON.stringify(data));
-        openFullScreen(true)
-      }
-    } catch (error) {
-      console.error('📈❌ Failed on upload:', error)
-    }
-  };
-
-  async function openFullScreen(useLocal) {
-    timelineOptions.showFull = true
-    showFullScreen.value     = true
-    await nextTick()   // ← wait Vue to rebuild DOM
-    addFullCanvasWrapper()
-
-    try {
-      if (useLocal) {
-        let stored     = localStorage.getItem('timelineTemp')
-        let data       = JSON.parse(stored)
-        data.portUsage = getPortUsage(data);
-        drawTimeline(fullCanvas.value, data)
-        console.log('📈✅ Full Timeline drawn from local storage')
-      }
-      else {
-        drawTimeline(fullCanvas.value, timeline)
-        console.log('📈✅ Full Timeline drawn from timeline')
-      }
-    } catch (e) {
-      console.error("📈❌ Failed to update timeline:", e);
-    }
-  }
-
-  function closeFullScreen() {
-     showFullScreen.value = false;
-     timelineOptions.showFull = false
   }
 
 /* ------------------------------------------------------------------
@@ -661,19 +510,6 @@
         </div>
 
         <div class="iters-group">
-          <button class="blue-button" :class="{ active: timelineOptions.zoomLevel > 1 }" :disabled="timelineOptions.zoomLevel == 1"
-              title="Zoom Out (6 levels)" id="timeline-zoom-out"
-              @click="zoomIncrease">
-              <img src="/img/zoom-out.png">
-          </button>
-          <button class="blue-button" :class="{ active: timelineOptions.zoomLevel < 6 }" :disabled="timelineOptions.zoomLevel == 6"
-              title="Zoom In (6 levels)" id="timeline-zoom-in"
-              @click="zoomReduce">
-              <img src="/img/zoom-in.png">
-          </button>
-        </div>
-
-        <div class="iters-group">
           <button class="blue-button" :class="{ active: timelineOptions.showPorts }" :aria-pressed="timelineOptions.showPorts"
             title="Show/Hide Resource Usage"
             id="timeline-show-ports"
@@ -682,29 +518,6 @@
             Port Usage
           </button>
         </div>
-
-        <div class="iters-group">
-          <button class="blue-button"
-            id="timeline-download-button"
-            title="Save timeline"
-            @click="showModalDownload = true">
-            Download
-          </button>
-          <button class="blue-button"
-            id="timeline-upload-button"
-            title="Upload timeline"
-            @click="uploadTimeline()">
-            Upload
-          </button>
-          <button class="blue-button add-prev-margin" :class="{ active: timelineOptions.showFull }"
-              title="View/refresh timeline on full-screen"
-              id="open-timeline-window"
-              @click="openFullScreen(false)">
-            Full Screen
-          </button>
-
-        </div>
-
       </div>
     </div>
 
@@ -740,55 +553,6 @@
     </div>
   </div>
 
-  <div v-if="showModalDownload" class="modal-overlay">
-    <div class="modal">
-      <h4>Save Timeline As</h4>
-      <label for="timeline-name">Name:</label>
-      <input v-model="modalName" type="text" id="save-timeline-name"
-           title="file name of timeline"
-        />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" title="Accept Download" @click="confirmDownload">
-          Yes
-        </button>
-        <button class="blue-button" title="Cancel Download" @click="showModalDownload=false">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div
-      class="fullscreen-content"
-      ref="contentRef"
-      :style="{
-        left: x + 'px',
-        top:  y + 'px',
-        width:  timelineOptions.windowWidth + 'px',
-        height: timelineOptions.windowHeight + 'px'
-      }"
-    >
-      <div class="fullscreen-header" ref="headerRef">
-        <span>Timeline (uploaded/current)</span>
-        <button class="close-btn" @click="closeFullScreen">×</button>
-      </div>
-      <div class="output-block-wrapper" id="full-canvas-container">
-        <canvas ref="fullCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-
-        <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
-            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-          <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
-              {{ hoverInfo.state }}
-              <span v-if="hoverInfo.critical"> (in critical path)</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
 </template>
 
 <style scoped>
@@ -818,31 +582,21 @@
     max-height: none;
   }
 
-  .grid-item {
-    min-width: 0;
+  .tooltip {
+    position: fixed;
+    padding: 4px 8px;
+    z-index: 10;
+    font-size:  medium;
+    display:    inline-block;
+    width:      max-content;
+    max-width:  250px;       /* avoids tooltips too wide */
+    text-align: center;
+
+    background:     #f9f9f9;
+    border:         1px solid #ccc;
+    border-radius:  4px;
+    pointer-events: none;
   }
-
-  .results {
-    min-width: 0;
-    overflow-x: auto;
-  }
-
-.tooltip {
-  position: fixed;
-  padding: 4px 8px;
-  z-index: 10;
-  font-size:  medium;
-  display:    inline-block;
-  width:      max-content;     /* se ajusta al texto */
-  max-width:  250px;       /* evita tooltips demasiado anchos */
-  text-align: center;
-
-  background:     #f9f9f9;
-  border:         1px solid #ccc;
-  border-radius:  4px;
-  pointer-events: none;
-}
-
 
   .timeline-controls {
     display:     flex;
@@ -853,16 +607,6 @@
   }
   .iters-group input[type="number"] { width: 4ch; }
 
-  .graph-toolbar {
-    display:     flex;
-    align-items: center;
-    gap:         8px;
-    width:       100%;
-    box-sizing:  border-box;
-    overflow:    hidden;
-    min-width:   0;
-  }
-
   .modal-header {
     display: flex;
     justify-content: space-between;
@@ -870,83 +614,21 @@
   }
 
   .close-btn {
-    align-self: flex-end;
     background: none;
-    border:     none;
-    font-size:  3vh;
-    cursor:     pointer;
-    margin-bottom: 8px;
+    border: none;
+    color: white;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.8;
+  }
+
+  .close-btn:hover {
+    opacity: 1;
   }
 
   .critical {
     color: red;
   }
-
-.fullscreen-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent; /* Sin fondo para no ocultar nada */
-  pointer-events: none; /* Permite clicks a través del overlay */
-  z-index: 999;
-}
-
-.fullscreen-content {
-  position: fixed;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
-  min-height: 300px;
-  width: 800px; /* Tamaño fijo inicial */
-  height: 600px;
-  resize: both;
-  overflow: auto;
-  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
-  z-index: 1000;
-}
-
-.fullscreen-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #2c3e50;
-  color: white;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0; /* Evita que el header se encoja */
-}
-
-.fullscreen-header:active {
-  cursor: grabbing;
-}
-
-.fullscreen-header span {
-  flex: 1;
-  text-align: center;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.8;
-}
-
-.close-btn:hover {
-  opacity: 1;
-}
-
 </style>
