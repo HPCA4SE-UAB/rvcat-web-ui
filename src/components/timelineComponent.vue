@@ -119,10 +119,10 @@
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
 
-    const container = document.getElementById("canvas-container")
-    const observer = new ResizeObserver(() => {resizeCanvas()})
-    observer.observe(container)
-    resizeCanvas()
+    // const container = document.getElementById("canvas-container")
+    // const observer = new ResizeObserver(() => {resizeCanvas()})
+    // observer.observe(container)
+    // resizeCanvas()
     addCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
     try {    // generate timeline using RVCAT (if previous components are mounted)
