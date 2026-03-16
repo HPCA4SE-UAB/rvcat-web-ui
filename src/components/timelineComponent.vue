@@ -295,16 +295,20 @@
     canvas.width  = padX * 2 + cycles * cellW;
     canvas.height = padY * 2 + (instructions.length+1) * cellH;
 
+    ctx.setTransform(1,0,0,1,0,0)
+    ctx.clearRect(0,0,canvas.width,canvas.height)
+
     ctx.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
     )
-    ctx.clearRect(
+    /* ctx.clearRect(
       -timelineOptions.canvasOffsetX/timelineOptions.canvasScale,
       -timelineOptions.canvasOffsetY/timelineOptions.canvasScale,
       canvas.width/timelineOptions.canvasScale,
       canvas.height/timelineOptions.canvasScale
-    )
+    ) */
+
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
     ctx.imageSmoothingEnabled = false;
