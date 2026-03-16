@@ -84,7 +84,7 @@
       clearTimeout(canvasTimeout)
       try {
         canvasTimeout = setTimeout(() => {
-          drawTimeline(timelineCanvas.value, timeline)
+          drawTimeline()
         }, 150)
         saveOptions()
         console.log('📈✅ Timeline drawn: new/resized/moved', timelineCanvas.value.width, timelineCanvas.value.height)
@@ -276,13 +276,13 @@
 /* ------------------------------------------------------------------
  * CANVAS: DRAW timeline
  * ------------------------------------------------------------------ */
-  const hoverInfo      = ref(null)
-  const tooltipRef     = ref(null)
-  const clickedCellInfo = ref(null)
+  const hoverInfo        = ref(null)
+  const tooltipRef       = ref(null)
+  const clickedCellInfo  = ref(null)
   const interactiveCells = []
 
-  function drawTimeline(canvas, timeJson) {
-    const ctx         = canvas.getContext('2d');
+  function drawTimeline() {
+    const ctx         = timelineCanvas.value.getContext('2d');
     const cellW       = 14;
     const cellH       = 20;
     const padX        = 20;
@@ -290,18 +290,18 @@
     const fontSize    = 14;
     const fontYOffset =  3;
 
-    const { cycles, instructions, portUsage } = timeJson
+    const { cycles, instructions, portUsage } = timeline
 
-    canvas.width  = padX * 2 + cycles * cellW;
-    canvas.height = padY * 2 + (instructions.length+1) * cellH;
+    timelineCanvas.value.width  = padX * 2 + cycles * cellW;
+    timelineCanvas.value.height = padY * 2 + (instructions.length+1) * cellH;
 
     ctx.setTransform(1,0,0,1,0,0)
-    ctx.clearRect(0,0,canvas.width,canvas.height)
+    ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
 
-    /* ctx.setTransform(
+    ctx.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
-    )*/
+    )
 
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
@@ -330,8 +330,8 @@
       const rowBg = iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
 
       //  Draw line starting on (x,y)
-      let   x    = padX;
-      const y    = padY + (rowIdx+1) * cellH;
+      let   x = padX;
+      const y = padY + (rowIdx+1) * cellH;
 
       for (let i = 0; i < cycles; ) {
         let ch        = ' '
@@ -343,9 +343,11 @@
           let kind = 'instr'
           let critical         = critical_cycles.includes(i - startCycle)
           let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E')
-          if (critical)
-            currColor = "red"
-          interactiveCells.push({ kind, x, y,
+
+          if (critical) currColor = "red"
+
+          interactiveCells.push({
+            kind, x, y,
             width:       cellW,
             height:      cellH,
             colIndexVis: i,
@@ -372,12 +374,12 @@
     }
 
     // Attach mousemove to show hover info
-    attachHover(canvas);
+    attachHover();
   }
 
-  function attachHover(canvas) {
-    canvas.onmousemove = e => {
-      const rect   = canvas.getBoundingClientRect();
+  function attachHover() {
+    timelineCanvas.value.onmousemove = e => {
+      const rect   = timelineCanvas.value.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
@@ -418,8 +420,8 @@
         critical: hitCell.critical
       };
 
-      canvas.onclick = e => {
-        const rect   = canvas.getBoundingClientRect();
+      timelineCanvas.value.onclick = e => {
+        const rect   = timelineCanvas.value.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
