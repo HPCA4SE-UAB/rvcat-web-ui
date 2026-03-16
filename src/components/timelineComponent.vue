@@ -122,7 +122,8 @@
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
-    addCanvasDragWrappers()
+    addCanvasDragWrapper()
+    addFullCanvasDragWrapper()
     console.log('📈🎯 Timeline Component mounted')
     if (timelineOptions.showFull)
       openFullScreen()
@@ -270,9 +271,8 @@
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
-  function addCanvasDragWrappers () {
+  function addCanvasDragWrapper () {
     const wrapper1 = document.getElementById("canvas-container")
-    const wrapper2 = document.getElementById("full-canvas-container")
 
     let isDown1 = false
     let startX1
@@ -280,36 +280,19 @@
     let scrollLeft1
     let scrollTop1
 
-    let isDown2 = false
-    let startX2
-    let startY2
-    let scrollLeft2
-    let scrollTop2
-
     wrapper1.addEventListener("mousedown", (e) => {
       isDown1 = true
       wrapper1.style.cursor = "grabbing"
 
       startX1 = e.pageX
       startY1 = e.pageY
-      scrollLeft1 = wrapper.scrollLeft
-      scrollTop1 = wrapper.scrollTop
-    })
-    wrapper2.addEventListener("mousedown", (e) => {
-      isDown2 = true
-      wrapper2.style.cursor = "grabbing"
-
-      startX2 = e.pageX
-      startY2 = e.pageY
-      scrollLeft2 = wrapper.scrollLeft
-      scrollTop2 = wrapper.scrollTop
+      scrollLeft1 = wrapper1.scrollLeft
+      scrollTop1  = wrapper1.scrollTop
     })
 
     window.addEventListener("mouseup", () => {
       isDown1 = false
-      isDown2 = false
       wrapper1.style.cursor = "grab"
-      wrapper2.style.cursor = "grab"
     })
 
     wrapper1.addEventListener("mousemove", (e) => {
@@ -321,6 +304,31 @@
       wrapper1.scrollLeft1 = scrollLeft1 - dx
       wrapper1.scrollTop1  = scrollTop1  - dy
     })
+  }
+
+  function addFullCanvasDragWrapper () {
+    const wrapper2 = document.getElementById("full-canvas-container")
+    let isDown2 = false
+    let startX2
+    let startY2
+    let scrollLeft2
+    let scrollTop2
+
+    wrapper2.addEventListener("mousedown", (e) => {
+      isDown2 = true
+      wrapper2.style.cursor = "grabbing"
+
+      startX2 = e.pageX
+      startY2 = e.pageY
+      scrollLeft2 = wrapper2.scrollLeft
+      scrollTop2  = wrapper2.scrollTop
+    })
+
+    window.addEventListener("mouseup", () => {
+      isDown2 = false
+       wrapper2.style.cursor = "grab"
+    })
+
     wrapper2.addEventListener("mousemove", (e) => {
       if (!isDown2) return
 

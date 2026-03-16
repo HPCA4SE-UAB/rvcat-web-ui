@@ -63,6 +63,7 @@
 
   .dropdown-wrapper {
     display:       flex;
+    overflow:      auto;
     align-items:   center;
     flex-wrap:     nowrap;
     gap:           0.4rem;
