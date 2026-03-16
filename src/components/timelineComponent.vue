@@ -118,11 +118,6 @@
   // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
-
-    // const container = document.getElementById("canvas-container")
-    // const observer = new ResizeObserver(() => {resizeCanvas()})
-    // observer.observe(container)
-    // resizeCanvas()
     addCanvasWrapper()
     console.log('📈🎯 Timeline Component mounted')
     try {    // generate timeline using RVCAT (if previous components are mounted)
@@ -276,13 +271,10 @@
 /* ------------------------------------------------------------------
  * CANVAS: DRAW timeline
  * ------------------------------------------------------------------ */
-  const canvasWidth    = 1200;
-  const canvasHeight   = 10000;
-  const hoverInfo      = ref(null);
-  const tooltipRef     = ref(null);
-
-  // const infoIcon        = ref(null);
-  const clickedCellInfo = ref(null);
+  const hoverInfo      = ref(null)
+  const tooltipRef     = ref(null)
+  const clickedCellInfo = ref(null)
+  const interactiveCells = []
 
   function drawTimeline(canvas, timeJson) {
     const ctx         = canvas.getContext('2d');
@@ -326,7 +318,7 @@
       i++
       x += cellW
     }
-    const interactiveCells = [];
+
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
     {
       // Compute background color based on iteration number
@@ -375,22 +367,10 @@
     }
 
     // Attach mousemove to show hover info
-    attachHover(canvas, interactiveCells);
+    attachHover(canvas);
   }
 
-  function resizeCanvas() {
-
-    const container = document.getElementById("canvas-container")
-    const canvas    = timelineCanvas.value
-    const rect      = container.getBoundingClientRect()
-
-    canvas.width  = rect.width
-    canvas.height = rect.height
-
-    drawTimeline(canvas, timeline)
-  }
-
-  function attachHover(canvas, interactiveCells) {
+  function attachHover(canvas) {
     canvas.onmousemove = e => {
       const rect   = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -416,23 +396,8 @@
         hoverInfo.value = null;
         return;
       }
-      let instrID = hitCell.instrID;
-      // If it is a Port cell, find which instruction the X corresponds to
-      if (hitCell.kind === 'port') {
-        if (hitCell.char === 'X') {
-          // find the instr cell in the same cycle & same port, with char 'E'
-          const match = interactiveCells.find(c =>
-            c.kind == 'instr' &&
-            c.port == hitCell.port &&
-            c.colIndexVis == hitCell.colIndexVis && hitCell.first_exec_stage
-          );
-          if (match){
-            instrID = match.instrID;
-          }
-        }
-      }
 
-      // For instruction rows, only show port on first 'E'
+      let instrID = hitCell.instrID;
       let displayPort = null;
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
@@ -453,12 +418,15 @@
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
+        const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+        const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+
         for (const cell of interactiveCells) {
           if (
-            mouseX >= cell.x &&
-            mouseX <= cell.x + cell.width &&
-            mouseY >= cell.y &&
-            mouseY <= cell.y + cell.height
+            worldX >= cell.x &&
+            worldX <= cell.x + cell.width &&
+            worldY >= cell.y &&
+            worldY <= cell.y + cell.height
           ) {
             handleCellClick(cell.instrID, cell.colIndexVis);
             break;
