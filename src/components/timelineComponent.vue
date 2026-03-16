@@ -272,37 +272,37 @@
   })
 
   function addCanvasDragWrapper () {
-    const wrapper1 = document.getElementById("canvas-container")
+    const wrapper = document.getElementById("canvas-container")
 
-    let isDown1 = false
-    let startX1
-    let startY1
-    let scrollLeft1
-    let scrollTop1
+    let isDown = false
+    let startX
+    let startY
+    let scrollLeft
+    let scrollTop
 
-    wrapper1.addEventListener("mousedown", (e) => {
-      isDown1 = true
-      wrapper1.style.cursor = "grabbing"
+    wrapper.addEventListener("mousedown", (e) => {
+      isDown = true
+      wrapper.style.cursor = "grabbing"
 
-      startX1 = e.pageX
-      startY1 = e.pageY
-      scrollLeft1 = wrapper1.scrollLeft
-      scrollTop1  = wrapper1.scrollTop
+      startX = e.pageX
+      startY = e.pageY
+      scrollLeft = wrapper.scrollLeft
+      scrollTop  = wrapper.scrollTop
     })
 
     window.addEventListener("mouseup", () => {
-      isDown1 = false
-      wrapper1.style.cursor = "grab"
+      isDown = false
+      wrapper.style.cursor = "grab"
     })
 
-    wrapper1.addEventListener("mousemove", (e) => {
-      if (!isDown1) return
+    wrapper.addEventListener("mousemove", (e) => {
+      if (!isDown) return
 
-      const dx = e.pageX - startX1
-      const dy = e.pageY - startY1
+      const dx = e.pageX - startX
+      const dy = e.pageY - startY
 
-      wrapper1.scrollLeft1 = scrollLeft1 - dx
-      wrapper1.scrollTop1  = scrollTop1  - dy
+      wrapper.scrollLeft = scrollLeft - dx
+      wrapper.scrollTop  = scrollTop  - dy
     })
   }
 
@@ -335,8 +335,8 @@
       const dx = e.pageX - startX2
       const dy = e.pageY - startY2
 
-      wrapper2.scrollLeft2 = scrollLeft2 - dx
-      wrapper2.scrollTop2  = scrollTop2  - dy
+      wrapper2.scrollLeft = scrollLeft2 - dx
+      wrapper2.scrollTop  = scrollTop2  - dy
     })
   }
 
