@@ -14,14 +14,17 @@
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
   const defaultOptions = {
-    iters:        1,
-    zoomLevel:    1,
-    showPorts:    false,
-    showFull:     false,
-    windowWidth:  500,
-    windowHeight: 300,
-    x_pos:        10,
-    y_pos:        10
+    iters:         1,
+    zoomLevel:     1,
+    showPorts:     false,
+    showFull:      false,
+    canvasScale:   1,
+    canvasOffsetX: 0,
+    canvasOffsetY: 0,
+    windowWidth:   500,
+    windowHeight:  300,
+    x_pos:         10,
+    y_pos:         10
   }
 
   const savedOptions = (() => {
@@ -305,34 +308,61 @@
 
   function addFullCanvasWrapper () {
     const wrapper = document.getElementById("full-canvas-container")
-    let isDown = false
+    let dragging = false
     let startX, startY
-    let scrollLeft, scrollTop
 
     wrapper.addEventListener("mousedown", (e) => {
-      isDown = true
-      wrapper.style.cursor = "grabbing"
-
-      startX = e.pageX
-      startY = e.pageY
-      scrollLeft = wrapper.scrollLeft
-      scrollTop  = wrapper.scrollTop
+      dragging = true
+      startX = e.clientX
+      startY = e.clientY
     })
 
     window.addEventListener("mouseup", () => {
-      isDown = false
-       wrapper.style.cursor = "grab"
+      dragging = false
     })
 
     wrapper.addEventListener("mousemove", (e) => {
-      if (!isDown) return
 
-      const dx = e.pageX - startX
-      const dy = e.pageY - startY
+      if (!dragging) return
 
-      wrapper.scrollLeft = scrollLeft - dx
-      wrapper.scrollTop  = scrollTop  - dy
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+
+      timelineOptions.canvasOffsetX += dx
+      timelineOptions.canvasOffsetY += dy
+
+      startX = e.clientX
+      startY = e.clientY
+
+      drawTimeline(fullCanvas, timeline)
     })
+
+    wrapper.addEventListener("wheel", (e) => {
+
+      e.preventDefault()
+
+      const zoomFactor = 1.1
+      const rect = fullCanvas.getBoundingClientRect()
+
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+
+      const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+      const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+
+      if (e.deltaY < 0) {
+        timelineOptions.canvasScale *= zoomFactor
+      } else {
+        timelineOptions.canvasScale /= zoomFactor
+      }
+
+      timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
+      timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
+
+      drawTimeline(fullCanvas, timeline)
+
+    }, { passive:false })
+
   }
 
 // ============================================================================
@@ -366,8 +396,8 @@
   async function openFullScreen(useLocal) {
     timelineOptions.showFull = true
     showFullScreen.value     = true
-    addFullCanvasWrapper()
     await nextTick()   // ← wait Vue to rebuild DOM
+    addFullCanvasWrapper()
 
     try {
       if (useLocal) {
@@ -403,22 +433,29 @@
   const clickedCellInfo = ref(null);
 
   function drawTimeline(canvas, timeJson) {
-    const Zoom        = (1+timelineOptions.zoomLevel)/4;
     const ctx         = canvas.getContext('2d');
-    const cellW       = 14 * Zoom;
-    const cellH       = 20 * Zoom;
-    const padX        = 20 * Zoom;
-    const padY        = 10 * Zoom;
-    const fontSize    = 14 * Zoom;
-    const fontYOffset =  3 * Zoom;
+    const cellW       = 14;
+    const cellH       = 20;
+    const padX        = 20;
+    const padY        = 10;
+    const fontSize    = 14;
+    const fontYOffset =  3;
 
     const { cycles, instructions, portUsage } = timeJson
 
     canvas.width  = padX * 2 + cycles * cellW;
     canvas.height = padY * 2 + (instructions.length+1) * cellH;
 
-    // Draw each row + build interactiveCells
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(
+      timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
+      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
+    )
+    ctx.clearRect(
+      -timelineOptions.canvasOffsetX/timelineOptions.canvasScale,
+      -timelineOptions.canvasOffsetY/timelineOptions.canvasScale,
+      canvas.width/timelineOptions.canvasScale,
+      canvas.height/timelineOptions.canvasScale
+    )
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
     ctx.imageSmoothingEnabled = false;
