@@ -121,7 +121,8 @@
 
   // Load from localStorage
   onMounted(() => {
-    cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline);
+    cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
+    addCanvasDragWrappers()
     console.log('📈🎯 Timeline Component mounted')
     if (timelineOptions.showFull)
       openFullScreen()
@@ -269,6 +270,41 @@
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
   })
 
+
+  function addCanvasDragWrappers () {
+    const wrapper = document.getElementById("simulation-output-container")
+
+    let isDown = false
+    let startX
+    let startY
+    let scrollLeft
+    let scrollTop
+
+    wrapper.addEventListener("mousedown", (e) => {
+      isDown = true
+      wrapper.style.cursor = "grabbing"
+
+      startX = e.pageX
+      startY = e.pageY
+      scrollLeft = wrapper.scrollLeft
+      scrollTop  = wrapper.scrollTop
+    })
+
+    window.addEventListener("mouseup", () => {
+      isDown = false
+      wrapper.style.cursor = "grab"
+    })
+
+    wrapper.addEventListener("mousemove", (e) => {
+      if (!isDown) return
+
+      const dx = e.pageX - startX
+      const dy = e.pageY - startY
+
+      wrapper.scrollLeft = scrollLeft - dx
+      wrapper.scrollTop  = scrollTop  - dy
+    })
+  }
 
 // ============================================================================
 // confirmDownload, uploadTimeline
@@ -688,11 +724,21 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow-x: auto;
-    overflow-y: auto;   /* opcional */
-    width:      100%;
-    height:     100%;
-    position:   relative;
+    overflow:        auto;
+    width:           100%;
+    height:          100%;
+    position:        relative;
+    cursor:          grab;  /* <--- */
+    scrollbar-width: none;  /* Firefox */
+    user-select: none;
+  }
+
+  .output-block-wrapper::-webkit-scrollbar {
+    display: none;  /* Chrome / Safari */
+  }
+
+  .output-block-wrapper:active {
+    cursor: grabbing;
   }
 
   .output-block-wrapper canvas {
