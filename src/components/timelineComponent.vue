@@ -87,7 +87,7 @@
           drawTimeline(timelineCanvas.value, timeline)
         }, 150)
         saveOptions()
-        console.log('📈✅ Timeline drawn: new/resized/moved')
+        console.log('📈✅ Timeline drawn: new/resized/moved', timelineCanvas.value.width, timelineCanvas.value.height)
       } catch (error) {
         console.error('📈❌Failed to draw timeline', error)
       }
@@ -298,10 +298,10 @@
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,canvas.width,canvas.height)
 
-    ctx.setTransform(
+    /* ctx.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
-    )
+    )*/
 
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
