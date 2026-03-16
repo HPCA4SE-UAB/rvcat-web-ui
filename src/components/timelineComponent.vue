@@ -334,7 +334,7 @@
       startX = e.clientX
       startY = e.clientY
 
-      drawTimeline(timelineCanvas, timeline)
+      drawTimeline(timelineCanvas.value , timeline)
     })
 
     wrapper.addEventListener("wheel", (e) => {
@@ -342,7 +342,7 @@
       e.preventDefault()
 
       const zoomFactor = 1.1
-      const rect = timelineCanvas.getBoundingClientRect()
+      const rect = timelineCanvas.value.getBoundingClientRect()
 
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
@@ -359,7 +359,7 @@
       timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
       timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
 
-      drawTimeline(timelineCanvas, timeline)
+      drawTimeline(timelineCanvas.value, timeline)
 
     }, { passive:false })
 
