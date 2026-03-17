@@ -77,7 +77,6 @@ function toggleFullScreen(key) {
     return
   }
   currentFullKey.value = key
-  // document.querySelector(`.grid-item.${key}`).scrollIntoView({ behavior: 'smooth' });
 }
 
 // ============================================================================

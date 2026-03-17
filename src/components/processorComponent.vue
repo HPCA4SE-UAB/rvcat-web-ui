@@ -154,7 +154,7 @@
   { deep: true, immediate: true })
 
   watch( () => simState,
-    saveSimState,
+    saveSimState(),
     { deep: true }
   )
 

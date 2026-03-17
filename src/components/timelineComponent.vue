@@ -111,6 +111,8 @@
   },
   { deep: true, immediate: true })
 
+  watch ([() => simState.instrHighlightedIdx], () => {console.log('📈 Intr timeline') },
+    { deep: true, immediate: false })
 
   watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },
   { deep: true, immediate: false })
@@ -118,7 +120,7 @@
   // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {
     if (dataType === 'error') {
-      console.error('📈❌Failed to get timeline:', data);
+      console.error('📈❌Failed to get timeline:', data)
       return;
     }
     try {
