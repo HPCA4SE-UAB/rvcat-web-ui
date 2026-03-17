@@ -326,6 +326,11 @@
       x += cellW
     }
 
+    interactiveCells.length = 0   // empty list
+
+    // ***************************************************************************************************
+    //   for each instruction, then for each cycle, then write cell into canvas and push interactive cells
+    // ***************************************************************************************************
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
     {
       // Compute background color based on iteration number
