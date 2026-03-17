@@ -999,7 +999,6 @@ function snapshotMemory() {
     margin-bottom:   2px;
     margin-right:    20px;
   }
-
   .section-header h4 {
     margin: 0;
     color:  #333;
@@ -1022,7 +1021,6 @@ function snapshotMemory() {
     font-size:       small;
     padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
   }
-
   .instructions-table thead {
     position:   sticky;
     top:        0;
@@ -1030,14 +1028,12 @@ function snapshotMemory() {
     color:      white;
     z-index:    1;
   }
-
   .instructions-table th {
     padding:     3px 3px;
     text-align:  center;
     font-weight: bold;
     border:      1px solid #005a9e;
   }
-
   .instructions-table td {
     padding:        1px;
     border:         1px solid #ddd;
@@ -1045,11 +1041,9 @@ function snapshotMemory() {
     text-align:     center;
     font-size:      medium;
   }
-
   .instructions-table tbody tr:nth-child(even) {
     background: #f9f9f9;
   }
-
   .instructions-table tbody tr:hover {
     background: #e8f4fd;
   }
@@ -1064,7 +1058,6 @@ function snapshotMemory() {
     text-align: center;
     border-radius: 3px;
   }
-
   .table-select:disabled {
     background: #f0f0f0;
     cursor:     not-allowed;
@@ -1084,21 +1077,17 @@ function snapshotMemory() {
     cursor:        pointer;
     font-size:     medium;
   }
-
   .action-btn:hover:not(:disabled) {
     background:   #e8f4fd;
     border-color: #007acc;
   }
-
   .action-btn:disabled {
     opacity: 0.5;
     cursor:  not-allowed;
   }
-
   .action-btn.delete {
     color:   #d32f2f;
   }
-
   .action-btn.delete:hover:not(:disabled) {
     background:   #ffebee;
     border-color: #d32f2f;
@@ -1116,12 +1105,10 @@ function snapshotMemory() {
     pointer-events: none;
     opacity:        0.4;
   }
-
   .fixed-row {
     font-weight: bold;
     color:       #0b2e5c; /* azul oscuro */
   }
-
   .fixed-row .table-input,
   .fixed-row .table-select,
   .fixed-row .readonly {
@@ -1132,12 +1119,10 @@ function snapshotMemory() {
   .add-margin {
     margin-right: 50px;
   }
-
   .add-prev-margin {
     margin-left: 100px;
   }
 
-  /* Modal styles */
   .modal-overlay {
     position: fixed;
     top:      0;
@@ -1150,7 +1135,6 @@ function snapshotMemory() {
     justify-content: center;
     align-items:     center;
   }
-
   .modal {
     background:    white;
     padding:       25px;
@@ -1158,12 +1142,25 @@ function snapshotMemory() {
     box-shadow:    0 4px 20px rgba(0, 0, 0, 0.3);
     min-width:     400px;
   }
-
+  .modal input {
+    width:         100%;
+    padding:       8px;
+    margin-bottom: 10px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+    box-sizing:    border-box;
+    font-size:     14px;
+  }
+  .modal-actions {
+    display:         flex;
+    justify-content: flex-end;
+    gap:             10px;
+    margin-top:      20px;
+  }
   .modal h4 {
     margin: 0 0 15px 0;
     color:  #007acc;
   }
-
   .modal label {
     display:       block;
     margin-bottom: 5px;
@@ -1177,27 +1174,9 @@ function snapshotMemory() {
     margin:      10px 0;
     font-weight: normal;
   }
-
   .checkbox-row input[type="checkbox"] {
     width:  16px;
     height: 16px;
-  }
-
-  .modal input {
-    width:         100%;
-    padding:       8px;
-    margin-bottom: 10px;
-    border:        1px solid #ccc;
-    border-radius: 4px;
-    box-sizing:    border-box;
-    font-size:     14px;
-  }
-
-  .modal-actions {
-    display:         flex;
-    justify-content: flex-end;
-    gap:             10px;
-    margin-top:      20px;
   }
 
   .error {
@@ -1219,12 +1198,10 @@ function snapshotMemory() {
     background-color: white;
     transition:       border-color 0.3s;
   }
-
   .form-select:focus {
     outline:      none;
     border-color: #4a6cf7;
   }
-
   .form-select option[value="_add_new_"] {
     color:            #4a6cf7;
     font-weight:      bold;
@@ -1271,7 +1248,6 @@ function snapshotMemory() {
     pointer-events: none; /* Permite clicks a través del overlay */
     z-index: 999;
   }
-
   .fullscreen-content {
     position: fixed;
     background: white;
@@ -1289,7 +1265,6 @@ function snapshotMemory() {
     pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
     z-index: 1000;
   }
-
   .fullscreen-header {
     display: flex;
     justify-content: space-between;
@@ -1303,11 +1278,9 @@ function snapshotMemory() {
     user-select: none;
     flex-shrink: 0; /* Evita que el header se encoja */
   }
-
   .fullscreen-header:active {
     cursor: grabbing;
   }
-
   .fullscreen-header span {
     flex: 1;
     text-align: center;
@@ -1323,7 +1296,6 @@ function snapshotMemory() {
     padding: 0 8px;
     opacity: 0.8;
   }
-
   .close-btn:hover {
     opacity: 1;
   }
@@ -1343,7 +1315,6 @@ function snapshotMemory() {
     align-items: center;
     justify-content: center;
   }
-
   .graph-wrapper svg {
     width: 100%;
     height: 100%;
@@ -1354,7 +1325,8 @@ function snapshotMemory() {
 
   .highlighted {
     background-color: rgba(255, 0, 0, 0.15);
-    outline: 2px solid red;
+    transition:       background-color 0.05s linear;
+    outline:          2px solid red;
   }
 
   tr:hover {
