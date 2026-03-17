@@ -223,6 +223,12 @@
     let dragging  = false
     let startX, startY
 
+    const observer = new ResizeObserver(() => {
+      timelineOptions.iters = 0  // forces watcher to re-draw canvas with 1 iteration
+    })
+
+    observer.observe(wrapper)
+
     wrapper.addEventListener("mousedown", (e) => {
       dragging = true
       startX = e.clientX
