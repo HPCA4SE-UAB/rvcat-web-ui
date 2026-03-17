@@ -1,11 +1,11 @@
 <script setup>
   import { ref, toRef, toRaw, onMounted, onUnmounted, nextTick, inject, reactive, watch }  from "vue"
-  import { useDraggable, useResizeObserver}                                from '@vueuse/core'
-  import HelpComponent                                   from '@/components/helpComponent.vue'
-  import { useRVCAT_Api }                                                    from '@/rvcatAPI'
+  import { useDraggable, useResizeObserver}                                       from '@vueuse/core'
+  import HelpComponent                                          from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                                           from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
            saveToLocalStorage, removeFromLocalStorage, updateProcess,
-           instructionTypes, typeOperations, typeSizes                      }  from '@/common'
+           instructionTypes, typeOperations, typeSizes, instrHighlightedIdx        }  from '@/common'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -58,7 +58,6 @@ const STORAGE_KEY = 'programOptions'
   const programOptions = reactive({ ...defaultOptions, ...savedOptions })
   const programSvg     = ref('')
   const showFullScreen = ref(false)
-  const instrHighlightedIdx = ref(0)
   let   graphTimeout   = null
 
   const saveOptions = () => {

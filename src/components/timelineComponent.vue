@@ -1,7 +1,7 @@
 <script setup>
   import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
   import HelpComponent                                 from '@/components/helpComponent.vue'
-  import { charToProcessingState }                                           from '@/common'
+  import { charToProcessingState, instrHighlightedIdx  }                     from '@/common'
   import { useRVCAT_Api }                                                  from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -58,8 +58,6 @@
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
   watch(() => [timelineOptions.iters, timelineOptions.showPorts], () => {
-    let canvasTimeout = null
-    clearTimeout(canvasTimeout)
     try {
       timelineOptions.iters = Math.min(timelineOptions.iters, 9)
       timelineOptions.iters = Math.max(timelineOptions.iters, 1)
@@ -69,9 +67,9 @@
       timelineOptions.canvasOffsetX= 0
       timelineOptions.canvasOffsetY= 0
 
-      canvasTimeout = setTimeout(() => {
+      requestAnimationFrame(() => {
         getTimelineAndDraw()
-      }, 150)
+      })
       console.log('📈✅ Modified timeline options (iters or showPorts)')
       saveOptions()
     } catch (error) {
@@ -80,16 +78,18 @@
   },
   { immediate: true })
 
-  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY], [oldX, oldY]) => {
+  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY],oldValue) => {
 
-    if (newX === null || newY === null) return
-    let canvasTimeout = null
-    clearTimeout(canvasTimeout)
-    console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
+    if (newX == null || newY == null) return
+    const oldX = oldValue?.[0]
+    const oldY = oldValue?.[1]
+    if (oldX == null || oldY == null) return
+
     try {
-      canvasTimeout = setTimeout(() => {
+      requestAnimationFrame(() => {
         drawHoverOverlay(oldX, oldY)
-      }, 150)
+      })
+      console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
       saveOptions()
     } catch (error) {
       console.error('📈❌Failed to draw hover overlay:', error)
@@ -99,12 +99,10 @@
 
   watch(() => [timeline, timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (timelineCanvas.value && timeline) {
-      let canvasTimeout = null
-      clearTimeout(canvasTimeout)
       try {
-        canvasTimeout = setTimeout(() => {
+        requestAnimationFrame(() => {
           drawTimeline()
-        }, 150)
+        })
         saveOptions()
       } catch (error) {
         console.error('📈❌Failed to draw timeline', error)
@@ -455,6 +453,13 @@
       }
 
       let instrID = hitCell.instrID;
+      if (instrHighlightedIdx.value !== instrID) {
+        instrHighlightedIdx.value = instrID
+      }
+
+      // cycle is hitCell.colIndexVis
+
+
       let displayPort = null;
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
@@ -466,10 +471,7 @@
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        cycle:    hitCell.colIndexVis,
-        port:     displayPort != null ? displayPort : "",
         state:    charToProcessingState(hitCell.char, displayPort),
-        instr:    instrID ?? "",
         critical: hitCell.critical
       };
 
