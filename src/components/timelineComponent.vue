@@ -89,7 +89,7 @@
       requestAnimationFrame(() => {
         drawHoverOverlay(oldX, oldY)
       })
-      console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
+      //console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
       saveOptions()
     } catch (error) {
       console.error('📈❌Failed to draw hover overlay:', error)
