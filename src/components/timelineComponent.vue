@@ -268,8 +268,8 @@
         timelineOptions.canvasScale /= zoomFactor
       }
 
-      timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
-      timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
+      //timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
+      //timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
     }, { passive:false })
   }
 
@@ -282,20 +282,32 @@
   const interactiveCells = []
 
   function drawTimeline() {
-    const ctx         = timelineCanvas.value.getContext('2d');
-    const cellW       = 14;
-    const cellH       = 20;
-    const padX        = 20;
-    const padY        = 10;
-    const fontSize    = 14;
-    const fontYOffset =  3;
-
-    const { cycles, instructions, portUsage } = timeline
 
     const rect = timelineCanvas.value.getBoundingClientRect()
     timelineCanvas.value.width  = rect.width
     timelineCanvas.value.height = rect.height
 
+    const { cycles, instructions, portUsage } = timeline
+
+    const cellW       = 14
+    const cellH       = 20
+    const padX        = 10
+    const padY        = 10
+    const fontSize    = 14
+    const fontXOffset = 2
+    const fontYOffset =  3
+
+    let totalWidth =  padX + cellW * cycles
+    let totalHeight = padY + cellH * (instructions.length+1)
+
+    while (rect.width >= 2*totalWidth && rect.height >= 2*totalHeight) {
+      cellW *=2; cellH *= 2; fontSize *= 2;
+      fontxOffset *=2; fontYOffset *=2;
+      totalWidth  =  padX + cellW * cycles
+      totalHeight = padY + cellH * (instructions.length+1)
+    }
+
+    const ctx = timelineCanvas.value.getContext('2d');
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
 
@@ -320,7 +332,7 @@
       ctx.strokeRect  (x, y, cellW, cellH)
 
       ctx.fillStyle = "#000"
-      ctx.fillText    (ch, x + 2, y + fontYOffset)
+      ctx.fillText    (ch, x + fontXOffset, y + fontYOffset)
       i++
       x += cellW
     }
@@ -367,7 +379,7 @@
         ctx.fillRect    (x, y, cellW, cellH);
         ctx.strokeRect  (x, y, cellW, cellH);
         ctx.fillStyle = currColor;
-        ctx.fillText    (ch, x + 2, y + fontYOffset);
+        ctx.fillText    (ch, x + fontXOffset, y + fontYOffset);
 
         i++;
         x += cellW;
@@ -549,11 +561,11 @@
 
 <style scoped>
   .output-block-wrapper {
-    overflow:        hidden;
+    overflow:        auto;
     width:           100%;
     height:          100%;
     position:        relative;
-    cursor:          pointer;
+    cursor:          default;
     scrollbar-width: none;  /* Firefox */
     user-select:     none;
   }
@@ -570,7 +582,7 @@
     position: relative;
     width:    100%;
     height:   100%;
-    overflow: hidden;
+    overflow: auto;
   }
 
   #canvas-container canvas {
