@@ -595,7 +595,8 @@ function snapshotMemory() {
             </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
-            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index"
+            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list"
+              :key="index"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td>{{ index }}</td>

@@ -1,3 +1,4 @@
+
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 
 export const typeOperations = {

@@ -20,4 +20,5 @@ app.use(router)
 app.provide('simulationState', SimulationState)
 app.provide('worker', useWorker())
 
+
 app.mount('#app')
