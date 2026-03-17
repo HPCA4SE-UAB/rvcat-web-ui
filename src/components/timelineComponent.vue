@@ -84,8 +84,6 @@
       clearTimeout(canvasTimeout)
       try {
         canvasTimeout = setTimeout(() => {
-          const rect = timelineCanvas.value.getBoundingClientRect()
-          console.log('📈✅ Timeline visual size', rect.width, rect.height)
           drawTimeline()
         }, 150)
         saveOptions()
@@ -294,8 +292,14 @@
 
     const { cycles, instructions, portUsage } = timeline
 
-    timelineCanvas.value.width  = padX * 2 + cycles * cellW;
-    timelineCanvas.value.height = padY * 2 + (instructions.length+1) * cellH;
+    const rect = timelineCanvas.value.getBoundingClientRect()
+    console.log('📈✅ Timeline visual size', rect.width, rect.height)
+
+    timelineCanvas.value.width  = rect.width
+    timelineCanvas.value.height = rect.height
+
+    // timelineCanvas.value.width  = padX * 2 + cycles * cellW
+    // timelineCanvas.value.height = padY * 2 + (instructions.length+1) * cellH
 
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
