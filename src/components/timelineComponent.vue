@@ -85,11 +85,11 @@
     if (newX === null || newY === null) return
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
+    console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
     try {
       canvasTimeout = setTimeout(() => {
         drawHoverOverlay(oldX, oldY)
       }, 150)
-      console.log(`📈🔄 Hover overlay: X:${timelineOptions.hoverPosX} Y: ${timelineOptions.hoverPosY}`)
       saveOptions()
     } catch (error) {
       console.error('📈❌Failed to draw hover overlay:', error)
