@@ -1,7 +1,7 @@
 <script setup>
   import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
   import HelpComponent                                 from '@/components/helpComponent.vue'
-  import { charToProcessingState, instrHighlightedIdx  }                     from '@/common'
+  import { charToProcessingState  }                                          from '@/common'
   import { useRVCAT_Api }                                                  from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -453,8 +453,8 @@
       }
 
       let instrID = hitCell.instrID;
-      if (instrHighlightedIdx.value !== instrID) {
-        instrHighlightedIdx.value = instrID
+      if (simState.instrHighlightedIdx !== instrID) {
+        simState.instrHighlightedIdx = instrID
       }
 
       // cycle is hitCell.colIndexVis
@@ -611,11 +611,9 @@
     scrollbar-width: none;  /* Firefox */
     user-select:     none;
   }
-
   .output-block-wrapper::-webkit-scrollbar {
     display: none;  /* Chrome / Safari */
   }
-
   .output-block-wrapper:active {
     cursor: grabbing;
   }
@@ -626,7 +624,6 @@
     height:   100%;
     overflow: auto;
   }
-
   #canvas-container canvas {
     position: absolute;
     inset:    0;       /* top:0 left:0 right:0 bottom:0 */
@@ -676,11 +673,9 @@
     padding:     0 8px;
     opacity:     0.8;
   }
-
   .close-btn:hover {
     opacity: 1;
   }
-
   .critical {
     color: red;
   }

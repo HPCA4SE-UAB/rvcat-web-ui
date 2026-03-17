@@ -1,7 +1,3 @@
-import { ref } from 'vue';
-
-export const instrHighlightedIdx = ref(-1)
-
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 
 export const typeOperations = {

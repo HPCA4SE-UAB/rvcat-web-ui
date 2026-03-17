@@ -5,7 +5,7 @@
   import { useRVCAT_Api }                                                           from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, initResource, createGraphVizGraph,
            saveToLocalStorage, removeFromLocalStorage, updateProcess,
-           instructionTypes, typeOperations, typeSizes, instrHighlightedIdx        }  from '@/common'
+           instructionTypes, typeOperations, typeSizes                             }  from '@/common'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -596,7 +596,7 @@ function snapshotMemory() {
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
             <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index"
-              :class="{ highlighted: index === instrHighlightedIdx }"
+              :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td>{{ index }}</td>
 
