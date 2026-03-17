@@ -251,15 +251,7 @@
     wrapper.addEventListener("wheel", (e) => {
 
       e.preventDefault()
-
       const zoomFactor = 1.1
-      const rect = timelineCanvas.value.getBoundingClientRect()
-
-      const mouseX = e.clientX - rect.left
-      const mouseY = e.clientY - rect.top
-
-      const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-      const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
 
       // fire drawTimeline reaction
       if (e.deltaY < 0) {
@@ -267,9 +259,6 @@
       } else {
         timelineOptions.canvasScale /= zoomFactor
       }
-
-      //timelineOptions.canvasOffsetX = mouseX - worldX * timelineOptions.canvasScale
-      //timelineOptions.canvasOffsetY = mouseY - worldY * timelineOptions.canvasScale
     }, { passive:false })
   }
 
@@ -289,20 +278,20 @@
 
     const { cycles, instructions, portUsage } = timeline
 
-    const cellW       = 14
-    const cellH       = 20
-    const padX        = 10
-    const padY        = 10
-    const fontSize    = 14
-    const fontXOffset = 2
-    const fontYOffset =  3
+    let cellW       = 14
+    let cellH       = 20
+    let padX        = 10
+    let padY        = 10
+    let fontSize    = 14
+    let fontXOffset = 2
+    let fontYOffset = 3
 
     let totalWidth =  padX + cellW * cycles
     let totalHeight = padY + cellH * (instructions.length+1)
 
     while (rect.width >= 2*totalWidth && rect.height >= 2*totalHeight) {
       cellW *=2; cellH *= 2; fontSize *= 2;
-      fontxOffset *=2; fontYOffset *=2;
+      fontXOffset *=2; fontYOffset *=2;
       totalWidth  =  padX + cellW * cycles
       totalHeight = padY + cellH * (instructions.length+1)
     }
