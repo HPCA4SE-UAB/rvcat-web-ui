@@ -408,8 +408,8 @@
 
     const { cycles, instructions, portUsage } = timeline
 
-    let totalRows = cycles
-    let totalCols = instructions.length+1
+    let totalRows = instructions.length+1
+    let totalCols = cycles
 
     const ctx = timelineCanvas.value.getContext('2d')
     ctx.save()
