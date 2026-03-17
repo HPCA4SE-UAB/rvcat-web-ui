@@ -80,8 +80,6 @@
   },
   { deep: true, immediate: true })
 
-  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], () => {
-
   watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY], [oldX, oldY]) => {
 
     if (newX === null || newY === null) return
