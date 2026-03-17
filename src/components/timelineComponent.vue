@@ -78,7 +78,7 @@
       console.error('📈❌Failed to save timeline options:', error)
     }
   },
-  { deep: true, immediate: true })
+  { immediate: true })
 
   watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY], [oldX, oldY]) => {
 
@@ -95,7 +95,7 @@
       console.error('📈❌Failed to draw hover overlay:', error)
     }
   },
-  { deep: true, immediate: true })
+  { immediate: true })
 
   watch(() => [timeline, timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (timelineCanvas.value && timeline) {
@@ -410,14 +410,15 @@
 
     let totalRows = cycles
     let totalCols = instructions.length+1
+
     const ctx = timelineCanvas.value.getContext('2d')
     ctx.save()
 
     // recover previous grid
     ctx.strokeStyle = "#bbb"
     ctx.lineWidth   = 1
-    ctx.strokeRect( timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
-    ctx.strokeRect( padX, timelineOptions.hoverPosY, totalCols * cellW, cellH )
+    ctx.strokeRect( oldX, padY, cellW, totalRows * cellH )
+    ctx.strokeRect( padX, oldY, totalCols * cellW, cellH )
 
     ctx.strokeStyle = "red"
     ctx.lineWidth   = 1
