@@ -87,7 +87,7 @@
           drawTimeline()
         }, 150)
         saveOptions()
-        console.log('📈✅ Timeline drawn: new/resized/moved', timelineCanvas.value.width, timelineCanvas.value.height)
+        // console.log('📈✅ Timeline drawn: new/resized/moved', timelineCanvas.value.width, timelineCanvas.value.height)
       } catch (error) {
         console.error('📈❌Failed to draw timeline', error)
       }
@@ -293,13 +293,8 @@
     const { cycles, instructions, portUsage } = timeline
 
     const rect = timelineCanvas.value.getBoundingClientRect()
-    console.log('📈✅ Timeline visual size', rect.width, rect.height)
-
     timelineCanvas.value.width  = rect.width
     timelineCanvas.value.height = rect.height
-
-    // timelineCanvas.value.width  = padX * 2 + cycles * cellW
-    // timelineCanvas.value.height = padY * 2 + (instructions.length+1) * cellH
 
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
@@ -558,7 +553,7 @@
     width:           100%;
     height:          100%;
     position:        relative;
-    cursor:          grab;  /* <--- */
+    cursor:          pointer;
     scrollbar-width: none;  /* Firefox */
     user-select:     none;
   }
@@ -573,23 +568,23 @@
 
   #canvas-container {
     position: relative;
-    width: 100%;
-    height: 100%;
+    width:    100%;
+    height:   100%;
     overflow: hidden;
   }
 
   #canvas-container canvas {
     position: absolute;
+    inset:    0;       /* top:0 left:0 right:0 bottom:0 */
+    width:    100%;
+    height:   100%;
     aspect-ratio: auto;
-    inset: 0;       /* top:0 left:0 right:0 bottom:0 */
-    width: 100%;
-    height: 100%;
   }
 
   .tooltip {
-    position: fixed;
-    padding: 4px 8px;
-    z-index: 10;
+    position:   fixed;
+    padding:    4px 8px;
+    z-index:    10;
     font-size:  medium;
     display:    inline-block;
     width:      max-content;
@@ -612,20 +607,20 @@
   .iters-group input[type="number"] { width: 4ch; }
 
   .modal-header {
-    display: flex;
-    justify-content: space-between;
+    display:     flex;
     align-items: center;
+    justify-content: space-between;
   }
 
   .close-btn {
     background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
+    border:     none;
+    color:    white;
+    font-size:  24px;
     line-height: 1;
-    cursor: pointer;
-    padding: 0 8px;
-    opacity: 0.8;
+    cursor:      pointer;
+    padding:     0 8px;
+    opacity:     0.8;
   }
 
   .close-btn:hover {
