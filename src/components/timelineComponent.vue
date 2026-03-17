@@ -18,7 +18,9 @@
     showPorts:     false,
     canvasScale:   1,
     canvasOffsetX: 0,
-    canvasOffsetY: 0
+    canvasOffsetY: 0,
+    hoverPosX:     null,
+    hoverPosY:     null
   }
 
   const savedOptions = (() => {
@@ -78,6 +80,21 @@
   },
   { deep: true, immediate: true })
 
+  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], () => {
+    let canvasTimeout = null
+    clearTimeout(canvasTimeout)
+    try {
+      canvasTimeout = setTimeout(() => {
+        drawHoverOverlay()
+      }, 150)
+      console.log(`📈🔄 Hover overlay: X:${timelineOptions.hoverPosX} Y: ${timelineOptions.hoverPosY}`)
+      saveOptions()
+    } catch (error) {
+      console.error('📈❌Failed to draw hover overlay:', error)
+    }
+  },
+  { deep: true, immediate: true })
+
   watch(() => [timeline, timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (timelineCanvas.value && timeline) {
       let canvasTimeout = null
@@ -87,7 +104,6 @@
           drawTimeline()
         }, 150)
         saveOptions()
-        // console.log('📈✅ Timeline drawn: new/resized/moved', timelineCanvas.value.width, timelineCanvas.value.height)
       } catch (error) {
         console.error('📈❌Failed to draw timeline', error)
       }
@@ -275,6 +291,13 @@
   const tooltipRef       = ref(null)
   const clickedCellInfo  = ref(null)
   const interactiveCells = []
+  let cellW       = 14
+  let cellH       = 20
+  let padX        = 10
+  let padY        = 10
+  let fontSize    = 14
+  let fontXOffset = 2
+  let fontYOffset = 3
 
   function drawTimeline() {
 
@@ -283,14 +306,6 @@
     timelineCanvas.value.height = rect.height
 
     const { cycles, instructions, portUsage } = timeline
-
-    let cellW       = 14
-    let cellH       = 20
-    let padX        = 10
-    let padY        = 10
-    let fontSize    = 14
-    let fontXOffset = 2
-    let fontYOffset = 3
 
     let totalWidth =  padX + cellW * cycles
     let totalHeight = padY + cellH * (instructions.length+1)
@@ -302,7 +317,7 @@
       totalHeight = padY + cellH * (instructions.length+1)
     }
 
-    const ctx = timelineCanvas.value.getContext('2d');
+    const ctx = timelineCanvas.value.getContext('2d')
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
 
@@ -361,8 +376,6 @@
 
           interactiveCells.push({
             kind, x, y,
-            width:       cellW,
-            height:      cellH,
             colIndexVis: i,
             char:        ch,
             critical,
@@ -390,6 +403,23 @@
     attachHover();
   }
 
+  function drawHoverOverlay() {
+
+    if (timelineOptions.hoverPosX === null || timelineOptions.hoverPosY === null) return
+
+    const ctx = timelineCanvas.value.getContext('2d')
+    ctx.save()
+
+    ctx.strokeStyle = "red"
+    ctx.lineWidth = 1 / timelineOptions.canvasScale   // evita que el zoom engorde la línea
+
+    // column & row
+    ctx.strokeRect( hoverCol * cellW, 0, cellW, totalRows * cellH )
+    ctx.strokeRect( 0, hoverRow * cellH, totalCols * cellW, cellH )
+    ctx.restore()
+  }
+
+
   function attachHover() {
     timelineCanvas.value.onmousemove = e => {
       const rect   = timelineCanvas.value.getBoundingClientRect();
@@ -403,9 +433,9 @@
       for (const cell of interactiveCells) {
         if (
           worldX >= cell.x &&
-          worldX <= cell.x + cell.width &&
+          worldX <= cell.x + cellW &&
           worldY >= cell.y &&
-          worldY <= cell.y + cell.height
+          worldY <= cell.y + cellH
         ) {
           hitCell = cell;
           break;
@@ -422,6 +452,9 @@
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
       }
+
+      timelineOptions.hoverPosX = hitCell.x
+      timelineOptions.hoverPosY = hitCell.y
 
       hoverInfo.value = {
         x:        e.clientX + 10,
@@ -444,9 +477,9 @@
         for (const cell of interactiveCells) {
           if (
             worldX >= cell.x &&
-            worldX <= cell.x + cell.width &&
+            worldX <= cell.x + cellW &&
             worldY >= cell.y &&
-            worldY <= cell.y + cell.height
+            worldY <= cell.y + cellH
           ) {
             handleCellClick(cell.instrID, cell.colIndexVis);
             break;
