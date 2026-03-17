@@ -81,6 +81,7 @@
   { deep: true, immediate: true })
 
   watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], () => {
+    if (timelineOptions.hoverPosX === null || timelineOptions.hoverPosY === null) return
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
     try {
@@ -122,10 +123,9 @@
       return;
     }
     try {
-      let timelineRVCAT      = JSON.parse(data)
+      let timelineRVCAT       = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
-      // deep copy & fire draw-update
-      Object.assign(timeline, JSON.parse(JSON.stringify(timelineRVCAT)))
+      Object.assign(timeline, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
     } catch (error) {
       console.error('📈❌Failed to process JSON timeline:', error)
     }
@@ -405,8 +405,10 @@
 
   function drawHoverOverlay() {
 
-    if (timelineOptions.hoverPosX === null || timelineOptions.hoverPosY === null) return
+    const { cycles, instructions, portUsage } = timeline
 
+    let totalRows = cycles
+    let totalCols = instructions.length+1
     const ctx = timelineCanvas.value.getContext('2d')
     ctx.save()
 
@@ -414,11 +416,10 @@
     ctx.lineWidth = 1 / timelineOptions.canvasScale   // evita que el zoom engorde la línea
 
     // column & row
-    ctx.strokeRect( hoverCol * cellW, 0, cellW, totalRows * cellH )
-    ctx.strokeRect( 0, hoverRow * cellH, totalCols * cellW, cellH )
+    ctx.strokeRect( padX + timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
+    ctx.strokeRect( padX, padY + timelineOptions.hoverPosY, totalCols * cellW, cellH )
     ctx.restore()
   }
-
 
   function attachHover() {
     timelineCanvas.value.onmousemove = e => {
