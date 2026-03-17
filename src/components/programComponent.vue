@@ -57,7 +57,8 @@ const STORAGE_KEY = 'programOptions'
 
   const programOptions = reactive({ ...defaultOptions, ...savedOptions })
   const programSvg     = ref('')
-  const showFullScreen = ref(false);
+  const showFullScreen = ref(false)
+  const instrHighlightedIdx = ref(0)
   let   graphTimeout   = null
 
   const saveOptions = () => {
@@ -595,7 +596,9 @@ function snapshotMemory() {
             </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
-            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index">
+            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list" :key="index"
+              :class="{ highlighted: index === instrHighlightedIdx }"
+            >
               <td>{{ index }}</td>
 
               <td title="Instruction description">
@@ -1259,95 +1262,104 @@ function snapshotMemory() {
     flex: 0 0 auto;
   }
 
-.fullscreen-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent; /* Sin fondo para no ocultar nada */
-  pointer-events: none; /* Permite clicks a través del overlay */
-  z-index: 999;
-}
+  .fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent; /* Sin fondo para no ocultar nada */
+    pointer-events: none; /* Permite clicks a través del overlay */
+    z-index: 999;
+  }
 
-.fullscreen-content {
-  position: fixed;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
-  min-height: 300px;
-  width: 800px; /* Tamaño fijo inicial */
-  height: 600px;
-  resize: both;
-  overflow: auto;
-  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
-  z-index: 1000;
-}
+  .fullscreen-content {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
+    min-height: 300px;
+    width: 800px; /* Tamaño fijo inicial */
+    height: 600px;
+    resize: both;
+    overflow: auto;
+    pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
+    z-index: 1000;
+  }
 
-.fullscreen-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #2c3e50;
-  color: white;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0; /* Evita que el header se encoja */
-}
+  .fullscreen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0; /* Evita que el header se encoja */
+  }
 
-.fullscreen-header:active {
-  cursor: grabbing;
-}
+  .fullscreen-header:active {
+    cursor: grabbing;
+  }
 
-.fullscreen-header span {
-  flex: 1;
-  text-align: center;
-}
+  .fullscreen-header span {
+    flex: 1;
+    text-align: center;
+  }
 
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.8;
-}
+  .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.8;
+  }
 
-.close-btn:hover {
-  opacity: 1;
-}
+  .close-btn:hover {
+    opacity: 1;
+  }
 
-.graph-container {
-  flex: 1;
-  padding: 10px;
-  overflow: hidden;
-  background: #f8f9fa;
-  min-height: 0;
-}
+  .graph-container {
+    flex: 1;
+    padding: 10px;
+    overflow: hidden;
+    background: #f8f9fa;
+    min-height: 0;
+  }
 
-.graph-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .graph-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.graph-wrapper svg {
-  width: 100%;
-  height: 100%;
-  width: auto;
-  height: auto;
-  display: block;
-}
+  .graph-wrapper svg {
+    width: 100%;
+    height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+  }
+
+  .highlighted {
+    background-color: rgba(255, 0, 0, 0.15);
+    outline: 2px solid red;
+  }
+
+  tr:hover {
+    background-color: rgba(0,0,0,0.05);
+  }
 
 </style>

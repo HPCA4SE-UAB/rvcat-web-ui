@@ -81,12 +81,15 @@
   { deep: true, immediate: true })
 
   watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], () => {
-    if (timelineOptions.hoverPosX === null || timelineOptions.hoverPosY === null) return
+
+  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY], [oldX, oldY]) => {
+
+    if (newX === null || newY === null) return
     let canvasTimeout = null
     clearTimeout(canvasTimeout)
     try {
       canvasTimeout = setTimeout(() => {
-        drawHoverOverlay()
+        drawHoverOverlay(oldX, oldY)
       }, 150)
       console.log(`📈🔄 Hover overlay: X:${timelineOptions.hoverPosX} Y: ${timelineOptions.hoverPosY}`)
       saveOptions()
@@ -403,7 +406,7 @@
     attachHover();
   }
 
-  function drawHoverOverlay() {
+  function drawHoverOverlay(oldX, oldY) {
 
     const { cycles, instructions, portUsage } = timeline
 
@@ -412,12 +415,16 @@
     const ctx = timelineCanvas.value.getContext('2d')
     ctx.save()
 
-    ctx.strokeStyle = "red"
-    ctx.lineWidth = 1 / timelineOptions.canvasScale   // evita que el zoom engorde la línea
+    // recover previous grid
+    ctx.strokeStyle = "#bbb"
+    ctx.lineWidth   = 1
+    ctx.strokeRect( timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
+    ctx.strokeRect( padX, timelineOptions.hoverPosY, totalCols * cellW, cellH )
 
-    // column & row
-    ctx.strokeRect( padX + timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
-    ctx.strokeRect( padX, padY + timelineOptions.hoverPosY, totalCols * cellW, cellH )
+    ctx.strokeStyle = "red"
+    ctx.lineWidth   = 1
+    ctx.strokeRect( timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
+    ctx.strokeRect( padX, timelineOptions.hoverPosY, totalCols * cellW, cellH )
     ctx.restore()
   }
 
