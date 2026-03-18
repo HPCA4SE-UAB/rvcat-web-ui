@@ -72,8 +72,8 @@
       }
     }
   )
-  watch(
-    () => [timeline.value, timelineOptions.showPorts, timelineOptions.canvasScale,
+
+  watch( () => [timeline.value, timelineOptions.showPorts, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
     ([newTimeline, newShowPorts], [oldTimeline, oldShowPorts]) => {
 
@@ -83,10 +83,7 @@
         saveOptions()
         console.log('📈✅ Modified showPorts')
       }
-
-      console.log('📈✅ Redraw timeline')
       scheduleDraw()
-      // drawTimeline()
     }
   )
 
@@ -220,6 +217,11 @@
     })
 
     observer.observe(wrapper)
+
+    const canvas = timelineCanvas.value
+
+    canvas.addEventListener("mousemove", onMouseMove)
+    canvas.addEventListener("click", onClick)
 
     wrapper.addEventListener("mousedown", (e) => {
       dragging = true
@@ -397,104 +399,99 @@
         x += cellW;
       }
     }
-
-    // Attach mousemove to show hover info
-    attachHover();
   }
 
   function drawHoverOverlay(row, col) {
     const ctx = overlayCanvas.value.getContext('2d')
     ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
 
+    console.log('📈✅ Draw Hover', row, col)
     if (row == null || col == null) return
 
     ctx.strokeStyle = 'red'
     ctx.lineWidth = 1
-    ctx.strokeRect( 0, padY + row * cellH, overlayCanvas.value.width, cellH )
+    ctx.strokeRect( 0, padY + (row+1) * cellH, overlayCanvas.value.width, cellH )
     ctx.strokeRect( padX + col * cellW, 0, cellW, overlayCanvas.value.height)
   }
 
-  function attachHover() {
+  function onMouseMove(e) {
+    const rect = timelineCanvas.value.getBoundingClientRect()
 
-    timelineCanvas.value.onmousemove = e => {
-      const rect   = timelineCanvas.value.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
 
-      const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-      const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+    const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+    const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
 
-      let hitCell = null;
-      for (const cell of interactiveCells) {
-        if (
-          worldX >= cell.x &&
-          worldX <= cell.x + cellW &&
-          worldY >= cell.y &&
-          worldY <= cell.y + cellH
-        ) {
-          hitCell = cell;
-          break;
-        }
+    let hitCell = null
+
+    for (const cell of interactiveCells) {
+      if (
+        worldX >= cell.x &&
+        worldX <= cell.x + cellW &&
+        worldY >= cell.y &&
+        worldY <= cell.y + cellH
+      ) {
+        hitCell = cell
+        break
       }
+    }
 
-      if (!hitCell) {
-        hoverInfo.value = null
-        simState.instrHighlightedIdx = -1
-        if (hoverRow != null || hoverCol != null) {
-          hoverRow = null
-          hoverCol = null
-          drawHoverOverlay(hoverRow, hoverCol) // remove hover
-        }
-        return
+    if (!hitCell) {
+      hoverInfo.value = null
+      simState.instrHighlightedIdx = -1
+
+      if (hoverRow != null || hoverCol != null) {
+        hoverRow = null
+        hoverCol = null
+        drawHoverOverlay(null, null)
       }
+      return
+    }
 
-      const col     = hitCell.colIdx
-      const row     = hitCell.rowIdx
-      const instrID = hitCell.instrID
+    const { rowIdx: row, colIdx: col, instrID } = hitCell
 
-      if (simState.instrHighlightedIdx !== instrID) {
-        simState.instrHighlightedIdx = instrID
+    if (simState.instrHighlightedIdx !== instrID) {
+      simState.instrHighlightedIdx = instrID
+    }
+
+    hoverInfo.value = {
+      x: e.clientX + 10,
+      y: e.clientY + 10,
+      state: charToProcessingState(hitCell.char, hitCell.first_exec_stage ? hitCell.port : null),
+      critical: hitCell.critical
+    }
+
+    if (hoverRow !== row || hoverCol !== col) {
+      hoverRow = row
+      hoverCol = col
+      drawHoverOverlay(row, col)
+    }
+  }
+
+  function onClick(e) {
+    const rect = timelineCanvas.value.getBoundingClientRect()
+
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+    const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+
+    for (const cell of interactiveCells) {
+      if (
+        worldX >= cell.x &&
+        worldX <= cell.x + cellW &&
+        worldY >= cell.y &&
+        worldY <= cell.y + cellH
+      ) {
+        handleCellClick(cell.rowIdx, cell.colIdx)
+        break
       }
+    }
+  }
 
-      let displayPort = null;
-      if (hitCell.first_exec_stage) {
-        displayPort = hitCell.port;
-      }
-
-      hoverInfo.value = {
-        x:        e.clientX + 10,
-        y:        e.clientY + 10,
-        state:    charToProcessingState(hitCell.char, displayPort),
-        critical: hitCell.critical
-      }
-
-      if (hoverRow != row || hoverCol != col) {  // only if changes
-        hoverRow = row
-        hoverCol = col
-        drawHoverOverlay(hoverRow, hoverCol)
-      }
-
-      timelineCanvas.value.onclick = e => {
-        const rect   = timelineCanvas.value.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-        const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
-
-        for (const cell of interactiveCells) {
-          if (
-            worldX >= cell.x &&
-            worldX <= cell.x + cellW &&
-            worldY >= cell.y &&
-            worldY <= cell.y + cellH
-          ) {
-            handleCellClick(cell.rowIdx, cell.colIdx);
-            break;
-          }
-        }
-      };
-
+  /*
       // Flip tooltip if it overflows screen
       nextTick(() => {
         const tt = tooltipRef.value;
@@ -517,7 +514,7 @@
         }
       });
     };
-  }
+  } */
 
   async function handleCellClick(instrID, cycle) {
     const text = 'To DO';
