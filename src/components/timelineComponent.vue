@@ -422,11 +422,6 @@
 
   function attachHover() {
 
-    timelineCanvas.value.addEventListener('mouseleave', () => {
-      drawHoverOverlay(null, null)
-      simState.instrHighlightedIdx = -1
-    })
-
     timelineCanvas.value.onmousemove = e => {
       const rect   = timelineCanvas.value.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -449,13 +444,14 @@
       }
 
       if (!hitCell) {
+        hoverInfo.value = null
+        simState.instrHighlightedIdx = -1
         if (hoverRow != null || hoverCol != null) {
-          hoverInfo.value = null;
           hoverRow = null
           hoverCol = null
           drawHoverOverlay(hoverRow, hoverCol) // remove hover
         }
-        return;
+        return
       }
 
       const col     = hitCell.colIdx
