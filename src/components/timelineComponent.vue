@@ -114,12 +114,8 @@
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
     addCanvasWrapper()
+    // requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
     console.log('📈🎯 Timeline Component mounted')
-    try {    // generate timeline using RVCAT (if previous components are mounted)
-      getTimelineAndDraw()
-    } catch (error) {
-      console.error('📈❌ Failed on timeline:', error)
-    }
   });
 
   // Clean up on unmount
@@ -199,19 +195,19 @@
     return lines.join("\n");
   }
 
-  async function requestTimeline() {
+  function requestTimeline() {
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-      await getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
-                        timelineOptions.iters) // Call Python RVCAT
+      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
+                  timelineOptions.iters) // Call Python RVCAT
     }
   }
 
   function addCanvasWrapper () {
     const wrapper = document.getElementById("canvas-container")
-    let dragging  = false
-    let startX, startY
+    let   dragging  = false
+    let   startX, startY
 
     const observer = new ResizeObserver(() => {
       timelineOptions.iters = 0  // forces watcher to re-draw canvas with 1 iteration
@@ -440,7 +436,7 @@
 
   function attachHover() {
 
-    timelinecanvas.value.addEventListener('mouseleave', () => {
+    timelineCanvas.value.addEventListener('mouseleave', () => {
       drawHoverOverlay(null, null)
       simState.instrHighlightedIdx = -1
     })

@@ -11,7 +11,7 @@ const SimulationState = reactive({
   state:                0,
   processorName:       '',
   programName:         '',
-  instrHighlightedIdx: 0,
+  instrHighlightedIdx: -1,
   simulatedProcess:    {}
 })
 
