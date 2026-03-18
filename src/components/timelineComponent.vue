@@ -633,10 +633,10 @@
     position: absolute;
     top: 0;
     left: 0;
-    /* inset:    0;
-    /*  width:    100%;
-    /* height:   100%;
-    aspect-ratio: auto; */
+    /* inset:    0; */
+    width:    100%;
+    height:   100%;
+    aspect-ratio: auto;
   }
   #canvas-container canvas:last-child {
     pointer-events: none; /* 👈 importante */
