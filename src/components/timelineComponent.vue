@@ -471,6 +471,7 @@
         state:    charToProcessingState(hitCell.char, hitCell.first_exec_stage ? hitCell.port : null),
         critical: hitCell.critical
       }
+      adjustTooltipPosition(e)
 
       hoverRow = row
       hoverCol = col
@@ -500,30 +501,31 @@
     }
   }
 
-  /*
-      // Flip tooltip if it overflows screen
-      nextTick(() => {
-        const tt = tooltipRef.value;
-        if (!tt) return;
-        const tr = tt.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+  function adjustTooltipPosition(e) {
+    nextTick(() => {
+      const tt = tooltipRef.value
+      if (!tt) return
 
-        let newX = hoverInfo.value.x;
-        let newY = hoverInfo.value.y;
+      const tr = tt.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
 
-        if (tr.right > vw) {
-          newX = e.clientX - tr.width - 10;
-        }
-        if (tr.bottom > vh) {
-          newY = e.clientY - tr.height - 10;
-        }
-        if (newX !== hoverInfo.value.x || newY !== hoverInfo.value.y) {
-          hoverInfo.value = { ...hoverInfo.value, x: newX, y: newY };
-        }
-      });
-    };
-  } */
+      let x = e.clientX + 10
+      let y = e.clientY + 10
+
+      if (tr.right > vw) {
+        x = e.clientX - tr.width - 10
+      }
+
+      if (tr.bottom > vh) {
+        y = e.clientY - tr.height - 10
+      }
+
+      tt.style.left = `${x}px`
+      tt.style.top  = `${y}px`
+    })
+  }
+
 
   async function handleCellClick(instrID, cycle) {
     const text = 'To DO';
