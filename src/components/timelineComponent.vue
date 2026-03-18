@@ -311,10 +311,18 @@
     let totalWidth =  padX + cellW * cycles
     let totalHeight = padY + cellH * (instructions.length+1)
 
+    cellW = 14
+    cellH = 20
+    padX  = 10
+    padY  = 10
+    fontSize   = 14
+    fontXOffset = 2
+    fontYOffset = 3
+
     while (rect.width >= 2*totalWidth && rect.height >= 2*totalHeight) {
       cellW *=2; cellH *= 2; fontSize *= 2;
       fontXOffset *=2; fontYOffset *=2;
-      totalWidth  =  padX + cellW * cycles
+      totalWidth  = padX + cellW * cycles
       totalHeight = padY + cellH * (instructions.length+1)
     }
 
@@ -415,6 +423,9 @@
     ctx.save()
 
     // recover previous grid
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle   = "#ffffff"
+    // ctx.fillStyle = "#000"
     ctx.strokeStyle = "#bbb"
     ctx.lineWidth   = 1
     ctx.strokeRect( oldX, padY, cellW, totalRows * cellH )
