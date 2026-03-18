@@ -268,6 +268,8 @@
   const tooltipRef       = ref(null)
   const clickedCellInfo  = ref(null)
   const interactiveCells = []
+  let totalCycles = 0
+  let totalInstr  = 0
   let cellW       = 14
   let cellH       = 20
   let padX        = 10
@@ -300,6 +302,8 @@
 
     const { cycles, instructions, portUsage } = timeline.value
 
+    totalCycles = cycles
+    totalInstr  = instructions.length
     cellW = 14
     cellH = 20
     padX  = 10
@@ -403,15 +407,15 @@
 
   function drawHoverOverlay(row, col) {
     const ctx = overlayCanvas.value.getContext('2d')
+    console.log('📈✅ Draw Hover', row, col)
     ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
 
-    console.log('📈✅ Draw Hover', row, col)
-    if (row == null || col == null) return
+    if (row === null || col === null) return
 
     ctx.strokeStyle = 'red'
     ctx.lineWidth = 1
-    ctx.strokeRect( 0, padY + (row+1) * cellH, overlayCanvas.value.width, cellH )
-    ctx.strokeRect( padX + col * cellW, 0, cellW, overlayCanvas.value.height)
+    ctx.strokeRect( padY, padY + (row+1) * cellH, totalCycles*cellW, cellH )
+    ctx.strokeRect( padX + col * cellW, padX, cellW, totalInstr*cellH)
   }
 
   function onMouseMove(e) {
