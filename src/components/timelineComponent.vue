@@ -220,7 +220,7 @@
 
     const canvas = timelineCanvas.value
 
-    canvas.addEventListener("mousemove", onMouseMove)
+    // canvas.addEventListener("mousemove", onMouseMove)
     canvas.addEventListener("click", onClick)
 
     wrapper.addEventListener("mousedown", (e) => {
@@ -235,7 +235,10 @@
 
     wrapper.addEventListener("mousemove", (e) => {
 
-      if (!dragging) return
+      if (!dragging) {
+        onMouseMove(e)
+        return
+      }
 
       const dx = e.clientX - startX
       const dy = e.clientY - startY
@@ -415,7 +418,7 @@
     ctx.strokeStyle = 'red'
     ctx.lineWidth = 1
     ctx.strokeRect( padY, padY + (row+1) * cellH, totalCycles*cellW, cellH )
-    ctx.strokeRect( padX + col * cellW, padX, cellW, totalInstr*cellH)
+    ctx.strokeRect( padX + col * cellW, padX, cellW, (totalInstr+1)*cellH)
   }
 
   function onMouseMove(e) {
@@ -440,7 +443,7 @@
         break
       }
     }
-
+    console.log('📈✅ MouseMoved', row, col)
     if (!hitCell) {
       hoverInfo.value = null
       simState.instrHighlightedIdx = -1
