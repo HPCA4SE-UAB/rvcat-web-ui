@@ -414,24 +414,10 @@
 
     if (row == null || col == null) return
 
-    // fila
     ctx.strokeStyle = 'red'
     ctx.lineWidth = 1
-
-    ctx.strokeRect(
-      0,
-      padY + row * cellH,
-      canvas.width,
-      cellH
-    )
-
-    // columna
-    ctx.strokeRect(
-      padX + col * cellW,
-      0,
-      cellW,
-      canvas.height
-    )
+    ctx.strokeRect( 0, padY + row * cellH, overlayCanvas.value.width, cellH )
+    ctx.strokeRect( padX + col * cellW, 0, cellW, overlayCanvas.value.height)
   }
 
   function attachHover() {
