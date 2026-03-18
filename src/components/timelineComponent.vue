@@ -18,9 +18,7 @@
     showPorts:     false,
     canvasScale:   1,
     canvasOffsetX: 0,
-    canvasOffsetY: 0,
-    hoverPosX:     null,
-    hoverPosY:     null
+    canvasOffsetY: 0
   }
 
   const savedOptions = (() => {
@@ -51,71 +49,43 @@
     };
   }
 
-  const timeline       = reactive(createDefaultTimeline())
+  const timeline       = ref(createDefaultTimeline())
   const timelineCanvas = ref(null)
+  const overlayCanvas  = ref(null)
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  watch(() => [timelineOptions.iters, timelineOptions.showPorts], () => {
-    try {
-      timelineOptions.iters = Math.min(timelineOptions.iters, 9)
-      timelineOptions.iters = Math.max(timelineOptions.iters, 1)
+  watch( () => ({ iters: timelineOptions.iters, showPorts: timelineOptions.showPorts, scale: timelineOptions.canvasScale,
+                  offsetX:   timelineOptions.canvasOffsetX,  offsetY:   timelineOptions.canvasOffsetY  }),
+    saveOptions,
+    { deep: true }
+  )
 
-      // re-position
-      timelineOptions.canvasScale  = 1
-      timelineOptions.canvasOffsetX= 0
-      timelineOptions.canvasOffsetY= 0
-
-      requestAnimationFrame(() => {
-        getTimelineAndDraw()
-      })
-      console.log('📈✅ Modified timeline options (iters or showPorts)')
-      saveOptions()
-    } catch (error) {
-      console.error('📈❌Failed to save timeline options:', error)
-    }
-  },
-  { immediate: true })
-
-  watch(() => [timelineOptions.hoverPosX, timelineOptions.hoverPosY], ([newX, newY],oldValue) => {
-
-    if (newX == null || newY == null) return
-    const oldX = oldValue?.[0]
-    const oldY = oldValue?.[1]
-    if (oldX == null || oldY == null) return
-
-    try {
-      requestAnimationFrame(() => {
-        drawHoverOverlay(oldX, oldY)
-      })
-      //console.log(`📈🔄 Hover overlay: X:${newX} Y: ${newY}`)
-      saveOptions()
-    } catch (error) {
-      console.error('📈❌Failed to draw hover overlay:', error)
-    }
-  },
-  { immediate: true })
-
-  watch(() => [timeline, timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
-    if (timelineCanvas.value && timeline) {
+  watch( () => timelineOptions.iters, (newIters, oldIters) => {
+      if (newIters === oldIters) return
       try {
-        requestAnimationFrame(() => {
-          drawTimeline()
-        })
-        saveOptions()
+        const clamped = Math.min(Math.max(newIters, 1), 9)
+        if (clamped !== newIters) {
+          timelineOptions.iters = clamped
+          return
+        }
+        requestTimeline() // request timeline to RVCAT, then update timeline --> fire drawTimeline
+        console.log('📈✅ Modified timeline iters')
       } catch (error) {
-        console.error('📈❌Failed to draw timeline', error)
+        console.error('📈❌Failed to save timeline options:', error)
       }
     }
-  },
-  { deep: true, immediate: true })
+  )
 
-  watch (() => simState.instrHighlightedIdx, (newVal,oldVal) => {console.log('📈 Intr timeline', newVal) },
+  watch(() => [timeline.value,  timelineOptions.showPorts, timelineOptions.canvasScale,
+               timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
+    if (!timelineCanvas.value || !timeline.value) return
+    scheduleDraw()
+  })
+
+  watch ([() => simState.simulatedProcess], () => { requestTimeline() },
     { deep: true, immediate: false })
-
-  watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },
-  { deep: true, immediate: false })
 
   // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
   const handleTimeline = async (data, dataType) => {
@@ -126,7 +96,10 @@
     try {
       let timelineRVCAT       = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
-      Object.assign(timeline, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
+      Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
+      timelineOptions.canvasScale   = 1
+      timelineOptions.canvasOffsetX = 0
+      timelineOptions.canvasOffsetY = 0
     } catch (error) {
       console.error('📈❌Failed to process JSON timeline:', error)
     }
@@ -226,7 +199,7 @@
     return lines.join("\n");
   }
 
-  async function getTimelineAndDraw() {
+  async function requestTimeline() {
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
@@ -299,6 +272,19 @@
   let fontSize    = 14
   let fontXOffset = 2
   let fontYOffset = 3
+  let rafPending  = false
+  let hoverRow    = null
+  let hoverCol    = null
+
+  function scheduleDraw() {
+    if (rafPending) return
+    rafPending = true
+
+    requestAnimationFrame(() => {
+      drawTimeline()
+      rafPending = false
+    })
+  }
 
   function drawTimeline() {
 
@@ -306,7 +292,10 @@
     timelineCanvas.value.width  = rect.width
     timelineCanvas.value.height = rect.height
 
-    const { cycles, instructions, portUsage } = timeline
+    overlayCanvas.value.width  = rect.width
+    overlayCanvas.value.height = rect.height
+
+    const { cycles, instructions, portUsage } = timeline.value
 
     let totalWidth =  padX + cellW * cycles
     let totalHeight = padY + cellH * (instructions.length+1)
@@ -319,6 +308,9 @@
     fontXOffset = 2
     fontYOffset = 3
 
+    hoverRow = null
+    hoverCol = null
+
     while (rect.width >= 2*totalWidth && rect.height >= 2*totalHeight) {
       cellW *=2; cellH *= 2; fontSize *= 2;
       fontXOffset *=2; fontYOffset *=2;
@@ -330,7 +322,15 @@
     ctx.setTransform(1,0,0,1,0,0)
     ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
 
+    const ctxOverlay = overlayCanvas.value.getContext('2d')
+    ctxOverlay.setTransform(1,0,0,1,0,0)
+    ctxOverlay.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
+
     ctx.setTransform(
+      timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
+      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
+    )
+    ctxOverlay.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
     )
@@ -385,11 +385,11 @@
 
           interactiveCells.push({
             kind, x, y,
-            colIndexVis: i,
-            char:        ch,
+            colIdx: i,
+            rowIdx,
+            char: ch,
             critical,
             first_exec_stage,
-            rowIdx,
             port,
             instrIdx
           })
@@ -412,33 +412,39 @@
     attachHover();
   }
 
-  function drawHoverOverlay(oldX, oldY) {
+  function drawHoverOverlay(row, col) {
+    const ctx = overlayCanvas.value.getContext('2d')
+    ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
 
-    const { cycles, instructions, portUsage } = timeline
+    if (row == null || col == null) return
 
-    let totalRows = instructions.length+1
-    let totalCols = cycles
+    // fila
+    ctx.strokeStyle = 'red'
+    ctx.lineWidth = 1
 
-    const ctx = timelineCanvas.value.getContext('2d')
-    ctx.save()
+    ctx.strokeRect(
+      0,
+      padY + row * cellH,
+      canvas.width,
+      cellH
+    )
 
-    // recover previous grid
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle   = "#ffffff"
-    // ctx.fillStyle = "#000"
-    ctx.strokeStyle = "#bbb"
-    ctx.lineWidth   = 1
-    ctx.strokeRect( oldX, padY, cellW, totalRows * cellH )
-    ctx.strokeRect( padX, oldY, totalCols * cellW, cellH )
-
-    ctx.strokeStyle = "red"
-    ctx.lineWidth   = 1
-    ctx.strokeRect( timelineOptions.hoverPosX, padY, cellW, totalRows * cellH )
-    ctx.strokeRect( padX, timelineOptions.hoverPosY, totalCols * cellW, cellH )
-    ctx.restore()
+    // columna
+    ctx.strokeRect(
+      padX + col * cellW,
+      0,
+      cellW,
+      canvas.height
+    )
   }
 
   function attachHover() {
+
+    timelinecanvas.value.addEventListener('mouseleave', () => {
+      drawHoverOverlay(null, null)
+      simState.instrHighlightedIdx = -1
+    })
+
     timelineCanvas.value.onmousemove = e => {
       const rect   = timelineCanvas.value.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -461,25 +467,35 @@
       }
 
       if (!hitCell) {
-        hoverInfo.value = null;
+        if (hoverRow != null || hoverCol != null) {
+          hoverInfo.value = null;
+          hoverRow = null
+          hoverCol = null
+          drawHoverOverlay(hoverRow, hoverCol) // remove hover
+        }
         return;
       }
 
-      let instrID = hitCell.instrID;
+      const col     = hitCell.colIdx
+      const row     = hitCell.rowIdx
+      const instrID = hitCell.instrID
+
       if (simState.instrHighlightedIdx !== instrID) {
         simState.instrHighlightedIdx = instrID
       }
 
-      // cycle is hitCell.colIndexVis
-
+      if (hoverRow != row || hoverCol != col) {  // only if changes
+        hoverRow = row
+        hoverCol = col
+        requestAnimationFrame(() => {
+          drawHoverOverlay(hoverRow, hoverCol)
+        })
+      }
 
       let displayPort = null;
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
       }
-
-      timelineOptions.hoverPosX = hitCell.x
-      timelineOptions.hoverPosY = hitCell.y
 
       hoverInfo.value = {
         x:        e.clientX + 10,
@@ -503,7 +519,7 @@
             worldY >= cell.y &&
             worldY <= cell.y + cellH
           ) {
-            handleCellClick(cell.instrID, cell.colIndexVis);
+            handleCellClick(cell.rowIdx, cell.colIdx);
             break;
           }
         }
@@ -582,6 +598,7 @@
 
     <div class="output-block-wrapper" id="canvas-container">
       <canvas ref="timelineCanvas"></canvas>
+      <canvas ref="overlayCanvas"></canvas>
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
@@ -635,14 +652,16 @@
     position: relative;
     width:    100%;
     height:   100%;
-    overflow: auto;
   }
   #canvas-container canvas {
     position: absolute;
-    inset:    0;       /* top:0 left:0 right:0 bottom:0 */
+    inset:   0;
     width:    100%;
     height:   100%;
     aspect-ratio: auto;
+  }
+  #canvas-container canvas:last-child {
+    pointer-events: none; /* 👈 importante */
   }
 
   .tooltip {

@@ -11,7 +11,7 @@ const SimulationState = reactive({
   state:                0,
   processorName:       '',
   programName:         '',
-  instrHighlightedIdx: -1,
+  instrHighlightedIdx: 0,
   simulatedProcess:    {}
 })
 
@@ -19,6 +19,5 @@ app.use(router)
 
 app.provide('simulationState', SimulationState)
 app.provide('worker', useWorker())
-
 
 app.mount('#app')
