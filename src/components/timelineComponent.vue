@@ -81,7 +81,7 @@
   watch(() => [timeline.value,  timelineOptions.showPorts, timelineOptions.canvasScale,
                timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (!timelineCanvas.value || !timeline.value) return
-    scheduleDraw()
+    drawTimeline()
   })
 
   watch ([() => simState.simulatedProcess], () => { requestTimeline() },
@@ -217,8 +217,8 @@
 
     wrapper.addEventListener("mousedown", (e) => {
       dragging = true
-      startX = e.clientX
-      startY = e.clientY
+      startX   = e.clientX
+      startY   = e.clientY
     })
 
     window.addEventListener("mouseup", () => {
@@ -231,9 +231,8 @@
 
       const dx = e.clientX - startX
       const dy = e.clientY - startY
-
-      startX = e.clientX
-      startY = e.clientY
+      startX   = e.clientX
+      startY   = e.clientY
 
       // fire drawTimeline reaction
       timelineOptions.canvasOffsetX += dx
@@ -293,9 +292,6 @@
 
     const { cycles, instructions, portUsage } = timeline.value
 
-    let totalWidth =  padX + cellW * cycles
-    let totalHeight = padY + cellH * (instructions.length+1)
-
     cellW = 14
     cellH = 20
     padX  = 10
@@ -303,30 +299,22 @@
     fontSize   = 14
     fontXOffset = 2
     fontYOffset = 3
-
     hoverRow = null
     hoverCol = null
-
-    while (rect.width >= 2*totalWidth && rect.height >= 2*totalHeight) {
-      cellW *=2; cellH *= 2; fontSize *= 2;
-      fontXOffset *=2; fontYOffset *=2;
-      totalWidth  = padX + cellW * cycles
-      totalHeight = padY + cellH * (instructions.length+1)
-    }
-
-    const ctx = timelineCanvas.value.getContext('2d')
-    ctx.setTransform(1,0,0,1,0,0)
-    ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
+    hoverInfo.value = null
 
     const ctxOverlay = overlayCanvas.value.getContext('2d')
     ctxOverlay.setTransform(1,0,0,1,0,0)
     ctxOverlay.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
-
-    ctx.setTransform(
+    ctxOverlay.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
     )
-    ctxOverlay.setTransform(
+
+    const ctx = timelineCanvas.value.getContext('2d')
+    ctx.setTransform(1,0,0,1,0,0)
+    ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
+    ctx.setTransform(
       timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
       timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
     )
@@ -633,7 +621,6 @@
     position: absolute;
     top: 0;
     left: 0;
-    /* inset:    0; */
     width:    100%;
     height:   100%;
     aspect-ratio: auto;
