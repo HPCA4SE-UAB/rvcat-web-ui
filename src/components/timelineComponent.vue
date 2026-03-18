@@ -52,15 +52,11 @@
   const timeline       = ref(createDefaultTimeline())
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
+  let   last_showPorts = false
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  watch( () => ({ iters: timelineOptions.iters, showPorts: timelineOptions.showPorts }),
-    saveOptions,
-    { deep: true }
-  )
-
   watch( () => timelineOptions.iters, (newIters, oldIters) => {
       if (newIters === oldIters) return
       try {
@@ -69,6 +65,7 @@
           timelineOptions.iters = clamped
           return
         }
+        saveOptions()
         requestTimeline() // request timeline to RVCAT, then update timeline --> fire drawTimeline
         console.log('📈✅ Modified timeline iters')
       } catch (error) {
@@ -80,6 +77,11 @@
   watch(() => [timeline.value,  timelineOptions.showPorts, timelineOptions.canvasScale,
                timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (!timelineCanvas.value || !timeline.value) return
+    if (timelineOptions.showPorts !== last_showPorts ) {
+      saveOptions()
+      last_showPorts = timelineOptions.showPorts
+      console.log('📈✅ Modified showPorts')
+    }
     console.log('📈✅ Redraw timeline')
     drawTimeline()
   })
