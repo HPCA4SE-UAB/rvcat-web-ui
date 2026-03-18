@@ -443,7 +443,6 @@
         break
       }
     }
-    console.log('📈✅ MouseMoved', row, col)
     if (!hitCell) {
       hoverInfo.value = null
       simState.instrHighlightedIdx = -1
@@ -453,23 +452,26 @@
         hoverCol = null
         drawHoverOverlay(null, null)
       }
+      console.log('📈✅ MouseMoved - Not Hit Cell')
       return
     }
 
     const { rowIdx: row, colIdx: col, instrID } = hitCell
 
-    if (simState.instrHighlightedIdx !== instrID) {
-      simState.instrHighlightedIdx = instrID
-    }
-
-    hoverInfo.value = {
-      x: e.clientX + 10,
-      y: e.clientY + 10,
-      state: charToProcessingState(hitCell.char, hitCell.first_exec_stage ? hitCell.port : null),
-      critical: hitCell.critical
-    }
-
+    console.log('📈✅ MouseMoved - HitCell:', row, col)
     if (hoverRow !== row || hoverCol !== col) {
+
+      if (simState.instrHighlightedIdx !== instrID) {
+        simState.instrHighlightedIdx = instrID
+      }
+
+      hoverInfo.value = {
+        x:        e.clientX + 10,
+        y:        e.clientY + 10,
+        state:    charToProcessingState(hitCell.char, hitCell.first_exec_stage ? hitCell.port : null),
+        critical: hitCell.critical
+      }
+
       hoverRow = row
       hoverCol = col
       drawHoverOverlay(row, col)
