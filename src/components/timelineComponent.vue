@@ -56,8 +56,7 @@
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  watch( () => ({ iters: timelineOptions.iters, showPorts: timelineOptions.showPorts, scale: timelineOptions.canvasScale,
-                  offsetX:   timelineOptions.canvasOffsetX,  offsetY:   timelineOptions.canvasOffsetY  }),
+  watch( () => ({ iters: timelineOptions.iters, showPorts: timelineOptions.showPorts }),
     saveOptions,
     { deep: true }
   )
@@ -81,6 +80,7 @@
   watch(() => [timeline.value,  timelineOptions.showPorts, timelineOptions.canvasScale,
                timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
     if (!timelineCanvas.value || !timeline.value) return
+    console.log('📈✅ Redraw timeline')
     drawTimeline()
   })
 
@@ -96,7 +96,7 @@
     try {
       let timelineRVCAT       = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
-      Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
+      await Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
       timelineOptions.canvasScale   = 1
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
