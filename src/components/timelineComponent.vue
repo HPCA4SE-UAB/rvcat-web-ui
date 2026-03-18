@@ -459,9 +459,9 @@
 
     if (hoverRow !== row || hoverCol !== col) {
 
-      if (simState.instrHighlightedIdx !== instrID) {
-        simState.instrHighlightedIdx = instrID
-        console.log(simState)
+      if (simState.instrHighlightedIdx !== instrIdx) {
+        simState.instrHighlightedIdx = instrIdx
+        console.log(instrIdx, simState)
       }
 
       hoverInfo.value = {
