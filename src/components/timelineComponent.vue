@@ -52,7 +52,6 @@
   const timeline       = ref(createDefaultTimeline())
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
-  let   last_showPorts = false
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
@@ -73,18 +72,23 @@
       }
     }
   )
+  watch(
+    () => [timeline.value, timelineOptions.showPorts, timelineOptions.canvasScale,
+      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
+    ([newTimeline, newShowPorts], [oldTimeline, oldShowPorts]) => {
 
-  watch(() => [timeline.value,  timelineOptions.showPorts, timelineOptions.canvasScale,
-               timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY], () => {
-    if (!timelineCanvas.value || !timeline.value) return
-    if (timelineOptions.showPorts !== last_showPorts ) {
-      saveOptions()
-      last_showPorts = timelineOptions.showPorts
-      console.log('📈✅ Modified showPorts')
+      if (!timelineCanvas.value || !newTimeline) return
+
+      if (newShowPorts !== oldShowPorts) {
+        saveOptions()
+        console.log('📈✅ Modified showPorts')
+      }
+
+      console.log('📈✅ Redraw timeline')
+      scheduleDraw()
+      // drawTimeline()
     }
-    console.log('📈✅ Redraw timeline')
-    drawTimeline()
-  })
+  )
 
   watch ([() => simState.simulatedProcess], () => { requestTimeline() },
     { deep: true, immediate: false })
@@ -98,7 +102,7 @@
     try {
       let timelineRVCAT       = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
-      await Object.assign(timeline.value, JSON.parse(JSON.stringify(timelineRVCAT))) // deep copy & fire draw-update
+      timeline.value = timelineRVCAT
       timelineOptions.canvasScale   = 1
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
