@@ -455,7 +455,7 @@
       return
     }
 
-    const { rowIdx: row, colIdx: col, instrID } = hitCell
+    const { rowIdx: row, colIdx: col, instrIdx } = hitCell
 
     if (hoverRow !== row || hoverCol !== col) {
 
