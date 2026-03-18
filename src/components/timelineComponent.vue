@@ -452,17 +452,16 @@
         hoverCol = null
         drawHoverOverlay(null, null)
       }
-      console.log('📈✅ MouseMoved - Not Hit Cell')
       return
     }
 
     const { rowIdx: row, colIdx: col, instrID } = hitCell
 
-    console.log('📈✅ MouseMoved - HitCell:', row, col)
     if (hoverRow !== row || hoverCol !== col) {
 
       if (simState.instrHighlightedIdx !== instrID) {
         simState.instrHighlightedIdx = instrID
+        console.log(simState)
       }
 
       hoverInfo.value = {
@@ -525,7 +524,6 @@
       tt.style.top  = `${y}px`
     })
   }
-
 
   async function handleCellClick(instrID, cycle) {
     const text = 'To DO';
