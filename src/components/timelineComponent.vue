@@ -111,7 +111,7 @@
   },
   { deep: true, immediate: true })
 
-  watch ([() => simState.instrHighlightedIdx], () => {console.log('📈 Intr timeline') },
+  watch (() => simState.instrHighlightedIdx, (newVal,oldVal) => {console.log('📈 Intr timeline', newVal) },
     { deep: true, immediate: false })
 
   watch ([() => simState.simulatedProcess], () => { getTimelineAndDraw() },

@@ -153,8 +153,14 @@
   },
   { deep: true, immediate: true })
 
-  watch( () => simState,
-    saveSimState(),
+  watch(
+    () => ({
+      state: simState.state,
+      processorName: simState.processorName,
+      programName: simState.programName,
+      simulatedProcess: simState.simulatedProcess
+    }),
+    saveSimState,
     { deep: true }
   )
 
