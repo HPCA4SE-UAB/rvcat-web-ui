@@ -462,14 +462,6 @@
         simState.instrHighlightedIdx = instrID
       }
 
-      if (hoverRow != row || hoverCol != col) {  // only if changes
-        hoverRow = row
-        hoverCol = col
-        requestAnimationFrame(() => {
-          drawHoverOverlay(hoverRow, hoverCol)
-        })
-      }
-
       let displayPort = null;
       if (hitCell.first_exec_stage) {
         displayPort = hitCell.port;
@@ -480,7 +472,13 @@
         y:        e.clientY + 10,
         state:    charToProcessingState(hitCell.char, displayPort),
         critical: hitCell.critical
-      };
+      }
+
+      if (hoverRow != row || hoverCol != col) {  // only if changes
+        hoverRow = row
+        hoverCol = col
+        drawHoverOverlay(hoverRow, hoverCol)
+      }
 
       timelineCanvas.value.onclick = e => {
         const rect   = timelineCanvas.value.getBoundingClientRect();
