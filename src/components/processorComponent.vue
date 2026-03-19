@@ -446,6 +446,8 @@
 
     if (results !== null)
       usage = (results.ipc / dispatch) * 100
+    else
+      usage = ''
 
     // ---- Decode ----
     let decode_row = `<TR>
