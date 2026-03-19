@@ -430,12 +430,15 @@ function snapshotMemory() {
   }
 
   function updateCriticalInfo() {
-    const res        = simState.executionResults?.critical_path?.instructions || []
-    const instr_list = simState.simulatedProcess?.instruction_list || []
+    const res = simState.executionResults?.critical_path?.instructions
+    const instr_list = simState.simulatedProcess?.instruction_list
+
+    if (!res || !instr_list) return
+
+    const resMap = new Map(res.map(r => [r.id, r.percentage]))
 
     instr_list.forEach((inst, index) => {
-      let percentage = (res[`"${index}"`]?.percentage ?? 0)*100
-      inst.percentage = percentage.toFixed(0)
+      inst.percentage = ((resMap.get(index) ?? 0)*100).toFixed(0)
     })
   }
 
