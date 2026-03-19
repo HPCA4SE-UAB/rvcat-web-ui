@@ -170,6 +170,14 @@
     }
   )
 
+  watch( () => simState.highlightedPort, (newValue, oldValue) => {
+      if (newValue === 1 && oldValue !== 1) {
+        console.log('💻✅ HighlightedPort')
+        drawProcessor()
+      }
+    }
+  )
+
   watch(() => simState.simulatedProcess, () => {
     // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
     const oldROBsize = simState.simulatedProcess.ROBsize;
