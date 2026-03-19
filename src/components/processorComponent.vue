@@ -176,6 +176,11 @@
     }
   )
 
+  watch( () => simState.executionResults, () => {
+      drawProcessor()
+  },
+  { deep: true, immediate: true })
+
   watch(() => simState.simulatedProcess, () => {
     // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
     const oldROBsize = simState.simulatedProcess.ROBsize;
@@ -290,7 +295,7 @@
 
   const drawProcessor = async () => {
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess,simState.highlightedPort)
+      const dotCode      = get_processor_dot (simState.simulatedProcess, simState.highlightedPort, simState.executionResults)
       // console.log('💻🔄Redrawing simulated processor', dotCode);
       const svg          = await createGraphVizGraph(dotCode);
       // console.log('💻🔄Redrawing SVG', svg);
@@ -314,11 +319,6 @@
   }
 
   /*
-      // Colorscale from white to red
-    const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
-                    "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
-                    "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
-    ];
 
     let dispatch_color = color[Math.floor(usage.dispatch/5)];
     let execute_color = color[Math.floor(usage.ports[i] / 5)];
@@ -339,7 +339,7 @@
       }
    */
 
-  function get_processor_dot(process, highlightPort) {
+  function get_processor_dot(process, highlightPort= -1, results = null) {
 
     const ports    = process.ports
     const lat      = process.latencies
@@ -348,6 +348,12 @@
     const sched    = process.sched
     const dispatch = process.dispatch
     const retire   = process.retire
+
+    // Colorscale from white to red
+    const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
+                    "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
+                    "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
+    ];
 
     function type_color(type) {
       if (type === "INT")    return "#d6e4ff"
@@ -438,9 +444,12 @@
 
     const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
 
+    if (results !== null)
+      usage = (results.ipc / dispatch) * 100
+
     // ---- Decode ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle ${usage}</FONT></TD>
       <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
