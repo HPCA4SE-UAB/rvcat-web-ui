@@ -361,7 +361,10 @@
             ? usage.includes(i)
             : i in usage
         })
+        .map(p => `P${p}`)
         .join(',')
+
+      sequenceOfPorts = `Ports used: ${sequenceOfPorts || 'none'}`
 
       interactiveCells.push({
         x, y, colIdx: i, rowIdx: -1,   /* indicates 1st row of cycles */
@@ -480,6 +483,9 @@
         state:    sequenceOfPorts,
         critical: false
       }
+      hoverRow = null
+      hoverCol = null
+      drawHoverOverlay(null, null)
       adjustTooltipPosition(e)
       return
     }

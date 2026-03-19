@@ -464,15 +464,11 @@
         if (op.big) {
           const tooltip = latency_tooltip(op.label)
           op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}>
-              <FONT POINT-SIZE="16"><B>${op.label}</B></FONT>
-            </TD>`
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
         } else {
           const tooltip = latency_tooltip(op.label)
           op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}>
-              <FONT POINT-SIZE="14">${op.label}</FONT>
-            </TD>`
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
         }
       }
       op_rows += "</TR>"
