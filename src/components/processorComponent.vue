@@ -177,7 +177,9 @@
   )
 
   watch( () => simState.executionResults, () => {
+    if (simState.state > 1) {
       drawProcessor()
+    }
   },
   { deep: true, immediate: true })
 
