@@ -131,9 +131,10 @@ function loadEditedProgram() {
     const data = JSON.parse(stored);
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
-        text:    inst.text || '',    type:    inst.type    || '',  oper:     inst.oper    || '',
-        size:    inst.size || '',    destin:  inst.destin  || '',  source1:  inst.source1 || '',
-        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || ''
+        text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
+        size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
+        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
+        percentage: null
       };
     });
   } catch (e) {
@@ -340,7 +341,8 @@ function addInstruction( index ) {
       source1: '',
       source2: '',
       source3: '',
-      constant: ''
+      constant: '',
+      percentage: null
     }
   );
 }
@@ -377,7 +379,8 @@ function normalizeInstruction(inst) {
     source1:  (inst.source1  || '').trim(),
     source2:  (inst.source2  || '').trim(),
     source3:  (inst.source3  || '').trim(),
-    constant: (inst.constant || '').trim()
+    constant: (inst.constant || '').trim(),
+    percentage: inst.percentage
   };
 }
 
@@ -427,8 +430,13 @@ function snapshotMemory() {
   }
 
   function updateCriticalInfo() {
-    const res= simState.executionResults
-    return
+    const res        = simState.executionResults?.critical_path?.instructions || []
+    const instr_list = simState.simulatedProcess?.instruction_list || []
+
+    instr_list.forEach((inst, index) => {
+      console.log('📄🔄 Update percentage of instruction', index, res);
+      inst.percentage = res[index]?.percentage ?? 0
+    })
   }
 
   function portsMaskToString(mask) {
@@ -605,8 +613,8 @@ function snapshotMemory() {
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td>{{ index }}
-                <section v-if="simState.executionResults !== null">
-                  {{simState.executionResults.instructions[index].percentage.tofix(0)}}
+                <section v-if="inst.percentage !== null">
+                  {{inst.percentage.tofix(0)}}%
                 </section>
               </td>
 
