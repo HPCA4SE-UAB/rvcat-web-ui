@@ -214,7 +214,8 @@
     let   startX, startY
 
     const observer = new ResizeObserver(() => {
-      timelineOptions.iters = 0  // forces watcher to re-draw canvas with 1 iteration
+      togglePorts()  // forces watcher to re-draw canvas
+      togglePorts()  // forces watcher to re-draw canvas
     })
 
     observer.observe(wrapper)

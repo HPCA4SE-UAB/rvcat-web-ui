@@ -313,6 +313,32 @@
     }
   }
 
+  /*
+      // Colorscale from white to red
+    const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
+                    "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
+                    "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
+    ];
+
+    let dispatch_color = color[Math.floor(usage.dispatch/5)];
+    let execute_color = color[Math.floor(usage.ports[i] / 5)];
+    dot_code += `P${i} fillcolor="${execute_color}", tooltip="Usage: ${usage.ports[i].toFixed(1)}%"];\n`
+
+      let dispatch= 2
+      let retire  = 2
+      let usage = {}
+      usage['dispatch'] = (d["ipc"] / dispatch) * 100;
+      usage['retire']   = (d["ipc"] / retire)   * 100;
+      usage.ports       = {}
+      let i = 0;
+      // let keys = Object.keys(processorInfo.ports);
+      let keys = ["P0", "P1", "P2"]
+      for (let key of keys) {
+          usage.ports[i] = d.ports[key];
+          i++;
+      }
+   */
+
   function get_processor_dot(process, highlightPort) {
 
     const ports    = process.ports

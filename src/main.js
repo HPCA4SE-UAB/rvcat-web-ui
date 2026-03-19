@@ -13,7 +13,8 @@ const SimulationState = reactive({
   programName:         '',
   instrHighlightedIdx: -1,
   highlightedPort:     -1,
-  simulatedProcess:    {}
+  simulatedProcess:    {},
+  executionResults:    {}
 })
 
 app.use(router)
