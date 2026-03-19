@@ -438,7 +438,7 @@ function snapshotMemory() {
 
     if (!res) {
       instr_list.forEach((inst, index) => {
-        inst.percentage = null
+        delete inst.percentage
       })
       return
     }
