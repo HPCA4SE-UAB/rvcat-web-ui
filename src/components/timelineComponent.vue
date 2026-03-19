@@ -201,8 +201,9 @@
   function requestTimeline() {
     if (simState.state >= 3) {
       console.log('📈🔄 Request timeline from RVCAT')
-      const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2),
+      const { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
+      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
+                                    instruction_list: toRaw(instruction_list)}, null, 2),
                   timelineOptions.iters) // Call Python RVCAT
     }
   }
