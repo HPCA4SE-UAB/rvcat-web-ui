@@ -181,29 +181,9 @@
 
     // Colorscale from grey to red
     const color = [
-      "#e0e0e0",
-      "#c8e6c9",
-      "#a5d6a7",
-      "#81c784",
-      "#66bb6a",
-      "#4caf50",
-      "#43a047",
-      "#388e3c",
-      "#2e7d32",
-      "#558b2f",
-      "#7cb342",
-      "#9e9d24",
-      "#c0ca33",
-      "#d4b000",
-      "#c49000",
-      "#b37400",
-      "#a35a00",
-      "#933f00",
-      "#832600",
-      "#731200",
-      "#630000",
-      "#4a0000"
-    ];
+      "#e0e0e0",  "#c8e6c9",  "#a5d6a7",  "#81c784",  "#66bb6a",  "#4caf50",  "#43a047",  "#388e3c",
+      "#2e7d32",  "#558b2f",  "#7cb342",  "#9e9d24",  "#c0ca33",  "#d4b000",  "#c49000",  "#b37400",
+      "#a35a00",  "#933f00",  "#832600",  "#731200",  "#630000",  "#4a0000"    ];
 
     let usage = 0
     if (results !== null)
@@ -211,12 +191,12 @@
     let dispatch_color = color[Math.floor(usage/5)]
 
     let message = results !== null
-      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     // ---- Decode ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle<B>&nbsp;${message}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle${message}</FONT></TD>
       <TD ROWSPAN="4" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
@@ -230,23 +210,29 @@
 
     for (let p of port_ids) {
       const style = ' BGCOLOR="#f5f5f5"'
-      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+      if (results !== null)
+        usage = (results.ports[p]) * 100
+      let port_color = color[Math.floor(usage/5)]
+      let message = results !== null
+        ? `&nbsp;<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
+        : ""
+
+      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}${message}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
 
     // ---- Registers & Retire ----
-
     if (results !== null)
       usage = (results.ipc / retire) * 100
-    dispatch_color = color[Math.floor(usage/5)]
+    let retire_color = color[Math.floor(usage/5)]
 
     message = results !== null
-      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>&nbsp;${message}</B>&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;${message}&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
     </TR>`
 
     const dot = `
