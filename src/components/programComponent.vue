@@ -434,8 +434,8 @@ function snapshotMemory() {
     const instr_list = simState.simulatedProcess?.instruction_list || []
 
     instr_list.forEach((inst, index) => {
-      console.log('📄🔄 Update percentage of instruction', index, res);
-      inst.percentage = res[`"${index}"`]?.percentage.tofix(0) ?? 0
+      let percentage = (res[`"${index}"`]?.percentage ?? 0)*100
+      inst.percentage = percentage.toFixed(0)
     })
   }
 
@@ -598,7 +598,7 @@ function snapshotMemory() {
         <table class="instructions-table">
           <thead>
             <tr>
-              <th style="width: 20px;">  #    </th>
+              <th style="width: 50px;">  #    </th>
               <th style="width: 600px;"> Inst </th>
               <th v-if="!programOptions.showLat"  style="width: 100px;"> Type </th>
               <th v-if="!programOptions.showLat"  style="width: 100px;"> Oper </th>
