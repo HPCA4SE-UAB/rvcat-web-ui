@@ -230,11 +230,11 @@
     let retire_color = color[Math.floor(usage/5)]
 
     message = usage !== 0
-      ? `<B>&nbsp;&nbsp;&nbsp;Usage:<FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
+      ? `<B>&nbsp;Usage:<FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;${message}&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle${message}&nbsp;<B>Architected Registers</B></FONT></TD>
     </TR>`
 
     const dot = `
