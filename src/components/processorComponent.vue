@@ -322,9 +322,7 @@
 
   /*
 
-    let dispatch_color = color[Math.floor(usage.dispatch/5)];
-    let execute_color = color[Math.floor(usage.ports[i] / 5)];
-    dot_code += `P${i} fillcolor="${execute_color}", tooltip="Usage: ${usage.ports[i].toFixed(1)}%"];\n`
+
 
       let dispatch= 2
       let retire  = 2
@@ -446,13 +444,18 @@
 
     const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
 
-    let usage = ''
+    let usage = 0
     if (results !== null)
       usage = (results.ipc / dispatch) * 100
+    let dispatch_color = color[Math.floor(usage/5)]
+
+    let message = results !== null
+      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      : ""
 
     // ---- Decode ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle ${usage}</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle<B>&nbsp${message}</B></FONT></TD>
       <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
