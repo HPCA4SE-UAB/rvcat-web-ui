@@ -77,7 +77,7 @@
           alert('Error running simulation');
           document.getElementById('run-simulation-spinner').style.display = 'none';
           document.getElementById('simulation-running').style.display     = 'none';
-          document.getElementById('critical-path-section').style.display  = 'block';
+          document.getElementById('previous-simulations-section').style.display  = 'block';
           document.getElementById('run-simulation-button').disabled       = false;
           return;
       }
@@ -88,7 +88,7 @@
 
       document.getElementById('run-simulation-spinner').style.display = 'none';
       document.getElementById('simulation-running').style.display     = 'none';
-      document.getElementById('critical-path-section').style.display  = 'block';
+      document.getElementById('previous-simulations-section').style.display  = 'block';
       document.getElementById('run-simulation-button').disabled       = false;
     } catch (error) {
       console.error('🕐❌Failed to obtain execution results:', error)
@@ -112,7 +112,7 @@
 
         document.getElementById('run-simulation-spinner').style.display = 'block';
         document.getElementById('simulation-running').style.display     = 'block';
-        document.getElementById('critical-path-section').style.display  = 'none';
+        document.getElementById('previous-simulations-section').style.display  = 'none';
         document.getElementById('run-simulation-button').disabled       = true;
 
         const { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
