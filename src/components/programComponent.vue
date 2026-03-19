@@ -435,7 +435,7 @@ function snapshotMemory() {
 
     instr_list.forEach((inst, index) => {
       console.log('📄🔄 Update percentage of instruction', index, res);
-      inst.percentage = res[index]?.percentage ?? 0
+      inst.percentage = res[`"${index}"`]?.percentage.tofix(0) ?? 0
     })
   }
 
@@ -613,8 +613,8 @@ function snapshotMemory() {
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td>{{ index }}
-                <section v-if="inst.percentage !== null">
-                  {{inst.percentage.tofix(0)}}%
+                <section v-if="inst?.percentage != null">
+                  {{ inst.percentage }}%
                 </section>
               </td>
 
