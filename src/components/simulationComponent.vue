@@ -211,8 +211,8 @@
     for (let p of port_ids) {
       const style = ' BGCOLOR="#f5f5f5"'
       usage = 0
-      if (results !== null && results.ports[p] !== null)
-        usage = (results.ports[p])
+      if (results?.ports?.[p] != null)
+        usage = results.ports[p]
       let port_color = color[Math.floor(usage/5)]
       let message = usage !== 0
         ? `&nbsp;<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
