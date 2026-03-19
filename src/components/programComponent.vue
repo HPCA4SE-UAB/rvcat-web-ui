@@ -199,20 +199,14 @@ function loadEditedMemory() {
     { deep: true }
   )
 
-  // 🔹 Inicialización
-  watch(
-    () => simState.state,
-    (newValue, oldValue) => {
+  watch( () => simState.state, (newValue, oldValue) => {
       if (newValue === 2 && oldValue !== 2) {
         initProgram()
       }
     }
   )
 
-  // 🔹 Refresco
-  watch(
-    () => simState.simulatedProcess,
-    () => {
+  watch( () => simState.simulatedProcess, () => {
       if (simState.state > 2) {
         console.log('📄🔄 Refreshing program latencies & ports on simulated process');
         updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
@@ -221,6 +215,12 @@ function loadEditedMemory() {
     },
     { deep: true, immediate: false }
   )
+
+  watch( () => simState.executionResults, () => {
+    if (simState.state > 2)
+      updateCriticalInfo()
+  },
+  { deep: true, immediate: true })
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
@@ -424,6 +424,11 @@ function snapshotMemory() {
       console.error('📄❌Failed to generate SVG for graphviz Dependence Graph:', error)
       programSvg.value = `<div class="error">Failed to render graph</div>`;
     }
+  }
+
+  function updateCriticalInfo() {
+    const res= simState.executionResults
+    return
   }
 
   function portsMaskToString(mask) {

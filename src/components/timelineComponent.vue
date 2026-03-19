@@ -117,7 +117,7 @@
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
     addCanvasWrapper()
-    // requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
+    requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
     console.log('📈🎯 Timeline Component mounted')
   });
 

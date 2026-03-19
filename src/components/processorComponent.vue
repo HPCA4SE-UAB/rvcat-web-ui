@@ -176,13 +176,6 @@
     }
   )
 
-  watch( () => simState.executionResults, () => {
-    if (simState.state > 1) {
-      drawProcessor()
-    }
-  },
-  { deep: true, immediate: true })
-
   watch(() => simState.simulatedProcess, () => {
     // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
     const oldROBsize = simState.simulatedProcess.ROBsize;
@@ -320,26 +313,7 @@
     }
   }
 
-  /*
-
-
-
-      let dispatch= 2
-      let retire  = 2
-      let usage = {}
-      usage['dispatch'] = (d["ipc"] / dispatch) * 100;
-      usage['retire']   = (d["ipc"] / retire)   * 100;
-      usage.ports       = {}
-      let i = 0;
-      // let keys = Object.keys(processorInfo.ports);
-      let keys = ["P0", "P1", "P2"]
-      for (let key of keys) {
-          usage.ports[i] = d.ports[key];
-          i++;
-      }
-   */
-
-  function get_processor_dot(process, highlightPort= -1, results = null) {
+  function get_processor_dot(process, highlightPort= -1) {
 
     const ports    = process.ports
     const lat      = process.latencies
@@ -348,32 +322,6 @@
     const sched    = process.sched
     const dispatch = process.dispatch
     const retire   = process.retire
-
-    // Colorscale from grey to red
-    const color = [
-      "#e0e0e0",
-      "#c8e6c9",
-      "#a5d6a7",
-      "#81c784",
-      "#66bb6a",
-      "#4caf50",
-      "#43a047",
-      "#388e3c",
-      "#2e7d32",
-      "#558b2f",
-      "#7cb342",
-      "#9e9d24",
-      "#c0ca33",
-      "#d4b000",
-      "#c49000",
-      "#b37400",
-      "#a35a00",
-      "#933f00",
-      "#832600",
-      "#731200",
-      "#630000",
-      "#4a0000"
-    ];
 
     function type_color(type) {
       if (type === "INT")    return "#d6e4ff"
@@ -464,18 +412,9 @@
 
     const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
 
-    let usage = 0
-    if (results !== null)
-      usage = (results.ipc / dispatch) * 100
-    let dispatch_color = color[Math.floor(usage/5)]
-
-    let message = results !== null
-      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
-      : ""
-
     // ---- Decode ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle<B>&nbsp;${message}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
       <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
@@ -536,17 +475,8 @@
     }
 
     // ---- Registers & Retire ----
-
-    if (results !== null)
-      usage = (results.ipc / retire) * 100
-    dispatch_color = color[Math.floor(usage/5)]
-
-    message = results !== null
-      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
-      : ""
-
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>&nbsp;${message}</B>&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
     </TR>`
 
     const dot = `

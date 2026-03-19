@@ -2,6 +2,7 @@
   import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue"
   import HelpComponent                                   from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                                    from '@/rvcatAPI'
+  import { createGraphVizGraph, typeOperations   }                             from '@/common'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -29,8 +30,9 @@
 
   const simulationOptions = reactive({ ...defaultOptions, ...savedOptions })
 
-  let cleanupHandleResults  = null
-  let resultsTimeout        = null
+  const resultsSvg            = ref('')
+  let   cleanupHandleResults  = null
+  let   resultsTimeout        = null
 
   // Save on changes
   const saveOptions = () => {
@@ -64,6 +66,34 @@
      }
     })
 
+  watch( () => simulationOptions.iters, (newIters, oldIters) => {
+      if (newIters === oldIters) return
+      try {
+        const clamped = Math.min(Math.max(newIters, 1), 2000)
+        if (clamped !== newIters) {
+          simulationOptions.iters = clamped
+          return
+        }
+        saveOptions()
+        if (simState.state >= 3) {
+          reloadExecutionResults()
+        }
+        console.log('🕐✅ Modified simulation iters')
+      } catch (error) {
+        console.error('🕐❌Failed when modifying simulation options:', error)
+      }
+    }
+  )
+
+  watch( () => simState.simulatedProcess, () => {
+      if (simState.state >= 3 && simState.simulatedProcess) {
+        console.log('🕐🔄 Re-execute simulation');
+        reloadExecutionResults()
+      }
+    },
+    { deep: true, immediate: false }
+  )
+
  // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
   const handleResults = async (data, dataType) => {
     if (dataType === 'error') {
@@ -72,7 +102,8 @@
     }
     try {
       console.log('🕐✅ Execution Results received')
-      simState.executionResults = JSON.parse(data);
+      simState.executionResults = JSON.parse(data)
+      drawProcessorResults()
       if (simState.executionResults['data_type'] === 'error') {
           alert('Error running simulation');
           document.getElementById('run-simulation-spinner').style.display = 'none';
@@ -126,33 +157,115 @@
     }
   }
 
-  watch( () => simulationOptions.iters, (newIters, oldIters) => {
-      if (newIters === oldIters) return
-      try {
-        const clamped = Math.min(Math.max(newIters, 1), 2000)
-        if (clamped !== newIters) {
-          simulationOptions.iters = clamped
-          return
-        }
-        saveOptions()
-        if (simState.state >= 3) {
-          reloadExecutionResults()
-        }
-        console.log('🕐✅ Modified simulation iters')
-      } catch (error) {
-        console.error('🕐❌Failed when modifying simulation options:', error)
-      }
+  const drawProcessorResults = async () => {
+    try {
+      const dotCode      = get_proc_results_dot (simState.simulatedProcess, simState.executionResults)
+      // console.log('💻🔄Redrawing simulated processor with usage info', dotCode);
+      const svg          = await createGraphVizGraph(dotCode);
+      // console.log('💻🔄Redrawing SVG of processor with usage info', svg);
+      resultsSvg.value = svg.outerHTML;
+    } catch (error) {
+      console.error('💻❌ Failed to draw results+processor:', error)
+      resultsSvg.value = `<div class="error">Failed to render graph</div>`;
     }
-  )
+  }
 
-  watch( () => simState.simulatedProcess, () => {
-      if (simState.state >= 3 && simState.simulatedProcess) {
-        console.log('🕐🔄 Re-execute simulation');
-        reloadExecutionResults()
-      }
-    },
-    { deep: true, immediate: false }
-  )
+  function get_proc_results_dot (process, results) {
+
+    const ports    = process.ports
+    const port_ids = Object.keys(ports)
+    const ROBsize  = process.ROBsize || 20
+    const sched    = process.sched
+    const dispatch = process.dispatch
+    const retire   = process.retire
+
+    // Colorscale from grey to red
+    const color = [
+      "#e0e0e0",
+      "#c8e6c9",
+      "#a5d6a7",
+      "#81c784",
+      "#66bb6a",
+      "#4caf50",
+      "#43a047",
+      "#388e3c",
+      "#2e7d32",
+      "#558b2f",
+      "#7cb342",
+      "#9e9d24",
+      "#c0ca33",
+      "#d4b000",
+      "#c49000",
+      "#b37400",
+      "#a35a00",
+      "#933f00",
+      "#832600",
+      "#731200",
+      "#630000",
+      "#4a0000"
+    ];
+
+    let usage = 0
+    if (results !== null)
+      usage = (results.ipc / dispatch) * 100
+    let dispatch_color = color[Math.floor(usage/5)]
+
+    let message = results !== null
+      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      : ""
+
+    // ---- Decode ----
+    let decode_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle<B>&nbsp;${message}</B></FONT></TD>
+      <TD ROWSPAN="4" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+    </TR>`
+
+    // ---- Waiting Buffer ----
+    let wb_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${sched}</B></FONT></TD>
+    </TR>`
+
+    // ---- Port headers ----
+    let port_header = "<TR>"
+
+    for (let p of port_ids) {
+      const style = ' BGCOLOR="#f5f5f5"'
+      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+    }
+
+    port_header += "</TR>"
+
+    // ---- Registers & Retire ----
+
+    if (results !== null)
+      usage = (results.ipc / retire) * 100
+    dispatch_color = color[Math.floor(usage/5)]
+
+    message = results !== null
+      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      : ""
+
+    let reg_row = `<TR>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>&nbsp;${message}</B>&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
+    </TR>`
+
+    const dot = `
+      digraph CPU {
+        node [shape=plain fontname="Arial" width=0 height=0 margin=0]
+        pipeline [
+          label=<
+            <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
+              ${decode_row}
+              ${wb_row}
+              ${port_header}
+              ${reg_row}
+            </TABLE>
+          >
+        ]
+      }  `
+    return dot
+  }
+
 
 /* ------------------------------------------------------------------
  * Help support
@@ -236,6 +349,12 @@
         </span>
         <span class="dropdown-title">Previous simulation results</span>
       </button>
+    </div>
+
+    <div class="graph-section">
+      <div class="processor-container">
+        <div class="processor-img" v-html="resultsSvg" v-if="resultsSvg"></div>
+      </div>
     </div>
 
     <Transition name="fold" appear>
@@ -331,6 +450,39 @@
       100% {
           transform: rotate(360deg);
       }
+  }
+
+  .graph-section {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+  }
+
+  .processor-img {
+    width:        100%;
+    height:       100%;
+    max-width:    150%;
+    max-height:   150%;
+    align-items:  center;
+    object-fit:   contain;
+    transform-box: fill-box;
+  }
+
+  .processor-img svg text {
+    font-size:   12px !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  .processor-img svg polygon,
+  .processor-img svg path {
+    stroke-width: 2px !important;
+  }
+
+  .processor-container {
+    width:     100%;
+    height:    100%;
+    display:   flex;
+    margin-top: 2px;
   }
 
 </style>
