@@ -604,7 +604,11 @@ function snapshotMemory() {
               :key="index"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
-              <td>{{ index }}</td>
+              <td>{{ index }}
+                <section v-if="simState.executionResults !== null">
+                  {{simState.executionResults.instructions[index].percentage.tofix(0)}}
+                </section>
+              </td>
 
               <td title="Instruction description">
                  {{ inst.text }}
