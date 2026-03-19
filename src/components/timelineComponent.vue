@@ -461,7 +461,9 @@
 
       if (simState.instrHighlightedIdx !== instrIdx)
         simState.instrHighlightedIdx = instrIdx
-      if (char == 'E' && simState.highlightedPort !== port)
+      if (char !== 'E')
+        simState.highlightedPort = -1
+      else if (simState.highlightedPort !== port)
         simState.highlightedPort = port
 
       hoverInfo.value = {
