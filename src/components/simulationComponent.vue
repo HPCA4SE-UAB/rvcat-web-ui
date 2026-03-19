@@ -218,7 +218,7 @@
         ? `<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
         : ""
 
-      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}${message}</B></FONT></TD>`
+      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p} ${message}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
