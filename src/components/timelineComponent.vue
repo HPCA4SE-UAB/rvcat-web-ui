@@ -410,7 +410,6 @@
 
   function drawHoverOverlay(row, col) {
     const ctx = overlayCanvas.value.getContext('2d')
-    console.log('📈✅ Draw Hover', row, col)
     ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
 
     if (row === null || col === null) return
@@ -446,6 +445,7 @@
     if (!hitCell) {
       hoverInfo.value = null
       simState.instrHighlightedIdx = -1
+      simState.highlightedPort = -1
 
       if (hoverRow != null || hoverCol != null) {
         hoverRow = null
@@ -455,20 +455,20 @@
       return
     }
 
-    const { rowIdx: row, colIdx: col, instrIdx } = hitCell
+    const { rowIdx: row, colIdx: col, instrIdx, char, port, first_exec_stage, critical } = hitCell
 
     if (hoverRow !== row || hoverCol !== col) {
 
-      if (simState.instrHighlightedIdx !== instrIdx) {
+      if (simState.instrHighlightedIdx !== instrIdx)
         simState.instrHighlightedIdx = instrIdx
-        console.log(instrIdx, simState)
-      }
+      if (char == 'E' && simState.highlightedPort !== port)
+        simState.highlightedPort = port
 
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        state:    charToProcessingState(hitCell.char, hitCell.first_exec_stage ? hitCell.port : null),
-        critical: hitCell.critical
+        state:    charToProcessingState(char, first_exec_stage ? port : null),
+        critical: critical
       }
       adjustTooltipPosition(e)
 

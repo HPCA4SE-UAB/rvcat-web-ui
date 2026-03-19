@@ -156,8 +156,7 @@
   watch( () => ({ state: simState.state,
       processorName:     simState.processorName,
       programName:       simState.programName,
-      simulatedProcess:  simState.simulatedProcess,
-      instrHigh:         simState.instrHighlightedIdx
+      simulatedProcess:  simState.simulatedProcess
     }),
     saveSimState,
     { deep: true }
@@ -285,7 +284,7 @@
 
   const drawProcessor = async () => {
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess)
+      const dotCode      = get_processor_dot (simState.simulatedProcess,simState.highlightedPort)
       // console.log('💻🔄Redrawing simulated processor', dotCode);
       const svg          = await createGraphVizGraph(dotCode);
       // console.log('💻🔄Redrawing SVG', svg);
@@ -299,7 +298,7 @@
   const drawEditedProcessor = async () => {
     console.log('💻🔄Redrawing edited processor');
     try {
-      const dotCode   = get_processor_dot (procConfig)
+      const dotCode   = get_processor_dot (procConfig, -1)
       const svg       = await createGraphVizGraph(dotCode);
       editedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -308,7 +307,7 @@
     }
   }
 
-  function get_processor_dot(process) {
+  function get_processor_dot(process, highlightPort) {
 
     const ports    = process.ports
     const lat      = process.latencies
@@ -380,7 +379,6 @@
         } else {
 
           for (let sub of grouped[type]) {
-
             result.push({
               label: `${type}.${sub}`,
               big: false
@@ -391,6 +389,15 @@
 
       return result
     }
+
+    function highlightStyle(isHighlighted) {
+      if (!isHighlighted) return ''
+      return ' BGCOLOR="#ffcccc" BORDER="3" COLOR="red"'
+    }
+
+    const highlight = highlightPort !== null && highlightPort !== undefined
+      ? String(highlightPort)
+      : null
 
     const port_ops = {}
 
@@ -413,8 +420,14 @@
     // ---- Port headers ----
     let port_header = "<TR>"
 
-    for (let p of port_ids)
-      port_header += `<TD BGCOLOR="#f5f5f5"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+    for (let p of port_ids) {
+      const isHighlighted = (p === highlight)
+      const style = isHighlighted
+        ? ' BGCOLOR="#ffcccc" BORDER="3" COLOR="red"'
+        : ' BGCOLOR="#f5f5f5"'
+
+      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+    }
 
     port_header += "</TR>"
 
@@ -427,11 +440,15 @@
       op_rows += "<TR>"
 
       for (let p of port_ids) {
+        const isHighlighted = (p === highlight)
+        const highlightAttr = isHighlighted
+          ? ' BORDER="3" COLOR="red"'
+          : ''
 
         const op = port_ops[p][i]
 
         if (!op) {
-          op_rows += `<TD></TD>`
+          op_rows += `<TD${highlightAttr}></TD>`
           continue
         }
 
@@ -441,14 +458,17 @@
         if (op.big) {
           const tooltip = latency_tooltip(op.label)
           op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}>
+              <FONT POINT-SIZE="16"><B>${op.label}</B></FONT>
+            </TD>`
         } else {
           const tooltip = latency_tooltip(op.label)
           op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
+            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}>
+              <FONT POINT-SIZE="14">${op.label}</FONT>
+            </TD>`
         }
       }
-
       op_rows += "</TR>"
     }
 
