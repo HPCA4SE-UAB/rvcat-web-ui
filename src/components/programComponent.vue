@@ -439,7 +439,7 @@ function snapshotMemory() {
     const resMap = new Map(res.map(r => [r.id, r.percentage]))
 
     instr_list.forEach((inst, index) => {
-      inst.percentage = ((resMap.get(index) ?? 0)*100).toFixed(0)
+      inst.percentage = (resMap.get(index) ?? 0).toFixed(0)
     })
   }
 
