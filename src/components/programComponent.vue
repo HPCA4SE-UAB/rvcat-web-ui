@@ -556,6 +556,26 @@ function snapshotMemory() {
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
 
+  function percentageToColor(p) {
+    if (p == null || isNaN(p)) return ''
+
+    p = Math.max(0, Math.min(100, p))
+
+    // azul → cian → amarillo → rojo
+    const r = Math.round(Math.min(255, (p / 50) * 255))
+    const g = Math.round(p < 50 ? (p / 50) * 255 : ((100 - p) / 50) * 255)
+    const b = Math.round(Math.max(0, (1 - p / 50) * 255))
+
+    return `rgb(${r}, ${g}, ${b})`
+  }
+
+  function rowStyle(inst) {
+    return {
+      backgroundColor: percentageToColor(inst.percentage),
+      color: inst.percentage > 50 ? 'white' : 'black'
+    }
+  }
+
 </script>
 
 <template>
@@ -613,6 +633,7 @@ function snapshotMemory() {
           <tbody v-if="simState.simulatedProcess !== null">
             <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
+              :style="rowStyle(inst)"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td>{{ index }}
