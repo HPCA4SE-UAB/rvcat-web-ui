@@ -349,10 +349,30 @@
     const dispatch = process.dispatch
     const retire   = process.retire
 
-    // Colorscale from white to red
-    const color = [ "#ffffff", "#eaffea", "#d5ffd5", "#c0ffc0", "#aaffaa", "#95ff95", "#80ff80",
-                    "#7ffb6e", "#86f55d", "#96ee4d", "#abe63d", "#bfde2d", "#d4d51e", "#e6ca11",
-                    "#f2bb07", "#f8a800", "#f18c00", "#ea7000", "#e35400", "#dc3800", "#d51c00", "#ce0000"
+    // Colorscale from grey to red
+    const color = [
+      "#e0e0e0",
+      "#c8e6c9",
+      "#a5d6a7",
+      "#81c784",
+      "#66bb6a",
+      "#4caf50",
+      "#43a047",
+      "#388e3c",
+      "#2e7d32",
+      "#558b2f",
+      "#7cb342",
+      "#9e9d24",
+      "#c0ca33",
+      "#d4b000",
+      "#c49000",
+      "#b37400",
+      "#a35a00",
+      "#933f00",
+      "#832600",
+      "#731200",
+      "#630000",
+      "#4a0000"
     ];
 
     function type_color(type) {
@@ -515,9 +535,18 @@
       op_rows += "</TR>"
     }
 
-    // ---- Registers ----
+    // ---- Registers & Retire ----
+
+    if (results !== null)
+      usage = (results.ipc / retire) * 100
+    dispatch_color = color[Math.floor(usage/5)]
+
+    message = results !== null
+      ? `Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT>`
+      : ""
+
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;<B>&nbsp;${message}</B>&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
     </TR>`
 
     const dot = `
