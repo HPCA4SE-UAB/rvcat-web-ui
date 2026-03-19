@@ -190,7 +190,7 @@
       usage = (results.ipc / dispatch) * 100
     let dispatch_color = color[Math.floor(usage/5)]
 
-    let message = results !== null
+    let message =  usage !== 0
       ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
@@ -210,10 +210,11 @@
 
     for (let p of port_ids) {
       const style = ' BGCOLOR="#f5f5f5"'
-      if (results !== null)
-        usage = (results.ports[p]) * 100
+      usage = 0
+      if (results !== null && results.ports[p] !== null)
+        usage = (results.ports[p])
       let port_color = color[Math.floor(usage/5)]
-      let message = results !== null
+      let message = usage !== 0
         ? `&nbsp;<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
         : ""
 
@@ -223,11 +224,12 @@
     port_header += "</TR>"
 
     // ---- Registers & Retire ----
+    usage = 0
     if (results !== null)
       usage = (results.ipc / retire) * 100
     let retire_color = color[Math.floor(usage/5)]
 
-    message = results !== null
+    message = usage !== 0
       ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
