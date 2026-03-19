@@ -364,14 +364,7 @@
         .join(',')
 
       interactiveCells.push({
-        x, y,
-        colIdx: i,
-        rowIdx: -1,   /* indicates 1st row of cycles */
-        char: ch,
-        critical,
-        first_exec_stage,
-        port,
-        instrIdx,
+        x, y, colIdx: i, rowIdx: -1,   /* indicates 1st row of cycles */
         sequenceOfPorts
       })
 
