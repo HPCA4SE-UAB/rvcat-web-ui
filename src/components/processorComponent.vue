@@ -171,8 +171,8 @@
   )
 
   watch( () => simState.highlightedPort, (newValue, oldValue) => {
-      if (newValue === 1 && oldValue !== 1) {
-        console.log('💻✅ HighlightedPort')
+      if (newValue !== oldValue) {
+        console.log('💻✅ HighlightedPort', newValue)
         drawProcessor()
       }
     }
