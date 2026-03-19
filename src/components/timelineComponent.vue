@@ -338,6 +338,8 @@
     ctx.textBaseline          = 'top';
     ctx.imageSmoothingEnabled = false;
 
+    interactiveCells.length = 0   // empty list
+
     // First line: 0 1 2 3 ...   start on (0,0)
     let   x = padX
     const y = padY
@@ -351,15 +353,35 @@
 
       ctx.fillStyle = "#000"
       ctx.fillText    (ch, x + fontXOffset, y + fontYOffset)
+
+      let sequenceOfPorts = Object.keys(portUsage)
+        .filter(p => {
+          const usage = portUsage[p]
+          return Array.isArray(usage)
+            ? usage.includes(i)
+            : i in usage
+        })
+        .join(',')
+
+      interactiveCells.push({
+        x, y,
+        colIdx: i,
+        rowIdx: -1,   /* indicates 1st row of cycles */
+        char: ch,
+        critical,
+        first_exec_stage,
+        port,
+        instrIdx,
+        sequenceOfPorts
+      })
+
       i++
       x += cellW
     }
 
-    interactiveCells.length = 0   // empty list
-
-    // ***************************************************************************************************
-    //   for each instruction, then for each cycle, then write cell into canvas and push interactive cells
-    // ***************************************************************************************************
+    // ************************************************************************************
+    //   for each inst. & for each cycle, write cell into canvas and push interactive cells
+    // ************************************************************************************
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
     {
       // Compute background color based on iteration number
@@ -376,14 +398,13 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+states.length) {
           ch  = states[i-startCycle];
-          let kind = 'instr'
           let critical         = critical_cycles.includes(i - startCycle)
           let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E')
 
           if (critical) currColor = "red"
 
           interactiveCells.push({
-            kind, x, y,
+            x, y,
             colIdx: i,
             rowIdx,
             char: ch,
@@ -455,7 +476,20 @@
       return
     }
 
-    const { rowIdx: row, colIdx: col, instrIdx, char, port, first_exec_stage, critical } = hitCell
+    const { rowIdx: row, colIdx: col, instrIdx, char, port, first_exec_stage, critical, sequenceOfPorts } = hitCell
+
+    if (row === -1) {
+      simState.highlightedPort = -1
+      simState.instrHighlightedIdx = -1
+      hoverInfo.value = {
+        x:        e.clientX + 10,
+        y:        e.clientY + 10,
+        state:    sequenceOfPorts,
+        critical: false
+      }
+      adjustTooltipPosition(e)
+      return
+    }
 
     if (hoverRow !== row || hoverCol !== col) {
 
