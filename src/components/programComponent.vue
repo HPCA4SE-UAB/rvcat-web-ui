@@ -601,7 +601,7 @@ function snapshotMemory() {
         <table class="instructions-table">
           <thead>
             <tr>
-              <th style="width: 50px;">  #    </th>
+              <th style="width: 100px;">  #    </th>
               <th style="width: 600px;"> Inst </th>
               <th v-if="!programOptions.showLat"  style="width: 100px;"> Type </th>
               <th v-if="!programOptions.showLat"  style="width: 100px;"> Oper </th>
