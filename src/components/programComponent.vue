@@ -15,7 +15,8 @@
     isFullscreen: {
       type:    Boolean,
       default: false
-    }
+    },
+    activeView: String
   })
 
 // ============================================================================
@@ -631,14 +632,18 @@ function snapshotMemory() {
             </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
-            <tr v-for="(inst, index) in simState.simulatedProcess.instruction_list"
+            <tr
+              v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
-              :style="rowStyle(inst)"
+              :style="activeView === 'simulationComponent' ? rowStyle(inst) : {}"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
-              <td>{{ index }}
-                <section v-if="inst?.percentage != null">
+              <td>
+                <section v-if="activeView === 'simulationComponent' && inst?.percentage != null">
                   {{ inst.percentage }}%
+                </section>
+                <section v-else>
+                 {{ index }}
                 </section>
               </td>
 
