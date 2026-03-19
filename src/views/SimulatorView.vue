@@ -229,7 +229,9 @@ onUnmounted(() => {
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
-        <programComponent   :is-fullscreen="isProgramFullscreen" @requestSwitchFull="toggleFullScreen"/>
+        <programComponent :is-fullscreen="isProgramFullscreen" :active-view="currentKey"
+                          @requestSwitchFull="toggleFullScreen"
+        />
       </div>
 
       <div v-show="isTutorialFullscreen"
@@ -243,7 +245,7 @@ onUnmounted(() => {
         class="grid-item results"
         id="right-panel"
         >
-        <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst" />
+        <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst"/>
         <div v-else>Component not found</div>
       </div>
 
