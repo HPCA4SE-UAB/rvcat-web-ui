@@ -191,7 +191,7 @@
     let dispatch_color = color[Math.floor(usage/5)]
 
     let message =  usage !== 0
-      ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
+      ? `<B>&nbsp;&nbsp;&nbsp;Usage:<FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     // ---- Decode ----
@@ -230,7 +230,7 @@
     let retire_color = color[Math.floor(usage/5)]
 
     message = usage !== 0
-      ? `<B>&nbsp;&nbsp;&nbsp;Usage: <FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
+      ? `<B>&nbsp;&nbsp;&nbsp;Usage:<FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     let reg_row = `<TR>
