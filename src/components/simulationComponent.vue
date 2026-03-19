@@ -47,7 +47,7 @@
   onMounted(() => {
     cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
     console.log('🕐🎯 SimulationComponent mounted')
-
+    simState.executionResults = null
     try {    // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -215,7 +215,7 @@
         usage = results.ports[p]
       let port_color = color[Math.floor(usage/5)]
       let message = usage !== 0
-        ? `&nbsp;<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
+        ? `<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
         : ""
 
       port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}${message}</B></FONT></TD>`

@@ -434,7 +434,14 @@ function snapshotMemory() {
     const res = simState.executionResults?.critical_path?.instructions
     const instr_list = simState.simulatedProcess?.instruction_list
 
-    if (!res || !instr_list) return
+    if (!instr_list) return
+
+    if (!res) {
+      instr_list.forEach((inst, index) => {
+        inst.percentage = null
+      })
+      return
+    }
 
     const resMap = new Map(res.map(r => [r.id, r.percentage]))
 
@@ -567,7 +574,7 @@ function snapshotMemory() {
     const b = Math.round(Math.max(0, (1 - p / 50) * 255))
 
     // Mezclar con blanco (70% color original, 30% blanco)
-    const mixWhite = 0.4 // Ajusta este valor (mayor = más claro)
+    const mixWhite = 0.7 // Ajusta este valor (mayor = más claro)
     const r2 = Math.round(r + (255 - r) * mixWhite)
     const g2 = Math.round(g + (255 - g) * mixWhite)
     const b2 = Math.round(b + (255 - b) * mixWhite)
