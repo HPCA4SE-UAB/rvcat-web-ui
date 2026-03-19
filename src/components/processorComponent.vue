@@ -446,10 +446,9 @@
 
     const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
 
+    let usage = ''
     if (results !== null)
       usage = (results.ipc / dispatch) * 100
-    else
-      usage = ''
 
     // ---- Decode ----
     let decode_row = `<TR>
