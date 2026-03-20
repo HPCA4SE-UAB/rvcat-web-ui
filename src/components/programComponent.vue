@@ -616,6 +616,7 @@ function snapshotMemory() {
           </option>
            <option value="_add_new_">Add new</option>
         </select>
+        <!--
         <button class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
             title="Edit current program on full-screen as a new program">
@@ -626,6 +627,7 @@ function snapshotMemory() {
             title="Remove program from list (and local storage)">
           🧹
         </button>
+        -->
       </div>
     </div>
 
