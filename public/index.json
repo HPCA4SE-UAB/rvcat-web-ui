@@ -2,7 +2,7 @@
   "processor": [
     "B1",
     "B2",
-    "B3"
+    "B4"
   ],
   "program": [
     "Base",
@@ -10,8 +10,6 @@
     "V2"
   ],
    "tutorial": [
-    "TutProcessor",
-    "lesson-1",
     "navigation-tour"
   ]
 }

@@ -1,9 +1,9 @@
 {
-  "name": "B3",
-  "dispatch": 3,
-  "retire": 4,
+  "name": "B4",
   "sched": "optimal",
-  "ROBsize": 48,
+  "dispatch": 4,
+  "retire": 5,
+  "ROBsize": 64,
   "nBlocks": 0,
   "blkSize": 8,
   "mPenalty": 12,
@@ -32,18 +32,15 @@
   },
   "ports": {
     "0": [
-      "INT.ARITH",
-      "INT.LOGIC",
-      "INT.SHIFT",
       "MEM.LOAD",
       "MEM.STORE",
       "VMEM.STORE",
       "VMEM.LOAD"
     ],
     "1": [
-      "INT.ARITH",
-      "INT.LOGIC",
-      "INT.SHIFT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT",
       "FLOAT.ADD",
       "FLOAT.FMA",
       "VFLOAT.ADD",
@@ -53,20 +50,26 @@
       "INT.ARITH",
       "INT.LOGIC",
       "INT.SHIFT",
-      "VINT.ARITH",
-      "VINT.LOGIC",
-      "VINT.SHIFT",
       "FLOAT.MUL",
-      "VFLOAT.MUL"
+      "FLOAT.FMA",
+      "VFLOAT.MUL",
+      "VFLOAT.FMA"
     ],
     "3": [
-      "BRANCH",
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
       "FLOAT.ADD",
-      "FLOAT.FMA",
       "FLOAT.DIV",
       "FLOAT.SQRT",
       "VFLOAT.DIV",
       "VFLOAT.SQRT"
+    ],
+    "4": [
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "BRANCH"
     ]
   }
 }
