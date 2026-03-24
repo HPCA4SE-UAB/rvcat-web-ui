@@ -41,15 +41,7 @@
     }
   }
 
-  function createDefaultTimeline() {
-    return {
-      cycles:       4,
-      instructions: [ [0, 0, 0, "0", "DEWR", [0,1,2,3]]],
-      portUsage:    { "0": [1], "1": [] }
-    };
-  }
-
-  const timeline       = ref(createDefaultTimeline())
+  const timeline       = ref(null)
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
 
@@ -132,6 +124,17 @@
 /* ------------------------------------------------------------------
 * UI actions
 * ------------------------------------------------------------------ */
+
+  function requestTimeline() {
+    if (simState.state >= 3) {
+      console.log('📈🔄 Request timeline from RVCAT')
+      const { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
+      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
+                                    instruction_list: toRaw(instruction_list)}, null, 2),
+                  timelineOptions.iters) // Call Python RVCAT
+    }
+  }
+
   function togglePorts()  { timelineOptions.showPorts = !timelineOptions.showPorts }
 
   function getPortUsage(timeline) {
@@ -196,16 +199,6 @@
       lines.push(row);
     }
     return lines.join("\n");
-  }
-
-  function requestTimeline() {
-    if (simState.state >= 3) {
-      console.log('📈🔄 Request timeline from RVCAT')
-      const { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
-                                    instruction_list: toRaw(instruction_list)}, null, 2),
-                  timelineOptions.iters) // Call Python RVCAT
-    }
   }
 
   function addCanvasWrapper () {
@@ -299,8 +292,12 @@
   function drawTimeline() {
 
     const rect = timelineCanvas.value.getBoundingClientRect()
+
     timelineCanvas.value.width  = rect.width
     timelineCanvas.value.height = rect.height
+
+    const ctxOld = overlayCanvas.value.getContext('2d')
+    ctxOld.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
 
     overlayCanvas.value.width  = rect.width
     overlayCanvas.value.height = rect.height
@@ -429,7 +426,9 @@
 
   function drawHoverOverlay(row, col) {
     const ctx = overlayCanvas.value.getContext('2d')
-    ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
+    ctx.clearRect(0, 0,
+                  Math.max(overlayCanvas.value.width, 1+padX+totalCycles*cellW),
+                  Math.max(overlayCanvas.value.height,1+padY+(totalInstr+1)*cellH))
 
     if (row === null || col === null) return
 
