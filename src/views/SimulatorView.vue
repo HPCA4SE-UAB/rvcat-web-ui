@@ -19,6 +19,35 @@ const { isReady, registerHandler }  = inject('worker');
 const { importRVCAT }               = useRVCAT_Api();
 
 // ============================================================================
+// RVCAT options & localStorage
+// ============================================================================
+
+  const STORAGE_KEY = 'rvcatOptions'
+
+  const rvcatOptions = {
+    version: "1.0",
+    year:    2026
+  }
+
+  function checkRVCATversion() {
+    const storedData = localStorage.getItem(STORAGE_KEY)
+
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData)
+        if (parsedData.version === rvcatOptions.version)
+          return
+      } catch (error) {
+        console.error('Error al parsear localStorage:', error)
+      }
+    }
+    localStorage.clear()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
+    alert('💻 New version of RVCAT has been released: Clearing localStorage')
+  }
+
+
+// ============================================================================
 // Main Simulator Panel UI
 // ============================================================================
 // Map of component keys -> component definitions
@@ -110,6 +139,7 @@ watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
       importRVCAT();       // call RVCAT API
+      checkRVCATversion()
   }
 })
 
