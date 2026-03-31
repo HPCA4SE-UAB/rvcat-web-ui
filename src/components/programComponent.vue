@@ -525,32 +525,30 @@ function snapshotMemory() {
     }
     showModalDownload.value = false;
   }
+const uploadProgram = async (oldProgram) => {
+  try {
+    const data = await uploadJSON(null, 'program');
 
-  const uploadProgram = async (oldProgram) => {
-    try {
-      const data = await uploadJSON(null, 'program');
-      if (data) {
-        if (programOptions.availablePrograms.includes(data.name)) {
-          if (confirm(`A program with name: "${data.name}" has been already loaded.`)) {
-            saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
-            programOptions.currentProgram = data.name;
-            Object.assign(simState.simulatedProcess, data)
-            return;
-          }
-        }
-        else {
-          // TODO: Check here if it is a valid program
-          saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
-          programOptions.currentProgram = data.name;
-          Object.assign(simState.simulatedProcess, data)
-          return;
-        }
+    if (data) {
+      const exists = programOptions.availablePrograms.includes(data.name);
+      if (exists && !confirm(`A program with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
+        programOptions.currentProgram = oldProgram;
+        return;
       }
-      programOptions.currentProgram = oldProgram;
-    } catch (error) {
-      programOptions.currentProgram = oldProgram;
+
+      // TODO: Check here if it is a valid program
+      saveToLocalStorage('program', data.name, data, programOptions.availablePrograms);
+      programOptions.currentProgram = data.name;
+      Object.assign(simState.simulatedProcess, data);
+
+      return;
     }
-  };
+  } catch (error) {
+    console.error("Failed to upload program:", error);
+  }
+
+  programOptions.currentProgram = oldProgram;
+};
 
   function clearProgram() {
     editedProgram.value  = [];
