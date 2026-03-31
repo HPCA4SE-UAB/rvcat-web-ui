@@ -717,31 +717,26 @@ const uploadProcessor = async (oldProcessor) => {
     if (data) {
       const exists = processorOptions.availableProcessors.includes(data.name);
 
-      // Guard clause: Exit early if it exists but the user declines to overwrite
       if (exists && !confirm(`A processor with name: "${data.name}" already exists. Do you want to overwrite it?`)) {
         processorOptions.processorName = oldProcessor;
         return;
       }
 
-      // Remove the old one only if we are confirming an overwrite
       if (exists) {
         removeFromLocalStorage('processor', data.name, processorOptions.availableProcessors);
       }
 
-      // DRY: Centralized success logic
       saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors);
       Object.assign(simState.simulatedProcess, data);
       simState.processorName = data.name;
       processorOptions.processorName = data.name;
 
-      return; // Exit successfully
+      return;
     }
   } catch (error) {
-    // Errors safely fall through to the fallback below
     console.error("Failed to upload processor:", error);
   }
 
-  // DRY: Centralized fallback for missing data or caught errors
   processorOptions.processorName = oldProcessor;
 };
 
