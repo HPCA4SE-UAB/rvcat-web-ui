@@ -531,7 +531,12 @@ function snapshotMemory() {
       const data = await uploadJSON(null, 'program');
       if (data) {
         if (programOptions.availablePrograms.includes(data.name)) {
-          alert(`A program with name: "${data.name}" has been already loaded.`)
+          if (confirm(`A program with name: "${data.name}" has been already loaded.`)) {
+            saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
+            programOptions.currentProgram = data.name;
+            Object.assign(simState.simulatedProcess, data)
+            return;
+          }
         }
         else {
           // TODO: Check here if it is a valid program
