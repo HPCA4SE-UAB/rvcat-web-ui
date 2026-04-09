@@ -528,24 +528,25 @@ function snapshotMemory() {
 
   const uploadProgram = async (oldProgram) => {
     try {
-      const data = await uploadJSON(null, 'program');
+      const data = await uploadJSON(null, 'program')
       if (data) {
-        if (programOptions.availablePrograms.includes(data.name)) {
-          alert(`A program with name: "${data.name}" has been already loaded.`)
+        const exists = programOptions.availablePrograms.includes(data.name)
+        if (exists && !confirm(`A program with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
+          alert('Upload cancelled.')
+          programOptions.currentProgram = oldProgram
+          return
         }
-        else {
-          // TODO: Check here if it is a valid program
-          saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
-          programOptions.currentProgram = data.name;
-          Object.assign(simState.simulatedProcess, data)
-          return;
-        }
+        // TODO: Check here if it is a valid program
+        saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
+        programOptions.currentProgram = data.name;
+        Object.assign(simState.simulatedProcess, data)
+        return
       }
-      programOptions.currentProgram = oldProgram;
     } catch (error) {
-      programOptions.currentProgram = oldProgram;
+      console.error('📄❌ Failed to upload program:', error)
     }
-  };
+    programOptions.currentProgram = oldProgram
+  }
 
   function clearProgram() {
     editedProgram.value  = [];
