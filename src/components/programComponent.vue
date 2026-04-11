@@ -651,7 +651,7 @@ function snapshotMemory() {
               :style="activeView === 'simulationComponent' ? rowStyle(inst) : {}"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
-              <td>
+              <td title="Instruction Number/Percentage of time aggregated to in critical path">
                 <section v-if="activeView === 'simulationComponent' && inst?.percentage != null">
                   {{ inst.percentage }}%
                 </section>
