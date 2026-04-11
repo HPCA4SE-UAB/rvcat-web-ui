@@ -43,8 +43,7 @@ const { importRVCAT }               = useRVCAT_Api();
     }
     localStorage.clear()
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
-    alert('💻 New version of RVCAT has been released: Clearing localStorage',
-          'V1.03: allows modifying processor configuration on the flight, and fixes some help messages'
+    alert('💻 New version of RVCAT has been released: Clearing localStorage<BR/>V1.03: allows modifying processor configuration on the flight, and fixes some help messages'
     )
   }
 
