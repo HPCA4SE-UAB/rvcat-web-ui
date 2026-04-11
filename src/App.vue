@@ -58,7 +58,8 @@
 
   .header-title {
     font-size:    large;
-    font-weight:  600
+    font-weight:  600;
+    margin-right: 5px;
   }
 
   .dropdown-wrapper {
@@ -101,10 +102,31 @@
     align-items: center;
     gap:         6px;
     margin-top:  3px;
+    margin-left: auto;
+    /* flex-shrink: 0; */
   }
+
   .iters-label {
     font-size:  medium;
+    font-weight: normal;
+    color: black;
     text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .iters-label.highlight {
+    font-weight: bold;
+    color: #ff6b00;
+  }
+
+  .iters-label.highlight-blue {
+    font-weight: bold;
+    color: #0066cc;
+  }
+
+  .iters-label.highlight-green {
+    font-weight: bold;
+    color: #00aa00;
   }
 
   .blue-button {
@@ -153,7 +175,6 @@
     font-size: medium;
   }
 
-  /* Modal styles */
   .modal-overlay {
     position:   fixed;
     top:        0; left: 0; right: 0; bottom: 0;
@@ -184,7 +205,6 @@
     margin: 6px 0;
   }
 
-  /* Folding animation */
   .fold-enter-active, .fold-leave-active {
     transition: max-height 0.25s ease, opacity 0.2s ease;
     overflow:   hidden;

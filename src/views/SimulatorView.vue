@@ -25,7 +25,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.02",
+    version: "1.03",
     year:    2026
   }
 
@@ -38,12 +38,14 @@ const { importRVCAT }               = useRVCAT_Api();
         if (parsedData.version === rvcatOptions.version)
           return
       } catch (error) {
-        console.error('Error al parsear localStorage:', error)
+        console.error('Error when parsing localStorage:', error)
       }
     }
     localStorage.clear()
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
-    alert('💻 New version of RVCAT has been released: Clearing localStorage')
+    alert('💻 New version of RVCAT has been released: Clearing localStorage',
+          'V1.03: allows modifying processor configuration on the flight, and fixes some help messages'
+    )
   }
 
 

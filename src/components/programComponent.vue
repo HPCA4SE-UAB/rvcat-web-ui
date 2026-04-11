@@ -134,8 +134,7 @@ function loadEditedProgram() {
       return {
         text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
         size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
-        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
-        percentage: null
+        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || ''
       };
     });
   } catch (e) {
@@ -342,8 +341,7 @@ function addInstruction( index ) {
       source1: '',
       source2: '',
       source3: '',
-      constant: '',
-      percentage: null
+      constant: ''
     }
   );
 }
@@ -380,8 +378,7 @@ function normalizeInstruction(inst) {
     source1:  (inst.source1  || '').trim(),
     source2:  (inst.source2  || '').trim(),
     source3:  (inst.source3  || '').trim(),
-    constant: (inst.constant || '').trim(),
-    percentage: inst.percentage
+    constant: (inst.constant || '').trim()
   };
 }
 
@@ -530,6 +527,7 @@ function snapshotMemory() {
     try {
       const data = await uploadJSON(null, 'program')
       if (data) {
+
         const exists = programOptions.availablePrograms.includes(data.name)
         if (exists && !confirm(`A program with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
           alert('Upload cancelled.')
@@ -602,7 +600,7 @@ function snapshotMemory() {
       </div>
 
       <div class="settings-container">
-        <button class="blue-button add-prev-margin" :class="{ active: programOptions.showLat }"
+        <button class="blue-button" :class="{ active: programOptions.showLat }"
             title="Show/Hide instruction Input/Output operands"
             id="show-inout-operands"
           @click="toggleLatency">
@@ -617,18 +615,18 @@ function snapshotMemory() {
           </option>
            <option value="_add_new_">Add new</option>
         </select>
-        <!--
+	<!--
         <button class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
-            title="Edit current program on full-screen as a new program">
+            title="Edit current program on full-screen editor">
           📝
         </button>
+	-->
         <button class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
             title="Remove program from list (and local storage)">
           🧹
         </button>
-        -->
       </div>
     </div>
 
@@ -954,8 +952,7 @@ function snapshotMemory() {
   </div>
 
   <div v-if="showFullScreen && isFullscreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div
-      class="fullscreen-content"
+    <div class="fullscreen-content"
       ref="contentRef"
       :style="{
         left: x + 'px',
@@ -1043,9 +1040,11 @@ function snapshotMemory() {
   }
 
   .settings-container {
-    display:     flex;
+    display: flex;
     align-items: center;
-    gap:         3px;
+    gap: 3px;
+    flex: 1;
+    justify-content: center;
   }
 
   .fullscreen-settings {

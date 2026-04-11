@@ -1,8 +1,8 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, computed, reactive, watch } from 'vue'
-  import HelpComponent                                     from '@/components/helpComponent.vue'
+  import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
+  import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-            createGraphVizGraph, instructionTypes, typeOperations, typeSizes   } from '@/common'
+            createGraphVizGraph, instructionTypes, typeOperations, typeSizes                } from '@/common'
 
   const simState = inject('simulationState');
 
@@ -58,6 +58,124 @@
       console.error('🚀❌ Failed to save SimulationState:', error)
     }
   }
+
+  const activeField = ref("rob");
+
+  const FIELD_CONFIG = {
+    rob: {
+      label: "ROB:",
+      title: "Number of ROB entries (1 to 200)",
+      min: 1,
+      max: 200,
+      model: "ROBsize"
+    },
+    dispatch: {
+      label: "Dispatch:",
+      title: "Dispatch width (1 to 9)",
+      min: 1,
+      max: 9,
+      model: "dispatch"
+    },
+    retire: {
+      label: "Retire:",
+      title: "Retire width (1 to 9)",
+      min: 1,
+      max: 9,
+      model: "retire"
+    }
+  };
+
+  const currentConfig = computed(() => FIELD_CONFIG[activeField.value]);
+
+  const currentValue = computed({
+    get() {
+      return simState.simulatedProcess[currentConfig.value.model];
+    },
+    set(val) {
+      if (val === "" || val == null) return;
+      if (val >= currentConfig.value.min && val <= currentConfig.value.max) {
+        simState.simulatedProcess[currentConfig.value.model] = val;
+      }
+    }
+  });
+
+  const inputValue   = ref('');
+  const isInvalid    = ref(false);
+  let   errorTimeout = null;
+
+  const validateField = () => {
+    const min = currentConfig.value.min;
+    const max = currentConfig.value.max;
+    let rawValue = inputValue.value;
+
+    if (errorTimeout) clearTimeout(errorTimeout);
+
+    if (rawValue === '' || rawValue === null || rawValue === undefined) {
+      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    let numValue = Number(rawValue);
+
+    if (isNaN(numValue)) {
+      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    if (numValue < min) {
+      numValue = min;
+      inputValue.value = numValue;
+      showTemporaryError(`El valor mínimo es ${min}`);
+    } else if (numValue > max) {
+      numValue = max;
+      inputValue.value = numValue;
+      showTemporaryError(`El valor máximo es ${max}`);
+    }
+
+    if (simState.simulatedProcess[currentConfig.value.model] !== numValue) {
+      simState.simulatedProcess[currentConfig.value.model] = numValue;
+    }
+  }
+
+  const showTemporaryError = (message) => {
+    isInvalid.value = true;
+    errorTimeout = setTimeout(() => {
+      isInvalid.value = false;
+    }, 2000);
+    console.warn(message);
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      event.target.blur();
+    }
+  };
+
+  const handleInput = (event) => {
+    if (isInvalid.value) {
+      isInvalid.value = false;
+    }
+    let value = event.target.value;
+    if (value !== '' && !/^\d*$/.test(value)) {
+      event.target.value = value.replace(/\D/g, '');
+      inputValue.value = event.target.value;
+    }
+  };
+
+  const labelHighlighted = ref(false);
+
+  const highlightLabel = () => {
+    labelHighlighted.value = true;
+
+    setTimeout(() => {
+      labelHighlighted.value = false;
+    }, 3000); // 3000ms
+  };
+
 
 // ============================================================================
 // Temporal in-edition processor:  createDefaultConfig, updateProcessorSettings
@@ -176,18 +294,39 @@
     }
   )
 
-  watch(() => simState.simulatedProcess, () => {
-    // be sure ROBsize is between 1 and 200, even if the loaded processor has an invalid value
-    const oldROBsize = simState.simulatedProcess.ROBsize;
-    const newROBsize = Math.max(Math.min(oldROBsize, 200), 1);
-    if (newROBsize !== oldROBsize)
-      simState.simulatedProcess.ROBsize = newROBsize;
+  watchEffect(() => { // Dependences: re-evaluated when they change
+    const svg        = simulatedSvg.value;
+    const fullscreen = props.isFullscreen;
 
+    if (svg) { // available SVG
+      nextTick(() => {
+        addClickListenersToSvg()
+      })
+    }
+  })
+
+  watch(() => currentConfig.value?.label, (newLabel, oldLabel) => {
+    if (newLabel && newLabel !== oldLabel) {
+      highlightLabel()
+    }
+  })
+
+  watch(() => simState.simulatedProcess, () => {
     if (simState.state > 1) {
       drawProcessor()
     }
   },
   { deep: true, immediate: true })
+
+  watch(() => simState.simulatedProcess[currentConfig.value.model],
+    (newVal) => {
+      if (String(inputValue.value) !== String(newVal)) {
+        inputValue.value = newVal ?? '';
+        isInvalid.value = false;
+      }
+    },
+    { immediate: true }
+  )
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
@@ -203,14 +342,16 @@
         updateProcessorSettings(data)
         return
       } catch (e) {
-        console.error('💻❌ Failed to load edited processor from localStorage:', e);
+        console.error('📄❌ Failed to load edited processor from localStorage:', e);
       }
     }
+    if (currentConfig.value?.label) highlightLabel()
   });
 
   onUnmounted(() => {
     console.log('💻👋 ProcessorComponent unmounted')
     localStorage.removeItem('processorTemp')
+    removeClickListeners()
   });
 
 // ============================================================================
@@ -313,15 +454,15 @@
     }
   }
 
-  function get_processor_dot(process, highlightPort= -1) {
+  function get_processor_dot(process, highlightPort = -1) {
 
     const ports    = process.ports
     const lat      = process.latencies
     const port_ids = Object.keys(ports)
     const ROBsize  = process.ROBsize || 20
     const sched    = process.sched
-    const dispatch = process.dispatch
-    const retire   = process.retire
+    const dispatch = process.dispatch || 1
+    const retire   = process.retire || 1
 
     function type_color(type) {
       if (type === "INT")    return "#d6e4ff"
@@ -360,30 +501,22 @@
     }
 
     function compress_ops(ops) {
-
       const grouped = {}
-
       for (let op of ops) {
-
         const [type, sub] = op.split(".")
-
         if (!grouped[type]) grouped[type] = new Set()
         if (sub) grouped[type].add(sub)
       }
 
       const result = []
-
       for (let type in grouped) {
-
         const all_ops = typeOperations[type] || []
-
         if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
           result.push({
             label: type,
             big: true
           })
         } else {
-
           for (let sub of grouped[type]) {
             result.push({
               label: `${type}.${sub}`,
@@ -392,13 +525,7 @@
           }
         }
       }
-
       return result
-    }
-
-    function highlightStyle(isHighlighted) {
-      if (!isHighlighted) return ''
-      return ' BGCOLOR="#ffcccc" BORDER="3" COLOR="red"'
     }
 
     const highlight = highlightPort !== null && highlightPort !== undefined
@@ -406,21 +533,24 @@
       : null
 
     const port_ops = {}
-
     for (let p of port_ids)
       port_ops[p] = compress_ops(ports[p])
 
-    const total_rows  = Math.max(...Object.values(port_ops).map(o => o.length))
+    const total_rows = Math.max(...Object.values(port_ops).map(o => o.length))
 
-    // ---- Decode ----
+    // ---- Dispatch + ROB ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows+4}"  BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Edit dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Edit ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer ----
+    let schedLabel = "❌optimal ✅greedy"
+    if (sched !== "greedy"){
+      schedLabel = "✅optimal ❌greedy"
+    }
     let wb_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${sched}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="sched" TITLE="Toggle scheduler"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${schedLabel}</B></FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -432,13 +562,12 @@
         ? ' BGCOLOR="#ffcccc" BORDER="3" COLOR="red"'
         : ' BGCOLOR="#f5f5f5"'
 
-      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+      port_header += `<TD ${style} HREF="#" ID="port:${p}" TITLE="Select port ${p}"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
 
     // ---- Operation rows ----
-
     let op_rows = ""
 
     for (let i = 0; i < total_rows; i++) {
@@ -454,29 +583,24 @@
         const op = port_ops[p][i]
 
         if (!op) {
-          op_rows += `<TD${highlightAttr}></TD>`
+          op_rows += `<TD ${highlightAttr}></TD>`
           continue
         }
 
-        const type  = op_type(op.label)
-        const color = type_color(type)
+        const type    = op_type(op.label)
+        const color   = type_color(type)
+        const tooltip = latency_tooltip(op.label)
 
-        if (op.big) {
-          const tooltip = latency_tooltip(op.label)
-          op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}><FONT POINT-SIZE="16"><B>${op.label}</B></FONT></TD>`
-        } else {
-          const tooltip = latency_tooltip(op.label)
-          op_rows += `
-            <TD BGCOLOR="${color}" TITLE="${tooltip}"${highlightAttr}><FONT POINT-SIZE="14">${op.label}</FONT></TD>`
-        }
+        op_rows += `
+          <TD BGCOLOR="${color}" TITLE="${tooltip}" HREF="#" ID="op:${p}:${i}:${op.label}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${op.label}</B>` : op.label}</FONT></TD>`
       }
+
       op_rows += "</TR>"
     }
 
-    // ---- Registers & Retire ----
+    // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Edit retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
     </TR>`
 
     const dot = `
@@ -493,9 +617,74 @@
             </TABLE>
           >
         ]
-      }  `
+      }`
+
     return dot
   }
+
+  let clickListeners = [];     // To clean listeners
+
+  const addClickListenersToSvg = () => {
+    nextTick(() => {
+      const svgElement = document.querySelector('.simProcessor-img svg');
+      if (!svgElement) return;
+
+      removeClickListeners()
+      console.log('💻Add click listeners to processor table');
+
+      svgElement.querySelectorAll('g').forEach(g => {
+        if (typeof g.id === 'string' && g.id.startsWith("a_")) {
+          const clickHandler = (e) => {
+            e.preventDefault()
+
+            const action = g.id.slice(2)
+            console.log("Action:", action)
+
+            switch (action) {
+              case 'dispatch':
+              case 'rob':
+              case 'retire':
+                activeField.value = action
+                break
+
+              case 'sched':
+                if (simState.simulatedProcess.sched === 'greedy') {
+                  simState.simulatedProcess.sched = 'optimal'
+                } else {
+                  simState.simulatedProcess.sched = 'greedy'
+                }
+                break
+
+              case 'port':
+                const port = g.id.slice(2)
+                console.log('Port clicked:', port)
+                break
+
+              case 'op':
+                // const [_, __, p, row, label] = parts
+                // console.log('Op:', p, row, label)
+                break
+            }
+          }
+          // Guardar referencia para poder removerlo después
+          clickListeners.push({
+            node:    g,
+            handler: clickHandler
+          })
+
+          g.addEventListener('click', clickHandler)
+        }
+      })
+    })
+  }
+
+  const removeClickListeners = () => {
+    clickListeners.forEach(({ node, handler }) => {
+      node.removeEventListener('click', handler);
+    })
+    clickListeners = []
+  }
+
 
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
@@ -770,37 +959,50 @@
         </div>
         <div class="settings-container">
           <select v-model="processorOptions.processorName" class="form-select"
-              id="processors-list" title="Select Processor">
+              id="processors-list" title="Select Processor Configuration">
             <option value="" disabled>Select</option>
             <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
               {{ processor }}
             </option>
             <option value="_add_new_">Add new</option>
           </select>
-          <!--
+	  <!--
           <button class="blue-button small-btn" @click="editProcessor"
             id="edit-processor-button"
-            title="Edit current processor on full-screen as a new program">
+            title="Edit current processor on full-screen">
           📝
           </button>
-          <button class="blue-button small-btn" @click="removeProcessor"
+          -->
+	  <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
           🧹
           </button>
-          -->
           <div class="iters-group rob-group">
-            <span class="iters-label" title="Number of ROB entries (1 to 200)">ROB:</span>
-            <input type="number" min="1" max="200" id="rob-size" title="Number of ROB entries (1 to 200)"
-                 v-model.number="simState.simulatedProcess.ROBsize">
+            <span class="iters-label"
+              :class="{ 'highlight': labelHighlighted }"
+              :title="currentConfig.title">
+              {{ currentConfig.label }}
+            </span>
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :placeholder="currentConfig.min.toString()"
+              v-model="inputValue"
+              @blur="validateField"
+              @keypress="handleKeyPress"
+              @input="handleInput"
+              :class="{ 'invalid': isInvalid }"
+              :title="`Rango: ${currentConfig.min} - ${currentConfig.max}`"
+            />
           </div>
         </div>
       </div>
 
-      <!--    Processor Graph with visual usage  -->
       <div class="graph-section">
         <div class="processor-container">
-          <div class="processor-img" v-html="simulatedSvg" v-if="simulatedSvg"></div>
+          <div class="simProcessor-img" v-html="simulatedSvg" v-if="simulatedSvg"></div>
         </div>
       </div>
     </div>
@@ -919,7 +1121,6 @@
             <span class="header-title">Instruction Latencies and Execution Ports</span>
           </div>
 
-          <!-- Ports toolbar -->
           <div class="ports-toolbar">
             <span v-for="port in portList" :key="port" class="port-tag">
               P{{ port }}
@@ -960,7 +1161,6 @@
                         <span class="type-name">{{ type }}</span>
                       </button>
 
-                      <!-- Tipo SIN operaciones (ej. BRANCH) -->
                       <span
                         v-else
                         class="type-label no-ops"
@@ -1084,19 +1284,25 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="Provides graphical visualization of the <strong>processor microarchitecture</strong> (pipeline) characteristics.
-        <p>Modify the size of the <strong>ROB</strong> (ReOrder Buffer) or select a new <em>processor configuration</em> file from the list.
-        Pin the <strong>Edit Processor</strong> tab to modify the microarchitectural parameters.</p>
-        <p>After simulating the execution of a program, the graphical view of the processor provides utilization information:
-        hover over the <em>execution ports</em> to inspect their individual <em>utilization</em>.
-        <strong>Red</strong> indicates a potential performance bottleneck in execution.</p>"
-    title="Processor MicroArchitecture and Usage"
+    text="The table describes the <strong>processor microarchitecture</strong> (pipeline) characteristics.
+        <p>Click on the corresponding table cells to modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> widths
+          (maximum number of instructions dispatched into or retired from the <strong>Execution Engine</strong> per clock cycle),
+          or the <strong>ROB</strong> (ReOrder Buffer) size (maximum number of instructions on the <strong>Execution Engine</strong>).
+          All of them may impose a <strong><em>throughput-bound</em></strong> performace limit.</p>
+        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> scheduler
+          (which issues ready instructions as soon as possible) and an <em>optimal</em> scheduler
+          (which always issues the best combination of ready instructions to maximize performance).</p>
+        <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
+         Click on the buttons on the right to <strong>edit</strong> the microarchitectural parameters or
+         to <strong>remove</strong> the file from local storage.</p>
+        "
+    title="Processor MicroArchitecture Description"
     @close="closeHelp" />
 
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
-      (2) <em>Cache Memory</em>; (3) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
-      (4) <em>Execution Latencies</em>"
+      (2) <em>ROB</em> size; (3) <em>Cache Memory</em>; (4) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
+      (5) <em>Execution Latencies</em>"
     title="Processor Settings"
     @close="closeHelp1"/>
 
@@ -1136,7 +1342,7 @@
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
         <button class="blue-button" title="Accept Download" @click="confirmDownload"> Yes </button>
-        <button class="blue-button" title="Cancel Download"   @click="showModalDownload=false">  Cancel </button>
+        <button class="blue-button" title="Cancel Download" @click="showModalDownload=false">  Cancel </button>
       </div>
     </div>
   </div>
@@ -1164,6 +1370,32 @@
 
   .iters-group rob-group {
         gap:         0px;
+  }
+
+  .iters-group input {
+    width:         30px;
+    padding:       2px 4px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+    transition:    all 0.2s ease;
+  }
+
+  .iters-group input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  .iters-group input.invalid {
+    border-color:     #ff4444;
+    background-color: #fff0f0;
+    animation:        shake 0.3s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-5px); }
+    75%      { transform: translateX(5px); }
   }
 
   .settings-group {
@@ -1215,8 +1447,13 @@
     display: flex;
     align-items: center;
     gap: 3px;
+    flex: 1;
+    justify-content: center;
   }
-
+  .settings-container select,
+  .settings-container button {
+    flex-shrink: initial;
+  }
   .fullscreen-settings {
     display: flex;
     align-items: center;
@@ -1264,7 +1501,6 @@
     background-color: #f0f5ff;
   }
 
-
   .latency-input {
     width:     40px !important; /* Más estrecho */
     max-width: 70px;
@@ -1306,13 +1542,51 @@
   }
 
   .processor-img svg text {
-    font-size:   12px !important;
-    font-family: Arial, sans-serif !important;
+    font-size:   12px;
+    font-family: Arial, sans-serif;
   }
 
   .processor-img svg polygon,
   .processor-img svg path {
+    stroke-width: 2px;
+  }
+
+  .simProcessor-img {
+    width:        100%;
+    height:       100%;
+    max-width:    150%;
+    max-height:   150%;
+    align-items:  center;
+    object-fit:   contain;
+    transform-box: fill-box;
+  }
+
+  .simProcessor-img svg text {
+    font-size:   12px;
+    font-family: Arial, sans-serif;
+  }
+
+  .simProcessor-img svg polygon,
+  .simProcessor-img svg path {
+    stroke-width: 2px;
+  }
+
+  .simProcessor-img svg[viewBox] {
+    width:    100%;
+    height:   100%;
+    overflow: hidden;
+  }
+
+  .simProcessor-img g.node.selected polygon {
+    stroke-width: 3px !important;
+    stroke:       #0066ff !important;
+    filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
+  }
+
+  .simProcessor-img g.node:hover polygon {
     stroke-width: 2px !important;
+    stroke:       #444444 !important;
+    cursor:       pointer;
   }
 
   .table-container {
@@ -1464,17 +1738,14 @@
     font-weight:    bold;
     cursor:         pointer;
   }
-
   .op-row {
     background: #f9fbff;
   }
-
   .op-cell {
     padding-left:   2px;
     font-size:      smaller;
     font-style:     italic;
   }
-
   .type-cell {
     white-space: nowrap;
   }
@@ -1499,14 +1770,12 @@
   .type-name {
     font-weight: 600;
   }
-
   .type-label.no-ops {
     font-weight:  600;
     color:     #261515;
     cursor:     default;
     opacity:      0.9;
   }
-
   .op-name {
     font-weight: 600;
   }
