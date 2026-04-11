@@ -100,10 +100,9 @@
   .iters-group {
     display:     inline-flex;
     align-items: center;
-    gap:         6px;
+    gap:         0px;
     margin-top:  3px;
     margin-left: auto;
-    /* flex-shrink: 0; */
   }
 
   .iters-label {
