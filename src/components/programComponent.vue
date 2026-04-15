@@ -46,20 +46,26 @@ const STORAGE_KEY = 'programOptions'
     }
   }
 
-  const savedOptions = (() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('📄load options')
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
-    }
-  })()
-
-  const programOptions = reactive({ ...defaultOptions, ...savedOptions })
+  const programOptions = reactive(defaultOptions)
   const programSvg     = ref('')
   const showFullScreen = ref(false)
   let   graphTimeout   = null
+
+  const loadOptions = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(programOptions, JSON.parse(saved))
+        console.log('📄load options')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('📄default load options')
+      }
+    } catch (error) {
+      console.error('📄❌ Failed to load:', error)
+    }
+  }
 
   const saveOptions = () => {
     try {
@@ -207,7 +213,13 @@ function loadEditedMemory() {
     }
   )
 
+  let updateCritical= false
+
   watch( () => simState.simulatedProcess, () => {
+      if (updateCritical) {
+        updateCritical = false;
+        return
+      }
       if (simState.state > 2) {
         console.log('📄🔄 Refreshing program latencies & ports on simulated process');
         updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
@@ -217,22 +229,17 @@ function loadEditedMemory() {
     { deep: true, immediate: false }
   )
 
-  watch( () => simState.executionResults, () => {
-    if (simState.state > 2)
-      updateCriticalInfo()
-  },
-  { deep: true, immediate: true })
-
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
   let cleanupHandleGraph= null
 
   onMounted(() => {
-    console.log('📄🎯 ProgramComponent mounted')
+    loadOptions()
     cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
     loadEditedProgram()
     loadEditedMemory()
+    console.log('📄🎯 ProgramComponent mounted')
   });
 
   onUnmounted(() => {
@@ -427,26 +434,6 @@ function snapshotMemory() {
     }
   }
 
-  function updateCriticalInfo() {
-    const res = simState.executionResults?.critical_path?.instructions
-    const instr_list = simState.simulatedProcess?.instruction_list
-
-    if (!instr_list) return
-
-    if (!res) {
-      instr_list.forEach((inst, index) => {
-        delete inst.percentage
-      })
-      return
-    }
-
-    const resMap = new Map(res.map(r => [r.id, r.percentage]))
-
-    instr_list.forEach((inst, index) => {
-      inst.percentage = (resMap.get(index) ?? 0).toFixed(0)
-    })
-  }
-
   function portsMaskToString(mask) {
     const ports = []
     let   i     = 0
@@ -581,10 +568,15 @@ function snapshotMemory() {
     return `rgb(${r2}, ${g2}, ${b2})`
   }
 
-  function rowStyle(inst) {
+  function rowStyle(index) {
+    if (simState.executionResults == null || !simState.executionResults?.critical_path?.instructions)
+      return {}
+    const percentage = simState.executionResults?.critical_path?.instructions?.[index]?.percentage;
+    if (percentage == null || isNaN(percentage))
+      return {}
     return {
-      backgroundColor: percentageToColor(inst.percentage),
-      color: inst.percentage > 50 ? 'white' : 'black'
+      backgroundColor: percentageToColor(percentage),
+      color: percentage > 50 ? 'white' : 'black'
     }
   }
 
@@ -648,12 +640,12 @@ function snapshotMemory() {
             <tr
               v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
-              :style="activeView === 'simulationComponent' ? rowStyle(inst) : {}"
+              :style="activeView === 'simulationComponent' ? rowStyle(index) : {}"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
               <td title="Instruction Number/Percentage of time aggregated to in critical path">
-                <section v-if="activeView === 'simulationComponent' && inst?.percentage != null">
-                  {{ inst.percentage }}%
+                <section v-if="activeView === 'simulationComponent' && simState.executionResults?.critical_path?.instructions?.[index]?.percentage != null">
+                  {{ simState.executionResults.critical_path.instructions[index].percentage.toFixed(0) }}%
                 </section>
                 <section v-else>
                  {{ index }}

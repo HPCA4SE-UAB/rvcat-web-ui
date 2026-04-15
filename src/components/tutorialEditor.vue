@@ -1,16 +1,16 @@
 <template>
- <div class="main">   
+ <div class="main">
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Tutorial  Editor</span>
       </div>
-   
+
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
-          <button class="blue-button" title="Save current tutorial on your local file system" 
+          <button class="blue-button" title="Save current tutorial on your local file system"
                 @click="downloadTutorial">   Download </button>
-          <button class="blue-button" title="Load new tutorial from your local file system" 
+          <button class="blue-button" title="Load new tutorial from your local file system"
                 @click="uploadTutorial"> Upload   </button>
         </div>
 
@@ -22,7 +22,7 @@
     </div>
 
     <div class="tutorial-editor">
-      
+
       <!-- Header: Tutorial Description -->
       <div class="editor-content">
         <div class="section tutorial-header">
@@ -34,10 +34,10 @@
             <label>Description</label>
             <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial" title="Description of the tutorial"></textarea>
             <div class="buttons">
-              <button class="blue-button" title="Add new step to the tutorial (after selected step)" 
+              <button class="blue-button" title="Add new step to the tutorial (after selected step)"
                 :disabled="stepNumber >= maxSteps"
                 @click="addStep('step', stepNumber)">Add new Step</button>
-              <button class="blue-button" title="Add new question to the tutorial (after selected step)" 
+              <button class="blue-button" title="Add new question to the tutorial (after selected step)"
                 :disabled="stepNumber >= maxSteps"
                 @click="addStep('question', stepNumber)">Add new Question</button>
               <button class="blue-button" title="Duplicate selected step (after the selected one)"
@@ -58,7 +58,7 @@
             <div class="form-group left-column">
               <div class="form-row">
                 <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
-                  {{ stepNumber }} 
+                  {{ stepNumber }}
                 </span>
                 <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
               </div>
@@ -66,7 +66,7 @@
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
               <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
-              <template v-if="currentStep.type === 'step'">  
+              <template v-if="currentStep.type === 'step'">
                 <label>Position</label>
                 <select v-model="currentStep.position">
                   <option value="bottom">Bottom</option>
@@ -82,7 +82,7 @@
                 </select>
                 <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
               </template>
-              <template v-if="currentStep.type === 'question'">             
+              <template v-if="currentStep.type === 'question'">
                 <label>Answer Mode <span class="required">*</span></label>
                 <div class="answer-mode-selector">
                   <label class="mode-radio">
@@ -97,7 +97,7 @@
                </template>
             </div>
 
-            <template v-if="currentStep.type === 'step'">             
+            <template v-if="currentStep.type === 'step'">
               <div class="form-group">
                 <label>Action (optional)</label>
                 <select v-model="currentStep.action">
@@ -181,7 +181,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div v-else class="form-group">
                 <label>Validation</label>
                 <select v-model="currentStep.validationType">
@@ -199,7 +199,7 @@
               <div class="form-group left-column">
                 <label>Question Text <span class="required">*</span></label>
                 <textarea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text"></textarea>
- 
+
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
@@ -209,9 +209,9 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="answers-section right-column">
-                <h4>Answers (up to 6) 
+                <h4>Answers (up to 6)
                    <span class="required">*</span>
                    - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}
                 </h4>
@@ -225,11 +225,11 @@
                     </label>
                     <button v-if="currentStep.answers.length > 2" @click="removeAnswer(currentStep, ansIndex)" class="remove-answer-btn">×</button>
                   </div>
-                  
+
                   <div class="form-group">
                     <input v-model="answer.text" type="text" placeholder="Answer option...">
                   </div>
-                  
+
                   <div class="feedback-group">
                     <div class="form-group">
                       <label v-if="answer.isCorrect">✓ Explanation (shown when user selects this correct answer)</label>
@@ -238,14 +238,14 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <button v-if="currentStep.answers.length < 6" @click="addAnswer(currentStep)" class="add-answer-btn">+ Add Answer</button>
               </div>
             </template>
 
           </div>
         </div>
-        
+
     </div>
   </div>
 
@@ -264,12 +264,12 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="<p>Tutorials can be edited, uploaded from or downloaded to the local file system in JSON format, added or removed to the local menu 
+    text="<p>Tutorials can be edited, uploaded from or downloaded to the local file system in JSON format, added or removed to the local menu
       (able to be executed, stored in the navigator local storage, and preserved across sessions).</p>
-      <p>A tutorial is composed of <strong>general steps</strong> and <strong>question steps</strong>. 
+      <p>A tutorial is composed of <strong>general steps</strong> and <strong>question steps</strong>.
       General steps define an element in the simulator that is highlighted, and may define a action (simulate click on main header buttons).
-      You can specify the position in the screen for the tutorial message in relation to the highlighted screen element. 
-      Finally, you can specify some requirement to continue the tutorial, 
+      You can specify the position in the screen for the tutorial message in relation to the highlighted screen element.
+      Finally, you can specify some requirement to continue the tutorial,
       such as clicking some button, or selecting some value in a certain input box.</p>"
     title="Tutorial edition, download/upload, "
     @close="closeHelp"  />
@@ -284,7 +284,7 @@ import HelpComponent                                     from '@/components/help
 import {  downloadJSON, uploadJSON, saveToLocalStorage, createGraphVizGraph  } from '@/common'
 
 const simState = inject('simulationState');
- 
+
 // ============================================================================
 // Edited Tutorial & LocalStorage
 // ============================================================================
@@ -295,9 +295,9 @@ const tutorialSvg = ref('')
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
-const currentStep = computed(() => 
+const currentStep = computed(() =>
   stepNumber.value >= 0 && stepNumber.value < tutorial.steps.length
-    ? tutorial.steps[stepNumber.value] 
+    ? tutorial.steps[stepNumber.value]
     : null
 );
 const maxSteps    = computed(() => tutorial.steps.length)
@@ -374,7 +374,7 @@ const validationInputSelectors = [
 
   { label: 'Performance bound information',   value: '#performance-bound' },
   { label: 'Performance latency limit',       value: '#latency-limit' },
-  { label: 'Performance throughput limit',    value: '#throughput-limit' },  
+  { label: 'Performance throughput limit',    value: '#throughput-limit' },
   { label: 'Performance best limit',          value: '#best-limit' },
   { label: 'Detailed thorughput limits',      value: '#detailed-thorughput-limits' },
 
@@ -441,9 +441,9 @@ const createEmptyQuestion = () => ({
 const addStep = (type = 'step', atIndex = -1) => {
   let insertIndex= atIndex+1
   let newStep = null
- 
+
   if (!type) {  // duplicate current
-    insertIndex = Math.max(0, Math.min(insertIndex-1, tutorial.steps.length - 1)); 
+    insertIndex = Math.max(0, Math.min(insertIndex-1, tutorial.steps.length - 1));
     // Create deep copy
     newStep = JSON.parse(JSON.stringify(tutorial.steps[insertIndex]));
     newStep.title = `${newStep.title} (copy)`;
@@ -460,8 +460,6 @@ const addStep = (type = 'step', atIndex = -1) => {
 const removeStep = (index) => {
   tutorial.steps.splice(index, 1)
   stepNumber.value = index-1;
-  // if (index > 0 )
-  //  selectNodeByIndex(index-1)
 }
 
 // ============================================================================
@@ -513,20 +511,20 @@ const removeAnswer = (step, index) => {
     ensureOneCorrectAnswer(step)
   }
 }
-  
+
 // ============================================================================
 // IMAGE UPLOAD (unified handler)
 // ============================================================================
 const handleImageUpload = (event, step) => {
   const file = event.target.files[0]
   if (!file) return
-  
+
   if (file.size > MAX_IMAGE_SIZE) {
     alert('Image is too large. Please use an image smaller than 500KB.')
     event.target.value = ''
     return
   }
-  
+
   const reader  = new FileReader()
   reader.onload = (e) => { step.image = e.target.result }
   reader.readAsDataURL(file)
@@ -537,12 +535,12 @@ const handleImageUpload = (event, step) => {
 // ============================================================================
 const buildValidation = (step) => {
   if (!step.validationType) return null
-  
+
   const validation = {
     type:    step.validationType,
     message: step.validationMessage || 'Complete this action to continue'
   }
-  
+
   switch (step.validationType) {
     case 'program_selected':
     case 'architecture_selected':
@@ -579,7 +577,7 @@ const convertStepForExport = (step) => {
     if (step.image) q.image = step.image
     return q
   }
-  
+
   const s = {
     type:        'step',
     title:       step.title,
@@ -589,11 +587,11 @@ const convertStepForExport = (step) => {
   }
   if (step.image)   s.image  = step.image
   if (step.action)  s.action = step.action
-  
+
   const validation = buildValidation(step)
-  if (validation) 
+  if (validation)
     s.validation = validation
-  
+
   return s
 }
 
@@ -610,21 +608,21 @@ const buildTutorialData = () => ({
 // ============================================================================
 const validateTutorial = () => {
   const errors = []
-  
+
   if (!tutorial.name?.trim())         errors.push('• Tutorial Name is required')
   if (!tutorial.steps.length)         errors.push('• At least one step or question is required')
-  
+
   tutorial.steps.forEach((step, i) => {
     const n = i
     if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
-    
+
     if (step.type === 'question') {
       if (!step.questionText?.trim()) errors.push(`• Step ${n}: Question Text is required`)
       if (!step.answerMode)           errors.push(`• Step ${n}: Answer Mode is required`)
-      
+
       const validAnswers = step.answers?.filter(a => a.text?.trim()) || []
       if (validAnswers.length < 2)    errors.push(`• Step ${n}: At least 2 answers with text are required`)
-      
+
       const correctAnswers = step.answers?.filter(a => a.isCorrect && a.text?.trim()) || []
       if (step.answerMode === 'single' && correctAnswers.length !== 1) {
                                       errors.push(`• Step ${n}: Single-choice mode requires exactly one correct answer`)
@@ -635,7 +633,7 @@ const validateTutorial = () => {
                                       errors.push(`• Step ${n}: CSS Selector is required`)
     }
   })
-  
+
   return errors
 }
 
@@ -647,7 +645,7 @@ const showValidationErrors = () => {
   }
   return true
 }
-  
+
 // ============================================================================
 // HELP
 // ============================================================================
@@ -660,14 +658,14 @@ const showValidationErrors = () => {
 
 
 // ============================================================================
-// TUTORIAL ACTIONS: loadEditedTutorial, clearDraft 
+// TUTORIAL ACTIONS: loadEditedTutorial, clearDraft
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
 
 const showSaveModal = ref(false)
 const modalName     = ref('')
 const modalError    = ref('')
-  
+
 function loadEditedTutorial() {
   const stored = localStorage.getItem('tutorialTemp');
   if (!stored) {
@@ -707,10 +705,10 @@ const saveTutorialAs = () => {
 const confirmSaveTutorialAs = async () => {
   if (!showValidationErrors()) return
   const name = modalName.value.trim();
-   
+
   const data    = buildTutorialData();
   const success = saveToLocalStorage('tutorial', name, data, null );
-  
+
   if (success) {
     console.log(`🎓✅ Tutorial saved as: ${name}`);
     showSaveModal.value = false
@@ -723,7 +721,7 @@ const confirmSaveTutorialAs = async () => {
 
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
-  
+
   const tutorialData = buildTutorialData();
   downloadJSON(tutorialData, 'tempTut', 'tutorial');
 };
@@ -761,7 +759,7 @@ const convertUploadedStep = (step) => {
     if (!q.answers.some(a => a.isCorrect)) q.answers[0].isCorrect = true
     return q
   }
-  
+
   const s = {
     ...createEmptyStep(),
     title:       step.title       || '',
@@ -771,7 +769,7 @@ const convertUploadedStep = (step) => {
     position:    step.position    || 'bottom',
     action:      step.action      || ''
   }
-  
+
   if (step.validation) {
     s.validationType =     step.validation.type     || ''
     s.validationMessage =  step.validation.message  || ''
@@ -788,8 +786,8 @@ async function processTutorialUpdate(t) {
     console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
     const dotCode = generateTutorialDot(t);
-    console.log('🎓📥 Dot Code', dotCode);
-      
+    // console.log('🎓📥 Dot Code', dotCode);
+
     const svg = await createGraphVizGraph(dotCode);
     tutorialSvg.value = svg.outerHTML;
   } catch (error) {
@@ -807,7 +805,7 @@ digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
   subgraph cluster_0 {
    style="filled,rounded"; color=grey; tooltip="Tutorial flow-graph"; fillcolor=lightgrey;
-   node [style=filled,margin="0.05,0.05", fontname="courier", URL="javascript:void(0)"]; 
+   node [style=filled,margin="0.05,0.05", fontname="courier", URL="javascript:void(0)"];
 `
   for (let i = 0; i < num_steps; i++) {
     let color = "blue"
@@ -816,8 +814,8 @@ digraph "Tutorial Graph" {
     if (type !== "step") {
       color = "purple"
       fill  = "mediumpurple1"
-    } 
-    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>, 
+    }
+    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,
                             tooltip="Click to edit this ${type}"]\n`
   }
   dot_code += `
@@ -853,7 +851,7 @@ watch(tutorial, (t) => {
     await processTutorialUpdate(t);
   }, 100);
 }, { deep: true });
-  
+
 // Watch for changes on Simulation state
 watch(() => simState.state, (newValue, oldValue) => {
   if (newValue == 3) { // Initialization Stage
@@ -882,17 +880,17 @@ const addClickListenersToSvg = () => {
       const handleClick = (event) => {
         event.stopPropagation();
         let stepN = index
-        
+
         console.log('🎓 Selected step:', stepN);
-        
+
         // 1. DESELECT previous node
         if (lastSelectedNode && lastSelectedNode !== node) {
           resetNodeStyle(lastSelectedNode);
         }
-        
+
         // 2. SELECT new node
         highlightNodeAsSelected(node);
-        
+
         // 3. Update State
         lastSelectedNode = node;
         if (index > tutorial.steps.length)
@@ -909,13 +907,13 @@ const addClickListenersToSvg = () => {
           node.style.transition = 'filter 0.15s ease';
         }
       };
-      
+
       const handleMouseLeave = () => {
         if (node !== lastSelectedNode) {
           node.style.filter = 'none';
         }
       };
-  
+
       node.addEventListener('click',      handleClick);
       node.addEventListener('mouseenter', handleMouseEnter);
       node.addEventListener('mouseleave', handleMouseLeave);
@@ -927,7 +925,7 @@ const addClickListenersToSvg = () => {
         leave: handleMouseLeave
       });
     });
-    
+
     selectNodeByIndex(stepNumber)
   });
 };
@@ -946,12 +944,12 @@ const highlightNodeAsSelected = (node) => {
   const shapes = node.querySelectorAll('ellipse, polygon, path, rect');
   shapes.forEach(shape => {
     if (!shape.hasAttribute('data-original-stroke')) {
-      shape.setAttribute('data-original-stroke', 
+      shape.setAttribute('data-original-stroke',
         shape.getAttribute('stroke') || '#000000');
-      shape.setAttribute('data-original-stroke-width', 
+      shape.setAttribute('data-original-stroke-width',
         shape.getAttribute('stroke-width') || '1');
     }
-    
+
     shape.setAttribute('stroke', '#0066ff');
     shape.setAttribute('stroke-width', '3');
     shape.style.stroke = '#0066ff';
@@ -964,12 +962,12 @@ const highlightNodeAsSelected = (node) => {
 const resetNodeStyle = (node) => {
   node.style.filter = 'none';
   node.classList.remove('selected');
-  
+
   const shapes = node.querySelectorAll('ellipse, polygon, path, rect');
   shapes.forEach(shape => {
     const originalStroke      = shape.getAttribute('data-original-stroke');
     const originalStrokeWidth = shape.getAttribute('data-original-stroke-width');
-    
+
     if (originalStroke) {
       shape.setAttribute('stroke', originalStroke);
       shape.style.stroke = originalStroke;
@@ -984,17 +982,17 @@ const resetNodeStyle = (node) => {
 const selectNodeByIndex = (index) => {
   const svgElement = document.querySelector('.tutorial-img svg');
   if (!svgElement) return;
-  
+
   const nodes = svgElement.querySelectorAll('g.node');
   if (index >= 0 && index < nodes.length) {
     if (index == -1) index = 1+tutorial.steps.length
     const node = nodes[index];
-    
+
     // Deselect
     if (lastSelectedNode && lastSelectedNode !== node) {
       resetNodeStyle(lastSelectedNode);
     }
-    
+
     // Select new
     highlightNodeAsSelected(node);
     lastSelectedNode = node;
@@ -1024,81 +1022,81 @@ onUnmounted(() => {
 
 <style scoped>
 
-.tutorial-editor {
-  background:     white;
-  border-radius:  12px;
-  width:          100%;
-  display:        flex;
-  flex-direction: column;
-  margin:         auto;
-}
-  
-.settings-container {
-  display:     flex;
-  align-items: center;
-  gap:         10px;
-}
+  .tutorial-editor {
+    background:     white;
+    border-radius:  12px;
+    width:          100%;
+    display:        flex;
+    flex-direction: column;
+    margin:         auto;
+  }
 
-.fullscreen-settings {
-  display:     flex;
-  align-items: center;
-  gap:         10px;
-}
-  
-#tutorials-list {
-  font-size: larger;
-}
+  .settings-container {
+    display:     flex;
+    align-items: center;
+    gap:         10px;
+  }
 
-.editor-content {
-  display:    flex;
-  flex:       1;
-  overflow-y: auto;
-  padding:    0;
-  flex-direction: column;
-  max-height:     2000px;
-}
+  .fullscreen-settings {
+    display:     flex;
+    align-items: center;
+    gap:         10px;
+  }
 
-.section {
-  flex: 1;
-  overflow-y:    auto;
-  min-height:    0; /* Importante para flex + overflow */
-  padding:       10px 10px;
-  border-bottom: 1px solid #f3f4f6;
-}
+  #tutorials-list {
+    font-size: larger;
+  }
 
-.section:last-child {
-  border-bottom: none;
-}
- 
-.tutorial-header {
-  display:     flex;
-  gap:         10px;
-  align-items: flex-start;
-  min-height:  120px; /* Altura mínima para la sección */
-}
+  .editor-content {
+    display:    flex;
+    flex:       1;
+    overflow-y: auto;
+    padding:    0;
+    flex-direction: column;
+    max-height:     2000px;
+  }
 
-.left-column {
-  flex:      1;      /* 1/4 del espacio disponible */
-  min-width: 0; /* Evita que crezca más de lo necesario */
-}
+  .section {
+    flex: 1;
+    overflow-y:    auto;
+    min-height:    0; /* Importante para flex + overflow */
+    padding:       10px 10px;
+    border-bottom: 1px solid #f3f4f6;
+  }
 
-.right-column {
-  flex:       3;          /* 3/4 del espacio disponible */
-  min-width:  0;
-  box-sizing: border-box; /* Incluye padding y border en el cálculo */
-  display:    flex;
-  padding:    2px;
-  flex-direction: column;
-  border:        1px solid #ddd;
-  background:    #f8f9fa;
-  border-radius: 8px;
+  .section:last-child {
+    border-bottom: none;
+  }
 
-  max-height: 1500px; /* O la altura máxima que prefieras */
-  min-height:  180px; /* Altura mínima */
-  
-  overflow: hidden; /* Oculta cualquier desbordamiento */
-  position: relative; /* Para el posicionamiento interno */
-}
+  .tutorial-header {
+    display:     flex;
+    gap:         10px;
+    align-items: flex-start;
+    min-height:  120px; /* Altura mínima para la sección */
+  }
+
+  .left-column {
+    flex:      1;      /* 1/4 del espacio disponible */
+    min-width: 0; /* Evita que crezca más de lo necesario */
+  }
+
+  .right-column {
+    flex:       3;          /* 3/4 del espacio disponible */
+    min-width:  0;
+    box-sizing: border-box; /* Incluye padding y border en el cálculo */
+    display:    flex;
+    padding:    2px;
+    flex-direction: column;
+    border:        1px solid #ddd;
+    background:    #f8f9fa;
+    border-radius: 8px;
+
+    max-height: 1500px; /* O la altura máxima que prefieras */
+    min-height:  180px; /* Altura mínima */
+
+    overflow: hidden; /* Oculta cualquier desbordamiento */
+    position: relative; /* Para el posicionamiento interno */
+  }
 
  .tutorial-img {
     width:        100%;
@@ -1112,8 +1110,8 @@ onUnmounted(() => {
     width:    100%;
     height:   100%;
     overflow: hidden;
-  }  
-  
+  }
+
   .tutorial-img svg text {
     font-size:   small;
     font-family: Arial, sans-serif;
@@ -1122,401 +1120,401 @@ onUnmounted(() => {
   .tutorial-img svg path {
     stroke-width: 2px !important;
   }
-  
-.tutorial-img g.node.selected ellipse,
-.tutorial-img g.node.selected polygon,
-.tutorial-img g.node.selected path {
-  stroke-width: 3px !important;
-  stroke:       #0066ff !important;
-  filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
-}
 
-.tutorial-img g.node:hover ellipse,
-.tutorial-img g.node:hover polygon,
-.tutorial-img g.node:hover path {
-  stroke-width: 2px !important;
-  stroke:       #444444 !important;
-  cursor:       pointer;
-}
+  .tutorial-img g.node.selected ellipse,
+  .tutorial-img g.node.selected polygon,
+  .tutorial-img g.node.selected path {
+    stroke-width: 3px !important;
+    stroke:       #0066ff !important;
+    filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
+  }
 
-.form-group {
-  margin-bottom: 8px;
-  padding-right: 10px;
-}
+  .tutorial-img g.node:hover ellipse,
+  .tutorial-img g.node:hover polygon,
+  .tutorial-img g.node:hover path {
+    stroke-width: 2px !important;
+    stroke:       #444444 !important;
+    cursor:       pointer;
+  }
 
-.form-row {
-  display:               grid;
-  grid-template-columns: 1fr 140px;
-  gap:                   1px;
-}
+  .form-group {
+    margin-bottom: 8px;
+    padding-right: 10px;
+  }
 
-.form-group label {
-  display:       block;
-  margin-bottom: 2px;
-  font-size:     medium;
-  font-weight:   500;
-  color:         #374151;
-}
+  .form-row {
+    display:               grid;
+    grid-template-columns: 1fr 140px;
+    gap:                   1px;
+  }
 
-.required {
-  color:       #ef4444;
-  font-weight: 600;
-}
+  .form-group label {
+    display:       block;
+    margin-bottom: 2px;
+    font-size:     medium;
+    font-weight:   500;
+    color:         #374151;
+  }
 
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width:         100%;
-  padding:       1px 6px;
-  border:        1px solid #d1d5db;
-  border-radius: 8px;
-  font-size:     medium;
-  color:         #111827;
-  transition:    border-color 0.2s;
-  font-family:   inherit;
-  box-sizing:    border-box;
-}
+  .required {
+    color:       #ef4444;
+    font-weight: 600;
+  }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-  outline:      none;
-  border-color: #3b82f6;
-  box-shadow:   0 0 0 3px rgba(59, 130, 246, 0.1);
-}
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width:         100%;
+    padding:       1px 6px;
+    border:        1px solid #d1d5db;
+    border-radius: 8px;
+    font-size:     medium;
+    color:         #111827;
+    transition:    border-color 0.2s;
+    font-family:   inherit;
+    box-sizing:    border-box;
+  }
 
-.form-group textarea {
-  height:      60px;
-  resize:      vertical;
-  line-height: 1.2;
-}
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline:      none;
+    border-color: #3b82f6;
+    box-shadow:   0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
 
-.label-input-row {
-  display:       flex;
-  align-items:   center;
-  margin-bottom: 2px;
-  gap:           8px;
-  width:         100%;
-}
+  .form-group textarea {
+    height:      60px;
+    resize:      vertical;
+    line-height: 1.2;
+  }
 
-.label-input-row label {
-  flex-shrink: 0; 
-  text-align:  right;
-  font-weight: 500;
-  white-space: nowrap; 
-}
+  .label-input-row {
+    display:       flex;
+    align-items:   center;
+    margin-bottom: 2px;
+    gap:           8px;
+    width:         100%;
+  }
 
-.name-input {
-  flex:      1; /* Ocupa todo el espacio disponible */
-  min-width: 0; /* Importante para que funcione flex */
-  padding:   8px;
-  border:    1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
+  .label-input-row label {
+    flex-shrink: 0;
+    text-align:  right;
+    font-weight: 500;
+    white-space: nowrap;
+  }
 
-/* Selector preset with text input combo */
-.selector-preset {
-  margin-bottom: 4px;
-}
+  .name-input {
+    flex:      1; /* Ocupa todo el espacio disponible */
+    min-width: 0; /* Importante para que funcione flex */
+    padding:   8px;
+    border:    1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
 
-.selector-input {
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size:   small;
-}
+  /* Selector preset with text input combo */
+  .selector-preset {
+    margin-bottom: 4px;
+  }
 
-.step-card {
-  display:        flex;
-  background:     #f9fafb;
-  border:        1px solid #e5e7eb;
-  border-radius: 10px;
-  padding:       10px 10px;
-  margin-bottom: 8px;
-  position:      relative;
-}
+  .selector-input {
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size:   small;
+  }
 
-.step-header {
-  display:         flex;
-  justify-content: space-between;
-  align-items:     center;
-  margin-bottom:   8px;
-}
+  .step-card {
+    display:        flex;
+    background:     #f9fafb;
+    border:        1px solid #e5e7eb;
+    border-radius: 10px;
+    padding:       10px 10px;
+    margin-bottom: 8px;
+    position:      relative;
+  }
 
-.step-number {
-  background:  #3b82f6;
-  color:       white;
-  font-size:   small;
-  font-weight: 600;
-  padding:     4px 8px;
-  border-radius: 12px;
-  min-width:  12px;
-  max-width:  24px;
-  text-align: center;
-}
+  .step-header {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    margin-bottom:   8px;
+  }
 
-.remove-btn {
-  background: #ef4444;
-  color:      white;
-  border:     none;
-  border-radius: 4px;
-  width:     24px;
-  height:    24px;
-  font-size: medium;
-  cursor:    pointer;
-  display:   flex;
-  align-items:     center;
-  justify-content: center;
-  transition:      background-color 0.2s;
-}
+  .step-number {
+    background:  #3b82f6;
+    color:       white;
+    font-size:   small;
+    font-weight: 600;
+    padding:     4px 8px;
+    border-radius: 12px;
+    min-width:  12px;
+    max-width:  24px;
+    text-align: center;
+  }
 
-.remove-btn:hover {
-  background: #dc2626;
-}
+  .remove-btn {
+    background: #ef4444;
+    color:      white;
+    border:     none;
+    border-radius: 4px;
+    width:     24px;
+    height:    24px;
+    font-size: medium;
+    cursor:    pointer;
+    display:   flex;
+    align-items:     center;
+    justify-content: center;
+    transition:      background-color 0.2s;
+  }
 
-.validation-card {
-  background:    #fef3c7;
-  border:        1px solid #f59e0b;
-  border-radius: 8px;
-  padding:       8px 8px;
-  margin-top:    2px;
-}
+  .remove-btn:hover {
+    background: #dc2626;
+  }
 
-.validation-card h4 {
-  margin:       0 0 16px 0;
-  font-size:   small;
-  font-weight: 600;
-  color:       #92400e;
-  text-align:  center;
-}
+  .validation-card {
+    background:    #fef3c7;
+    border:        1px solid #f59e0b;
+    border-radius: 8px;
+    padding:       8px 8px;
+    margin-top:    2px;
+  }
 
-.validation-details {
-  margin-top: 12px;
-}
+  .validation-card h4 {
+    margin:       0 0 16px 0;
+    font-size:   small;
+    font-weight: 600;
+    color:       #92400e;
+    text-align:  center;
+  }
 
-.step-type-selector {
-  display: flex;
-  gap:     12px;
-}
+  .validation-details {
+    margin-top: 12px;
+  }
 
-.type-radio {
-  display:     flex;
-  align-items: center;
-  gap:         6px;
-  cursor:      pointer;
-  font-size:   medium;
-  color:       #374151;
-}
+  .step-type-selector {
+    display: flex;
+    gap:     12px;
+  }
 
-.type-radio input {
-  width:  auto;
-  margin: 0;
-  cursor: pointer;
-}
+  .type-radio {
+    display:     flex;
+    align-items: center;
+    gap:         6px;
+    cursor:      pointer;
+    font-size:   medium;
+    color:       #374151;
+  }
 
-/* Question card styles */
-.question-card {
-  display:      flex;
-  background:   #f5f3ff;
-  border-color: #8b5cf6;
-}
+  .type-radio input {
+    width:  auto;
+    margin: 0;
+    cursor: pointer;
+  }
 
-.question-number {
-  background: #8b5cf6 !important;
-}
+  /* Question card styles */
+  .question-card {
+    display:      flex;
+    background:   #f5f3ff;
+    border-color: #8b5cf6;
+  }
 
-.answer-mode-selector {
-  display:    flex;
-  gap:        4px;
-  margin-top: 4px;
-  flex-direction: column;
-}
+  .question-number {
+    background: #8b5cf6 !important;
+  }
 
-.mode-radio {
-  display:     flex;
-  align-items: center;
-  gap:         4px;
-  cursor:      pointer;
-  font-size:   small;
-  color:       #374151;
-}
+  .answer-mode-selector {
+    display:    flex;
+    gap:        4px;
+    margin-top: 4px;
+    flex-direction: column;
+  }
 
-.mode-radio input {
-  width:  auto;
-  margin: 4px;
-  cursor: pointer;
-}
+  .mode-radio {
+    display:     flex;
+    align-items: center;
+    gap:         4px;
+    cursor:      pointer;
+    font-size:   small;
+    color:       #374151;
+  }
 
-.image-upload-section {
-  display:        flex;
-  flex-direction: column;
-  gap:            8px;
-}
+  .mode-radio input {
+    width:  auto;
+    margin: 4px;
+    cursor: pointer;
+  }
 
-.image-input {
-  padding:       8px;
-  border:        2px dashed #d1d5db;
-  border-radius: 8px;
-  cursor:        pointer;
-  transition:    border-color 0.2s;
-}
+  .image-upload-section {
+    display:        flex;
+    flex-direction: column;
+    gap:            8px;
+  }
 
-.image-input:hover {
-  border-color: #3b82f6;
-}
+  .image-input {
+    padding:       8px;
+    border:        2px dashed #d1d5db;
+    border-radius: 8px;
+    cursor:        pointer;
+    transition:    border-color 0.2s;
+  }
 
-.image-preview {
-  position:  relative;
-  display:   inline-block;
-  max-width: 400px;
-}
+  .image-input:hover {
+    border-color: #3b82f6;
+  }
 
-.image-preview img {
-  max-width:     100%;
-  max-height:    250px;
-  border-radius: 6px;
-  border:        1px solid #e5e7eb;
-}
+  .image-preview {
+    position:  relative;
+    display:   inline-block;
+    max-width: 400px;
+  }
 
-.remove-image-btn {
-  position:   absolute;
-  top:        8px;
-  right:      8px;
-  background: #ef4444;
-  color:      white;
-  border:     none;
-  border-radius: 4px;
-  padding:       4px 6px;
-  font-size:  small;
-  cursor:     pointer;
-  transition: background 0.2s;
-}
+  .image-preview img {
+    max-width:     100%;
+    max-height:    250px;
+    border-radius: 6px;
+    border:        1px solid #e5e7eb;
+  }
 
-.remove-image-btn:hover {
-  background: #dc2626;
-}
+  .remove-image-btn {
+    position:   absolute;
+    top:        8px;
+    right:      8px;
+    background: #ef4444;
+    color:      white;
+    border:     none;
+    border-radius: 4px;
+    padding:       4px 6px;
+    font-size:  small;
+    cursor:     pointer;
+    transition: background 0.2s;
+  }
 
-.answers-section {
-  margin-top:    1px;
-  padding-left:  8px;
-  background:    white;
-  border-radius: 8px;
-  border:        1px solid #e5e7eb;
-}
+  .remove-image-btn:hover {
+    background: #dc2626;
+  }
 
-.answers-section h4 {
-  margin:      0 0 2px 0;
-  font-size:   small;
-  font-weight: 600;
-  color:       #374151;
-}
+  .answers-section {
+    margin-top:    1px;
+    padding-left:  8px;
+    background:    white;
+    border-radius: 8px;
+    border:        1px solid #e5e7eb;
+  }
 
-.answer-card {
-  background:    #f9fafb;
-  border:        1px solid #e5e7eb;
-  border-radius: 8px;
-  padding:       3px;
-  margin-bottom: 3px;
-  transition:    all 0.2s;
-}
+  .answers-section h4 {
+    margin:      0 0 2px 0;
+    font-size:   small;
+    font-weight: 600;
+    color:       #374151;
+  }
 
-.answer-card.correct-answer {
-  background:   #ecfdf5;
-  border-color: #10b981;
-}
+  .answer-card {
+    background:    #f9fafb;
+    border:        1px solid #e5e7eb;
+    border-radius: 8px;
+    padding:       3px;
+    margin-bottom: 3px;
+    transition:    all 0.2s;
+  }
 
-.answer-header {
-  display:       flex;
-  align-items:   center;
-  gap:           6px;
-  margin-bottom: 2px;
-}
+  .answer-card.correct-answer {
+    background:   #ecfdf5;
+    border-color: #10b981;
+  }
 
-.answer-letter {
-  background:    #6b7280;
-  color:         white;
-  font-size:     small;
-  font-weight:   600;
-  padding:       2px 4px;
-  border-radius: 4px;
-}
+  .answer-header {
+    display:       flex;
+    align-items:   center;
+    gap:           6px;
+    margin-bottom: 2px;
+  }
 
-.correct-answer .answer-letter {
-  background: #10b981;
-}
+  .answer-letter {
+    background:    #6b7280;
+    color:         white;
+    font-size:     small;
+    font-weight:   600;
+    padding:       2px 4px;
+    border-radius: 4px;
+  }
 
-.correct-checkbox {
-  display:     flex;
-  align-items: center;
-  gap:         4px;
-  cursor:      pointer;
-  font-size:   small;
-  color:       #374151;
-  margin-left: auto;
-}
+  .correct-answer .answer-letter {
+    background: #10b981;
+  }
 
-.correct-checkbox input {
-  width: auto;
-  margin: 0;
-  cursor: pointer;
-}
+  .correct-checkbox {
+    display:     flex;
+    align-items: center;
+    gap:         4px;
+    cursor:      pointer;
+    font-size:   small;
+    color:       #374151;
+    margin-left: auto;
+  }
 
-.remove-answer-btn {
-  background: #ef4444;
-  color:      white;
-  border:     none;
-  border-radius: 4px;
-  width:    16px;
-  height:   16px;
-  font-size: small;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
+  .correct-checkbox input {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+  }
 
-.remove-answer-btn:hover {
-  background: #dc2626;
-}
+  .remove-answer-btn {
+    background: #ef4444;
+    color:      white;
+    border:     none;
+    border-radius: 4px;
+    width:    16px;
+    height:   16px;
+    font-size: small;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
 
-.feedback-group {
-  margin-top:  2px;
-  padding:     2px;
-  background:  rgba(255, 255, 255, 0.7);
-  border-radius: 6px;
-  border: 1px dashed #d1d5db;
-}
+  .remove-answer-btn:hover {
+    background: #dc2626;
+  }
 
-.feedback-group .form-group {
-  margin-bottom: 8px;
-}
+  .feedback-group {
+    margin-top:  2px;
+    padding:     2px;
+    background:  rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    border: 1px dashed #d1d5db;
+  }
 
-.feedback-group .form-group:last-child {
-  margin-bottom: 0;
-}
+  .feedback-group .form-group {
+    margin-bottom: 8px;
+  }
 
-.feedback-group label {
-  font-size: small;
-  color: #6b7280;
-}
+  .feedback-group .form-group:last-child {
+    margin-bottom: 0;
+  }
 
-.add-answer-btn {
-  background:    #6b7280;
-  color:         white;
-  border:        none;
-  padding:       2px 10px;
-  border-radius: 6px;
-  font-size:     medium;
-  font-weight:   500;
-  cursor:        pointer;
-  transition:    background-color 0.2s;
-  display:       block;
-  width:         100%;
-  margin-bottom: 20px;
-}
+  .feedback-group label {
+    font-size: small;
+    color: #6b7280;
+  }
 
-.add-answer-btn:hover {
-  background: #4b5563;
-}
+  .add-answer-btn {
+    background:    #6b7280;
+    color:         white;
+    border:        none;
+    padding:       2px 10px;
+    border-radius: 6px;
+    font-size:     medium;
+    font-weight:   500;
+    cursor:        pointer;
+    transition:    background-color 0.2s;
+    display:       block;
+    width:         100%;
+    margin-bottom: 20px;
+  }
+
+  .add-answer-btn:hover {
+    background: #4b5563;
+  }
 
 </style>

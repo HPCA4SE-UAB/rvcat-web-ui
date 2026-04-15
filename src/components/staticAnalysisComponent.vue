@@ -1,8 +1,9 @@
 <script setup>
-  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from 'vue'
-  import HelpComponent                                  from '@/components/helpComponent.vue'
-  import { createGraphVizGraph }                                              from '@/common'
-  import { useRVCAT_Api }                                                   from '@/rvcatAPI'
+  import { ref, toRaw, onMounted, onUnmounted, onBeforeUnmount,
+           nextTick, inject, watch, reactive }                from 'vue'
+  import HelpComponent             from '@/components/helpComponent.vue'
+  import { createGraphVizGraph }                         from '@/common'
+  import { useRVCAT_Api }                              from '@/rvcatAPI'
 
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -21,21 +22,10 @@
     showThrough: false
   }
 
-  const savedOptions = (() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('🔎load options')
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
-    }
-  })()
-
-  const dependenceGraphOptions = reactive({ ...defaultOptions, ...savedOptions })
+  const dependenceGraphOptions = reactive(defaultOptions)
   const dependenceGraphSvg     = ref('')
   const showFullScreen         = ref(false);
 
-  let graphTimeout          = null
   let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
 
@@ -43,10 +33,26 @@
     name:                "No data",
     LatencyTime:         0.0,
     ThroughputTime:      0.0,
-    "performance-bound": "N/A",
+    "performance-bound":   "N/A",
     BestTime:            0.0,
     "Throughput-Bottlenecks": []
   })
+
+  const loadOptions = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(dependenceGraphOptions, JSON.parse(saved))
+        console.log('🔎load options')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('🔎default load options')
+      }
+    } catch (error) {
+      console.error('🔎❌ Failed to load:', error)
+    }
+  }
 
   const saveOptions = () => {
     try {
@@ -56,22 +62,59 @@
     }
   }
 
-  onMounted(() => {
-    console.log('🔎🎯 Static Analysis Component mounted')
-    cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
-    cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
-
-    try {    // Load from localStorage
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        Object.assign(dependenceGraphOptions, JSON.parse(saved))
-      }
+  function getAnalysis() {
+    if (simState.state >= 3 && simState.simulatedProcess) {
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
       getPerformanceAnalysis(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
-    } catch (error) {
-      console.error('🔎❌ Failed to load:', error)
     }
-  });
+  }
+
+  function createDependenceGraph() {
+    if (simState.state >= 3 && simState.simulatedProcess) {
+      getDependenceGraph(
+        JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
+        dependenceGraphOptions.iters,
+        dependenceGraphOptions.showIntern,
+        dependenceGraphOptions.showLaten,
+        dependenceGraphOptions.showSmall,
+        dependenceGraphOptions.showFull
+      )
+    }
+  }
+
+  let unwatch            = null
+  let isComponentMounted = false
+
+  onMounted(() => {
+    cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
+    cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
+    loadOptions() // load options or store it if not present (first run)
+    getAnalysis() // load performance data for current process if it exists
+    nextTick(() => {
+      isComponentMounted = true;
+      unwatch = watch(dependenceGraphOptions, () => {
+          try {
+            dependenceGraphOptions.iters = Math.min(dependenceGraphOptions.iters, 7);
+            dependenceGraphOptions.iters = Math.max(dependenceGraphOptions.iters, 1);
+            createDependenceGraph()
+            saveOptions()
+            console.log('🔎✅ Saved graph options')
+          } catch (error) {
+            console.error('🔎❌Failed to create dependence graph:', error)
+          }
+        },
+        { immediate: true, deep: false})
+      console.log('🔎🎯 Static Analysis Component mounted')
+    })
+  })
+
+  onBeforeUnmount(() => {
+    isComponentMounted = false;
+    if (unwatch) {
+      unwatch();
+      unwatch = null;
+    }
+  })
 
   // Clean up on unmount
   onUnmounted(() => {
@@ -81,6 +124,7 @@
         cleanupHandleGraph    = null;
         cleanupHandleAnalysis = null
     }
+    console.log('🔎👋 Static Analysis Component unMounted')
   })
 
  /* ------------------------------------------------------------------
@@ -92,48 +136,12 @@
   function toggleFull   () { dependenceGraphOptions.showFull    = !dependenceGraphOptions.showFull    }
   function toggleThrough() { dependenceGraphOptions.showThrough = !dependenceGraphOptions.showThrough }
 
-  watch(dependenceGraphOptions, () => {
-    clearTimeout(graphTimeout)
-    try {
-      dependenceGraphOptions.iters = Math.min(dependenceGraphOptions.iters, 7);
-      dependenceGraphOptions.iters = Math.max(dependenceGraphOptions.iters, 1);
-      saveOptions()
-      graphTimeout = setTimeout(() => {
-        getDependenceGraph(
-          JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
-          dependenceGraphOptions.iters,
-          dependenceGraphOptions.showIntern,
-          dependenceGraphOptions.showLaten,
-          dependenceGraphOptions.showSmall,
-          dependenceGraphOptions.showFull
-        )
-      }, 75)
-      console.log('🔎✅ Saved graph options')
-    } catch (error) {
-      console.error('🔎❌Failed to save dependence graph options:', error)
-    }
-  },
-  { deep: true, immediate: true })
-
-  // Watch for changes on processor or program
-  watch (
-    [() => simState.simulatedProcess], () => {
-      clearTimeout(graphTimeout)
-      graphTimeout = setTimeout(() => {
-        const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-        getPerformanceAnalysis(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
-        getDependenceGraph(
-          JSON.stringify( toRaw(instruction_list), null, 2),
-          dependenceGraphOptions.iters,
-          dependenceGraphOptions.showIntern,
-          dependenceGraphOptions.showLaten,
-          dependenceGraphOptions.showSmall,
-          dependenceGraphOptions.showFull
-        )
-      }, 75)
+  watch (simState.simulatedProcess, () => {
+      getAnalysis()
+      createDependenceGraph()
       console.log('🔎✅ Graph updated')
-    },
-    { deep: true, immediate: false })
+  },
+  { deep: true, immediate: false })
 
   // Handler for 'get_dependence_graph' message (fired by RVCAT getDependenceGraph function)
   const handleGraph = async (data, dataType) => {

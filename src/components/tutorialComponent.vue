@@ -1,6 +1,6 @@
 <template>
   <div class="tutorial-system">
-    
+
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
@@ -13,7 +13,7 @@
             <span class="image-hint">Click to enlarge</span>
           </div>
           <div class="tutorial-actions">
-            <button @click="previousStep" :disabled="stepIndex === 0" 
+            <button @click="previousStep" :disabled="stepIndex === 0"
                title="Go to previous step on the tutorial"
                class="tutorial-btn">
               Previous
@@ -21,15 +21,15 @@
             <span class="tutorial-progress">
               {{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}
             </span>
-            <button v-if="stepIndex < currentTutorial.steps.length - 1" 
-                    @click="nextStep" 
+            <button v-if="stepIndex < currentTutorial.steps.length - 1"
+                    @click="nextStep"
                     title="Go to next step on the tutorial.\n If disabled, then an action must be done first."
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Next
             </button>
-            <button v-else 
-                    @click="completeTutorial" 
+            <button v-else
+                    @click="completeTutorial"
                     title="Finish tutorial.\n If disabled, then an action must be done first."
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
@@ -37,7 +37,7 @@
             </button>
           </div>
         </div>
-        <button @click="closeTutorial" 
+        <button @click="closeTutorial"
           title="Close tutorial, but can be resumed later"
           class="tutorial-close">&times;</button>
       </div>
@@ -47,28 +47,28 @@
     <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay">
       <div class="question-panel">
         <button @click="closeTutorial" class="question-close">&times;</button>
-        
+
         <div class="question-header">
           <span class="question-badge">Question {{ stepIndex + 1 }}</span>
           <h2 v-html="currentStep?.title"></h2>
         </div>
-        
+
         <div class="question-body">
           <p class="question-text" v-html="currentStep?.questionText"></p>
-          
+
           <div v-if="currentStep?.image" class="question-image" @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Question image">
             <span class="image-hint">Click to enlarge</span>
           </div>
-          
+
           <div class="question-mode-info">
             <span v-if="currentStep?.answerMode === 'single'">Select ONE correct answer</span>
             <span v-else>Select ALL correct answers</span>
           </div>
-          
+
           <div class="answers-list">
             <div v-for="(answer, index) in shuffledAnswers" :key="answer.originalIndex" class="answer-wrapper">
-              <button 
+              <button
                 @click="selectAnswer(answer.originalIndex)"
                 :class="getAnswerClass(answer.originalIndex)"
                 :disabled="questionAnswered && isQuestionCorrect"
@@ -80,13 +80,13 @@
                 <span v-if="questionAnswered && !isQuestionCorrect && selectedAnswers.includes(answer.originalIndex) && answer.isCorrect" class="answer-indicator partial-correct">✓</span>
               </button>
               <!-- Inline feedback below each answer -->
-              <div v-if="questionAnswered && selectedAnswers.includes(answer.originalIndex) && answer.explanation" 
+              <div v-if="questionAnswered && selectedAnswers.includes(answer.originalIndex) && answer.explanation"
                    :class="['answer-feedback', answer.isCorrect ? 'feedback-correct' : 'feedback-wrong']"
                    v-html="answer.explanation">
               </div>
             </div>
           </div>
-          
+
           <!-- Summary message section -->
           <div v-if="questionAnswered" class="feedback-section">
             <div v-if="isQuestionCorrect" class="feedback-box feedback-correct">
@@ -97,35 +97,35 @@
             </div>
           </div>
         </div>
-        
+
         <div class="question-actions">
-          <button @click="previousStep" :disabled="stepIndex === 0" 
+          <button @click="previousStep" :disabled="stepIndex === 0"
                title="Go to previous step on the tutorial"
                class="tutorial-btn">
             Previous
           </button>
-          
-          <button v-if="!questionAnswered" 
-                  @click="submitAnswer" 
+
+          <button v-if="!questionAnswered"
+                  @click="submitAnswer"
                   :disabled="selectedAnswers.length === 0"
                   class="tutorial-btn tutorial-btn-primary">
             Submit Answer
           </button>
-          
+
           <button v-else-if="!isQuestionCorrect"
                   @click="retryQuestion"
                   class="tutorial-btn tutorial-btn-retry">
             Try Again
           </button>
-          
-          <button v-else-if="stepIndex < currentTutorial.steps.length - 1" 
-                  @click="nextStep" 
+
+          <button v-else-if="stepIndex < currentTutorial.steps.length - 1"
+                  @click="nextStep"
                   title="Go to next step on the tutorial"
                   class="tutorial-btn tutorial-btn-primary">
             Next
           </button>
-          <button v-else 
-                  @click="completeTutorial" 
+          <button v-else
+                  @click="completeTutorial"
                   title="Finish the tutorial"
                   class="tutorial-btn tutorial-btn-primary">
             Finish
@@ -147,20 +147,20 @@
       <button @click="toggleTutorialMenu" title="Open Tutorial" class="tutorial-launcher-btn">
         <span class="tutorial-icon">?</span>
       </button>
-      
+
       <!-- Tutorial Menu -->
       <div v-if="showTutorialMenu" class="tutorial-menu">
         <h4>Available Tutorials</h4>
-        
+
         <!-- Show resume option if there's a paused tutorial -->
         <div v-if="currentTutorial" class="tutorial-paused-section">
           <div class="tutorial-paused-header">
             <h5>📚 Tutorial in Progress</h5>
             <p class="tutorial-paused-info" v-html="currentTutorial.name"></p>
           </div>
-          
+
           <div class="tutorial-action-buttons">
-            <button @click="resumeTutorial" 
+            <button @click="resumeTutorial"
               title="Resume the tutorial at the step where was left"
               class="tutorial-action-btn tutorial-resume-btn">
               <div class="tutorial-action-icon">▶️</div>
@@ -169,8 +169,8 @@
                 <span>Step {{ stepIndex + 1 }} of {{ currentTutorial.steps.length }}</span>
               </div>
             </button>
-            
-            <button @click="stopTutorial" 
+
+            <button @click="stopTutorial"
               title="Stop the tutorial and reset tutorial progress to first step"
               class="tutorial-action-btn tutorial-stop-btn">
               <div class="tutorial-action-icon">⏹️</div>
@@ -180,16 +180,16 @@
               </div>
             </button>
           </div>
-          
+
           <div class="tutorial-menu-separator"></div>
         </div>
-        
+
         <div v-if="isLoading" class="tutorial-loading">
           Loading tutorials...
         </div>
         <div v-else class="tutorial-list">
-          <button 
-            v-for="tutorial in tutorialOptions.available" 
+          <button
+            v-for="tutorial in tutorialOptions.available"
             :key="tutorial.id"
             @click="startTutorial(tutorial.id)"
             title="Start this tutorial"
@@ -200,7 +200,7 @@
               <p v-html="tutorial.description"></p>
             </div>
           </button>
-          <button 
+          <button
             @click="addTutorial"
             title="Upload new tutorial"
             class="tutorial-menu-item"
@@ -217,11 +217,10 @@
 </template>
 
 <script setup>
-  
+
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import {  initResource, uploadJSON, removeFromLocalStorage }                   from '@/common'
 const simState = inject('simulationState');
-
 
 // ============================================================================
 // Tutorial progress & localStorage
@@ -234,36 +233,41 @@ const defaultOptions = {
   progressStep:  0
 }
 
+const tutorialOptions  = reactive(defaultOptions)
+
 const TOOLTIP_WIDTH  = 400
 const TOOLTIP_HEIGHT = 200
 
-// Core tutorial state 
+// Core tutorial state
 const currentTutorial = ref(null)
 const stepIndex       = ref(0)
-  
+
 const isActive  = ref(false)
 const isLoading = ref(false)
 
-const savedOptions = (() => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    console.log('👨‍🎓load options (core)')
-    return saved ? JSON.parse(saved) : defaultOptions
-  } catch {
-    return defaultOptions
+  const loadOptions = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        Object.assign(tutorialOptions, JSON.parse(saved))
+        console.log('👨‍🎓load options (core)')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('👨‍🎓default load options')
+      }
+    } catch (error) {
+      console.error('👨‍🎓❌ Failed to load:', error)
+    }
   }
-})()
 
-const tutorialOptions  = reactive({ ...defaultOptions, ...savedOptions })
-  
-const saveOptions = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
-    console.log('👨‍🎓✅ save options (core)')
-  } catch (error) {
-    console.error('👨‍🎓❌ Failed to save (core):', error)
+  const saveOptions = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tutorialOptions))
+    } catch (error) {
+      console.error('👨‍🎓❌ Failed to save (core):', error)
+    }
   }
-}
 
 // ============================================================================
 // PROPS & EMITS
@@ -271,9 +275,9 @@ const saveOptions = () => {
 
   // get properties from main panel
 const props = defineProps({ activeView: String, activeFull: String })
-  
+
 // emit signal to simulatorView in order to switch panels
-const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull']) 
+const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
 
 // ============================================================================
@@ -282,7 +286,7 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
 // refer to this variable to force evaluation of validation state
 const validationState  = ref({})
-  
+
 const showTutorialMenu = ref(false)
 const showEditor       = ref(false)
 const highlightElement = ref(null)
@@ -310,24 +314,24 @@ const validationEventListeners = ref([])
 // ============================================================================
 // COMPUTED PROPERTIES
 // ============================================================================
-const currentStep = computed(() => 
+const currentStep = computed(() =>
    currentTutorial.value?.steps?.[stepIndex.value] ?? null
 )
 
-const isQuestionStep = computed(() => 
+const isQuestionStep = computed(() =>
   currentStep.value?.type === 'question'
 )
 
 const isQuestionCorrect = computed(() => {
   if (!currentStep.value || currentStep.value.type !== 'question') return false
-  
+
   const answers        = currentStep.value.answers || []
   const correctIndices = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
-  
+
   if (currentStep.value.answerMode === 'single') {
     return selectedAnswers.value.length === 1 && correctIndices.includes(selectedAnswers.value[0])
   }
-  
+
   const hasAllCorrect = correctIndices.every(i => selectedAnswers.value.includes(i))
   const hasNoWrong    = selectedAnswers.value.every(i => correctIndices.includes(i))
   return hasAllCorrect && hasNoWrong
@@ -348,10 +352,10 @@ const canProceed = computed(() => {
 
   const validation = currentStep.value?.validation
   if (!validation) return true
-  
+
   // Force reactivity
   validationState.value
-  
+
   try {
     const { type, selector, value, minValue } = validation
     switch (type) {
@@ -375,19 +379,19 @@ const canProceed = computed(() => {
 })
 
 const tooltipStyle = computed(() => {
-  
+
   tooltipPositionTrigger.value // Force reactivity
-  
+
   if (!highlightElement.value || !currentStep.value) return { display: 'none' }
-  
+
   const rect = highlightElement.value.getBoundingClientRect()
   const pos  = currentStep.value.position || 'bottom'
   const margin = 25
-  
+
   let top, left
   const centerX = rect.left + rect.width / 2  - TOOLTIP_WIDTH / 2
   const centerY = rect.top  + rect.height / 2 - TOOLTIP_HEIGHT / 2
-  
+
   switch (pos) {
     case 'top':    top = rect.top - TOOLTIP_HEIGHT - 15; left = centerX;                        break
     case 'bottom': top = rect.bottom + 15;               left = centerX;                        break
@@ -395,21 +399,21 @@ const tooltipStyle = computed(() => {
     case 'right':  top = centerY;                        left = rect.right + 15;                break
     default:       top = rect.bottom + 15;               left = centerX
   }
-  
+
   // Clamp to viewport
   left = Math.max(margin, Math.min(left, window.innerWidth -  TOOLTIP_WIDTH - margin))
   top  = Math.max(margin, Math.min(top,  window.innerHeight - TOOLTIP_HEIGHT - margin))
-  
+
   return { top: `${top}px`, left: `${left}px` }
 })
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-  
+
 const isElementVisible = (el) => {
   const rect = el.getBoundingClientRect()
-  return rect.top < window.innerHeight && rect.bottom > 0 && 
+  return rect.top < window.innerHeight && rect.bottom > 0 &&
          rect.left < window.innerWidth && rect.right > 0
 }
 
@@ -477,13 +481,13 @@ const shuffleAnswers = () => {
 // ============================================================================
 // TUTORIAL LOADING
 // ============================================================================
-  
+
 const initTutorial = async () => {
-  const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource 
+  const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource
   await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
 
   // replace list of tutorial names by list of tutorial descriptions
-  const tutorials = []  
+  const tutorials = []
   for (const name of tutorialOptions.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
@@ -507,7 +511,7 @@ const loadCurrentTutorial = async (ID) => {
   let tutorial = null
   if ( ID !== "")
     tutorial = tutorialOptions.available.find(t => t.id === ID)
-    
+
   if ( ID === "" || tutorial === null) { // no tutorial in progress
     tutorialOptions.inProgressID = ""
     tutorialOptions.progressStep =  0
@@ -527,7 +531,7 @@ const loadCurrentTutorial = async (ID) => {
   tutorialOptions.progressStep = stepIndex.value
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
-  
+
 const addTutorial = async () => {
   try {
     const data   = await uploadJSON(null, 'tutorial');
@@ -547,7 +551,7 @@ const addTutorial = async () => {
       description: data.description
     })
     const key    = `tutorial.${data.id}`;
-    const str    = JSON.stringify(data, null, 2);   
+    const str    = JSON.stringify(data, null, 2);
     localStorage.setItem(key, str);
     console.log(`👨‍🎓✅ Added tutorial to local storage: ${data.id}`);
   } catch (error) {
@@ -573,9 +577,9 @@ const showValidationMessage = (message) => {
 const validateCurrentStep = async () => {
   const v = currentStep.value?.validation
   if (!v) return true
-  
+
   const getElement = (sel) => document.querySelector(sel)
-  
+
   const validators = {
     program_selected: () =>      simState.selectedProgram === v.value,
     architecture_selected: () => simState.selectedProcessor === v.value,
@@ -583,7 +587,7 @@ const validateCurrentStep = async () => {
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
     button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
   }
-  
+
   const isValid = validators[v.type]?.() ?? true
   if (!isValid) showValidationMessage(v.message || 'Please complete this action')
   return isValid
@@ -593,22 +597,22 @@ const setupValidationListeners = () => {
   cleanupValidationListeners()
   const v = currentStep.value?.validation
   if (!v) return
-  
+
   const selectorMap = {
     program_selected:      '#programs-list',
     architecture_selected: '#processors-list',
     input_value:            v.selector,
     input_value_min:        v.selector
   }
-  
+
   const selector = selectorMap[v.type]
   if (!selector) return
-  
+
   const el = document.querySelector(selector)
   if (!el) return
-  
+
   const handler = () => { validationState.value = { t: Date.now() } }
-  
+
   ;['change', 'input', 'keyup'].forEach(evt => {
     el.addEventListener(evt, handler)
     validationEventListeners.value.push({ element: el, eventType: evt, handler })
@@ -627,16 +631,16 @@ const cleanupValidationListeners = () => {
 // ============================================================================
 const setupButtonClickTracking = () => {
   cleanupButtonClickTracking()
-  
+
   const v = currentStep.value?.validation
   if (v?.type !== 'button_clicked' || !v.selector) return
-  
+
   const selector = v.selector.trim()
-  
+
   const attach = () => {
     const btn = document.querySelector(selector)
     if (!btn) return false
-    
+
     const handler = () => {
       console.log(`👨‍🎓⏺️ Button clicked: ${selector}`)
       clickedButtons.value.add(selector)
@@ -646,7 +650,7 @@ const setupButtonClickTracking = () => {
     trackedButtonElements.value.push({ element: btn, handler })
     return true
   }
-  
+
   if (!attach()) setTimeout(attach, 500)
 }
 
@@ -664,7 +668,7 @@ const cleanup = () => {
   clearHighlights()
   cleanupValidationListeners()
   cleanupButtonClickTracking()
-  
+
   clickedButtons.value = new Set()
   resetQuestionState()
   restoreScrollPosition()
@@ -679,9 +683,9 @@ const highlightCurrentStep = async () => {
     highlightElement.value = null
     return
   }
-  
+
   if (!currentStep.value?.selector) return
-  
+
   // Execute step action
   if (currentStep.value.action) {
     try {
@@ -692,13 +696,13 @@ const highlightCurrentStep = async () => {
       console.error('👨‍🎓❌ Step action error:', e)
     }
   }
-  
+
   clearHighlights()
-  
+
   // Find element
   let element
   const sel = currentStep.value.selector
-  
+
   if (sel.includes(':contains(')) {
     const match = sel.match(/^([^:]+):contains\("([^"]+)"\)$/)
     if (match) {
@@ -708,7 +712,7 @@ const highlightCurrentStep = async () => {
   } else {
     element = document.querySelector(sel)
   }
-  
+
   if (element) {
     highlightElement.value = element
     element.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
@@ -716,7 +720,7 @@ const highlightCurrentStep = async () => {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
-  
+
   await nextTick()
   setupValidationListeners()
   setupButtonClickTracking()
@@ -727,7 +731,7 @@ const highlightCurrentStep = async () => {
 // ============================================================================
 const selectAnswer = (index) => {
   if (questionAnswered.value) return
-  
+
   if (currentStep.value.answerMode === 'single') {
     selectedAnswers.value = [index]
   } else {
@@ -745,7 +749,7 @@ const retryQuestion = () => resetQuestionState()
 const getAnswerClass = (index) => {
   const classes = ['answer-option']
   if (selectedAnswers.value.includes(index)) classes.push('selected')
-  
+
   if (questionAnswered.value) {
     const answer = currentStep.value.answers[index]
     if (isQuestionCorrect.value && answer.isCorrect) {
@@ -759,12 +763,12 @@ const getAnswerClass = (index) => {
 
 const getErrorMessage = () => {
   if (!questionAnswered.value || isQuestionCorrect.value) return ''
-  
+
   const answers         = currentStep.value.answers || []
   const correctIndices  = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
   const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
-  
+
   if (currentStep.value.answerMode === 'single')       return 'Incorrect answer. Try again!'
   if (selectedWrong.length && !selectedCorrect.length) return 'Wrong answer selected. Try again!'
   if (selectedWrong.length)                            return 'You selected some correct answers, but also wrong ones. Try again!'
@@ -775,20 +779,20 @@ const getErrorMessage = () => {
 // ============================================================================
 // NAVIGATION
 // ============================================================================
-  
+
 const startTutorial = async (tutorialId) => {
-  
+
   await loadCurrentTutorial (tutorialId)
   if (!currentTutorial.value) return
-  
+
   saveScrollPosition()
   resetQuestionState()
-  
+
   clickedButtons.value        = new Set()
   trackedButtonElements.value = []
   isActive.value              = true
   showTutorialMenu.value      = false
-  
+
   nextTick(() => {
     shuffleAnswers()
     highlightCurrentStep()
@@ -860,7 +864,7 @@ watch(() => simState.state, (newValue, oldValue) => {
     simState.state = 5;   // acknowledge tutorials have been included in list
   }
 });
-  
+
 watch(  // Watch for tutorial changes on specific properties
   () => ({
     available:    tutorialOptions.available,
@@ -876,11 +880,11 @@ watch(  // Watch for tutorial changes on specific properties
 const handleClickOutside = (e) => {
   // Only run if the tutorial menu is currently shown
   if (!showTutorialMenu.value) return
-  
+
   // Get references to the menu and its launch button
   const menu = document.querySelector('.tutorial-menu')
   const btn  = document.querySelector('.tutorial-launcher-btn')
-  
+
   // Check if click was OUTSIDE both the menu AND the button
   if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
     // If clicked outside both, hide the menu
@@ -895,17 +899,19 @@ const handleWindowChange = () => {
     tooltipPositionTrigger.value++
   }
 }
-  
+
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
 
 onMounted(async () => {
-  console.log('👨‍🎓🎯 TutorialEngine mounted')
+  loadOptions()
   document.addEventListener('click', handleClickOutside)
   window.addEventListener  ('resize', handleWindowChange)
   window.addEventListener  ('scroll', handleWindowChange, true)
   isLoading.value = true
+  await initTutorial()
+  console.log('👨‍🎓🎯 TutorialEngine mounted')
 })
 
 onUnmounted(() => {
@@ -916,11 +922,10 @@ onUnmounted(() => {
   cleanupValidationListeners ()
   cleanupButtonClickTracking ()
 })
-
 </script>
 
 <style scoped>
-  
+
 .tutorial-system {
   position: fixed;
   z-index: 9999;
@@ -1753,5 +1758,5 @@ onUnmounted(() => {
       transform: translate(-50%, -50%) scale(1);
     }
   }
-    
+
 </style>

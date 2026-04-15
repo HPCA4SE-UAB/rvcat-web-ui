@@ -25,7 +25,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.03",
+    version: "1.04",
     year:    2026
   }
 
@@ -42,11 +42,9 @@ const { importRVCAT }               = useRVCAT_Api();
       }
     }
     localStorage.clear()
+    alert('💻 New version of RVCAT has been released (V1.04)')
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
-    alert('💻 New version of RVCAT has been released: V1.03<BR/>May modify processor configuration on the flight, and fixes some help messages'
-    )
   }
-
 
 // ============================================================================
 // Main Simulator Panel UI
@@ -60,9 +58,10 @@ const components = {
 };
 
 // Navigation state
-const currentFullKey    = ref('none')
-const currentKey        = ref('simulationComponent')
-const currentComponent  = shallowRef(components[currentKey.value])
+const checkOK          = ref(false);
+const currentFullKey   = ref('none')
+const currentKey       = ref('simulationComponent')
+const currentComponent = shallowRef(components[currentKey.value])
 
 // Computed to use on template
 const isNotFullscreen       = computed(() => currentFullKey.value === 'none');
@@ -100,7 +99,6 @@ function onRequestSwitch(key) {
   currentFullKey.value       = 'none'
 }
 
-// Handle requests from header (& processor/program/tutorial engine)
 function toggleFullScreen(key) {
   if (currentFullKey.value === key) {
     currentFullKey.value = 'none'
@@ -116,16 +114,13 @@ function toggleFullScreen(key) {
 // Navigation state
 const showOverlay = ref(true);
 
-function closeLoadingOverlay() {
-   showOverlay.value = false
-}
+function closeLoadingOverlay() { showOverlay.value = false }
 
 // ============================================================================
 // EVENT HANDLERS: import_rvcat     WATCH: isReady
 // ============================================================================
 const loadingMessage = ref('Initializing');
 
-// Handler for 'import_rvcat' message
 const handleRVCAT = async (data, dataType) => {
   if (dataType === 'error') {
     console.error('❌ handler: failed to import RVCAT:', data);
@@ -140,7 +135,6 @@ watch(isReady, (ready) => {
   if (ready) {
       loadingMessage.value = 'Loading complete!';
       importRVCAT();       // call RVCAT API
-      checkRVCATversion()
   }
 })
 
@@ -150,7 +144,9 @@ watch(isReady, (ready) => {
 let  cleanupRVCAT = null
 
 onMounted(() => {
+  checkRVCATversion()
   console.log('🔵🎯 Main Component mounted')
+  checkOK.value = true   // mount all components
   nextTick(() => {
       loadingMessage.value = 'Loading RVCAT';
       showOverlay.value    = true
@@ -167,7 +163,6 @@ onUnmounted(() => {
 
 </script>
 
-<!----  Id's on the template are used for tutorial linking of panels and buttons: do not change them! -->
 <template>
   <body>
     <header>
@@ -176,7 +171,7 @@ onUnmounted(() => {
        <h1>RVCAT-WEB</h1>
        <nav>
         <ul>
-          <!--
+	  <!--
           <li>
             <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
                id="processor-button"
@@ -204,7 +199,6 @@ onUnmounted(() => {
 
           <li class="separator"></li>
           -->
-
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
                id="simulation-button"
@@ -213,11 +207,11 @@ onUnmounted(() => {
                 Simulation
             </button>
           </li>
-          <!--
+	  <!--
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
                id="analysis-button"
-               title="Static Performance Analysis -> identify potential bottleneck, either throughput or latency (depnedencies)"
+               title="Static Performance Analysis -> identify potential bottleneck, either throughput or latency (dependencies)"
                @click="onRequestSwitch('staticAnalysisComponent')" >
                 Static Analysis
             </button>
@@ -253,14 +247,14 @@ onUnmounted(() => {
 
     <main class="container" :class="containerClasses">
 
-      <div v-show="isProcessorFullscreen || isNotFullscreen"
+      <div v-if="checkOK" v-show="isProcessorFullscreen || isNotFullscreen"
           class="grid-item processor" :class="{ 'fullscreen': isProcessorFullscreen }"
           id="processor-panel"
         >
         <processorComponent :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-show="isProgramFullscreen || isNotFullscreen"
+      <div v-if="checkOK" v-show="isProgramFullscreen || isNotFullscreen"
         class="grid-item program" :class="{ 'fullscreen': isProgramFullscreen }"
         id="program-panel"
         >
@@ -269,14 +263,14 @@ onUnmounted(() => {
         />
       </div>
 
-      <div v-show="isTutorialFullscreen"
+      <div v-if="checkOK" v-show="isTutorialFullscreen"
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
         >
         <tutorialEditor     :is-fullscreen="isTutorialFullscreen"  @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-show= "isNotFullscreen"
+      <div v-if="checkOK" v-show= "isNotFullscreen"
         class="grid-item results"
         id="right-panel"
         >
@@ -284,13 +278,15 @@ onUnmounted(() => {
         <div v-else>Component not found</div>
       </div>
 
-      <tutorialComponent
-        :activeView="currentKey"
-        :activeFull="currentFullKey"
-        id="tutorial-activation"
-        @requestSwitchPanel="onRequestSwitch"
-        @requestSwitchFull="toggleFullScreen"
-      />
+      <div v-if="checkOK">
+        <tutorialComponent
+          :activeView="currentKey"
+          :activeFull="currentFullKey"
+          id="tutorial-activation"
+          @requestSwitchPanel="onRequestSwitch"
+          @requestSwitchFull="toggleFullScreen"
+        />
+      </div>
     </main>
   </body>
 </template>

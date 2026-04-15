@@ -1,8 +1,9 @@
 <script setup>
-  import { ref, toRaw, onMounted, nextTick, onUnmounted, watch, inject, reactive} from 'vue'
-  import HelpComponent                                 from '@/components/helpComponent.vue'
-  import { charToProcessingState  }                                          from '@/common'
-  import { useRVCAT_Api }                                                  from '@/rvcatAPI'
+  import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
+           watch, inject, reactive}                                  from 'vue'
+  import HelpComponent                    from '@/components/helpComponent.vue'
+  import { charToProcessingState  }                             from '@/common'
+  import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
   const { registerHandler } = inject('worker')
@@ -21,17 +22,23 @@
     canvasOffsetY: 0
   }
 
-  const savedOptions = (() => {
+  const timelineOptions = reactive(defaultOptions)
+
+  const loadOptions = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('📈load options')
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
+      if (saved) {
+        Object.assign(timelineOptions, JSON.parse(saved))
+        console.log('📈load options')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('📈default load options')
+      }
+    } catch (error) {
+      console.error('📈❌ Failed to load:', error)
     }
-  })()
-
-  const timelineOptions = reactive({ ...defaultOptions, ...savedOptions })
+  }
 
   const saveOptions = () => {
     try {
@@ -48,36 +55,6 @@
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
-  watch( () => timelineOptions.iters, (newIters, oldIters) => {
-      if (newIters === oldIters) return
-      try {
-        const clamped = Math.min(Math.max(newIters, 1), 9)
-        if (clamped !== newIters) {
-          timelineOptions.iters = clamped
-          return
-        }
-        saveOptions()
-        requestTimeline() // request timeline to RVCAT, then update timeline --> fire drawTimeline
-        console.log('📈✅ Modified timeline iters')
-      } catch (error) {
-        console.error('📈❌Failed to save timeline options:', error)
-      }
-    }
-  )
-
-  watch( () => [timeline.value, timelineOptions.showPorts, timelineOptions.canvasScale,
-      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
-    ([newTimeline, newShowPorts], [oldTimeline, oldShowPorts]) => {
-
-      if (!timelineCanvas.value || !newTimeline) return
-
-      if (newShowPorts !== oldShowPorts) {
-        saveOptions()
-        console.log('📈✅ Modified showPorts')
-      }
-      scheduleDraw()
-    }
-  )
 
   watch ([() => simState.simulatedProcess], () => { requestTimeline() },
     { deep: true, immediate: false })
@@ -92,9 +69,11 @@
       let timelineRVCAT       = JSON.parse(data)
       timelineRVCAT.portUsage = getPortUsage(timelineRVCAT);
       timeline.value = timelineRVCAT
-      timelineOptions.canvasScale   = 1
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
+      // timelineOptions.canvasScale   = 1
+      scheduleDraw()
+
     } catch (error) {
       console.error('📈❌Failed to process JSON timeline:', error)
     }
@@ -104,21 +83,56 @@
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
   let cleanupHandleTimeline = null
+  let unwatch               = null
+  let isComponentMounted    = false
 
-  // Load from localStorage
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
+    loadOptions()
     addCanvasWrapper()
     requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
-    console.log('📈🎯 Timeline Component mounted')
-  });
+    nextTick(() => {
+      isComponentMounted = true;
+      unwatch = watch(
+        () => [timelineOptions.iters, timelineOptions.showPorts, timelineOptions.canvasScale,
+                timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
+            ([newIters, newShowPorts], [oldIters, oldShowPorts]) => {
+              if (!timelineCanvas.value || !timeline.value) return
+              if (newIters != oldIters) {
+                const clamped = Math.min(Math.max(newIters, 1), 9)
+                if (clamped !== newIters) {
+                  timelineOptions.iters = clamped
+                  return
+                }
+                console.log('📈✅ Modified timeline iters')
+                saveOptions()
+                requestTimeline() // request timeline to RVCAT, then update timeline --> fire drawTimeline
+                return
+              } else if (newShowPorts !== oldShowPorts) {
+                console.log('📈✅ Modified showPorts')
+              }
+              saveOptions()
+              scheduleDraw()
+            }
+          )
+      console.log('📈🎯 Timeline Component mounted')
+    })
+  })
 
-  // Clean up on unmount
+  onBeforeUnmount(() => {
+    isComponentMounted = false;
+    if (unwatch) {
+      unwatch();
+      unwatch = null;
+    }
+  })
+
   onUnmounted(() => {
     if (cleanupHandleTimeline) {
       cleanupHandleTimeline()
       cleanupHandleTimeline = null
     }
+    console.log('📈👋 Timeline Component unMounted')
   })
 
 /* ------------------------------------------------------------------
@@ -215,7 +229,6 @@
 
     const canvas = timelineCanvas.value
 
-    // canvas.addEventListener("mousemove", onMouseMove)
     canvas.addEventListener("click", onClick)
 
     wrapper.addEventListener("mousedown", (e) => {

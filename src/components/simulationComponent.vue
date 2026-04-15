@@ -1,8 +1,10 @@
 <script setup>
-  import { ref, toRaw, onMounted, onUnmounted, nextTick, inject, watch, reactive } from "vue"
-  import HelpComponent                                   from '@/components/helpComponent.vue'
-  import { useRVCAT_Api }                                                    from '@/rvcatAPI'
-  import { createGraphVizGraph, typeOperations   }                             from '@/common'
+  import { ref, toRaw, computed, onMounted, onUnmounted, onBeforeUnmount,
+           nextTick, inject, watch, reactive }                       from "vue"
+  import HelpComponent                    from '@/components/helpComponent.vue'
+  import { useRVCAT_Api }                                     from '@/rvcatAPI'
+  import { createGraphVizGraph, downloadJSON, uploadJSON,
+           saveToLocalStorage, removeFromLocalStorage, initResource} from '@/common'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -12,29 +14,22 @@
    * Simulation Results options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'simulationOptions'
+  const MAX_ITERS    = 2000
 
   const defaultOptions = {
-    iters:  1,
-    showPrevious: false
+    iters:            100,
+    autorun:          false,
+    availableResults: [],
+    resultName:       ''
   }
 
-  const savedOptions = (() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('🕐load options')
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
-    }
-  })()
-
-  const simulationOptions = reactive({ ...defaultOptions, ...savedOptions })
+  const simulationOptions = reactive(defaultOptions)
 
   const resultsSvg            = ref('')
   let   cleanupHandleResults  = null
   let   resultsTimeout        = null
+  const showResultsInfo       = ref({})
 
-  // Save on changes
   const saveOptions = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(simulationOptions))
@@ -43,58 +38,286 @@
     }
   }
 
-  // Load from localStorage
-  onMounted(() => {
-    cleanupHandleResults  = registerHandler('get_execution_results', handleResults);
-    console.log('🕐🎯 SimulationComponent mounted')
-    simState.executionResults = null
-    try {    // Load from localStorage
+  const loadOptions = () => {
+    try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         Object.assign(simulationOptions, JSON.parse(saved))
+        console.log('🕐load options')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('🕐default load options')
       }
     } catch (error) {
       console.error('🕐❌ Failed to load:', error)
     }
-  });
+  }
 
-  // Clean up on unmount
+/* ------------------------------------------------------------------
+  * Simulation Results (persistent in localStorage)
+  * ------------------------------------------------------------------ */
+  let simResults = {}
+  let simProcess = {}
+  const isArray  = (arr) => Array.isArray(arr);
+
+  const areInstructionsEqual = (instr1, instr2) => {
+    if (instr1.latency !== instr2.latency)  return false;
+    if (instr1.ports   !== instr2.ports)    return false;
+    if (instr1.destin  !== instr2.destin)   return false;
+    if (instr1.source1 !== instr2.source1)  return false;
+    if (instr1.source2 !== instr2.source2)  return false;
+    if (instr1.source3 !== instr2.source3)  return false;
+    return true; // ✅ all are equal
+  }
+
+  const areProcessorsEqual = (proc1, proc2) => {
+    if (proc1 == {} || proc2 == {}) return false
+    if (proc1.dispatch !== proc2.dispatch) return false;
+    if (proc1.retire !== proc2.retire)     return false;
+    if (proc1.sched !== proc2.sched)       return false;
+    if (proc1.ROBsize !== proc2.ROBsize)   return false;
+    if (proc1.nBlocks !== proc2.nBlocks)   return false;
+    if (proc1.nBlocks > 0) {
+      if (proc1.blkSize    !== proc2.blkSize)    return false;
+      if (proc1.mIssueTime !== proc2.mIssueTime) return false;
+      if (proc1.mPenalty   !== proc2.mPenalty)   return false;
+    }
+
+    if (isArray(proc1.instruction_list) && isArray(proc2.instruction_list)) {
+      if (proc1.instruction_list.length !== proc2.instruction_list.length) return false;
+      for (let i = 0; i < proc1.instruction_list.length; i++) {
+        if (!areInstructionsEqual(proc1.instruction_list[i], proc2.instruction_list[i])) return false;
+      }
+      return true;
+    }
+    return false;
+  };
+
+  const saveResults = () => {
+    try {
+      localStorage.setItem('simResults', JSON.stringify(simResults))
+      localStorage.setItem('simProcess', JSON.stringify(simProcess))
+    } catch (error) {
+      console.error('🕐❌ Failed to save:', error)
+    }
+  }
+
+  const loadResults = () => {
+    let stored = localStorage.getItem('simResults');
+    if (stored) {
+      try {
+        Object.assign(simResults, structuredClone(JSON.parse(stored)))
+      } catch (e) {
+        console.error('🕐❌ Failed to load simulation results from localStorage:', e);
+      }
+    }
+    stored = localStorage.getItem('simProcess');
+    if (stored) {
+      try {
+        Object.assign(simProcess, structuredClone(JSON.parse(stored)))
+      } catch (e) {
+        console.error('🕐❌ Failed to load simulated processor from localStorage:', e);
+      }
+    }
+  }
+
+// ============================================================================
+// INPUT VALIDATION: iterations field
+// ============================================================================
+
+  const inputValue   = ref('');
+  const isInvalid    = ref(false);
+  let   errorTimeout = null;
+
+  const validateField = () => {
+    const min = 1;
+    const max = MAX_ITERS;
+    let rawValue = inputValue.value;
+
+    if (errorTimeout) clearTimeout(errorTimeout);
+
+    if (rawValue === '' || rawValue === null || rawValue === undefined) {
+      const lastValidValue = simulationOptions.iters;
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    let numValue = Number(rawValue);
+
+    if (isNaN(numValue)) {
+      const lastValidValue = simulationOptions.iters;
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    if (numValue < min) {
+      numValue = min;
+      inputValue.value = numValue;
+      showTemporaryError(`Minimum is ${min}`);
+    } else if (numValue > max) {
+      numValue = max;
+      inputValue.value = numValue;
+      showTemporaryError(`Maximum is ${max}`);
+    }
+
+    if (simulationOptions.iters !== numValue) {
+      simulationOptions.iters = numValue;
+    }
+  }
+
+  const showTemporaryError = (message) => {
+    isInvalid.value = true;
+    errorTimeout = setTimeout(() => {
+      isInvalid.value = false;
+    }, 2000);
+    console.warn(message);
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      event.target.blur();
+    }
+  };
+
+  const handleInput = (event) => {
+    if (isInvalid.value) {
+      isInvalid.value = false;
+    }
+    let value = event.target.value;
+    if (value !== '' && !/^\d*$/.test(value)) {
+      event.target.value = value.replace(/\D/g, '');
+      inputValue.value = event.target.value;
+    }
+  };
+
+// ============================================================================
+// LIFECYCLE:  Mount/unMount
+// ============================================================================
+
+  let unwatch            = null;
+  let isComponentMounted = false;
+
+  const updateResults= () => {
+    if (simState.state >= 3 && simState.simulatedProcess) {
+      const equalProcs = areProcessorsEqual(simState.simulatedProcess, simProcess)
+      const equalIters = simResults.total_iterations == simulationOptions.iters
+      if (equalProcs && equalIters) {
+        if (simState.executionResults == null) simState.executionResults = simResults
+        console.log('🕐✅ Same simulated proces && number of iterations: execution results are valid');
+        drawProcessorResults();
+      } else if (simulationOptions?.autorun) {
+        console.log('🕐🔄 Something changed: re-running simulation', equalProcs, equalIters)
+        reloadExecutionResults()
+      } else {
+        simState.executionResults = null; // Clear results to avoid showing outdated data
+        resultsSvg.value = ''; // Clear graph
+        console.log('🕐🧹 Process/Iterations changed but autorun is disabled: clear simulation results')
+      }
+    }
+  }
+
+  const updateShowResults= () => {
+    showResultsInfo.value = {}  // clear previous results info from simulation state
+    for (const [index, name] of simulationOptions.availableResults.entries()) {
+      const stored = localStorage.getItem(`results.${name}`);
+      if (stored) {
+        try {
+          showResultsInfo.value[index] = JSON.parse(stored);
+        } catch (e) {
+          console.error(`🕐❌ Failed to load previous results for ${name}:`, e);
+        }
+      }
+    }
+  }
+
+  const handleOptionsChange = (newVal, oldVal) => {
+    // Verify that component is mounted and necessary data is available before executing the watch logic
+    if (!isComponentMounted || !simulationOptions || !simState) {
+      console.log('🕐 Component not ready, skipping watch execution')
+      return
+    }
+    try {
+      if (newVal.iters !== oldVal?.iters) {
+        console.log('🕐🔄 Iterations changed:', newVal.iters);
+        if (inputValue) inputValue.value = newVal.iters ?? '';
+        if (typeof isInvalid !== 'undefined') isInvalid.value = false;
+      }
+      updateResults()
+      saveOptions()
+    } catch (error) {
+      console.error('🕐❌ Error in options watch handler:', error);
+    }
+  };
+
+  const initSimulation = async () => {
+    await initResource('result', simulationOptions, 'resultName', 'availableResults');
+    updateResults()
+  };
+
+  function removeResult () {
+    if (simulationOptions.availableResults.length > 0) {
+      if (confirm(`Results named "${simulationOptions.resultName}" will disappear, Are you sure?`)) {
+        removeFromLocalStorage('result', simulationOptions.resultName, simulationOptions.availableResults)
+        if ( simulationOptions.availableResults.length > 0)
+          simulationOptions.resultName = simulationOptions.availableResults[0]
+      } else {
+        alert('Removal cancelled.')
+      }
+    }
+  }
+
+  onMounted(() => {
+    cleanupHandleResults  = registerHandler('get_execution_results', handleResults)
+    document.getElementById('simulation-running').style.display = 'none'
+    loadOptions()
+    loadResults()
+    initSimulation()
+    nextTick(() => {
+      isComponentMounted = true;
+      unwatch = watch(
+        () => ({
+          iters:        simulationOptions?.iters,
+          autorun:      simulationOptions?.autorun,
+          name:         simulationOptions?.resultName
+        }),
+        handleOptionsChange,
+        {
+          immediate: true,
+          deep: false
+        }
+      )
+      console.log('🕐🎯 SimulationComponent mounted')
+    })
+  })
+
+  onBeforeUnmount(() => {
+    isComponentMounted = false;
+    if (unwatch) {
+      unwatch();
+      unwatch = null;
+    }
+  })
+
   onUnmounted(() => {
      if (cleanupHandleResults) {
         cleanupHandleResults();
         cleanupHandleResults = null
      }
-    })
+    console.log('🕐👋 SimulationComponent unMounted')
+  })
 
-  watch( () => simulationOptions.iters, (newIters, oldIters) => {
-      if (newIters === oldIters) return
-      try {
-        const clamped = Math.min(Math.max(newIters, 1), 2000)
-        if (clamped !== newIters) {
-          simulationOptions.iters = clamped
-          return
-        }
-        saveOptions()
-        if (simState.state >= 3) {
-          reloadExecutionResults()
-        }
-        console.log('🕐✅ Modified simulation iters')
-      } catch (error) {
-        console.error('🕐❌Failed when modifying simulation options:', error)
-      }
-    }
-  )
+// ============================================================================
+// WATCHES: simulatedProcess, rvcat results
+// ============================================================================
 
-  watch( () => simState.simulatedProcess, () => {
-      if (simState.state >= 3 && simState.simulatedProcess) {
-        console.log('🕐🔄 Re-execute simulation');
-        reloadExecutionResults()
-      }
-    },
+  watch( () => simState.simulatedProcess, () => { updateResults() },
     { deep: true, immediate: false }
   )
 
- // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
+  // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
   const handleResults = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('🕐❌Failed to get execution results:', data);
@@ -102,25 +325,17 @@
     }
     try {
       console.log('🕐✅ Execution Results received')
-      simState.executionResults = JSON.parse(data)
-      drawProcessorResults()
-      if (simState.executionResults['data_type'] === 'error') {
-          alert('Error running simulation');
-          document.getElementById('run-simulation-spinner').style.display = 'none';
-          document.getElementById('simulation-running').style.display     = 'none';
-          document.getElementById('previous-simulations-section').style.display  = 'block';
-          document.getElementById('run-simulation-button').disabled       = false;
-          return;
-      }
-      document.getElementById('instructions-output').innerHTML         = simState.executionResults["total_instructions"]
-      document.getElementById('cycles-output').innerHTML               = simState.executionResults["total_cycles"];
-      document.getElementById('IPC-output').innerHTML                  = simState.executionResults["ipc"].toFixed(2);
-      document.getElementById('cycles-per-iteration-output').innerHTML = simState.executionResults["cycles_per_iteration"].toFixed(2);
-
-      document.getElementById('run-simulation-spinner').style.display = 'none';
-      document.getElementById('simulation-running').style.display     = 'none';
-      document.getElementById('previous-simulations-section').style.display  = 'block';
-      document.getElementById('run-simulation-button').disabled       = false;
+      simResults = JSON.parse(data)
+      saveResults()
+      if (resultsTimeout) clearTimeout(resultsTimeout)
+      resultsTimeout = setTimeout(() => {
+        drawProcessorResults()
+        document.getElementById('run-simulation-spinner').style.display = 'none';
+        document.getElementById('simulation-running').style.display     = 'none';
+        document.getElementById('previous-simulations-section').style.display  = 'block';
+        document.getElementById('run-simulation-button').disabled       = false;
+      }, 500)
+      simState.executionResults = simResults
     } catch (error) {
       console.error('🕐❌Failed to obtain execution results:', error)
     }
@@ -130,21 +345,80 @@
   * Simulation options: UI actions
   * ------------------------------------------------------------------ */
 
-  function togglePrevious() { simulationOptions.showPrevious = !simulationOptions.showPrevious }
+  function toggleAutorun()  { simulationOptions.autorun      = !simulationOptions.autorun }
+
+  const formattedResults = computed(() => {
+    const results = simState.executionResults || {};
+
+    return {
+      iters:        results["total_iterations"]?.toLocaleString() ?? '0',
+      instructions: results["total_instructions"]?.toLocaleString() ?? '0',
+      cycles:       results["total_cycles"]?.toLocaleString() ?? '0',
+      cpi:          results["cycles_per_iteration"]?.toFixed(2) ?? '0',
+      ipc:          results["ipc"]?.toFixed(3) ?? '0',
+      loads:        results["total_loads"]?.toLocaleString() ?? '0'
+    };
+  });
+
+  const ipcColor = computed(() => {
+    const ipc = simState.executionResults?.["ipc"] ?? 0
+    const dw  = simState.simulatedProcess?.dispatch || 1
+
+    if (!ipc || !dw || dw === 0) return '#666';
+
+    const ratio = ipc / dw;
+
+    // close to maximum (>= 80% of dispatch width) -> Green
+    if (ratio >= 0.8) return '#00cc44';
+
+    // Very low (<= 10% of dispatch width) -> Red
+    if (ratio <= 0.1) return '#ff3333';
+
+    // Intermediate: gradient from red to green
+    const t     = (ratio - 0.1) / 0.7; // Normalize 0.1-0.8 to 0-1
+    const red   = Math.floor(255 * (1 - t));
+    const green = Math.floor(255 * t);
+
+    return `rgb(${red}, ${green}, 0)`;
+  });
+
+  const ipcStyle = computed(() => ({
+    color:      ipcColor.value,
+    fontWeight: 'bold',
+    fontSize:   '1.2em',
+    backgroundColor: `${ipcColor.value}10`,
+    padding:    '2px 6px',
+    borderRadius: '4px',
+    transition: 'all 0.3s ease'
+  }));
+
+  const ipcTooltip = computed(() => {
+    const ipc = simState.executionResults?.["ipc"] ?? 0;
+    const dw  = simState.simulatedProcess?.dispatch || 1;
+    const efficiency = ((ipc / dw) * 100).toFixed(1);
+    return `IPC: ${ipc.toFixed(3)} | Dispatch Width: ${dw}\nEfficiency: ${efficiency}% of maximum possible IPC`;
+  });
 
   const reloadExecutionResults = async () => {
+    simProcess = {
+      dispatch: simState.simulatedProcess.dispatch,
+      retire:   simState.simulatedProcess.retire,
+      sched:    simState.simulatedProcess.sched,
+      ROBsize:  simState.simulatedProcess.ROBsize,
+      nBlocks:  simState.simulatedProcess.nBlocks,
+      blkSize:  simState.simulatedProcess.blkSize,
+      mIssueTime: simState.simulatedProcess.mIssueTime,
+      mPenalty: simState.simulatedProcess.mPenalty,
+      instruction_list: JSON.parse(JSON.stringify(simState.simulatedProcess.instruction_list))
+    }
     clearTimeout(resultsTimeout)
     try {
       resultsTimeout = setTimeout(() => {
-        document.getElementById('instructions-output').innerHTML         = '?';
-        document.getElementById('cycles-output').innerHTML               = '?';
-        document.getElementById('IPC-output').innerHTML                  = '?';
-        document.getElementById('cycles-per-iteration-output').innerHTML = '?';
-
         document.getElementById('run-simulation-spinner').style.display = 'block';
         document.getElementById('simulation-running').style.display     = 'block';
         document.getElementById('previous-simulations-section').style.display  = 'none';
         document.getElementById('run-simulation-button').disabled       = true;
+        resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
         const { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
         getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
@@ -159,13 +433,11 @@
 
   const drawProcessorResults = async () => {
     try {
-      const dotCode      = get_proc_results_dot (simState.simulatedProcess, simState.executionResults)
-      // console.log('💻🔄Redrawing simulated processor with usage info', dotCode);
+      const dotCode      = get_proc_results_dot (simState.simulatedProcess, simResults)
       const svg          = await createGraphVizGraph(dotCode);
-      // console.log('💻🔄Redrawing SVG of processor with usage info', svg);
       resultsSvg.value = svg.outerHTML;
     } catch (error) {
-      console.error('💻❌ Failed to draw results+processor:', error)
+      console.error('🕐❌ Failed to draw results+processor:', error)
       resultsSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
@@ -175,7 +447,6 @@
     const ports    = process.ports
     const port_ids = Object.keys(ports)
     const ROBsize  = process.ROBsize || 20
-    const sched    = process.sched
     const dispatch = process.dispatch
     const retire   = process.retire
 
@@ -191,25 +462,20 @@
     let dispatch_color = color[Math.floor(usage/5)]
 
     let message =  usage !== 0
-      ? `<B>&nbsp;&nbsp;&nbsp;Usage:<FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
+      ? `&nbsp;&nbsp;&nbsp;Usage:<B><FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     // ---- Decode ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle${message}</FONT></TD>
-      <TD ROWSPAN="4" BGCOLOR="#f0f0f0" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
-    </TR>`
-
-    // ---- Waiting Buffer ----
-    let wb_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${sched}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Usage of dispatch capacity"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle${message}</FONT></TD>
+      <TD ROWSPAN="3" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Pending: usage of ROB capacity" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Port headers ----
     let port_header = "<TR>"
 
     for (let p of port_ids) {
-      const style = ' BGCOLOR="#f5f5f5"'
+      const style = ` BGCOLOR="#f5f5f5" HREF="#" TITLE="Usage of port ${p}"`
       usage = 0
       if (results?.ports?.[p] != null)
         usage = results.ports[p]
@@ -217,7 +483,6 @@
       let message = usage !== 0
         ? `<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
         : ""
-
       port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p} ${message}</B></FONT></TD>`
     }
 
@@ -229,12 +494,12 @@
       usage = (results.ipc / retire) * 100
     let retire_color = color[Math.floor(usage/5)]
 
-    message = usage !== 0
-      ? `<B>&nbsp;Usage:<FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
+    message =  usage !== 0
+      ? `&nbsp;&nbsp;&nbsp;Usage:<B><FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
       : ""
 
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"><FONT POINT-SIZE="20"><B>Retire:</B>&nbsp;${retire}/cycle${message}&nbsp;<B>Architected Registers</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Usage of retire capacity"><FONT POINT-SIZE="20"><B>Retire:&nbsp;</B>&nbsp;${retire}/cycle${message}</FONT></TD>
     </TR>`
 
     const dot = `
@@ -244,7 +509,6 @@
           label=<
             <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
               ${decode_row}
-              ${wb_row}
               ${port_header}
               ${reg_row}
             </TABLE>
@@ -254,6 +518,100 @@
     return dot
   }
 
+// ============================================================================
+// confirmDownload, uploadResults
+// ============================================================================
+ const ADD_NEW_OPTION = '_add_new_'
+
+  watch( () => simulationOptions.resultName, (newName, oldName) => {
+    try {
+      if (newName === ADD_NEW_OPTION)
+        return uploadResults(oldName)
+        saveOptions()
+    } catch (error) {
+      console.error('🕐❌ Failed when changing result name:', error)
+    }
+  })
+
+  const showModalDownload = ref(false)
+  const modalName         = ref("")
+  const nameError         = ref("")
+
+  async function confirmDownload() {
+    const name   = modalName.value.trim();
+    const stored = localStorage.getItem(`results.${simulationOptions.resultName}`)
+    if (stored) {
+      const data = JSON.parse(stored)
+      data.name = name
+      await downloadJSON(data, name, 'result')
+    }
+    showModalDownload.value = false;
+  }
+
+  const uploadResults = async (oldResult) => {
+    try {
+      const data = await uploadJSON(null, 'result')
+      if (data) {
+        const exists = simulationOptions.availableResults.includes(data.name)
+        if (exists && !confirm(`A result with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
+          alert('Upload cancelled.')
+          simulationOptions.resultName = oldResult
+          return
+        }
+        saveToLocalStorage('result', data.name, data, simulationOptions.availableResults)
+        simulationOptions.resultName = data.name;
+        updateShowResults()
+        console.log(`✅ Upload results to "${data.name}"`);
+        return
+      }
+    } catch (error) {
+      console.error('🕐❌ Failed to upload result:', error)
+    }
+    simulationOptions.resultName = oldResult
+  }
+
+  const copyResults = async () => {
+    try {
+      const res = localStorage.getItem('simResults');
+      if (res) {
+        const data = JSON.parse(res);
+        // to do: if the name already exists, add a suffix like "current (copy)" or "current (2)"
+        localStorage.setItem('results.current', JSON.stringify(data));
+        simulationOptions.availableResults.push('current')
+        simulationOptions.resultName = 'current'
+        updateShowResults()
+        console.log(`✅ Copied results to "current"`);
+        return
+      }
+      console.log(`✅ Cannot copy, since there are no results to copy`);
+    } catch (error) {
+      console.error('🕐📄❌ Failed to copy results', error)
+    }
+  }
+
+  let oldResultNames = {}
+
+  const captureOldValue = (index) => {
+    oldResultNames[index] = simulationOptions.availableResults[index]
+  }
+
+  const renameResult = (index) => {
+    const newName = simulationOptions.availableResults[index]
+    const oldName = oldResultNames[index]
+    console.log(`✅ Renamed results from "${oldName}" to "${newName}"`);
+    if (oldName === newName) return
+    const oldData = localStorage.getItem(`results.${oldName}`)
+    if (oldData) {
+      try {
+        localStorage.setItem(`results.${newName}`, oldData)
+        localStorage.removeItem(`results.${oldName}`)
+        simulationOptions.resultName = newName
+        updateShowResults()
+      } catch (e) {
+        console.error(`❌ Failed to rename results:`, e);
+      }
+    }
+  }
 
 /* ------------------------------------------------------------------
  * Help support
@@ -276,44 +634,75 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Simulate Execution of <strong>{{ simState.programName }}</strong></span>
+        <span class="header-title">Simulate Execution of {{ simState.programName }} on {{ simState.processorName }}</span>
       </div>
       <div class="iters-run">
-        <div class="iters-group">
-          <span class="iters-label">Iterations:</span>
-          <input type="number" min="1" max="5000" v-model.number="simulationOptions.iters"
-                 title="# loop iterations (1 to 5000)" id="simulation-iterations" >
-        </div>
         <button class="blue-button" @click="reloadExecutionResults"
-                title="Run Simulation"  id="run-simulation-button" >
-           Run
+          title="Run Simulation" id="run-simulation-button" >
+          Run Simulation
         </button>
+        <span>AutoRun:</span>
+        <input type="checkbox"
+              title="Set to run the simulation every time the processor/program/#iterations is modified"
+              id="automatic-simulation-check"
+              :checked="simulationOptions.autorun"
+              @change="toggleAutorun"
+          />
+
+        <div class="iters-group">
+          <span class="iters-label" :title="`Rang: 1 - ${MAX_ITERS} iters`">
+            Iterations:
+          </span>
+          <input
+            type=      "text"
+            inputmode= "numeric"
+            pattern=   "[0-9]*"
+            :placeholder="100"
+            v-model=  "inputValue"
+            @blur=    "validateField"
+            @keypress="handleKeyPress"
+            @input=   "handleInput"
+            id=       "simulation-iterations"
+            :class=   "{ 'invalid': isInvalid }"
+            :title=   "`Rang: 1 - ${MAX_ITERS} iters`"
+          />
+        </div>
       </div>
     </div>
 
     <div id="simulation-results-info" class="results-info">
       <div class="row">
         <div class="simulation-inline-item">
+          <label for="instructions">Iterations:</label>
+          <span id="iterations-output" title="Total loop iterations">{{ formattedResults.iters }}</span>
+        </div>
+        <div class="simulation-inline-item">
           <label for="instructions">Instructions:</label>
-          <span id="instructions-output">?</span>
+          <span id="instructions-output" title="Total executed instructions">{{ formattedResults.instructions }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="cycles">Cycles:</label>
-          <span id="cycles-output">?</span>
+          <label for="cycles">Clock Cycles:</label>
+          <span id="cycles-output" title="Total clock cycles">{{ formattedResults.cycles }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="cycles-per-iteration">Cycles per iteration:</label>
-          <span id="cycles-per-iteration-output">?</span>
+          <label for="cycles-per-iteration">Cycles/iteration:</label>
+          <span id="cycles-per-iteration-output" title="Clock cycles per loop iteration">{{ formattedResults.cpi }}</span>
         </div>
       </div>
       <div class="row">
         <div class="simulation-inline-item">
           <label for="IPC">IPC:</label>
-          <span id="IPC-output">?</span>
+          <span
+            id="IPC-output"
+            :style="ipcStyle"
+            :data-tooltip="ipcTooltip"
+          >
+            {{ formattedResults.ipc }}
+          </span>
         </div>
         <div class="simulation-inline-item">
           <label for="Loads">Loads:</label>
-          <span id="Loads-output">?</span>
+          <span id="Loads-output" title="Total executed LOADs">{{ formattedResults.loads }}</span>
         </div>
       </div>
     </div>
@@ -324,72 +713,224 @@
         <div id="simulation-running"><p>Simulation on course...</p></div>
       </div>
     </div>
-
-    <div class="dropdown-wrapper" id="previous-simulations-section">
-      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
-         <img src="/img/info.png" class="info-img">
-      </span>
-      <button class="dropdown-header" @click="togglePrevious" :aria-expanded="showPrevious"
-        title="Show previous simulation results"
-        id   ="show-previous-button">
-        <span class="arrow" aria-hidden="true">
-          {{ simulationOptions.showPrevious ? '▼' : '▶' }}
-        </span>
-        <span class="dropdown-title">Previous simulation results</span>
-      </button>
-    </div>
-
     <div class="graph-section">
       <div class="processor-container">
         <div class="processor-img" v-html="resultsSvg" v-if="resultsSvg"></div>
       </div>
     </div>
+    <div class="header">
+      <div class="section-title-and-info">
+        <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show help">
+          <img src="/img/info.png" class="info-img">
+        </span>
+        <span class="header-title">Previous simulation results</span>
+      </div>
+      <div class="iters-run">
+        <button class="blue-button" @click="copyResults"
+            title="Store current simulation results"
+            id="store-results-button">
+          Store Results
+        </button>
+        <select v-model="simulationOptions.resultName" class="form-select"
+            id="results-list" title="Visualize previously obtained results">
+          <option value="" disabled>Select</option>
+          <option v-for="result in simulationOptions.availableResults" :key="result" :value="result" >
+            {{ result }}
+          </option>
+          <option value="_add_new_">Add new</option>
+        </select>
+        <button class="blue-button small-btn" @click="removeResult"
+          id="remove-results-button"
+          title="Remove simulation results from list (and local storage)">
+        🧹
+        </button>
+        <button class="blue-button small-btn" @click="showModalDownload = true"
+          id="save-results-button"
+          title="Save current simulation results">
+        💾
+        </button>
+      </div>
+    </div>
+    <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;"> Name  </th>
+              <th style="width: 100px;"> Iters  </th>
+              <th style="width: 100px;"> Instr  </th>
+              <th style="width: 100px;"> Cycles </th>
+              <th style="width: 100px;"> C/iter </th>
+              <th style="width: 100px;"> IPC    </th>
+            </tr>
+          </thead>
+          <tbody v-if="simulationOptions.resultName">
+            <tr v-for="(name, index) in simulationOptions.availableResults" :key="index">
+              <td title="Name of the stored results">
+                <input type="text"
+                  v-model="simulationOptions.availableResults[index]"
+                  class="iters-group"
+                  title="Modify File Name if required"
+                  @focus="captureOldValue(index)"
+                  @blur="renameResult(index)"
+                />
+              </td>
+              <td title="Total loop iterations executed">
+                {{ showResultsInfo[index]?.total_iterations?.toLocaleString() ?? '0' }}
+              </td>
+              <td title="Total machine instructions executed">
+                {{ showResultsInfo[index]?.total_instructions?.toLocaleString() ?? '0' }}
+              </td>
+              <td title="Total clock cycles taken">
+                {{ showResultsInfo[index]?.total_cycles?.toLocaleString() ?? '0' }}
+              </td>
+              <td title="Cycles per loop iteration">
+                {{ showResultsInfo[index]?.cycles_per_iteration?.toLocaleString() ?? '0' }}
+              </td>
+              <td title="Instructions Per cycle (IPC)">
+                {{ showResultsInfo[index]?.ipc?.toLocaleString() ?? '0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+  </div>
 
-    <Transition name="fold" appear>
-      <prev v-show="simulationOptions.showPrevious" id="previous-results"></prev>
-    </Transition>
+  <div v-if="showModalDownload" class="modal-overlay">
+    <div class="modal">
+      <h4>Save Results As</h4>
+      <label for="results-name">Name:</label>
+      <input v-model="modalName" type="text" id="save-results-name"
+           title="file name of new simulation results" placeholder="Enter name for results"
+        />
+      <div v-if="nameError" class="error">{{ nameError }}</div>
+      <div class="modal-actions">
+        <button class="blue-button" title="Accept Download" @click="confirmDownload"> Yes </button>
+        <button class="blue-button" title="Cancel Download" @click="showModalDownload=false">  Cancel </button>
+      </div>
+    </div>
   </div>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<strong>Simulate</strong> the execution of a specified number of program
-      loop iterations and view aggregate performance metrics, including the total number of executed
-      <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure that you simulate a representative
-      number of loop iterations.
-      <p>The sections below provide detailed statistics on the critical execution path and
-      the utilization of core processor resources.</p>"
+    text="<strong>Simulate</strong> the execution of a specified number of program loop iterations and view aggregate performance metrics,
+      including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
+      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure a representative number of loop iterations is selected,
+      as very low iteration counts may not fully capture the program's behavior and performance characteristics.
+      <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths, and usage of execution ports.
+        These metrics are crucial for identifying potential performance bottlenecks in the simulated execution.</p>
+    "
     title="Overall Simulation Results"
     @close="closeHelp1"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Open this tab to visualize the <strong>performance results</strong> from previous simulations,
-      along with the <em>dispatch</em> and <em>retire</em> stages, on the <strong>critical execution path</strong>.
-      <p>You can also explore the critical execution path in a detailed timeline view for a limited number
-      of loop iterations in the <strong>Timeline</strong> tab.</p>"
-    title="Critical execution path breakdown"
+    text="Open this tab to visualize the <strong>performance results</strong> from previous simulations.
+      This section allows you to compare the current simulation results with those from previous runs,
+      enabling you to track performance changes over time or after modifications to the processor configuration
+      or program.
+      <p>Use this feature to analyze trends, identify regressions, or confirm improvements in your simulations.</p>"
+    title="Previous Performance Results"
     @close="closeHelp2"/>
   </Teleport>
 
 </template>
 
 <style scoped>
+
+  .iters-run span {
+    white-space: nowrap;
+  }
+
   .iters-run {
     display:     flex;
     align-items: center;
-    gap:         12px;
+    gap:         10px;
+    flex-wrap:   nowrap;
+  }
+
+  .iters-run input[type="checkbox"] {
+    width:  22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: #4a90e2;
+    margin: 0;
+    vertical-align: middle;
+  }
+
+  .iters-run input[type="checkbox"]:hover {
+    transform:  scale(1.05);
+    transition: transform 0.2s ease;
+  }
+
+  .iters-group .iters-label {
+    white-space: nowrap;
+  }
+
+  .iters-group input {
+    width:         70px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+    text-align:    center;
+    transition:    all 0.2s ease;
+  }
+
+  .iters-group input:focus {
+    outline:       none;
+    border-color: #4a90e2;
+    box-shadow:    0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  .iters-group input.invalid {
+    border-color: #ff4444;
+    background-color: #fff0f0;
+  }
+
+  .settings-container {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    justify-content: center;
+  }
+  .settings-container select,
+  .settings-container button {
+    flex-shrink: initial;
+  }
+
+  .form-select {
+    width:            100%;
+    padding:          1px 1px;
+    margin-bottom:    2px;
+    border:           2px solid #ddd;
+    border-radius:    6px;
+    font-size:        medium;
+    background-color: white;
+    transition:       border-color 0.3s;
+  }
+
+  .form-select:focus {
+    outline:      none;
+    border-color: #4a6cf7;
+  }
+
+  .form-select option[value="_add_new_"] {
+    color:            #4a6cf7;
+    font-weight:      bold;
+    background-color: #f0f5ff;
   }
 
   .results-info {
-    width: 100%;
+    font-size:   16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
+
   .results-info .row {
-    gap:             20px;
     display:         flex;
+    gap:             5px;
+    margin-bottom:   8px;
+    flex-wrap:       wrap;
     justify-content: space-between;
-    margin-bottom:   5px;
   }
 
   .simulation-inline-item {
@@ -404,15 +945,53 @@
   .simulation-inline-item label {
     flex:         1;
     margin-right: 10px;
+    font-weight:  600;
+    color:       #333;
+    font-size:    1.2em;
   }
   .simulation-inline-item span {
     text-align:  right;
     flex-shrink: 0;
+    font-weight: bold;
+    font-size:   1.1em;
+    transition:  color 0.3s ease;
+  }
+
+  #IPC-output {
+    font-weight: bold;
+    font-size: 1.2em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  #IPC-output {
+    cursor: help;
+    position: relative;
+  }
+
+  #IPC-output:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
   }
 
   .sim-running-msg {
-    display: flex;
-    width:   100%;
+    display:         flex;
+    width:           100%;
     align-items:     center;
     justify-content: center;
   }
@@ -471,6 +1050,50 @@
     height:    100%;
     display:   flex;
     margin-top: 2px;
+  }
+
+  .table-container {
+     width:          auto;
+     max-width:      100%;
+     overflow-x:     auto;
+     overflow-y:     auto;
+     padding-bottom: 37px;
+     border:         1px solid #ddd;
+     border-radius:  5px;
+     margin-right:   2px;
+  }
+
+  .results-table {
+    width:           100%;
+    border-collapse: collapse;
+    font-size:       small;
+    padding-bottom:  30px;
+  }
+  .results-table thead {
+    position:   sticky;
+    top:        0;
+    background: #007acc;
+    color:      white;
+    z-index:    1;
+  }
+  .results-table th {
+    padding:     3px 3px;
+    text-align:  center;
+    font-weight: bold;
+    border:      1px solid #005a9e;
+  }
+  .results-table td {
+    padding:        0px;
+    border:         1px solid #ddd;
+    vertical-align: middle;
+    text-align:     center;
+    font-size:      medium;
+  }
+  .results-table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  .results-table tbody tr:hover {
+    background: #e8f4fd;
   }
 
 </style>

@@ -2,7 +2,7 @@
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-            createGraphVizGraph, instructionTypes, typeOperations, typeSizes                } from '@/common'
+           createGraphVizGraph, instructionTypes, typeOperations, typeSizes                 } from '@/common'
 
   const simState = inject('simulationState');
 
@@ -29,18 +29,24 @@
                                             )
   }
 
-  const savedOptions = (() => {
+  const processorOptions = reactive(defaultOptions)
+  const simulatedSvg     = ref('')
+
+  const loadOptions = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      console.log('💻load options')
-      return saved ? JSON.parse(saved) : defaultOptions
-    } catch {
-      return defaultOptions
+      if (saved) {
+        Object.assign(processorOptions, JSON.parse(saved))
+        console.log('💻load options')
+      }
+      else {
+        saveOptions() // Save defaults if no options were saved before
+        console.log('💻default load options')
+      }
+    } catch (error) {
+      console.error('💻❌ Failed to load:', error)
     }
-  })()
-
-  const processorOptions = reactive({ ...defaultOptions, ...savedOptions })
-  const simulatedSvg     = ref('')
+  }
 
   const saveOptions = () => {
     try {
@@ -86,18 +92,6 @@
   };
 
   const currentConfig = computed(() => FIELD_CONFIG[activeField.value]);
-
-  const currentValue = computed({
-    get() {
-      return simState.simulatedProcess[currentConfig.value.model];
-    },
-    set(val) {
-      if (val === "" || val == null) return;
-      if (val >= currentConfig.value.min && val <= currentConfig.value.max) {
-        simState.simulatedProcess[currentConfig.value.model] = val;
-      }
-    }
-  });
 
   const inputValue   = ref('');
   const isInvalid    = ref(false);
@@ -332,20 +326,10 @@
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
   onMounted(() => {
-    console.log('💻🎯 ProcessorComponent mounted')
-
-    // load Edited Processor
-    const stored = localStorage.getItem('processorTemp');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored)
-        updateProcessorSettings(data)
-        return
-      } catch (e) {
-        console.error('📄❌ Failed to load edited processor from localStorage:', e);
-      }
-    }
+    loadOptions()
+    loadEditedProcessor()
     if (currentConfig.value?.label) highlightLabel()
+    console.log('💻🎯 ProcessorComponent mounted')
   });
 
   onUnmounted(() => {
@@ -385,6 +369,20 @@
   }
 
   const emit = defineEmits(['requestSwitchFull'])
+
+  function loadEditedProcessor() {
+    // load Edited Processor
+    const stored = localStorage.getItem('processorTemp');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        updateProcessorSettings(data)
+        return
+      } catch (e) {
+        console.error('📄❌ Failed to load edited processor from localStorage:', e);
+      }
+    }
+  }
 
   function editProcessor () {
     if (simState.simulatedProcess) {
@@ -541,7 +539,7 @@
     // ---- Dispatch + ROB ----
     let decode_row = `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Edit dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Edit ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Edit ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer ----
@@ -972,8 +970,8 @@
             title="Edit current processor on full-screen">
           📝
           </button>
-          -->
-	  <button class="blue-button small-btn" @click="removeProcessor"
+	  -->
+          <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
           🧹
@@ -994,7 +992,7 @@
               @keypress="handleKeyPress"
               @input="handleInput"
               :class="{ 'invalid': isInvalid }"
-              :title="`Rango: ${currentConfig.min} - ${currentConfig.max}`"
+              :title="`Rang: ${currentConfig.min} - ${currentConfig.max}`"
             />
           </div>
         </div>
@@ -1293,7 +1291,7 @@
           (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
           (which always issues the best combination of ready instructions to maximize performance).</p>
         <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
-         Click on the buttons on the right to <strong>edit</strong> all the microarchitectural parameters or
+         Click on the buttons on the right to <strong>edit</strong> the microarchitectural parameters or
          to <strong>remove</strong> the file from local storage.</p>
         "
     title="Processor MicroArchitecture Description"
@@ -1309,7 +1307,7 @@
     <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths.
        They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
-      <p>They may impose a throughput-bound performance limit.</p>"
+      <p>They may impose a throughput-bound performace limit.</p>"
     title="Dispatch/Retire Width Settings"
     @close="closeHelp2"/>
 
