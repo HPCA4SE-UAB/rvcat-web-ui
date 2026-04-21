@@ -1002,7 +1002,7 @@
             </option>
             <option value="_add_new_">Add new</option>
           </select>
-<--!
+<!--
           <button class="blue-button small-btn" @click="editProcessor"
             id="edit-processor-button"
             title="Edit current processor on full-screen">
