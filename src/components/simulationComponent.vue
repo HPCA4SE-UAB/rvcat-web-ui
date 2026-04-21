@@ -351,12 +351,12 @@
     const results = simState.executionResults || {};
 
     return {
-      iters:        results["total_iterations"]?.toLocaleString() ?? '0',
-      instructions: results["total_instructions"]?.toLocaleString() ?? '0',
-      cycles:       results["total_cycles"]?.toLocaleString() ?? '0',
-      cpi:          results["cycles_per_iteration"]?.toFixed(2) ?? '0',
-      ipc:          results["ipc"]?.toFixed(3) ?? '0',
-      loads:        results["total_loads"]?.toLocaleString() ?? '0'
+      iters:        results["total_iterations"]?.toLocaleString() ?? 'X',
+      instructions: results["total_instructions"]?.toLocaleString() ?? 'X',
+      cycles:       results["total_cycles"]?.toLocaleString() ?? 'X',
+      cpi:          results["cycles_per_iteration"]?.toFixed(2) ?? 'X',
+      ipc:          results["ipc"]?.toFixed(3) ?? 'X',
+      loads:        results["total_loads"]?.toLocaleString() ?? 'X'
     };
   });
 
@@ -780,19 +780,19 @@
                 />
               </td>
               <td title="Total loop iterations executed">
-                {{ showResultsInfo[index]?.total_iterations?.toLocaleString() ?? '0' }}
+                {{ showResultsInfo[index]?.total_iterations?.toLocaleString() ?? 'X' }}
               </td>
               <td title="Total machine instructions executed">
-                {{ showResultsInfo[index]?.total_instructions?.toLocaleString() ?? '0' }}
+                {{ showResultsInfo[index]?.total_instructions?.toLocaleString() ?? 'X' }}
               </td>
               <td title="Total clock cycles taken">
-                {{ showResultsInfo[index]?.total_cycles?.toLocaleString() ?? '0' }}
+                {{ showResultsInfo[index]?.total_cycles?.toLocaleString() ?? 'X' }}
               </td>
               <td title="Cycles per loop iteration">
-                {{ showResultsInfo[index]?.cycles_per_iteration?.toLocaleString() ?? '0' }}
+                {{ showResultsInfo[index]?.cycles_per_iteration?.toLocaleString() ?? 'X' }}
               </td>
               <td title="Instructions Per cycle (IPC)">
-                {{ showResultsInfo[index]?.ipc?.toLocaleString() ?? '0' }}
+                {{ showResultsInfo[index]?.ipc?.toLocaleString() ?? 'X' }}
               </td>
             </tr>
           </tbody>
