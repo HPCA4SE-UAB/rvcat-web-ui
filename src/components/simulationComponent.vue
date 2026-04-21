@@ -258,15 +258,34 @@
     updateResults()
   };
 
+  const CONFIRM_KEY = 'confirmDeleteResults';
+
   function removeResult () {
-    if (simulationOptions.availableResults.length > 0) {
-      if (confirm(`Results named "${simulationOptions.resultName}" will disappear, Are you sure?`)) {
-        removeFromLocalStorage('result', simulationOptions.resultName, simulationOptions.availableResults)
-        if ( simulationOptions.availableResults.length > 0)
-          simulationOptions.resultName = simulationOptions.availableResults[0]
-      } else {
-        alert('Removal cancelled.')
+    if (simulationOptions.availableResults.length === 0) return;
+
+    const askConfirmation = localStorage.getItem(CONFIRM_KEY) !== 'false';
+
+    if (askConfirmation) {
+      const confirmed = confirm(
+        `Results named "${simulationOptions.resultName}" will disappear. Are you sure?\n\n` +
+        `Press OK to confirm, Cancel to abort.`
+      );
+
+      if (!confirmed) {
+        alert('Removal cancelled.');
+        return;
       }
+
+      const dontAskAgain = confirm("Do you want to skip this confirmation next time?");
+      if (dontAskAgain) {
+        localStorage.setItem(CONFIRM_KEY, 'false');
+      }
+    }
+
+    removeFromLocalStorage('result', simulationOptions.resultName, simulationOptions.availableResults );
+
+    if (simulationOptions.availableResults.length > 0) {
+      simulationOptions.resultName = simulationOptions.availableResults[0];
     }
   }
 
@@ -359,6 +378,81 @@
       loads:        results["total_loads"]?.toLocaleString() ?? 'X'
     };
   });
+
+  let iterControl = {
+    lastTime:  0,
+    direction: null, // 'up' | 'down'
+    stepLevel: 0,    // 0:1, 1:10, 2:100, 3:1000
+    streak:    0
+  };
+
+  const STEP_VALUES     = [1, 10, 100];
+  const FAST_THRESHOLD  = 300;  // ms → considera "rápido"
+  const RESET_THRESHOLD = 1200; // ms → reinicia velocidad
+
+  function getStep(direction) {
+    const now = Date.now();
+
+    // Si pasa mucho tiempo → reset
+    if (now - iterControl.lastTime > RESET_THRESHOLD) {
+      iterControl.stepLevel = 0;
+      iterControl.streak    = 0;
+    }
+
+    // Si cambia la dirección → reset parcial
+    if (iterControl.direction !== direction) {
+      iterControl.stepLevel = 0;
+      iterControl.streak    = 0;
+      iterControl.direction = direction;
+    }
+
+    // Si es rápido → aumentar racha
+    if (now - iterControl.lastTime < FAST_THRESHOLD) {
+      iterControl.streak++;
+    } else {
+      iterControl.streak = 0;
+    }
+
+    // Increase step level every 6 rapid repetitions
+    if (iterControl.streak >= 6 && iterControl.stepLevel < STEP_VALUES.length - 1) {
+      iterControl.stepLevel++;
+      iterControl.streak = 0; // reset para siguiente escalado
+    }
+
+    iterControl.lastTime = now;
+
+    return STEP_VALUES[iterControl.stepLevel];
+  }
+
+  function roundToStep(value, step, direction) {
+    if (direction === 'up') {
+      return Math.ceil(value / step) * step;
+    } else {
+      return Math.floor(value / step) * step;
+    }
+  }
+
+  function increaseIterations() {
+    const step   = getStep('up')
+    let newValue = simulationOptions.iters + step
+    if (step > 1) newValue = roundToStep(newValue, step, 'up')
+    simulationOptions.iters = Math.min(newValue, MAX_ITERS)
+  }
+
+  function decreaseIterations() {
+    const step   = getStep('down')
+    if (simulationOptions.iters < step*2) {
+      if (iterControl.stepLevel > 0) {
+        iterControl.stepLevel--;
+        iterControl.streak = -10000; // disable scaling
+        step = STEP_VALUES[iterControl.stepLevel];
+      }
+    }
+    let newValue = simulationOptions.iters - step
+    if (step > 1) newValue = roundToStep(newValue, step, 'down')
+    simulationOptions.iters = Math.max(newValue, 1)
+  }
+
 
   const ipcColor = computed(() => {
     const ipc = simState.executionResults?.["ipc"] ?? 0
@@ -618,6 +712,26 @@
     }
   }
 
+  function moveResultsUp() {
+    if (simulationOptions.resultName !== simulationOptions.availableResults[0]) {
+      const index = simulationOptions.availableResults.indexOf(simulationOptions.resultName);
+      const temp = simulationOptions.availableResults[index];
+      simulationOptions.availableResults[index] = simulationOptions.availableResults[index - 1];
+      simulationOptions.availableResults[index - 1] = temp;
+      updateShowResults();
+    }
+  }
+
+  function moveResultsDown() {
+    if (simulationOptions.resultName !== simulationOptions.availableResults[simulationOptions.availableResults.length - 1]) {
+      const index = simulationOptions.availableResults.indexOf(simulationOptions.resultName);
+      const temp = simulationOptions.availableResults[index];
+      simulationOptions.availableResults[index] = simulationOptions.availableResults[index + 1];
+      simulationOptions.availableResults[index + 1] = temp;
+      updateShowResults();
+    }
+  }
+
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
@@ -629,6 +743,35 @@
   function closeHelp1() { showHelp1.value  = false }
   function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
   function closeHelp2() { showHelp2.value  = false }
+
+/* ------------------------------------------------------------------
+ * Button Support: press & hold
+ * ------------------------------------------------------------------ */
+  let holdTimeout = null;
+  let holdInterval= null;
+  let savedAutorun = false;
+
+  function startHold(action) {
+    const INITIAL_DELAY = 400;   // tiempo hasta que empieza la repetición
+    const REPEAT_INTERVAL = 250; // velocidad de repetición
+
+    savedAutorun = simulationOptions.autorun; // save autorun state to restore later
+    simulationOptions.autorun = false; // disable autorun while manually changing iterations
+    action()    // first click
+
+    // wait until repetition
+    holdTimeout = setTimeout(() => {
+      holdInterval = setInterval(() => {
+        action();
+      }, REPEAT_INTERVAL);
+    }, INITIAL_DELAY);
+  }
+
+  function stopHold() {
+    clearTimeout(holdTimeout);
+    clearInterval(holdInterval);
+    simulationOptions.autorun = savedAutorun; // restore autorun state after manual change
+  }
 
 </script>
 
@@ -671,6 +814,29 @@
             :class=   "{ 'invalid': isInvalid }"
             :title=   "`Rang: 1 - ${MAX_ITERS} iters`"
           />
+          <button
+            class="blue-button small-btn"
+            @mousedown="startHold(increaseIterations)"
+            @mouseup="stopHold"
+            @mouseleave="stopHold"
+            @touchstart.prevent="startHold(increaseIterations)"
+            @touchend="stopHold"
+            title="Increase iterations (press and hold for faster incrementing)"
+          >
+            ▲
+          </button>
+
+          <button
+            class="blue-button small-btn"
+            @mousedown="startHold(decreaseIterations)"
+            @mouseup="stopHold"
+            @mouseleave="stopHold"
+            @touchstart.prevent="startHold(decreaseIterations)"
+            @touchend="stopHold"
+            title="Decrease iterations (press and hold for faster decrementing)"
+          >
+            ▼
+          </button>
         </div>
       </div>
     </div>
@@ -744,6 +910,21 @@
           </option>
           <option value="_add_new_">Add new</option>
         </select>
+        <button
+          class="blue-button small-btn"
+          @click="moveResultsUp()"
+          title="Move results up"
+        >
+          ▲
+        </button>
+
+        <button
+          class="blue-button small-btn"
+          @click="moveResultsDown()"
+          title="Move results down"
+        >
+          ▼
+        </button>
         <button class="blue-button small-btn" @click="removeResult"
           id="remove-results-button"
           title="Remove simulation results from list (and local storage)">
@@ -830,11 +1011,12 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Open this tab to visualize the <strong>performance results</strong> from previous simulations.
-      This section allows you to compare the current simulation results with those from previous runs,
+    text="Visualize the <strong>performance results</strong> from previous simulations.
+      This table allows you to compare the current simulation results with those from previous runs,
       enabling you to track performance changes over time or after modifications to the processor configuration
       or program.
-      <p>Use this feature to analyze trends, identify regressions, or confirm improvements in your simulations.</p>"
+      <p>You can also manage your stored results by renaming them, reordering them for better comparison,
+        saving them for later usage, or removing those that are no longer needed.</p>"
     title="Previous Performance Results"
     @close="closeHelp2"/>
   </Teleport>
