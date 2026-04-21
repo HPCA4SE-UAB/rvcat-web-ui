@@ -246,6 +246,7 @@
         if (typeof isInvalid !== 'undefined') isInvalid.value = false;
       }
       updateResults()
+      updateShowResults()
       saveOptions()
     } catch (error) {
       console.error('🕐❌ Error in options watch handler:', error);
@@ -525,7 +526,7 @@
     try {
       if (newName === ADD_NEW_OPTION)
         return uploadResults(oldName)
-        saveOptions()
+      saveOptions()
     } catch (error) {
       console.error('🕐❌ Failed when changing result name:', error)
     }
@@ -573,12 +574,18 @@
       const res = localStorage.getItem('simResults');
       if (res) {
         const data = JSON.parse(res);
-        // to do: if the name already exists, add a suffix like "current (copy)" or "current (2)"
-        localStorage.setItem('results.current', JSON.stringify(data));
-        simulationOptions.availableResults.push('current')
-        simulationOptions.resultName = 'current'
+        let   baseName = 'current';
+        let   name = baseName;
+        let   counter = 1;
+        while (simulationOptions.availableResults.includes(name)) {
+          name = `${baseName} (${counter})`;
+          counter++;
+        }
+        localStorage.setItem(`results.${name}`, JSON.stringify(data));
+        simulationOptions.availableResults.push(name)
+        simulationOptions.resultName = name
         updateShowResults()
-        console.log(`✅ Copied results to "current"`);
+        console.log(`✅ Copied results to ${name}`);
         return
       }
       console.log(`✅ Cannot copy, since there are no results to copy`);
