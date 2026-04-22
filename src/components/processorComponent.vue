@@ -952,7 +952,7 @@
 
   function startHold(action) {
     const INITIAL_DELAY   = 400;   // tiempo hasta que empieza la repetición
-    const REPEAT_INTERVAL = 150; // velocidad de repetición
+    const REPEAT_INTERVAL = 100;   // velocidad de repetición
 
     action()    // first click
 
@@ -1008,7 +1008,7 @@
             title="Edit current processor on full-screen">
           📝
           </button>
--->
+--->
           <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
