@@ -42,7 +42,7 @@ const { importRVCAT }               = useRVCAT_Api();
       }
     }
     localStorage.clear()
-    alert('💻 New version of RVCAT has been released (V1.04)')
+    alert(`💻 New version of RVCAT has been released (V${rvcatOptions.version})`)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
   }
 
