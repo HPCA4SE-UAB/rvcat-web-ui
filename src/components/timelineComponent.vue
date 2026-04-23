@@ -706,10 +706,6 @@
 </template>
 
 <style scoped>
-  .tooltip-text {
-    white-space: pre-line;
-  }
-
   .output-block-wrapper {
     overflow:        auto;
     width:           100%;
@@ -752,7 +748,7 @@
     width:      max-content;
     max-width:  250px;       /* avoids tooltips too wide */
     text-align: center;
-
+    white-space: pre-line;   /* interpret character \n */
     background:     #f9f9f9;
     border:         1px solid #ccc;
     border-radius:  4px;
