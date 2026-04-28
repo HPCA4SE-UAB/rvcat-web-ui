@@ -468,7 +468,7 @@ nav ul li {
 .grid-item.processor.fullscreen,
 .grid-item.program.fullscreen  {
   padding:       0px;
-  max-height: 1400px;
+  max-height: 2400px;
   margin:     0 auto;
 }
 
