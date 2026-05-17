@@ -82,7 +82,8 @@
       "source1": "c",
       "source2": "",
       "source3": "",
-      "constant": ""
+      "constant": "",
+      "stride": 1
     }
   ]
 }

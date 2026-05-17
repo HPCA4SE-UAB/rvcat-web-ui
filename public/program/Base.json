@@ -58,7 +58,8 @@
       "source1": "i",
       "source2": "",
       "source3": "",
-      "constant": "1"
+      "constant": "1",
+      "stride": 1
     },
     {
       "text": "c = i != N",
@@ -69,7 +70,8 @@
       "source1": "i",
       "source2": "N",
       "source3": "",
-      "constant": ""
+      "constant": "",
+      "stride": 1
     },
     {
       "text": "if c go back",
@@ -80,7 +82,8 @@
       "source1": "c",
       "source2": "",
       "source3": "",
-      "constant": ""
+      "constant": "",
+      "stride": 1
     }
   ]
 }
