@@ -11,7 +11,7 @@
       "source2": "V",
       "source3": "",
       "constant": "",
-      "stride": 1,
+      "stride": 2,
       "lanes": 1
     },
     {
@@ -35,7 +35,7 @@
       "source2": "W",
       "source3": "",
       "constant": "",
-      "stride": 1,
+      "stride": 2,
       "lanes": 1
     },
     {
@@ -59,7 +59,7 @@
       "source2": "V",
       "source3": "",
       "constant": "1",
-      "stride": 1,
+      "stride": 2,
       "lanes": 1
     },
     {
@@ -83,7 +83,7 @@
       "source2": "W",
       "source3": "",
       "constant": "1",
-      "stride": 1,
+      "stride": 2,
       "lanes": 1
     },
     {
