@@ -368,14 +368,48 @@
 
   const formattedResults = computed(() => {
     const results = simState.executionResults || {};
+    if (results.total_iterations === undefined || results.total_iterations === null) {
+      return {
+        iters:    'X',    instructions: 'X',    cycles:   'X',    cpi:      'X',
+        ipc:      'X',    loads:        'X',    stores:   'X',    MM:       'X'
+      };
+    }
+
+    const nIters      = results["total_iterations"]
+    const totalCycles = results["total_cycles"]
+    const totalInstrs = results["total_instructions"]
+    const cpi         = totalCycles / nIters;
+    const ipc         = totalInstrs / totalCycles
+    const read_misses = results["read_misses"]
+    const write_misses= results["write_misses"]
+    const MM_reads    = results["MM_Reads"]
+    const MM_writes   = results["MM_Writes"]
+
+    let rdMiss;
+    const formateado = read_misses.toLocaleString();
+    const relacion = (read_misses / nIters).toFixed(2);
+    rdMiss = `${formateado} (${relacion})`;
+
+    let wrMiss;
+    const formateado2 = write_misses.toLocaleString();
+    const relacion2 = (write_misses / nIters).toFixed(2);
+    wrMiss = `${formateado2} (${relacion2})`;
+
+    let MM_usage;
+    const format1 = MM_reads.toLocaleString();
+    const format2 = MM_writes.toLocaleString();
+    const percentage = ((MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles).toFixed(2);
+    MM_usage = `${format1}+${format2} (${percentage})`;
 
     return {
-      iters:        results["total_iterations"]?.toLocaleString() ?? 'X',
-      instructions: results["total_instructions"]?.toLocaleString() ?? 'X',
-      cycles:       results["total_cycles"]?.toLocaleString() ?? 'X',
-      cpi:          results["cycles_per_iteration"]?.toFixed(2) ?? 'X',
-      ipc:          results["ipc"]?.toFixed(3) ?? 'X',
-      loads:        results["total_loads"]?.toLocaleString() ?? 'X'
+      iters:        nIters.toLocaleString(),
+      instructions: totalInstrs.toLocaleString(),
+      cycles:       totalCycles.toLocaleString(),
+      cpi:          cpi.toFixed(2),
+      ipc:          ipc.toFixed(3),
+      loads:        rdMiss,
+      stores:       wrMiss,
+      MM:           MM_usage
     };
   });
 
@@ -872,8 +906,16 @@
           </span>
         </div>
         <div class="simulation-inline-item">
-          <label for="Loads">Loads:</label>
-          <span id="Loads-output" title="Total executed LOADs">{{ formattedResults.loads }}</span>
+          <label for="RdMiss">RdMisses:</label>
+          <span id="RdMiss-output" title="Total Cache Read Misses">{{ formattedResults.loads }}</span>
+        </div>
+        <div class="simulation-inline-item">
+          <label for="WrMiss">WrMisses:</label>
+          <span id="WrMiss-output" title="Total Cache Write Misses">{{ formattedResults.stores }}</span>
+        </div>
+        <div class="simulation-inline-item">
+          <label for="MM">MM usage:</label>
+          <span id="MM-output" title="MM accesses (Read+Write) & BW usage">{{ formattedResults.MM }}</span>
         </div>
       </div>
     </div>

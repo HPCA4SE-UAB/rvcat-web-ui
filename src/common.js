@@ -21,18 +21,27 @@ export const typeSizes = {
     'BRANCH': []
   };
 
-export function charToProcessingState(ch, port) {
+export function charToProcessingState(ch, port, addr) {
   if (port != null) {
-    return `starting Execution on port P${port}`
+    if (ch === "L")
+      return `Load from address ${addr}, port P${port}`
+    else if (ch === "S")
+      return `Store to address ${addr}, port P${port}`
+    else
+      return `Execution issued to port P${port}`
   }
   switch (ch) {
     case "E": return "Execution continues on pipeline";
+    case "L": return "Load operation running";
+    case "S": return "Store operation running";
     case "R": return "Retire: write to architected register";
     case "D": return "Dispatch: enter execution engine";
     case "-": return "Waiting for older instructions to retire ";
     case "W": return "Write back result on ROB";
     case ".": return "Waiting due to data dependencies";
     case "*": return "Waiting due to port collision";
+    case "#": return "Main Memory read request (miss)";
+    case "$": return "Main Memory write request (replace)";
     case "!": return "Cache miss";
     case "2": return "Secondary cache miss";
     default:  return null;

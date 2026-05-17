@@ -156,8 +156,12 @@
 
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states]] of timeline.instructions.entries()) {
       const eIndex = states.indexOf("E");
-      if (eIndex < 0) alert("Timeline problem: all instructions must traverse an E state");
-      const cycle = startCycle + eIndex;
+      const lIndex = states.indexOf("L");
+      const sIndex = states.indexOf("S");
+
+      const Index = eIndex >= 0 ? eIndex : (lIndex >= 0 ? lIndex : sIndex);
+      if (Index < 0) alert("Timeline problem: all instructions must traverse an E/L/S state");
+      const cycle = startCycle + Index;
 
       // Verificar que cycle esté dentro del rango
       if (cycle >= 0 && cycle < timeline.cycles) {
@@ -418,7 +422,7 @@
     // ************************************************************************************
     //   for each inst. & for each cycle, write cell into canvas and push interactive cells
     // ************************************************************************************
-    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles]] of instructions.entries())
+    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles, addr]] of instructions.entries())
     {
       if (rowIdx >= totalInstr) return
 
@@ -440,7 +444,9 @@
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
           let critical         = critical_cycles.includes(i - startCycle)
-          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E')
+          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E') ||
+                                 (ch == 'L' && states[i-startCycle-1] != 'L') ||
+                                 (ch == 'S' && states[i-startCycle-1] != 'S')
 
           if (critical) currColor = "red"
 
@@ -456,7 +462,8 @@
             first_exec_stage,
             port,
             instrIdx,
-            portsUsed: portsUsedList[i]
+            portsUsed: portsUsedList[i],
+            addr
           })
         }
 
@@ -545,7 +552,8 @@
     }
 
     const { rowIdx: row, colIdx: col, initCol, lengthCol, initRow, lengthRow,
-            char, port, first_exec_stage, critical, sequenceOfPorts, instrIdx, portsUsed } = hitCell
+            char, port, first_exec_stage, critical, sequenceOfPorts,
+            instrIdx, portsUsed, addr } = hitCell
 
     if (row === -1) {
       simState.highlightedPort = -1
@@ -575,7 +583,7 @@
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        state:    charToProcessingState(char, first_exec_stage ? port : null),
+        state:    charToProcessingState(char, first_exec_stage ? port : null, addr),
         critical: critical
       }
       adjustTooltipPosition(e)
@@ -688,7 +696,7 @@
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
             {{ hoverInfo.state }}
-            <span v-if="hoverInfo.critical"> (in Critical Path)</span>
+            <span v-if="hoverInfo.critical">(in Critical Path)</span>
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 {
-  "name": "Base",
+  "name": "BaseSIMD",
   "instruction_list": [
     {
-      "text": "tmp = V[i]",
-      "type": "MEM",
+      "text": "tmp[0:3] = V[i:i+3]",
+      "type": "VMEM",
       "oper": "LOAD",
       "size": "word",
       "destin": "tmp",
@@ -12,22 +12,23 @@
       "source3": "",
       "constant": "",
       "stride": 1,
-      "lanes": 1
+      "lanes": 4
     },
     {
-      "text": "sum = sum + tmp",
-      "type": "FLOAT",
+      "text": "sum[0:3] = sum[0:3] + tmp[0:3]",
+      "type": "VFLOAT",
       "oper": "ADD",
       "size": "single",
       "destin": "sum",
       "source1": "sum",
       "source2": "tmp",
       "source3": "",
-      "constant": ""
+      "constant": "",
+      "lanes": 4
     },
     {
-      "text": "tmp = W[i]",
-      "type": "MEM",
+      "text": "tmp[0:3] = W[i:i+3]",
+      "type": "VMEM",
       "oper": "LOAD",
       "size": "word",
       "destin": "tmp",
@@ -36,21 +37,22 @@
       "source3": "",
       "constant": "",
       "stride": 1,
-      "lanes": 1
+      "lanes": 4
     },
     {
-      "text": "sum = sum + tmp",
-      "type": "FLOAT",
+      "text": "sum[0:3] = sum[0:3] + tmp[0:3]",
+      "type": "VFLOAT",
       "oper": "ADD",
       "size": "single",
       "destin": "sum",
       "source1": "sum",
       "source2": "tmp",
       "source3": "",
-      "constant": ""
+      "constant": "",
+      "lanes": 4
     },
     {
-      "text": "i = i + 1",
+      "text": "i = i + 4",
       "type": "INT",
       "oper": "ARITH",
       "size": "word",
@@ -58,7 +60,7 @@
       "source1": "i",
       "source2": "",
       "source3": "",
-      "constant": "1"
+      "constant": "4"
     },
     {
       "text": "c = i != N",

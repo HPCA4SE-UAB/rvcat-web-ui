@@ -8,9 +8,11 @@
       "size": "word",
       "destin": "tmp",
       "source1": "i",
-      "source2": "",
+      "source2": "V",
       "source3": "",
-      "constant": "V"
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
     },
     {
       "text": "sum = sum + tmp",
@@ -30,9 +32,11 @@
       "size": "word",
       "destin": "tmp",
       "source1": "i",
-      "source2": "",
+      "source2": "W",
       "source3": "",
-      "constant": "W"
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
     },
     {
       "text": "sum = sum + tmp",
@@ -52,9 +56,11 @@
       "size": "word",
       "destin": "tmp",
       "source1": "i",
-      "source2": "",
+      "source2": "V",
       "source3": "",
-      "constant": "V+1"
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
     },
     {
       "text": "sum = sum + tmp",
@@ -74,9 +80,11 @@
       "size": "word",
       "destin": "tmp",
       "source1": "i",
-      "source2": "",
+      "source2": "W",
       "source3": "",
-      "constant": "W+1"
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
     },
     {
       "text": "sum = sum + tmp",
