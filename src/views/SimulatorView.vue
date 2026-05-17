@@ -25,7 +25,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.06",
+    version: "1.07",
     year:    2026
   }
 
