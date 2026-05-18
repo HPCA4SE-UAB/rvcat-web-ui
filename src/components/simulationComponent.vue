@@ -398,8 +398,8 @@
     let MM_usage;
     const format1 = MM_reads.toLocaleString();
     const format2 = MM_writes.toLocaleString();
-    const percentage = ((MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles).toFixed(2);
-    MM_usage = `${format1}+${format2} (${percentage})`;
+    const percentage = (100 * (MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles).toFixed(1);
+    MM_usage = `${format1}+${format2} (${percentage}%)`;
 
     return {
       iters:        nIters.toLocaleString(),
@@ -907,15 +907,15 @@
         </div>
         <div class="simulation-inline-item">
           <label for="RdMiss">RdMisses:</label>
-          <span id="RdMiss-output" title="Total Cache Read Misses">{{ formattedResults.loads }}</span>
+          <span id="RdMiss-output" title="Total Cache Read Misses (Misses per Iteration)">{{ formattedResults.loads }}</span>
         </div>
         <div class="simulation-inline-item">
           <label for="WrMiss">WrMisses:</label>
-          <span id="WrMiss-output" title="Total Cache Write Misses">{{ formattedResults.stores }}</span>
+          <span id="WrMiss-output" title="Total Cache Write Misses (Misses per Iteration)">{{ formattedResults.stores }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="MM">MM usage:</label>
-          <span id="MM-output" title="MM accesses (Read+Write) & BW usage">{{ formattedResults.MM }}</span>
+          <label for="MM">MM:</label>
+          <span id="MM-output" title="MM accesses (Read+Write) & BW usage (%)">{{ formattedResults.MM }}</span>
         </div>
       </div>
     </div>

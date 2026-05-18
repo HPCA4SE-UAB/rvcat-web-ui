@@ -40,10 +40,11 @@ export function charToProcessingState(ch, port, addr) {
     case "W": return "Write back result on ROB";
     case ".": return "Waiting due to data dependencies";
     case "*": return "Waiting due to port collision";
-    case "#": return "Main Memory read request (miss)";
-    case "$": return "Main Memory write request (replace)";
-    case "!": return "Cache miss";
+    case "#": return "Main Memory receiving request";
+    case ":": return "Waiting for data block from MM";
+    case "!": return "Cache miss: waiting to send MM read request";
     case "2": return "Secondary cache miss";
+    case "U": return "Cache block Update: send write request to MM";
     default:  return null;
   }
 }
