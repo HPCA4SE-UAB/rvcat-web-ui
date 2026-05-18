@@ -984,7 +984,7 @@
 </script>
 
 <template>
-  <div class="main">
+  <div>
     <div v-if="!isFullscreen">
       <div class="header">
         <div class="section-title-and-info">

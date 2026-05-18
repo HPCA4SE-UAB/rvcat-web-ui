@@ -33,8 +33,8 @@
   .main {
     height:   100%;
     width:    100%;
-    overflow: hidden;
-    padding:  2px 2px;
+    overflow: auto;
+    padding:  1px;
     z-index:  10;
     position: relative;
     background:    white;

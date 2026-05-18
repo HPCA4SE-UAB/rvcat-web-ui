@@ -583,7 +583,7 @@ function snapshotMemory() {
 </script>
 
 <template>
-  <div class="main">
+  <div>
 
     <div v-if="!isFullscreen" class="header">
       <div class="section-title-and-info">
