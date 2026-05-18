@@ -66,6 +66,8 @@
   }
 
   const activeField = ref("rob");
+  let cacheConfigOptions = ["cache_nBlk", "cache_BlkSz", "cache_mPenalty", "cache_mIssueTime"]
+  let currentCacheOption = 0
 
   const FIELD_CONFIG = {
     rob: {
@@ -81,6 +83,34 @@
       min: 1,
       max: 9,
       model: "dispatch"
+    },
+    cache_nBlk: {
+      label: "nBlocks:",
+      title: "Number of Cache blocks (0 to 32)",
+      min: 0,
+      max: 32,
+      model: "nBlocks"
+    },
+    cache_BlkSz: {
+      label: "BlkSize:",
+      title: "Cache block size (1 to 128 bytes)",
+      min: 1,
+      max: 128,
+      model: "blkSize"
+    },
+    cache_mPenalty: {
+      label: "missPenalty:",
+      title: "Cache Miss penalty (cycles added to memory operations when cache miss, 1 to 99)",
+      min: 1,
+      max: 99,
+      model: "mPenalty"
+    },
+    cache_mIssueTime: {
+      label: "mIssueTime:",
+      title: "Memory Issue Time (minimum time between memory accesses, 1 to 99)",
+      min: 1,
+      max: 99,
+      model: "mIssueTime"
     },
     retire: {
       label: "Retire:",
@@ -461,6 +491,10 @@
     const sched    = process.sched
     const dispatch = process.dispatch || 1
     const retire   = process.retire || 1
+    const CachePenalty   = process.mPenalty || 1
+    const CacheIssueTime = process.mIssueTime || 1
+    const CacheBlocks    = process.nBlocks || 0
+    const CacheBlockSize = process.blkSize || 32
 
     function type_color(type) {
       if (type === "INT")    return "#d6e4ff"
@@ -596,6 +630,18 @@
       op_rows += "</TR>"
     }
 
+    let cache_row = ""
+    // ---- Cache configuration ----
+    if (CacheBlocks > 0) {
+      cache_row = `<TR>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}</FONT></TD>
+      </TR>`
+    } else {
+      cache_row = `<TR>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;No cache</FONT></TD>
+      </TR>`
+    }
+
     // ---- Retire ----
     let reg_row = `<TR>
       <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Edit retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
@@ -611,6 +657,7 @@
               ${wb_row}
               ${port_header}
               ${op_rows}
+              ${cache_row}
               ${reg_row}
             </TABLE>
           >
@@ -656,6 +703,11 @@
               case 'port':
                 const port = g.id.slice(2)
                 console.log('Port clicked:', port)
+                break
+
+              case 'cache':
+                currentCacheOption = (currentCacheOption + 1) % cacheConfigOptions.length;
+                activeField.value  = cacheConfigOptions[currentCacheOption];
                 break
 
               case 'op':
@@ -1002,13 +1054,11 @@
             </option>
             <option value="_add_new_">Add new</option>
           </select>
-<!--
           <button class="blue-button small-btn" @click="editProcessor"
             id="edit-processor-button"
             title="Edit current processor on full-screen">
           📝
           </button>
---->
           <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
