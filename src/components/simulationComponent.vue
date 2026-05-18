@@ -547,8 +547,8 @@
         document.getElementById('run-simulation-button').disabled       = true;
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
-        const { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blksize, nBlocks, mPenalty, mIssueTime,
+        const { ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
+        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
                                               instruction_list: toRaw(instruction_list)}, null, 2),
                             simulationOptions.iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')
