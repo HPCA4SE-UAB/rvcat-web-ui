@@ -815,8 +815,8 @@
       <div class="section-title-and-info">
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="header-title">Simulate Execution of {{ simState.programName }} on {{ simState.processorName }}</span>
+        </span>        <span class="header-title">Simulate Execution of {{ simState.programName }} on {{ simState.processorName }}</span>
+
       </div>
       <div class="iters-run">
         <button class="blue-button" @click="reloadExecutionResults"

@@ -1054,11 +1054,13 @@
             </option>
             <option value="_add_new_">Add new</option>
           </select>
+          <!--
           <button class="blue-button small-btn" @click="editProcessor"
             id="edit-processor-button"
             title="Edit current processor on full-screen">
           📝
           </button>
+          -->
           <button class="blue-button small-btn" @click="removeProcessor"
             id="remove-processor-button"
             title="Remove processor configuration from list (and local storage)">
