@@ -304,9 +304,10 @@ function loadEditedMemory() {
 
   function removeProgram () {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
-    if ( programOptions.availablePrograms.length > 0)
+    if ( programOptions.availablePrograms.length > 0) {
       programOptions.currentProgram = programOptions.availablePrograms[0]
       simState.programName = programOptions.currentProgram;  // fire other components
+    }
     else {
       programOptions.currentProgram = ''
       alert("Removing all programs forces to load the original programs provided in the distribution")
