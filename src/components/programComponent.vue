@@ -267,10 +267,10 @@ function loadEditedMemory() {
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
+      simState.programName  = programOptions.currentProgram;  // fire other components
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
       Object.assign(simState.simulatedProcess, data)
-      simState.programName  = programOptions.currentProgram;  // fire other components
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
         console.log('📄✅ Initialization step (3): program loaded')
@@ -306,6 +306,7 @@ function loadEditedMemory() {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
     if ( programOptions.availablePrograms.length > 0)
       programOptions.currentProgram = programOptions.availablePrograms[0]
+      simState.programName = programOptions.currentProgram;  // fire other components
     else {
       programOptions.currentProgram = ''
       alert("Removing all programs forces to load the original programs provided in the distribution")
@@ -524,6 +525,7 @@ function snapshotMemory() {
         // TODO: Check here if it is a valid program
         saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
+        simState.programName  = programOptions.currentProgram;  // fire other components
         Object.assign(simState.simulatedProcess, data)
         return
       }
