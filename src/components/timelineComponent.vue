@@ -575,7 +575,7 @@
 
       if (simState.instrHighlightedIdx !== instrIdx)
         simState.instrHighlightedIdx = instrIdx
-      if (char !== 'E')
+      if (char !== 'E' && char !== 'L' && char !== 'S')
         simState.highlightedPort = -1
       else if (simState.highlightedPort !== port)
         simState.highlightedPort = port
