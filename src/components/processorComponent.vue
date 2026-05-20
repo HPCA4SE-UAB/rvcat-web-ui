@@ -591,7 +591,7 @@
     for (let p of port_ids) {
       const isHighlighted = (p === highlight)
       const style = isHighlighted
-        ? ' BGCOLOR="#ffcccc" BORDER="3" COLOR="red"'
+        ? ' BGCOLOR="#ffcccc" BORDER="1" COLOR="red"'
         : ' BGCOLOR="#f5f5f5"'
 
       port_header += `<TD ${style} HREF="#" ID="port:${p}" TITLE="Select port ${p}"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
@@ -609,7 +609,7 @@
       for (let p of port_ids) {
         const isHighlighted = (p === highlight)
         const highlightAttr = isHighlighted
-          ? ' BORDER="3" COLOR="red"'
+          ? ' BORDER="1" COLOR="red"'
           : ''
 
         const op = port_ops[p][i]
