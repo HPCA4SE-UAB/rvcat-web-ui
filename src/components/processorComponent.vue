@@ -297,7 +297,6 @@
 
   watch( () => ({ state: simState.state,
       processorName:     simState.processorName,
-      programName:       simState.programName,
       simulatedProcess:  simState.simulatedProcess
     }),
     saveSimState,
@@ -389,8 +388,9 @@
         console.log('💻✅ Initialization step (2): processor configuration loaded')
         drawEditedProcessor()
       }
+      data.name = simState.simulatedProcess.name || 'unknown'
       Object.assign(simState.simulatedProcess, data)
-      simState.processorName= processorOptions.processorName;
+      simState.processorName= processorOptions.processorName
       drawProcessor()
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
@@ -459,7 +459,7 @@
 
   const drawProcessor = async () => {
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess, simState.highlightedPort, simState.executionResults)
+      const dotCode      = get_processor_dot (simState.simulatedProcess, simState.highlightedPort)
       // console.log('💻🔄Redrawing simulated processor', dotCode);
       const svg          = await createGraphVizGraph(dotCode);
       // console.log('💻🔄Redrawing SVG', svg);
@@ -961,9 +961,10 @@
           return
         }
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-        Object.assign(simState.simulatedProcess, data)
         simState.processorName = data.name
         processorOptions.processorName = data.name
+        data.name = simState.simulatedProcess.name || 'unknown'
+        Object.assign(simState.simulatedProcess, data)
         return
       }
     } catch (error) {

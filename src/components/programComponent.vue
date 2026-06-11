@@ -223,7 +223,6 @@ function loadEditedMemory() {
       if (simState.state > 2) {
         console.log('📄🔄 Refreshing program latencies & ports on simulated process');
         updateProcess(simState.simulatedProcess) // recompute instruction latencies & ports
-        simState.programName = programOptions.currentProgram
       }
     },
     { deep: true, immediate: false }
@@ -267,7 +266,6 @@ function loadEditedMemory() {
   const reloadProgram = async () => {
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
-      simState.programName  = programOptions.currentProgram;  // fire other components
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
       Object.assign(simState.simulatedProcess, data)
@@ -304,10 +302,8 @@ function loadEditedMemory() {
 
   function removeProgram () {
     removeFromLocalStorage('program', programOptions.currentProgram, programOptions.availablePrograms)
-    if ( programOptions.availablePrograms.length > 0) {
+    if ( programOptions.availablePrograms.length > 0)
       programOptions.currentProgram = programOptions.availablePrograms[0]
-      simState.programName = programOptions.currentProgram;  // fire other components
-    }
     else {
       programOptions.currentProgram = ''
       alert("Removing all programs forces to load the original programs provided in the distribution")
@@ -526,7 +522,6 @@ function snapshotMemory() {
         // TODO: Check here if it is a valid program
         saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
-        simState.programName  = programOptions.currentProgram;  // fire other components
         Object.assign(simState.simulatedProcess, data)
         return
       }
@@ -597,7 +592,7 @@ function snapshotMemory() {
       <div class="settings-container">
         <button class="blue-button" :class="{ active: programOptions.showLat }"
             title="Toggle between showing latency & Ports / Instruction type"
-            id="show-latPorts-operands"
+            id="show-latports-operands"
           @click="toggleLatency">
           <span v-if="programOptions.showLat">✔ </span>
           latency
@@ -610,13 +605,13 @@ function snapshotMemory() {
           </option>
            <option value="_add_new_">Add new</option>
         </select>
-	<!--
+        <!--
         <button class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
             title="Edit current program on full-screen editor">
           📝
         </button>
-	-->
+        -->
         <button class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
             title="Remove program from list (and local storage)">

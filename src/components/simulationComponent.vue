@@ -54,6 +54,10 @@
     }
   }
 
+  const displayText = computed(() => {
+    return `Simulate Execution of ${simState.simulatedProcess.name} on ${simState.processorName}`
+  })
+
 /* ------------------------------------------------------------------
   * Simulation Results (persistent in localStorage)
   * ------------------------------------------------------------------ */
@@ -364,7 +368,7 @@
   * Simulation options: UI actions
   * ------------------------------------------------------------------ */
 
-  function toggleAutorun()  { simulationOptions.autorun      = !simulationOptions.autorun }
+  function toggleAutorun()  { simulationOptions.autorun = !simulationOptions.autorun }
 
   const formattedResults = computed(() => {
     const results = simState.executionResults || {};
@@ -486,7 +490,6 @@
     if (step > 1) newValue = roundToStep(newValue, step, 'down')
     simulationOptions.iters = Math.max(newValue, 1)
   }
-
 
   const ipcColor = computed(() => {
     const ipc = simState.executionResults?.["ipc"] ?? 0
@@ -815,8 +818,8 @@
       <div class="section-title-and-info">
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
            <img src="/img/info.png" class="info-img">
-        </span>        <span class="header-title">Simulate Execution of {{ simState.programName }} on {{ simState.processorName }}</span>
-
+        </span>
+        <span class="header-title">{{displayText}}</span>
       </div>
       <div class="iters-run">
         <button class="blue-button" @click="reloadExecutionResults"
