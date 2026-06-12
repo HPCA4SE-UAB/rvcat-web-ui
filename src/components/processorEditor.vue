@@ -718,8 +718,14 @@
     <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths.
        They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
-      <p>They may impose a throughput-bound performace limit.</p>"
-    title="Dispatch/Retire Width Settings"
+       They may impose a throughput-bound performace limit.
+       <p>Modify the <strong>ROB</strong> (ReOrder Buffer) size, which indicates the maximum number of instructions simultaenously on the <strong>Execution Engine</strong>.
+      This parameter limits the maximum instruction-level parallelism that can be exploited by the processor,
+      and may impose a (<strong><em>dependence-bound</em></strong>) performance limit.</p>
+      <p>The policy of the instruction scheduler may be set to <em>greedy</em> or <em>optimal</em>.
+        A greedy scheduler always issues ready instructions in program order.
+        An optimal scheduler always issues the best combination of ready instructions to maximize performance.</p>"
+    title="Dispatch/Retire Width & ROB Settings. Instruction Scheduler Policy"
     @close="closeHelp2"/>
 
     <HelpComponent v-if="showHelp3" :position="helpPosition"

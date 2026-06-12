@@ -588,7 +588,7 @@
            The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
            The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
            It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).</p>
-        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instructionscheduler
+        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instruction scheduler
           (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
           (which always issues the best combination of ready instructions to maximize performance).</p>
         <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports
