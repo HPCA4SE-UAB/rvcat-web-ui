@@ -171,7 +171,7 @@ onUnmounted(() => {
        <h1>RVCAT-WEB</h1>
        <nav>
         <ul>
-	  <!--
+	        <!--
           <li>
             <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
                id="processor-button"
@@ -207,7 +207,15 @@ onUnmounted(() => {
                 Simulation
             </button>
           </li>
-	  <!--
+          <li>
+            <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
+               id="timeline-button"
+               title="Detailed Timeline of Program's execution"
+               @click="onRequestSwitch('timelineComponent')" >
+                Timeline
+            </button>
+          </li>
+	        <!--
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
                id="analysis-button"
@@ -217,14 +225,6 @@ onUnmounted(() => {
             </button>
           </li>
           -->
-          <li>
-            <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
-               id="timeline-button"
-               title="Detailed Timeline of Program's execution"
-               @click="onRequestSwitch('timelineComponent')" >
-                Timeline
-            </button>
-          </li>
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
                id="about-button"
@@ -247,23 +247,15 @@ onUnmounted(() => {
 
     <main class="container" :class="containerClasses">
 
-      <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen"
-          id="process-panel"
-        >
+      <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen" id="process-panel">
         <processorComponent @requestSwitchFull="toggleFullScreen"/>
         <programComponent :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-if="checkOK" v-show="isProcessorFullscreen"
-          class="grid-item processor"
-          id="processor-panel"
-        >
+      <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processor-panel">
         <processorComponent :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
-      <div v-if="checkOK" v-show="isProgramFullscreen"
-        class="grid-item program"
-        id="program-panel"
-        >
+      <div v-if="checkOK" v-show="isProgramFullscreen" class="grid-item program" id="program-panel">
         <programComponent :is-fullscreen="isProgramFullscreen" :active-view="currentKey"
                           @requestSwitchFull="toggleFullScreen"
         />
@@ -273,22 +265,17 @@ onUnmounted(() => {
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
         >
-        <tutorialEditor :is-fullscreen="isTutorialFullscreen"  @requestSwitchFull="toggleFullScreen"/>
+        <tutorialEditor :is-fullscreen="isTutorialFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-if="checkOK" v-show= "isNotFullscreen"
-        class="grid-item results"
-        id="right-panel"
+      <div v-if="checkOK" v-show= "isNotFullscreen" class="grid-item results" id="right-panel"
         >
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst"/>
         <div v-else>Component not found</div>
       </div>
 
       <div v-if="checkOK">
-        <tutorialComponent
-          :activeView="currentKey"
-          :activeFull="currentFullKey"
-          id="tutorial-activation"
+        <tutorialComponent :activeView="currentKey" :activeFull="currentFullKey" id="tutorial-activation"
           @requestSwitchPanel="onRequestSwitch"
           @requestSwitchFull="toggleFullScreen"
         />
