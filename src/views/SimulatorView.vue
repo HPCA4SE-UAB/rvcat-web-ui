@@ -1,8 +1,10 @@
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, computed } from 'vue';
 
-import processorComponent      from '@/components/processorComponent.vue';
-import programComponent        from '@/components/programComponent.vue';
+import processor       from '@/components/processor.vue';
+import program         from '@/components/program.vue';
+import programEditor   from '@/components/programEditor.vue';
+import processorEditor from '@/components/processorEditor.vue';
 
 import tutorialComponent       from '@/components/tutorialComponent.vue';
 import tutorialEditor          from '@/components/tutorialEditor.vue';
@@ -51,10 +53,10 @@ const { importRVCAT }               = useRVCAT_Api();
 // ============================================================================
 // Map of component keys -> component definitions
 const components = {
+  simulationComponent,
   timelineComponent,
   staticAnalysisComponent,
-  aboutComponent,
-  simulationComponent
+  aboutComponent
 };
 
 // Navigation state
@@ -171,7 +173,6 @@ onUnmounted(() => {
        <h1>RVCAT-WEB</h1>
        <nav>
         <ul>
-	        <!--
           <li>
             <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
                id="processor-button"
@@ -198,7 +199,7 @@ onUnmounted(() => {
           </li>
 
           <li class="separator"></li>
-          -->
+
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
                id="simulation-button"
@@ -215,7 +216,6 @@ onUnmounted(() => {
                 Timeline
             </button>
           </li>
-	        <!--
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
                id="analysis-button"
@@ -224,7 +224,6 @@ onUnmounted(() => {
                 Static Analysis
             </button>
           </li>
-          -->
           <li>
             <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
                id="about-button"
@@ -248,34 +247,36 @@ onUnmounted(() => {
     <main class="container" :class="containerClasses">
 
       <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen" id="process-panel">
-        <processorComponent @requestSwitchFull="toggleFullScreen"/>
-        <programComponent :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
+        <processor :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
+        <program :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processor-panel">
-        <processorComponent :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
+      <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processorEditor-panel">
+        <processorEditor :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
       </div>
-      <div v-if="checkOK" v-show="isProgramFullscreen" class="grid-item program" id="program-panel">
-        <programComponent :is-fullscreen="isProgramFullscreen" :active-view="currentKey"
-                          @requestSwitchFull="toggleFullScreen"
-        />
+
+      <div v-if="checkOK" v-show="isProgramFullscreen"   class="grid-item program"   id="programEditor-panel">
+        <programEditor   :is-fullscreen="isProgramFullscreen"   @requestSwitchFull="toggleFullScreen"/>
       </div>
 
       <div v-if="checkOK" v-show="isTutorialFullscreen"
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
         >
-        <tutorialEditor :is-fullscreen="isTutorialFullscreen" @requestSwitchFull="toggleFullScreen"/>
+        <tutorialEditor :is-fullscreen="isTutorialFullscreen"  @requestSwitchFull="toggleFullScreen"/>
       </div>
 
-      <div v-if="checkOK" v-show= "isNotFullscreen" class="grid-item results" id="right-panel"
+      <div v-if="checkOK" v-show= "isNotFullscreen"
+        class="grid-item results"
+        id="right-panel"
         >
         <component :is="currentComponent" v-if="currentComponent" ref="settingsCompInst"/>
         <div v-else>Component not found</div>
       </div>
 
       <div v-if="checkOK">
-        <tutorialComponent :activeView="currentKey" :activeFull="currentFullKey" id="tutorial-activation"
+        <tutorialComponent :activeView="currentKey" :activeFull="currentFullKey"
+          id="tutorial-activation"
           @requestSwitchPanel="onRequestSwitch"
           @requestSwitchFull="toggleFullScreen"
         />
@@ -356,6 +357,7 @@ nav ul li {
 .program   { grid-column: 1; grid-row: 1; }
 .tutorial  { grid-column: 1; grid-row: 1; }
 .results   { grid-column: 2; grid-row: 1; min-width: 0;}
+.process   { grid-column: 1; grid-row: 1; min-width: 0;}
 
 .container.processor-fullscreen,
 .container.program-fullscreen,
@@ -424,9 +426,6 @@ nav ul li {
   border-radius: 0;
   border:        none;
   box-shadow:    0 0 10px rgba(0,0,0,0.3);
-  padding:       0px;
-  max-height: 2400px;
-  margin:     0 auto;
 }
 
 /* Ocultar otros componentes en pantalla completa */
@@ -440,6 +439,33 @@ nav ul li {
 .container.tutorial-fullscreen .grid-item.program,
 .container.tutorial-fullscreen .grid-item.results {
   display: none;
+}
+
+.grid-item.processor,
+.grid-item.program,
+.grid-item.tutorial {
+  padding:       0px;
+  max-height: 2400px;
+  margin:     0 auto;
+}
+
+.grid-item.processor::-webkit-scrollbar,
+.grid-item.program::-webkit-scrollbar,
+.grid-item.tutorial::-webkit-scrollbar {
+  width: 10px;
+}
+
+.grid-item.processor::-webkit-scrollbar-track,
+.grid-item.program::-webkit-scrollbar-track,
+.grid-item.tutorial::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.grid-item.processor::-webkit-scrollbar-thumb,
+.grid-item.program::-webkit-scrollbar-thumb,
+.grid-item.tutorial::-webkit-scrollbar-thumb {
+  background:    #888;
+  border-radius: 5px;
 }
 
 .blur-overlay {
@@ -479,25 +505,6 @@ nav ul li {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-.grid-item.processor::-webkit-scrollbar,
-.grid-item.program::-webkit-scrollbar,
-.grid-item.tutorial::-webkit-scrollbar {
-  width: 10px;
-}
-
-.grid-item.processor::-webkit-scrollbar-track,
-.grid-item.program::-webkit-scrollbar-track,
-.grid-item.tutorial::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.grid-item.processor::-webkit-scrollbar-thumb,
-.grid-item.program::-webkit-scrollbar-thumb,
-.grid-item.tutorial::-webkit-scrollbar-thumb {
-  background:    #888;
-  border-radius: 5px;
 }
 
 </style>

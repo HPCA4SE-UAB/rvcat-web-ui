@@ -6,9 +6,9 @@
   ],
   "program": [
     "BaseSIMD",
+    "Base",
     "V1",
-    "V2",
-    "Base"  
+    "V2"
   ],
    "tutorial": [
     "navigation-tour"

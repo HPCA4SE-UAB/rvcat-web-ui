@@ -426,3 +426,188 @@ export function fitSvgToContainer(svg, container) {
   svg.style.width  = svgWidth + "px"
   svg.style.height = svgHeight + "px"
 }
+
+export function get_processor_dot(process, highlightPort = -1) {
+
+    const ports    = process.ports
+    const lat      = process.latencies
+    const port_ids = Object.keys(ports)
+    const ROBsize  = process.ROBsize || 20
+    const sched    = process.sched
+    const dispatch = process.dispatch || 1
+    const retire   = process.retire || 1
+    const CachePenalty   = process.mPenalty || 1
+    const CacheIssueTime = process.mIssueTime || 1
+    const CacheBlocks    = process.nBlocks || 0
+    const CacheBlockSize = process.blkSize || 32
+
+    function type_color(type) {
+      if (type === "INT")    return "#d6e4ff"
+      if (type === "MEM")    return "#d6ffd6"
+      if (type === "FLOAT")  return "#fff2b3"
+      if (type === "VINT")   return "#e6e4ff"
+      if (type === "VMEM")   return "#e6ffd6"
+      if (type === "VFLOAT") return "#eff2b3"
+      if (type === "BRANCH") return "#ffd6d6"
+      return "#f0f0f0"
+    }
+
+    function op_type(op) {
+      return op.split(".")[0]
+    }
+
+    function latency_tooltip(op) {
+
+      const base = lat[op]
+
+      const variants = Object.keys(lat)
+        .filter(k => k.startsWith(op + "."))
+
+      if (variants.length === 0)
+        return base !== undefined ? `${op} latency: ${base}` : ""
+
+      let txt = `${op} latencies:\n`
+
+      if (base !== undefined)
+        txt += `base: ${base}\n`
+
+      for (let v of variants)
+        txt += `${v}: ${lat[v]}\n`
+
+      return txt
+    }
+
+    function compress_ops(ops) {
+      const grouped = {}
+      for (let op of ops) {
+        const [type, sub] = op.split(".")
+        if (!grouped[type]) grouped[type] = new Set()
+        if (sub) grouped[type].add(sub)
+      }
+
+      const result = []
+      for (let type in grouped) {
+        const all_ops = typeOperations[type] || []
+        if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
+          result.push({
+            label: type,
+            big: true
+          })
+        } else {
+          for (let sub of grouped[type]) {
+            result.push({
+              label: `${type}.${sub}`,
+              big: false
+            })
+          }
+        }
+      }
+      return result
+    }
+
+    const highlight = highlightPort !== null && highlightPort !== undefined
+      ? String(highlightPort)
+      : null
+
+    const port_ops = {}
+    for (let p of port_ids)
+      port_ops[p] = compress_ops(ports[p])
+
+    const total_rows = Math.max(...Object.values(port_ops).map(o => o.length))
+
+    // ---- Dispatch + ROB ----
+    let decode_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Edit dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Edit ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+    </TR>`
+
+    // ---- Waiting Buffer ----
+    let schedLabel = "❌optimal ✅greedy"
+    if (sched !== "greedy"){
+      schedLabel = "✅optimal ❌greedy"
+    }
+    let wb_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="sched" TITLE="Toggle scheduler"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${schedLabel}</B></FONT></TD>
+    </TR>`
+
+    // ---- Port headers ----
+    let port_header = "<TR>"
+
+    for (let p of port_ids) {
+      const isHighlighted = (p === highlight)
+      const style = isHighlighted
+        ? ' BGCOLOR="#ffcccc" BORDER="1" COLOR="red"'
+        : ' BGCOLOR="#f5f5f5"'
+
+      port_header += `<TD ${style} HREF="#" ID="port:${p}" TITLE="Select port ${p}"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+    }
+
+    port_header += "</TR>"
+
+    // ---- Operation rows ----
+    let op_rows = ""
+
+    for (let i = 0; i < total_rows; i++) {
+
+      op_rows += "<TR>"
+
+      for (let p of port_ids) {
+        const isHighlighted = (p === highlight)
+        const highlightAttr = isHighlighted
+          ? ' BORDER="1" COLOR="red"'
+          : ''
+
+        const op = port_ops[p][i]
+
+        if (!op) {
+          op_rows += `<TD ${highlightAttr}></TD>`
+          continue
+        }
+
+        const type    = op_type(op.label)
+        const color   = type_color(type)
+        const tooltip = latency_tooltip(op.label)
+
+        op_rows += `
+          <TD BGCOLOR="${color}" TITLE="${tooltip}" HREF="#" ID="op:${p}:${i}:${op.label}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${op.label}</B>` : op.label}</FONT></TD>`
+      }
+
+      op_rows += "</TR>"
+    }
+
+    let cache_row = ""
+    // ---- Cache configuration ----
+    if (CacheBlocks > 0) {
+      cache_row = `<TR>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}</FONT></TD>
+      </TR>`
+    } else {
+      cache_row = `<TR>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;No cache</FONT></TD>
+      </TR>`
+    }
+
+    // ---- Retire ----
+    let reg_row = `<TR>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Edit retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
+    </TR>`
+
+    const dot = `
+      digraph CPU {
+        node [shape=plain fontname="Arial" width=0 height=0 margin=0]
+        pipeline [
+          label=<
+            <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
+              ${decode_row}
+              ${wb_row}
+              ${port_header}
+              ${op_rows}
+              ${cache_row}
+              ${reg_row}
+            </TABLE>
+          >
+        ]
+      }`
+
+    return dot
+  }

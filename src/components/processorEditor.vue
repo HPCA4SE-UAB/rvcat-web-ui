@@ -1,8 +1,8 @@
 <script setup>
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
-  import { downloadJSON, uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-           createGraphVizGraph, instructionTypes, typeOperations, typeSizes                 } from '@/common'
+  import { downloadJSON, uploadJSON, createGraphVizGraph,
+           instructionTypes, typeOperations, typeSizes, get_processor_dot                   } from '@/common'
 
   const simState = inject('simulationState');
 
@@ -17,11 +17,9 @@
 // Processor options & localStorage
 // ============================================================================
 
-  const STORAGE_KEY = 'processorOptions'
+  const STORAGE_KEY = 'procEditOptions'
 
   const defaultOptions = {
-    processorName:       '',
-    availableProcessors: [],
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
     expandedOperations:  Object.fromEntries( instructionTypes.flatMap(type =>
                                                 typeOperations[type].map(op => [`${type}.${op}`, false])
@@ -29,14 +27,13 @@
                                             )
   }
 
-  const processorOptions = reactive(defaultOptions)
-  const simulatedSvg     = ref('')
+  const procEditOptions = reactive(defaultOptions)
 
   const loadOptions = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        Object.assign(processorOptions, JSON.parse(saved))
+        Object.assign(procEditOptions, JSON.parse(saved))
         console.log('💻load options')
       }
       else {
@@ -50,155 +47,11 @@
 
   const saveOptions = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(processorOptions))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(procEditOptions))
     } catch (error) {
       console.error('💻❌ Failed to save processor options:', error)
     }
   }
-
-  const saveSimState = () => {
-    try {
-      localStorage.setItem('SimulationState', JSON.stringify(simState))
-      console.log('🚀✅ SimulationState saved');
-    } catch (error) {
-      console.error('🚀❌ Failed to save SimulationState:', error)
-    }
-  }
-
-  const activeField = ref("rob");
-  let cacheConfigOptions = ["cache_nBlk", "cache_BlkSz", "cache_mPenalty", "cache_mIssueTime"]
-  let currentCacheOption = 0
-
-  const FIELD_CONFIG = {
-    rob: {
-      label: "ROB:",
-      title: "Number of ROB entries (1 to 200)",
-      min: 1,
-      max: 200,
-      model: "ROBsize"
-    },
-    dispatch: {
-      label: "Dispatch:",
-      title: "Dispatch width (1 to 9)",
-      min: 1,
-      max: 9,
-      model: "dispatch"
-    },
-    cache_nBlk: {
-      label: "nBlocks:",
-      title: "Number of Cache blocks (0 to 32)",
-      min: 0,
-      max: 32,
-      model: "nBlocks"
-    },
-    cache_BlkSz: {
-      label: "BlkSize:",
-      title: "Cache block size (1 to 128 bytes)",
-      min: 1,
-      max: 128,
-      model: "blkSize"
-    },
-    cache_mPenalty: {
-      label: "missPenalty:",
-      title: "Cache Miss penalty (cycles added to memory operations when cache miss, 1 to 99)",
-      min: 1,
-      max: 99,
-      model: "mPenalty"
-    },
-    cache_mIssueTime: {
-      label: "mIssueTime:",
-      title: "Memory Issue Time (minimum time between memory accesses, 1 to 99)",
-      min: 1,
-      max: 99,
-      model: "mIssueTime"
-    },
-    retire: {
-      label: "Retire:",
-      title: "Retire width (1 to 9)",
-      min: 1,
-      max: 9,
-      model: "retire"
-    }
-  };
-
-  const currentConfig = computed(() => FIELD_CONFIG[activeField.value]);
-
-  const inputValue   = ref('');
-  const isInvalid    = ref(false);
-  let   errorTimeout = null;
-
-  const validateField = () => {
-    const min = currentConfig.value.min;
-    const max = currentConfig.value.max;
-    let rawValue = inputValue.value;
-
-    if (errorTimeout) clearTimeout(errorTimeout);
-
-    if (rawValue === '' || rawValue === null || rawValue === undefined) {
-      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
-      inputValue.value = lastValidValue ?? min;
-      isInvalid.value = false;
-      return;
-    }
-
-    let numValue = Number(rawValue);
-
-    if (isNaN(numValue)) {
-      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
-      inputValue.value = lastValidValue ?? min;
-      isInvalid.value = false;
-      return;
-    }
-
-    if (numValue < min) {
-      numValue = min;
-      inputValue.value = numValue;
-      showTemporaryError(`El valor mínimo es ${min}`);
-    } else if (numValue > max) {
-      numValue = max;
-      inputValue.value = numValue;
-      showTemporaryError(`El valor máximo es ${max}`);
-    }
-
-    if (simState.simulatedProcess[currentConfig.value.model] !== numValue) {
-      simState.simulatedProcess[currentConfig.value.model] = numValue;
-    }
-  }
-
-  const showTemporaryError = (message) => {
-    isInvalid.value = true;
-    errorTimeout = setTimeout(() => {
-      isInvalid.value = false;
-    }, 2000);
-    console.warn(message);
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      event.target.blur();
-    }
-  };
-
-  const handleInput = (event) => {
-    if (isInvalid.value) {
-      isInvalid.value = false;
-    }
-    let value = event.target.value;
-    if (value !== '' && !/^\d*$/.test(value)) {
-      event.target.value = value.replace(/\D/g, '');
-      inputValue.value = event.target.value;
-    }
-  };
-
-  const labelHighlighted = ref(false);
-
-  const highlightLabel = () => {
-    labelHighlighted.value = true;
-
-    setTimeout(() => {
-      labelHighlighted.value = false;
-    }, 3000); // 3000ms
-  };
 
 
 // ============================================================================
@@ -251,30 +104,10 @@
   };
 
 // ============================================================================
-// WATCHES: processor, globalState
+// WATCHES
 // ============================================================================
-  const ADD_NEW_OPTION = '_add_new_'
 
-  watch( () => processorOptions.processorName, (newName, oldName) => {
-    try {
-      if (newName === ADD_NEW_OPTION)
-        return uploadProcessor(oldName)
-
-      saveOptions()
-
-      if (simState.state > 1) {  // Processor already initialized
-         if (newName !== simState.processorName) {
-           console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
-           reloadProcessor()
-         }
-      }
-    } catch (error) {
-      console.error('💻❌ Failed when changing processor name:', error)
-    }
-  })
-
-  watch( [ () => processorOptions.availableProcessors, () => processorOptions.expandedTypes,
-    () => processorOptions.expandedOperations], () => {
+  watch( [ () => procEditOptions.expandedTypes, () => procEditOptions.expandedOperations], () => {
     try {
       saveOptions()
     } catch (error) {
@@ -295,61 +128,15 @@
   },
   { deep: true, immediate: true })
 
-  watch( () => ({ state: simState.state,
-      processorName:     simState.processorName,
-      simulatedProcess:  simState.simulatedProcess
-    }),
-    saveSimState,
-    { deep: true }
-  )
-
-  watch( () => simState.state, (newValue, oldValue) => {
-      if (newValue === 1 && oldValue !== 1) {
-        console.log('💻✅ Initialization Step (1): RVCAT imported')
-        initProcessor()
-      }
-    }
-  )
-
-  watch( () => simState.highlightedPort, (newValue, oldValue) => {
-      if (newValue !== oldValue)
-        drawProcessor()
-    }
-  )
-
   watchEffect(() => { // Dependences: re-evaluated when they change
-    const svg        = simulatedSvg.value;
     const fullscreen = props.isFullscreen;
 
-    if (svg) { // available SVG
+    if (fullscreen) { // maybe edited program has changed
       nextTick(() => {
-        addClickListenersToSvg()
+        loadEditedProcessor();
       })
     }
   })
-
-  watch(() => currentConfig.value?.label, (newLabel, oldLabel) => {
-    if (newLabel && newLabel !== oldLabel) {
-      highlightLabel()
-    }
-  })
-
-  watch(() => simState.simulatedProcess, () => {
-    if (simState.state > 1) {
-      drawProcessor()
-    }
-  },
-  { deep: true, immediate: true })
-
-  watch(() => simState.simulatedProcess[currentConfig.value.model],
-    (newVal) => {
-      if (String(inputValue.value) !== String(newVal)) {
-        inputValue.value = newVal ?? '';
-        isInvalid.value = false;
-      }
-    },
-    { immediate: true }
-  )
 
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
@@ -357,48 +144,17 @@
   onMounted(() => {
     loadOptions()
     loadEditedProcessor()
-    if (currentConfig.value?.label) highlightLabel()
-    console.log('💻🎯 ProcessorComponent mounted')
+    console.log('💻🎯 Processor Editor Component mounted')
   });
 
   onUnmounted(() => {
-    console.log('💻👋 ProcessorComponent unmounted')
+    console.log('💻👋 Processor Editor Component unmounted')
     localStorage.removeItem('processorTemp')
-    removeClickListeners()
   });
 
 // ============================================================================
-// PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor,
-//     uploadForEdition, drawProcessor, drawEditedProcessor, get_processor_dot
+// PROCESSOR ACTIONS
 // ============================================================================
-
-  const initProcessor = async () => {
-    await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
-    reloadProcessor()
-  };
-
-  const reloadProcessor = async () => {
-    console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
-    try {
-      const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
-      const data       = JSON.parse(jsonString)
-
-      if (simState.state == 1) {  // This is an initialization step
-        simState.state = 2;       // Change to next initialization step
-        console.log('💻✅ Initialization step (2): processor configuration loaded')
-        drawEditedProcessor()
-      }
-      data.name = simState.simulatedProcess.name || 'unknown'
-      Object.assign(simState.simulatedProcess, data)
-      simState.processorName= processorOptions.processorName
-      drawProcessor()
-    } catch (error) {
-      console.error('💻❌ Failed to set processor:', error)
-      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
-    }
-  }
-
-  const emit = defineEmits(['requestSwitchFull'])
 
   function loadEditedProcessor() {
     // load Edited Processor
@@ -414,38 +170,6 @@
     }
   }
 
-  function editProcessor () {
-    if (simState.simulatedProcess) {
-      emit('requestSwitchFull', 'processor')
-      const cleanProcConfig = {
-        name:       'edit',
-        sched:      simState.simulatedProcess.sched      || 'optimal',
-        dispatch:   simState.simulatedProcess.dispatch   || 1,
-        retire:     simState.simulatedProcess.retire     || 1,
-        ROBsize:    simState.simulatedProcess.ROBsize    || 20,
-        nBlocks:    simState.simulatedProcess.nBlocks    || 0,
-        blkSize:    simState.simulatedProcess.blkSize    || 1,
-        mPenalty:   simState.simulatedProcess.mPenalty   || 1,
-        mIssueTime: simState.simulatedProcess.mIssueTime || 1,
-        latencies:  JSON.parse(JSON.stringify(simState.simulatedProcess.latencies)),
-        ports:      JSON.parse(JSON.stringify(simState.simulatedProcess.ports))
-      }
-      updateProcessorSettings(cleanProcConfig)
-      console.log('💻📄 Emit requestSwitchFull for processor edition')
-    }
-  }
-
-  function removeProcessor () {
-    removeFromLocalStorage('processor', processorOptions.processorName, processorOptions.availableProcessors)
-    if ( processorOptions.availableProcessors.length > 0)
-      processorOptions.processorName = processorOptions.availableProcessors[0]
-    else {
-      processorOptions.availableProcessors = ''
-      alert("Removing all processor configurations forces to load the original processors provided in the distribution")
-      initProcessor()
-    }
-  }
-
   const uploadForEdition = async () => {
     try {
       const data = await uploadJSON(null, 'processor');
@@ -456,19 +180,6 @@
       console.error('📄❌ Failed to upload processor for edition:', error)
     }
   };
-
-  const drawProcessor = async () => {
-    try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess, simState.highlightedPort)
-      // console.log('💻🔄Redrawing simulated processor', dotCode);
-      const svg          = await createGraphVizGraph(dotCode);
-      // console.log('💻🔄Redrawing SVG', svg);
-      simulatedSvg.value = svg.outerHTML;
-    } catch (error) {
-      console.error('💻❌ Failed to draw processor:', error)
-      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
-    }
-  }
 
   const drawEditedProcessor = async () => {
     console.log('💻🔄Redrawing edited processor');
@@ -482,271 +193,17 @@
     }
   }
 
-  function get_processor_dot(process, highlightPort = -1) {
-
-    const ports    = process.ports
-    const lat      = process.latencies
-    const port_ids = Object.keys(ports)
-    const ROBsize  = process.ROBsize || 20
-    const sched    = process.sched
-    const dispatch = process.dispatch || 1
-    const retire   = process.retire || 1
-    const CachePenalty   = process.mPenalty || 1
-    const CacheIssueTime = process.mIssueTime || 1
-    const CacheBlocks    = process.nBlocks || 0
-    const CacheBlockSize = process.blkSize || 32
-
-    function type_color(type) {
-      if (type === "INT")    return "#d6e4ff"
-      if (type === "MEM")    return "#d6ffd6"
-      if (type === "FLOAT")  return "#fff2b3"
-      if (type === "VINT")   return "#e6e4ff"
-      if (type === "VMEM")   return "#e6ffd6"
-      if (type === "VFLOAT") return "#eff2b3"
-      if (type === "BRANCH") return "#ffd6d6"
-      return "#f0f0f0"
-    }
-
-    function op_type(op) {
-      return op.split(".")[0]
-    }
-
-    function latency_tooltip(op) {
-
-      const base = lat[op]
-
-      const variants = Object.keys(lat)
-        .filter(k => k.startsWith(op + "."))
-
-      if (variants.length === 0)
-        return base !== undefined ? `${op} latency: ${base}` : ""
-
-      let txt = `${op} latencies:\n`
-
-      if (base !== undefined)
-        txt += `base: ${base}\n`
-
-      for (let v of variants)
-        txt += `${v}: ${lat[v]}\n`
-
-      return txt
-    }
-
-    function compress_ops(ops) {
-      const grouped = {}
-      for (let op of ops) {
-        const [type, sub] = op.split(".")
-        if (!grouped[type]) grouped[type] = new Set()
-        if (sub) grouped[type].add(sub)
-      }
-
-      const result = []
-      for (let type in grouped) {
-        const all_ops = typeOperations[type] || []
-        if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
-          result.push({
-            label: type,
-            big: true
-          })
-        } else {
-          for (let sub of grouped[type]) {
-            result.push({
-              label: `${type}.${sub}`,
-              big: false
-            })
-          }
-        }
-      }
-      return result
-    }
-
-    const highlight = highlightPort !== null && highlightPort !== undefined
-      ? String(highlightPort)
-      : null
-
-    const port_ops = {}
-    for (let p of port_ids)
-      port_ops[p] = compress_ops(ports[p])
-
-    const total_rows = Math.max(...Object.values(port_ops).map(o => o.length))
-
-    // ---- Dispatch + ROB ----
-    let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Edit dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows+4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Edit ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
-    </TR>`
-
-    // ---- Waiting Buffer ----
-    let schedLabel = "❌optimal ✅greedy"
-    if (sched !== "greedy"){
-      schedLabel = "✅optimal ❌greedy"
-    }
-    let wb_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="sched" TITLE="Toggle scheduler"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${schedLabel}</B></FONT></TD>
-    </TR>`
-
-    // ---- Port headers ----
-    let port_header = "<TR>"
-
-    for (let p of port_ids) {
-      const isHighlighted = (p === highlight)
-      const style = isHighlighted
-        ? ' BGCOLOR="#ffcccc" BORDER="1" COLOR="red"'
-        : ' BGCOLOR="#f5f5f5"'
-
-      port_header += `<TD ${style} HREF="#" ID="port:${p}" TITLE="Select port ${p}"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
-    }
-
-    port_header += "</TR>"
-
-    // ---- Operation rows ----
-    let op_rows = ""
-
-    for (let i = 0; i < total_rows; i++) {
-
-      op_rows += "<TR>"
-
-      for (let p of port_ids) {
-        const isHighlighted = (p === highlight)
-        const highlightAttr = isHighlighted
-          ? ' BORDER="1" COLOR="red"'
-          : ''
-
-        const op = port_ops[p][i]
-
-        if (!op) {
-          op_rows += `<TD ${highlightAttr}></TD>`
-          continue
-        }
-
-        const type    = op_type(op.label)
-        const color   = type_color(type)
-        const tooltip = latency_tooltip(op.label)
-
-        op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}" HREF="#" ID="op:${p}:${i}:${op.label}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${op.label}</B>` : op.label}</FONT></TD>`
-      }
-
-      op_rows += "</TR>"
-    }
-
-    let cache_row = ""
-    // ---- Cache configuration ----
-    if (CacheBlocks > 0) {
-      cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}</FONT></TD>
-      </TR>`
-    } else {
-      cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="Edit cache configuration"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;No cache</FONT></TD>
-      </TR>`
-    }
-
-    // ---- Retire ----
-    let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Edit retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
-    </TR>`
-
-    const dot = `
-      digraph CPU {
-        node [shape=plain fontname="Arial" width=0 height=0 margin=0]
-        pipeline [
-          label=<
-            <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
-              ${decode_row}
-              ${wb_row}
-              ${port_header}
-              ${op_rows}
-              ${cache_row}
-              ${reg_row}
-            </TABLE>
-          >
-        ]
-      }`
-
-    return dot
-  }
-
-  let clickListeners = [];     // To clean listeners
-
-  const addClickListenersToSvg = () => {
-    nextTick(() => {
-      const svgElement = document.querySelector('.simProcessor-img svg');
-      if (!svgElement) return;
-
-      removeClickListeners()
-      console.log('💻Add click listeners to processor table');
-
-      svgElement.querySelectorAll('g').forEach(g => {
-        if (typeof g.id === 'string' && g.id.startsWith("a_")) {
-          const clickHandler = (e) => {
-            e.preventDefault()
-
-            const action = g.id.slice(2)
-            console.log("Action:", action)
-
-            switch (action) {
-              case 'dispatch':
-              case 'rob':
-              case 'retire':
-                activeField.value = action
-                break
-
-              case 'sched':
-                if (simState.simulatedProcess.sched === 'greedy') {
-                  simState.simulatedProcess.sched = 'optimal'
-                } else {
-                  simState.simulatedProcess.sched = 'greedy'
-                }
-                break
-
-              case 'port':
-                const port = g.id.slice(2)
-                console.log('Port clicked:', port)
-                break
-
-              case 'cache':
-                currentCacheOption = (currentCacheOption + 1) % cacheConfigOptions.length;
-                activeField.value  = cacheConfigOptions[currentCacheOption];
-                break
-
-              case 'op':
-                // const [_, __, p, row, label] = parts
-                // console.log('Op:', p, row, label)
-                break
-            }
-          }
-          // Guardar referencia para poder removerlo después
-          clickListeners.push({
-            node:    g,
-            handler: clickHandler
-          })
-
-          g.addEventListener('click', clickHandler)
-        }
-      })
-    })
-  }
-
-  const removeClickListeners = () => {
-    clickListeners.forEach(({ node, handler }) => {
-      node.removeEventListener('click', handler);
-    })
-    clickListeners = []
-  }
-
-
 // ============================================================================
 // Processor Edition LOGIC:      addPort, removePort, toggleTypeExpand,
 //    toggleTypeForPor, togglePortOperation, toggleScheduler, noPortAssigned
 // ============================================================================
 
   function toggleTypeExpand(type) {
-    processorOptions.expandedTypes[type] = ! processorOptions.expandedTypes[type];
+    procEditOptions.expandedTypes[type] = ! procEditOptions.expandedTypes[type];
   }
 
   function toggleOperationExpand(type, oper) {
-    processorOptions.expandedOperations[`${type}.${oper}`] = ! processorOptions.expandedOperations[`${type}.${oper}`];
+    procEditOptions.expandedOperations[`${type}.${oper}`] = ! procEditOptions.expandedOperations[`${type}.${oper}`];
   }
 
   function opsOfTypeAssigned(port, type) {
@@ -932,7 +389,7 @@
   }
 
 // ============================================================================
-// confirmDownload, uploadProcessor, clearProcessor
+// confirmDownload, clearProcessor
 // ============================================================================
   const showModalDownload = ref(false)
   const showModalClear    = ref(false)
@@ -950,29 +407,6 @@
     showModalDownload.value = false;
   }
 
-  const uploadProcessor = async (oldProcessor) => {
-    try {
-      const data = await uploadJSON(null, 'processor')
-      if (data) {
-        const exists = processorOptions.availableProcessors.includes(data.name)
-        if (exists && !confirm(`A processor with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
-          alert('Upload cancelled.')
-          processorOptions.processorName = oldProcessor
-          return
-        }
-        saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
-        simState.processorName = data.name
-        processorOptions.processorName = data.name
-        data.name = simState.simulatedProcess.name || 'unknown'
-        Object.assign(simState.simulatedProcess, data)
-        return
-      }
-    } catch (error) {
-      console.error('💻❌ Failed to upload processor:', error)
-    }
-    processorOptions.processorName = oldProcessor
-  }
-
   function clearProcessor() {
     updateProcessorSettings(createDefaultConfig())
     showModalClear.value = false;
@@ -981,13 +415,10 @@
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
-  const showHelp  = ref(false); const helpIcon  = ref(null);
   const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false);
   const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
   const helpPosition = ref({ top: '0%', left: '40%' });
 
-  function openHelp()   { nextTick(() => { showHelp.value = true }) }
-  function closeHelp()  { showHelp.value  = false }
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
   function closeHelp1() { showHelp1.value  = false }
   function openHelp2()  { nextTick(() => { showHelp2.value = true }) }
@@ -997,128 +428,11 @@
   function openHelp4()  { nextTick(() => { showHelp4.value = true }) }
   function closeHelp4() { showHelp4.value  = false }
 
-/* ------------------------------------------------------------------
- * Button Support: press & hold
- * ------------------------------------------------------------------ */
-  let holdTimeout = null;
-  let holdInterval= null;
-
-  function startHold(action) {
-    const INITIAL_DELAY   = 400;   // tiempo hasta que empieza la repetición
-    const REPEAT_INTERVAL = 100;   // velocidad de repetición
-
-    action()    // first click
-
-    // wait until repetition
-    holdTimeout = setTimeout(() => {
-      holdInterval = setInterval(() => {
-        action();
-      }, REPEAT_INTERVAL);
-    }, INITIAL_DELAY);
-  }
-
-  function stopHold() {
-    clearTimeout(holdTimeout);
-    clearInterval(holdInterval);
-  }
-
-  function increaseParameter() {
-    const max    = currentConfig.value.max
-    let newValue = simState.simulatedProcess[currentConfig.value.model]
-    simState.simulatedProcess[currentConfig.value.model] = Math.min(newValue+1, max)
-  }
-
-  function decreaseParameter() {
-    const min    = currentConfig.value.min
-    let newValue = simState.simulatedProcess[currentConfig.value.model]
-    simState.simulatedProcess[currentConfig.value.model] = Math.max(newValue-1, min)
-  }
-
 </script>
 
 <template>
   <div>
-    <div v-if="!isFullscreen">
-      <div class="header">
-        <div class="section-title-and-info">
-          <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help">
-            <img src="/img/info.png" class="info-img">
-          </span>
-          <span class="header-title">Processor</span>
-        </div>
-        <div class="settings-container">
-          <select v-model="processorOptions.processorName" class="form-select"
-              id="processors-list" title="Select Processor Configuration">
-            <option value="" disabled>Select</option>
-            <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
-              {{ processor }}
-            </option>
-            <option value="_add_new_">Add new</option>
-          </select>
-          <!--
-          <button class="blue-button small-btn" @click="editProcessor"
-            id="edit-processor-button"
-            title="Edit current processor on full-screen">
-          📝
-          </button>
-          -->
-          <button class="blue-button small-btn" @click="removeProcessor"
-            id="remove-processor-button"
-            title="Remove processor configuration from list (and local storage)">
-          🧹
-          </button>
-          <div class="iters-group rob-group">
-            <span class="iters-label"
-              :class="{ 'highlight': labelHighlighted }"
-              :title="currentConfig.title">
-              {{ currentConfig.label }}
-            </span>
-            <input
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              :placeholder="currentConfig.min.toString()"
-              v-model="inputValue"
-              @blur="validateField"
-              @keypress="handleKeyPress"
-              @input="handleInput"
-              :class="{ 'invalid': isInvalid }"
-              :title="`Rang: ${currentConfig.min} - ${currentConfig.max}`"
-            />
-          </div>
-          <button
-            class="blue-button small-btn"
-            @mousedown="startHold(increaseParameter)"
-            @mouseup="stopHold"
-            @mouseleave="stopHold"
-            @touchstart.prevent="startHold(increaseParameter)"
-            @touchend="stopHold"
-            title="Increase parameter (press and hold for faster incrementing)"
-          >
-            ▲
-          </button>
-          <button
-            class="blue-button small-btn"
-            @mousedown="startHold(decreaseParameter)"
-            @mouseup="stopHold"
-            @mouseleave="stopHold"
-            @touchstart.prevent="startHold(decreaseParameter)"
-            @touchend="stopHold"
-            title="Decrease parameter (press and hold for faster decrementing)"
-          >
-            ▼
-          </button>
-        </div>
-      </div>
-
-      <div class="graph-section">
-        <div class="processor-container">
-          <div class="simProcessor-img" v-html="simulatedSvg" v-if="simulatedSvg"></div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="isFullscreen" class="header">
+    <div class="header">
       <div class="section-title-and-info">
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show Help" >
           <img src="/img/info.png" class="info-img">
@@ -1126,7 +440,7 @@
         <span class="header-title">Processor Settings - Editor</span>
       </div>
 
-      <div class="settings-container fullscreen-settings">
+      <div class="settings-container">
         <div class="buttons">
           <button class="blue-button"
               id="processor-download-button"
@@ -1151,7 +465,7 @@
       </div>
     </div>
 
-    <div v-if="isFullscreen" class="settings-sections">
+    <div class="settings-sections">
       <div class="horizontal-layout">
         <div class="settings-group widths-group">
           <div class="section-title-and-info">
@@ -1267,7 +581,7 @@
                         :title="`Show operations of type ${type}`"
                         id="show-critical-button">
                         <span class="arrow" aria-hidden="true">
-                          {{ processorOptions.expandedTypes[type] ? '▼' : '▶' }}
+                          {{ procEditOptions.expandedTypes[type] ? '▼' : '▶' }}
                         </span>
                         <span class="type-name">{{ type }}</span>
                       </button>
@@ -1305,7 +619,7 @@
                     </td>
                   </tr>
                   <template
-                      v-if="hasOperations(type) && processorOptions.expandedTypes[type] && !isTypeChecked(port, type)"
+                      v-if="hasOperations(type) && procEditOptions.expandedTypes[type] && !isTypeChecked(port, type)"
                       v-for="op in typeOperations[type]"
                       :key="`${type}-${op}`"
                     >
@@ -1319,7 +633,7 @@
                           :title="`Show data sizes of ${type}.${op} operation`"
                           >
                           <span class="arrow" aria-hidden="true">
-                            {{ processorOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
+                            {{ procEditOptions.expandedOperations[`${type}.${op}`] ? '▼' : '▶' }}
                           </span>
                           <span class="op-name">{{ op }}</span>
                         </button>
@@ -1335,7 +649,7 @@
 
                       <td> - </td>
                       <td
-                        v-if="!processorOptions.expandedOperations[`${type}.${op}`]"
+                        v-if="!procEditOptions.expandedOperations[`${type}.${op}`]"
                         >
                         <input type="number"
                           v-model.number="procConfig.latencies[`${type}.${op}`]"
@@ -1356,7 +670,7 @@
                       </td>
                     </tr>
                     <tr
-                      v-if="processorOptions.expandedOperations[`${type}.${op}`] && hasSizes(type)"
+                      v-if="procEditOptions.expandedOperations[`${type}.${op}`] && hasSizes(type)"
                       v-for="size in typeSizes[type]"
                       :key="`${type}-${op}-${size}`"
                       class="op-row"
@@ -1394,22 +708,6 @@
   </div>
 
   <Teleport to="body">
-    <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The table describes the <strong>processor microarchitecture</strong> (pipeline) characteristics.
-        <p>Click on the corresponding table cells to modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> widths
-          (maximum number of instructions dispatched into or retired from the <strong>Execution Engine</strong> per clock cycle),
-          or the <strong>ROB</strong> (ReOrder Buffer) size (maximum number of instructions on the <strong>Execution Engine</strong>).
-          All of them may impose a <strong><em>throughput-bound</em></strong> performance limit.</p>
-        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> scheduler
-          (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
-          (which always issues the best combination of ready instructions to maximize performance).</p>
-        <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
-         Click on the buttons on the right to <strong>edit</strong> the microarchitectural parameters or
-         to <strong>remove</strong> the file from local storage.</p>
-        "
-    title="Processor MicroArchitecture Description"
-    @close="closeHelp" />
-
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
       (2) <em>ROB</em> size; (3) <em>Cache Memory</em>; (4) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
