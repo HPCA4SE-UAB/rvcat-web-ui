@@ -189,6 +189,7 @@ onUnmounted(() => {
                 {{ fullProgramButtonText }}
             </button>
           </li>
+          <!--
           <li>
             <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                id="tutorial-button"
@@ -197,6 +198,7 @@ onUnmounted(() => {
                 {{ fullTutorialButtonText }}
             </button>
           </li>
+          -->
 
           <li class="separator"></li>
 
