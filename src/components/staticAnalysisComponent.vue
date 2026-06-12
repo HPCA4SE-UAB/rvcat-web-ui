@@ -389,7 +389,7 @@
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>,
       meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p>
-      <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>loop-carried chain of data dependencies</strong> that forms a critical path across iterations.</p>"
+      <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>circular chain of data dependencies</strong> that forms a cyclic path across loop iterations.</p>"
     title="Static Performance Analysis"
     @close="closeHelp1"/>
   </Teleport>

@@ -1045,10 +1045,12 @@
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="<strong>Simulate</strong> the execution of a specified number of program loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure a representative number of loop iterations is selected,
-      as very low iteration counts may not fully capture the program's behavior and performance characteristics.
-      <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths, and usage of execution ports.
+      <em>Instructions Per Cycle</em> (IPC), Read/Write cache misses, and Main Memory (MM) accesses.
+      <p>When the simulation is performed, a table appears below, providing statistics of the utilization of core
+        processor resources: dispatch and retire widths, and usage of execution ports.
         These metrics are crucial for identifying potential performance bottlenecks in the simulated execution.</p>
+      <p>To obtain meaningful results, ensure a representative (high enough) number of loop iterations is set,
+      as very low iteration counts may not fully capture the program's behavior and performance characteristics.</p>
     "
     title="Overall Simulation Results"
     @close="closeHelp1"/>
