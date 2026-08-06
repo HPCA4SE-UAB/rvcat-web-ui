@@ -371,6 +371,17 @@
     const lengthRowList = []
     const portsUsedList = []
 
+    // First cell is empty (top-left corner)
+    ctx.fillStyle   = "#ffffff"
+    ctx.strokeStyle = "#bbb"
+    ctx.lineWidth   = 1
+    ctx.fillRect    (x, y, cellW, cellH)
+    ctx.strokeRect  (x, y, cellW, cellH)
+
+    ctx.fillStyle = "#000"
+    ctx.fillText    (' ', x + fontXOffset, y + fontYOffset)
+    x += cellW
+
     for (let i = 0; i < totalCycles; ) {
       let ch          = String(i % 10)
       ctx.fillStyle   = "#ffffff"
@@ -436,6 +447,16 @@
       let initCol   = startCycle
       let lengthCol = states.length
 
+      // First cell is instruction number
+      ctx.fillStyle   = rowBg;
+      ctx.strokeStyle = "#bbb";
+      ctx.lineWidth   = 1;
+      ctx.fillRect    (x, y, cellW, cellH);
+      ctx.strokeRect  (x, y, cellW, cellH);
+      ctx.fillStyle = "#000"
+      ctx.fillText    (String(instrIdx % 10), x + fontXOffset, y + fontYOffset)
+      x += cellW
+
       for (let i = 0; i < totalCycles; ) {
         let ch        = ' '
         let currColor = "#000"
@@ -448,7 +469,7 @@
                                  (ch == 'L' && states[i-startCycle-1] != 'L') ||
                                  (ch == 'S' && states[i-startCycle-1] != 'S')
 
-          if (critical) currColor = "red"
+          if (critical && timelineOptions.full) currColor = "red"
 
           interactiveCells.push({
             x, y,
@@ -493,7 +514,7 @@
     // highlight column (cycle)
     if (col !== null) {
       let length = Math.min(lengthRow, totalInstr-initRow)
-      ctx.strokeRect( padX + col*cellW, padX + (initRow+1) * cellH,  cellW, length*cellH)
+      ctx.strokeRect( padX + (col+1)*cellW, padX + (initRow+1) * cellH,  cellW, length*cellH)
 
       // highlight specific positions (cells)
       if (portsUsed && portsUsed.length > 0) {
@@ -502,7 +523,7 @@
           if (row >= initRow && row < initRow + lengthRow) {
             ctx.save();
             ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
-            ctx.fillRect(padX + col * cellW, padX + (row + 1) * cellH, cellW, cellH);
+            ctx.fillRect(padX + (col + 1) * cellW, padX + (row + 1) * cellH, cellW, cellH);
             ctx.restore();
           }
         });
@@ -512,7 +533,7 @@
     // highlight row (instruction)
     if (row !== null) {
       let length = Math.min(lengthCol, totalCycles-initCol)
-      ctx.strokeRect( padY + initCol*cellW, padY + (row+1) * cellH, length*cellW, cellH )
+      ctx.strokeRect( padY + (initCol+1)*cellW, padY + (row+1) * cellH, length*cellW, cellH )
     }
   }
 
@@ -584,7 +605,7 @@
         x:        e.clientX + 10,
         y:        e.clientY + 10,
         state:    charToProcessingState(char, first_exec_stage ? port : null, addr),
-        critical: critical
+        critical: critical && timelineOptions.full
       }
       adjustTooltipPosition(e)
 
