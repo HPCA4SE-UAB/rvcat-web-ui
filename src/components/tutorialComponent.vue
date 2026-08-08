@@ -1,6 +1,5 @@
 <template>
   <div class="tutorial-system">
-
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
@@ -8,7 +7,8 @@
         <div class="tutorial-content">
           <h3 v-html="currentStep?.title"></h3>
           <p class="step-description" v-html="currentStep?.description"></p>
-          <div v-if="currentStep?.image" class="step-image" @click="openLightbox(currentStep.image)">
+          <div v-if="currentStep?.image" class="step-image"
+            @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Step image">
             <span class="image-hint">Click to enlarge</span>
           </div>
@@ -23,14 +23,14 @@
             </span>
             <button v-if="stepIndex < currentTutorial.steps.length - 1"
                     @click="nextStep"
-                    title="Go to next step on the tutorial.\n If disabled, then an action must be done first."
+                    title="Go next step; disabled if an action must be done first"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Next
             </button>
             <button v-else
                     @click="completeTutorial"
-                    title="Finish tutorial.\n If disabled, then an action must be done first."
+                    title="Finish tutorial; disabled if an action must be done first"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Finish
@@ -75,12 +75,18 @@
               >
                 <span class="answer-letter">{{ String.fromCharCode(65 + index) }}</span>
                 <span class="answer-text" v-html="answer.text"></span>
-                <span v-if="questionAnswered && isQuestionCorrect  && answer.isCorrect" class="answer-indicator correct">✓</span>
-                <span v-if="questionAnswered && !isQuestionCorrect && selectedAnswers.includes(answer.originalIndex) && !answer.isCorrect" class="answer-indicator wrong">✗</span>
-                <span v-if="questionAnswered && !isQuestionCorrect && selectedAnswers.includes(answer.originalIndex) && answer.isCorrect" class="answer-indicator partial-correct">✓</span>
+                <span v-if="questionAnswered && isQuestionCorrect  &&
+                            answer.isCorrect" class="answer-indicator correct">✓</span>
+                <span v-if="questionAnswered && !isQuestionCorrect &&
+                            selectedAnswers.includes(answer.originalIndex) && !answer.isCorrect"
+                            class="answer-indicator wrong">✗</span>
+                <span v-if="questionAnswered && !isQuestionCorrect &&
+                            selectedAnswers.includes(answer.originalIndex) && answer.isCorrect"
+                            class="answer-indicator partial-correct">✓</span>
               </button>
               <!-- Inline feedback below each answer -->
-              <div v-if="questionAnswered && selectedAnswers.includes(answer.originalIndex) && answer.explanation"
+              <div v-if="questionAnswered && selectedAnswers.includes(answer.originalIndex)
+                         && answer.explanation"
                    :class="['answer-feedback', answer.isCorrect ? 'feedback-correct' : 'feedback-wrong']"
                    v-html="answer.explanation">
               </div>
@@ -184,32 +190,41 @@
           <div class="tutorial-menu-separator"></div>
         </div>
 
-        <div v-if="isLoading" class="tutorial-loading">
-          Loading tutorials...
-        </div>
         <div v-else class="tutorial-list">
-          <button
-            v-for="tutorial in tutorialOptions.available"
+          <div
+            v-for="tutorial in availableTutorials"
             :key="tutorial.id"
-            @click="startTutorial(tutorial.id)"
-            title="Start this tutorial"
-            class="tutorial-menu-item"
+            class="tutorial-item-wrapper"
           >
-            <div class="tutorial-item-content">
-              <strong v-html="tutorial.name"></strong>
-              <p v-html="tutorial.description"></p>
-            </div>
-          </button>
+            <button
+              @click="startTutorial(tutorial.id)"
+              title="Start this tutorial"
+              class="tutorial-menu-item"
+            >
+              <div class="tutorial-item-content">
+                <strong v-html="tutorial.name"></strong>
+                <p v-html="tutorial.description"></p>
+              </div>
+            </button>
+            <button
+              @click="deleteTutorial(tutorial.id)"
+              title="Delete this tutorial form list (and local storage)"
+              id="remove-tutorial-button"
+              class="tutorial-delete-btn"
+            >
+            🧹
+            </button>
+          </div>
+
           <button
             @click="addTutorial"
             title="Upload new tutorial"
             class="tutorial-menu-item"
           >
             <div class="tutorial-item-content">
-              <strong> ADD NEW TUTORIAL</strong>
+              <strong>ADD NEW TUTORIAL</strong>
             </div>
           </button>
-
         </div>
       </div>
     </div>
@@ -219,7 +234,7 @@
 <script setup>
 
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import {  initResource, uploadJSON, removeFromLocalStorage }                   from '@/common'
+import { initResource, removeFromLocalStorage, uploadJSON }                         from '@/common'
 const simState = inject('simulationState');
 
 // ============================================================================
@@ -236,14 +251,12 @@ const defaultOptions = {
 const tutorialOptions  = reactive(defaultOptions)
 
 const TOOLTIP_WIDTH  = 400
-const TOOLTIP_HEIGHT = 200
+const TOOLTIP_HEIGHT = 300
 
 // Core tutorial state
 const currentTutorial = ref(null)
 const stepIndex       = ref(0)
-
-const isActive  = ref(false)
-const isLoading = ref(false)
+const isActive        = ref(false)
 
   const loadOptions = () => {
     try {
@@ -269,6 +282,10 @@ const isLoading = ref(false)
     }
   }
 
+const availableTutorials = computed(() =>
+   tutorialOptions.available
+)
+
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
@@ -286,9 +303,7 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
 // refer to this variable to force evaluation of validation state
 const validationState  = ref({})
-
 const showTutorialMenu = ref(false)
-const showEditor       = ref(false)
 const highlightElement = ref(null)
 
 // Scroll position
@@ -382,11 +397,14 @@ const tooltipStyle = computed(() => {
 
   tooltipPositionTrigger.value // Force reactivity
 
-  if (!highlightElement.value || !currentStep.value) return { display: 'none' }
+  if (!highlightElement.value || !currentStep.value) {
+    showTutorialMenu.value = true
+    return { display: 'none' }
+  }
 
   const rect = highlightElement.value.getBoundingClientRect()
   const pos  = currentStep.value.position || 'bottom'
-  const margin = 25
+  const margin = 15
 
   let top, left
   const centerX = rect.left + rect.width / 2  - TOOLTIP_WIDTH / 2
@@ -476,87 +494,6 @@ const shuffleAnswers = () => {
     ;[indices[i], indices[j]] = [indices[j], indices[i]]
   }
   shuffledAnswerIndices.value = indices
-}
-
-// ============================================================================
-// TUTORIAL LOADING
-// ============================================================================
-
-const initTutorial = async () => {
-  const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource
-  await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
-
-  // replace list of tutorial names by list of tutorial descriptions
-  const tutorials = []
-  for (const name of tutorialOptions.available) {
-    try {
-      const jsonString = localStorage.getItem(`tutorial.${name}`)
-      const tutorial   = JSON.parse(jsonString)
-      tutorial.id      = name
-      tutorials.push({
-        id:          name,
-        name:        tutorial.name,
-        description: tutorial.description
-      })
-    } catch (e) {
-      console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
-    }
-  }
-  tutorialOptions.available  = tutorials   // fire options saving
-  await loadCurrentTutorial (inProgressID)
-  isLoading.value            = false
-}
-
-const loadCurrentTutorial = async (ID) => {
-  let tutorial = null
-  if ( ID !== "")
-    tutorial = tutorialOptions.available.find(t => t.id === ID)
-
-  if ( ID === "" || tutorial === null) { // no tutorial in progress
-    tutorialOptions.inProgressID = ""
-    tutorialOptions.progressStep =  0
-    currentTutorial.value         = null
-    stepIndex.value               = 0
-    console.log('👨‍🎓🚦No tutorial in progress')
-    return
-  }
-
-  const jsonString      = localStorage.getItem(`tutorial.${ID}`)
-  const fullTutorial    = JSON.parse(jsonString)
-  fullTutorial.steps    = processStepActions(fullTutorial.steps)
-  fullTutorial.id       = ID
-  currentTutorial.value = fullTutorial
-  stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
-  tutorialOptions.inProgressID = ID
-  tutorialOptions.progressStep = stepIndex.value
-  console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
-}
-
-const addTutorial = async () => {
-  try {
-    const data   = await uploadJSON(null, 'tutorial');
-    let included = false
-
-    for (const tut of tutorialOptions.available) {
-      if (tut.id === data.id)
-        included = true
-    }
-    if (included) {
-      alert(`A tutorial with name: "${data.id}" has been already loaded.`)
-      return
-    }
-    tutorialOptions.available.push({
-      id:          data.id,
-      name:        data.name,
-      description: data.description
-    })
-    const key    = `tutorial.${data.id}`;
-    const str    = JSON.stringify(data, null, 2);
-    localStorage.setItem(key, str);
-    console.log(`👨‍🎓✅ Added tutorial to local storage: ${data.id}`);
-  } catch (error) {
-    console.error('👨‍🎓❌ Failed to upload/save tutorial', error);
-  }
 }
 
 // ============================================================================
@@ -854,6 +791,104 @@ const toggleTutorialMenu = () => {
 }
 
 // ============================================================================
+// TUTORIAL: Init, loadCurrent & add
+// ============================================================================
+
+const initTutorial = async () => {
+  const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource
+  await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
+
+  // replace list of tutorial names by list of tutorial descriptions
+  const tutorials = []
+  for (const name of tutorialOptions.available) {
+    try {
+      const jsonString = localStorage.getItem(`tutorial.${name}`)
+      const tutorial   = JSON.parse(jsonString)
+      tutorial.id      = name
+      tutorials.push({
+        id:          name,
+        name:        tutorial.name,
+        description: tutorial.description
+      })
+    } catch (e) {
+      console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
+    }
+  }
+  tutorialOptions.available = tutorials   // fire options saving
+  await loadCurrentTutorial (inProgressID)
+}
+
+const loadCurrentTutorial = async (ID) => {
+  let tutorial = null
+  if ( ID !== "")
+    tutorial = tutorialOptions.available.find(t => t.id === ID)
+
+  if ( ID === "" || tutorial === null) { // no tutorial in progress
+    tutorialOptions.inProgressID = ""
+    tutorialOptions.progressStep =  0
+    currentTutorial.value         = null
+    stepIndex.value               = 0
+    console.log('👨‍🎓🚦No tutorial in progress')
+    return
+  }
+
+  const jsonString      = localStorage.getItem(`tutorial.${ID}`)
+  const fullTutorial    = JSON.parse(jsonString)
+  fullTutorial.steps    = processStepActions(fullTutorial.steps)
+  fullTutorial.id       = ID
+  currentTutorial.value = fullTutorial
+  stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
+  tutorialOptions.inProgressID = ID
+  tutorialOptions.progressStep = stepIndex.value
+  console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
+}
+
+const addTutorial = async () => {
+  try {
+    const data   = await uploadJSON(null, 'tutorial');
+    let included = false
+
+    for (const tut of tutorialOptions.available) {
+      if (tut.id === data.id)
+        included = true
+    }
+    if (included) {
+      alert(`A tutorial with name: "${data.id}" has been already loaded.`)
+      return
+    }
+    tutorialOptions.available.push({
+      id:          data.id,
+      name:        data.name,
+      description: data.description
+    })
+    const key    = `tutorial.${data.id}`;
+    const str    = JSON.stringify(data, null, 2);
+    localStorage.setItem(key, str);
+    console.log(`👨‍🎓✅ Added tutorial to local storage: ${data.id}`);
+  } catch (error) {
+    console.error('👨‍🎓❌ Failed to upload/save tutorial', error);
+  }
+}
+
+function deleteTutorial (tutorialId) {
+  removeFromLocalStorage('tutorial', tutorialId)
+
+  const index = tutorialOptions.available.findIndex(
+    tutorial => tutorial.id === tutorialId
+  )
+  if (index !== -1) {
+    tutorialOptions.available.splice(index, 1);
+  }
+  tutorialOptions.inProgressID = ''
+  if ( tutorialOptions.available.length == 0)
+  {
+    alert("Removing all tutorial configurations forces to load the original tutorials provided in the distribution")
+    initTutorial()
+  }
+  showTutorialMenu.value = true
+}
+
+// ============================================================================
 // EVENT HANDLERS: click, windowChange;  WATCHES: tutorial, globalState
 // ============================================================================
 
@@ -909,8 +944,6 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener  ('resize', handleWindowChange)
   window.addEventListener  ('scroll', handleWindowChange, true)
-  isLoading.value = true
-  await initTutorial()
   console.log('👨‍🎓🎯 TutorialEngine mounted')
 })
 
@@ -919,8 +952,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener ('resize', handleWindowChange)
   window.removeEventListener ('scroll', handleWindowChange, true)
-  cleanupValidationListeners ()
-  cleanupButtonClickTracking ()
+  cleanup ()
 })
 </script>
 
@@ -954,23 +986,23 @@ onUnmounted(() => {
   z-index:     10001;
   pointer-events: all;
   transition:    all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  border-radius: 12px;
+  border-radius: 10px;
   transform:     translateY(-10px) scale(0.95);
   animation:     tutorial-tooltip-appear 0.4s ease-out forwards;
 }
 
 .tutorial-content {
-  padding: 10px;
+  padding: 12px;
 }
 
 .tutorial-content h3 {
-  margin:    0 0 10px 0;
+  margin:    0 0 5px 0;
   color:     #333;
   font-size: large;
 }
 
 .tutorial-content p {
-  margin:      0 0 20px 0;
+  margin:      0 0 10px 0;
   color:       #666;
   line-height: 1.5;
   font-size:   medium;
@@ -992,7 +1024,7 @@ onUnmounted(() => {
 }
 
 .tutorial-btn {
-  padding:       8px 16px;
+  padding:       4px 16px;
   border:        1px solid #ddd;
   border-radius: 4px;
   background:    white;
@@ -1047,8 +1079,8 @@ onUnmounted(() => {
 
 .tutorial-close {
   position:    absolute;
-  top:         10px;
-  right:       15px;
+  top:         0px;
+  right:       0px;
   background:  none;
   border:      none;
   font-size:   large;
@@ -1096,7 +1128,7 @@ onUnmounted(() => {
 .tutorial-menu {
   bottom:  20px;
   right:   20px;
-  padding: 12px;
+  padding: 8px;
   width:      360px;
   max-height: 500px;
   position:   absolute;
@@ -1114,14 +1146,14 @@ onUnmounted(() => {
 
 .tutorial-list {
   display: flex;
-  gap:     8px;
+  gap:     4px;
   flex-direction: column;
 }
 
 .tutorial-menu-item {
   background: none;
-  border:     1px solid #ddd;
-  padding:    10px;
+  border:     2px solid #ddd;
+  padding:    5px;
   cursor:     pointer;
   text-align: left;
   transition: all 0.2s;
@@ -1136,7 +1168,7 @@ onUnmounted(() => {
 .tutorial-item-content strong {
   display:       block;
   color:         #333;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
   font-size:     medium;
 }
 
@@ -1147,23 +1179,48 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
-.tutorial-loading {
-  padding:    10px;
-  text-align: center;
-  color:      #666;
-  font-style: italic;
+.tutorial-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tutorial-delete-btn {
+  background: #eed1d1;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tutorial-delete-btn:hover {
+  background: #ff0000;
+  transform: scale(1.1);
+}
+
+.tutorial-delete-btn:active {
+  transform: scale(0.95);
 }
 
 .tutorial-menu-separator {
-  height:     1px;
+  height:     3px;
   background: #eee;
-  margin:     5px 0;
+  margin:     4px 0;
 }
 
 .tutorial-paused-section {
   border-bottom:  2px solid #eee;
-  margin-bottom:  8px;
-  padding-bottom: 8px;
 }
 
 .tutorial-paused-header {
@@ -1181,7 +1238,7 @@ onUnmounted(() => {
 .tutorial-paused-info {
   margin:     0;
   color:      #666;
-  font-size:  small;
+  font-size:  medium;
   font-style: italic;
 }
 
@@ -1261,7 +1318,6 @@ onUnmounted(() => {
   }
 }
 
-/* Question Overlay Styles */
 .question-overlay {
   display:  flex;
   position: fixed;
@@ -1308,8 +1364,8 @@ onUnmounted(() => {
 
 .question-close {
   position: absolute;
-  top:      10px;
-  right:    12px;
+  top:      0px;
+  right:    0px;
   background:  none;
   border:      none;
   font-size:   24px;
@@ -1325,24 +1381,24 @@ onUnmounted(() => {
 }
 
 .question-header {
-  padding:       4px 18px 6px;
+  padding:       4px 8px;
   border-bottom: 1px solid #f0f0f0;
   background:    linear-gradient(135deg, #8b5cf6, #7c3aed);
   color:         white;
   display:       flex;
   align-items:   center;
-  gap:           10px;
+  gap:           12px;
   width:         100%;
 }
 
 .question-badge {
   display:       inline-block;
   background:    rgba(255, 255, 255, 0.2);
-  padding:       3px 10px;
+  padding:       3px 3px;
   border-radius: 16px;
   font-size:     small;
   font-weight:   bold;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
   background:    #007bff;
   color:         white;
   flex-shrink:   0;
@@ -1350,6 +1406,7 @@ onUnmounted(() => {
 
 .question-header h2 {
   margin:      0;
+  margin-right: 30px;
   font-size:   medium;
   font-weight: 600;
   flex:        1;
@@ -1360,7 +1417,7 @@ onUnmounted(() => {
 }
 
 .question-body {
-  padding:    10px 20px;
+  padding:    10px 10px;
   overflow-y: auto;
   flex:       1;
 }
@@ -1369,7 +1426,7 @@ onUnmounted(() => {
   font-size: medium;
   line-height: 1.6;
   color: #333;
-  margin: 0 0 6px 0;
+  margin: 0 0 3px 0;
 }
 
 .question-text :deep(code) {
@@ -1380,14 +1437,14 @@ onUnmounted(() => {
 }
 
 .question-image {
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   text-align:    center;
   cursor:        pointer;
   position:      relative;
 }
 
 .step-image {
-  margin:     6px 0;
+  margin:     5px 0;
   text-align: center;
   cursor:     pointer;
   position:   relative;
@@ -1480,24 +1537,24 @@ onUnmounted(() => {
 
 .question-mode-info {
   background: #f5f3ff;
-  padding: 10px 14px;
+  padding: 6px 14px;
   border-radius: 8px;
   font-size: 13px;
   color: #6b7280;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .answers-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .answer-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 4px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 10px;
   background: white;
@@ -1606,7 +1663,7 @@ onUnmounted(() => {
 .answer-feedback {
   margin-top: 6px;
   margin-left: 40px;
-  padding: 8px 12px;
+  padding: 0px 12px;
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.4;
@@ -1633,17 +1690,17 @@ onUnmounted(() => {
 }
 
 .feedback-section {
-  margin-top: 16px;
+  margin-top: 4px;
   animation: fadeIn 0.3s ease-out;
 }
 
 .feedback-box {
-  padding: 12px 16px;
+  padding: 2px 16px;
   border-radius: 8px;
 }
 
 .feedback-box h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 0px 0;
   font-size: 14px;
   font-weight: 600;
 }
@@ -1667,7 +1724,7 @@ onUnmounted(() => {
 }
 
 .question-actions {
-  padding: 14px 20px;
+  padding: 6px 20px;
   border-top: 1px solid #f0f0f0;
   display: flex;
   justify-content: space-between;
