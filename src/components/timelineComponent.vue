@@ -16,8 +16,8 @@
 
   const defaultOptions = {
     instructions:  20,
-    cycles:        40,
-    full:          false,
+    cycles:        30,
+    critical:      false,
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -57,16 +57,26 @@
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
 // ============================================================================
 
+  let timelinePending  = false
+  let lastPending      = false
+
   watch ([() => simState.simulatedProcess], () => { requestTimeline() },
     { deep: true, immediate: false })
 
   function requestTimeline() {
     if (simState.state >= 3) {
+      if (timelinePending) {
+        lastPending=true
+        return  // skip request if previous request is still pending
+      }
+      timelinePending = true
       console.log('📈🔄 Request timeline from RVCAT')
-      const { name, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+      const { iters, name, ROBsize, dispatch, retire, sched,
+              blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
+      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched,
+                                    blkSize, nBlocks, mPenalty, mIssueTime,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
-                  10) // Call Python RVCAT (obtain timeline with current process info, for 10 loop iterations)
+                  iters) // Call Python RVCAT (get timeline with process info and iters loop iterations)
     }
   }
 
@@ -77,14 +87,20 @@
       return;
     }
     try {
-      let timelineRVCAT       = JSON.parse(data)
+      let timelineRVCAT = JSON.parse(data)
       getPortUsage(timelineRVCAT);
       timeline.value = timelineRVCAT
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
-      scheduleDraw()
+      scheduleDraw(timelineOptions.cycles, 0)
+
     } catch (error) {
       console.error('📈❌Failed to process JSON timeline:', error)
+    }
+    timelinePending = false
+    if (lastPending) {
+      lastPending=false
+      requestTimeline()
     }
   }
 
@@ -103,25 +119,12 @@
     nextTick(() => {
       isComponentMounted = true;
       unwatch = watch(
-        () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.full,
+        () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([newInstructions, newCycles], [oldInstructions, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
-              if (newCycles != oldCycles) {
-                const clamped = Math.min(Math.max(newCycles, 1), 100)
-                if (clamped !== newCycles) {
-                  timelineOptions.cycles = clamped
-                  return
-                }
-              } else if (newInstructions != oldInstructions) {
-                const clamped = Math.min(Math.max(newInstructions, 1), 100)
-                if (clamped !== newInstructions) {
-                  timelineOptions.instructions = clamped
-                  return
-                }
-              }
+              scheduleDraw(newCycles,oldCycles)
               saveOptions()
-              scheduleDraw()
             }
           )
       console.log('📈🎯 Timeline Component mounted')
@@ -148,7 +151,7 @@
 * UI actions
 * ------------------------------------------------------------------ */
 
-  function toggleFull()  { timelineOptions.full = !timelineOptions.full }
+  function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
 
   function getPortUsage(timeline) {
     const usagePorts = {};
@@ -178,64 +181,14 @@
     timeline.portUsageInstr = usageInstr
   }
 
-  function buildPortTimelineMatrix(timeline) {
-
-    const portUsage = timeline.portUsagePorts;
-
-    // Determinar número de ciclos
-    const maxCycle = Math.max(
-      ...Object.values(portUsage).flat(),
-      0
-    );
-
-    const cycles = maxCycle + 1;
-    const ports = Object.keys(portUsage).sort((a,b)=>Number(a)-Number(b));
-    const matrix = {};
-
-    for (const p of ports) {
-      matrix[p] = new Array(cycles).fill(0);
-    }
-
-    for (const [port, usedCycles] of Object.entries(portUsage)) {
-      for (const c of usedCycles) {
-        matrix[port][c]++;
-      }
-    }
-
-    return { cycles, ports, matrix };
-    // {  cycles: 4, ports: ["0","1"], matrix: { "0": [0,1,1,0], "1": [0,0,0,1] }
-  }
-
-  function renderPortUsageASCII(portMatrix) {
-    //     0123
-    // P0  .XX.
-    // P1  ...X
-    const { cycles, ports, matrix } = portMatrix;
-    const lines = [];
-    let header = "    ";
-    for (let c = 0; c < cycles; c++) {
-      header += (c % 10);
-    }
-    lines.push(header);
-
-    for (const p of ports) {
-      let row = `P${p}  `;
-      for (let c = 0; c < cycles; c++) {
-        row += matrix[p][c] > 0 ? "X" : ".";
-      }
-      lines.push(row);
-    }
-    return lines.join("\n");
-  }
-
   function addCanvasWrapper () {
     const wrapper = document.getElementById("canvas-container")
     let   dragging  = false
     let   startX, startY
 
     const observer = new ResizeObserver(() => {
-      toggleFull()  // forces watcher to re-draw canvas
-      toggleFull()  // forces watcher to re-draw canvas
+      toggleCritical()  // forces watcher to re-draw canvas
+      toggleCritical()  // forces watcher to re-draw canvas
     })
 
     observer.observe(wrapper)
@@ -304,17 +257,17 @@
   let hoverRow    = null
   let hoverCol    = null
 
-  function scheduleDraw() {
+  function scheduleDraw(cycles, oldCycles) {
     if (rafPending) return
     rafPending = true
 
     requestAnimationFrame(() => {
-      drawTimeline()
+      drawTimeline(cycles, oldCycles)
       rafPending = false
     })
   }
 
-  function drawTimeline() {
+  function drawTimeline(newCycles, oldCycles) {
 
     const rect = timelineCanvas.value.getBoundingClientRect()
 
@@ -328,9 +281,34 @@
     overlayCanvas.value.height = rect.height
 
     const { cycles, instructions, portUsagePorts, portUsageInstr } = timeline.value
+    totalCycles = timelineOptions.cycles
+    totalInstr  = timelineOptions.instructions
 
-    totalCycles = Math.min(cycles, timelineOptions.cycles)
-    totalInstr  = Math.min(instructions.length, timelineOptions.instructions)
+    if (newCycles != oldCycles && newCycles != 0 ) {
+      if (newCycles > cycles) newCycles = cycles
+
+      // change timeline size (cycles) and recompute totalInstr
+      totalCycles = newCycles
+
+      // Compute last instruction processed before newCycles
+      let first_cycle = instructions[totalInstr-1][2]
+      if (totalCycles > first_cycle) { // included & find more
+        while (totalCycles > first_cycle && totalInstr < instructions.length) {
+          totalInstr++
+          first_cycle = instructions[totalInstr-1][2]
+        }
+        if (totalCycles <= first_cycle)
+          totalInstr--
+      } else { // not included & find less
+        do {
+          totalInstr--
+          first_cycle = instructions[totalInstr-1][2]
+        } while (totalCycles <= first_cycle && totalInstr > 0)
+      }
+      timelineOptions.instructions = totalInstr
+      timelineOptions.cycles= newCycles
+    }
+
     cellW = 14
     cellH = 20
     padX  = 10
@@ -395,9 +373,19 @@
 
       // calculate column init and column length for this cycle i
       let initRow   = 0
-      while (initRow < totalInstr && (instructions[initRow][2] + instructions[initRow][4].length <= i)) initRow++
+      while (initRow < totalInstr && (instructions[initRow][2] + instructions[initRow][4].length <= i))
+        initRow++
       let lengthRow = 1
-      while (initRow+lengthRow < totalInstr && instructions[initRow+lengthRow][2] <= i) lengthRow++
+      let ROBused = 1
+      if (instructions[initRow][2] + instructions[initRow][4].length === i+1) {
+        ROBused = 0
+      }
+      while (initRow+lengthRow < totalInstr && instructions[initRow+lengthRow][2] <= i) {
+        if (instructions[initRow+lengthRow][2] + instructions[initRow+lengthRow][4].length > i+1) {
+          ROBused++
+        }
+        lengthRow++
+      }
 
       let sequenceOfPorts = Object.keys(portUsagePorts)
         .filter(p => {
@@ -409,7 +397,7 @@
         .map(p => `P${p}`)
         .join(',')
 
-      sequenceOfPorts = `Ports used: ${sequenceOfPorts || 'none'}\nROB usage: ${lengthRow}`
+      sequenceOfPorts = `Ports used: ${sequenceOfPorts || 'none'}\nROB usage: ${ROBused}`
 
       const portsUsed = portUsageInstr[i]
 
@@ -469,7 +457,7 @@
                                  (ch == 'L' && states[i-startCycle-1] != 'L') ||
                                  (ch == 'S' && states[i-startCycle-1] != 'S')
 
-          if (critical && timelineOptions.full) currColor = "red"
+          if (critical && timelineOptions.critical) currColor = "red"
 
           interactiveCells.push({
             x, y,
@@ -605,7 +593,7 @@
         x:        e.clientX + 10,
         y:        e.clientY + 10,
         state:    charToProcessingState(char, first_exec_stage ? port : null, addr),
-        critical: critical && timelineOptions.full
+        critical: critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
 
@@ -686,25 +674,19 @@
 
       <div class="timeline-controls">
         <div class="iters-group">
-          <span class="iters-label">Instructions:</span>
-          <input type="number" min="1" max="100"  v-model.number="timelineOptions.instructions"
-            title="# instructions (1 to 100)"
-            id="timeline-instructions">
-        </div>
-        <div class="iters-group">
           <span class="iters-label">Cycles:</span>
-          <input type="number" min="1" max="100"  v-model.number="timelineOptions.cycles"
-            title="# cycles (1 to 100)"
+          <input type="number" min="1" v-model.number="timelineOptions.cycles"
+            title="# cycles"
             id="timeline-cycles">
         </div>
 
         <div class="iters-group">
-          <button class="blue-button" :class="{ active: timelineOptions.full }" :aria-pressed="timelineOptions.full"
-            title="Toggle Full Timeline View"
-            id="timeline-full"
-            @click="toggleFull">
-            <span v-if="timelineOptions.full">✔ </span>
-            Full Timeline
+          <button class="blue-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
+            title="Toggle Critical Path View"
+            id="timeline-critical"
+            @click="toggleCritical">
+            <span v-if="timelineOptions.critical">✔ </span>
+            Show Critical
           </button>
         </div>
       </div>
@@ -717,7 +699,6 @@
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
         <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
             {{ hoverInfo.state }}
-            <span v-if="hoverInfo.critical">(in Critical Path)</span>
         </div>
       </div>
     </div>

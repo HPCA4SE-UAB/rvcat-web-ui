@@ -25,20 +25,13 @@ const STORAGE_KEY = 'programEditOptions'
 
   const defaultOptions = {
     showInOut:         true,
+    showStrideLanes:   true,
     showActions:       true,
     showGraph:         false,
     windowWidth:       500,
     windowHeight:      300,
     x_pos:             10,
-    y_pos:             10,
-    visibleCols: {
-      text:     true,
-      type:     true,
-      oper:     true,
-      size:     true,
-      name:     true,
-      pattern:  true
-    }
+    y_pos:             10
   }
 
   const programEditOptions = reactive(defaultOptions)
@@ -143,7 +136,8 @@ function loadEditedProgram() {
       return {
         text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
         size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
-        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || ''
+        source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
+        stride:  inst.stride  || 1,  lanes:   inst.lanes   || 1
       };
     });
     console.log('📄Edited Program Reloaded from local storage')
@@ -155,8 +149,9 @@ function loadEditedProgram() {
 // ============================================================================
 // WATCHES
 // ============================================================================
-  watch( () => [programEditOptions.showInOut, programEditOptions.showActions, programEditOptions.showGraph,
-           programEditOptions.windowWidth, programEditOptions.windowHeight],
+  watch( () => [programEditOptions.showInOut, programEditOptions.showStrideLanes,
+                programEditOptions.showActions, programEditOptions.showGraph,
+                programEditOptions.windowWidth, programEditOptions.windowHeight],
     () => { saveOptions() }
   )
 
@@ -198,9 +193,6 @@ function loadEditedProgram() {
         // TODO: Check here if it is a valid program
         localStorage.setItem('programTemp', JSON.stringify(data));
         loadEditedProgram()
-        if (editedProgram.value.length > 0)
-          editedProgram.value.pop()
-        localStorage.setItem('programTemp', JSON.stringify(editedProgram.value));
       }
     } catch (error) {
       console.error('📄❌ Failed to upload program for edition:', error)
@@ -225,7 +217,9 @@ function addInstruction( index ) {
       source1: '',
       source2: '',
       source3: '',
-      constant: ''
+      constant: '',
+      stride: 1,
+      lanes:  1
     }
   );
 }
@@ -262,7 +256,9 @@ function normalizeInstruction(inst) {
     source1:  (inst.source1  || '').trim(),
     source2:  (inst.source2  || '').trim(),
     source3:  (inst.source3  || '').trim(),
-    constant: (inst.constant || '').trim()
+    constant: (inst.constant || '').trim(),
+    stride:   inst.stride || 1,
+    lanes:    inst.lanes  || 1
   };
 }
 
@@ -274,6 +270,7 @@ function snapshotProgram() {
 }
 
   function toggleInOut  () { programEditOptions.showInOut   = !programEditOptions.showInOut }
+  function toggleStrideLanes() { programEditOptions.showStrideLanes = !programEditOptions.showStrideLanes }
   function toggleActions() { programEditOptions.showActions = !programEditOptions.showActions }
 
   // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
@@ -298,24 +295,10 @@ function snapshotProgram() {
     clearTimeout(graphTimeout)
     try {
       graphTimeout = setTimeout(() => {
-
-        editedProgram.value.push( {
-          text:    'if c go back',
-          type:    'BRANCH',
-          oper:    '',
-          size:    '',
-          destin:  '',
-          source1: 'c',
-          source2: '',
-          source3: '',
-          constant: ''
-        } );
-
         getProgGraph(
           JSON.stringify( toRaw(editedProgram.value), null, 2),
           1, true, false, false, true
         )
-        editedProgram.value.pop()
       }, 75)
       console.log('📄✅ Graph drawn')
       programEditOptions.showGraph = true
@@ -340,24 +323,15 @@ function snapshotProgram() {
     if (stored) {
       const data = JSON.parse(stored)
       data.name = name
-      data.instruction_list.push( {
-        text:    'if c go back',
-        type:    'BRANCH',
-        oper:    '',
-        size:    '',
-        destin:  '',
-        source1: 'c',
-        source2: '',
-        source3: '',
-        constant: ''
-      } );
       await downloadJSON(data, name, 'program')
     }
     showModalDownload.value = false;
   }
 
   function clearProgram() {
-    editedProgram.value  = [];
+    editedProgram.value  = [{ text: "if c go back", type: "BRANCH", oper: "",
+      size: "", destin: "", source1: "c", source2: "", source3: "", constant: "",
+      stride: 1, lanes: 1}];
     showModalClear.value = false;
     addInstruction(0);
   }
@@ -384,12 +358,22 @@ function snapshotProgram() {
         <span class="header-title">Program Editor</span>
       </div>
 
-      <button class="blue-button add-prev-margin" :class="{ active: programEditOptions.showInOut }"
+      <button class="blue-button add-prev-margin"
+              :class="{ active: programEditOptions.showInOut }"
           title="Show/Hide instruction Input/Output operands"
           id="show-inout-operands"
         @click="toggleInOut">
         <span v-if="programEditOptions.showInOut">✔ </span>
         InOut
+      </button>
+
+      <button class="blue-button add-prev-margin"
+              :class="{ active: programEditOptions.showStrideLanes }"
+          title="Show/Hide instruction Stride & vector lanes"
+          id="show-mem-operands"
+        @click="toggleStrideLanes">
+        <span v-if="programEditOptions.showStrideLanes">✔ </span>
+        Stride/Lanes
       </button>
 
       <button class="blue-button add-margin" :class="{ active: programEditOptions.showActions }"
@@ -439,27 +423,29 @@ function snapshotProgram() {
             <thead>
               <tr>
                 <th style="width: 20px;">  # </th>
-                <th v-if="programEditOptions.visibleCols.text"     style="width: 600px;"> Text    </th>
-                <th v-if="programEditOptions.visibleCols.type"     style="width: 100px;"> Type    </th>
-                <th v-if="programEditOptions.visibleCols.oper"     style="width: 100px;"> Oper    </th>
-                <th v-if="programEditOptions.visibleCols.size"     style="width: 100px;"> Size    </th>
+                <th style="width: 600px;"> Text    </th>
+                <th style="width: 100px;"> Type    </th>
+                <th style="width: 100px;"> Oper    </th>
+                <th style="width: 100px;"> Size    </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Destin  </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Source1 </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Source2 </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Source3 </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Constant</th>
+                <th v-if="programEditOptions.showStrideLanes" style="width: 80px;">  Stride </th>
+                <th v-if="programEditOptions.showStrideLanes" style="width: 80px;">  Lanes  </th>
                 <th v-if="programEditOptions.showActions" style="width: 100px;"> Actions </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(inst, index) in editedProgram" :key="index">
+              <tr v-for="(inst, index) in editedProgram.slice(0, editedProgram.length - 1)" :key="index">
                 <td>{{ index }}</td>
 
-                <td v-if="programEditOptions.visibleCols.text">
+                <td>
                   <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.type">
+                <td>
                   <select v-model="inst.type" class="table-select" title="Select instruction type">
                     <option value="">Select...</option>
                     <option v-for="type in instructionTypes" :key="type" :value="type">
@@ -468,7 +454,7 @@ function snapshotProgram() {
                   </select>
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.oper">
+                <td>
                   <select v-model="inst.oper" :disabled="!inst.type || typeOperations[inst.type].length === 0"
                     class="table-select" title="Select operation for this type"
                   >
@@ -483,7 +469,7 @@ function snapshotProgram() {
                   </select>
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.size">
+                <td>
                   <select v-model="inst.size" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
                     class="table-select" title="Select size for this instruction type & operations"
                   >
@@ -518,6 +504,14 @@ function snapshotProgram() {
                   <input type="text" v-model="inst.constant" class="table-input" />
                 </td>
 
+                <td v-if="programEditOptions.showStrideLanes">
+                  <input type="number" v-model="inst.stride" class="table-input" />
+                </td>
+
+                <td v-if="programEditOptions.showStrideLanes">
+                  <input type="number" v-model="inst.lanes" class="table-input" />
+                </td>
+
                 <td v-if="programEditOptions.showActions" class="actions-cell">
 
                   <button
@@ -531,7 +525,7 @@ function snapshotProgram() {
 
                   <button
                     @click="moveInstructionDown(index)"
-                    :disabled="index === editedProgram.length - 1"
+                    :disabled="index === editedProgram.length - 2"
                     class="action-btn"
                     title="Move down"
                   >
@@ -540,7 +534,7 @@ function snapshotProgram() {
 
                   <button
                     @click="removeInstruction(index)"
-                    :disabled="editedProgram.length === 1"
+                    :disabled="editedProgram.length === 2"
                     class="action-btn delete"
                     title="Delete"
                   >
@@ -549,7 +543,6 @@ function snapshotProgram() {
 
                   <button
                     @click="addInstruction(index)"
-                    :disabled="editedProgram.length === 1"
                     class="action-btn"
                     title="Insert new instruction before this one"
                   >
@@ -561,44 +554,48 @@ function snapshotProgram() {
 
               <!-- 🔒 Fila fija final -->
               <tr class="fixed-row">
-                <td> {{editedProgram.length}} </td>
+                <td> {{editedProgram.length-1}} </td>
 
-                <td v-if="programEditOptions.visibleCols.text" title="This final conditional branch is fixed">
+                <td title="This final conditional branch is fixed">
                   <span class="table-input readonly">if c go back</span>
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.type">
+                <td title="This final conditional branch is fixed">
                   <span class="table-select readonly">BRANCH</span>
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.oper">
+                <td title="This final conditional branch is fixed">
                   <span class="table-select readonly"> </span>
                 </td>
 
-                <td v-if="programEditOptions.visibleCols.size">
+                <td title="This final conditional branch is fixed">
                   <span class="table-select readonly"> </span>
                 </td>
 
                 <td v-if="programEditOptions.showInOut">
                   <span class="table-input readonly"> </span>
                 </td>
-
                 <td v-if="programEditOptions.showInOut">
                   <span class="table-input readonly">c</span>
                 </td>
-
-                <td v-if="programEditOptions.showInOut">
-                  <span class="table-input readonly"> </span>
-                </td>
-
                 <td v-if="programEditOptions.showInOut">
                   <span class="table-input readonly"> </span>
                 </td>
                 <td v-if="programEditOptions.showInOut">
                   <span class="table-input readonly"> </span>
                 </td>
-
-                <td v-if="programEditOptions.showActions" class="actions-cell">
+                <td v-if="programEditOptions.showInOut">
+                  <span class="table-input readonly"> </span>
+                </td>
+                <td v-if="programEditOptions.showStrideLanes">
+                  <input type="number" v-model="editedProgram[editedProgram.length - 1].stride" class="table-input" />
+                </td>
+                <td v-if="programEditOptions.showStrideLanes"
+                title="This final conditional branch is fixed">
+                  <span class="table-input readonly"> 1 </span>
+                </td>
+                <td v-if="programEditOptions.showActions" class="actions-cell"
+                  title="This final conditional branch is fixed">
                   <span class="table-input readonly"> 🔒 </span>
                 </td>
               </tr>

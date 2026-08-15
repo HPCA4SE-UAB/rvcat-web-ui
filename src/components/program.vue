@@ -3,7 +3,7 @@
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage, updateProcess
                                                                               }  from '@/common'
-  const simState            = inject('simulationState');
+  const simState = inject('simulationState');
 
   const props = defineProps({
     activeView: String
@@ -13,13 +13,17 @@
 // Program options & localStorage
 // ============================================================================
 
-const STORAGE_KEY = 'programOptions'
+  const STORAGE_KEY = 'programOptions'
+
+  const MAX_N = 5000
 
   const defaultOptions = {
     currentProgram:    '',
     availablePrograms: [],
-    showLat:           true
-  }
+    N:                 100,
+    stride:            1,
+    show:              0  // 0: type/operands, 1: latency/ports, 2: InOut, 3: memory
+ }
 
   const programOptions = reactive(defaultOptions)
 
@@ -63,9 +67,21 @@ const STORAGE_KEY = 'programOptions'
       reloadProgram()
   })
 
-  watch( () => [programOptions.showLat],
+  watch( () => [programOptions.show],
     () => { saveOptions() }
   )
+
+  watch( () => programOptions.N, (newN, oldN) => {
+    if (newN !== oldN) {
+      console.log('📄🔄 N modified from', oldN, 'to', newN);
+      if (inputValue) inputValue.value = newN ?? '';
+      if (typeof isInvalid !== 'undefined') isInvalid.value = false;
+      programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
+      if (!programOptions.N) programOptions.N = programOptions.stride;
+      simState.simulatedProcess.iters = programOptions.N / programOptions.stride
+      saveOptions()
+    }
+  })
 
   watch( () => simState.state, (newValue, oldValue) => {
       if (newValue === 2 && oldValue !== 2) {
@@ -113,6 +129,12 @@ const STORAGE_KEY = 'programOptions'
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
       Object.assign(simState.simulatedProcess, data)
+      let instrCount = simState.simulatedProcess.instruction_list.length
+      programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
+      console.log('📄✅ Program reloaded. STRIDE:', programOptions.stride)
+      programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
+      if (!programOptions.N) programOptions.N = programOptions.stride;
+      simState.simulatedProcess.iters = programOptions.N / programOptions.stride
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
         console.log('📄✅ Initialization step (3): program loaded')
@@ -134,9 +156,6 @@ const STORAGE_KEY = 'programOptions'
         )
       }
 
-      if (cleanProgram.instruction_list.length > 0)
-        cleanProgram.instruction_list.pop()
-
       localStorage.setItem('programTemp', JSON.stringify(cleanProgram));
       emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')
@@ -154,7 +173,7 @@ const STORAGE_KEY = 'programOptions'
     }
   }
 
-  function toggleLatency() { programOptions.showLat = !programOptions.showLat }
+  function toggleLatency() { programOptions.show = (programOptions.show + 1) % 4 }
 
   function portsMaskToString(mask) {
     const ports = []
@@ -183,12 +202,189 @@ const STORAGE_KEY = 'programOptions'
         saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
         Object.assign(simState.simulatedProcess, data)
+        let instrCount = simState.simulatedProcess.instruction_list.length
+        programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
+        console.log('📄✅ Program uploaded. STRIDE:', programOptions.stride)
+        programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
+        if (!programOptions.N) programOptions.N = programOptions.stride;
+        simState.simulatedProcess.iters = programOptions.N / programOptions.stride
         return
       }
     } catch (error) {
       console.error('📄❌ Failed to upload program:', error)
     }
     programOptions.currentProgram = oldProgram
+  }
+
+  let iterControl = {
+    lastTime:  0,
+    direction: null, // 'up' | 'down'
+    stepLevel: 0,    // 0:1, 1:10, 2:100, 3:1000
+    streak:    0
+  };
+
+  const STEP_VALUES     = [1, 10, 100];
+  const FAST_THRESHOLD  = 300;  // ms → considera "rápido"
+  const RESET_THRESHOLD = 1200; // ms → reinicia velocidad
+
+  function getStep(direction) {
+    const now = Date.now();
+
+    // Si pasa mucho tiempo → reset
+    if (now - iterControl.lastTime > RESET_THRESHOLD) {
+      iterControl.stepLevel = 0;
+      iterControl.streak    = 0;
+    }
+
+    // Si cambia la dirección → reset parcial
+    if (iterControl.direction !== direction) {
+      iterControl.stepLevel = 0;
+      iterControl.streak    = 0;
+      iterControl.direction = direction;
+    }
+
+    // Si es rápido → aumentar racha
+    if (now - iterControl.lastTime < FAST_THRESHOLD) {
+      iterControl.streak++;
+    } else {
+      iterControl.streak = 0;
+    }
+
+    // Increase step level every 6 rapid repetitions
+    if (iterControl.streak >= 6 && iterControl.stepLevel < STEP_VALUES.length - 1) {
+      iterControl.stepLevel++;
+      iterControl.streak = 0; // reset para siguiente escalado
+    }
+
+    iterControl.lastTime = now;
+
+    return STEP_VALUES[iterControl.stepLevel];
+  }
+
+  function roundToStep(value, step, direction) {
+    if (direction === 'up') {
+      return Math.ceil(value / step) * step;
+    } else {
+      return Math.floor(value / step) * step;
+    }
+  }
+
+  function increaseN() {
+    const step   = getStep('up')
+    const MaxN   = MAX_N - (MAX_N % programOptions.stride)
+    let newValue = programOptions.N + step*programOptions.stride
+    if (step > 1) newValue = roundToStep(newValue, step*programOptions.stride, 'up')
+    programOptions.N = Math.min(newValue, MaxN)
+  }
+
+  function decreaseN() {
+    let step = getStep('down')
+    if (programOptions.N < step*programOptions.stride*2) {
+      if (iterControl.stepLevel > 0) {
+        iterControl.stepLevel--;
+        iterControl.streak = -10000; // disable scaling
+        step = STEP_VALUES[iterControl.stepLevel];
+      }
+    }
+    let newValue = programOptions.N - step*programOptions.stride
+    if (step > 1) newValue = roundToStep(newValue, step*programOptions.stride, 'down')
+    programOptions.N = Math.max(newValue, programOptions.stride)
+  }
+
+// ============================================================================
+// INPUT VALIDATION: iterations field
+// ============================================================================
+
+  const inputValue   = ref('');
+  const isInvalid    = ref(false);
+  let   errorTimeout = null;
+
+  const validateField = () => {
+    const min = 1;
+    const max = MAX_N;
+    let rawValue = inputValue.value;
+
+    if (errorTimeout) clearTimeout(errorTimeout);
+
+    if (rawValue === '' || rawValue === null || rawValue === undefined) {
+      const lastValidValue = programOptions.N;
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    let numValue = Number(rawValue);
+
+    if (isNaN(numValue)) {
+      const lastValidValue = programOptions.N;
+      inputValue.value = lastValidValue ?? min;
+      isInvalid.value = false;
+      return;
+    }
+
+    if (numValue < min) {
+      numValue = min;
+      inputValue.value = numValue;
+      showTemporaryError(`Minimum is ${min}`);
+    } else if (numValue > max) {
+      numValue = max;
+      inputValue.value = numValue;
+      showTemporaryError(`Maximum is ${max}`);
+    }
+
+    if (programOptions.N !== numValue) {
+      programOptions.N = numValue;
+    }
+  }
+
+  const showTemporaryError = (message) => {
+    isInvalid.value = true;
+    errorTimeout = setTimeout(() => {
+      isInvalid.value = false;
+    }, 2000);
+    console.warn(message);
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      event.target.blur();
+    }
+  };
+
+  const handleInput = (event) => {
+    if (isInvalid.value) {
+      isInvalid.value = false;
+    }
+    let value = event.target.value;
+    if (value !== '' && !/^\d*$/.test(value)) {
+      event.target.value = value.replace(/\D/g, '');
+      inputValue.value = event.target.value;
+    }
+  };
+
+/* ------------------------------------------------------------------
+ * Button Support: press & hold
+ * ------------------------------------------------------------------ */
+  let holdTimeout = null;
+  let holdInterval= null;
+
+  function startHold(action) {
+    const INITIAL_DELAY = 400;   // tiempo hasta que empieza la repetición
+    const REPEAT_INTERVAL = 250; // velocidad de repetición
+
+    action()    // first click
+
+    // wait until repetition
+    holdTimeout = setTimeout(() => {
+      holdInterval = setInterval(() => {
+        action();
+      }, REPEAT_INTERVAL);
+    }, INITIAL_DELAY);
+  }
+
+  function stopHold() {
+    clearTimeout(holdTimeout);
+    clearInterval(holdInterval);
   }
 
 // ============================================================================
@@ -242,13 +438,7 @@ const STORAGE_KEY = 'programOptions'
       </div>
 
       <div class="settings-container">
-        <button class="blue-button" :class="{ active: programOptions.showLat }"
-            title="Toggle between showing latency & Ports / Instruction type"
-            id="show-latports-operands"
-          @click="toggleLatency">
-          <span v-if="programOptions.showLat">✔ </span>
-          latency
-        </button>
+
         <select v-model="programOptions.currentProgram" class="form-select"
             id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
@@ -267,6 +457,56 @@ const STORAGE_KEY = 'programOptions'
             title="Remove program from list (and local storage)">
           🧹
         </button>
+        <button class="blue-button"
+            title="Toggle between: type|performance|input-output|memory"
+            id="show-instr-operands"
+          @click="toggleLatency">
+          <span v-if="programOptions.show === 0">type</span>
+          <span v-if="programOptions.show === 1">perf</span>
+          <span v-if="programOptions.show === 2">InOut</span>
+          <span v-if="programOptions.show === 3">mem</span>
+        </button>
+        <div class="iters-group">
+          <span class="iters-label" :title="`Rang: 1 - ${MAX_N} iters`">
+            N:
+          </span>
+          <input
+            type=      "text"
+            inputmode= "numeric"
+            pattern=   "[0-9]*"
+            :placeholder="100"
+            v-model=  "inputValue"
+            @blur=    "validateField"
+            @keypress="handleKeyPress"
+            @input=   "handleInput"
+            id=       "program-iterations"
+            :class=   "{'invalid': isInvalid}"
+            :title=   "`Rang: 1 - ${MAX_N}`"
+          />
+          <button
+            class="blue-button small-btn"
+            @mousedown="startHold(increaseN)"
+            @mouseup="stopHold"
+            @mouseleave="stopHold"
+            @touchstart.prevent="startHold(increaseN)"
+            @touchend="stopHold"
+            title="Increase N (press and hold for faster incrementing)"
+          >
+            ▲
+          </button>
+
+          <button
+            class="blue-button small-btn"
+            @mousedown="startHold(decreaseN )"
+            @mouseup="stopHold"
+            @mouseleave="stopHold"
+            @touchstart.prevent="startHold(decreaseN)"
+            @touchend="stopHold"
+            title="Decrease N (press and hold for faster decrementing)"
+          >
+            ▼
+          </button>
+        </div>
       </div>
     </div>
 
@@ -277,12 +517,18 @@ const STORAGE_KEY = 'programOptions'
             <tr>
               <th style="width: 100px;">  #    </th>
               <th style="width: 600px;"> Inst </th>
-              <th v-if="!programOptions.showLat"  style="width: 100px;"> Type </th>
-              <th v-if="!programOptions.showLat"  style="width: 100px;"> Oper </th>
-              <th v-if="!programOptions.showLat"  style="width: 100px;"> Size </th>
-              <th v-if="programOptions.showLat"   style="width: 100px;"> Lat </th>
-              <th v-if="programOptions.showLat"   style="width: 200px;"> Ports </th>
-            </tr>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> Type </th>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> Oper </th>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> Size </th>
+              <th v-if="programOptions.show === 1"  style="width: 100px;"> Latency </th>
+              <th v-if="programOptions.show === 1"  style="width: 200px;"> Ports </th>
+              <th v-if="programOptions.show === 2"  style="width: 80px;"> Dst </th>
+              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src1 </th>
+              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src2 </th>
+              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src3 </th>
+              <th v-if="programOptions.show === 3"  style="width: 150px;"> Address </th>
+              <th v-if="programOptions.show === 3"  style="width: 80px;"> Stride </th>
+              <th v-if="programOptions.show === 3"  style="width: 80px;"> Lanes </th>          </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
             <tr
@@ -291,32 +537,53 @@ const STORAGE_KEY = 'programOptions'
               :style="activeView === 'simulationComponent' ? rowStyle(index) : {}"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
-              <td title="Instruction Number/Percentage of time aggregated to in critical path">
-                <section v-if="activeView === 'simulationComponent' && simState.executionResults?.critical_path?.instructions?.[index]?.percentage != null">
-                  {{ simState.executionResults.critical_path.instructions[index].percentage.toFixed(0) }}%
-                </section>
-                <section v-else>
-                 {{ index }}
-                </section>
+              <td v-if="activeView === 'simulationComponent' && simState.executionResults?.critical_path?.instructions?.[index]?.percentage != null"
+                  title="Percentage of time aggregated to in critical path">
+                {{ simState.executionResults.critical_path.instructions[index].percentage.toFixed(0) }}%
               </td>
-
+              <td v-else title="Instruction Number">
+                {{ index }}
+              </td>
               <td title="Instruction description">
-                 {{ inst.text }}
+                {{ inst.text }}
               </td>
-              <td v-if="!programOptions.showLat" title="Instruction type">
+              <td v-if="programOptions.show === 0" title="Instruction type">
                 {{ inst.type }}
               </td>
-              <td v-if="!programOptions.showLat" title="Operation type">
+              <td v-if="programOptions.show === 0" title="Operation type">
                 {{ inst.oper }}
               </td>
-              <td v-if="!programOptions.showLat" title="Operation size">
+              <td v-if="programOptions.show === 0" title="Operation size">
                 {{ inst.size}}
               </td>
-              <td v-if="programOptions.showLat" title="Latency">
+              <td v-if="programOptions.show === 1" title="Instruction Latency">
                 {{ inst.latency }}
               </td>
-              <td v-if="programOptions.showLat" title="Available execution ports">
+              <td v-if="programOptions.show === 1" title="Available execution ports">
                 {{ portsMaskToString(inst.ports) }}
+              </td>
+              <td v-if="programOptions.show === 2" title="Destination operand">
+                {{ inst.destin }}
+              </td>
+              <td v-if="programOptions.show === 2" title="Source operand 1">
+                {{ inst.source1 }}
+              </td>
+              <td v-if="programOptions.show === 2" title="Source operand 2">
+                {{ inst.source2 }}
+              </td>
+              <td v-if="programOptions.show === 2" title="Source operand 3">
+                {{ inst.source3 }}
+              </td>
+              <td v-if="programOptions.show === 3"
+                  title="Memory address">
+                {{ (inst.type === 'MEM' || inst.type === 'VMEM') ? inst.source2 : ''}}
+              </td>
+              <td v-if="programOptions.show === 3"
+                  title="Memory & Loop stride">
+                {{ (inst.type === 'MEM' || inst.type === 'VMEM' || inst.type === 'BRANCH') ? inst.stride : '' }}
+              </td>
+              <td v-if="programOptions.show === 3" title="Number of vector lanes">
+                {{ inst.lanes }}
               </td>
             </tr>
           </tbody>
@@ -455,4 +722,32 @@ const STORAGE_KEY = 'programOptions'
   tr:hover {
     background-color: rgba(0,0,0,0.05);
   }
+
+  .iters-group .iters-label {
+    white-space: nowrap;
+  }
+
+  .iters-group .iters-label {
+    white-space: nowrap;
+  }
+
+  .iters-group input {
+    width:         60px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+    text-align:    center;
+    transition:    all 0.2s ease;
+  }
+
+  .iters-group input:focus {
+    outline:       none;
+    border-color: #4a90e2;
+    box-shadow:    0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  .iters-group input.invalid {
+    border-color: #ff4444;
+    background-color: #fff0f0;
+  }
+
 </style>

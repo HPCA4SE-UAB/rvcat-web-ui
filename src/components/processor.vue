@@ -2,7 +2,7 @@
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-           createGraphVizGraph, typeOperations, get_processor_dot }                           from '@/common'
+           createGraphVizGraph, get_processor_dot }                                           from '@/common'
 
   const simState = inject('simulationState');
 
@@ -149,7 +149,7 @@
     }
 
     if (simState.simulatedProcess[currentConfig.value.model] !== numValue) {
-      simState.simulatedProcess[currentConfig.value.model] = numValue;
+        simState.simulatedProcess[currentConfig.value.model] = numValue;
     }
   }
 
@@ -588,7 +588,7 @@
            The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
            The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
            It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).</p>
-        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instruction scheduler
+        <p>Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instructionscheduler
           (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
           (which always issues the best combination of ready instructions to maximize performance).</p>
         <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports

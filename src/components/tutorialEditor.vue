@@ -197,7 +197,7 @@
 
             <template v-else-if="currentStep.type === 'question'">
               <div class="form-group left-column">
-                <label>Question Text <span class="required">*</span></label>
+                <label>Question text <span class="required">*</span></label>
                 <textarea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text"></textarea>
 
                 <label>Question Image (optional)</label>
@@ -403,7 +403,8 @@ const validationButtonSelectors = [
   { label: 'Clear Edited Program',       value: '#clear-processor-button' },
   { label: 'Clear Edited Proc. Config',  value: '#clear-program-button' },
   { label: 'Remove PortX',               value: '#remove-port0-button' },
-  { label: 'Add Port',                   value: '#add-port-button' }
+  { label: 'Add Port',                   value: '#add-port-button' },
+  { label: 'Toggle Instruction Operands', value: '#show-instr-operands' }
 ]
 
 // ============================================================================

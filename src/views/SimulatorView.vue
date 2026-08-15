@@ -1,14 +1,12 @@
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, computed } from 'vue';
 
-import processor       from '@/components/processor.vue';
-import program         from '@/components/program.vue';
-import programEditor   from '@/components/programEditor.vue';
-import processorEditor from '@/components/processorEditor.vue';
-
+import processor               from '@/components/processor.vue';
+import program                 from '@/components/program.vue';
+import programEditor           from '@/components/programEditor.vue';
+import processorEditor         from '@/components/processorEditor.vue';
 import tutorialComponent       from '@/components/tutorialComponent.vue';
 import tutorialEditor          from '@/components/tutorialEditor.vue';
-
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
@@ -27,7 +25,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.11",
+    version: "1.12",
     year:    2026
   }
 
@@ -189,7 +187,6 @@ onUnmounted(() => {
                 {{ fullProgramButtonText }}
             </button>
           </li>
-          <!--
           <li>
             <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                id="tutorial-button"
@@ -198,7 +195,6 @@ onUnmounted(() => {
                 {{ fullTutorialButtonText }}
             </button>
           </li>
-          -->
 
           <li class="separator"></li>
 
