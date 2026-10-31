@@ -166,9 +166,10 @@ onUnmounted(() => {
 <template>
   <body>
     <header>
-     <div id="top" class="header-title">
+      <div id="top">
+        <div class="header-title">
        <img src="/img/favicon.png" class="title-img">
-       <h1>RVCAT-WEB</h1>
+          <div :style="{ fontSize: 'large', padding: '0 40px' }">RVCAT-WEB</div>
        <nav>
         <ul>
           <li>
