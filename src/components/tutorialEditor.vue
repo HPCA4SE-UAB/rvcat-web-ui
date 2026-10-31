@@ -249,19 +249,6 @@
     </div>
   </div>
 
-  <div v-if="showModalUp" class="modal-overlay">
-    <div class="modal">
-      <h4>Load Tutorial As</h4>
-      <label for="config-name">Name:</label>
-      <input id="config-name" type="text" v-model="modalName" />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" title="Accept Load" @click="confirmModal"> Load  </button>
-        <button class="blue-button" title="Cancel Load" @click="cancelModal"> Cancel </button>
-      </div>
-    </div>
-  </div>
-
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
     text="<p>Tutorials can be edited, uploaded from or downloaded to the local file system in JSON format, added or removed to the local menu
