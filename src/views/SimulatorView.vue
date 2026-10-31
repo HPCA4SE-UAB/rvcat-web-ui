@@ -168,72 +168,72 @@ onUnmounted(() => {
     <header>
       <div id="top">
         <div class="header-title">
-       <img src="/img/favicon.png" class="title-img">
+          <img src="/img/favicon.png" class="title-img">
           <div :style="{ fontSize: 'large', padding: '0 40px' }">RVCAT-WEB</div>
-       <nav>
-        <ul>
-          <li>
-            <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
-               id="processor-button"
-               title="Open full window for processor configuration"
-               @click="toggleFullScreen('processor')" >
-                {{ fullProcessorButtonText }}
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
-               id="program-button"
-               title="Open full window for program edition"
-               @click="toggleFullScreen('program')" >
-                {{ fullProgramButtonText }}
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
-               id="tutorial-button"
-               title="Open full window for tutorial edition"
-               @click="toggleFullScreen('tutorial')" >
-                {{ fullTutorialButtonText }}
-            </button>
-          </li>
+          <nav>
+            <ul>
+              <li>
+                <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
+                  id="simulation-button"
+                  title="Simulate Program's execution and collect performance metrics"
+                  @click="onRequestSwitch('simulationComponent')" >
+                    Simulation
+                </button>
+              </li>
+              <li>
+                <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
+                  id="timeline-button"
+                  title="Detailed Timeline of Program's execution"
+                  @click="onRequestSwitch('timelineComponent')" >
+                    Timeline
+                </button>
+              </li>
+              <li>
+                <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
+                  id="analysis-button"
+                  title="Static Performance Analysis: identify potential bottleneck (throughput or latency/dependencies)"
+                  @click="onRequestSwitch('staticAnalysisComponent')" >
+                    Static Analysis
+                </button>
+              </li>
+              <li>
+                <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
+                  id="about-button"
+                  title="Credits on the design and development for this tool"
+                  @click="onRequestSwitch('aboutComponent')" >
+                    About
+                </button>
+              </li>
 
-          <li class="separator"></li>
-
-          <li>
-            <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
-               id="simulation-button"
-               title="Simulate Program's execution and collect performance metrics"
-               @click="onRequestSwitch('simulationComponent')" >
-                Simulation
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
-               id="timeline-button"
-               title="Detailed Timeline of Program's execution"
-               @click="onRequestSwitch('timelineComponent')" >
-                Timeline
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
-               id="analysis-button"
-               title="Static Performance Analysis -> identify potential bottleneck, either throughput or latency (dependencies)"
-               @click="onRequestSwitch('staticAnalysisComponent')" >
-                Static Analysis
-            </button>
-          </li>
-          <li>
-            <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
-               id="about-button"
-               title="Credits on the design and development for this tool"
-               @click="onRequestSwitch('aboutComponent')" >
-                About
-            </button>
-          </li>
-        </ul>
-       </nav>
-     </div>
+              <li class="separator"></li>
+              <li>
+                <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
+                  id="program-button"
+                  title="Open/Close program edition panel"
+                  @click="toggleFullScreen('program')" >
+                    {{ fullProgramButtonText }}
+                </button>
+              </li>
+              <li>
+                <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
+                  id="processor-button"
+                  title="Open/Close processor edition panel"
+                  @click="toggleFullScreen('processor')" >
+                    {{ fullProcessorButtonText }}
+                </button>
+              </li>
+              <li>
+                <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
+                  id="tutorial-button"
+                  title="Open/Close tutorial edition panel"
+                  @click="toggleFullScreen('tutorial')" >
+                    {{ fullTutorialButtonText }}
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
     </header>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
@@ -286,7 +286,6 @@ onUnmounted(() => {
 
 <style scoped>
 
-/* applied to header title */
 #top {
   max-height:      5vh;
   width:           100vw;
@@ -298,12 +297,7 @@ onUnmounted(() => {
   box-sizing:      border-box;
   align-items:     center;
   justify-content: space-between;
-  background-color: #007acc;
-}
-
-h1 {
-  margin:    0;
-  font-size: large;
+  background-color: #0cb35f;
 }
 
 nav ul {
@@ -329,7 +323,7 @@ nav ul li {
 
 .title-img {
   height:     4vh;
-  margin-top: 0.25vh;
+  margin-top: 0.0vh;
 }
 
 .header-title {
