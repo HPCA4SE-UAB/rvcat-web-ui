@@ -105,9 +105,9 @@
                   <option value="switchTo:simulationComponent">     Go to Simulation     </option>
                   <option value="switchTo:staticAnalysisComponent"> Go to Static Analysis</option>
                   <option value="switchTo:timelineComponent">       Go to Timeline       </option>
-                  <option value="switchToFull:processorEditor">     Go to Processor      </option>
-                  <option value="switchToFull:programEditor">       Go to Program        </option>
-                  <option value="switchToFull:tutorialEditor">      Go to Tutorial       </option>
+                  <option value="switchToFull:processor">           Go to Processor      </option>
+                  <option value="switchToFull:program">             Go to Program        </option>
+                  <option value="switchToFull:tutorial">            Go to Tutorial       </option>
                 </select>
 
                 <label>Step Image (opt.)</label>

@@ -292,7 +292,6 @@ const isActive        = ref(false)
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
-  // get properties from main panel
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
@@ -568,11 +567,16 @@ const showCurrentStep = async () => {
 const processStepActions = (steps) => steps.map(step => {
   if (step.action && typeof step.action === 'string') {
     const [actionType, param] = step.action.split(':')
-    console.log(`👨‍🎓⏺️ Step Action: ${actionType} with parameter: ${param}`)
     if (actionType === 'switchTo') {
-      step.action = () => emit('requestSwitchPanel', param)
+      step.action = () => {
+        emit('requestSwitchPanel', param)
+        console.log(`👨‍🎓⏺️ STEP action: switchTo ${param}`)
+      }
     } else if (actionType === 'switchToFull') {
-      step.action = () => emit('requestSwitchFull', param)
+      step.action = () => {
+        emit('requestSwitchFull', param)
+        console.log(`👨‍🎓⏺️ STEP action: switchToFull ${param}`)
+      }
     }
   }
   return step
