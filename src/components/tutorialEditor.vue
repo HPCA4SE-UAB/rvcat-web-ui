@@ -52,6 +52,36 @@
           </div>
         </div>
 
+        <section v-if="tutorial.steps.length" class="step-order-section" aria-labelledby="step-order-title">
+          <div class="step-order-heading">
+            <h3 id="step-order-title">Card order</h3>
+            <span>Drag a card to change its order. This does not change its connections.</span>
+          </div>
+          <ol class="step-order-list">
+            <li v-for="(step, index) in tutorial.steps" :key="step.id"
+              class="step-order-item"
+              :class="{
+                'is-selected': currentStep?.id === step.id,
+                'is-drop-target': dropTargetStepId === step.id
+              }"
+              :data-step-id="step.id"
+              :aria-label="`Card ${index + 1}: ${step.title || (step.type === 'question' ? 'Question' : 'Step')}. Drag to reorder, or use Alt+Arrow keys.`"
+              tabindex="0"
+              draggable="true"
+              @click="selectStepById(step.id)"
+              @keydown="handleStepOrderKeydown($event, step.id)"
+              @dragstart="startStepDrag($event, step.id)"
+              @dragover.prevent="dropTargetStepId = step.id"
+              @drop.prevent.stop="dropStep(step.id)"
+              @dragend="clearStepDrag">
+              <span class="step-order-grip" aria-hidden="true">⠿</span>
+              <span class="step-order-number">{{ index + 1 }}</span>
+              <span class="step-order-type">{{ step.type === 'question' ? 'Question' : 'Step' }}</span>
+              <span class="step-order-title">{{ step.title || '(Untitled)' }}</span>
+            </li>
+          </ol>
+        </section>
+
         <!-- Card: step/question -->
         <div v-if="currentStep" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
@@ -61,12 +91,6 @@
                   {{ stepNumber }}
                 </span>
                 <div class="step-controls">
-                  <button type="button" @click="moveStep(-1)" :disabled="stepNumber <= 0"
-                    class="move-step-btn" title="Move step one position toward the beginning"
-                    aria-label="Move step left">←</button>
-                  <button type="button" @click="moveStep(1)" :disabled="stepNumber >= maxSteps - 1"
-                    class="move-step-btn" title="Move step one position toward the end"
-                    aria-label="Move step right">→</button>
                   <button type="button" @click="removeStep(stepNumber)" class="remove-btn"
                     title="Remove selected step" aria-label="Remove selected step">×</button>
                 </div>
@@ -285,7 +309,7 @@
       You can specify the position in the screen for the tutorial message in relation to the highlighted screen element.
       Finally, you can specify some requirement to continue the tutorial,
       such as clicking some button, or selecting some value in a certain input box.</p>
-      <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination "End Tutorial".
+      <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination End Tutorial.
       Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
       Older JSON tutorials are migrated to a linear flow when loaded.</p>"
     title="Tutorial edition, download/upload, "
@@ -312,6 +336,8 @@ const simState = inject('simulationState');
 const tutorial    = reactive({ id: 'newTut', name: '', description: '', flowVersion: TUTORIAL_FLOW_VERSION, steps: [] })   // default edited
 const stepNumber  = ref(0)
 const tutorialSvg = ref('')
+const draggedStepId = ref(null)
+const dropTargetStepId = ref(null)
 
 const MAX_IMAGE_SIZE = 500 * 1024 // 500KB
 
@@ -508,14 +534,58 @@ const removeStep = (index) => {
   stepNumber.value = index-1;
 }
 
-const moveStep = (offset) => {
-  const index = stepNumber.value
-  const targetIndex = index + offset
-  if (index < 0 || targetIndex < 0 || targetIndex >= tutorial.steps.length) return
+const selectStepById = (stepId) => {
+  const index = tutorial.steps.findIndex(step => step.id === stepId)
+  if (index !== -1) stepNumber.value = index
+}
 
-  const [step] = tutorial.steps.splice(index, 1)
+const moveStepTo = (stepId, targetIndex) => {
+  const sourceIndex = tutorial.steps.findIndex(step => step.id === stepId)
+  if (sourceIndex === -1 || targetIndex < 0 || targetIndex >= tutorial.steps.length) return
+
+  const selectedStepId = currentStep.value?.id
+  const [step] = tutorial.steps.splice(sourceIndex, 1)
   tutorial.steps.splice(targetIndex, 0, step)
-  stepNumber.value = targetIndex
+  selectStepById(selectedStepId)
+}
+
+const startStepDrag = (event, stepId) => {
+  draggedStepId.value = stepId
+  dropTargetStepId.value = stepId
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', stepId)
+}
+
+const dropStep = (targetStepId) => {
+  const sourceIndex = tutorial.steps.findIndex(step => step.id === draggedStepId.value)
+  const targetIndex = tutorial.steps.findIndex(step => step.id === targetStepId)
+  if (sourceIndex !== -1 && targetIndex !== -1)
+    moveStepTo(draggedStepId.value, targetIndex - (sourceIndex < targetIndex ? 1 : 0))
+  clearStepDrag()
+}
+
+const clearStepDrag = () => {
+  draggedStepId.value = null
+  dropTargetStepId.value = null
+}
+
+const handleStepOrderKeydown = (event, stepId) => {
+  if (event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+    event.preventDefault()
+    const index = tutorial.steps.findIndex(step => step.id === stepId)
+    const targetIndex = index + (event.key === 'ArrowUp' ? -1 : 1)
+    moveStepTo(stepId, targetIndex)
+    nextTick(() => {
+      Array.from(document.querySelectorAll('.step-order-item'))
+        .find(item => item.getAttribute('data-step-id') === stepId)
+        ?.focus()
+    })
+    return
+  }
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    selectStepById(stepId)
+  }
 }
 
 const setSuccessor = (step, slot, targetId) => {
@@ -885,7 +955,7 @@ digraph "Tutorial Graph" {
       color = "purple"
       fill  = "mediumpurple1"
     }
-    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label="${label}",
+    dot_code += `    a${i} [id="${getGraphNodeId(tut.steps[i].id)}", color=${color}, fillcolor=${fill}, label="${label}",
                             tooltip="${escapeDotString(`${type}: ${title}`)}"]\n`
   }
   dot_code += `
@@ -903,9 +973,14 @@ digraph "Tutorial Graph" {
     }
   }
   if (tut.steps.some(step => step.next?.includes('end')))
-    dot_code += '  end [shape=doublecircle, label="End Tutorial"]\n'
+    dot_code += '  end [id="tutorial-end", shape=doublecircle, label="End Tutorial"]\n'
   return dot_code + `
   }`
+}
+
+function getGraphNodeId(stepId) {
+  const encodedId = Array.from(String(stepId), char => char.codePointAt(0).toString(16)).join('-')
+  return `tutorial-step-${encodedId}`
 }
 
 function escapeDotString(value) {
@@ -956,14 +1031,18 @@ const addClickListenersToSvg = () => {
 
     removeClickListeners();
 
-    // Add event listener to all nodes
+    // Resolve nodes by their explicit SVG ids; Graphviz's DOM order can differ from step order.
     const nodes = svgElement.querySelectorAll('g.node');
-    nodes.forEach((node, index) => {
+    nodes.forEach((node) => {
       node.style.cursor = 'pointer';
 
       const handleClick = (event) => {
         event.stopPropagation();
-        let stepN = index
+        const nodeId = node.getAttribute('id')
+        const stepN = nodeId === 'tutorial-end'
+          ? -1
+          : tutorial.steps.findIndex(step => getGraphNodeId(step.id) === nodeId)
+        if (stepN === -1 && nodeId !== 'tutorial-end') return
 
         console.log('🎓 Selected step:', stepN);
 
@@ -977,12 +1056,8 @@ const addClickListenersToSvg = () => {
 
         // 3. Update State
         lastSelectedNode = node;
-        if (index > tutorial.steps.length)
-          stepN = -1
-
         stepNumber.value = stepN;
-        if (stepN >= 0)
-          selectNodeByIndex(stepN)
+        selectNodeByIndex(stepN)
       };
 
       const handleMouseEnter = () => {
@@ -1069,9 +1144,9 @@ const selectNodeByIndex = (index) => {
   if (!svgElement) return;
 
   const nodes = svgElement.querySelectorAll('g.node');
-  if (index >= 0 && index < nodes.length) {
-    if (index == -1) index = 1+tutorial.steps.length
-    const node = nodes[index];
+  const nodeId = index === -1 ? 'tutorial-end' : getGraphNodeId(tutorial.steps[index]?.id)
+  const node = Array.from(nodes).find(candidate => candidate.getAttribute('id') === nodeId)
+  if (node) {
 
     // Deselect
     if (lastSelectedNode && lastSelectedNode !== node) {
@@ -1153,6 +1228,101 @@ onUnmounted(() => {
     border-bottom: none;
   }
 
+  .step-order-section {
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .step-order-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-bottom: 6px;
+  }
+
+  .step-order-heading h3 {
+    margin: 0;
+    color: #374151;
+    font-size: 0.95rem;
+  }
+
+  .step-order-heading span {
+    color: #6b7280;
+    font-size: 0.8rem;
+  }
+
+  .step-order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 4px 0 0;
+    list-style: none;
+  }
+
+  .step-order-item {
+    display: grid;
+    grid-template-columns: 18px 28px 72px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 3px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #374151;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .step-order-item:active {
+    cursor: grabbing;
+  }
+
+  .step-order-item:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+  }
+
+  .step-order-item.is-selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #2563eb;
+  }
+
+  .step-order-item.is-drop-target {
+    border-top: 3px solid #f59e0b;
+  }
+
+  .step-order-grip {
+    color: #6b7280;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .step-order-number {
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-align: right;
+  }
+
+  .step-order-type {
+    color: #6b7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .step-order-title {
+    overflow: hidden;
+    font-size: 0.88rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .tutorial-header {
     display:     flex;
     gap:         10px;
@@ -1229,7 +1399,7 @@ onUnmounted(() => {
 
   .form-row {
     display:               grid;
-    grid-template-columns: 1fr 140px;
+    grid-template-columns: 1fr auto;
     gap:                   1px;
   }
 
@@ -1341,30 +1511,6 @@ onUnmounted(() => {
     display:         flex;
     justify-content: flex-end;
     gap:             4px;
-  }
-
-  .move-step-btn {
-    background:    #3b82f6;
-    color:         white;
-    border:        none;
-    border-radius: 4px;
-    width:         24px;
-    height:        24px;
-    font-size:     medium;
-    cursor:        pointer;
-    display:       flex;
-    align-items:   center;
-    justify-content: center;
-    transition:    background-color 0.2s;
-  }
-
-  .move-step-btn:hover:not(:disabled) {
-    background: #2563eb;
-  }
-
-  .move-step-btn:disabled {
-    opacity: 0.4;
-    cursor:  not-allowed;
   }
 
   .remove-btn {
