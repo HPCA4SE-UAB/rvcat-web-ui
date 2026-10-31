@@ -1016,7 +1016,7 @@ onUnmounted(() => {
 
   .tutorial-highlighted {
     position:      relative;
-    z-index:       10001 !important;
+    z-index:       9998 !important;
     border:        4px solid #007acc !important;
     border-radius: 6px !important;
     box-shadow:    0 0 20px rgba(0, 122, 204, 0.5) !important;
