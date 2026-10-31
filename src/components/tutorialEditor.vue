@@ -74,6 +74,7 @@
               <label>First successor</label>
               <select :value="currentStep.next?.[0] || ''" @change="setSuccessor(currentStep, 0, $event.target.value)">
                 <option value="">No successor</option>
+                <option value="end" :disabled="currentStep.next?.[1] === 'end'">End Tutorial</option>
                 <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
                   :disabled="step.id === currentStep.id || step.id === currentStep.next?.[1]">
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
@@ -82,6 +83,7 @@
               <label>Second successor (optional)</label>
               <select :value="currentStep.next?.[1] || ''" @change="setSuccessor(currentStep, 1, $event.target.value)">
                 <option value="">No second successor</option>
+                <option value="end" :disabled="currentStep.next?.[0] === 'end'">End Tutorial</option>
                 <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
                   :disabled="step.id === currentStep.id || step.id === currentStep.next?.[0]">
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
@@ -283,7 +285,7 @@
       You can specify the position in the screen for the tutorial message in relation to the highlighted screen element.
       Finally, you can specify some requirement to continue the tutorial,
       such as clicking some button, or selecting some value in a certain input box.</p>
-      <p>Each card can have up to two successor cards, including cards earlier in the graph.
+      <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination "End Tutorial".
       Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
       Older JSON tutorials are migrated to a linear flow when loaded.</p>"
     title="Tutorial edition, download/upload, "
@@ -478,9 +480,9 @@ const addStep = (type = 'step', atIndex = -1) => {
   else
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
 
-  newStep.next = previousTargets.slice(0, 1)
+  newStep.next = previousTargets
   if (previousStep)
-    previousStep.next = [newStep.id, ...previousTargets.slice(1, 2)]
+    previousStep.next = [newStep.id]
 
   tutorial.steps.splice(insertIndex, 0, newStep);
   stepNumber.value = insertIndex;
@@ -491,13 +493,17 @@ const removeStep = (index) => {
   const [removedStep] = tutorial.steps.splice(index, 1)
   if (!removedStep) return
 
-  const replacementTarget = removedStep.next?.filter(Boolean).find(targetId => targetId !== removedStep.id)
+  const replacementTargets = (removedStep.next || []).filter(targetId => targetId && targetId !== removedStep.id)
   tutorial.steps.forEach(step => {
-    step.next = (step.next || [])
-      .map(targetId => targetId === removedStep.id ? replacementTarget : targetId)
-      .filter((targetId, targetIndex, targets) =>
-        targetId && targetId !== step.id && targets.indexOf(targetId) === targetIndex)
-      .slice(0, 2)
+    const updatedTargets = []
+    for (const targetId of step.next || []) {
+      const replacements = targetId === removedStep.id ? replacementTargets : [targetId]
+      for (const replacement of replacements) {
+        if (replacement && replacement !== step.id && !updatedTargets.includes(replacement))
+          updatedTargets.push(replacement)
+      }
+    }
+    step.next = updatedTargets.slice(0, 2)
   })
   stepNumber.value = index-1;
 }
@@ -516,7 +522,7 @@ const setSuccessor = (step, slot, targetId) => {
   const next = [...(step.next || [])]
   while (next.length <= slot) next.push('')
   next[slot] = targetId
-  step.next = next
+  step.next = next.filter(Boolean)
 }
 
 // ============================================================================
@@ -682,7 +688,7 @@ const validateTutorial = () => {
                                       errors.push(`• Step ${n}: Successors must be different`)
     if (successors.includes(step.id)) errors.push(`• Step ${n}: A card cannot link to itself`)
     successors.forEach(targetId => {
-      if (!tutorial.steps.some(target => target.id === targetId))
+      if (targetId !== 'end' && !tutorial.steps.some(target => target.id === targetId))
                                       errors.push(`• Step ${n}: Successor does not exist`)
     })
 
@@ -887,11 +893,17 @@ digraph "Tutorial Graph" {
 `
   for (let i = 0; i < num_steps; i++) {
     for (const targetId of (tut.steps[i].next || []).filter(Boolean)) {
+      if (targetId === 'end') {
+        dot_code += `  a${i} -> end\n`
+        continue
+      }
       const targetIndex = indexById.get(targetId)
       if (targetIndex !== undefined)
         dot_code += `  a${i} -> a${targetIndex}\n`
     }
   }
+  if (tut.steps.some(step => step.next?.includes('end')))
+    dot_code += '  end [shape=doublecircle, label="End Tutorial"]\n'
   return dot_code + `
   }`
 }

@@ -1,9 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
   createTutorialStepId,
+  get_processor_dot,
   migrateTutorialFlow,
   TUTORIAL_FLOW_VERSION
 } from './common'
+
+describe('processor graph markup', () => {
+  it('escapes operation data before inserting it into Graphviz HTML labels', () => {
+    const dot = get_processor_dot({
+      ports: { 0: ['INT.<"\'&'] },
+      latencies: { 'INT.<"\'&': 2 },
+      ROBsize: 20,
+      sched: 'optimal'
+    }, false)
+
+    expect(dot).toContain('ID="op:0:0:INT.&lt;&quot;&#39;&amp;"')
+    expect(dot).toContain('INT.&lt;&quot;&#39;&amp;</FONT>')
+  })
+})
 
 describe('tutorial flow migration', () => {
   it('assigns stable ids and linear successors to legacy tutorials', () => {
@@ -26,12 +41,12 @@ describe('tutorial flow migration', () => {
       steps: [
         { id: 'a', next: ['c'] },
         { id: 'b', next: [] },
-        { id: 'c', next: ['a', 'b'] }
+        { id: 'c', next: ['a', 'end'] }
       ]
     }
 
     expect(migrateTutorialFlow(tutorial).steps.map(step => step.next))
-      .toEqual([['c'], [], ['a', 'b']])
+      .toEqual([['c'], [], ['a', 'end']])
   })
 
   it('rejects unknown, self-referencing, or duplicate destinations', () => {
@@ -43,6 +58,7 @@ describe('tutorial flow migration', () => {
     expect(() => migrateTutorialFlow(makeTutorial(['missing']))).toThrow(/unknown successor/)
     expect(() => migrateTutorialFlow(makeTutorial(['a']))).toThrow(/self-link/)
     expect(() => migrateTutorialFlow(makeTutorial(['b', 'b']))).toThrow(/duplicate successor/)
+    expect(() => migrateTutorialFlow(makeTutorial(['end', 'end']))).toThrow(/duplicate end destination/)
   })
 
   it('rejects unsupported flow versions instead of rewriting their links', () => {

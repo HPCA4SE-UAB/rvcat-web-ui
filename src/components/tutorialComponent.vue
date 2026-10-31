@@ -3,7 +3,10 @@
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
-      <div class="tutorial-tooltip" ref="contentRef" :style="{ left: x + 'px', top: y + 'px' }">
+      <div class="tutorial-tooltip" ref="contentRef"
+        :style="{ left: x + 'px', top: y + 'px',
+                  width: currentStep?.wWidth ? `${currentStep.wWidth}px` : undefined,
+                  height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="currentStep?.title"></h3>
           <button title="Close tutorial, but can be resumed later"
@@ -27,10 +30,10 @@
             </span>
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
-                    :title="`Continue to ${target.title}`"
+                    :title="target.id === 'end' ? 'Finish tutorial' : `Continue to ${target.title}`"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
-              {{ target.title }}
+              {{ target.id === 'end' ? 'End Tutorial' : target.title }}
             </button>
             <button v-if="successorSteps.length === 0"
                     @click="completeTutorial"
@@ -129,7 +132,7 @@
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
                     class="tutorial-btn tutorial-btn-primary">
-              {{ target.title }}
+              {{ target.id === 'end' ? 'End Tutorial' : target.title }}
             </button>
           </template>
           <button v-else
@@ -308,6 +311,7 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
   const HEADER_HEIGHT = 40
   const MIN_W = 100
   const MIN_H = 100
+  const VIEWPORT_MARGIN = 16
 
   const headerRef  = ref(null)
   const contentRef = ref(null)
@@ -320,13 +324,12 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
     onMove(pos) {
 
-      const w = tutorialOptions.windowWidth
+      const rect = contentRef.value?.getBoundingClientRect()
+      const w = rect?.width || tutorialOptions.windowWidth
+      const h = rect?.height || tutorialOptions.windowHeight
 
-      const maxX = window.innerWidth  - w
-      const maxY = window.innerHeight - HEADER_HEIGHT
-
-      x.value = Math.min(Math.max(pos.x, 0), maxX)
-      y.value = Math.min(Math.max(pos.y, HEADER_HEIGHT), maxY)
+      x.value = clamp(pos.x, VIEWPORT_MARGIN, window.innerWidth - w - VIEWPORT_MARGIN)
+      y.value = clamp(pos.y, HEADER_HEIGHT, window.innerHeight - h - VIEWPORT_MARGIN)
 
       const step = currentStep.value
       if (step) {
@@ -339,11 +342,14 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
   useResizeObserver(contentRef, (entries) => {
     const { width: w, height: h } = entries[0].contentRect
 
-    const maxWidth  = window.innerWidth  - tutorialOptions.x_pos
-    const maxHeight = window.innerHeight - tutorialOptions.y_pos
+    const maxWidth  = Math.max(MIN_W, window.innerWidth - VIEWPORT_MARGIN * 2)
+    const maxHeight = Math.max(MIN_H, window.innerHeight - HEADER_HEIGHT - VIEWPORT_MARGIN)
 
     tutorialOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
     tutorialOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
+
+    x.value = clamp(x.value, VIEWPORT_MARGIN, window.innerWidth - tutorialOptions.windowWidth - VIEWPORT_MARGIN)
+    y.value = clamp(y.value, HEADER_HEIGHT, window.innerHeight - tutorialOptions.windowHeight - VIEWPORT_MARGIN)
 
     const step = currentStep.value
     if (step) {
@@ -353,16 +359,13 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
   })
 
   const handleWindowResize = () => {
-    const w = tutorialOptions.windowWidth
-
-    x.value = Math.min(x.value, window.innerWidth - w)
-    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
-
     const step = currentStep.value
-    if (step) {
+    if (step && Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
+      x.value = clamp(x.value, VIEWPORT_MARGIN, window.innerWidth - tutorialOptions.windowWidth - VIEWPORT_MARGIN)
+      y.value = clamp(y.value, HEADER_HEIGHT, window.innerHeight - tutorialOptions.windowHeight - VIEWPORT_MARGIN)
       step.x_pos = x.value
       step.y_pos = y.value
-    }
+    } else if (step) nextTick(positionCurrentTooltip)
   }
 
   window.addEventListener('resize', handleWindowResize)
@@ -404,7 +407,9 @@ const successorSteps = computed(() => {
   const step = currentStep.value
   if (!step) return []
   return (step.next || [])
-    .map(id => steps.find(candidate => candidate.id === id))
+    .map(id => id === 'end'
+      ? { id: 'end', title: 'End Tutorial' }
+      : steps.find(candidate => candidate.id === id))
     .filter(Boolean)
 })
 
@@ -482,6 +487,69 @@ const isElementVisible = (el) => {
 }
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max))
+
+const getTooltipPosition = (targetRect, width, height, preferredPosition) => {
+  const margin = VIEWPORT_MARGIN
+  const centerX = targetRect.left + targetRect.width / 2 - width / 2
+  const centerY = targetRect.top + targetRect.height / 2 - height / 2
+  const candidates = [
+    { side: 'bottom', space: window.innerHeight - targetRect.bottom - margin, top: targetRect.bottom + margin, left: centerX, required: height },
+    { side: 'top', space: targetRect.top - margin, top: targetRect.top - height - margin, left: centerX, required: height },
+    { side: 'right', space: window.innerWidth - targetRect.right - margin, top: centerY, left: targetRect.right + margin, required: width },
+    { side: 'left', space: targetRect.left - margin, top: centerY, left: targetRect.left - width - margin, required: width }
+  ].map(candidate => {
+    const left = clamp(candidate.left, margin, window.innerWidth - width - margin)
+    const top = clamp(candidate.top, HEADER_HEIGHT, window.innerHeight - height - margin)
+    const overlaps = left < targetRect.right && left + width > targetRect.left
+      && top < targetRect.bottom && top + height > targetRect.top
+    return { ...candidate, left, top, fits: candidate.space >= candidate.required && !overlaps, overlaps }
+  })
+
+  const preferred = candidates.find(candidate => candidate.side === preferredPosition)
+  const selected = preferred?.fits
+    ? preferred
+    : candidates.filter(candidate => !candidate.overlaps)
+      .sort((a, b) => b.space - a.space)[0]
+
+  return selected
+    ? { left: selected.left, top: selected.top }
+    : { left: clamp(centerX, margin, window.innerWidth - width - margin),
+        top: clamp(centerY, HEADER_HEIGHT, window.innerHeight - height - margin) }
+}
+
+const positionCurrentTooltip = async () => {
+  const step = currentStep.value
+  const tooltipRect = contentRef.value?.getBoundingClientRect()
+  if (!step || !tooltipRect) return
+
+  tutorialOptions.windowWidth = tooltipRect.width
+  tutorialOptions.windowHeight = tooltipRect.height
+  step.wWidth = tooltipRect.width
+  step.wHeight = tooltipRect.height
+
+  if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
+    x.value = clamp(step.x_pos, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
+    y.value = clamp(step.y_pos, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+    return
+  }
+
+  const targetRect = highlightElement.value?.getBoundingClientRect()
+  if (targetRect) {
+    const position = getTooltipPosition(
+      targetRect,
+      tooltipRect.width,
+      tooltipRect.height,
+      step.position || 'bottom'
+    )
+    x.value = position.left
+    y.value = position.top
+    return
+  }
+
+  x.value = clamp((window.innerWidth - tooltipRect.width) / 2, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
+  y.value = clamp((window.innerHeight - tooltipRect.height) / 2, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+}
 
 const clearHighlights = () => {
   document.querySelectorAll('.tutorial-highlighted').forEach(el => {
@@ -524,61 +592,23 @@ const showCurrentStep = async () => {
   } else {
     element = document.querySelector(sel)
   }
+  highlightElement.value = element || null
 
-  if (currentStep.value.wWidth)
-    tutorialOptions.windowWidth = currentStep.value.wWidth
-
-  if (currentStep.value.wHeight)
-    tutorialOptions.windowHeight = currentStep.value.wHeight
+  tutorialOptions.windowWidth = currentStep.value.wWidth || 320
+  tutorialOptions.windowHeight = currentStep.value.wHeight || 180
 
   if (element) {
     highlightElement.value = element
     element.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
     if (!isElementVisible(element)) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      element.scrollIntoView({ behavior: 'auto', block: 'center' })
     }
     console.log(`👨‍🎓⏺️ Highlighted Element: ${element} X: ${currentStep.value.x_pos} Y: ${currentStep.value.y_pos} W: ${currentStep.value.wWidth} H: ${currentStep.value.wHeight}`)
-
-    if (currentStep.value.x_pos) {
-      x.value = currentStep.value.x_pos
-      y.value = currentStep.value.y_pos
-    }
-    else {
-      const rect = highlightElement.value.getBoundingClientRect()
-      const pos  = currentStep.value.position || 'bottom'
-      const margin = 15
-
-      let top, left
-      const centerX = rect.left + rect.width / 2  - tutorialOptions.windowWidth / 2
-      const centerY = rect.top  + rect.height / 2 - tutorialOptions.windowHeight / 2
-
-      switch (pos) {
-        case 'top':     top = rect.top - tutorialOptions.windowHeight - margin;
-                        left = centerX;
-                        break
-        case 'bottom':  top = rect.bottom + margin;
-                        left = centerX;
-                        break
-        case 'left':    top = centerY;
-                        left = rect.left - tutorialOptions.windowWidth - margin;
-                        break
-        case 'right':   top = centerY;
-                        left = rect.right + margin;
-                        break
-        default:        top = rect.bottom + margin;
-                        left = centerX
-      }
-
-      // Clamp to viewport
-      left = Math.max(margin, Math.min(left, window.innerWidth - tutorialOptions.windowWidth - margin))
-      top  = Math.max(margin, Math.min(top,  window.innerHeight - tutorialOptions.windowHeight - margin))
-
-      x.value = left
-      y.value = top
-    }
   }
 
   await nextTick()
+  await positionCurrentTooltip()
+
   setupValidationListeners()
   setupButtonClickTracking()
 }
@@ -823,20 +853,25 @@ const goToStep = async (newIndex, { recordHistory = true } = {}) => {
   tutorialOptions.progressStepId = currentTutorial.value.steps[newIndex].id
   resetQuestionState()
   shuffleAnswers    ()
+  isActive.value = true
   await nextTick()
 
   await showCurrentStep()
-  isActive.value  = true
 }
 
 const nextStep = async (targetId) => {
   if (!currentStep.value) return
+  if (currentStep.value.type === 'question' && !isQuestionCorrect.value) return
+  if (!currentStep.value.next?.includes(targetId)) return
+  if (targetId === 'end') {
+    await completeTutorial()
+    return
+  }
   if (currentStep.value.type !== 'question' && currentStep.value.validation) {
     if (!await validateCurrentStep()) return
   }
-  if (currentStep.value.type === 'question' && !isQuestionCorrect.value) return
   const targetIndex = currentTutorial.value.steps.findIndex(step => step.id === targetId)
-  if (targetIndex === -1 || !currentStep.value.next?.includes(targetId)) return
+  if (targetIndex === -1) return
   await goToStep(targetIndex)
 }
 
@@ -1144,8 +1179,11 @@ onUnmounted(() => {
   .tutorial-tooltip {
     display:        flex;
     flex-direction: column;
-    position:    fixed; /* absolute */
-    overflow:    auto;  /* added to allow resizing content */
+    position:    fixed;
+    overflow:    hidden;
+    width:       fit-content;
+    max-width:   calc(100vw - 32px);
+    max-height:  calc(100vh - 56px);
     background:  white;
     box-shadow:  0 8px 24px rgba(0, 0, 0, 0.3);
     padding:     0;
@@ -1188,6 +1226,7 @@ onUnmounted(() => {
   .tutorial-tooltip .tutorial-content {
     padding: 10px;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     word-wrap: break-word;
   }

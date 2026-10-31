@@ -107,6 +107,9 @@ export function migrateTutorialFlow(tutorial) {
       while (ids.has(id)) id = `step-${index + 1}-${suffix++}`
       step.id = id
     }
+    if (step.id === 'end') {
+      throw new Error(`Tutorial step ${index + 1} uses the reserved id "end".`)
+    }
     ids.add(step.id)
   })
 
@@ -123,6 +126,13 @@ export function migrateTutorialFlow(tutorial) {
       step.next = step.next.filter(targetId => targetId != null && targetId !== '')
       const seenTargets = new Set()
       step.next.forEach(targetId => {
+        if (targetId === 'end') {
+          if (seenTargets.has(targetId)) {
+            throw new Error(`Tutorial step ${index + 1} has a duplicate end destination.`)
+          }
+          seenTargets.add(targetId)
+          return
+        }
         if (typeof targetId !== 'string' || !ids.has(targetId)) {
           throw new Error(`Tutorial step ${index + 1} references an unknown successor.`)
         }
@@ -501,6 +511,15 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     const CacheBlocks    = process.nBlocks || 0
     const CacheBlockSize = process.blkSize || 32
 
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+    }
+
     function type_color(type) {
       if (type === "INT")    return "#d6e4ff"
       if (type === "MEM")    return "#d6ffd6"
@@ -607,7 +626,8 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
         ? ' BGCOLOR="#ffcccc" BORDER="1" COLOR="red"'
         : ' BGCOLOR="#f5f5f5"'
 
-      port_header += `<TD ${style} HREF="#" ID="port:${p}" TITLE="Port ${p}"><FONT POINT-SIZE="20"><B>P${p}</B></FONT></TD>`
+      const safePort = escapeHtml(p)
+      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="Port ${safePort}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
@@ -635,9 +655,11 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
         const type    = op_type(op.label)
         const color   = type_color(type)
         const tooltip = latency_tooltip(op.label)
+        const safeLabel = escapeHtml(op.label)
+        const safeTooltip = escapeHtml(tooltip)
 
         op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${tooltip}" HREF="#" ID="op:${p}:${i}:${op.label}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${op.label}</B>` : op.label}</FONT></TD>`
+          <TD BGCOLOR="${color}" TITLE="${safeTooltip}" HREF="#" ID="op:${escapeHtml(p)}:${i}:${safeLabel}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${safeLabel}</B>` : safeLabel}</FONT></TD>`
       }
 
       op_rows += "</TR>"
