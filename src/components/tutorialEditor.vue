@@ -60,7 +60,16 @@
                 <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
                   {{ stepNumber }}
                 </span>
-                <button @click="removeStep(stepNumber)" class="remove-btn">×</button>
+                <div class="step-controls">
+                  <button type="button" @click="moveStep(-1)" :disabled="stepNumber <= 0"
+                    class="move-step-btn" title="Move step one position toward the beginning"
+                    aria-label="Move step up">↑</button>
+                  <button type="button" @click="moveStep(1)" :disabled="stepNumber >= maxSteps - 1"
+                    class="move-step-btn" title="Move step one position toward the end"
+                    aria-label="Move step down">↓</button>
+                  <button type="button" @click="removeStep(stepNumber)" class="remove-btn"
+                    title="Remove selected step" aria-label="Remove selected step">×</button>
+                </div>
               </div>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
@@ -450,6 +459,16 @@ const removeStep = (index) => {
   stepNumber.value = index-1;
 }
 
+const moveStep = (offset) => {
+  const index = stepNumber.value
+  const targetIndex = index + offset
+  if (index < 0 || targetIndex < 0 || targetIndex >= tutorial.steps.length) return
+
+  const [step] = tutorial.steps.splice(index, 1)
+  tutorial.steps.splice(targetIndex, 0, step)
+  stepNumber.value = targetIndex
+}
+
 // ============================================================================
 // STEP TYPE & MODE CHANGES
 // ============================================================================
@@ -762,12 +781,14 @@ digraph "Tutorial Graph" {
     let color = "blue"
     let fill  = "lightblue"
     let type  = tut.steps[i].type
+    const title = tut.steps[i].title || `${type} ${i}`
+    const shortTitle = title.length > 18 ? `${title.slice(0, 15)}...` : title
     if (type !== "step") {
       color = "purple"
       fill  = "mediumpurple1"
     }
-    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label=<<B><FONT COLOR="${color}">${i}</FONT></B>>,
-                            tooltip="Click to edit this ${type}"]\n`
+    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label="${i}\\n${escapeDotString(shortTitle)}",
+                            tooltip="${escapeDotString(`${type}: ${title}`)}"]\n`
   }
   dot_code += `
   }
@@ -786,6 +807,13 @@ digraph "Tutorial Graph" {
   }
   return dot_code + `
   }`
+}
+
+function escapeDotString(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/[\r\n]+/g, ' ')
 }
 
 // ============================================================================
@@ -877,7 +905,7 @@ const addClickListenersToSvg = () => {
       });
     });
 
-    selectNodeByIndex(stepNumber)
+    selectNodeByIndex(stepNumber.value)
   });
 };
 
@@ -1201,6 +1229,36 @@ onUnmounted(() => {
     min-width:  12px;
     max-width:  24px;
     text-align: center;
+  }
+
+  .step-controls {
+    display:         flex;
+    justify-content: flex-end;
+    gap:             4px;
+  }
+
+  .move-step-btn {
+    background:    #3b82f6;
+    color:         white;
+    border:        none;
+    border-radius: 4px;
+    width:         24px;
+    height:        24px;
+    font-size:     medium;
+    cursor:        pointer;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    transition:    background-color 0.2s;
+  }
+
+  .move-step-btn:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .move-step-btn:disabled {
+    opacity: 0.4;
+    cursor:  not-allowed;
   }
 
   .remove-btn {
