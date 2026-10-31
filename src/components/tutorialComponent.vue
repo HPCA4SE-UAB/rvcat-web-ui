@@ -568,6 +568,7 @@ const showCurrentStep = async () => {
 const processStepActions = (steps) => steps.map(step => {
   if (step.action && typeof step.action === 'string') {
     const [actionType, param] = step.action.split(':')
+    console.log(`👨‍🎓⏺️ Step Action: ${actionType} with parameter: ${param}`)
     if (actionType === 'switchTo') {
       step.action = () => emit('requestSwitchPanel', param)
     } else if (actionType === 'switchToFull') {
