@@ -25,7 +25,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.12",
+    version: "1.13",
     year:    2026
   }
 
@@ -245,23 +245,23 @@ onUnmounted(() => {
     <main class="container" :class="containerClasses">
 
       <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen" id="process-panel">
-        <processor :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
+        <processor @requestSwitchFull="toggleFullScreen"/>
         <program :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
       </div>
 
       <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processorEditor-panel">
-        <processorEditor :is-fullscreen="isProcessorFullscreen" @requestSwitchFull="toggleFullScreen"/>
+        <processorEditor :is-fullscreen="isProcessorFullscreen"/>
       </div>
 
       <div v-if="checkOK" v-show="isProgramFullscreen"   class="grid-item program"   id="programEditor-panel">
-        <programEditor   :is-fullscreen="isProgramFullscreen"   @requestSwitchFull="toggleFullScreen"/>
+        <programEditor   :is-fullscreen="isProgramFullscreen"  />
       </div>
 
       <div v-if="checkOK" v-show="isTutorialFullscreen"
         class="grid-item tutorial" :class="{ 'fullscreen': isTutorialFullscreen }"
         id="tutorial-panel"
         >
-        <tutorialEditor :is-fullscreen="isTutorialFullscreen"  @requestSwitchFull="toggleFullScreen"/>
+        <tutorialEditor :is-fullscreen="isTutorialFullscreen"  />
       </div>
 
       <div v-if="checkOK" v-show= "isNotFullscreen"

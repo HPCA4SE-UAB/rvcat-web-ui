@@ -848,11 +848,13 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<strong>Simulate</strong> the execution of a specified number of program loop iterations and view aggregate performance metrics,
+    text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      and <em>Instructions Per Cycle</em> (IPC). To obtain meaningful results, ensure a representative number of loop iterations is selected,
+      <em>Instructions Per Cycle</em> (IPC), Read/Write <em>cache misses</em>, and <em>MM bandwidth</em> usage.
+      To obtain meaningful results, ensure a representative number of loop iterations, N, is selected,
       as very low iteration counts may not fully capture the program's behavior and performance characteristics.
-      <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths, and usage of execution ports.
+      <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths,
+        and usage of execution ports and cache/MM hierarchy.
         These metrics are crucial for identifying potential performance bottlenecks in the simulated execution.</p>
     "
     title="Overall Simulation Results"
@@ -862,7 +864,7 @@
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
     text="Visualize the <strong>performance results</strong> from previous simulations.
-      This table allows you to compare the current simulation results with those from previous runs,
+      This list allows you to compare the current simulation results with those from previous runs,
       enabling you to track performance changes over time or after modifications to the processor configuration
       or program.
       <p>You can also manage your stored results by renaming them, reordering them for better comparison,

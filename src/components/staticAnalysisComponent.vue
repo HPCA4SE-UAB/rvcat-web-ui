@@ -83,7 +83,6 @@
   }
 
   let unwatch            = null
-  let isComponentMounted = false
 
   onMounted(() => {
     cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
@@ -91,7 +90,6 @@
     loadOptions() // load options or store it if not present (first run)
     getAnalysis() // load performance data for current process if it exists
     nextTick(() => {
-      isComponentMounted = true;
       unwatch = watch(dependenceGraphOptions, () => {
           try {
             dependenceGraphOptions.iters = Math.min(dependenceGraphOptions.iters, 7);
@@ -109,7 +107,6 @@
   })
 
   onBeforeUnmount(() => {
-    isComponentMounted = false;
     if (unwatch) {
       unwatch();
       unwatch = null;

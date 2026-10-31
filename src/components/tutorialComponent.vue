@@ -3,9 +3,13 @@
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
-      <div class="tutorial-tooltip" :style="tooltipStyle">
-        <div class="tutorial-content">
+      <div class="tutorial-tooltip" ref="contentRef" :style="{ left: x + 'px', top: y + 'px' }">
+        <div class="tutorial-header" ref="headerRef">
           <h3 v-html="currentStep?.title"></h3>
+          <button title="Close tutorial, but can be resumed later"
+          class="tutorial-close" @click="closeTutorial">&times;</button>
+        </div>
+        <div class="tutorial-content">
           <p class="step-description" v-html="currentStep?.description"></p>
           <div v-if="currentStep?.image" class="step-image"
             @click="openLightbox(currentStep.image)">
@@ -37,9 +41,6 @@
             </button>
           </div>
         </div>
-        <button @click="closeTutorial"
-          title="Close tutorial, but can be resumed later"
-          class="tutorial-close">&times;</button>
       </div>
     </div>
 
@@ -233,7 +234,8 @@
 
 <script setup>
 
-import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useDraggable, useResizeObserver}                                           from '@vueuse/core'
 import { initResource, removeFromLocalStorage, uploadJSON }                         from '@/common'
 const simState = inject('simulationState');
 
@@ -243,15 +245,16 @@ const simState = inject('simulationState');
 const STORAGE_KEY = 'tutorialOptions'
 
 const defaultOptions = {
-  available:    [],
-  inProgressID: "",
-  progressStep:  0
+  available:      [],
+  inProgressID:   "",
+  progressStep:    0,
+  windowWidth:   200,
+  windowHeight:  200,
+  x_pos:          10,
+  y_pos:          10
 }
 
 const tutorialOptions  = reactive(defaultOptions)
-
-const TOOLTIP_WIDTH  = 400
-const TOOLTIP_HEIGHT = 300
 
 // Core tutorial state
 const currentTutorial = ref(null)
@@ -282,20 +285,82 @@ const isActive        = ref(false)
     }
   }
 
-const availableTutorials = computed(() =>
-   tutorialOptions.available
-)
+  const availableTutorials = computed(() =>
+    tutorialOptions.available
+  )
 
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
-
   // get properties from main panel
-const props = defineProps({ activeView: String, activeFull: String })
-
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
+// ============================================================================
+// Draggable & resizable full-screen graph container
+// ============================================================================
+
+  const HEADER_HEIGHT = 40
+  const MIN_W = 100
+  const MIN_H = 100
+
+  const headerRef  = ref(null)
+  const contentRef = ref(null)
+
+  const x = toRef(tutorialOptions, 'x_pos')
+  const y = toRef(tutorialOptions, 'y_pos')
+
+  const { isDragging } = useDraggable(headerRef, {
+    initialValue: { x: tutorialOptions.x_pos, y: tutorialOptions.y_pos },
+
+    onMove(pos) {
+
+      const w = tutorialOptions.windowWidth
+
+      const maxX = window.innerWidth  - w
+      const maxY = window.innerHeight - HEADER_HEIGHT
+
+      x.value = Math.min(Math.max(pos.x, 0), maxX)
+      y.value = Math.min(Math.max(pos.y, HEADER_HEIGHT), maxY)
+
+      const step = currentStep.value
+      if (step) {
+        step.x_pos = x.value
+        step.y_pos = y.value
+      }
+    }
+  })
+
+  useResizeObserver(contentRef, (entries) => {
+    const { width: w, height: h } = entries[0].contentRect
+
+    const maxWidth  = window.innerWidth  - tutorialOptions.x_pos
+    const maxHeight = window.innerHeight - tutorialOptions.y_pos
+
+    tutorialOptions.windowWidth  = Math.max(MIN_W, Math.min(w, maxWidth))
+    tutorialOptions.windowHeight = Math.max(MIN_H, Math.min(h, maxHeight))
+
+    const step = currentStep.value
+    if (step) {
+      step.wWidth = tutorialOptions.windowWidth
+      step.wHeight = tutorialOptions.windowHeight
+    }
+  })
+
+  const handleWindowResize = () => {
+    const w = tutorialOptions.windowWidth
+
+    x.value = Math.min(x.value, window.innerWidth - w)
+    y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)
+
+    const step = currentStep.value
+    if (step) {
+      step.x_pos = x.value
+      step.y_pos = y.value
+    }
+  }
+
+  window.addEventListener('resize', handleWindowResize)
 
 // ============================================================================
 // Tutorial STATE
@@ -305,10 +370,6 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 const validationState  = ref({})
 const showTutorialMenu = ref(false)
 const highlightElement = ref(null)
-
-// Scroll position
-const originalScrollPosition = ref({ x: 0, y: 0 })
-const tooltipPositionTrigger = ref(0)
 
 // Question state
 const selectedAnswers       = ref([])
@@ -393,42 +454,9 @@ const canProceed = computed(() => {
   }
 })
 
-const tooltipStyle = computed(() => {
-
-  tooltipPositionTrigger.value // Force reactivity
-
-  if (!highlightElement.value || !currentStep.value) {
-    showTutorialMenu.value = true
-    return { display: 'none' }
-  }
-
-  const rect = highlightElement.value.getBoundingClientRect()
-  const pos  = currentStep.value.position || 'bottom'
-  const margin = 15
-
-  let top, left
-  const centerX = rect.left + rect.width / 2  - TOOLTIP_WIDTH / 2
-  const centerY = rect.top  + rect.height / 2 - TOOLTIP_HEIGHT / 2
-
-  switch (pos) {
-    case 'top':    top = rect.top - TOOLTIP_HEIGHT - 15; left = centerX;                        break
-    case 'bottom': top = rect.bottom + 15;               left = centerX;                        break
-    case 'left':   top = centerY;                        left = rect.left - TOOLTIP_WIDTH - 15; break
-    case 'right':  top = centerY;                        left = rect.right + 15;                break
-    default:       top = rect.bottom + 15;               left = centerX
-  }
-
-  // Clamp to viewport
-  left = Math.max(margin, Math.min(left, window.innerWidth -  TOOLTIP_WIDTH - margin))
-  top  = Math.max(margin, Math.min(top,  window.innerHeight - TOOLTIP_HEIGHT - margin))
-
-  return { top: `${top}px`, left: `${left}px` }
-})
-
 // ============================================================================
-// UTILITY FUNCTIONS
+// HIGHLIGHTING
 // ============================================================================
-
 const isElementVisible = (el) => {
   const rect = el.getBoundingClientRect()
   return rect.top < window.innerHeight && rect.bottom > 0 &&
@@ -443,9 +471,98 @@ const clearHighlights = () => {
   })
 }
 
-const resetQuestionState = () => {
-  selectedAnswers.value  = []
-  questionAnswered.value = false
+const showCurrentStep = async () => {
+  if (currentStep.value?.type === 'question') {
+    clearHighlights()
+    highlightElement.value = null
+    return
+  }
+
+  if (!currentStep.value?.selector) return
+
+  // Execute step action
+  if (currentStep.value.action) {
+    try {
+      await currentStep.value.action()
+      await nextTick()
+      await delay(300)
+    } catch (e) {
+      console.error('👨‍🎓❌ Step action error:', e)
+    }
+  }
+
+  clearHighlights()
+
+  // Find element
+  let element
+  const sel = currentStep.value.selector
+
+  if (sel.includes(':contains(')) {
+    const match = sel.match(/^([^:]+):contains\("([^"]+)"\)$/)
+    if (match) {
+      element = Array.from(document.querySelectorAll(match[1]))
+        .find(el => el.textContent.includes(match[2]))
+    }
+  } else {
+    element = document.querySelector(sel)
+  }
+
+  if (currentStep.value.wWidth)
+    tutorialOptions.windowWidth = currentStep.value.wWidth
+
+  if (currentStep.value.wHeight)
+    tutorialOptions.windowHeight = currentStep.value.wHeight
+
+  if (element) {
+    highlightElement.value = element
+    element.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
+    if (!isElementVisible(element)) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    console.log(`👨‍🎓⏺️ Highlighted Element: ${element} X: ${currentStep.value.x_pos} Y: ${currentStep.value.y_pos} W: ${currentStep.value.wWidth} H: ${currentStep.value.wHeight}`)
+
+    if (currentStep.value.x_pos) {
+      x.value = currentStep.value.x_pos
+      y.value = currentStep.value.y_pos
+    }
+    else {
+      const rect = highlightElement.value.getBoundingClientRect()
+      const pos  = currentStep.value.position || 'bottom'
+      const margin = 15
+
+      let top, left
+      const centerX = rect.left + rect.width / 2  - tutorialOptions.windowWidth / 2
+      const centerY = rect.top  + rect.height / 2 - tutorialOptions.windowHeight / 2
+
+      switch (pos) {
+        case 'top':     top = rect.top - tutorialOptions.windowHeight - margin;
+                        left = centerX;
+                        break
+        case 'bottom':  top = rect.bottom + margin;
+                        left = centerX;
+                        break
+        case 'left':    top = centerY;
+                        left = rect.left - tutorialOptions.windowWidth - margin;
+                        break
+        case 'right':   top = centerY;
+                        left = rect.right + margin;
+                        break
+        default:        top = rect.bottom + margin;
+                        left = centerX
+      }
+
+      // Clamp to viewport
+      left = Math.max(margin, Math.min(left, window.innerWidth - tutorialOptions.windowWidth - margin))
+      top  = Math.max(margin, Math.min(top,  window.innerHeight - tutorialOptions.windowHeight - margin))
+
+      x.value = left
+      y.value = top
+    }
+  }
+
+  await nextTick()
+  setupValidationListeners()
+  setupButtonClickTracking()
 }
 
 const processStepActions = (steps) => steps.map(step => {
@@ -461,40 +578,10 @@ const processStepActions = (steps) => steps.map(step => {
 })
 
 // ============================================================================
-// SCROLL MANAGEMENT
-// ============================================================================
-const saveScrollPosition = () => {
-  originalScrollPosition.value = {
-    x: window.pageXOffset || document.documentElement.scrollLeft,
-    y: window.pageYOffset || document.documentElement.scrollTop
-  }
-}
-
-const restoreScrollPosition = () => {
-  window.scrollTo({ ...originalScrollPosition.value, behavior: 'smooth' })
-}
-
-// ============================================================================
 // LIGHTBOX
 // ============================================================================
 const openLightbox = (src) => { lightboxImage.value = src;  showLightbox.value  = true }
 const closeLightbox = () =>   { showLightbox.value = false; lightboxImage.value = '' }
-
-// ============================================================================
-// ANSWER SHUFFLING (Fisher-Yates)
-// ============================================================================
-const shuffleAnswers = () => {
-  if (currentStep.value?.type !== 'question') {
-    shuffledAnswerIndices.value = []
-    return
-  }
-  const indices = (currentStep.value.answers || []).map((_, i) => i)
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[indices[i], indices[j]] = [indices[j], indices[i]]
-  }
-  shuffledAnswerIndices.value = indices
-}
 
 // ============================================================================
 // VALIDATION
@@ -556,16 +643,6 @@ const setupValidationListeners = () => {
   })
 }
 
-const cleanupValidationListeners = () => {
-  validationEventListeners.value.forEach(({ element, eventType, handler }) => {
-    element.removeEventListener(eventType, handler)
-  })
-  validationEventListeners.value = []
-}
-
-// ============================================================================
-// BUTTON CLICK TRACKING
-// ============================================================================
 const setupButtonClickTracking = () => {
   cleanupButtonClickTracking()
 
@@ -591,6 +668,17 @@ const setupButtonClickTracking = () => {
   if (!attach()) setTimeout(attach, 500)
 }
 
+// ============================================================================
+// BUTTON CLICK TRACKING
+// ============================================================================
+
+const cleanupValidationListeners = () => {
+  validationEventListeners.value.forEach(({ element, eventType, handler }) => {
+    element.removeEventListener(eventType, handler)
+  })
+  validationEventListeners.value = []
+}
+
 const cleanupButtonClickTracking = () => {
   trackedButtonElements.value.forEach(({ element, handler }) => {
     try { element.removeEventListener('click', handler) } catch {}
@@ -598,9 +686,6 @@ const cleanupButtonClickTracking = () => {
   trackedButtonElements.value = []
 }
 
-// ============================================================================
-// CLEANUP HELPERS
-// ============================================================================
 const cleanup = () => {
   clearHighlights()
   cleanupValidationListeners()
@@ -608,64 +693,25 @@ const cleanup = () => {
 
   clickedButtons.value = new Set()
   resetQuestionState()
-  restoreScrollPosition()
-}
-
-// ============================================================================
-// HIGHLIGHTING
-// ============================================================================
-const highlightCurrentStep = async () => {
-  if (currentStep.value?.type === 'question') {
-    clearHighlights()
-    highlightElement.value = null
-    return
-  }
-
-  if (!currentStep.value?.selector) return
-
-  // Execute step action
-  if (currentStep.value.action) {
-    try {
-      await currentStep.value.action()
-      await nextTick()
-      await delay(300)
-    } catch (e) {
-      console.error('👨‍🎓❌ Step action error:', e)
-    }
-  }
-
-  clearHighlights()
-
-  // Find element
-  let element
-  const sel = currentStep.value.selector
-
-  if (sel.includes(':contains(')) {
-    const match = sel.match(/^([^:]+):contains\("([^"]+)"\)$/)
-    if (match) {
-      element = Array.from(document.querySelectorAll(match[1]))
-        .find(el => el.textContent.includes(match[2]))
-    }
-  } else {
-    element = document.querySelector(sel)
-  }
-
-  if (element) {
-    highlightElement.value = element
-    element.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
-    if (!isElementVisible(element)) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }
-
-  await nextTick()
-  setupValidationListeners()
-  setupButtonClickTracking()
 }
 
 // ============================================================================
 // QUESTION HANDLING
 // ============================================================================
+
+const shuffleAnswers = () => {
+  if (currentStep.value?.type !== 'question') {
+    shuffledAnswerIndices.value = []
+    return
+  }
+  const indices = (currentStep.value.answers || []).map((_, i) => i)
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[indices[i], indices[j]] = [indices[j], indices[i]]
+  }
+  shuffledAnswerIndices.value = indices
+}
+
 const selectAnswer = (index) => {
   if (questionAnswered.value) return
 
@@ -679,6 +725,11 @@ const selectAnswer = (index) => {
 
 const submitAnswer = () => {
   if (selectedAnswers.value.length) questionAnswered.value = true
+}
+
+const resetQuestionState = () => {
+  selectedAnswers.value  = []
+  questionAnswered.value = false
 }
 
 const retryQuestion = () => resetQuestionState()
@@ -722,7 +773,6 @@ const startTutorial = async (tutorialId) => {
   await loadCurrentTutorial (tutorialId)
   if (!currentTutorial.value) return
 
-  saveScrollPosition()
   resetQuestionState()
 
   clickedButtons.value        = new Set()
@@ -732,17 +782,20 @@ const startTutorial = async (tutorialId) => {
 
   nextTick(() => {
     shuffleAnswers()
-    highlightCurrentStep()
+    showCurrentStep()
   })
 }
 
 const goToStep = async (newIndex) => {
+  isActive.value = false
   stepIndex.value = newIndex
   tutorialOptions.progressStep =  newIndex  // fire options saving
   resetQuestionState()
   shuffleAnswers    ()
   await nextTick()
-  await highlightCurrentStep()
+
+  await showCurrentStep()
+  isActive.value  = true
 }
 
 const nextStep = async () => {
@@ -780,10 +833,9 @@ const stopTutorial  = () => endTutorial(true)
 
 const resumeTutorial = () => {
   if (!currentTutorial.value) return
-  saveScrollPosition()
   isActive.value         = true
   showTutorialMenu.value = false
-  nextTick(highlightCurrentStep)
+  nextTick(showCurrentStep)
 }
 
 const toggleTutorialMenu = () => {
@@ -892,7 +944,7 @@ function deleteTutorial (tutorialId) {
 // EVENT HANDLERS: click, windowChange;  WATCHES: tutorial, globalState
 // ============================================================================
 
-watch(() => simState.state, (newValue, oldValue) => {
+watch(() => simState.state, (newValue) => {
   if (newValue == 4) { // Tutorial Editor has set tutorial on localStorage
     console.log('👨‍🎓📥 Include tutorials in available list');
     initTutorial()
@@ -905,6 +957,10 @@ watch(  // Watch for tutorial changes on specific properties
     available:    tutorialOptions.available,
     inProgressID: tutorialOptions.inProgressID,
     progressStep: tutorialOptions.progressStep,
+    windowWidth:  tutorialOptions.windowWidth,
+    windowHeight: tutorialOptions.windowHeight,
+    x_pos:        tutorialOptions.x_pos,
+    y_pos:        tutorialOptions.y_pos,
   }),
   () => {
     saveOptions()
@@ -927,14 +983,6 @@ const handleClickOutside = (e) => {
   }
 }
 
-const handleWindowChange = () => {
-  // Only run if tutorial is active AND there's an element highlighted
-  if (isActive.value && highlightElement.value) {
-    // Increment a counter to trigger tooltip repositioning
-    tooltipPositionTrigger.value++
-  }
-}
-
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
@@ -942,381 +990,460 @@ const handleWindowChange = () => {
 onMounted(async () => {
   loadOptions()
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener  ('resize', handleWindowChange)
-  window.addEventListener  ('scroll', handleWindowChange, true)
   console.log('👨‍🎓🎯 TutorialEngine mounted')
 })
 
 onUnmounted(() => {
   console.log('👨‍🎓🧹 Tutorial Engine unmounted')
   document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener ('resize', handleWindowChange)
-  window.removeEventListener ('scroll', handleWindowChange, true)
+  window.removeEventListener('resize', handleWindowResize)
   cleanup ()
 })
 </script>
 
-<style scoped>
+<style>
 
-.tutorial-system {
-  position: fixed;
-  z-index: 9999;
-}
-
-.tutorial-overlay {
-  top:    0;
-  left:   0;
-  width:  100vw;
-  height: 100vh;
-  z-index:  9999;
-  position: fixed;
-  background: transparent;
-  pointer-events: none;
-  transition:     opacity 0.3s ease-in-out;
-}
-
-.tutorial-tooltip {
-  position:    absolute;
-  background:  white;
-  box-shadow:  0 8px 24px rgba(0, 0, 0, 0.3);
-  padding:     0;
-  opacity:     0;
-  width:       400px;
-  max-width:   calc(100vw - 40px);
-  z-index:     10001;
-  pointer-events: all;
-  transition:    all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  border-radius: 10px;
-  transform:     translateY(-10px) scale(0.95);
-  animation:     tutorial-tooltip-appear 0.4s ease-out forwards;
-}
-
-.tutorial-content {
-  padding: 12px;
-}
-
-.tutorial-content h3 {
-  margin:    0 0 5px 0;
-  color:     #333;
-  font-size: large;
-}
-
-.tutorial-content p {
-  margin:      0 0 10px 0;
-  color:       #666;
-  line-height: 1.5;
-  font-size:   medium;
-}
-
-.tutorial-content :deep(code) {
-  background:    #f4f4f4;
-  padding:       2px 4px;
-  border-radius: 3px;
-  font-family:   monospace;
-  font-size:     small;
-}
-
-.tutorial-actions {
-  gap:     10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tutorial-btn {
-  padding:       4px 16px;
-  border:        1px solid #ddd;
-  border-radius: 4px;
-  background:    white;
-  cursor:        pointer;
-  font-size:     medium;
-  transition:    all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform:     translateY(0);
-}
-
-.tutorial-btn:hover:not(:disabled) {
-  background: #f5f5f5;
-  transform:  translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.tutorial-btn:disabled {
-  opacity: 0.5;
-  cursor:  not-allowed;
-}
-
-.tutorial-btn-primary {
-  background:   #007acc;
-  color:        white;
-  border-color: #007acc;
-}
-
-.tutorial-btn-primary:hover:not(:disabled) {
-  background: #005999;
-  transform:  translateY(-1px);
-  box-shadow: 0 2px 12px rgba(0, 122, 204, 0.3);
-}
-
-.tutorial-btn-disabled {
-  background:   #cccccc !important;
-  color:        #666666 !important;
-  border-color: #cccccc !important;
-  cursor:  not-allowed !important;
-  opacity: 0.7;
-}
-
-.tutorial-btn-disabled:hover {
-  background: #cccccc !important;
-  transform:  none !important;
-  box-shadow: none !important;
-}
-
-.tutorial-progress {
-  font-size:   small;
-  color:       #666;
-  white-space: nowrap;
-}
-
-.tutorial-close {
-  position:    absolute;
-  top:         0px;
-  right:       0px;
-  background:  none;
-  border:      none;
-  font-size:   large;
-  cursor:      pointer;
-  color:       #999;
-  line-height: 0.8;
-}
-
-.tutorial-close:hover {
-  color: #333;
-}
-
-.tutorial-launcher {
-  position: fixed;
-  bottom:   20px;
-  right:    20px;
-  z-index:  10000;
-}
-
-.tutorial-launcher-btn {
-  width:         50px;
-  height:        50px;
-  border-radius: 50%;
-  background:    #007acc;
-  color:         white;
-  border:        none;
-  cursor:        pointer;
-  box-shadow:    0 4px 12px rgba(0, 122, 204, 0.4);
-  transition:    all 0.3s;
-  display:       flex;
-  align-items:   center;
-  justify-content: center;
-}
-
-.tutorial-launcher-btn:hover {
-  background:  #005999;
-  transform:   scale(1.1);
-}
-
-.tutorial-icon {
-  font-size:   xx-large;
-  font-weight: bolder;
-}
-
-.tutorial-menu {
-  bottom:  20px;
-  right:   20px;
-  padding: 8px;
-  width:      360px;
-  max-height: 500px;
-  position:   absolute;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  overflow-y: auto;
-}
-
-.tutorial-menu h4 {
-  margin:    0 0 10px 0;
-  color:     #333;
-  font-size: medium;
-}
-
-.tutorial-list {
-  display: flex;
-  gap:     4px;
-  flex-direction: column;
-}
-
-.tutorial-menu-item {
-  background: none;
-  border:     2px solid #ddd;
-  padding:    5px;
-  cursor:     pointer;
-  text-align: left;
-  transition: all 0.2s;
-  border-radius: 6px;
-}
-
-.tutorial-menu-item:hover {
-  background:  #f5f5f5;
-  border-color: #007acc;
-}
-
-.tutorial-item-content strong {
-  display:       block;
-  color:         #333;
-  margin-bottom: 2px;
-  font-size:     medium;
-}
-
-.tutorial-item-content p {
-  margin:     0;
-  color:      #666;
-  font-size:  small;
-  line-height: 1.4;
-}
-
-.tutorial-item-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.tutorial-delete-btn {
-  background: #eed1d1;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.tutorial-delete-btn:hover {
-  background: #ff0000;
-  transform: scale(1.1);
-}
-
-.tutorial-delete-btn:active {
-  transform: scale(0.95);
-}
-
-.tutorial-menu-separator {
-  height:     3px;
-  background: #eee;
-  margin:     4px 0;
-}
-
-.tutorial-paused-section {
-  border-bottom:  2px solid #eee;
-}
-
-.tutorial-paused-header {
-  text-align:    center;
-  margin-bottom: 8px;
-}
-
-.tutorial-paused-header h5 {
-  margin:      0 0 2px 0;
-  color:       #333;
-  font-size:   large;
-  font-weight: 600;
-}
-
-.tutorial-paused-info {
-  margin:     0;
-  color:      #666;
-  font-size:  medium;
-  font-style: italic;
-}
-
-.tutorial-action-buttons {
-  display:       flex;
-  gap:           8px;
-  margin-bottom: 4px;
-}
-
-.tutorial-action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap:     8px;
-  padding: 8px 12px;
-  border:  none;
-  border-radius: 8px;
-  cursor:      pointer;
-  transition: all 0.3s ease;
-  text-align: left;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tutorial-action-icon {
-  font-size:   large;
-  line-height: 1;
-}
-
-.tutorial-action-content {
-  display:        flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tutorial-action-content strong {
-  font-size:   medium;
-  font-weight: blod;
-  line-height: 1.2;
-}
-
-.tutorial-action-content span {
-  font-size:   small;
-  opacity:     0.8;
-  line-height: 1.2;
-}
-
-.tutorial-resume-btn {
-  background: linear-gradient(135deg, #28a745, #20893e);
-  color: white;
-}
-
-.tutorial-resume-btn:hover {
-  background: linear-gradient(135deg, #218838, #1e7e34);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
-}
-
-.tutorial-stop-btn {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
-}
-
-.tutorial-stop-btn:hover {
-  background: linear-gradient(135deg, #c82333, #bd2130);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-}
-
-@keyframes tutorial-tooltip-appear {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+  .tutorial-highlight-pulse {
+    animation:        tutorial-pulse 5s infinite ease-in-out;
+    transform-origin: center center;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+
+  @keyframes tutorial-pulse {
+    0%   { box-shadow: 0 0 0 0    rgba(0, 122, 204, 0.7); }
+    70%  { box-shadow: 0 0 0 10px rgba(0, 122, 204, 0);   }
+    100% { box-shadow: 0 0 0 0    rgba(0, 122, 204, 0);   }
   }
-}
+
+  .tutorial-highlighted {
+    position:      relative;
+    z-index:       10001 !important;
+    border:        4px solid #007acc !important;
+    border-radius: 6px !important;
+    box-shadow:    0 0 20px rgba(0, 122, 204, 0.5) !important;
+    transition:    all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform:     scale(1.15) !important;
+    will-change:   transform !important;
+    transform-origin: center center !important;
+  }
+
+  /* Adjust highlight for different zoom levels */
+  @media (max-width: 1200px) {
+    .tutorial-highlighted {
+      border-width:  5px !important;
+      box-shadow:    0 0 15px rgba(0, 122, 204, 0.5) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tutorial-highlighted {
+      border-width:  2px !important;
+      box-shadow:    0 0 10px rgba(0, 122, 204, 0.5) !important;
+      transform:     scale(1.1) !important;
+    }
+  }
+
+  .tutorial-system {
+    position: fixed;
+    z-index: 9999;
+  }
+
+  .tutorial-overlay {
+    top:    0;
+    left:   0;
+    width:  100vw;
+    height: 100vh;
+    z-index:  9999;
+    position: fixed;
+    background: transparent;
+    pointer-events: none;
+    transition:     opacity 0.3s ease-in-out;
+  }
+
+  .tutorial-tooltip {
+    display:        flex;
+    flex-direction: column;
+    position:    fixed; /* absolute */
+    overflow:    auto;  /* added to allow resizing content */
+    background:  white;
+    box-shadow:  0 8px 24px rgba(0, 0, 0, 0.3);
+    padding:     0;
+    opacity:     0;
+
+    z-index:    10001;
+    pointer-events: auto;
+    resize:     both;
+    transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    border-radius: 10px;
+    transform:     translateY(-10px) scale(0.95);
+    animation:     tutorial-tooltip-appear 0.8s ease-out forwards;
+
+    will-change:   transform, opacity;
+    box-sizing:    border-box;
+  }
+
+  @keyframes tutorial-tooltip-appear {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .tutorial-tooltip .tutorial-header {
+    padding: 6px 20px 6px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .tutorial-tooltip .tutorial-content {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    word-wrap: break-word;
+  }
+
+  .tutorial-header {
+    background:  white;
+    font-weight:    600;
+    border-radius:  8px 8px 0 0;
+    cursor:         grab;
+    user-select:    none;
+  }
+
+  .tutorial-header h3 {
+    margin:    0 0 1px 0;
+    color:     #333;
+    font-size: large;
+  }
+
+  .tutorial-header:active {
+    cursor: grabbing;
+  }
+
+  .tutorial-header span {
+    flex: 1;
+    text-align: center;
+  }
+
+  .tutorial-content h3 {
+    margin:    0 0 1px 0;
+    color:     #333;
+    font-size: large;
+  }
+
+  .tutorial-content p {
+    margin:      0 0 10px 0;
+    color:       #666;
+    line-height: 1.5;
+    font-size:   medium;
+  }
+
+  .tutorial-content :deep(code) {
+    background:    #f4f4f4;
+    padding:       2px 4px;
+    border-radius: 3px;
+    font-family:   monospace;
+    font-size:     small;
+  }
+
+  .tutorial-actions {
+    gap:     10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tutorial-btn {
+    padding:       4px 16px;
+    border:        1px solid #ddd;
+    border-radius: 4px;
+    background:    white;
+    cursor:        pointer;
+    font-size:     medium;
+    transition:    all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform:     translateY(0);
+  }
+
+  .tutorial-btn:hover:not(:disabled) {
+    background: #f5f5f5;
+    transform:  translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .tutorial-btn:disabled {
+    opacity: 0.5;
+    cursor:  not-allowed;
+  }
+
+  .tutorial-btn-primary {
+    background:   #007acc;
+    color:        white;
+    border-color: #007acc;
+  }
+
+  .tutorial-btn-primary:hover:not(:disabled) {
+    background: #005999;
+    transform:  translateY(-1px);
+    box-shadow: 0 2px 12px rgba(0, 122, 204, 0.3);
+  }
+
+  .tutorial-btn-disabled {
+    background:   #cccccc !important;
+    color:        #666666 !important;
+    border-color: #cccccc !important;
+    cursor:  not-allowed !important;
+    opacity: 0.7;
+  }
+
+  .tutorial-btn-disabled:hover {
+    background: #cccccc !important;
+    transform:  none !important;
+    box-shadow: none !important;
+  }
+
+  .tutorial-progress {
+    font-size:   small;
+    color:       #666;
+    white-space: nowrap;
+  }
+
+  .tutorial-close {
+    position:    absolute;
+    top:         0px;
+    right:       0px;
+    background:  none;
+    border:      none;
+    font-size:   large;
+    cursor:      pointer;
+    color:       #999;
+    line-height: 0.8;
+  }
+
+  .tutorial-close:hover {
+    color: #333;
+  }
+
+  .tutorial-launcher {
+    position: fixed;
+    bottom:   20px;
+    right:    20px;
+    z-index:  10000;
+  }
+
+  .tutorial-launcher-btn {
+    width:         50px;
+    height:        50px;
+    border-radius: 50%;
+    background:    #007acc;
+    color:         white;
+    border:        none;
+    cursor:        pointer;
+    box-shadow:    0 4px 12px rgba(0, 122, 204, 0.4);
+    transition:    all 0.3s;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+  }
+
+  .tutorial-launcher-btn:hover {
+    background:  #005999;
+    transform:   scale(1.1);
+  }
+
+  .tutorial-icon {
+    font-size:   xx-large;
+    font-weight: bolder;
+  }
+
+  .tutorial-menu {
+    bottom:  20px;
+    right:   20px;
+    padding: 8px;
+    width:      360px;
+    max-height: 500px;
+    position:   absolute;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+  }
+
+  .tutorial-menu h4 {
+    margin:    0 0 10px 0;
+    color:     #333;
+    font-size: medium;
+  }
+
+  .tutorial-list {
+    display: flex;
+    gap:     4px;
+    flex-direction: column;
+  }
+
+  .tutorial-menu-item {
+    background: none;
+    border:     2px solid #ddd;
+    padding:    5px;
+    cursor:     pointer;
+    text-align: left;
+    transition: all 0.2s;
+    border-radius: 6px;
+  }
+
+  .tutorial-menu-item:hover {
+    background:  #f5f5f5;
+    border-color: #007acc;
+  }
+
+  .tutorial-item-content strong {
+    display:       block;
+    color:         #333;
+    margin-bottom: 2px;
+    font-size:     medium;
+  }
+
+  .tutorial-item-content p {
+    margin:     0;
+    color:      #666;
+    font-size:  small;
+    line-height: 1.4;
+  }
+
+  .tutorial-item-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .tutorial-delete-btn {
+    background: #eed1d1;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .tutorial-delete-btn:hover {
+    background: #ff0000;
+    transform: scale(1.1);
+  }
+
+  .tutorial-delete-btn:active {
+    transform: scale(0.95);
+  }
+
+  .tutorial-menu-separator {
+    height:     3px;
+    background: #eee;
+    margin:     4px 0;
+  }
+
+  .tutorial-paused-section {
+    border-bottom:  2px solid #eee;
+  }
+
+  .tutorial-paused-header {
+    text-align:    center;
+    margin-bottom: 8px;
+  }
+
+  .tutorial-paused-header h5 {
+    margin:      0 0 2px 0;
+    color:       #333;
+    font-size:   large;
+    font-weight: 600;
+  }
+
+  .tutorial-paused-info {
+    margin:     0;
+    color:      #666;
+    font-size:  medium;
+    font-style: italic;
+  }
+
+  .tutorial-action-buttons {
+    display:       flex;
+    gap:           8px;
+    margin-bottom: 4px;
+  }
+
+  .tutorial-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap:     8px;
+    padding: 8px 12px;
+    border:  none;
+    border-radius: 8px;
+    cursor:      pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .tutorial-action-icon {
+    font-size:   large;
+    line-height: 1;
+  }
+
+  .tutorial-action-content {
+    display:        flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tutorial-action-content strong {
+    font-size:   medium;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+
+  .tutorial-action-content span {
+    font-size:   small;
+    opacity:     0.8;
+    line-height: 1.2;
+  }
+
+  .tutorial-resume-btn {
+    background: linear-gradient(135deg, #28a745, #20893e);
+    color: white;
+  }
+
+  .tutorial-resume-btn:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  }
+
+  .tutorial-stop-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+  }
+
+  .tutorial-stop-btn:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  }
 
 .question-overlay {
   display:  flex;
@@ -1535,274 +1662,213 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-.question-mode-info {
-  background: #f5f3ff;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.answers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.answer-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-  width: 100%;
-}
-
-.answer-option:hover:not(:disabled) {
-  border-color: #8b5cf6;
-  background: #faf5ff;
-}
-
-.answer-option.selected {
-  border-color: #8b5cf6;
-  background: #f5f3ff;
-}
-
-.answer-option.correct {
-  border-color: #10b981;
-  background: #ecfdf5;
-}
-
-.answer-option.partial-correct {
-  border-color: #10b981;
-  background: #ecfdf5;
-}
-
-.answer-option.wrong {
-  border-color: #ef4444;
-  background: #fef2f2;
-}
-
-.answer-option:disabled {
-  cursor: default;
-}
-
-.answer-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.answer-letter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: #e5e7eb;
-  color: #374151;
-  font-weight: 600;
-  font-size: 13px;
-  border-radius: 6px;
-  flex-shrink: 0;
-}
-
-.answer-option.selected .answer-letter {
-  background: #8b5cf6;
-  color: white;
-}
-
-.answer-option.correct .answer-letter,
-.answer-option.partial-correct .answer-letter {
-  background: #10b981;
-  color: white;
-}
-
-.answer-option.wrong .answer-letter {
-  background: #ef4444;
-  color: white;
-}
-
-.answer-text {
-  flex: 1;
-  font-size: 14px;
-  color: #374151;
-  line-height: 1.4;
-}
-
-.answer-text :deep(code) {
-  background: #f4f4f4;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
-.answer-indicator {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.answer-indicator.correct {
-  color: #10b981;
-}
-
-.answer-indicator.partial-correct {
-  color: #10b981;
-}
-
-.answer-indicator.wrong {
-  color: #ef4444;
-}
-
-.answer-feedback {
-  margin-top: 6px;
-  margin-left: 40px;
-  padding: 0px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.4;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.answer-feedback :deep(code) {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
-.answer-feedback.feedback-correct {
-  background: #ecfdf5;
-  color: #065f46;
-  border-left: 3px solid #10b981;
-}
-
-.answer-feedback.feedback-wrong {
-  background: #fef2f2;
-  color: #991b1b;
-  border-left: 3px solid #ef4444;
-}
-
-.feedback-section {
-  margin-top: 4px;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.feedback-box {
-  padding: 2px 16px;
-  border-radius: 8px;
-}
-
-.feedback-box h4 {
-  margin: 0 0 0px 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.feedback-correct {
-  background: #ecfdf5;
-  border: 1px solid #10b981;
-}
-
-.feedback-correct h4 {
-  color: #059669;
-}
-
-.feedback-wrong {
-  background: #fef2f2;
-  border: 1px solid #ef4444;
-}
-
-.feedback-wrong h4 {
-  color: #dc2626;
-}
-
-.question-actions {
-  padding: 6px 20px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  background: #f9fafb;
-}
-
-.tutorial-btn-retry {
-  background: #f59e0b;
-  color: white;
-  border-color: #f59e0b;
-}
-
-.tutorial-btn-retry:hover:not(:disabled) {
-  background: #d97706;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.3);
-}
-
-  .tutorial-highlight-pulse {
-    animation:        tutorial-pulse 2s infinite ease-in-out;
-    transform-origin: center center;
+  .question-mode-info {
+    background: #f5f3ff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
   }
 
-  @keyframes tutorial-pulse {
-    0%   { box-shadow: 0 0 0 0    rgba(0, 122, 204, 0.7); }
-    70%  { box-shadow: 0 0 0 10px rgba(0, 122, 204, 0);   }
-    100% { box-shadow: 0 0 0 0    rgba(0, 122, 204, 0);   }
+  .answers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .tutorial-highlighted {
-    position:      relative;
-    z-index:       10001 !important;
-    border:        3px solid #007acc !important;
-    border-radius: 6px !important;
-    box-shadow:    0 0 20px rgba(0, 122, 204, 0.5) !important;
-    transition:    all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    transform:     scale(1.02) !important;
-    will-change:   transform !important;
-    transform-origin: center center !important;
+  .answer-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    width: 100%;
   }
 
-  /* Adjust highlight for different zoom levels */
-  @media (max-width: 1200px) {
-    .tutorial-highlighted {
-      border-width:  2px !important;
-      box-shadow:    0 0 15px rgba(0, 122, 204, 0.5) !important;
-    }
+  .answer-option:hover:not(:disabled) {
+    border-color: #8b5cf6;
+    background: #faf5ff;
   }
 
-  @media (max-width: 768px) {
-    .tutorial-highlighted {
-      border-width:  2px !important;
-      box-shadow:    0 0 10px rgba(0, 122, 204, 0.5) !important;
-      transform:     scale(1.01) !important;
-    }
+  .answer-option.selected {
+    border-color: #8b5cf6;
+    background: #f5f3ff;
   }
 
-  /* Specific styles for different element types in tutorials */
-  .tutorial-highlighted.header-title {
-    color:      #333 !important;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    transform-origin: center center !important;
+  .answer-option.correct {
+    border-color: #10b981;
+    background: #ecfdf5;
   }
 
-  .tutorial-highlighted button {
-    color:      #333 !important;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    transform:  scale(1.05) !important;
-    transform-origin: center center !important;
+  .answer-option.partial-correct {
+    border-color: #10b981;
+    background: #ecfdf5;
   }
 
-  .tutorial-highlighted select {
-    background: white !important;
-    color:      #333 !important;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    transform:  scale(1.03) !important;
-    transform-origin: center center !important;
+  .answer-option.wrong {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+
+  .answer-option:disabled {
+    cursor: default;
+  }
+
+  .answer-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .answer-letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #e5e7eb;
+    color: #374151;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .answer-option.selected .answer-letter {
+    background: #8b5cf6;
+    color: white;
+  }
+
+  .answer-option.correct .answer-letter,
+  .answer-option.partial-correct .answer-letter {
+    background: #10b981;
+    color: white;
+  }
+
+  .answer-option.wrong .answer-letter {
+    background: #ef4444;
+    color: white;
+  }
+
+  .answer-text {
+    flex: 1;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.4;
+  }
+
+  .answer-text :deep(code) {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+
+  .answer-indicator {
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .answer-indicator.correct {
+    color: #10b981;
+  }
+
+  .answer-indicator.partial-correct {
+    color: #10b981;
+  }
+
+  .answer-indicator.wrong {
+    color: #ef4444;
+  }
+
+  .answer-feedback {
+    margin-top: 6px;
+    margin-left: 40px;
+    padding: 0px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .answer-feedback :deep(code) {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+
+  .answer-feedback.feedback-correct {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left: 3px solid #10b981;
+  }
+
+  .answer-feedback.feedback-wrong {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 3px solid #ef4444;
+  }
+
+  .feedback-section {
+    margin-top: 4px;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .feedback-box {
+    padding: 2px 16px;
+    border-radius: 8px;
+  }
+
+  .feedback-box h4 {
+    margin: 0 0 0px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .feedback-correct {
+    background: #ecfdf5;
+    border: 1px solid #10b981;
+  }
+
+  .feedback-correct h4 {
+    color: #059669;
+  }
+
+  .feedback-wrong {
+    background: #fef2f2;
+    border: 1px solid #ef4444;
+  }
+
+  .feedback-wrong h4 {
+    color: #dc2626;
+  }
+
+  .question-actions {
+    padding: 6px 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    background: #f9fafb;
+  }
+
+  .tutorial-btn-retry {
+    background: #f59e0b;
+    color: white;
+    border-color: #f59e0b;
+  }
+
+  .tutorial-btn-retry:hover:not(:disabled) {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 12px rgba(245, 158, 11, 0.3);
   }
 
   @keyframes tutorial-message-appear {

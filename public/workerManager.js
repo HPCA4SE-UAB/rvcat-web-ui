@@ -4,18 +4,18 @@ export class WorkerManager {
     this.worker           = new Worker(workerPath);
     this.messageCallbacks = new Map(); // Store callbacks by message ID
     this.globalHandlers   = {}; // Will be set by Vue components
-    
+
     this.isReady      = false; // Track initialization state
     this.readyPromise = null; // Promise for waiting
     this.readyResolve = null;
-    
+
     this.setupMessageHandler();
     this.initialize();
   }
 
   setupMessageHandler() {
     this.worker.onmessage = (message) => {
-      const { action, id, result, data_type } = message.data;      
+      const { action, id, result, data_type } = message.data;
       if (action === 'initialized') {
         this.isReady = true;
         if (this.readyResolve) {
@@ -24,7 +24,7 @@ export class WorkerManager {
         }
         console.log('📦🎯 Worker initialized and ready');
       }
-      
+
       if (action === 'executed' && id) {
         // Call specific callback if exists
         if (this.messageCallbacks.has(id)) {
@@ -55,7 +55,7 @@ export class WorkerManager {
     if (callback) {
       this.messageCallbacks.set(id, callback);
     }
-    
+
     this.worker.postMessage({
       action: 'execute',
       code: code,
@@ -63,17 +63,17 @@ export class WorkerManager {
     });
   }
 
-  
+
   // Wait for initialization
   async waitForReady() {
     if (this.isReady) return true;
-    
+
     if (!this.readyPromise) {
       this.readyPromise = new Promise((resolve) => {
         this.readyResolve = resolve;
       });
     }
-    
+
     return this.readyPromise;
   }
 
@@ -88,9 +88,9 @@ export class WorkerManager {
   }
 
   loadPackage(pkg) {
-    this.worker.postMessage({ 
-      action: 'loadPackage', 
-      package: pkg 
+    this.worker.postMessage({
+      action: 'loadPackage',
+      package: pkg
     });
   }
 

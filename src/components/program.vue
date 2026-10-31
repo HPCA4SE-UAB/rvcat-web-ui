@@ -391,7 +391,7 @@
 // Help support
 // ============================================================================
   const showHelp     = ref(false);
-  const helpPosition = ref({ top: '0%', left: '40%' });
+  const helpPosition = ref({ top: '0%', left: '35%' });
   const helpIcon     = ref(null);
 
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
@@ -437,8 +437,7 @@
         <span class="header-title">Program</span>
       </div>
 
-      <div class="settings-container">
-
+      <div class="program-header">
         <select v-model="programOptions.currentProgram" class="form-select"
             id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
@@ -449,7 +448,7 @@
         </select>
         <button class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
-            title="Edit current program on full-screen editor">
+            title="Edit current program">
           📝
         </button>
         <button class="blue-button small-btn" @click="removeProgram"
@@ -510,7 +509,7 @@
       </div>
     </div>
 
-    <section class="main-box">
+    <section class="program-container">
       <div class="table-container">
         <table class="instructions-table">
           <thead>
@@ -594,18 +593,23 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level,
-       informal language. The <em>type</em>, execution <em>latency</em> and eligible <em>execution ports</em> are shown for each instruction.
-        <p>The simulation tracks <strong>data dependencies</strong> but omits detailed architectural state: it <strong>does not</strong> model processor registers, memory states,
-      branch outcomes, or memory dependencies (e.g., store-load interactions).</p>
-        Programs can be edited/uploaded/downloaded in JSON format."
+    text="The simulated program consists of a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>,
+          described in high-level informal language. N is the total iterations (user-configurable).
+          With a <strong>loop stride</strong> S (default is 1), the loop runs N/S times.
+          For each instruction, you can view: (1) <em>type</em> and operand <em>sizes</em>;
+          (2) <em>latency</em> and eligible <em>execution ports</em>; (3) input/output operands;
+          (4) memory <em>addresses</em>, <em>strides</em>, and vector <em>lanes</em> used.
+        <p>The simulation models <strong>data dependencies</strong> but <strong>does not</strong> model
+          processor registers, memory states, branch outcomes, or memory dependencies (e.g., store-load orderings).</p>
+      <p>A new <em>program</em> can be selected from the list (referring to a JSON file description stored in local storage).
+        Click on the corresponding button to <strong>edit</strong> a program or to <strong>remove</strong> a program from local storage.</p>"
       title="Program Description"
     @close="closeHelp"  />
   </Teleport>
 </template>
 
 <style scoped>
-  .main-box {
+  .program-container {
     overflow:      auto;
     scroll-behavior: smooth;
     margin-top:    0px;
@@ -619,7 +623,7 @@
     width: 5px;
   }
 
-  .settings-container {
+  .program-header {
     display: flex;
     align-items: center;
     gap: 3px;

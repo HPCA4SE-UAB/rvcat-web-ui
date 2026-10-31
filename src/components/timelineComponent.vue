@@ -92,6 +92,7 @@
       timeline.value = timelineRVCAT
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
+      timelineOptions.instructions = 1
       scheduleDraw(timelineOptions.cycles, 0)
 
     } catch (error) {
@@ -707,9 +708,16 @@
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time.
+<<<<<<< HEAD
                 The dimension of the timeline, <em>instructions</em> × <em>cycles</em> can be modified, and you can choose to see the <strong>full timeline</strong></p>
               <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
                 Hover over the grid to see specific info about the selected cell, the selected instruction (initial cell of a row),
+=======
+                Increase the total number of <em>cycles</em> dispayed in the timeline to understand the execution incrementally.
+                Set the <strong>critical</strong> buttom to emphasize the critical execution path from the last retired instruction</p>
+              <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
+                Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
+>>>>>>> origin/main
                 or the selected cycle (initial cell of a column).</p>"
        @close="closeHelp1" />
   </Teleport>

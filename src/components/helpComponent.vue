@@ -32,8 +32,8 @@
 </script>
 
 <template>
-  <div v-if="visible" class="tutorial-overlay" @click.self="close">
-    <div class="tutorial-dialog" :style="positionStyle">
+  <div v-if="visible" class="help-overlay" @click.self="close">
+    <div class="help-dialog" :style="positionStyle">
       <b>Help - {{title}}</b>
       <button class="close-button" @click="close">x</button>
       <div class="dialog-content" v-html="text"></div>
@@ -42,7 +42,7 @@
 </template>
 
 <style scoped>
-  .tutorial-overlay {
+  .help-overlay {
     top:    0;
     left:   0;
     inset:  0;
@@ -56,13 +56,13 @@
     align-items:     center;
   }
 
-  .tutorial-dialog {
+  .help-dialog {
     background: #ffffff;
-    padding:    24px 28px;
+    padding:    16px 20px;
     position:   relative;
-    max-width:  32rem;
+    max-width:  40rem;
     width:      100%;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont,
                "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -78,16 +78,16 @@
     color:      #666;
     cursor:     pointer;
   }
-  
+
   .close-button:hover {
     color: #000;
   }
-  
+
   .dialog-content {
-    margin-top:  12px;
+    margin-top:  10px;
     font-size:   0.9rem;
     line-height: 1.6;
-    text-align:  left; 
+    text-align:  left;
     color:       #333;
   }
 </style>

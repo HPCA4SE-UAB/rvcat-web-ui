@@ -174,6 +174,11 @@ function loadEditedProgram() {
   onMounted(() => {
     loadOptions()
     cleanupHandleGraph = registerHandler('get_prog_graph', handleGraph);
+
+    const stored = localStorage.getItem('programTemp');
+    if (!stored) clearProgram()
+    // localStorage.setItem('programTemp', JSON.stringify(val));
+
     loadEditedProgram()
     console.log('📄🎯 Program Editor Component mounted')
   });
@@ -269,9 +274,9 @@ function snapshotProgram() {
   };
 }
 
-  function toggleInOut  () { programEditOptions.showInOut   = !programEditOptions.showInOut }
+  function toggleInOut  ()     { programEditOptions.showInOut   = !programEditOptions.showInOut }
   function toggleStrideLanes() { programEditOptions.showStrideLanes = !programEditOptions.showStrideLanes }
-  function toggleActions() { programEditOptions.showActions = !programEditOptions.showActions }
+  function toggleActions()     { programEditOptions.showActions = !programEditOptions.showActions }
 
   // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
   const handleGraph = async (data, dataType) => {
@@ -367,7 +372,7 @@ function snapshotProgram() {
         InOut
       </button>
 
-      <button class="blue-button add-prev-margin"
+      <button class="blue-button add-margin"
               :class="{ active: programEditOptions.showStrideLanes }"
           title="Show/Hide instruction Stride & vector lanes"
           id="show-mem-operands"
@@ -376,7 +381,8 @@ function snapshotProgram() {
         Stride/Lanes
       </button>
 
-      <button class="blue-button add-margin" :class="{ active: programEditOptions.showActions }"
+      <button class="blue-button add-margin"
+              :class="{ active: programEditOptions.showActions }"
           title="Show/Hide column with buttons for moving/adding/removing instructions"
           id="show-instruction-actions"
           @click="toggleActions">
@@ -553,7 +559,7 @@ function snapshotProgram() {
               </tr>
 
               <!-- 🔒 Fila fija final -->
-              <tr class="fixed-row">
+              <tr v-if="editedProgram.length" class="fixed-row">
                 <td> {{editedProgram.length-1}} </td>
 
                 <td title="This final conditional branch is fixed">
@@ -654,11 +660,14 @@ function snapshotProgram() {
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The simulated program consists of a <em>fixed-iteration</em> loop executing a sequence of <strong>machine instructions</strong>, each described in a high-level,
-       informal language. The description of each instruction can be modified: text, type, input/destination operands, constants.
-        Programs can be edited/uploaded/downloaded in JSON format."
+    text="The simulated program consists of a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>,
+          described in high-level informal language.
+          You can set a <strong>loop stride</strong> S (default 1); for a total iteration count N the loop executes N/S times.
+          For each instruction, you can edit: (1) <em>type</em> and operand <em>sizes</em>;
+          (2) input/output operands; and (3) memory <em>strides</em> and vector <em>lanes</em> used.
+        Programs can be uploaded or downloaded in JSON format."
       title="Program Edition"
-    @close="closeHelp"  />
+    @close="closeHelp" />
   </Teleport>
 </template>
 
@@ -870,16 +879,6 @@ function snapshotProgram() {
     border-radius: 4px;
   }
 
-  .fullscreen-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent; /* Sin fondo para no ocultar nada */
-    pointer-events: none; /* Permite clicks a través del overlay */
-    z-index: 999;
-  }
   .fullscreen-content {
     position: fixed;
     background: white;

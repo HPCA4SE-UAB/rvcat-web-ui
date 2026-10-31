@@ -184,7 +184,7 @@
   const drawEditedProcessor = async () => {
     console.log('💻🔄Redrawing edited processor');
     try {
-      const dotCode   = get_processor_dot (procConfig, -1)
+      const dotCode   = get_processor_dot (procConfig, false, -1)
       const svg       = await createGraphVizGraph(dotCode);
       editedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -417,7 +417,7 @@
  * ------------------------------------------------------------------ */
   const showHelp1 = ref(false); const showHelp2 = ref(false); const showHelp3 = ref(false); const showHelp4 = ref(false);
   const helpIcon1 = ref(null);  const helpIcon2 = ref(null);  const helpIcon3 = ref(null);  const helpIcon4 = ref(null);
-  const helpPosition = ref({ top: '0%', left: '40%' });
+  const helpPosition = ref({ top: '10%', left: '20%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
   function closeHelp1() { showHelp1.value  = false }
@@ -709,19 +709,19 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> Widths;
-      (2) <em>ROB</em> size; (3) <em>Cache Memory</em>; (4) <em>Execution Ports</em> (Add or remove execution ports, up to a maximum of 10); and
+    text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> widths;
+      (2) <em>ROB</em> size; (3) <em>Cache Memory</em>; (4) <em>Execution Ports</em> (add or remove execution ports, up to a maximum of 10); and
       (5) <em>Execution Latencies</em>"
     title="Processor Settings"
     @close="closeHelp1"/>
 
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> Widths.
-       They indicate the maximum number of instructions per clock cycle that must be dispatched into or retired from the Execution Engine.
+    text="Modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> widths.
+       They indicate the maximum number of instructions per clock cycle that can be dispatched into or retired from the Execution Engine.
        They may impose a throughput-bound performace limit.
-       <p>Modify the <strong>ROB</strong> (ReOrder Buffer) size, which indicates the maximum number of instructions simultaenously on the <strong>Execution Engine</strong>.
+       <p>Modify the <strong>ROB</strong> (ReOrder Buffer) size, which indicates the maximum number of instructions simultaneously on the <strong>Execution Engine</strong>.
       This parameter limits the maximum instruction-level parallelism that can be exploited by the processor,
-      and may impose a (<strong><em>dependence-bound</em></strong>) performance limit.</p>
+      and may impose (<strong><em>latency-bound</em></strong>) performance limits.</p>
       <p>The policy of the instruction scheduler may be set to <em>greedy</em> or <em>optimal</em>.
         A greedy scheduler always issues ready instructions in program order.
         An optimal scheduler always issues the best combination of ready instructions to maximize performance.</p>"
@@ -730,7 +730,7 @@
 
     <HelpComponent v-if="showHelp3" :position="helpPosition"
     text="Modify the <strong>Cache Memory</strong> settings. Setting a Number of Blocks = 0 means all data accesses
-      will always hit in the cache, and, therefore, the latency of memory loads and stores will always be the same.
+      will always hit in the cache, and, therefore, the latency of memory loads and stores is constant.
       <p>The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
       The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
       It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
@@ -740,7 +740,7 @@
   <HelpComponent v-if="showHelp4" :position="helpPosition"
     text="Modify the <strong>Latency</strong> and the maximum <strong>Execution Throughput</strong> of instruction types.
       <p>Each instruction type can be assigned a fixed execution latency and a set of eligible execution ports
-         (only one is used for execution each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
+         (only one is used for executing each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
         If a port is deleted, execution port P0 is automatically assigned to any instruction types left without a valid port.</p>"
     title="Instruction Latency and Throughput Settings"
     @close="closeHelp4"/>
@@ -839,13 +839,6 @@
     flex: 0 0 auto;
   }
 
-  .processor-container {
-    width:     100%;
-    height:    100%;
-    display:   flex;
-    margin-top: 2px;
-  }
-
   .processor-side-container {
     flex: 1 1 55%;
     min-width: 0;           /* Importante para evitar desbordamiento */
@@ -869,11 +862,6 @@
   .settings-container button {
     flex-shrink: initial;
   }
-  .fullscreen-settings {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
 
   .settings-sections {
     display:         flex;
@@ -892,28 +880,6 @@
   }
   .latency-group .table-container {
     overflow-y: auto; /* Scroll vertical si la tabla es muy larga */
-  }
-
-  .form-select {
-    width:            100%;
-    padding:          1px 1px;
-    margin-bottom:    2px;
-    border:           2px solid #ddd;
-    border-radius:    6px;
-    font-size:        medium;
-    background-color: white;
-    transition:       border-color 0.3s;
-  }
-
-  .form-select:focus {
-    outline:      none;
-    border-color: #4a6cf7;
-  }
-
-  .form-select option[value="_add_new_"] {
-    color:            #4a6cf7;
-    font-weight:      bold;
-    background-color: #f0f5ff;
   }
 
   .latency-input {
@@ -940,12 +906,6 @@
     cursor: pointer;
   }
 
-  .graph-section {
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
-  }
-
   .processor-img {
     width:        100%;
     height:       100%;
@@ -964,44 +924,6 @@
   .processor-img svg polygon,
   .processor-img svg path {
     stroke-width: 2px;
-  }
-
-  .simProcessor-img {
-    width:        100%;
-    height:       100%;
-    max-width:    150%;
-    max-height:   150%;
-    align-items:  center;
-    object-fit:   contain;
-    transform-box: fill-box;
-  }
-
-  .simProcessor-img svg text {
-    font-size:   12px;
-    font-family: Arial, sans-serif;
-  }
-
-  .simProcessor-img svg polygon,
-  .simProcessor-img svg path {
-    stroke-width: 2px;
-  }
-
-  .simProcessor-img svg[viewBox] {
-    width:    100%;
-    height:   100%;
-    overflow: hidden;
-  }
-
-  .simProcessor-img g.node.selected polygon {
-    stroke-width: 3px !important;
-    stroke:       #0066ff !important;
-    filter:       drop-shadow(0 0 5px rgba(0, 100, 255, 0.5));
-  }
-
-  .simProcessor-img g.node:hover polygon {
-    stroke-width: 2px !important;
-    stroke:       #444444 !important;
-    cursor:       pointer;
   }
 
   .table-container {
@@ -1127,25 +1049,6 @@
     border-radius: 4px;
     cursor:        pointer;
     font-size:     0.9em;
-  }
-
-  .tooltip-text {
-    visibility: hidden;
-    width:      240px;
-    color:      #fff;
-    text-align: left;
-    padding:    8px;
-    font-size:  0.85em;
-    position:   absolute;
-    top:        50%;
-    left:       100%;
-    transform:  translate(8px, -50%);
-    z-index:    10;
-    opacity:    0;
-    white-space:   normal;
-    border-radius: 4px;
-    transition:    opacity 0.2s ease-in-out;
-    background-color: rgba(0, 0, 0, 0.7);
   }
 
   .type-row {

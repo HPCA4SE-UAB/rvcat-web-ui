@@ -1,3 +1,10 @@
+<script setup>
+import { provide } from 'vue'
+import { useWorker } from './useWorker'
+
+provide('worker', useWorker())
+</script>
+
 <template>
     <RouterView />
 </template>

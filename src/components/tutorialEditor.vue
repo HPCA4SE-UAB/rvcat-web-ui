@@ -281,7 +281,7 @@
 <script setup>
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
-import {  downloadJSON, uploadJSON, saveToLocalStorage, createGraphVizGraph  } from '@/common'
+import {  downloadJSON, uploadJSON, createGraphVizGraph  } from '@/common'
 
 const simState = inject('simulationState');
 
@@ -307,10 +307,10 @@ const predefinedSelectors = [
   { label: 'Custom', value: '' },
   { label: '── Main Areas ──',      value: '', disabled: true },
   { label: 'Header / Title',        value: '.header-title' },
-  { label: 'Program Area',          value: '.program' },
-  { label: 'Processor Area',        value: '.processor' },
+  { label: 'Program Area',          value: '.program-container' },
+  { label: 'Processor Area',        value: '.processor-container' },
   { label: 'Results Area',          value: '.results' },
-  { label: '── Program Section ──', value: '', disabled: true },
+  { label: '── File Selection ──',  value: '', disabled: true },
   { label: 'Program Selector',      value: '#programs-list' },
   { label: 'Processor Selector',    value: '#processors-list' },
   { label: '── Processor Config ──', value: '', disabled: true },
@@ -638,15 +638,6 @@ const validateTutorial = () => {
   return errors
 }
 
-const showValidationErrors = () => {
-  const errors = validateTutorial()
-  if (errors.length) {
-    alert('Please fix the following errors:\n\n' + errors.join('\n'))
-    return false
-  }
-  return true
-}
-
 // ============================================================================
 // HELP
 // ============================================================================
@@ -662,10 +653,6 @@ const showValidationErrors = () => {
 // TUTORIAL ACTIONS: loadEditedTutorial, clearDraft
 //                   downloadTutorial, uploadTutorial, removeTutorial
 // ============================================================================
-
-const showSaveModal = ref(false)
-const modalName     = ref('')
-const modalError    = ref('')
 
 function loadEditedTutorial() {
   const stored = localStorage.getItem('tutorialTemp');
@@ -695,30 +682,6 @@ const clearDraft = (check = true) => {
     stepNumber.value     = -1
   }
 }
-
-const saveTutorialAs = () => {
-  // Open modal to input new name
-  modalName.value     = "Name?";
-  modalError.value    = '';
-  showSaveModal.value = true;
-};
-
-const confirmSaveTutorialAs = async () => {
-  if (!showValidationErrors()) return
-  const name = modalName.value.trim();
-
-  const data    = buildTutorialData();
-  const success = saveToLocalStorage('tutorial', name, data, null );
-
-  if (success) {
-    console.log(`🎓✅ Tutorial saved as: ${name}`);
-    showSaveModal.value = false
-    return true;
-  } else {
-    modalError.value = 'Failed to save tutorial';
-    return false;
-  }
-};
 
 const downloadTutorial = () => {
   if (!validateTutorial()) return;
@@ -854,7 +817,7 @@ watch(tutorial, (t) => {
 }, { deep: true });
 
 // Watch for changes on Simulation state
-watch(() => simState.state, (newValue, oldValue) => {
+watch(() => simState.state, (newValue) => {
   if (newValue == 3) { // Initialization Stage
     simState.state = 4;   // Signal tutorial engine to obtain list of tutorials from localStorage
     console.log('🎓📥 Initialization step (4): tutorial editor')
