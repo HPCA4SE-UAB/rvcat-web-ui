@@ -630,6 +630,7 @@
     flex: 1;
     justify-content: center;
   }
+
   .table-container {
      width:          auto;
      max-width:      100%;
