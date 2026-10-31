@@ -77,6 +77,66 @@ export const resourceConfig = {
   }
 };
 
+export const TUTORIAL_FLOW_VERSION = 2;
+
+export function createTutorialStepId() {
+  const id = globalThis.crypto?.randomUUID?.()
+    || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  return `step-${id}`
+}
+
+export function migrateTutorialFlow(tutorial) {
+  if (!tutorial || !Array.isArray(tutorial.steps)) {
+    throw new TypeError('Tutorial must contain a steps array.')
+  }
+
+  const isLegacy = tutorial.flowVersion == null || tutorial.flowVersion === 1
+  if (!isLegacy && tutorial.flowVersion !== TUTORIAL_FLOW_VERSION) {
+    throw new Error(`Unsupported tutorial flow version: ${tutorial.flowVersion}.`)
+  }
+  const steps = tutorial.steps.map(step => ({ ...step }))
+  const ids = new Set()
+
+  steps.forEach((step, index) => {
+    if (typeof step.id !== 'string' || !step.id || ids.has(step.id)) {
+      if (!isLegacy) {
+        throw new Error(`Tutorial step ${index + 1} has a missing or duplicate id.`)
+      }
+      let id = `step-${index + 1}`
+      let suffix = 1
+      while (ids.has(id)) id = `step-${index + 1}-${suffix++}`
+      step.id = id
+    }
+    ids.add(step.id)
+  })
+
+  if (isLegacy) {
+    steps.forEach((step, index) => {
+      step.next = index < steps.length - 1 ? [steps[index + 1].id] : []
+    })
+  } else {
+    steps.forEach((step, index) => {
+      if (step.next == null) step.next = []
+      if (!Array.isArray(step.next) || step.next.length > 2) {
+        throw new Error(`Tutorial step ${index + 1} must have at most two successor ids.`)
+      }
+      step.next = step.next.filter(targetId => targetId != null && targetId !== '')
+      const seenTargets = new Set()
+      step.next.forEach(targetId => {
+        if (typeof targetId !== 'string' || !ids.has(targetId)) {
+          throw new Error(`Tutorial step ${index + 1} references an unknown successor.`)
+        }
+        if (targetId === step.id || seenTargets.has(targetId)) {
+          throw new Error(`Tutorial step ${index + 1} has a self-link or duplicate successor.`)
+        }
+        seenTargets.add(targetId)
+      })
+    })
+  }
+
+  return { ...tutorial, flowVersion: TUTORIAL_FLOW_VERSION, steps }
+}
+
 export function updateProcess(process) {
 
   const { latencies, ports, instruction_list } = process

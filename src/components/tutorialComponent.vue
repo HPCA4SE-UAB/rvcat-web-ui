@@ -17,7 +17,7 @@
             <span class="image-hint">Click to enlarge</span>
           </div>
           <div class="tutorial-actions">
-            <button @click="previousStep" :disabled="stepIndex === 0"
+            <button @click="previousStep" :disabled="!canGoBack"
                title="Go to previous step on the tutorial"
                class="tutorial-btn">
               Previous
@@ -25,14 +25,14 @@
             <span class="tutorial-progress">
               {{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}
             </span>
-            <button v-if="stepIndex < currentTutorial.steps.length - 1"
-                    @click="nextStep"
-                    title="Go next step; disabled if an action must be done first"
+            <button v-for="target in successorSteps" :key="target.id"
+                    @click="nextStep(target.id)"
+                    :title="`Continue to ${target.title}`"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
-              Next
+              {{ target.title }}
             </button>
-            <button v-else
+            <button v-if="successorSteps.length === 0"
                     @click="completeTutorial"
                     title="Finish tutorial; disabled if an action must be done first"
                     :disabled="!canProceed"
@@ -106,7 +106,7 @@
         </div>
 
         <div class="question-actions">
-          <button @click="previousStep" :disabled="stepIndex === 0"
+          <button @click="previousStep" :disabled="!canGoBack"
                title="Go to previous step on the tutorial"
                class="tutorial-btn">
             Previous
@@ -125,12 +125,13 @@
             Try Again
           </button>
 
-          <button v-else-if="stepIndex < currentTutorial.steps.length - 1"
-                  @click="nextStep"
-                  title="Go to next step on the tutorial"
-                  class="tutorial-btn tutorial-btn-primary">
-            Next
-          </button>
+          <template v-else-if="isQuestionCorrect && successorSteps.length">
+            <button v-for="target in successorSteps" :key="target.id"
+                    @click="nextStep(target.id)"
+                    class="tutorial-btn tutorial-btn-primary">
+              {{ target.title }}
+            </button>
+          </template>
           <button v-else
                   @click="completeTutorial"
                   title="Finish the tutorial"
@@ -236,7 +237,10 @@
 
 import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDraggable, useResizeObserver}                                           from '@vueuse/core'
-import { initResource, removeFromLocalStorage, uploadJSON }                         from '@/common'
+import {
+  initResource, removeFromLocalStorage, uploadJSON,
+  migrateTutorialFlow, TUTORIAL_FLOW_VERSION
+} from '@/common'
 const simState = inject('simulationState');
 
 // ============================================================================
@@ -248,6 +252,8 @@ const defaultOptions = {
   available:      [],
   inProgressID:   "",
   progressStep:    0,
+  progressStepId: "",
+  progressHistory: [],
   windowWidth:   200,
   windowHeight:  200,
   x_pos:          10,
@@ -391,6 +397,19 @@ const validationEventListeners = ref([])
 // ============================================================================
 const currentStep = computed(() =>
    currentTutorial.value?.steps?.[stepIndex.value] ?? null
+)
+
+const successorSteps = computed(() => {
+  const steps = currentTutorial.value?.steps || []
+  const step = currentStep.value
+  if (!step) return []
+  return (step.next || [])
+    .map(id => steps.find(candidate => candidate.id === id))
+    .filter(Boolean)
+})
+
+const canGoBack = computed(() =>
+  Array.isArray(tutorialOptions.progressHistory) && tutorialOptions.progressHistory.length > 0
 )
 
 const isQuestionStep = computed(() =>
@@ -778,6 +797,8 @@ const startTutorial = async (tutorialId) => {
   await loadCurrentTutorial (tutorialId)
   if (!currentTutorial.value) return
 
+  tutorialOptions.progressHistory = []
+  tutorialOptions.progressStepId = currentStep.value?.id || ''
   resetQuestionState()
 
   clickedButtons.value        = new Set()
@@ -791,10 +812,15 @@ const startTutorial = async (tutorialId) => {
   })
 }
 
-const goToStep = async (newIndex) => {
+const goToStep = async (newIndex, { recordHistory = true } = {}) => {
+  if (newIndex < 0 || newIndex >= currentTutorial.value.steps.length) return
+  if (recordHistory && currentStep.value)
+    tutorialOptions.progressHistory.push(currentStep.value.id)
+
   isActive.value = false
   stepIndex.value = newIndex
   tutorialOptions.progressStep =  newIndex  // fire options saving
+  tutorialOptions.progressStepId = currentTutorial.value.steps[newIndex].id
   resetQuestionState()
   shuffleAnswers    ()
   await nextTick()
@@ -803,17 +829,26 @@ const goToStep = async (newIndex) => {
   isActive.value  = true
 }
 
-const nextStep = async () => {
-  if (stepIndex.value >= currentTutorial.value.steps.length - 1) return
+const nextStep = async (targetId) => {
+  if (!currentStep.value) return
   if (currentStep.value.type !== 'question' && currentStep.value.validation) {
     if (!await validateCurrentStep()) return
   }
-  await goToStep(stepIndex.value + 1)
+  if (currentStep.value.type === 'question' && !isQuestionCorrect.value) return
+  const targetIndex = currentTutorial.value.steps.findIndex(step => step.id === targetId)
+  if (targetIndex === -1 || !currentStep.value.next?.includes(targetId)) return
+  await goToStep(targetIndex)
 }
 
 const previousStep = async () => {
-  if (stepIndex.value <= 0) return
-  await goToStep(stepIndex.value - 1)
+  while (tutorialOptions.progressHistory.length) {
+    const previousId = tutorialOptions.progressHistory.pop()
+    const previousIndex = currentTutorial.value.steps.findIndex(step => step.id === previousId)
+    if (previousIndex !== -1) {
+      await goToStep(previousIndex, { recordHistory: false })
+      return
+    }
+  }
 }
 
 const endTutorial = (fullReset = false) => {
@@ -825,6 +860,8 @@ const endTutorial = (fullReset = false) => {
     highlightElement.value = null
     tutorialOptions.inProgressID = ""   // fire options saving
     tutorialOptions.progressStep =  0
+    tutorialOptions.progressStepId = ""
+    tutorialOptions.progressHistory = []
   }
 }
 
@@ -853,6 +890,8 @@ const toggleTutorialMenu = () => {
 
 const initTutorial = async () => {
   const inProgressID = tutorialOptions.inProgressID  // Copy before modification by InitResource
+  if (!Array.isArray(tutorialOptions.progressHistory))
+    tutorialOptions.progressHistory = []
   await initResource('tutorial', tutorialOptions, 'inProgressID', 'available')
 
   // replace list of tutorial names by list of tutorial descriptions
@@ -860,7 +899,16 @@ const initTutorial = async () => {
   for (const name of tutorialOptions.available) {
     try {
       const jsonString = localStorage.getItem(`tutorial.${name}`)
-      const tutorial   = JSON.parse(jsonString)
+      const source = JSON.parse(jsonString)
+      const wasLegacy = source.flowVersion == null || source.flowVersion === 1
+      const tutorial = migrateTutorialFlow(source)
+      if (wasLegacy && name === inProgressID) {
+        const savedIndex = Math.max(0, Math.min(tutorialOptions.progressStep, tutorial.steps.length - 1))
+        if (!tutorialOptions.progressHistory.length && savedIndex > 0)
+          tutorialOptions.progressHistory = tutorial.steps.slice(0, savedIndex).map(step => step.id)
+        tutorialOptions.progressStepId = tutorial.steps[savedIndex]?.id || ''
+      }
+      localStorage.setItem(`tutorial.${name}`, JSON.stringify(tutorial))
       tutorial.id      = name
       tutorials.push({
         id:          name,
@@ -880,9 +928,11 @@ const loadCurrentTutorial = async (ID) => {
   if ( ID !== "")
     tutorial = tutorialOptions.available.find(t => t.id === ID)
 
-  if ( ID === "" || tutorial === null) { // no tutorial in progress
+  if ( ID === "" || !tutorial) { // no tutorial in progress
     tutorialOptions.inProgressID = ""
     tutorialOptions.progressStep =  0
+    tutorialOptions.progressStepId = ""
+    tutorialOptions.progressHistory = []
     currentTutorial.value         = null
     stepIndex.value               = 0
     console.log('👨‍🎓🚦No tutorial in progress')
@@ -890,11 +940,28 @@ const loadCurrentTutorial = async (ID) => {
   }
 
   const jsonString      = localStorage.getItem(`tutorial.${ID}`)
-  const fullTutorial    = JSON.parse(jsonString)
+  const sourceTutorial  = JSON.parse(jsonString)
+  const wasLegacy       = sourceTutorial.flowVersion == null || sourceTutorial.flowVersion === 1
+  const fullTutorial    = migrateTutorialFlow(sourceTutorial)
+  if (wasLegacy) localStorage.setItem(`tutorial.${ID}`, JSON.stringify(fullTutorial))
   fullTutorial.steps    = processStepActions(fullTutorial.steps)
   fullTutorial.id       = ID
   currentTutorial.value = fullTutorial
-  stepIndex.value       = (tutorialOptions.inProgressID === ID) ? tutorialOptions.progressStep : 0
+  const isResuming      = tutorialOptions.inProgressID === ID
+  if (!Array.isArray(tutorialOptions.progressHistory))
+    tutorialOptions.progressHistory = []
+  tutorialOptions.progressHistory = tutorialOptions.progressHistory
+    .filter(stepId => fullTutorial.steps.some(step => step.id === stepId))
+  const savedIndex      = isResuming && tutorialOptions.progressStepId
+    ? fullTutorial.steps.findIndex(step => step.id === tutorialOptions.progressStepId)
+    : -1
+  stepIndex.value       = isResuming
+    ? (savedIndex >= 0 ? savedIndex : Math.min(tutorialOptions.progressStep, fullTutorial.steps.length - 1))
+    : 0
+  if (!isResuming) tutorialOptions.progressHistory = []
+  else if (wasLegacy && !tutorialOptions.progressHistory.length)
+    tutorialOptions.progressHistory = fullTutorial.steps.slice(0, stepIndex.value).map(step => step.id)
+  tutorialOptions.progressStepId = fullTutorial.steps[stepIndex.value]?.id || ''
   tutorialOptions.inProgressID = ID
   tutorialOptions.progressStep = stepIndex.value
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
@@ -902,7 +969,12 @@ const loadCurrentTutorial = async (ID) => {
 
 const addTutorial = async () => {
   try {
-    const data   = await uploadJSON(null, 'tutorial');
+    const uploaded = await uploadJSON(null, 'tutorial');
+    if (!uploaded) return
+    const data = migrateTutorialFlow({
+      ...uploaded,
+      id: uploaded.id || uploaded.name
+    })
     let included = false
 
     for (const tut of tutorialOptions.available) {
@@ -937,6 +1009,9 @@ function deleteTutorial (tutorialId) {
     tutorialOptions.available.splice(index, 1);
   }
   tutorialOptions.inProgressID = ''
+  tutorialOptions.progressStep = 0
+  tutorialOptions.progressStepId = ''
+  tutorialOptions.progressHistory = []
   if ( tutorialOptions.available.length == 0)
   {
     alert("Removing all tutorial configurations forces to load the original tutorials provided in the distribution")
@@ -962,6 +1037,8 @@ watch(  // Watch for tutorial changes on specific properties
     available:    tutorialOptions.available,
     inProgressID: tutorialOptions.inProgressID,
     progressStep: tutorialOptions.progressStep,
+    progressStepId: tutorialOptions.progressStepId,
+    progressHistory: tutorialOptions.progressHistory,
     windowWidth:  tutorialOptions.windowWidth,
     windowHeight: tutorialOptions.windowHeight,
     x_pos:        tutorialOptions.x_pos,

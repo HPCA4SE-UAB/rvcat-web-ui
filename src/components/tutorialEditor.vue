@@ -63,14 +63,30 @@
                 <div class="step-controls">
                   <button type="button" @click="moveStep(-1)" :disabled="stepNumber <= 0"
                     class="move-step-btn" title="Move step one position toward the beginning"
-                    aria-label="Move step up">↑</button>
+                    aria-label="Move step left">←</button>
                   <button type="button" @click="moveStep(1)" :disabled="stepNumber >= maxSteps - 1"
                     class="move-step-btn" title="Move step one position toward the end"
-                    aria-label="Move step down">↓</button>
+                    aria-label="Move step right">→</button>
                   <button type="button" @click="removeStep(stepNumber)" class="remove-btn"
                     title="Remove selected step" aria-label="Remove selected step">×</button>
                 </div>
               </div>
+              <label>First successor</label>
+              <select :value="currentStep.next?.[0] || ''" @change="setSuccessor(currentStep, 0, $event.target.value)">
+                <option value="">No successor</option>
+                <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
+                  :disabled="step.id === currentStep.id || step.id === currentStep.next?.[1]">
+                  {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
+                </option>
+              </select>
+              <label>Second successor (optional)</label>
+              <select :value="currentStep.next?.[1] || ''" @change="setSuccessor(currentStep, 1, $event.target.value)">
+                <option value="">No second successor</option>
+                <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
+                  :disabled="step.id === currentStep.id || step.id === currentStep.next?.[0]">
+                  {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
+                </option>
+              </select>
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
@@ -266,7 +282,10 @@
       General steps define an element in the simulator that is highlighted, and may define a action (simulate click on main header buttons).
       You can specify the position in the screen for the tutorial message in relation to the highlighted screen element.
       Finally, you can specify some requirement to continue the tutorial,
-      such as clicking some button, or selecting some value in a certain input box.</p>"
+      such as clicking some button, or selecting some value in a certain input box.</p>
+      <p>Each card can have up to two successor cards, including cards earlier in the graph.
+      Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
+      Older JSON tutorials are migrated to a linear flow when loaded.</p>"
     title="Tutorial edition, download/upload, "
     @close="closeHelp"  />
   </Teleport>
@@ -277,7 +296,10 @@
 <script setup>
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
-import {  downloadJSON, uploadJSON, createGraphVizGraph  } from '@/common'
+import {
+  downloadJSON, uploadJSON, createGraphVizGraph,
+  createTutorialStepId, migrateTutorialFlow, TUTORIAL_FLOW_VERSION
+} from '@/common'
 
 const simState = inject('simulationState');
 
@@ -285,7 +307,7 @@ const simState = inject('simulationState');
 // Edited Tutorial & LocalStorage
 // ============================================================================
 
-const tutorial    = reactive({ id: 'newTut', name: '', description: '', steps: [] })   // default edited
+const tutorial    = reactive({ id: 'newTut', name: '', description: '', flowVersion: TUTORIAL_FLOW_VERSION, steps: [] })   // default edited
 const stepNumber  = ref(0)
 const tutorialSvg = ref('')
 
@@ -407,6 +429,8 @@ const validationButtonSelectors = [
 // STEP CREATION HELPERS
 // ============================================================================
 const createEmptyStep = () => ({
+  id:               createTutorialStepId(),
+  next:             [],
   type:            'step',
   title:           '',
   description:     '',
@@ -424,6 +448,8 @@ const createEmptyStep = () => ({
 })
 
 const createEmptyQuestion = () => ({
+  id:           createTutorialStepId(),
+  next:         [],
   type:          'question',
   title:         '',
   questionText:  '',
@@ -438,16 +464,23 @@ const createEmptyQuestion = () => ({
 const addStep = (type = 'step', atIndex = -1) => {
   let insertIndex= atIndex+1
   let newStep = null
+  const previousStep = tutorial.steps[atIndex]
+  const previousTargets = previousStep?.next?.filter(Boolean) || []
 
   if (!type) {  // duplicate current
     insertIndex = Math.max(0, Math.min(insertIndex-1, tutorial.steps.length - 1));
     // Create deep copy
     newStep = JSON.parse(JSON.stringify(tutorial.steps[insertIndex]));
     newStep.title = `${newStep.title} (copy)`;
+    newStep.id = createTutorialStepId()
     insertIndex = insertIndex+1
   }
   else
     newStep = (type === 'question' ? createEmptyQuestion() : createEmptyStep());
+
+  newStep.next = previousTargets.slice(0, 1)
+  if (previousStep)
+    previousStep.next = [newStep.id, ...previousTargets.slice(1, 2)]
 
   tutorial.steps.splice(insertIndex, 0, newStep);
   stepNumber.value = insertIndex;
@@ -455,7 +488,17 @@ const addStep = (type = 'step', atIndex = -1) => {
 }
 
 const removeStep = (index) => {
-  tutorial.steps.splice(index, 1)
+  const [removedStep] = tutorial.steps.splice(index, 1)
+  if (!removedStep) return
+
+  const replacementTarget = removedStep.next?.filter(Boolean).find(targetId => targetId !== removedStep.id)
+  tutorial.steps.forEach(step => {
+    step.next = (step.next || [])
+      .map(targetId => targetId === removedStep.id ? replacementTarget : targetId)
+      .filter((targetId, targetIndex, targets) =>
+        targetId && targetId !== step.id && targets.indexOf(targetId) === targetIndex)
+      .slice(0, 2)
+  })
   stepNumber.value = index-1;
 }
 
@@ -467,6 +510,13 @@ const moveStep = (offset) => {
   const [step] = tutorial.steps.splice(index, 1)
   tutorial.steps.splice(targetIndex, 0, step)
   stepNumber.value = targetIndex
+}
+
+const setSuccessor = (step, slot, targetId) => {
+  const next = [...(step.next || [])]
+  while (next.length <= slot) next.push('')
+  next[slot] = targetId
+  step.next = next
 }
 
 // ============================================================================
@@ -571,6 +621,8 @@ const buildValidation = (step) => {
 const convertStepForExport = (step) => {
   if (step.type === 'question') {
     const q = {
+      id:           step.id,
+      next:         (step.next || []).filter(Boolean),
       type:         'question',
       title:        step.title,
       questionText: step.questionText,
@@ -586,6 +638,8 @@ const convertStepForExport = (step) => {
   }
 
   const s = {
+    id:          step.id,
+    next:        (step.next || []).filter(Boolean),
     type:        'step',
     title:       step.title,
     description: step.description,
@@ -603,11 +657,10 @@ const convertStepForExport = (step) => {
 }
 
 const buildTutorialData = () => ({
+  flowVersion: TUTORIAL_FLOW_VERSION,
   name:        tutorial.name,
   description: tutorial.description,
-  steps:       tutorial.steps
-    .filter(s => s.title && (s.type === 'question' || s.selector))
-    .map(convertStepForExport)
+  steps:       tutorial.steps.map(convertStepForExport)
 })
 
 // ============================================================================
@@ -622,6 +675,16 @@ const validateTutorial = () => {
   tutorial.steps.forEach((step, i) => {
     const n = i
     if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
+
+    const successors = (step.next || []).filter(Boolean)
+    if (successors.length > 2)         errors.push(`• Step ${n}: At most 2 successors are allowed`)
+    if (new Set(successors).size !== successors.length)
+                                      errors.push(`• Step ${n}: Successors must be different`)
+    if (successors.includes(step.id)) errors.push(`• Step ${n}: A card cannot link to itself`)
+    successors.forEach(targetId => {
+      if (!tutorial.steps.some(target => target.id === targetId))
+                                      errors.push(`• Step ${n}: Successor does not exist`)
+    })
 
     if (step.type === 'question') {
       if (!step.questionText?.trim()) errors.push(`• Step ${n}: Question Text is required`)
@@ -669,9 +732,11 @@ function loadEditedTutorial() {
   }
   try {
     const data = JSON.parse(stored);
-    tutorial.name        = data.name        || ''
-    tutorial.description = data.description || ''
-    tutorial.steps       = data.steps       || []
+    const normalized = migrateTutorialFlow(data)
+    tutorial.name        = normalized.name        || ''
+    tutorial.description = normalized.description || ''
+    tutorial.flowVersion = normalized.flowVersion
+    tutorial.steps       = normalized.steps
     stepNumber.value     = 0
     console.log('🎓🔄 Reloading Edited tutorial with existing draft')
     // selectNodeByIndex(0)
@@ -684,13 +749,18 @@ const clearDraft = (check = true) => {
   if ( !check || confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
     tutorial.name        = ''
     tutorial.description = ''
+    tutorial.flowVersion = TUTORIAL_FLOW_VERSION
     tutorial.steps       = []
     stepNumber.value     = -1
   }
 }
 
 const downloadTutorial = () => {
-  if (!validateTutorial()) return;
+  const errors = validateTutorial()
+  if (errors.length) {
+    alert(errors.join('\n'))
+    return
+  }
 
   const tutorialData = buildTutorialData();
   downloadJSON(tutorialData, 'tempTut', 'tutorial');
@@ -698,10 +768,18 @@ const downloadTutorial = () => {
 
 const uploadTutorial = () => {
   uploadJSON((data) => {
-    tutorial.name        = data.name        || ''
-    tutorial.description = data.description || ''
-    tutorial.steps       = data.steps.map(convertUploadedStep)
-    stepNumber.value     = 0
+    try {
+      const converted = { ...data, steps: data.steps.map(convertUploadedStep) }
+      const normalized = migrateTutorialFlow(converted)
+      tutorial.name        = normalized.name        || ''
+      tutorial.description = normalized.description || ''
+      tutorial.flowVersion = normalized.flowVersion
+      tutorial.steps       = normalized.steps
+      stepNumber.value     = 0
+    } catch (error) {
+      console.error('🎓❌ Failed to import tutorial flow:', error)
+      alert(`Could not load tutorial: ${error.message}`)
+    }
   }, 'tutorial');
 };
 
@@ -712,6 +790,8 @@ const uploadTutorial = () => {
 const convertUploadedStep = (step) => {
   if (step.type === 'question') {
     const q = {
+      id:            step.id,
+      next:          step.next,
       type:          'question',
       title:         step.title || '',
       questionText:  step.questionText || '',
@@ -732,6 +812,8 @@ const convertUploadedStep = (step) => {
 
   const s = {
     ...createEmptyStep(),
+    id:          step.id,
+    next:        step.next,
     title:       step.title       || '',
     description: step.description || '',
     image:       step.image       || '',
@@ -750,26 +832,34 @@ const convertUploadedStep = (step) => {
   return s
 }
 
+let graphRenderRequest = 0
+
 async function processTutorialUpdate(t) {
   try {
     localStorage.setItem('tutorialTemp', JSON.stringify(t));
     console.log('🎓📥 Edited tutorial saved in localStorage', t.name);
 
-    const dotCode = generateTutorialDot(t);
-    // console.log('🎓📥 Dot Code', dotCode);
-
-    const svg = await createGraphVizGraph(dotCode);
-    tutorialSvg.value = svg.outerHTML;
+    await updateTutorialGraph(t, stepNumber.value)
   } catch (error) {
     console.error('🎓❌ Failed to save edited tutorial in localStorage and update tutorial view:', error);
   }
 }
 
+async function updateTutorialGraph(t, selectedIndex) {
+  const renderRequest = ++graphRenderRequest
+  const dotCode = generateTutorialDot(t, selectedIndex)
+  const svg = await createGraphVizGraph(dotCode)
+
+  if (renderRequest === graphRenderRequest)
+    tutorialSvg.value = svg.outerHTML
+}
+
 // ============================================================================
 // GRAPH: generateTutorialDot
 // ============================================================================
-function generateTutorialDot(tut) {
+function generateTutorialDot(tut, selectedIndex) {
   const num_steps = tut.steps.length
+  const indexById = new Map(tut.steps.map((step, index) => [step.id, index]))
   let dot_code = `
 digraph "Tutorial Graph" {
   rankdir=LR; splines=spline; newrank=true;
@@ -782,28 +872,25 @@ digraph "Tutorial Graph" {
     let fill  = "lightblue"
     let type  = tut.steps[i].type
     const title = tut.steps[i].title || `${type} ${i}`
-    const shortTitle = title.length > 18 ? `${title.slice(0, 15)}...` : title
+    const label = i === selectedIndex
+      ? `${i}\\n${escapeDotString(title.slice(0, 5))}`
+      : i
     if (type !== "step") {
       color = "purple"
       fill  = "mediumpurple1"
     }
-    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label="${i}\\n${escapeDotString(shortTitle)}",
+    dot_code += `    a${i} [id="${i}", color=${color}, fillcolor=${fill}, label="${label}",
                             tooltip="${escapeDotString(`${type}: ${title}`)}"]\n`
   }
   dot_code += `
   }
-  start [fontsize=8 margin="0.05,0.02" shape=Msquare]
-  end   [fontsize=8 margin="0.05,0.02" shape=Msquare]
 `
-  if (num_steps > 0) {
-    dot_code += `     start -> `
-    for (let i = 0; i < (num_steps-1); i++) {
-      dot_code += `a${i} -> `
+  for (let i = 0; i < num_steps; i++) {
+    for (const targetId of (tut.steps[i].next || []).filter(Boolean)) {
+      const targetIndex = indexById.get(targetId)
+      if (targetIndex !== undefined)
+        dot_code += `  a${i} -> a${targetIndex}\n`
     }
-    dot_code += `a${num_steps-1} -> end`
-  }
-  else {
-    dot_code += `     start -> end`
   }
   return dot_code + `
   }`
@@ -830,6 +917,12 @@ watch(tutorial, (t) => {
     await processTutorialUpdate(t);
   }, 100);
 }, { deep: true });
+
+watch(stepNumber, (index) => {
+  updateTutorialGraph(tutorial, index).catch((error) => {
+    console.error('🎓❌ Failed to update tutorial graph for selected step:', error);
+  });
+});
 
 // Watch for changes on Simulation state
 watch(() => simState.state, (newValue) => {
@@ -920,6 +1013,7 @@ const removeClickListeners = () => {
 
 const highlightNodeAsSelected = (node) => {
   node.style.filter = 'drop-shadow(0 0 10px rgba(0, 100, 255, 0.8))';
+
   const shapes = node.querySelectorAll('ellipse, polygon, path, rect');
   shapes.forEach(shape => {
     if (!shape.hasAttribute('data-original-stroke')) {
