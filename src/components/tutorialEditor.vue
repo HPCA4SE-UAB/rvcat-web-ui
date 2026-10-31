@@ -101,13 +101,13 @@
               <div class="form-group">
                 <label>Action (optional)</label>
                 <select v-model="currentStep.action">
-                  <option value="">                               No action            </option>
-                  <option value="switchTo:simulationComponent">   Go to Simulation     </option>
-                  <option value="switchTo:analysisComponent">     Go to Static Analysis</option>
-                  <option value="switchTo:timelineComponent">     Go to Timeline       </option>
-                  <option value="switchToFull:processorComponent">Go to Processor      </option>
-                  <option value="switchToFull:programComponent">  Go to Program        </option>
-                  <option value="switchToFull:tutorialComponent"> Go to Tutorial       </option>
+                  <option value="">                                 No action            </option>
+                  <option value="switchTo:simulationComponent">     Go to Simulation     </option>
+                  <option value="switchTo:staticAnalysisComponent"> Go to Static Analysis</option>
+                  <option value="switchTo:timelineComponent">       Go to Timeline       </option>
+                  <option value="switchToFull:processorEditor">     Go to Processor      </option>
+                  <option value="switchToFull:programEditor">       Go to Program        </option>
+                  <option value="switchToFull:tutorialEditor">      Go to Tutorial       </option>
                 </select>
 
                 <label>Step Image (opt.)</label>
