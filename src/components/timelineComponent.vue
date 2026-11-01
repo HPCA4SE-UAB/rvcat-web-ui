@@ -3,7 +3,7 @@
            watch, inject, reactive}                                  from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { charToProcessingState  }                             from '@/common'
-  import { computeCriticalCycles } from '@/criticalPath'
+  import { computeCriticalCycles, findLastRetiredInstructionIndex } from '@/criticalPath'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -270,6 +270,7 @@
   let rafPending  = false
   let hoverRow    = null
   let hoverCol    = null
+  let visibleCriticalPath = null
 
   function scheduleDraw(cycles, oldCycles) {
     if (rafPending) return
@@ -321,6 +322,28 @@
       }
       timelineOptions.instructions = totalInstr
       timelineOptions.cycles= newCycles
+    }
+
+    const graph = timeline.value.critical_path_graph
+    let visibleCriticalCycles = timeline.value.computedCriticalCycles
+    if (graph) {
+      const visibleRetiredIndex = findLastRetiredInstructionIndex(
+        instructions.slice(0, totalInstr),
+        totalCycles
+      )
+      if (visibleRetiredIndex === null) {
+        visibleCriticalCycles = instructions.map(() => [])
+        visibleCriticalPath = { graph, target: null, cycles: visibleCriticalCycles }
+      } else {
+        if (visibleCriticalPath?.graph !== graph || visibleCriticalPath.target !== visibleRetiredIndex) {
+          visibleCriticalPath = {
+            graph,
+            target: visibleRetiredIndex,
+            cycles: computeCriticalCycles(graph, instructions, visibleRetiredIndex)
+          }
+        }
+        visibleCriticalCycles = visibleCriticalPath.cycles
+      }
     }
 
     cellW = 14
@@ -466,7 +489,7 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
-          const criticalCycles = timeline.value.computedCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
+          const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
           let critical         = criticalCycles.includes(i - startCycle)
           let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E') ||
                                  (ch == 'L' && states[i-startCycle-1] != 'L') ||
@@ -726,7 +749,7 @@
 
         <div class="iters-group">
           <button class="blue-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
-            title="Toggle Critical Path View"
+            title="Show the critical path ending at the last instruction retired in the visible cycles"
             id="timeline-critical"
             @click="toggleCritical">
             <span v-if="timelineOptions.critical">✔ </span>
@@ -752,7 +775,8 @@
     <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time.
                 Increase the total number of <em>cycles</em> displayed in the timeline to understand the execution incrementally.
-                Set the <strong>critical</strong> buttom to emphasize the critical execution path from the last retired instruction</p>
+                Set <strong>Show Critical</strong> to highlight the critical path ending at the last instruction retired
+                within the displayed cycles. Changing the cycle limit recalculates that path.</p>
               <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
                 Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
                 or the selected cycle (initial cell of a column).</p>"

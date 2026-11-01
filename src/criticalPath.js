@@ -1,13 +1,13 @@
 const GRAPH_STAGES = ['dispatch', 'execute', 'retire']
 
-function getLongestPath(graph) {
-  const { node_count: nodeCount, source, sink, dependencies_by_node: dependenciesByNode } = graph
+function getLongestPath(graph, targetNode) {
+  const { node_count: nodeCount, source, dependencies_by_node: dependenciesByNode } = graph
   const distances = Array(nodeCount).fill(Number.NEGATIVE_INFINITY)
   const nextNodes = Array(nodeCount).fill(-1)
   const nextWeights = Array(nodeCount).fill(0)
-  distances[sink] = 0
+  distances[targetNode] = 0
 
-  for (let node = sink; node > source; node--) {
+  for (let node = targetNode; node > source; node--) {
     for (const [dependency, weight] of dependenciesByNode[node]) {
       const candidateDistance = distances[node] + weight
       if (distances[dependency] < candidateDistance) {
@@ -19,12 +19,12 @@ function getLongestPath(graph) {
   }
 
   if (!Number.isFinite(distances[source]))
-    throw new Error('Critical-path graph has no path from source to sink.')
+    throw new Error(`Critical-path graph has no path from source to node ${targetNode}.`)
 
-  const path = [[sink, 1]]
+  const path = [[targetNode, 1]]
   const sourceToSink = []
   let node = source
-  while (node !== sink) {
+  while (node !== targetNode) {
     const next = nextNodes[node]
     if (next <= node)
       throw new Error('Critical-path graph cannot reconstruct a forward path.')
@@ -68,13 +68,29 @@ function validateGraph(graph, instructionRows) {
   })
 }
 
-export function computeCriticalCycles(graph, instructionRows) {
+export function findLastRetiredInstructionIndex(instructionRows, visibleCycles) {
+  for (let index = instructionRows.length - 1; index >= 0; index--) {
+    const [,, startCycle, , states] = instructionRows[index]
+    const retireOffset = states.lastIndexOf('R')
+    const retireCycle = startCycle + retireOffset
+    if (retireOffset >= 0 && retireCycle >= 0 && retireCycle < visibleCycles)
+      return index
+  }
+  return null
+}
+
+export function computeCriticalCycles(graph, instructionRows, targetInstructionIndex = instructionRows.length - 1) {
   validateGraph(graph, instructionRows)
-  const path = getLongestPath(graph)
+  if (!Number.isInteger(targetInstructionIndex)
+      || targetInstructionIndex < 0
+      || targetInstructionIndex >= instructionRows.length) {
+    throw new Error('Critical-path target instruction index is out of range.')
+  }
+  const path = getLongestPath(graph, (targetInstructionIndex + 1) * GRAPH_STAGES.length - 1)
   const criticalCycles = []
   let pathIndex = path.length - 1
 
-  for (let dynamicIndex = 0; dynamicIndex < instructionRows.length; dynamicIndex++) {
+  for (let dynamicIndex = 0; dynamicIndex <= targetInstructionIndex; dynamicIndex++) {
     const stages = [...instructionRows[dynamicIndex][4]]
     const cycles = []
     if (!stages.length)
@@ -121,6 +137,9 @@ export function computeCriticalCycles(graph, instructionRows) {
 
   if (pathIndex !== -1)
     throw new Error('Critical-path graph contains stages that could not be mapped to timeline rows.')
+
+  while (criticalCycles.length < instructionRows.length)
+    criticalCycles.push([])
 
   return criticalCycles
 }
