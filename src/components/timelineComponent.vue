@@ -3,6 +3,7 @@
            watch, inject, reactive}                                  from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { charToProcessingState  }                             from '@/common'
+  import { computeCriticalCycles } from '@/criticalPath'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -88,7 +89,22 @@
     }
     try {
       let timelineRVCAT = JSON.parse(data)
+      const graph = timelineRVCAT.critical_path_graph
+      if (graph) {
+        const computedCriticalCycles = computeCriticalCycles(graph, timelineRVCAT.instructions)
+        const mismatchedRows = computedCriticalCycles.reduce((rows, cycles, rowIndex) => {
+          if (JSON.stringify(cycles) !== JSON.stringify(timelineRVCAT.instructions[rowIndex][5]))
+            rows.push(rowIndex)
+          return rows
+        }, [])
+        if (mismatchedRows.length)
+          console.warn('📈⚠️ Python and JavaScript critical-path cells differ for timeline rows:', mismatchedRows.slice(0, 10))
+        timelineRVCAT.computedCriticalCycles = computedCriticalCycles
+      } else {
+        console.error('📈❌ Timeline response is missing critical_path_graph; using Python critical-cycle data.')
+      }
       getPortUsage(timelineRVCAT);
+      selectedCell.value = null
       timeline.value = timelineRVCAT
       timelineOptions.canvasOffsetX = 0
       timelineOptions.canvasOffsetY = 0
@@ -110,7 +126,6 @@
 // ============================================================================
   let cleanupHandleTimeline = null
   let unwatch               = null
-  let isComponentMounted    = false
 
   onMounted(() => {
     cleanupHandleTimeline = registerHandler('get_timeline', handleTimeline)
@@ -118,11 +133,10 @@
     addCanvasWrapper()
     requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
     nextTick(() => {
-      isComponentMounted = true;
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
-            ([newInstructions, newCycles], [oldInstructions, oldCycles]) => {
+            ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
               scheduleDraw(newCycles,oldCycles)
               saveOptions()
@@ -131,9 +145,7 @@
       console.log('📈🎯 Timeline Component mounted')
     })
   })
-
   onBeforeUnmount(() => {
-    isComponentMounted = false;
     if (unwatch) {
       unwatch();
       unwatch = null;
@@ -158,7 +170,7 @@
     const usagePorts = {};
     const usageInstr = Array.from({ length: timeline.cycles }, () => []);
 
-    for (const [rowIdx, [iter, instrIdx, startCycle, port, states]] of timeline.instructions.entries()) {
+    for (const [rowIdx, [, , startCycle, port, states]] of timeline.instructions.entries()) {
       const eIndex = states.indexOf("E");
       const lIndex = states.indexOf("L");
       const sIndex = states.indexOf("S");
@@ -244,6 +256,7 @@
  * ------------------------------------------------------------------ */
   const hoverInfo        = ref(null)
   const tooltipRef       = ref(null)
+  const selectedCell     = ref(null)
   const interactiveCells = []
   let totalCycles = 0
   let totalInstr  = 0
@@ -422,7 +435,7 @@
     // ************************************************************************************
     //   for each inst. & for each cycle, write cell into canvas and push interactive cells
     // ************************************************************************************
-    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, critical_cycles, addr]] of instructions.entries())
+    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, pythonCriticalCycles, addr]] of instructions.entries())
     {
       if (rowIdx >= totalInstr) return
 
@@ -453,7 +466,8 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
-          let critical         = critical_cycles.includes(i - startCycle)
+          const criticalCycles = timeline.value.computedCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
+          let critical         = criticalCycles.includes(i - startCycle)
           let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E') ||
                                  (ch == 'L' && states[i-startCycle-1] != 'L') ||
                                  (ch == 'S' && states[i-startCycle-1] != 'S')
@@ -489,6 +503,21 @@
         x += cellW;
       }
     }
+    drawSelectedCell()
+  }
+
+  function drawSelectedCell() {
+    const cell = selectedCell.value
+    if (!cell) return
+    const ctx = overlayCanvas.value?.getContext('2d')
+    if (!ctx) return
+    ctx.save()
+    ctx.fillStyle = 'rgba(255, 165, 0, 0.35)'
+    ctx.strokeStyle = '#e67e00'
+    ctx.lineWidth = 2
+    ctx.fillRect(cell.x, cell.y, cellW, cellH)
+    ctx.strokeRect(cell.x, cell.y, cellW, cellH)
+    ctx.restore()
   }
 
   function drawHoverOverlay(row, col, initRow, lengthRow, initCol, lengthCol, portsUsed) {
@@ -496,6 +525,8 @@
     ctx.clearRect(0, 0,
                   Math.max(overlayCanvas.value.width, 1+padX+totalCycles*cellW),
                   Math.max(overlayCanvas.value.height,1+padY+(totalInstr+1)*cellH))
+
+    drawSelectedCell()
 
     ctx.strokeStyle = 'red'
     ctx.lineWidth   = 1
@@ -620,10 +651,22 @@
         worldY >= cell.y &&
         worldY <= cell.y + cellH
       ) {
-        handleCellClick(cell.rowIdx, cell.colIdx)
+        handleCellClick(cell, e)
         break
       }
     }
+  }
+
+  function handleCellClick(cell, event) {
+    selectedCell.value = cell
+    drawHoverOverlay(null, null, null, null, null, null, null)
+    hoverInfo.value = {
+      x: event.clientX + 10,
+      y: event.clientY + 10,
+      state: 'ToDo',
+      critical: false
+    }
+    adjustTooltipPosition(event)
   }
 
   function adjustTooltipPosition(e) {
@@ -708,16 +751,10 @@
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
        text= "<p>The <strong>Timeline</strong> section shows the program execution over time.
-<<<<<<< HEAD
-                The dimension of the timeline, <em>instructions</em> × <em>cycles</em> can be modified, and you can choose to see the <strong>full timeline</strong></p>
-              <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
-                Hover over the grid to see specific info about the selected cell, the selected instruction (initial cell of a row),
-=======
-                Increase the total number of <em>cycles</em> dispayed in the timeline to understand the execution incrementally.
+                Increase the total number of <em>cycles</em> displayed in the timeline to understand the execution incrementally.
                 Set the <strong>critical</strong> buttom to emphasize the critical execution path from the last retired instruction</p>
               <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
                 Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
->>>>>>> origin/main
                 or the selected cycle (initial cell of a column).</p>"
        @close="closeHelp1" />
   </Teleport>

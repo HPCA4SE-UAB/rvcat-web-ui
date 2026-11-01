@@ -21,10 +21,10 @@
       </div>
     </div>
 
-    <div class="tutorial-editor">
+    <div class="tutorial-editor" :class="{ 'is-order-open': isStepOrderOpen }">
 
       <!-- Header: Tutorial Description -->
-      <div class="editor-content">
+      <div class="editor-content" :class="{ 'step-order-open': isStepOrderOpen }">
         <div class="section tutorial-header">
           <div class="form-group left-column">
             <div class="label-input-row">
@@ -44,6 +44,14 @@
                 :disabled="stepNumber < 0 || stepNumber >= maxSteps"
                 @click="addStep(null, stepNumber)">Duplicate</button>
             </div>
+            <button v-if="tutorial.steps.length" type="button"
+              class="step-order-toggle"
+              :aria-expanded="isStepOrderOpen"
+              aria-controls="step-order-panel"
+              @click="isStepOrderOpen = !isStepOrderOpen">
+              {{ isStepOrderOpen ? 'Close card order' : 'Reorder cards / questions' }}
+              <span aria-hidden="true">{{ isStepOrderOpen ? '▲' : '▼' }}</span>
+            </button>
           </div>
           <div class="form-group right-column">
             <div class="tutorial-img">
@@ -52,10 +60,11 @@
           </div>
         </div>
 
-        <section v-if="tutorial.steps.length" class="step-order-section" aria-labelledby="step-order-title">
+        <section v-if="tutorial.steps.length && isStepOrderOpen" id="step-order-panel"
+          class="step-order-section" aria-labelledby="step-order-title">
           <div class="step-order-heading">
             <h3 id="step-order-title">Card order</h3>
-            <span>Drag a card to change its order. This does not change its connections.</span>
+            <span>Numbers match the graph (starting at 0). Drag a row to change order; connections stay the same.</span>
           </div>
           <ol class="step-order-list">
             <li v-for="(step, index) in tutorial.steps" :key="step.id"
@@ -65,7 +74,7 @@
                 'is-drop-target': dropTargetStepId === step.id
               }"
               :data-step-id="step.id"
-              :aria-label="`Card ${index + 1}: ${step.title || (step.type === 'question' ? 'Question' : 'Step')}. Drag to reorder, or use Alt+Arrow keys.`"
+              :aria-label="`Graph node ${index}: ${step.title || (step.type === 'question' ? 'Question' : 'Step')}. Drag to reorder, or use Alt+Arrow keys.`"
               tabindex="0"
               draggable="true"
               @click="selectStepById(step.id)"
@@ -75,7 +84,7 @@
               @drop.prevent.stop="dropStep(step.id)"
               @dragend="clearStepDrag">
               <span class="step-order-grip" aria-hidden="true">⠿</span>
-              <span class="step-order-number">{{ index + 1 }}</span>
+              <span class="step-order-number">{{ index }}</span>
               <span class="step-order-type">{{ step.type === 'question' ? 'Question' : 'Step' }}</span>
               <span class="step-order-title">{{ step.title || '(Untitled)' }}</span>
             </li>
@@ -83,7 +92,7 @@
         </section>
 
         <!-- Card: step/question -->
-        <div v-if="currentStep" class="section">
+        <div v-if="currentStep && !isStepOrderOpen" class="section">
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
               <div class="form-row">
@@ -336,6 +345,7 @@ const simState = inject('simulationState');
 const tutorial    = reactive({ id: 'newTut', name: '', description: '', flowVersion: TUTORIAL_FLOW_VERSION, steps: [] })   // default edited
 const stepNumber  = ref(0)
 const tutorialSvg = ref('')
+const isStepOrderOpen = ref(false)
 const draggedStepId = ref(null)
 const dropTargetStepId = ref(null)
 
@@ -1191,6 +1201,12 @@ onUnmounted(() => {
     margin:         auto;
   }
 
+  .tutorial-editor.is-order-open {
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+    min-height: 0;
+  }
+
   .settings-container {
     display:     flex;
     align-items: center;
@@ -1216,6 +1232,40 @@ onUnmounted(() => {
     max-height:     2000px;
   }
 
+  .editor-content.step-order-open {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-content.step-order-open > .tutorial-header {
+    flex: 0 0 auto;
+  }
+
+  .step-order-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 7px 10px;
+    border: 1px solid #9ca3af;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #1f2937;
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .step-order-toggle:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
   .section {
     flex: 1;
     overflow-y:    auto;
@@ -1229,6 +1279,11 @@ onUnmounted(() => {
   }
 
   .step-order-section {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
     padding: 10px;
     border-bottom: 1px solid #e5e7eb;
     background: #f9fafb;
@@ -1255,9 +1310,10 @@ onUnmounted(() => {
 
   .step-order-list {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 3px;
-    max-height: 220px;
+    min-height: 0;
     overflow-y: auto;
     margin: 0;
     padding: 0 4px 0 0;
@@ -1328,6 +1384,11 @@ onUnmounted(() => {
     gap:         10px;
     align-items: flex-start;
     min-height:  120px; /* Altura mínima para la sección */
+    position:    relative;
+  }
+
+  .tutorial-header > .left-column {
+    flex: 0 0 calc(25% - 2.5px);
   }
 
   .left-column {
@@ -1346,25 +1407,51 @@ onUnmounted(() => {
     background:    #f8f9fa;
     border-radius: 8px;
 
-    max-height: 1500px; /* O la altura máxima que prefieras */
-    min-height:  180px; /* Altura mínima */
-
     overflow: hidden; /* Oculta cualquier desbordamiento */
     position: relative; /* Para el posicionamiento interno */
   }
 
+  .tutorial-header > .right-column {
+    flex: 0 0 auto;
+    position: absolute;
+    top: 10px;
+    right: 0;
+    bottom: 10px;
+    width: calc(75% - 7.5px);
+    min-height: 0;
+  }
+
  .tutorial-img {
-    width:        100%;
-    height:       100%;
-    align-items:  center;
-    object-fit:   contain;
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
     transform-box: fill-box;
   }
 
+  .tutorial-img > div {
+    display: flex;
+    flex: 1 1 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
   .tutorial-img svg[viewBox] {
+    display: block;
     width:    100%;
     height:   100%;
-    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    object-fit: contain;
+    overflow: visible;
   }
 
   .tutorial-img svg text {
