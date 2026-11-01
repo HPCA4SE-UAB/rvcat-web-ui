@@ -2,9 +2,30 @@ import { describe, expect, it } from 'vitest'
 import {
   createTutorialStepId,
   get_processor_dot,
+  getLogicalElementCount,
   migrateTutorialFlow,
   TUTORIAL_FLOW_VERSION
 } from './common'
+
+describe('logical element count', () => {
+  it('uses the loop branch stride to recover the configured element count', () => {
+    const scalarProgram = [
+      { type: 'MEM', stride: 1, lanes: 1 },
+      { type: 'BRANCH', stride: 1 }
+    ]
+    const simdProgram = [
+      { type: 'VMEM', stride: 1, lanes: 4 },
+      { type: 'BRANCH', stride: 4 }
+    ]
+
+    expect(getLogicalElementCount(scalarProgram, 100)).toBe(100)
+    expect(getLogicalElementCount(simdProgram, 25)).toBe(100)
+  })
+
+  it('defaults the loop stride to one when there is no non-unit branch stride', () => {
+    expect(getLogicalElementCount([{ type: 'BRANCH' }], 100)).toBe(100)
+  })
+})
 
 describe('processor graph markup', () => {
   it('escapes operation data before inserting it into Graphviz HTML labels', () => {

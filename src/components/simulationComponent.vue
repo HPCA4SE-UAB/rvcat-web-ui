@@ -4,7 +4,8 @@
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
   import { createGraphVizGraph, downloadJSON, uploadJSON,
-           saveToLocalStorage, removeFromLocalStorage, initResource} from '@/common'
+           saveToLocalStorage, removeFromLocalStorage, initResource,
+           getLogicalElementCount }                             from '@/common'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -64,18 +65,24 @@
   const isArray  = (arr) => Array.isArray(arr);
 
   const areInstructionsEqual = (instr1, instr2) => {
+    if (instr1.type    !== instr2.type)    return false;
     if (instr1.latency !== instr2.latency)  return false;
     if (instr1.ports   !== instr2.ports)    return false;
+    if (instr1.size    !== instr2.size)     return false;
     if (instr1.destin  !== instr2.destin)   return false;
     if (instr1.source1 !== instr2.source1)  return false;
     if (instr1.source2 !== instr2.source2)  return false;
     if (instr1.source3 !== instr2.source3)  return false;
+    if (instr1.constant !== instr2.constant) return false;
+    if (instr1.stride  !== instr2.stride)   return false;
+    if (instr1.lanes   !== instr2.lanes)    return false;
     return true; // ✅ all are equal
   }
 
   const areProcessorsEqual = (proc1, proc2) => {
     if (proc1 == {} || proc2 == {})        return false
     if (proc1.iters !== proc2.iters)       return false;
+    if (proc1.Nloop !== proc2.Nloop)       return false;
     if (proc1.dispatch !== proc2.dispatch) return false;
     if (proc1.retire !== proc2.retire)     return false;
     if (proc1.sched !== proc2.sched)       return false;
@@ -377,8 +384,11 @@
   });
 
   const reloadExecutionResults = async () => {
+    const instructionList = simState.simulatedProcess.instruction_list
+    const Nloop = getLogicalElementCount(instructionList, simState.simulatedProcess.iters)
     simProcess = {
       iters:    simState.simulatedProcess.iters,
+      Nloop,
       dispatch: simState.simulatedProcess.dispatch,
       retire:   simState.simulatedProcess.retire,
       sched:    simState.simulatedProcess.sched,
@@ -387,7 +397,7 @@
       blkSize:  simState.simulatedProcess.blkSize,
       mIssueTime: simState.simulatedProcess.mIssueTime,
       mPenalty: simState.simulatedProcess.mPenalty,
-      instruction_list: JSON.parse(JSON.stringify(simState.simulatedProcess.instruction_list))
+      instruction_list: JSON.parse(JSON.stringify(instructionList))
     }
     clearTimeout(resultsTimeout)
     try {
@@ -397,9 +407,9 @@
         document.getElementById('run-simulation-button').disabled       = true;
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
-        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-        getExecutionResults(JSON.stringify( { ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
-                                              instruction_list: toRaw(instruction_list)}, null, 2),
+        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime } = simState.simulatedProcess
+        getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+                                              instruction_list: toRaw(instructionList)}, null, 2),
                             iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')
        }, 200)

@@ -2,7 +2,7 @@
   import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
            watch, inject, reactive}                                  from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
-  import { charToProcessingState  }                             from '@/common'
+  import { charToProcessingState, getLogicalElementCount }       from '@/common'
   import { computeCriticalCycles, findLastRetiredInstructionIndex } from '@/criticalPath'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
@@ -74,7 +74,8 @@
       console.log('📈🔄 Request timeline from RVCAT')
       const { iters, name, ROBsize, dispatch, retire, sched,
               blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-      getTimeline(JSON.stringify( { name, ROBsize, dispatch, retire, sched,
+      const Nloop = getLogicalElementCount(instruction_list, iters)
+      getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
                   iters) // Call Python RVCAT (get timeline with process info and iters loop iterations)
@@ -464,6 +465,7 @@
 
       // Compute background color based on iteration number
       const rowBg = iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
+      const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
 
       //  Draw line starting on (x,y)
       let   x = padX;
@@ -480,6 +482,24 @@
       ctx.strokeRect  (x, y, cellW, cellH);
       ctx.fillStyle = "#000"
       ctx.fillText    (String(instrIdx % 10), x + fontXOffset, y + fontYOffset)
+
+      interactiveCells.push({
+        x, y,
+        colIdx: -1,
+        rowIdx,
+        initCol: startCycle,
+        lengthCol: states.length,
+        instrIdx,
+        iter,
+        port,
+        addr,
+        latency: simState.simulatedProcess.instruction_list[instrIdx]?.latency,
+        instructionText: simState.simulatedProcess.instruction_list[instrIdx]?.text,
+        memoryOperation: states.includes('L') ? 'Load from' : states.includes('S') ? 'Store to' : null,
+        critical: criticalCycles.length > 0,
+        criticalCycles: criticalCycles.length
+      })
+
       x += cellW
 
       for (let i = 0; i < totalCycles; ) {
@@ -489,7 +509,6 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
-          const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
           let critical         = criticalCycles.includes(i - startCycle)
           let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E') ||
                                  (ch == 'L' && states[i-startCycle-1] != 'L') ||
@@ -644,18 +663,51 @@
       else if (simState.highlightedPort !== port)
         simState.highlightedPort = port
 
+      const rowHeader = col === -1
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        state:    charToProcessingState(char, first_exec_stage ? port : null, addr),
-        critical: critical && timelineOptions.critical
+        state:    rowHeader
+          ? formatInstructionTooltip(hitCell)
+          : charToProcessingState(char, first_exec_stage ? port : null, addr),
+        critical: rowHeader ? critical : critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
 
       hoverRow = row
       hoverCol = col
-      drawHoverOverlay(row, col, initRow, lengthRow, initCol, lengthCol, portsUsed)
+      drawHoverOverlay(
+        row,
+        rowHeader ? null : col,
+        rowHeader ? row : initRow,
+        rowHeader ? 1 : lengthRow,
+        initCol,
+        lengthCol,
+        portsUsed
+      )
     }
+  }
+
+  function formatInstructionTooltip(cell) {
+    const details = [
+      `Iteration ${cell.iter}, instruction ${cell.instrIdx}`,
+      cell.instructionText || 'Instruction description unavailable'
+    ]
+
+    const executionInfo = []
+    if (cell.port !== null && cell.port !== undefined)
+      executionInfo.push(`P${cell.port}`)
+    if (Number.isFinite(cell.latency))
+      executionInfo.push(`${cell.latency} ${cell.latency === 1 ? 'cycle' : 'cycles'}`)
+    if (executionInfo.length)
+      details.push(executionInfo.join(' + '))
+
+    if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
+      details.push(`${cell.memoryOperation} MEM address ${cell.addr}`)
+
+    if (cell.criticalCycles > 0)
+      details.push(`${cell.criticalCycles} critical cycle${cell.criticalCycles === 1 ? '' : 's'}`)
+    return details.join('\n')
   }
 
   function onClick(e) {
@@ -779,7 +831,8 @@
                 within the displayed cycles. Changing the cycle limit recalculates that path.</p>
               <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
                 Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
-                or the selected cycle (initial cell of a column).</p>"
+                or the selected cycle (initial cell of a column). Hover over a row's first cell to inspect the instruction
+                and highlight it in the Program panel.</p>"
        @close="closeHelp1" />
   </Teleport>
 </template>

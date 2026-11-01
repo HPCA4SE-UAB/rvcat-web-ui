@@ -21,6 +21,16 @@ export const typeSizes = {
     'BRANCH': []
   };
 
+export function getLogicalElementCount(instructionList, loopIterations) {
+  let loopStride = 1
+  for (const instruction of instructionList) {
+    if (instruction.type === 'BRANCH' && instruction.stride !== 1) {
+      loopStride = instruction.stride ?? 1
+    }
+  }
+  return loopIterations * loopStride
+}
+
 export function charToProcessingState(ch, port, addr) {
   if (port != null) {
     if (ch === "L")
