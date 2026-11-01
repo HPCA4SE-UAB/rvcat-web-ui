@@ -3,7 +3,11 @@
            watch, inject, reactive}                                  from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { charToProcessingState, getLogicalElementCount }       from '@/common'
-  import { computeCriticalCycles, findLastRetiredInstructionIndex } from '@/criticalPath'
+  import {
+    computeCriticalCycles,
+    computeInstructionCriticalPercentages,
+    findLastRetiredInstructionIndex
+  } from '@/criticalPath'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -61,8 +65,26 @@
   let timelinePending  = false
   let lastPending      = false
 
-  watch ([() => simState.simulatedProcess], () => { requestTimeline() },
-    { deep: true, immediate: false })
+  watch(
+    () => {
+      const process = simState.simulatedProcess
+      return [
+        process.iters,
+        process.name,
+        process.ROBsize,
+        process.dispatch,
+        process.retire,
+        process.sched,
+        process.blkSize,
+        process.nBlocks,
+        process.mPenalty,
+        process.mIssueTime,
+        process.instruction_list
+      ]
+    },
+    requestTimeline,
+    { deep: true, immediate: false }
+  )
 
   function requestTimeline() {
     if (simState.state >= 3) {
@@ -78,7 +100,11 @@
       getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
-                  iters) // Call Python RVCAT (get timeline with process info and iters loop iterations)
+                  iters)
+        .catch(error => {
+          console.error('📈❌Failed to request timeline:', error)
+          finishTimelineRequest()
+        })
     }
   }
 
@@ -86,38 +112,42 @@
     // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
     if (dataType === 'error') {
       console.error('📈❌Failed to get timeline:', data)
-      return;
-    }
-    try {
-      let timelineRVCAT = JSON.parse(data)
-      const graph = timelineRVCAT.critical_path_graph
-      if (graph) {
-        const computedCriticalCycles = computeCriticalCycles(graph, timelineRVCAT.instructions)
-        const mismatchedRows = computedCriticalCycles.reduce((rows, cycles, rowIndex) => {
-          if (JSON.stringify(cycles) !== JSON.stringify(timelineRVCAT.instructions[rowIndex][5]))
-            rows.push(rowIndex)
-          return rows
-        }, [])
-        if (mismatchedRows.length)
-          console.warn('📈⚠️ Python and JavaScript critical-path cells differ for timeline rows:', mismatchedRows.slice(0, 10))
-        timelineRVCAT.computedCriticalCycles = computedCriticalCycles
-      } else {
-        console.error('📈❌ Timeline response is missing critical_path_graph; using Python critical-cycle data.')
-      }
-      getPortUsage(timelineRVCAT);
-      selectedCell.value = null
-      timeline.value = timelineRVCAT
-      timelineOptions.canvasOffsetX = 0
-      timelineOptions.canvasOffsetY = 0
-      timelineOptions.instructions = 1
-      scheduleDraw(timelineOptions.cycles, 0)
+    } else {
+      try {
+        let timelineRVCAT = JSON.parse(data)
+        const graph = timelineRVCAT.critical_path_graph
+        if (graph) {
+          const computedCriticalCycles = computeCriticalCycles(graph, timelineRVCAT.instructions)
+          const mismatchedRows = computedCriticalCycles.reduce((rows, cycles, rowIndex) => {
+            if (JSON.stringify(cycles) !== JSON.stringify(timelineRVCAT.instructions[rowIndex][5]))
+              rows.push(rowIndex)
+            return rows
+          }, [])
+          if (mismatchedRows.length)
+            console.warn('📈⚠️ Python and JavaScript critical-path cells differ for timeline rows:', mismatchedRows.slice(0, 10))
+          timelineRVCAT.computedCriticalCycles = computedCriticalCycles
+        } else {
+          console.error('📈❌ Timeline response is missing critical_path_graph; using Python critical-cycle data.')
+        }
+        getPortUsage(timelineRVCAT);
+        selectedCell.value = null
+        timeline.value = timelineRVCAT
+        timelineOptions.canvasOffsetX = 0
+        timelineOptions.canvasOffsetY = 0
+        timelineOptions.instructions = 1
+        scheduleDraw(timelineOptions.cycles, 0)
 
-    } catch (error) {
-      console.error('📈❌Failed to process JSON timeline:', error)
+      } catch (error) {
+        console.error('📈❌Failed to process JSON timeline:', error)
+      }
     }
+    finishTimelineRequest()
+  }
+
+  function finishTimelineRequest() {
     timelinePending = false
     if (lastPending) {
-      lastPending=false
+      lastPending = false
       requestTimeline()
     }
   }
@@ -147,6 +177,8 @@
     })
   })
   onBeforeUnmount(() => {
+    simState.timelineCriticalPathEnabled = false
+    simState.timelineCriticalPathPercentages = null
     if (unwatch) {
       unwatch();
       unwatch = null;
@@ -346,6 +378,17 @@
         visibleCriticalCycles = visibleCriticalPath.cycles
       }
     }
+    const criticalPercentages = timelineOptions.critical
+      ? computeInstructionCriticalPercentages(
+          instructions,
+          visibleCriticalCycles,
+          totalCycles,
+          totalInstr,
+          simState.simulatedProcess.instruction_list.length
+        )
+      : null
+    simState.timelineCriticalPathPercentages = criticalPercentages
+    simState.timelineCriticalPathEnabled = criticalPercentages !== null
 
     cellW = 14
     cellH = 20

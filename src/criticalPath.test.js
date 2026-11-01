@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { computeCriticalCycles, findLastRetiredInstructionIndex } from './criticalPath'
+import {
+  computeCriticalCycles,
+  computeInstructionCriticalPercentages,
+  findLastRetiredInstructionIndex
+} from './criticalPath'
 
 describe('critical path graph', () => {
   it('maps the longest weighted path to timeline cycles', () => {
@@ -44,6 +48,32 @@ describe('critical path graph', () => {
     expect(findLastRetiredInstructionIndex(rows, 4)).toBe(0)
     expect(findLastRetiredInstructionIndex(rows, 8)).toBe(1)
     expect(findLastRetiredInstructionIndex(rows, 3)).toBeNull()
+  })
+
+  it('aggregates visible critical cycles by static instruction and normalizes their contribution', () => {
+    const rows = [
+      [0, 0, 0, 0, 'DEER', [], -1],
+      [0, 1, 2, 0, 'DEER', [], -1],
+      [1, 0, 4, 0, 'DEER', [], -1]
+    ]
+
+    expect(computeInstructionCriticalPercentages(
+      rows,
+      [[0, 1, 2], [0], [3]],
+      7,
+      3,
+      2
+    )).toEqual([75, 25])
+  })
+
+  it('returns no percentages when the visible timeline contains no critical cycles', () => {
+    expect(computeInstructionCriticalPercentages(
+      [[0, 0, 0, 0, 'DEER', [], -1]],
+      [[]],
+      4,
+      1,
+      1
+    )).toBeNull()
   })
 
   it('calculates the critical path to an earlier retirement independently of the global sink', () => {

@@ -416,15 +416,25 @@
   }
 
   function rowStyle(index) {
-    if (simState.executionResults == null || !simState.executionResults?.critical_path?.instructions)
-      return {}
-    const percentage = simState.executionResults?.critical_path?.instructions?.[index]?.percentage;
+    const percentage = getCriticalPercentage(index)
     if (percentage == null || isNaN(percentage))
       return {}
     return {
       backgroundColor: percentageToColor(percentage),
       color: percentage > 50 ? 'white' : 'black'
     }
+  }
+
+  function getCriticalPercentage(index) {
+    if (props.activeView === 'timelineComponent') {
+      if (!simState.timelineCriticalPathEnabled)
+        return null
+      return simState.timelineCriticalPathPercentages?.[index]
+    }
+    if (props.activeView === 'simulationComponent') {
+      return simState.executionResults?.critical_path?.instructions?.[index]?.percentage
+    }
+    return null
   }
 
 </script>
@@ -533,12 +543,14 @@
             <tr
               v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
-              :style="activeView === 'simulationComponent' ? rowStyle(index) : {}"
+              :style="rowStyle(index)"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
             >
-              <td v-if="activeView === 'simulationComponent' && simState.executionResults?.critical_path?.instructions?.[index]?.percentage != null"
-                  title="Percentage of time aggregated to in critical path">
-                {{ simState.executionResults.critical_path.instructions[index].percentage.toFixed(0) }}%
+              <td v-if="getCriticalPercentage(index) != null"
+                  :title="activeView === 'timelineComponent'
+                    ? 'Percentage of visible critical-path cycles attributed to this instruction'
+                    : 'Percentage of time aggregated to in critical path'">
+                {{ getCriticalPercentage(index).toFixed(0) }}%
               </td>
               <td v-else title="Instruction Number">
                 {{ index }}

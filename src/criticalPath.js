@@ -79,6 +79,36 @@ export function findLastRetiredInstructionIndex(instructionRows, visibleCycles) 
   return null
 }
 
+export function computeInstructionCriticalPercentages(
+  instructionRows,
+  criticalCycles,
+  visibleCycles,
+  visibleInstructions,
+  staticInstructionCount
+) {
+  const counts = Array(staticInstructionCount).fill(0)
+  let totalCriticalCycles = 0
+
+  for (let rowIndex = 0; rowIndex < visibleInstructions; rowIndex++) {
+    const row = instructionRows[rowIndex]
+    if (!row) continue
+    const staticIndex = row[1]
+    if (!Number.isInteger(staticIndex) || staticIndex < 0 || staticIndex >= staticInstructionCount)
+      continue
+
+    for (const cycleOffset of criticalCycles[rowIndex] ?? []) {
+      const cycle = row[2] + cycleOffset
+      if (Number.isInteger(cycleOffset) && cycle >= 0 && cycle < visibleCycles) {
+        counts[staticIndex]++
+        totalCriticalCycles++
+      }
+    }
+  }
+
+  if (!totalCriticalCycles) return null
+  return counts.map(count => 100 * count / totalCriticalCycles)
+}
+
 export function computeCriticalCycles(graph, instructionRows, targetInstructionIndex = instructionRows.length - 1) {
   validateGraph(graph, instructionRows)
   if (!Number.isInteger(targetInstructionIndex)

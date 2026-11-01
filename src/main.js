@@ -11,6 +11,8 @@ const SimulationState = reactive({
   processorName:       '',
   instrHighlightedIdx: -1,
   highlightedPort:     -1,
+  timelineCriticalPathEnabled: false,
+  timelineCriticalPathPercentages: null,
   simulatedProcess:    {},
   executionResults:    {}
 })
