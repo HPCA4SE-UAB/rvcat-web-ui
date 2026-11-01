@@ -2,7 +2,12 @@
   import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
            watch, inject, reactive}                                  from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
-  import { charToProcessingState, getLogicalElementCount }       from '@/common'
+  import {
+    charToProcessingState,
+    getLogicalElementCount,
+    getUnsupportedInstructions,
+    validateProgram
+  } from '@/common'
   import {
     computeCriticalCycles,
     computeInstructionCriticalPercentages,
@@ -56,6 +61,7 @@
   }
 
   const timeline       = ref(null)
+  const timelineError  = ref('')
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
 
@@ -89,15 +95,43 @@
 
   function requestTimeline() {
     if (simState.state >= 3) {
+      const process = simState.simulatedProcess
+      const instruction_list = Array.isArray(process?.instruction_list)
+        ? process.instruction_list
+        : []
+      const iters = process?.iters
+      const Nloop = getLogicalElementCount(instruction_list, iters)
+      const validationErrors = validateProgram(process, {
+        logicalElementCount: Nloop
+      })
+      if (validationErrors.length) {
+        timelineError.value = `Cannot generate timeline for invalid program: ${validationErrors.join(' ')}`
+        clearTimelineView()
+        console.error('📈❌ Cannot generate timeline for invalid program:', validationErrors)
+        return
+      }
+
+      const unsupportedInstructions = getUnsupportedInstructions(process)
+      if (unsupportedInstructions.length) {
+        const instructionList = unsupportedInstructions
+          .map(({ index, instruction }) => `#${index + 1} (${instruction.type}.${instruction.oper})`)
+          .join(', ')
+        timelineError.value =
+          `Cannot generate timeline: the active processor has no execution port for ${instructionList}.`
+        clearTimelineView()
+        console.error('📈❌ Cannot generate timeline for unsupported instructions:', unsupportedInstructions)
+        return
+      }
+
+      timelineError.value = ''
       if (timelinePending) {
         lastPending=true
         return  // skip request if previous request is still pending
       }
       timelinePending = true
       console.log('📈🔄 Request timeline from RVCAT')
-      const { iters, name, ROBsize, dispatch, retire, sched,
-              blkSize, nBlocks, mPenalty, mIssueTime, instruction_list } = simState.simulatedProcess
-      const Nloop = getLogicalElementCount(instruction_list, iters)
+      const { name, ROBsize, dispatch, retire, sched,
+              blkSize, nBlocks, mPenalty, mIssueTime } = process
       getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
@@ -150,6 +184,15 @@
     if (lastPending) {
       lastPending = false
       requestTimeline()
+    }
+  }
+
+  function clearTimelineView() {
+    timeline.value = null
+    selectedCell.value = null
+    for (const canvas of [timelineCanvas.value, overlayCanvas.value]) {
+      const context = canvas?.getContext('2d')
+      if (context) context.clearRect(0, 0, canvas.width, canvas.height)
     }
   }
 
@@ -855,6 +898,9 @@
       </div>
     </div>
 
+    <div v-if="timelineError" class="execution-validation-error" role="alert">
+      {{ timelineError }}
+    </div>
     <div class="output-block-wrapper" id="canvas-container">
       <canvas ref="timelineCanvas"></canvas>
       <canvas ref="overlayCanvas"></canvas>
@@ -883,6 +929,13 @@
   </Teleport>
 </template>
 
+<style scoped>
+  .execution-validation-error {
+    padding: 8px 10px;
+    color: #a12622;
+    font-weight: 600;
+  }
+</style>
 <style scoped>
   .output-block-wrapper {
     overflow:        auto;

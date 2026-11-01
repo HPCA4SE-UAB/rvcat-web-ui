@@ -1,5 +1,6 @@
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
+export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
 
 export const typeOperations = {
     'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
@@ -15,11 +16,230 @@ export const typeSizes = {
     'INT':    ['byte', 'word', 'long'],
     'VINT':   ['byte', 'word', 'long'],
     'MEM':    ['byte', 'word', 'long'],
-    'VMEM':   [],
+    'VMEM':   ['byte', 'word', 'long'],
     'FLOAT':  ['single', 'double'],
     'VFLOAT': ['single', 'double'],
     'BRANCH': []
   };
+
+export function normalizeProgramDefaults(program) {
+  if (!program || typeof program !== 'object' || Array.isArray(program) ||
+      !Array.isArray(program.instruction_list)) {
+    return program
+  }
+
+  return {
+    ...program,
+    instruction_list: program.instruction_list.map(instruction => {
+      if (!instruction || typeof instruction !== 'object' || Array.isArray(instruction)) {
+        return instruction
+      }
+
+      const normalized = { ...instruction }
+      const isMemory = instruction.type === 'MEM' || instruction.type === 'VMEM'
+      if ((isMemory || instruction.type === 'BRANCH') &&
+          (normalized.stride === undefined || normalized.stride === null)) {
+        normalized.stride = 1
+      }
+      if (isMemory && (normalized.lanes === undefined || normalized.lanes === null)) {
+        normalized.lanes = 1
+      }
+      return normalized
+    })
+  }
+}
+
+export function validateProgram(program, options = {}) {
+  const errors = []
+  const addError = (message) => errors.push(message)
+
+  if (!program || typeof program !== 'object' || Array.isArray(program)) {
+    return ['Program must be a JSON object.']
+  }
+
+  if (typeof program.name !== 'string' || !program.name.trim()) {
+    addError("Program name must be a non-empty string.")
+  }
+
+  if (!Array.isArray(program.instruction_list) || program.instruction_list.length === 0) {
+    addError('Program must contain a non-empty instruction_list.')
+    return errors
+  }
+
+  const textFields = ['text', 'destin', 'source1', 'source2', 'source3', 'constant']
+  const branches = []
+
+  program.instruction_list.forEach((instruction, index) => {
+    const prefix = `Instruction ${index + 1}: `
+    const addInstructionError = (message) => addError(prefix + message)
+
+    if (!instruction || typeof instruction !== 'object' || Array.isArray(instruction)) {
+      addInstructionError('must be an object.')
+      return
+    }
+
+    if (typeof instruction.text !== 'string' || !instruction.text.trim()) {
+      addInstructionError('text must be a non-empty string.')
+    }
+
+    for (const field of textFields.slice(1)) {
+      if (instruction[field] !== undefined && typeof instruction[field] !== 'string') {
+        addInstructionError(`${field} must be a string when provided.`)
+      }
+    }
+
+    if (typeof instruction.type !== 'string' || !instructionTypes.includes(instruction.type)) {
+      addInstructionError(`type must be one of: ${instructionTypes.join(', ')}.`)
+      return
+    }
+
+    const operations = typeOperations[instruction.type]
+    if (instruction.type === 'BRANCH') {
+      branches.push(index)
+      if (instruction.oper !== undefined && instruction.oper !== '') {
+        addInstructionError('BRANCH oper must be empty.')
+      }
+      if (instruction.size !== undefined && instruction.size !== '') {
+        addInstructionError('BRANCH size must be empty.')
+      }
+    } else {
+      if (typeof instruction.oper !== 'string' || !operations.includes(instruction.oper)) {
+        addInstructionError(`oper must be one of: ${operations.join(', ')}.`)
+      }
+
+      const sizes = typeSizes[instruction.type]
+      if (typeof instruction.size !== 'string' || !sizes.includes(instruction.size)) {
+        addInstructionError(`size must be one of: ${sizes.join(', ')}.`)
+      }
+    }
+
+    const stride = instruction.stride === undefined ? 1 : instruction.stride
+    if (!Number.isSafeInteger(stride)) {
+      addInstructionError('stride must be a safe integer.')
+    } else if (instruction.type === 'BRANCH' &&
+               (stride <= 0 || stride > MAX_LOGICAL_ELEMENT_COUNT)) {
+      addInstructionError(
+        `BRANCH stride must be between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`
+      )
+    }
+
+    const lanes = instruction.lanes === undefined ? 1 : instruction.lanes
+    if (!Number.isSafeInteger(lanes) || lanes <= 0) {
+      addInstructionError('lanes must be a positive safe integer.')
+    }
+
+    if (instruction.type === 'MEM' || instruction.type === 'VMEM') {
+      if (typeof instruction.source2 !== 'string' || !instruction.source2.trim()) {
+        addInstructionError('memory instructions must name an array in source2.')
+      }
+      if (instruction.constant !== undefined &&
+          instruction.constant !== '' &&
+          (typeof instruction.constant !== 'string' ||
+           !/^[+-]?\d+$/.test(instruction.constant.trim()) ||
+           !Number.isSafeInteger(Number(instruction.constant.trim())))) {
+        addInstructionError('memory constant must be a safe integer offset.')
+      }
+    }
+  })
+
+  if (branches.length !== 1) {
+    addError('Program must contain exactly one BRANCH instruction.')
+  } else if (branches[0] !== program.instruction_list.length - 1) {
+    addError('The BRANCH instruction must be the final instruction.')
+  }
+
+  if (options.logicalElementCount !== undefined) {
+    const logicalElementCount = options.logicalElementCount
+    if (!Number.isSafeInteger(logicalElementCount) ||
+        logicalElementCount <= 0 ||
+        logicalElementCount > MAX_LOGICAL_ELEMENT_COUNT) {
+      addError(
+        `Logical element count must be between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`
+      )
+    } else if (branches.length === 1) {
+      const branch = program.instruction_list[branches[0]]
+      const loopStride = branch.stride === undefined ? 1 : branch.stride
+      if (Number.isSafeInteger(loopStride) && loopStride > 0) {
+        const effectiveElementCount = Math.max(
+          loopStride,
+          logicalElementCount - (logicalElementCount % loopStride)
+        )
+        const iterations = effectiveElementCount / loopStride
+        const elementSizes = { byte: 1, word: 4, long: 8 }
+
+        program.instruction_list.forEach((instruction, index) => {
+          if (instruction?.type !== 'MEM' && instruction?.type !== 'VMEM') return
+
+          const stride = instruction.stride === undefined ? 1 : instruction.stride
+          const lanes = instruction.lanes === undefined ? 1 : instruction.lanes
+          const elementSize = elementSizes[instruction.size]
+          const constant = instruction.constant === undefined || instruction.constant === ''
+            ? 0
+            : Number(instruction.constant)
+          if (!Number.isSafeInteger(stride) || !Number.isSafeInteger(lanes) || lanes <= 0 ||
+              !elementSize || !Number.isSafeInteger(constant)) {
+            return
+          }
+
+          const firstElement = stride < 0 ? effectiveElementCount - constant : constant
+          const lastElement = firstElement + (iterations - 1) * lanes * stride
+          const lastLane = Math.max(firstElement, lastElement) + lanes - 1
+          if (!Number.isSafeInteger(firstElement) || !Number.isSafeInteger(lastElement) ||
+              !Number.isSafeInteger(lastLane)) {
+            addError(
+              `Instruction ${index + 1}: memory addresses exceed the supported integer range.`
+            )
+            return
+          }
+          if (Math.min(firstElement, lastElement) < 0) {
+            addError(
+              `Instruction ${index + 1}: memory access for array "${instruction.source2}" ` +
+              `reaches before its base address at N=${effectiveElementCount}.`
+            )
+          }
+        })
+      }
+    }
+  }
+
+  return errors
+}
+
+function createOperationPortMasks(ports) {
+  const opToMask = {}
+
+  if (!ports || typeof ports !== 'object' || Array.isArray(ports)) {
+    return opToMask
+  }
+
+  Object.entries(ports).forEach(([portIdStr, supportedOps]) => {
+    const portId = Number(portIdStr)
+    if (!Number.isInteger(portId) || portId < 0 || portId > 31 || !Array.isArray(supportedOps)) {
+      return
+    }
+
+    const bit = (1 << portId)
+    supportedOps.forEach(op => {
+      if (!opToMask[op]) opToMask[op] = 0
+      opToMask[op] |= bit
+    })
+  })
+
+  return opToMask
+}
+
+export function getUnsupportedInstructions(process) {
+  if (!Array.isArray(process?.instruction_list)) {
+    return []
+  }
+
+  const opToMask = createOperationPortMasks(process.ports)
+  return process.instruction_list.flatMap((instruction, index) => {
+    const keyOp = `${instruction.type}.${instruction.oper}`
+    const portMask = opToMask[keyOp] ?? opToMask[instruction.type] ?? 0
+    return portMask === 0 ? [{ index, instruction }] : []
+  })
+}
 
 export function getLogicalElementCount(instructionList, loopIterations) {
   let loopStride = 1
@@ -161,22 +381,11 @@ export function updateProcess(process) {
 
   const { latencies, ports, instruction_list } = process
 
-  // 🔹 Precalcular mapa op → bitmask
-  const opToMask = {}
-
-  Object.entries(ports).forEach(([portIdStr, supportedOps]) => {
-
-    const portId = Number(portIdStr)
-    const bit    = (1 << portId)
-
-    supportedOps.forEach(op => {
-      if (!opToMask[op]) opToMask[op] = 0
-      opToMask[op] |= bit
-    })
-  })
+  const opToMask = createOperationPortMasks(ports)
+  const unsupportedInstructions = []
 
   // 🔹 Recalcular cada instrucción
-  instruction_list.forEach(instr => {
+  instruction_list.forEach((instr, index) => {
 
     const keyFull  = `${instr.type}.${instr.oper}.${instr.size}`
     const keyOp    = `${instr.type}.${instr.oper}`
@@ -197,8 +406,11 @@ export function updateProcess(process) {
 
     if (instr.ports === 0) {
       console.warn(`⚠️ No ports found for instruction ${instr.id} (${keyOp}). Check processor configuration.`)
+      unsupportedInstructions.push({ index, instruction: instr })
     }
   })
+
+  return unsupportedInstructions
 }
 
 /**
@@ -246,9 +458,10 @@ export async function downloadJSON(data, filename, resourceType) {
 
 /**
  * uploadJSON  @param {Function} onSuccess (Callback) @param {String} resourceType
+ *             @param {Object} validationOptions program validation options
  *             @returns {Promise<Object|null>}
  */
-export async function uploadJSON(onSuccess, resourceType) {
+export async function uploadJSON(onSuccess, resourceType, validationOptions = {}) {
   return new Promise((resolve) => {
     const input         = document.createElement('input');
     input.type          = 'file';
@@ -264,7 +477,19 @@ export async function uploadJSON(onSuccess, resourceType) {
 
       try {
         const text = await file.text();
-        const data = JSON.parse(text);
+        const parsedData = JSON.parse(text);
+        const data = resourceType === 'program'
+          ? normalizeProgramDefaults(parsedData)
+          : parsedData
+
+        if (resourceType === 'program') {
+          const validationErrors = validateProgram(data, validationOptions)
+          if (validationErrors.length) {
+            alert(`Invalid program:\n${validationErrors.map(error => `• ${error}`).join('\n')}`)
+            resolve(null)
+            return
+          }
+        }
 
         if (!data.name && !data.id) {
           alert(`The JSON file must contain a 'name' or 'id' field.`);

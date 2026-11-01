@@ -1,11 +1,167 @@
 import { describe, expect, it } from 'vitest'
 import {
   createTutorialStepId,
+  getUnsupportedInstructions,
   get_processor_dot,
   getLogicalElementCount,
   migrateTutorialFlow,
-  TUTORIAL_FLOW_VERSION
+  normalizeProgramDefaults,
+  TUTORIAL_FLOW_VERSION,
+  validateProgram
 } from './common'
+
+describe('program validation', () => {
+  it('defaults stride and lanes only on memory and branch instructions', () => {
+    const program = {
+      name: 'Defaults',
+      instruction_list: [
+        { type: 'MEM' },
+        { type: 'VMEM', stride: 0, lanes: 4 },
+        { type: 'FLOAT' },
+        { type: 'BRANCH' }
+      ]
+    }
+
+    expect(normalizeProgramDefaults(program).instruction_list).toEqual([
+      { type: 'MEM', stride: 1, lanes: 1 },
+      { type: 'VMEM', stride: 0, lanes: 4 },
+      { type: 'FLOAT' },
+      { type: 'BRANCH', stride: 1 }
+    ])
+    expect(program.instruction_list[0]).toEqual({ type: 'MEM' })
+  })
+
+  const validProgram = {
+    name: 'SIMD example',
+    instruction_list: [
+      {
+        text: 'tmp = V[i:i+3]',
+        type: 'VMEM',
+        oper: 'LOAD',
+        size: 'word',
+        source2: 'V',
+        stride: 0,
+        lanes: 4,
+        constant: '-2'
+      },
+      {
+        text: 'if c go back',
+        type: 'BRANCH',
+        oper: '',
+        size: '',
+        source1: 'c',
+        stride: 4
+      }
+    ]
+  }
+
+  it('accepts a program with SIMD memory and one final branch', () => {
+    expect(validateProgram(validProgram)).toEqual([])
+  })
+
+  it('rejects invalid structure, operation fields, and memory parameters', () => {
+    const invalidProgram = {
+      ...validProgram,
+      instruction_list: [
+        {
+          ...validProgram.instruction_list[0],
+          type: 'MEM',
+          oper: 'FMA',
+          size: 'single',
+          source2: ' ',
+          stride: 1.5,
+          lanes: 0,
+          constant: '1.2'
+        },
+        { ...validProgram.instruction_list[1], stride: 0 },
+        { ...validProgram.instruction_list[1], stride: 1 }
+      ]
+    }
+
+    const errors = validateProgram(invalidProgram)
+    expect(errors).toContain('Instruction 1: oper must be one of: STORE, LOAD.')
+    expect(errors).toContain('Instruction 1: size must be one of: byte, word, long.')
+    expect(errors).toContain('Instruction 1: memory instructions must name an array in source2.')
+    expect(errors).toContain('Instruction 1: stride must be a safe integer.')
+    expect(errors).toContain('Instruction 1: lanes must be a positive safe integer.')
+    expect(errors).toContain('Instruction 1: memory constant must be a safe integer offset.')
+    expect(errors).toContain('Instruction 2: BRANCH stride must be between 1 and 5000.')
+    expect(errors).toContain('Program must contain exactly one BRANCH instruction.')
+  })
+
+  it('requires the single branch to be the final instruction', () => {
+    const program = {
+      ...validProgram,
+      instruction_list: [
+        validProgram.instruction_list[1],
+        validProgram.instruction_list[0]
+      ]
+    }
+
+    expect(validateProgram(program)).toContain('The BRANCH instruction must be the final instruction.')
+  })
+
+  it('rejects loop strides outside the supported logical element range', () => {
+    const program = {
+      ...validProgram,
+      instruction_list: [
+        validProgram.instruction_list[0],
+        { ...validProgram.instruction_list[1], stride: 5001 }
+      ]
+    }
+
+    expect(validateProgram(program)).toContain(
+      'Instruction 2: BRANCH stride must be between 1 and 5000.'
+    )
+  })
+
+  it('rejects reverse memory access that passes before the array base', () => {
+    const program = {
+      ...validProgram,
+      instruction_list: [
+        { ...validProgram.instruction_list[0], stride: -2, lanes: 1 },
+        { ...validProgram.instruction_list[1], stride: 1 }
+      ]
+    }
+
+    expect(validateProgram(program, { logicalElementCount: 10 })).toContain(
+      'Instruction 1: memory access for array "V" reaches before its base address at N=10.'
+    )
+  })
+
+  it('rejects numeric values outside JavaScript safe integer range', () => {
+    const program = {
+      ...validProgram,
+      instruction_list: [
+        {
+          ...validProgram.instruction_list[0],
+          stride: Number.MAX_SAFE_INTEGER + 1,
+          constant: '9007199254740992'
+        },
+        validProgram.instruction_list[1]
+      ]
+    }
+
+    const errors = validateProgram(program)
+    expect(errors).toContain('Instruction 1: stride must be a safe integer.')
+    expect(errors).toContain('Instruction 1: memory constant must be a safe integer offset.')
+  })
+
+  it('finds instructions that have no matching processor port', () => {
+    const process = {
+      ports: { 0: ['VMEM.LOAD', 'BRANCH'] },
+      instruction_list: [
+        validProgram.instruction_list[0],
+        { type: 'FLOAT', oper: 'ADD', size: 'single' },
+        validProgram.instruction_list[1]
+      ]
+    }
+
+    expect(getUnsupportedInstructions(process)).toEqual([
+      { index: 1, instruction: process.instruction_list[1] }
+    ])
+  })
+})
 
 describe('logical element count', () => {
   it('uses the loop branch stride to recover the configured element count', () => {

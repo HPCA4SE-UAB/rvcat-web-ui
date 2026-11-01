@@ -1,8 +1,9 @@
 <script setup>
   import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch }           from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
-  import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage, updateProcess
-                                                                              }  from '@/common'
+  import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
+           updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
+           normalizeProgramDefaults }                                     from '@/common'
   import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
 
@@ -16,7 +17,7 @@
 
   const STORAGE_KEY = 'programOptions'
 
-  const MAX_N = 5000
+  const MAX_N = MAX_LOGICAL_ELEMENT_COUNT
 
   const defaultOptions = {
     currentProgram:    '',
@@ -129,7 +130,8 @@
     try {
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
-      Object.assign(simState.simulatedProcess, data)
+      const normalizedProgram = normalizeProgramDefaults(data)
+      Object.assign(simState.simulatedProcess, normalizedProgram)
       let instrCount = simState.simulatedProcess.instruction_list.length
       programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
       console.log('📄✅ Program reloaded. STRIDE:', programOptions.stride)
@@ -190,7 +192,9 @@
 
   const uploadProgram = async (oldProgram) => {
     try {
-      const data = await uploadJSON(null, 'program')
+      const data = await uploadJSON(null, 'program', {
+        logicalElementCount: programOptions.N
+      })
       if (data) {
 
         const exists = programOptions.availablePrograms.includes(data.name)
@@ -199,10 +203,10 @@
           programOptions.currentProgram = oldProgram
           return
         }
-        // TODO: Check here if it is a valid program
         saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
-        Object.assign(simState.simulatedProcess, data)
+        const normalizedProgram = normalizeProgramDefaults(data)
+        Object.assign(simState.simulatedProcess, normalizedProgram)
         let instrCount = simState.simulatedProcess.instruction_list.length
         programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
         console.log('📄✅ Program uploaded. STRIDE:', programOptions.stride)

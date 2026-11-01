@@ -5,7 +5,8 @@
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, createGraphVizGraph,
-           instructionTypes, typeOperations, typeSizes       }  from '@/common'
+           instructionTypes, typeOperations, typeSizes,
+           normalizeProgramDefaults                         }  from '@/common'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -131,13 +132,13 @@ function loadEditedProgram() {
   const stored = localStorage.getItem('programTemp');
   if (!stored) return;
   try {
-    const data = JSON.parse(stored);
+    const data = normalizeProgramDefaults(JSON.parse(stored));
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
         text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
         size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
         source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
-        stride:  inst.stride  || 1,  lanes:   inst.lanes   || 1
+        stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1
       };
     });
     console.log('📄Edited Program Reloaded from local storage')
@@ -195,7 +196,6 @@ function loadEditedProgram() {
     try {
       const data = await uploadJSON(null, 'program');
       if (data) {
-        // TODO: Check here if it is a valid program
         localStorage.setItem('programTemp', JSON.stringify(data));
         loadEditedProgram()
       }
@@ -262,8 +262,8 @@ function normalizeInstruction(inst) {
     source2:  (inst.source2  || '').trim(),
     source3:  (inst.source3  || '').trim(),
     constant: (inst.constant || '').trim(),
-    stride:   inst.stride || 1,
-    lanes:    inst.lanes  || 1
+    stride:   inst.stride ?? 1,
+    lanes:    inst.lanes  ?? 1
   };
 }
 

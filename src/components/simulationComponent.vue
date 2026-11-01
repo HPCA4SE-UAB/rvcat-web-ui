@@ -5,7 +5,8 @@
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
   import { createGraphVizGraph, downloadJSON, uploadJSON,
            saveToLocalStorage, removeFromLocalStorage, initResource,
-           getLogicalElementCount }                             from '@/common'
+           getLogicalElementCount, getUnsupportedInstructions,
+           validateProgram } from '@/common'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -25,6 +26,7 @@
   const simulationOptions = reactive(defaultOptions)
 
   const resultsSvg            = ref('')
+  const executionError        = ref('')
   let   cleanupHandleResults  = null
   let   resultsTimeout        = null
   const showResultsInfo       = ref({})
@@ -383,20 +385,60 @@
     return `IPC: ${ipc.toFixed(3)} | Dispatch Width: ${dw}\nEfficiency: ${efficiency}% of maximum possible IPC`;
   });
 
+  const repeatingCriticalPath = computed(() =>
+    simState.executionResults?.critical_path?.repeating_pattern ?? null
+  )
+
+  const repeatingCriticalPathText = computed(() => {
+    const nodes = repeatingCriticalPath.value?.nodes
+    if (!nodes?.length) return ''
+    return nodes.map(node =>
+      `#${node.instruction_index + 1} ${node.instruction} [${node.stage}, ${node.cycles} cycles]`
+    ).join(' → ')
+  })
+
   const reloadExecutionResults = async () => {
-    const instructionList = simState.simulatedProcess.instruction_list
-    const Nloop = getLogicalElementCount(instructionList, simState.simulatedProcess.iters)
+    executionError.value = ''
+    const process = simState.simulatedProcess
+    const instructionList = Array.isArray(process?.instruction_list)
+      ? process.instruction_list
+      : []
+    const Nloop = getLogicalElementCount(instructionList, process?.iters)
+    const validationErrors = validateProgram(simState.simulatedProcess, {
+      logicalElementCount: Nloop
+    })
+    if (validationErrors.length) {
+      executionError.value = `Cannot simulate invalid program: ${validationErrors.join(' ')}`
+      console.error('🕐❌ Cannot simulate invalid program:', validationErrors)
+      simState.executionResults = null
+      resultsSvg.value = ''
+      return
+    }
+
+    const unsupportedInstructions = getUnsupportedInstructions(process)
+    if (unsupportedInstructions.length) {
+      const instructionList = unsupportedInstructions
+        .map(({ index, instruction }) => `#${index + 1} (${instruction.type}.${instruction.oper})`)
+        .join(', ')
+      executionError.value =
+        `Cannot simulate: the active processor has no execution port for ${instructionList}.`
+      console.error('🕐❌ Cannot simulate unsupported instructions:', unsupportedInstructions)
+      simState.executionResults = null
+      resultsSvg.value = ''
+      return
+    }
+
     simProcess = {
-      iters:    simState.simulatedProcess.iters,
+      iters:    process.iters,
       Nloop,
-      dispatch: simState.simulatedProcess.dispatch,
-      retire:   simState.simulatedProcess.retire,
-      sched:    simState.simulatedProcess.sched,
-      ROBsize:  simState.simulatedProcess.ROBsize,
-      nBlocks:  simState.simulatedProcess.nBlocks,
-      blkSize:  simState.simulatedProcess.blkSize,
-      mIssueTime: simState.simulatedProcess.mIssueTime,
-      mPenalty: simState.simulatedProcess.mPenalty,
+      dispatch: process.dispatch,
+      retire:   process.retire,
+      sched:    process.sched,
+      ROBsize:  process.ROBsize,
+      nBlocks:  process.nBlocks,
+      blkSize:  process.blkSize,
+      mIssueTime: process.mIssueTime,
+      mPenalty: process.mPenalty,
       instruction_list: JSON.parse(JSON.stringify(instructionList))
     }
     clearTimeout(resultsTimeout)
@@ -407,7 +449,7 @@
         document.getElementById('run-simulation-button').disabled       = true;
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
-        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime } = simState.simulatedProcess
+        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime } = process
         getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
                                               instruction_list: toRaw(instructionList)}, null, 2),
                             iters) // Call Python RVCAT
@@ -737,6 +779,13 @@
         </div>
       </div>
     </div>
+    <div v-if="executionError" class="execution-validation-error" role="alert">
+      {{ executionError }}
+    </div>
+    <div v-if="repeatingCriticalPath" id="critical-path-pattern" class="critical-path-pattern">
+      <strong>Repeated critical-path pattern from Loop Iteration {{ repeatingCriticalPath.start_iteration.toLocaleString() }} to {{ repeatingCriticalPath.end_iteration.toLocaleString() }} ({{ repeatingCriticalPath.cycles_per_iteration.toLocaleString() }} critical cycles per repetition).</strong>
+      <p>{{ repeatingCriticalPathText }}</p>
+    </div>
 
     <div class="sim-running-msg">
       <div class="running-group">
@@ -891,6 +940,12 @@
     white-space: nowrap;
   }
 
+  .execution-validation-error {
+    margin: 8px 0;
+    color: #a12622;
+    font-weight: 600;
+  }
+
   .iters-run {
     display:     flex;
     align-items: center;
@@ -957,6 +1012,24 @@
     margin-bottom:   8px;
     flex-wrap:       wrap;
     justify-content: space-between;
+  }
+
+  .critical-path-pattern {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0 10px;
+    padding: 8px 10px;
+    border-left: 4px solid #d99000;
+    background: #fff8e6;
+    color: #242424;
+    overflow-wrap: anywhere;
+  }
+  .critical-path-pattern p {
+    margin: 0;
+  }
+  .critical-path-pattern small {
+    color: #555;
   }
 
   .simulation-inline-item {
