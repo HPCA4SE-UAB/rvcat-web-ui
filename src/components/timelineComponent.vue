@@ -18,6 +18,7 @@
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
+  const TIMELINE_RETIRE_LIMIT = 100
 
   const defaultOptions = {
     instructions:  20,
@@ -100,7 +101,7 @@
       getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
-                  iters)
+                  TIMELINE_RETIRE_LIMIT)
         .catch(error => {
           console.error('📈❌Failed to request timeline:', error)
           finishTimelineRequest()
@@ -875,7 +876,9 @@
               <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
                 Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
                 or the selected cycle (initial cell of a column). Hover over a row's first cell to inspect the instruction
-                and highlight it in the Program panel.</p>"
+                and highlight it in the Program panel.</p>
+              <p>To keep generation responsive, the timeline simulates at most 100 retired instructions.
+                The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>"
        @close="closeHelp1" />
   </Teleport>
 </template>

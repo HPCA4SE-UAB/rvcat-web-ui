@@ -86,9 +86,9 @@ export function useRVCAT_Api() {
     }
   };
 
-   const getTimeline = async (JSONprocessText, n_iters) => {
+   const getTimeline = async (JSONprocessText, n_ret) => {
     try {
-      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, ${n_iters})`
+      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, nret=${n_ret})`
       const result = await safeExecute(code, 'get_timeline');
       console.log('🧠 RVCAT: timeline JSON obtained');
       return result;
