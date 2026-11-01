@@ -3,6 +3,7 @@
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage, updateProcess
                                                                               }  from '@/common'
+  import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
 
   const props = defineProps({
@@ -397,32 +398,11 @@
   function openHelp()  { nextTick(() => { showHelp.value = true }) }
   function closeHelp() { showHelp.value  = false }
 
-  function percentageToColor(p) {
-    if (p == null || isNaN(p)) return ''
-    p = Math.max(0, Math.min(100, p))
-
-    // Colores originales más saturados
-    const r = Math.round(Math.min(255, (p / 50) * 255))
-    const g = Math.round(p < 50 ? (p / 50) * 255 : ((100 - p) / 50) * 255)
-    const b = Math.round(Math.max(0, (1 - p / 50) * 255))
-
-    // Mezclar con blanco (70% color original, 30% blanco)
-    const mixWhite = 0.7 // Ajusta este valor (mayor = más claro)
-    const r2 = Math.round(r + (255 - r) * mixWhite)
-    const g2 = Math.round(g + (255 - g) * mixWhite)
-    const b2 = Math.round(b + (255 - b) * mixWhite)
-
-    return `rgb(${r2}, ${g2}, ${b2})`
-  }
-
   function rowStyle(index) {
     const percentage = getCriticalPercentage(index)
-    if (percentage == null || isNaN(percentage))
+    if (percentage == null || !Number.isFinite(percentage))
       return {}
-    return {
-      backgroundColor: percentageToColor(percentage),
-      color: percentage > 50 ? 'white' : 'black'
-    }
+    return getCriticalityStyle(percentage)
   }
 
   function getCriticalPercentage(index) {
