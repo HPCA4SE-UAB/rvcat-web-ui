@@ -1,6 +1,29 @@
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
+export const CACHE_BLOCK_SIZES = [8, 16, 32, 64, 128];
+const MEMORY_DATA_SIZES = { byte: 1, word: 4, long: 8 };
+
+export function getLargestMemoryAccessSize(instructionList = []) {
+  return instructionList.reduce((largest, instruction) => {
+    if (instruction?.type !== 'MEM' && instruction?.type !== 'VMEM') return largest
+
+    const dataSize = MEMORY_DATA_SIZES[instruction.size]
+    if (!dataSize) return largest
+
+    const lanes = instruction.type === 'VMEM'
+      ? (Number.isSafeInteger(instruction.lanes) && instruction.lanes > 0
+          ? instruction.lanes
+          : 1)
+      : 1
+    return Math.max(largest, dataSize * lanes)
+  }, 0)
+}
+
+export function getAllowedCacheBlockSizes(instructionList = []) {
+  const largestAccessSize = getLargestMemoryAccessSize(instructionList)
+  return CACHE_BLOCK_SIZES.filter(size => size >= largestAccessSize)
+}
 
 export const typeOperations = {
     'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
@@ -165,14 +188,12 @@ export function validateProgram(program, options = {}) {
           logicalElementCount - (logicalElementCount % loopStride)
         )
         const iterations = effectiveElementCount / loopStride
-        const elementSizes = { byte: 1, word: 4, long: 8 }
-
         program.instruction_list.forEach((instruction, index) => {
           if (instruction?.type !== 'MEM' && instruction?.type !== 'VMEM') return
 
           const stride = instruction.stride === undefined ? 1 : instruction.stride
           const lanes = instruction.lanes === undefined ? 1 : instruction.lanes
-          const elementSize = elementSizes[instruction.size]
+          const elementSize = MEMORY_DATA_SIZES[instruction.size]
           const constant = instruction.constant === undefined || instruction.constant === ''
             ? 0
             : Number(instruction.constant)
@@ -254,27 +275,28 @@ export function getLogicalElementCount(instructionList, loopIterations) {
 export function charToProcessingState(ch, port, addr) {
   if (port != null) {
     if (ch === "L")
-      return `Load from address ${addr}, port P${port}`
+      return `Load addr ${addr} on P${port}`
     else if (ch === "S")
-      return `Store to address ${addr}, port P${port}`
+      return `Store addr ${addr} on P${port}`
     else
-      return `Execution issued to port P${port}`
+      return `Issued to P${port}`
   }
   switch (ch) {
-    case "E": return "Execution continues on pipeline";
-    case "L": return "Load operation running";
-    case "S": return "Store operation running";
-    case "R": return "Retire: write to architected register";
-    case "D": return "Dispatch: enter execution engine";
-    case "-": return "Waiting for older instructions to retire ";
-    case "W": return "Write back result on ROB";
-    case ".": return "Waiting due to data dependencies";
-    case "*": return "Waiting due to port collision";
-    case "#": return "Main Memory receiving request";
-    case ":": return "Waiting for data block from MM";
-    case "!": return "Cache miss: waiting to send MM read request";
-    case "2": return "Secondary cache miss";
-    case "U": return "Cache block Update: send write request to MM";
+    case "E": return "Executing";
+    case "L": return "Load running";
+    case "S": return "Store running";
+    case "R": return "Retire (write register)";
+    case "D": return "Dispatch";
+    case "-": return "Wait for older instr. to retire";
+    case "W": return "Write result to ROB";
+    case ".": return "Wait: data dependency";
+    case "*": return "Wait: port conflict";
+    case "^": return "Wait: issue width full";
+    case "#": return "MM request";
+    case ":": return "Wait: MM block";
+    case "!": return "Wait: MM request slot";
+    case "2": return "Wait: cache access";
+    case "U": return "Write back dirty block";
     default:  return null;
   }
 }

@@ -55,3 +55,11 @@ The program upload checks memory accesses against the selected logical element
 count. Simulation and timeline generation repeat validation before execution
 and report instructions unsupported by the active processor instead of running
 them. Latencies, ports, and memory addresses are derived by the application.
+
+The execution timeline's **Show Ports** control toggles the per-cycle rows for
+all configured execution ports. **Show Cache** independently toggles the Main
+Memory channel and cache-line rows, and is disabled when the selected processor
+has no cache. An `X` marks a port issue cycle; `R`/`W` mark Main Memory
+read/write transfers. Cache rows show `C`/`D` for ready clean/dirty blocks and
+`r`/`w` while a clean/dirty block fill is pending. Hover a cache cell to see its
+block address, readiness cycle, and LRU rank.

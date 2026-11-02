@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   createTutorialStepId,
+  charToProcessingState,
+  getAllowedCacheBlockSizes,
+  getLargestMemoryAccessSize,
   getUnsupportedInstructions,
   get_processor_dot,
   getLogicalElementCount,
@@ -10,7 +13,37 @@ import {
   validateProgram
 } from './common'
 
+describe('timeline state tooltips', () => {
+  it('uses concise English descriptions', () => {
+    expect(charToProcessingState('-', null, null)).toBe('Wait for older instr. to retire')
+    expect(charToProcessingState('.', null, null)).toBe('Wait: data dependency')
+    expect(charToProcessingState('*', null, null)).toBe('Wait: port conflict')
+    expect(charToProcessingState('^', null, null)).toBe('Wait: issue width full')
+    expect(charToProcessingState('L', 2, 40)).toBe('Load addr 40 on P2')
+  })
+})
+
 describe('program validation', () => {
+  it('calculates the largest scalar and vector memory access in bytes', () => {
+    expect(getLargestMemoryAccessSize([
+      { type: 'MEM', size: 'long', lanes: 12 },
+      { type: 'VMEM', size: 'word', lanes: 6 },
+      { type: 'VMEM', size: 'byte', lanes: 32 },
+      { type: 'FLOAT', size: 'double', lanes: 100 }
+    ])).toBe(32)
+  })
+
+  it('only allows cache blocks that fit the largest memory access', () => {
+    expect(getAllowedCacheBlockSizes([
+      { type: 'MEM', size: 'long' },
+      { type: 'VMEM', size: 'word', lanes: 6 }
+    ])).toEqual([32, 64, 128])
+    expect(getAllowedCacheBlockSizes([
+      { type: 'VMEM', size: 'long', lanes: 17 }
+    ])).toEqual([])
+    expect(getAllowedCacheBlockSizes([])).toEqual([8, 16, 32, 64, 128])
+  })
+
   it('defaults stride and lanes only on memory and branch instructions', () => {
     const program = {
       name: 'Defaults',

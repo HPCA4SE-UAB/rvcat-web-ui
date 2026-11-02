@@ -1,6 +1,6 @@
 <script setup>
   import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
-           watch, inject, reactive}                                  from 'vue'
+           watch, inject, reactive, computed}                         from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import {
     charToProcessingState,
@@ -29,6 +29,8 @@
     instructions:  20,
     cycles:        30,
     critical:      false,
+    showPorts:     true,
+    showCache:     true,
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -64,6 +66,7 @@
   const timelineError  = ref('')
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
+  const cacheEnabled   = computed(() => Number(simState.simulatedProcess?.nBlocks) > 0)
 
 // ============================================================================
 // WATCHES: timelineOptions, simulatedProcess, timeline  HANDLERS: getTimeline
@@ -84,13 +87,20 @@
         process.sched,
         process.blkSize,
         process.nBlocks,
-        process.mPenalty,
-        process.mIssueTime,
         process.instruction_list
       ]
     },
     requestTimeline,
     { deep: true, immediate: false }
+  )
+
+  watch(
+    () => [
+      simState.simulatedProcess.mPenalty,
+      simState.simulatedProcess.mIssueTime
+    ],
+    requestTimeline,
+    { flush: 'sync' }
   )
 
   function requestTimeline() {
@@ -210,6 +220,7 @@
     nextTick(() => {
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
+               timelineOptions.showPorts, timelineOptions.showCache,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -242,9 +253,11 @@
 * ------------------------------------------------------------------ */
 
   function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
+  function togglePorts()     { timelineOptions.showPorts = !timelineOptions.showPorts }
+  function toggleCache()     { timelineOptions.showCache = !timelineOptions.showCache }
 
   function getPortUsage(timeline) {
-    const usagePorts = {};
+    const inferredUsagePorts = {};
     const usageInstr = Array.from({ length: timeline.cycles }, () => []);
 
     for (const [rowIdx, [, , startCycle, port, states]] of timeline.instructions.entries()) {
@@ -259,16 +272,29 @@
       // Verificar que cycle esté dentro del rango
       if (cycle >= 0 && cycle < timeline.cycles) {
         usageInstr[cycle].push(rowIdx);
-        (usagePorts[port] ??= []).push(cycle);
+        (inferredUsagePorts[port] ??= []).push(cycle);
       } else {
         console.warn(`Cycle ${cycle} fuera de rango (0-${timeline.cycles-1}) para instrucción ${rowIdx}`);
       }
     }
-    for (const p in usagePorts) {
-      usagePorts[p].sort((a,b)=>a-b);
+
+    const recordedPortUsage = timeline.resource_usage?.ports ?? {}
+    const configuredPorts = Object.keys(simState.simulatedProcess?.ports ?? {})
+    const allPorts = new Set([
+      ...configuredPorts,
+      ...Object.keys(recordedPortUsage),
+      ...Object.keys(inferredUsagePorts)
+    ])
+    const usagePorts = {}
+    for (const port of allPorts) {
+      const cycles = recordedPortUsage[port]
+      usagePorts[port] = Array.isArray(cycles)
+        ? cycles.flatMap((used, cycle) => used ? [cycle] : [])
+        : (inferredUsagePorts[port] ?? [])
     }
     timeline.portUsagePorts = usagePorts
     timeline.portUsageInstr = usageInstr
+    timeline.resourcePortIds = [...allPorts].sort((a, b) => Number(a) - Number(b))
   }
 
   function addCanvasWrapper () {
@@ -338,7 +364,9 @@
   let totalCycles = 0
   let totalInstr  = 0
   let cellW       = 14
+  let labelW      = 40
   let cellH       = 20
+  let resourceRowCount = 0
   let padX        = 10
   let padY        = 10
   let fontSize    = 14
@@ -361,20 +389,60 @@
 
   function drawTimeline(newCycles, oldCycles) {
 
-    const rect = timelineCanvas.value.getBoundingClientRect()
+    const wrapper = timelineCanvas.value.parentElement
+    const viewportWidth = wrapper.clientWidth
+    const viewportHeight = wrapper.clientHeight
 
-    timelineCanvas.value.width  = rect.width
-    timelineCanvas.value.height = rect.height
-
-    const ctxOld = overlayCanvas.value.getContext('2d')
-    ctxOld.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
-
-    overlayCanvas.value.width  = rect.width
-    overlayCanvas.value.height = rect.height
-
-    const { cycles, instructions, portUsagePorts, portUsageInstr } = timeline.value
+    const { cycles, instructions, portUsageInstr } = timeline.value
+    const waitDetails = new Map(
+      (timeline.value.wait_details ?? []).map(detail => [
+        `${detail.instruction_index}:${detail.cycle}`,
+        detail
+      ])
+    )
     totalCycles = timelineOptions.cycles
     totalInstr  = timelineOptions.instructions
+    const cacheState = timeline.value.resource_usage?.cache_state
+    const cacheStatesByCycle = []
+    let cacheSnapshotIndex = 0
+    let cacheLines = []
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      while (cacheSnapshotIndex < (cacheState?.snapshots?.length ?? 0) &&
+             cacheState.snapshots[cacheSnapshotIndex].cycle <= cycle) {
+        cacheLines = cacheState.snapshots[cacheSnapshotIndex].lines
+        cacheSnapshotIndex++
+      }
+      cacheStatesByCycle[cycle] = cacheLines
+    }
+
+    const resourceRows = [
+      ...(timelineOptions.showPorts
+        ? timeline.value.resourcePortIds.map(port => ({
+            label: `P${port}`,
+            cycles: timeline.value.resource_usage?.ports?.[port] ?? [],
+            port,
+            requests: []
+          }))
+        : []),
+      ...(timelineOptions.showCache && cacheEnabled.value &&
+          Array.isArray(timeline.value.resource_usage?.mm)
+        ? [{
+            label: 'MM',
+            cycles: timeline.value.resource_usage.mm,
+            port: null,
+            requests: timeline.value.resource_usage.mm_requests ?? []
+          }]
+        : []),
+      ...(timelineOptions.showCache && cacheEnabled.value && cacheState
+        ? Array.from({ length: cacheState.line_count }, (_, cacheLineIndex) => ({
+            label: `C${cacheLineIndex}`,
+            cacheLineIndex,
+            cycles: [],
+            requests: []
+          }))
+        : [])
+    ]
+    resourceRowCount = resourceRows.length
 
     if (newCycles != oldCycles && newCycles != 0 ) {
       if (newCycles > cycles) newCycles = cycles
@@ -435,6 +503,7 @@
     simState.timelineCriticalPathEnabled = criticalPercentages !== null
 
     cellW = 14
+    labelW = 40
     cellH = 20
     padX  = 10
     padY  = 10
@@ -444,6 +513,21 @@
     hoverRow = null
     hoverCol = null
     hoverInfo.value = null
+
+    const canvasWidth = Math.max(
+      viewportWidth,
+      Math.ceil(padX*2 + labelW + totalCycles*cellW)
+    )
+    const canvasHeight = Math.max(
+      viewportHeight,
+      Math.ceil(padY*2 + (totalInstr+resourceRowCount+1)*cellH)
+    )
+    for (const canvas of [timelineCanvas.value, overlayCanvas.value]) {
+      canvas.width = canvasWidth
+      canvas.height = canvasHeight
+      canvas.style.width = `${canvasWidth}px`
+      canvas.style.height = `${canvasHeight}px`
+    }
 
     const ctxOverlay = overlayCanvas.value.getContext('2d')
     ctxOverlay.setTransform(1,0,0,1,0,0)
@@ -467,23 +551,22 @@
 
     interactiveCells.length = 0   // empty list
 
-    // First line: 0 1 2 3 ...   start on (0,0)
+    // Cycle header
     let   x = padX
     const y = padY
     const initRowList = []
     const lengthRowList = []
-    const portsUsedList = []
 
     // First cell is empty (top-left corner)
     ctx.fillStyle   = "#ffffff"
     ctx.strokeStyle = "#bbb"
     ctx.lineWidth   = 1
-    ctx.fillRect    (x, y, cellW, cellH)
-    ctx.strokeRect  (x, y, cellW, cellH)
+    ctx.fillRect    (x, y, labelW, cellH)
+    ctx.strokeRect  (x, y, labelW, cellH)
 
     ctx.fillStyle = "#000"
     ctx.fillText    (' ', x + fontXOffset, y + fontYOffset)
-    x += cellW
+    x += labelW
 
     for (let i = 0; i < totalCycles; ) {
       let ch          = String(i % 10)
@@ -512,35 +595,122 @@
         lengthRow++
       }
 
-      let sequenceOfPorts = Object.keys(portUsagePorts)
-        .filter(p => {
-          const usage = portUsagePorts[p]
-          return Array.isArray(usage)
-            ? usage.includes(i)
-            : i in usage
-        })
-        .map(p => `P${p}`)
-        .join(',')
-
-      sequenceOfPorts = `Ports used: ${sequenceOfPorts || 'none'}\nROB usage: ${ROBused}`
-
-      const portsUsed = portUsageInstr[i]
-
       interactiveCells.push({
         x, y, colIdx: i, rowIdx: -1,   /* indicates 1st row of cycles */
         initCol: i,
         lengthCol: 1,
         initRow, lengthRow,
-        sequenceOfPorts,
-        portsUsed
+        cellType: 'cycle-header',
+        tooltip: `ROB usage: ${ROBused}`
       })
 
       initRowList.push(initRow)
       lengthRowList.push(lengthRow)
-      portsUsedList.push(portsUsed)
 
       i++
       x += cellW
+    }
+
+    for (const [resourceRowIndex, resource] of resourceRows.entries()) {
+      const resourceY = padY + (resourceRowIndex + 1) * cellH
+      ctx.fillStyle = '#f1f3f5'
+      ctx.strokeStyle = '#bbb'
+      ctx.lineWidth = 1
+      ctx.fillRect(padX, resourceY, labelW, cellH)
+      ctx.strokeRect(padX, resourceY, labelW, cellH)
+      ctx.fillStyle = '#000'
+      ctx.fillText(resource.label, padX + fontXOffset, resourceY + fontYOffset)
+
+      const visibleCycleCount = Math.min(totalCycles, resource.cycles.length)
+      const usedCycleCount = resource.cycles
+        .slice(0, visibleCycleCount)
+        .filter(Boolean)
+        .length
+      const usagePercent = visibleCycleCount > 0
+        ? Math.round(usedCycleCount * 100 / visibleCycleCount)
+        : 0
+      interactiveCells.push({
+        x: padX,
+        y: resourceY,
+        width: labelW,
+        colIdx: -1,
+        rowIdx: -2,
+        cellType: 'resource-label',
+        resourceIndex: resourceRowIndex,
+        tooltip: resource.cacheLineIndex !== undefined
+          ? `Cache line ${resource.cacheLineIndex}: C clean, D dirty, r/w loading; hover a cycle for the block address and LRU rank`
+          : `${resource.label}: ${usedCycleCount}/${visibleCycleCount} cycles used (${usagePercent}%)`
+      })
+
+      for (let cycle = 0; cycle < totalCycles; cycle++) {
+        const resourceX = padX + labelW + cycle * cellW
+        ctx.fillStyle = '#fff'
+        ctx.strokeStyle = '#bbb'
+        ctx.fillRect(resourceX, resourceY, cellW, cellH)
+        ctx.strokeRect(resourceX, resourceY, cellW, cellH)
+        const memoryRequests = resource.port === null
+          ? resource.requests.filter(request =>
+              cycle >= request.cycle && cycle < request.cycle + request.duration
+            )
+          : []
+        const cacheLine = resource.cacheLineIndex !== undefined
+          ? cacheStatesByCycle[cycle]?.[resource.cacheLineIndex]
+          : null
+        let marker = ''
+        if (resource.cacheLineIndex !== undefined && cacheLine?.valid) {
+          marker = cacheLine.loading
+            ? cacheLine.dirty ? 'w' : 'r'
+            : cacheLine.dirty ? 'D' : 'C'
+        } else if (resource.cycles[cycle]) {
+          const transactionTypes = new Set(memoryRequests.map(request =>
+            request.operation === 'write' ? 'W' : 'R'
+          ))
+          marker = resource.port === null
+            ? [...transactionTypes].sort().join('/')
+            : 'X'
+        }
+        if (marker) {
+          ctx.fillStyle = '#000'
+          ctx.fillText(marker, resourceX + fontXOffset, resourceY + fontYOffset)
+        }
+
+        const linkedInstructionRows = resource.cacheLineIndex !== undefined
+          ? []
+          : resource.cycles[cycle]
+          ? resource.port === null
+            ? [...new Set(memoryRequests
+                .filter(request => request.operation !== 'write')
+                .map(request => request.instruction_index)
+                .filter(rowIndex => Number.isInteger(rowIndex)))]
+            : (portUsageInstr[cycle] ?? []).filter(rowIndex =>
+                Number(instructions[rowIndex]?.[3]) === Number(resource.port)
+              )
+          : []
+        interactiveCells.push({
+          x: resourceX,
+          y: resourceY,
+          colIdx: cycle,
+          rowIdx: -2,
+          cellType: 'resource-cycle',
+          resourceIndex: resourceRowIndex,
+          linkedInstructionRows,
+          tooltip: resource.cacheLineIndex !== undefined
+            ? !cacheLine?.valid
+              ? `Cache line ${resource.cacheLineIndex}: empty`
+              : `Block at addr ${cacheLine.address} (${cacheLine.dirty ? 'dirty' : 'clean'}; ` +
+                `${cacheLine.loading ? `loading, ready at cycle ${cacheLine.ready_cycle}` : 'ready'}; ` +
+                `LRU rank ${cacheLine.lru})`
+            : memoryRequests
+                .map(({ operation, address }) => {
+                  if (operation === 'read_for_write')
+                    return `Read block for writing at addr ${address}`
+                  if (operation === 'write')
+                    return `Write dirty block at addr ${address}`
+                  return `Read block at addr ${address}`
+                })
+                .join('\n')
+        })
+      }
     }
 
     // ************************************************************************************
@@ -556,7 +726,7 @@
 
       //  Draw line starting on (x,y)
       let   x = padX;
-      const y = padY + (rowIdx+1) * cellH;
+      const y = padY + (rowIdx + resourceRowCount + 1) * cellH;
 
       let initCol   = startCycle
       let lengthCol = states.length
@@ -565,13 +735,14 @@
       ctx.fillStyle   = rowBg;
       ctx.strokeStyle = "#bbb";
       ctx.lineWidth   = 1;
-      ctx.fillRect    (x, y, cellW, cellH);
-      ctx.strokeRect  (x, y, cellW, cellH);
+      ctx.fillRect    (x, y, labelW, cellH);
+      ctx.strokeRect  (x, y, labelW, cellH);
       ctx.fillStyle = "#000"
       ctx.fillText    (String(instrIdx % 10), x + fontXOffset, y + fontYOffset)
 
       interactiveCells.push({
         x, y,
+        width: labelW,
         colIdx: -1,
         rowIdx,
         initCol: startCycle,
@@ -587,7 +758,7 @@
         criticalCycles: criticalCycles.length
       })
 
-      x += cellW
+      x += labelW
 
       for (let i = 0; i < totalCycles; ) {
         let ch        = ' '
@@ -596,11 +767,12 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
-          let critical         = criticalCycles.includes(i - startCycle)
-          let first_exec_stage = (ch == 'E' && states[i-startCycle-1] != 'E') ||
-                                 (ch == 'L' && states[i-startCycle-1] != 'L') ||
-                                 (ch == 'S' && states[i-startCycle-1] != 'S')
-
+          const previousState = states[i-startCycle-1]
+          const first_exec_stage =
+            (ch === 'E' && previousState !== 'E') ||
+            (ch === 'L' && previousState !== 'L') ||
+            (ch === 'S' && previousState !== 'S')
+          let critical = criticalCycles.includes(i - startCycle)
           if (critical && timelineOptions.critical) currColor = "red"
 
           interactiveCells.push({
@@ -611,12 +783,12 @@
             initRow: initRowList[i],
             lengthRow: lengthRowList[i],
             char: ch,
-            critical,
             first_exec_stage,
+            critical,
             port,
             instrIdx,
-            portsUsed: portsUsedList[i],
-            addr
+            addr,
+            waitDetail: waitDetails.get(`${rowIdx}:${i}`)
           })
         }
 
@@ -644,45 +816,64 @@
     ctx.fillStyle = 'rgba(255, 165, 0, 0.35)'
     ctx.strokeStyle = '#e67e00'
     ctx.lineWidth = 2
-    ctx.fillRect(cell.x, cell.y, cellW, cellH)
-    ctx.strokeRect(cell.x, cell.y, cellW, cellH)
+    const width = cell.width ?? cellW
+    ctx.fillRect(cell.x, cell.y, width, cellH)
+    ctx.strokeRect(cell.x, cell.y, width, cellH)
     ctx.restore()
   }
 
-  function drawHoverOverlay(row, col, initRow, lengthRow, initCol, lengthCol, portsUsed) {
+  function drawHoverOverlay(
+    row,
+    col,
+    initRow,
+    lengthRow,
+    initCol,
+    lengthCol,
+    linkedInstructionRows = null,
+    linkedCycle = null
+  ) {
     const ctx = overlayCanvas.value.getContext('2d')
     ctx.clearRect(0, 0,
-                  Math.max(overlayCanvas.value.width, 1+padX+totalCycles*cellW),
-                  Math.max(overlayCanvas.value.height,1+padY+(totalInstr+1)*cellH))
+                  Math.max(overlayCanvas.value.width, 1+padX+labelW+totalCycles*cellW),
+                  Math.max(overlayCanvas.value.height, 1+padY+(totalInstr+resourceRowCount+1)*cellH))
 
     drawSelectedCell()
 
     ctx.strokeStyle = 'red'
     ctx.lineWidth   = 1
 
+    // Highlight the corresponding instruction cells when hovering a resource row.
+    if (linkedInstructionRows) {
+      for (const linkedRow of linkedInstructionRows) {
+        if (linkedRow < 0 || linkedRow >= totalInstr) continue
+        const x = padX + labelW + linkedCycle * cellW
+        const y = padY + (linkedRow + resourceRowCount + 1) * cellH
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'
+        ctx.fillRect(x, y, cellW, cellH)
+        ctx.strokeRect(x, y, cellW, cellH)
+      }
+    }
+
     // highlight column (cycle)
     if (col !== null) {
       let length = Math.min(lengthRow, totalInstr-initRow)
-      ctx.strokeRect( padX + (col+1)*cellW, padX + (initRow+1) * cellH,  cellW, length*cellH)
-
-      // highlight specific positions (cells)
-      if (portsUsed && portsUsed.length > 0) {
-        portsUsed.forEach(pos => {
-          let row = pos; // o pos - 1 si es 1-indexado
-          if (row >= initRow && row < initRow + lengthRow) {
-            ctx.save();
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
-            ctx.fillRect(padX + (col + 1) * cellW, padX + (row + 1) * cellH, cellW, cellH);
-            ctx.restore();
-          }
-        });
-      }
+      ctx.strokeRect(
+        padX + labelW + col*cellW,
+        padY + (initRow+resourceRowCount+1)*cellH,
+        cellW,
+        length*cellH
+      )
     }
 
     // highlight row (instruction)
     if (row !== null) {
       let length = Math.min(lengthCol, totalCycles-initCol)
-      ctx.strokeRect( padY + (initCol+1)*cellW, padY + (row+1) * cellH, length*cellW, cellH )
+      ctx.strokeRect(
+        padX + labelW + initCol*cellW,
+        padY + (row+resourceRowCount+1)*cellH,
+        length*cellW,
+        cellH
+      )
     }
   }
 
@@ -700,7 +891,7 @@
     for (const cell of interactiveCells) {
       if (
         worldX >= cell.x &&
-        worldX <= cell.x + cellW &&
+        worldX <= cell.x + (cell.width ?? cellW) &&
         worldY >= cell.y &&
         worldY <= cell.y + cellH
       ) {
@@ -716,14 +907,60 @@
       if (hoverRow != null || hoverCol != null) {
         hoverRow = null
         hoverCol = null
-        drawHoverOverlay(null, null, null, null, null, null, null)
+        drawHoverOverlay(null, null, null, null, null, null)
       }
       return
     }
 
     const { rowIdx: row, colIdx: col, initCol, lengthCol, initRow, lengthRow,
-            char, port, first_exec_stage, critical, sequenceOfPorts,
-            instrIdx, portsUsed, addr } = hitCell
+            char, port, critical,
+            instrIdx, addr } = hitCell
+
+    if (hitCell.cellType === 'resource-label') {
+      simState.highlightedPort = -1
+      simState.instrHighlightedIdx = -1
+      hoverInfo.value = {
+        x: e.clientX + 10,
+        y: e.clientY + 10,
+        state: hitCell.tooltip,
+        critical: false
+      }
+      hoverRow = row
+      hoverCol = col
+      drawHoverOverlay(null, null, null, null, null, null)
+      adjustTooltipPosition(e)
+      return
+    }
+
+    if (hitCell.cellType === 'resource-cycle') {
+      const resourceHoverRow = `resource-${hitCell.resourceIndex}`
+      simState.highlightedPort = -1
+      simState.instrHighlightedIdx = -1
+      hoverInfo.value = hitCell.tooltip
+        ? {
+            x: e.clientX + 10,
+            y: e.clientY + 10,
+            state: hitCell.tooltip,
+            critical: false
+          }
+        : null
+      if (hoverInfo.value) adjustTooltipPosition(e)
+      if (hoverRow !== resourceHoverRow || hoverCol !== col) {
+        hoverRow = resourceHoverRow
+        hoverCol = col
+        drawHoverOverlay(
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          hitCell.linkedInstructionRows,
+          col
+        )
+      }
+      return
+    }
 
     if (row === -1) {
       simState.highlightedPort = -1
@@ -731,12 +968,12 @@
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
-        state:    sequenceOfPorts,
+        state:    hitCell.tooltip,
         critical: false
       }
       hoverRow = null
       hoverCol = null
-      drawHoverOverlay(null, col, initRow, lengthRow, initCol, lengthCol, portsUsed)
+      drawHoverOverlay(null, col, initRow, lengthRow, initCol, lengthCol)
       adjustTooltipPosition(e)
       return
     }
@@ -751,12 +988,13 @@
         simState.highlightedPort = port
 
       const rowHeader = col === -1
+      const stateTooltip = formatProcessingTooltip(hitCell)
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
         state:    rowHeader
           ? formatInstructionTooltip(hitCell)
-          : charToProcessingState(char, first_exec_stage ? port : null, addr),
+          : stateTooltip,
         critical: rowHeader ? critical : critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
@@ -769,15 +1007,38 @@
         rowHeader ? row : initRow,
         rowHeader ? 1 : lengthRow,
         initCol,
-        lengthCol,
-        portsUsed
+        lengthCol
       )
     }
   }
 
+  function formatProcessingTooltip(cell) {
+    const detail = cell.waitDetail
+    if (cell.char === '.' && detail?.reason === 'data') {
+      const dependencies = [...new Set(detail.dependencies ?? [])]
+        .map(index => timeline.value.instructions[index])
+        .filter(Boolean)
+        .map(([iteration, instruction]) => `instr ${instruction} (iter ${iteration})`)
+      if (dependencies.length)
+        return `Wait for data from ${dependencies.join(', ')}`
+    }
+    if (cell.char === '*' && detail?.reason === 'ports') {
+      const ports = detail.ports.map(port => `P${port}`).join(', ')
+      return ports ? `Port conflict: ${ports}` : 'Port conflict'
+    }
+    if (cell.char === '*' && detail?.reason === 'issue-bandwidth') {
+      return 'Wait: issue width full'
+    }
+    return charToProcessingState(
+      cell.char,
+      cell.first_exec_stage ? cell.port : null,
+      cell.addr
+    )
+  }
+
   function formatInstructionTooltip(cell) {
     const details = [
-      `Iteration ${cell.iter}, instruction ${cell.instrIdx}`,
+      `Iter ${cell.iter}, instr ${cell.instrIdx}`,
       cell.instructionText || 'Instruction description unavailable'
     ]
 
@@ -809,7 +1070,7 @@
     for (const cell of interactiveCells) {
       if (
         worldX >= cell.x &&
-        worldX <= cell.x + cellW &&
+        worldX <= cell.x + (cell.width ?? cellW) &&
         worldY >= cell.y &&
         worldY <= cell.y + cellH
       ) {
@@ -894,6 +1155,25 @@
             <span v-if="timelineOptions.critical">✔ </span>
             Show Critical
           </button>
+          <button class="blue-button" :class="{ active: timelineOptions.showPorts }"
+            :aria-pressed="timelineOptions.showPorts"
+            title="Show or hide execution-port usage rows"
+            id="timeline-ports"
+            @click="togglePorts">
+            <span v-if="timelineOptions.showPorts">✔ </span>
+            Show Ports
+          </button>
+          <button class="blue-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
+            :aria-pressed="timelineOptions.showCache && cacheEnabled"
+            :disabled="!cacheEnabled"
+            :title="cacheEnabled
+              ? 'Show or hide Main Memory transfers and cache-line contents'
+              : 'Show Cache is unavailable because the selected processor has no cache'"
+            id="timeline-cache"
+            @click="toggleCache">
+            <span v-if="timelineOptions.showCache">✔ </span>
+            Show Cache
+          </button>
         </div>
       </div>
     </div>
@@ -924,7 +1204,13 @@
                 or the selected cycle (initial cell of a column). Hover over a row's first cell to inspect the instruction
                 and highlight it in the Program panel.</p>
               <p>To keep generation responsive, the timeline simulates at most 100 retired instructions.
-                The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>"
+                The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>
+              <p><strong>Show Ports</strong> displays the execution-port usage rows.
+                When the selected processor has a cache, <strong>Show Cache</strong> displays
+                Main Memory transfers and one row per cache line:
+                C/D mean clean/dirty and ready; r/w mean a clean/dirty block fill is pending.
+                Hover a cache cell to see the block address, its ready cycle, and LRU rank.
+                <strong>Show Cache</strong> is disabled when no cache is configured.</p>"
        @close="closeHelp1" />
   </Teleport>
 </template>

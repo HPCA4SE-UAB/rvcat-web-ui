@@ -2,7 +2,8 @@
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-           createGraphVizGraph, get_processor_dot }                                           from '@/common'
+           createGraphVizGraph, get_processor_dot, CACHE_BLOCK_SIZES,
+           getAllowedCacheBlockSizes, getLargestMemoryAccessSize }                         from '@/common'
 
   const simState = inject('simulationState');
 
@@ -81,8 +82,8 @@
     },
     cache_BlkSz: {
       label: "BlkSize:",
-      title: "Cache block size (1 to 128 bytes)",
-      min: 1,
+      title: "Cache block size (8, 16, 32, 64, or 128 bytes)",
+      min: 8,
       max: 128,
       model: "blkSize"
     },
@@ -110,13 +111,33 @@
   };
 
   const currentConfig = computed(() => FIELD_CONFIG[activeField.value]);
+  const largestMemoryAccessSize = computed(() =>
+    getLargestMemoryAccessSize(simState.simulatedProcess.instruction_list ?? [])
+  )
+  const allowedCacheBlockSizes = computed(() =>
+    getAllowedCacheBlockSizes(simState.simulatedProcess.instruction_list ?? [])
+  )
+  const minimumCacheBlockSize = computed(() => allowedCacheBlockSizes.value[0] ?? null)
+  const currentMinimum = computed(() =>
+    activeField.value === 'cache_BlkSz'
+      ? minimumCacheBlockSize.value ?? CACHE_BLOCK_SIZES[0]
+      : currentConfig.value.min
+  )
+  const currentTitle = computed(() => {
+    if (activeField.value !== 'cache_BlkSz') return currentConfig.value.title
+    if (minimumCacheBlockSize.value === null) {
+      return `No supported cache block can hold this program's largest ${largestMemoryAccessSize.value}-byte memory access`
+    }
+    return `Cache block size (${allowedCacheBlockSizes.value.join(', ')} bytes); minimum access size: ${largestMemoryAccessSize.value} bytes`
+  })
 
   const inputValue   = ref('');
   const isInvalid    = ref(false);
+  const validationMessage = ref('')
   let   errorTimeout = null;
 
   const validateField = () => {
-    const min = currentConfig.value.min;
+    const min = currentMinimum.value;
     const max = currentConfig.value.max;
     let rawValue = inputValue.value;
 
@@ -126,6 +147,7 @@
       const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
       inputValue.value = lastValidValue ?? min;
       isInvalid.value = false;
+      validationMessage.value = ''
       return;
     }
 
@@ -135,7 +157,20 @@
       const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
       inputValue.value = lastValidValue ?? min;
       isInvalid.value = false;
+      validationMessage.value = ''
       return;
+    }
+
+    if (activeField.value === 'cache_BlkSz') {
+      if (!allowedCacheBlockSizes.value.includes(numValue)) {
+        const lastValidValue = simState.simulatedProcess.blkSize
+        inputValue.value = lastValidValue
+        const requirement = minimumCacheBlockSize.value === null
+          ? `This program needs a ${largestMemoryAccessSize.value}-byte block, larger than the 128-byte maximum.`
+          : `Choose one of these cache block sizes (bytes): ${allowedCacheBlockSizes.value.join(', ')}.`
+        showTemporaryError(requirement)
+        return
+      }
     }
 
     if (numValue < min) {
@@ -155,8 +190,10 @@
 
   const showTemporaryError = (message) => {
     isInvalid.value = true;
+    validationMessage.value = message
     errorTimeout = setTimeout(() => {
       isInvalid.value = false;
+      validationMessage.value = ''
     }, 2000);
     console.warn(message);
   };
@@ -170,6 +207,7 @@
   const handleInput = (event) => {
     if (isInvalid.value) {
       isInvalid.value = false;
+      validationMessage.value = ''
     }
     let value = event.target.value;
     if (value !== '' && !/^\d*$/.test(value)) {
@@ -321,7 +359,7 @@
         retire:     simState.simulatedProcess.retire     || 1,
         ROBsize:    simState.simulatedProcess.ROBsize    || 20,
         nBlocks:    simState.simulatedProcess.nBlocks    || 0,
-        blkSize:    simState.simulatedProcess.blkSize    || 1,
+        blkSize:    simState.simulatedProcess.blkSize    || 4,
         mPenalty:   simState.simulatedProcess.mPenalty   || 1,
         mIssueTime: simState.simulatedProcess.mIssueTime || 1,
         latencies:  JSON.parse(JSON.stringify(simState.simulatedProcess.latencies)),
@@ -485,12 +523,28 @@
   }
 
   function increaseParameter() {
+    if (activeField.value === 'cache_BlkSz') {
+      const currentValue = simState.simulatedProcess.blkSize
+      const nextValue = allowedCacheBlockSizes.value.find(size => size > currentValue)
+      if (nextValue !== undefined)
+        simState.simulatedProcess.blkSize = nextValue
+      return
+    }
     const max    = currentConfig.value.max
     let newValue = simState.simulatedProcess[currentConfig.value.model]
     simState.simulatedProcess[currentConfig.value.model] = Math.min(newValue+1, max)
   }
 
   function decreaseParameter() {
+    if (activeField.value === 'cache_BlkSz') {
+      const values = allowedCacheBlockSizes.value
+      const currentValue = simState.simulatedProcess.blkSize
+      const previousValues = values.filter(size => size < currentValue)
+      simState.simulatedProcess.blkSize = previousValues.length
+        ? previousValues[previousValues.length - 1]
+        : values[0] ?? currentValue
+      return
+    }
     const min    = currentConfig.value.min
     let newValue = simState.simulatedProcess[currentConfig.value.model]
     simState.simulatedProcess[currentConfig.value.model] = Math.max(newValue-1, min)
@@ -528,20 +582,21 @@
         <div class="iters-group rob-group">
           <span class="iters-label"
             :class="{ 'highlight': labelHighlighted }"
-            :title="currentConfig.title">
+            :title="currentTitle">
             {{ currentConfig.label }}
           </span>
           <input
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
-            :placeholder="currentConfig.min.toString()"
+            :placeholder="currentMinimum.toString()"
             v-model="inputValue"
             @blur="validateField"
             @keypress="handleKeyPress"
             @input="handleInput"
             :class="{ 'invalid': isInvalid }"
-            :title="`Rang: ${currentConfig.min} - ${currentConfig.max}`"
+            :title="validationMessage || currentTitle"
+            :aria-invalid="isInvalid"
           />
         </div>
         <button

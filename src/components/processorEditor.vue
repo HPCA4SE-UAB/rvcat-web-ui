@@ -18,6 +18,7 @@
 // ============================================================================
 
   const STORAGE_KEY = 'procEditOptions'
+  const MIN_CACHE_BLOCK_SIZE = 4
 
   const defaultOptions = {
     expandedTypes:       Object.fromEntries( instructionTypes.map(type => [ type, false])),
@@ -66,7 +67,7 @@
       retire:     1,
       ROBsize:    20,
       nBlocks:    0,
-      blkSize:    1,
+      blkSize:    MIN_CACHE_BLOCK_SIZE,
       mPenalty:   1,
       mIssueTime: 1,
       latencies:  Object.fromEntries(
@@ -94,6 +95,10 @@
   const updateProcessorSettings = async (procInfo) => {
     try {
       Object.assign(procConfig, JSON.parse(JSON.stringify(procInfo)))   // deep copy & fire draw-update
+      if (Number.isFinite(procConfig.blkSize) && procConfig.blkSize < MIN_CACHE_BLOCK_SIZE) {
+        console.warn(`💻⚠️ Cache block size ${procConfig.blkSize} is below the minimum; using ${MIN_CACHE_BLOCK_SIZE}.`)
+        procConfig.blkSize = MIN_CACHE_BLOCK_SIZE
+      }
       if (!procConfig.ports || typeof procConfig.ports !== 'object') {
         procConfig= createDefaultConfig()
         console.warn('💻⚠️ Invalid processor configuration: missing or malformed "ports" property. Resetting to default configuration.')
@@ -515,10 +520,11 @@
 
             <span>Block Size:</span>
             <div class="button-group">
-              <button @click="procConfig.blkSize = Math.max(1, procConfig.blkSize / 2)">−</button>
+              <button @click="procConfig.blkSize = Math.max(MIN_CACHE_BLOCK_SIZE, procConfig.blkSize / 2)">−</button>
               <input type="number" v-model.number="procConfig.blkSize" readonly
                    id="block-size"
-                   title="Size of Memory block: must be a power of two (1 to 128)"
+                  min="4"
+                  title="Size of Memory block: must be a power of two (4 to 128)"
                />
               <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
             </div>
