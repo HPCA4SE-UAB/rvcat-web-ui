@@ -1,4 +1,6 @@
 
+export const RVCAT_VERSION = '1.14';
+
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
 export const CACHE_BLOCK_SIZES = [8, 16, 32, 64, 128];

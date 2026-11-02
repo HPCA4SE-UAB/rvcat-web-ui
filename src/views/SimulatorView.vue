@@ -13,6 +13,7 @@ import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import simulationComponent     from '@/components/simulationComponent.vue';
 
 import { useRVCAT_Api }        from '@/rvcatAPI';
+import { RVCAT_VERSION }       from '@/common';
 
 const simState                      = inject('simulationState');
 const { isReady, registerHandler }  = inject('worker');
@@ -25,7 +26,7 @@ const { importRVCAT }               = useRVCAT_Api();
   const STORAGE_KEY = 'rvcatOptions'
 
   const rvcatOptions = {
-    version: "1.13",
+    version: RVCAT_VERSION,
     year:    2026
   }
 
@@ -165,10 +166,10 @@ onUnmounted(() => {
 
 <template>
   <body>
-    <header>
+    <header :title="`RVCAT version ${RVCAT_VERSION}`">
       <div id="top">
         <div class="header-title">
-          <img src="/img/favicon.png" class="title-img">
+          <img src="/img/favicon.png" class="title-img" alt="RVCAT" :title="`RVCAT version ${RVCAT_VERSION}`">
           <div :style="{ fontSize: 'large', padding: '0 40px' }">RVCAT-WEB</div>
           <nav>
             <ul>
