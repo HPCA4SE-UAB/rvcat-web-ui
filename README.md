@@ -76,3 +76,7 @@ The processor table shows the cache settings and lets you edit them by clicking
 the Cache row; **Miss Penalty** is constrained to be at least **Miss Issue Time**.
 The model does not include LSQ dependencies or load/store bypass. Each memory
 block address has a distinct color shared across MM, cache-line, and buffer rows.
+Simulation results keep read/write miss totals and display primary versus secondary
+miss counts separately. MM read transfers fetch blocks after cache misses (including
+STORE read-for-write fills); MM write transfers write back evicted dirty blocks.
+The MM percentage is the fraction of total cycles in which the issue channel is busy.

@@ -320,21 +320,18 @@
     const MM_reads    = results["MM_Reads"]
     const MM_writes   = results["MM_Writes"]
 
-    let rdMiss;
-    const formateado = read_misses.toLocaleString();
-    const relacion = (read_misses / nIters).toFixed(2);
-    rdMiss = `${formateado} (${relacion})`;
-
-    let wrMiss;
-    const formateado2 = write_misses.toLocaleString();
-    const relacion2 = (write_misses / nIters).toFixed(2);
-    wrMiss = `${formateado2} (${relacion2})`;
-
-    let MM_usage;
-    const format1 = MM_reads.toLocaleString();
-    const format2 = MM_writes.toLocaleString();
-    const percentage = (100 * (MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles).toFixed(1);
-    MM_usage = `${format1}+${format2} (${percentage}%)`;
+    const formatMisses = (total, primary, secondary) => {
+      const split = Number.isFinite(primary) && Number.isFinite(secondary)
+        ? `P: ${primary.toLocaleString()}, S: ${secondary.toLocaleString()}`
+        : 'P/S unavailable'
+      return `${total.toLocaleString()} (${split}; ${(total / nIters).toFixed(2)}/iter)`
+    }
+    const mmUsagePercent = Number.isFinite(results.MM_usage_percent)
+      ? results.MM_usage_percent
+      : totalCycles > 0
+        ? 100 * (MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles
+        : 0
+    const MM_usage = `R ${MM_reads.toLocaleString()} + W ${MM_writes.toLocaleString()} (${mmUsagePercent.toFixed(1)}%)`
 
     return {
       iters:        nIters.toLocaleString(),
@@ -342,8 +339,16 @@
       cycles:       totalCycles.toLocaleString(),
       cpi:          cpi.toFixed(2),
       ipc:          ipc.toFixed(3),
-      loads:        rdMiss,
-      stores:       wrMiss,
+      loads:        formatMisses(
+        read_misses,
+        results.read_primary_misses,
+        results.read_secondary_misses
+      ),
+      stores:       formatMisses(
+        write_misses,
+        results.write_primary_misses,
+        results.write_secondary_misses
+      ),
       MM:           MM_usage
     };
   });
@@ -774,15 +779,15 @@
         </div>
         <div class="simulation-inline-item">
           <label for="RdMiss">RdMisses:</label>
-          <span id="RdMiss-output" title="Total Cache Read Misses (Misses per Iteration)">{{ formattedResults.loads }}</span>
+          <span id="RdMiss-output" title="Total read misses, shown as primary/secondary counts and misses per iteration. Primary misses start a fill; secondary misses join an existing or queued fill.">{{ formattedResults.loads }}</span>
         </div>
         <div class="simulation-inline-item">
           <label for="WrMiss">WrMisses:</label>
-          <span id="WrMiss-output" title="Total Cache Write Misses (Misses per Iteration)">{{ formattedResults.stores }}</span>
+          <span id="WrMiss-output" title="Total write misses, shown as primary/secondary counts and misses per iteration. Primary misses start a fill; secondary misses join an existing or queued fill.">{{ formattedResults.stores }}</span>
         </div>
         <div class="simulation-inline-item">
           <label for="MM">MM:</label>
-          <span id="MM-output" title="MM accesses (Read+Write) & BW usage (%)">{{ formattedResults.MM }}</span>
+          <span id="MM-output" title="R = Main Memory read transfers caused by cache misses (including STORE read-for-write); W = dirty-block writeback transfers; percentage = Main Memory issue-channel busy cycles divided by total cycles">{{ formattedResults.MM }}</span>
         </div>
       </div>
     </div>
@@ -917,6 +922,11 @@
     text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
       <em>Instructions Per Cycle</em> (IPC), Read/Write <em>cache misses</em>, and <em>MM bandwidth</em> usage.
+      Read/write miss totals include both primary misses (which start a fill) and secondary misses
+      (which join an existing or queued fill); the result fields show both counts separately.
+      MM read transfers fetch blocks for cache misses, including STORE read-for-write misses.
+      MM write transfers update dirty blocks evicted from cache; the displayed percentage is the fraction
+      of total cycles in which the MM issue channel is busy.
       To obtain meaningful results, ensure a representative number of loop iterations, N, is selected,
       as very low iteration counts may not fully capture the program's behavior and performance characteristics.
       <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths,

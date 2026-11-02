@@ -688,7 +688,6 @@
       ctx.fillRect(padX, resourceY, labelW, cellH)
       ctx.strokeRect(padX, resourceY, labelW, cellH)
       ctx.fillStyle = '#000'
-      ctx.fillText(resource.label, padX + fontXOffset, resourceY + fontYOffset)
 
       const visibleCycleCount = Math.min(totalCycles, resource.cycles.length)
       const usedCycleCount = resource.cycles
@@ -696,8 +695,25 @@
         .filter(Boolean)
         .length
       const usagePercent = visibleCycleCount > 0
-        ? Math.round(usedCycleCount * 100 / visibleCycleCount)
+        ? 100 * usedCycleCount / visibleCycleCount
         : 0
+      const displayedLabel = resource.port === null
+        ? `MM ${usagePercent.toFixed(0)}%`
+        : resource.label
+      const previousFont = ctx.font
+      if (resource.port === null)
+        ctx.font = '9px monospace'
+      ctx.fillText(displayedLabel, padX + fontXOffset, resourceY + fontYOffset)
+      ctx.font = previousFont
+      const visibleMmRequests = resource.port === null
+        ? resource.requests.filter(request =>
+            request.cycle >= 0 && request.cycle < visibleCycleCount
+          )
+        : []
+      const mmReadTransfers = visibleMmRequests.filter(
+        request => request.operation !== 'write'
+      ).length
+      const mmWriteTransfers = visibleMmRequests.length - mmReadTransfers
       interactiveCells.push({
         x: padX,
         y: resourceY,
@@ -713,7 +729,7 @@
           : resource.bufferType === 'write'
             ? `Write buffer ${resource.bufferIndex}: holds an evicted dirty block until its MM write completes`
           : resource.port === null
-            ? `MM: R/W transfers; each block address has the same color as its cache line`
+            ? `Main Memory: ${mmReadTransfers} read transfers from cache misses (including STORE read-for-write), ${mmWriteTransfers} dirty-block writebacks; busy ${usedCycleCount}/${visibleCycleCount} displayed cycles (${usagePercent.toFixed(1)}%).`
           : `${resource.label}: ${usedCycleCount}/${visibleCycleCount} cycles used (${usagePercent}%)`
       })
 
@@ -859,6 +875,9 @@
       // Compute background color based on iteration number
       const rowBg = iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
       const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
+      const memoryOperation = states.includes('L')
+        ? 'Load from'
+        : states.includes('S') ? 'Store to' : null
 
       //  Draw line starting on (x,y)
       let   x = padX;
@@ -889,7 +908,7 @@
         addr,
         latency: simState.simulatedProcess.instruction_list[instrIdx]?.latency,
         instructionText: simState.simulatedProcess.instruction_list[instrIdx]?.text,
-        memoryOperation: states.includes('L') ? 'Load from' : states.includes('S') ? 'Store to' : null,
+        memoryOperation,
         critical: criticalCycles.length > 0,
         criticalCycles: criticalCycles.length
       })
@@ -924,6 +943,7 @@
             port: portByInstructionCycle.get(`${rowIdx}:${i}`) ?? port,
             instrIdx,
             addr,
+            memoryOperation,
             waitDetail: waitDetails.get(`${rowIdx}:${i}`)
           })
         }
@@ -1198,7 +1218,8 @@
     return charToProcessingState(
       cell.char,
       cell.first_exec_stage ? cell.port : null,
-      cell.addr
+      cell.addr,
+      cell.memoryOperation
     )
   }
 
@@ -1376,6 +1397,8 @@
                 <strong>Cache</strong> displays Main Memory transfers, cache lines, fill buffers (F), and dirty write buffers (W):
                 C/D mean clean/dirty and ready; r/w mean a fill is in progress. A block keeps the same color
                 in MM, its cache line, and its buffers.
+                The MM row shows channel utilization for the visible cycles; its tooltip reports read transfers
+                caused by cache misses (including STORE read-for-write) and dirty-block writebacks.
                 A fill buffer stays occupied while a distinct block is fetched and until all waiting instructions
                 receive its data through the return queue. Its cache line may be replaced meanwhile; return data
                 comes from the fill buffer. Misses to that same block merge and share the fill.

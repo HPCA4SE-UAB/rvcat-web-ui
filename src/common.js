@@ -284,7 +284,7 @@ export function getLogicalElementCount(instructionList, loopIterations) {
   return loopIterations * loopStride
 }
 
-export function charToProcessingState(ch, port, addr) {
+export function charToProcessingState(ch, port, addr, memoryOperation = null) {
   if (port != null) {
     if (ch === "L")
       return `Load addr ${addr} on P${port}`
@@ -300,7 +300,9 @@ export function charToProcessingState(ch, port, addr) {
     case "R": return "Retire (write register)";
     case "D": return "Dispatch";
     case "-": return "Wait for older instr. to retire";
-    case "W": return "Write result to ROB";
+    case "W": return memoryOperation === "Store to"
+      ? "Write result to cache"
+      : "Write result to ROB";
     case ".": return "Wait: data dependency";
     case "*": return "Wait: port conflict";
     case "^": return "Wait: issue width full";

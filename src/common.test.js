@@ -79,6 +79,8 @@ describe('timeline state tooltips', () => {
     expect(charToProcessingState('*', null, null)).toBe('Wait: port conflict')
     expect(charToProcessingState('^', null, null)).toBe('Wait: issue width full')
     expect(charToProcessingState('@', null, null)).toBe('Wait for cache return: block data ready')
+    expect(charToProcessingState('W', null, null, 'Load from')).toBe('Write result to ROB')
+    expect(charToProcessingState('W', null, null, 'Store to')).toBe('Write result to cache')
     expect(charToProcessingState('L', 2, 40)).toBe('Load addr 40 on P2')
   })
 
