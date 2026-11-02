@@ -286,7 +286,7 @@ describe('logical element count', () => {
 })
 
 describe('processor graph markup', () => {
-  it('displays editable cache buffer capacities and return throughput', () => {
+  it('wraps editable cache settings across two lines in the same row', () => {
     const dot = get_processor_dot({
       ports: { 0: ['MEM.LOAD'] },
       latencies: { 'MEM.LOAD': 4 },
@@ -299,8 +299,9 @@ describe('processor graph markup', () => {
       rThru: 2
     }, true)
 
-    expect(dot).toContain('Fill buffers: 3')
-    expect(dot).toContain('Write buffers: 4')
+    expect(dot).toContain('Penalty: 12<BR ALIGN="LEFT"/>IssueTime: 8')
+    expect(dot).toContain('FillBuff: 3')
+    expect(dot).toContain('WrtBuff: 4')
     expect(dot).toContain('RetThru: 2')
   })
 

@@ -967,7 +967,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     // ---- Cache configuration ----
     if (CacheBlocks > 0) {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}&nbsp;Fill buffers: ${FillBuffers}&nbsp;Write buffers: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
       </TR>`
     } else {
       cache_row = `<TR>

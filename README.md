@@ -57,14 +57,16 @@ and report instructions unsupported by the active processor instead of running
 them. Latencies, ports, and memory addresses are derived by the application.
 
 The execution timeline's **Show Ports** control toggles per-cycle execution-port
-rows. **Show Cache** independently toggles Main Memory and cache-line rows;
-**Show Buffers** separately toggles fill-buffer and dirty write-buffer rows.
-Both cache controls are unavailable when the selected processor has no cache.
+rows. The **Cache** control toggles Main Memory, cache-line, fill-buffer, and
+dirty write-buffer rows together, and is unavailable when the selected processor
+has no cache.
 Fill and write buffer capacities are configurable in Processor Settings and
 default to two entries each. Misses are admitted by age, and requests to the same
-block share a fill entry. A fill reserves its cache line until the read completes;
-a dirty victim is held in a write buffer until its write completes before the
-replacement block is fetched. `R`/`W` identify active fill/write-buffer entries.
+block share a fill entry. A fill buffer remains occupied until the read completes
+and every waiting instruction receives its data through the return queue. Its cache
+line may be replaced meanwhile; queued returns use the fill buffer. A dirty victim
+is held in a write buffer until its write completes before the replacement block is
+fetched. `R`/`W` identify active fill/write-buffer entries.
 Secondary misses to an already-loading block use `2`; `:` denotes waiting for
 the fill and `@` waiting in the independent cache return queue. The configurable
 `rThru` parameter (1–32, default 1) limits how many waiting LOAD/STORE instructions

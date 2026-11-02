@@ -32,7 +32,6 @@
     critical:      false,
     showPorts:     true,
     showCache:     true,
-    showBuffers:   true,
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -229,7 +228,7 @@
     nextTick(() => {
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
-               timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showBuffers,
+               timelineOptions.showPorts, timelineOptions.showCache,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -264,7 +263,6 @@
   function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
   function togglePorts()     { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleCache()     { timelineOptions.showCache = !timelineOptions.showCache }
-  function toggleBuffers()   { timelineOptions.showBuffers = !timelineOptions.showBuffers }
 
   function getPortUsage(timeline) {
     const inferredUsagePorts = {};
@@ -494,7 +492,7 @@
             requests: []
           }))
         : []),
-      ...(timelineOptions.showBuffers && cacheEnabled.value && fillBufferState
+      ...(timelineOptions.showCache && cacheEnabled.value && fillBufferState
         ? Array.from({ length: fillBufferState.capacity }, (_, bufferIndex) => ({
             label: `F${bufferIndex}`,
             bufferType: 'fill',
@@ -503,7 +501,7 @@
             bufferStates: fillBuffersByCycle
           }))
         : []),
-      ...(timelineOptions.showBuffers && cacheEnabled.value && writeBufferState
+      ...(timelineOptions.showCache && cacheEnabled.value && writeBufferState
         ? Array.from({ length: writeBufferState.capacity }, (_, bufferIndex) => ({
             label: `W${bufferIndex}`,
             bufferType: 'write',
@@ -1336,23 +1334,12 @@
             :aria-pressed="timelineOptions.showCache && cacheEnabled"
             :disabled="!cacheEnabled"
             :title="cacheEnabled
-              ? 'Show or hide Main Memory transfers and cache-line contents'
+              ? 'Show or hide Main Memory transfers, cache lines, fill buffers, and write buffers'
               : 'Show Cache is unavailable because the selected processor has no cache'"
             id="timeline-cache"
             @click="toggleCache">
             <span v-if="timelineOptions.showCache">✔ </span>
             Cache
-          </button>
-          <button class="blue-button" :class="{ active: timelineOptions.showBuffers && cacheEnabled }"
-            :aria-pressed="timelineOptions.showBuffers && cacheEnabled"
-            :disabled="!cacheEnabled"
-            :title="cacheEnabled
-              ? 'Show or hide fill-buffer and dirty write-buffer rows independently of the cache rows'
-              : 'Show Buffers is unavailable because the selected processor has no cache'"
-            id="timeline-buffers"
-            @click="toggleBuffers">
-            <span v-if="timelineOptions.showBuffers && cacheEnabled">✔ </span>
-            Buffers
           </button>
         </div>
       </div>
@@ -1386,11 +1373,12 @@
               <p>To keep generation responsive, the timeline simulates at most 100 retired instructions.
                 The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>
               <p><strong>Show Ports</strong> displays execution-port usage.
-                <strong>Show Cache</strong> independently displays Main Memory transfers and cache lines:
+                <strong>Cache</strong> displays Main Memory transfers, cache lines, fill buffers (F), and dirty write buffers (W):
                 C/D mean clean/dirty and ready; r/w mean a fill is in progress. A block keeps the same color
-                in MM, its cache line, and its buffers.</p>
-              <p><strong>Show Buffers</strong> independently displays fill buffers (F) and dirty write buffers (W).
-                A fill buffer holds a distinct block being fetched; misses to that same block merge and share the fill.
+                in MM, its cache line, and its buffers.
+                A fill buffer stays occupied while a distinct block is fetched and until all waiting instructions
+                receive its data through the return queue. Its cache line may be replaced meanwhile; return data
+                comes from the fill buffer. Misses to that same block merge and share the fill.
                 Misses are admitted by age when a fill slot and cache line are available. An evicted dirty block
                 occupies a write buffer until its MM write completes, before the new block is fetched.
                 The processor editor sets the buffer capacities and return throughput. Buffer-full misses wait in the instruction timeline.
