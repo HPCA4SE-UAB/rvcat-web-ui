@@ -1,12 +1,12 @@
 {
   "processor": [
-    "B1",
+    "B4",
     "B2",
-    "B4"
+    "B1"
   ],
   "program": [
-    "BaseSIMD",
     "Base",
+    "BaseSIMD",
     "exemple",
     "V1",
     "V2"

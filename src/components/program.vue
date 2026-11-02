@@ -65,7 +65,7 @@
 
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
-    if (simState.state > 1)
+    if (newProgram && simState.state > 1)
       reloadProgram()
   })
 
@@ -171,6 +171,7 @@
       programOptions.currentProgram = programOptions.availablePrograms[0]
     else {
       programOptions.currentProgram = ''
+      programOptions.availablePrograms = []
       alert("Removing all programs forces to load the original programs provided in the distribution")
       initProgram()
     }

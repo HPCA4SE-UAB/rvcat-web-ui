@@ -8,6 +8,9 @@
   "blkSize": 8,
   "mPenalty": 12,
   "mIssueTime": 8,
+  "nFillBuffers": 2,
+  "nWriteBuffers": 2,
+  "rThru": 1,
   "latencies": {
     "INT": 1,
     "INT.ARITH": 1,

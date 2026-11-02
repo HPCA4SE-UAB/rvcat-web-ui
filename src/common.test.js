@@ -1,17 +1,76 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createTutorialStepId,
   charToProcessingState,
+  createMemoryAddressColorMap,
   getAllowedCacheBlockSizes,
   getLargestMemoryAccessSize,
   getUnsupportedInstructions,
   get_processor_dot,
   getLogicalElementCount,
+  initResource,
   migrateTutorialFlow,
   normalizeProgramDefaults,
   TUTORIAL_FLOW_VERSION,
   validateProgram
 } from './common'
+
+describe('default distributed resources', () => {
+  beforeEach(() => {
+    const values = new Map()
+    vi.stubGlobal('localStorage', {
+      get length() { return values.size },
+      key: index => [...values.keys()][index] ?? null,
+      getItem: key => values.get(key) ?? null,
+      setItem: (key, value) => values.set(String(key), String(value)),
+      removeItem: key => values.delete(key)
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('loads processor and program defaults in index order and selects the first', async () => {
+    const index = {
+      processor: ['B4', 'B2', 'B1'],
+      program: ['Base', 'BaseSIMD', 'exemple']
+    }
+    vi.stubGlobal('fetch', vi.fn(async path => ({
+      ok: true,
+      json: async () => path === './index.json'
+        ? index
+        : { name: path.split('/').pop().replace('.json', '') }
+    })))
+
+    const processorOptions = { processorName: '', availableProcessors: [] }
+    const programOptions = { currentProgram: '', availablePrograms: [] }
+    await initResource('processor', processorOptions, 'processorName', 'availableProcessors')
+    await initResource('program', programOptions, 'currentProgram', 'availablePrograms')
+
+    expect(processorOptions.availableProcessors).toEqual(['B4', 'B2', 'B1'])
+    expect(processorOptions.processorName).toBe('B4')
+    expect(programOptions.availablePrograms).toEqual(['Base', 'BaseSIMD', 'exemple'])
+    expect(programOptions.currentProgram).toBe('Base')
+  })
+
+  it('orders installed defaults before user resources while preserving the selection', async () => {
+    const index = { processor: ['B4', 'B2', 'B1'] }
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => index
+    })))
+    localStorage.setItem('processor.B1', '{}')
+    localStorage.setItem('processor.Custom', '{}')
+    localStorage.setItem('processor.B4', '{}')
+
+    const options = { processorName: 'Custom', availableProcessors: [] }
+    await initResource('processor', options, 'processorName', 'availableProcessors')
+
+    expect(options.availableProcessors).toEqual(['B4', 'B1', 'Custom'])
+    expect(options.processorName).toBe('Custom')
+  })
+})
 
 describe('timeline state tooltips', () => {
   it('uses concise English descriptions', () => {
@@ -19,7 +78,17 @@ describe('timeline state tooltips', () => {
     expect(charToProcessingState('.', null, null)).toBe('Wait: data dependency')
     expect(charToProcessingState('*', null, null)).toBe('Wait: port conflict')
     expect(charToProcessingState('^', null, null)).toBe('Wait: issue width full')
+    expect(charToProcessingState('@', null, null)).toBe('Wait for cache return: block data ready')
     expect(charToProcessingState('L', 2, 40)).toBe('Load addr 40 on P2')
+  })
+
+  it('assigns a stable distinct color to each valid memory address', () => {
+    const colors = createMemoryAddressColorMap([16, 0, 8, 16, null])
+
+    expect(colors.get(0)).not.toBe(colors.get(8))
+    expect(colors.get(8)).not.toBe(colors.get(16))
+    expect(colors.get(0)).toBe(createMemoryAddressColorMap([8, 16, 0]).get(0))
+    expect(colors.has(null)).toBe(false)
   })
 })
 
@@ -217,6 +286,24 @@ describe('logical element count', () => {
 })
 
 describe('processor graph markup', () => {
+  it('displays editable cache buffer capacities and return throughput', () => {
+    const dot = get_processor_dot({
+      ports: { 0: ['MEM.LOAD'] },
+      latencies: { 'MEM.LOAD': 4 },
+      nBlocks: 2,
+      blkSize: 16,
+      mPenalty: 12,
+      mIssueTime: 8,
+      nFillBuffers: 3,
+      nWriteBuffers: 4,
+      rThru: 2
+    }, true)
+
+    expect(dot).toContain('Fill buffers: 3')
+    expect(dot).toContain('Write buffers: 4')
+    expect(dot).toContain('RetThru: 2')
+  })
+
   it('escapes operation data before inserting it into Graphviz HTML labels', () => {
     const dot = get_processor_dot({
       ports: { 0: ['INT.<"\'&'] },

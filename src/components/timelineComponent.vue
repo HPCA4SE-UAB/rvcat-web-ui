@@ -4,6 +4,7 @@
   import HelpComponent                    from '@/components/helpComponent.vue'
   import {
     charToProcessingState,
+    createMemoryAddressColorMap,
     getLogicalElementCount,
     getUnsupportedInstructions,
     validateProgram
@@ -31,6 +32,7 @@
     critical:      false,
     showPorts:     true,
     showCache:     true,
+    showBuffers:   true,
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -87,6 +89,8 @@
         process.sched,
         process.blkSize,
         process.nBlocks,
+        process.nFillBuffers,
+        process.nWriteBuffers,
         process.instruction_list
       ]
     },
@@ -97,7 +101,9 @@
   watch(
     () => [
       simState.simulatedProcess.mPenalty,
-      simState.simulatedProcess.mIssueTime
+      simState.simulatedProcess.mIssueTime,
+      simState.simulatedProcess.nFillBuffers,
+      simState.simulatedProcess.nWriteBuffers
     ],
     requestTimeline,
     { flush: 'sync' }
@@ -141,9 +147,12 @@
       timelinePending = true
       console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire, sched,
-              blkSize, nBlocks, mPenalty, mIssueTime } = process
+              blkSize, nBlocks, mPenalty, mIssueTime,
+              nFillBuffers, nWriteBuffers } = process
       getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
+                                    nFillBuffers: nFillBuffers ?? 2,
+                                    nWriteBuffers: nWriteBuffers ?? 2,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
                   TIMELINE_RETIRE_LIMIT)
         .catch(error => {
@@ -220,7 +229,7 @@
     nextTick(() => {
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
-               timelineOptions.showPorts, timelineOptions.showCache,
+               timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showBuffers,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -255,10 +264,13 @@
   function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
   function togglePorts()     { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleCache()     { timelineOptions.showCache = !timelineOptions.showCache }
+  function toggleBuffers()   { timelineOptions.showBuffers = !timelineOptions.showBuffers }
 
   function getPortUsage(timeline) {
     const inferredUsagePorts = {};
     const usageInstr = Array.from({ length: timeline.cycles }, () => []);
+    const recordedPortOwners = timeline.resource_usage?.port_owners
+    timeline.portUsageInstrByPort = recordedPortOwners
 
     for (const [rowIdx, [, , startCycle, port, states]] of timeline.instructions.entries()) {
       const eIndex = states.indexOf("E");
@@ -271,10 +283,18 @@
 
       // Verificar que cycle esté dentro del rango
       if (cycle >= 0 && cycle < timeline.cycles) {
-        usageInstr[cycle].push(rowIdx);
+        if (!recordedPortOwners)
+          usageInstr[cycle].push(rowIdx);
         (inferredUsagePorts[port] ??= []).push(cycle);
       } else {
         console.warn(`Cycle ${cycle} fuera de rango (0-${timeline.cycles-1}) para instrucción ${rowIdx}`);
+      }
+    }
+    if (recordedPortOwners) {
+      for (const cycles of Object.values(recordedPortOwners)) {
+        cycles.forEach((rows, cycle) => {
+          usageInstr[cycle].push(...rows)
+        })
       }
     }
 
@@ -393,7 +413,14 @@
     const viewportWidth = wrapper.clientWidth
     const viewportHeight = wrapper.clientHeight
 
-    const { cycles, instructions, portUsageInstr } = timeline.value
+    const { cycles, instructions, portUsageInstr, portUsageInstrByPort } = timeline.value
+    const portByInstructionCycle = new Map()
+    for (const [port, cycleRows] of Object.entries(portUsageInstrByPort ?? {})) {
+      cycleRows.forEach((rows, cycle) => {
+        for (const rowIndex of rows)
+          portByInstructionCycle.set(`${rowIndex}:${cycle}`, Number(port))
+      })
+    }
     const waitDetails = new Map(
       (timeline.value.wait_details ?? []).map(detail => [
         `${detail.instruction_index}:${detail.cycle}`,
@@ -403,6 +430,32 @@
     totalCycles = timelineOptions.cycles
     totalInstr  = timelineOptions.instructions
     const cacheState = timeline.value.resource_usage?.cache_state
+    const fillBufferState = timeline.value.resource_usage?.fill_buffers
+    const writeBufferState = timeline.value.resource_usage?.write_buffers
+    const memoryRequests = timeline.value.resource_usage?.mm_requests ?? []
+    const bufferSlotsByCycle = bufferState => {
+      const byCycle = Array.from({ length: totalCycles }, () => [])
+      for (const snapshot of bufferState?.snapshots ?? []) {
+        if (snapshot.cycle >= 0 && snapshot.cycle < totalCycles)
+          byCycle[snapshot.cycle] = snapshot.slots
+      }
+      return byCycle
+    }
+    const fillBuffersByCycle = bufferSlotsByCycle(fillBufferState)
+    const writeBuffersByCycle = bufferSlotsByCycle(writeBufferState)
+    const cacheAddresses = (cacheState?.snapshots ?? [])
+      .flatMap(snapshot => snapshot.lines)
+      .filter(line => line.valid)
+      .map(line => line.address)
+    const bufferAddresses = [
+      ...fillBuffersByCycle.flatMap(slots => slots),
+      ...writeBuffersByCycle.flatMap(slots => slots)
+    ].filter(slot => slot?.valid).map(slot => slot.address)
+    const memoryAddressColors = createMemoryAddressColorMap([
+      ...memoryRequests.map(request => request.address),
+      ...cacheAddresses,
+      ...bufferAddresses
+    ])
     const cacheStatesByCycle = []
     let cacheSnapshotIndex = 0
     let cacheLines = []
@@ -439,6 +492,24 @@
             cacheLineIndex,
             cycles: [],
             requests: []
+          }))
+        : []),
+      ...(timelineOptions.showBuffers && cacheEnabled.value && fillBufferState
+        ? Array.from({ length: fillBufferState.capacity }, (_, bufferIndex) => ({
+            label: `F${bufferIndex}`,
+            bufferType: 'fill',
+            bufferIndex,
+            cycles: fillBuffersByCycle.map(slots => Boolean(slots[bufferIndex]?.valid)),
+            bufferStates: fillBuffersByCycle
+          }))
+        : []),
+      ...(timelineOptions.showBuffers && cacheEnabled.value && writeBufferState
+        ? Array.from({ length: writeBufferState.capacity }, (_, bufferIndex) => ({
+            label: `W${bufferIndex}`,
+            bufferType: 'write',
+            bufferIndex,
+            cycles: writeBuffersByCycle.map(slots => Boolean(slots[bufferIndex]?.valid)),
+            bufferStates: writeBuffersByCycle
           }))
         : [])
     ]
@@ -638,7 +709,13 @@
         cellType: 'resource-label',
         resourceIndex: resourceRowIndex,
         tooltip: resource.cacheLineIndex !== undefined
-          ? `Cache line ${resource.cacheLineIndex}: C clean, D dirty, r/w loading; hover a cycle for the block address and LRU rank`
+          ? `Cache line ${resource.cacheLineIndex}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer`
+          : resource.bufferType === 'fill'
+            ? `Fill buffer ${resource.bufferIndex}: holds one distinct block fill; misses to the same block share the entry`
+          : resource.bufferType === 'write'
+            ? `Write buffer ${resource.bufferIndex}: holds an evicted dirty block until its MM write completes`
+          : resource.port === null
+            ? `MM: R/W transfers; each block address has the same color as its cache line`
           : `${resource.label}: ${usedCycleCount}/${visibleCycleCount} cycles used (${usagePercent}%)`
       })
 
@@ -656,8 +733,39 @@
         const cacheLine = resource.cacheLineIndex !== undefined
           ? cacheStatesByCycle[cycle]?.[resource.cacheLineIndex]
           : null
+        const bufferEntry = resource.bufferType
+          ? resource.bufferStates[cycle]?.[resource.bufferIndex]
+          : null
+        const addressesInCell = resource.port === null
+          ? [...new Set(memoryRequests
+              .map(request => request.address)
+              .filter(Number.isSafeInteger))]
+          : cacheLine?.valid
+            ? [cacheLine.address]
+            : bufferEntry?.valid
+              ? [bufferEntry.address]
+              : []
+        if (addressesInCell.length === 1) {
+          ctx.fillStyle = memoryAddressColors.get(addressesInCell[0]) ?? '#fff'
+          ctx.fillRect(resourceX + 1, resourceY + 1, cellW - 2, cellH - 2)
+        } else if (addressesInCell.length > 1) {
+          const stripWidth = (cellW - 2) / addressesInCell.length
+          addressesInCell.forEach((address, index) => {
+            ctx.fillStyle = memoryAddressColors.get(address) ?? '#fff'
+            ctx.fillRect(
+              resourceX + 1 + index * stripWidth,
+              resourceY + 1,
+              stripWidth,
+              cellH - 2
+            )
+          })
+        }
         let marker = ''
-        if (resource.cacheLineIndex !== undefined && cacheLine?.valid) {
+        if (resource.bufferType === 'fill' && bufferEntry?.valid) {
+          marker = 'R'
+        } else if (resource.bufferType === 'write' && bufferEntry?.valid) {
+          marker = 'W'
+        } else if (resource.cacheLineIndex !== undefined && cacheLine?.valid) {
           marker = cacheLine.loading
             ? cacheLine.dirty ? 'w' : 'r'
             : cacheLine.dirty ? 'D' : 'C'
@@ -674,17 +782,33 @@
           ctx.fillText(marker, resourceX + fontXOffset, resourceY + fontYOffset)
         }
 
-        const linkedInstructionRows = resource.cacheLineIndex !== undefined
-          ? []
-          : resource.cycles[cycle]
-          ? resource.port === null
-            ? [...new Set(memoryRequests
-                .filter(request => request.operation !== 'write')
-                .map(request => request.instruction_index)
-                .filter(rowIndex => Number.isInteger(rowIndex)))]
-            : (portUsageInstr[cycle] ?? []).filter(rowIndex =>
-                Number(instructions[rowIndex]?.[3]) === Number(resource.port)
-              )
+        const linkedInstructionRows = resource.cacheLineIndex !== undefined ||
+              resource.bufferType === 'write' ||
+              resource.port === null
+            ? []
+            : resource.bufferType === 'fill' && bufferEntry?.valid
+              ? bufferEntry.instruction_indices
+            : resource.cycles[cycle]
+            ? portUsageInstrByPort
+              ? portUsageInstrByPort[String(resource.port)]?.[cycle] ?? []
+              : (portUsageInstr[cycle] ?? []).filter(rowIndex =>
+                  Number(instructions[rowIndex]?.[3]) === Number(resource.port))
+            : []
+        const linkedResourceRows = resource.port === null
+          ? resourceRows.flatMap((bufferResource, resourceIndex) => {
+              if (!bufferResource.bufferType) return []
+              const matchingOperation = bufferResource.bufferType === 'write'
+                ? 'write'
+                : 'read'
+              const bufferEntry = bufferResource.bufferStates[cycle]?.[bufferResource.bufferIndex]
+              return bufferEntry?.valid &&
+                  memoryRequests.some(request =>
+                    (request.operation === 'write' ? 'write' : 'read') === matchingOperation &&
+                    request.address === bufferEntry.address
+                  )
+                ? [resourceIndex]
+                : []
+            })
           : []
         interactiveCells.push({
           x: resourceX,
@@ -694,11 +818,25 @@
           cellType: 'resource-cycle',
           resourceIndex: resourceRowIndex,
           linkedInstructionRows,
-          tooltip: resource.cacheLineIndex !== undefined
+          linkedResourceRows,
+          tooltip: resource.bufferType && !bufferEntry?.valid
+            ? `${resource.bufferType === 'fill' ? 'Fill' : 'Write'} buffer ${resource.bufferIndex}: empty`
+            : resource.bufferType === 'fill'
+              ? `Fill block at addr ${bufferEntry.address} (${bufferEntry.state}` +
+                `${bufferEntry.ready_cycle == null ? '' : `; ready at cycle ${bufferEntry.ready_cycle}`}` +
+                `; waiting instructions ${bufferEntry.instruction_indices.map(index => index + 1).join(', ')})`
+            : resource.bufferType === 'write'
+              ? `Write dirty block at addr ${bufferEntry.address} (${bufferEntry.state}` +
+                `${bufferEntry.ready_cycle == null ? '' : `; available at cycle ${bufferEntry.ready_cycle}`})`
+            : resource.cacheLineIndex !== undefined
             ? !cacheLine?.valid
               ? `Cache line ${resource.cacheLineIndex}: empty`
               : `Block at addr ${cacheLine.address} (${cacheLine.dirty ? 'dirty' : 'clean'}; ` +
-                `${cacheLine.loading ? `loading, ready at cycle ${cacheLine.ready_cycle}` : 'ready'}; ` +
+              `${cacheLine.loading
+                ? cacheLine.ready_cycle == null
+                  ? 'loading'
+                  : `loading, ready at cycle ${cacheLine.ready_cycle}`
+                : 'ready'}; ` +
                 `LRU rank ${cacheLine.lru})`
             : memoryRequests
                 .map(({ operation, address }) => {
@@ -785,7 +923,7 @@
             char: ch,
             first_exec_stage,
             critical,
-            port,
+            port: portByInstructionCycle.get(`${rowIdx}:${i}`) ?? port,
             instrIdx,
             addr,
             waitDetail: waitDetails.get(`${rowIdx}:${i}`)
@@ -830,7 +968,8 @@
     initCol,
     lengthCol,
     linkedInstructionRows = null,
-    linkedCycle = null
+    linkedCycle = null,
+    linkedResourceRows = null
   ) {
     const ctx = overlayCanvas.value.getContext('2d')
     ctx.clearRect(0, 0,
@@ -848,6 +987,15 @@
         if (linkedRow < 0 || linkedRow >= totalInstr) continue
         const x = padX + labelW + linkedCycle * cellW
         const y = padY + (linkedRow + resourceRowCount + 1) * cellH
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'
+        ctx.fillRect(x, y, cellW, cellH)
+        ctx.strokeRect(x, y, cellW, cellH)
+      }
+    }
+    if (linkedResourceRows) {
+      for (const linkedRow of linkedResourceRows) {
+        const x = padX + labelW + linkedCycle * cellW
+        const y = padY + (linkedRow + 1) * cellH
         ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'
         ctx.fillRect(x, y, cellW, cellH)
         ctx.strokeRect(x, y, cellW, cellH)
@@ -956,7 +1104,8 @@
           null,
           null,
           hitCell.linkedInstructionRows,
-          col
+          col,
+          hitCell.linkedResourceRows
         )
       }
       return
@@ -1014,6 +1163,12 @@
 
   function formatProcessingTooltip(cell) {
     const detail = cell.waitDetail
+    if (cell.char === '!' && detail?.reason === 'cache')
+      return `Cache MISS: block addr ${detail.block_address}`
+    if (cell.char === '2' && detail?.reason === 'cache')
+      return `2ary MISS: block addr ${detail.block_address}`
+    if (cell.char === '@' && detail?.reason === 'cache-return')
+      return `Wait for cache return: block addr ${detail.block_address}`
     if (cell.char === '.' && detail?.reason === 'data') {
       const dependencies = [...new Set(detail.dependencies ?? [])]
         .map(index => timeline.value.instructions[index])
@@ -1028,6 +1183,19 @@
     }
     if (cell.char === '*' && detail?.reason === 'issue-bandwidth') {
       return 'Wait: issue width full'
+    }
+    if (detail?.reason === 'cache') {
+      if (detail.buffer_state === 'queued_fill')
+        return `Wait for fill-buffer slot for block at addr ${detail.block_address}`
+      if (detail.buffer_state === 'queued_write')
+        return `Wait for write-buffer slot before filling block at addr ${detail.block_address}`
+      if (detail.buffer_state === 'queued_line')
+        return `Wait for a cache line before filling block at addr ${detail.block_address}`
+      if (detail.buffer_state === 'waiting_mm')
+        return `Wait for MM issue slot for block at addr ${detail.block_address}`
+      if (detail.buffer_state === 'waiting_writeback')
+        return `Wait for dirty writeback before filling block at addr ${detail.block_address}`
+      return `Wait for block at addr ${detail.block_address}`
     }
     return charToProcessingState(
       cell.char,
@@ -1148,12 +1316,13 @@
         </div>
 
         <div class="iters-group">
+          <span class="show-label">Show:</span>
           <button class="blue-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
             title="Show the critical path ending at the last instruction retired in the visible cycles"
             id="timeline-critical"
             @click="toggleCritical">
             <span v-if="timelineOptions.critical">✔ </span>
-            Show Critical
+            Critical
           </button>
           <button class="blue-button" :class="{ active: timelineOptions.showPorts }"
             :aria-pressed="timelineOptions.showPorts"
@@ -1161,7 +1330,7 @@
             id="timeline-ports"
             @click="togglePorts">
             <span v-if="timelineOptions.showPorts">✔ </span>
-            Show Ports
+            Ports
           </button>
           <button class="blue-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
             :aria-pressed="timelineOptions.showCache && cacheEnabled"
@@ -1172,7 +1341,18 @@
             id="timeline-cache"
             @click="toggleCache">
             <span v-if="timelineOptions.showCache">✔ </span>
-            Show Cache
+            Cache
+          </button>
+          <button class="blue-button" :class="{ active: timelineOptions.showBuffers && cacheEnabled }"
+            :aria-pressed="timelineOptions.showBuffers && cacheEnabled"
+            :disabled="!cacheEnabled"
+            :title="cacheEnabled
+              ? 'Show or hide fill-buffer and dirty write-buffer rows independently of the cache rows'
+              : 'Show Buffers is unavailable because the selected processor has no cache'"
+            id="timeline-buffers"
+            @click="toggleBuffers">
+            <span v-if="timelineOptions.showBuffers && cacheEnabled">✔ </span>
+            Buffers
           </button>
         </div>
       </div>
@@ -1205,17 +1385,53 @@
                 and highlight it in the Program panel.</p>
               <p>To keep generation responsive, the timeline simulates at most 100 retired instructions.
                 The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>
-              <p><strong>Show Ports</strong> displays the execution-port usage rows.
-                When the selected processor has a cache, <strong>Show Cache</strong> displays
-                Main Memory transfers and one row per cache line:
-                C/D mean clean/dirty and ready; r/w mean a clean/dirty block fill is pending.
-                Hover a cache cell to see the block address, its ready cycle, and LRU rank.
-                <strong>Show Cache</strong> is disabled when no cache is configured.</p>"
+              <p><strong>Show Ports</strong> displays execution-port usage.
+                <strong>Show Cache</strong> independently displays Main Memory transfers and cache lines:
+                C/D mean clean/dirty and ready; r/w mean a fill is in progress. A block keeps the same color
+                in MM, its cache line, and its buffers.</p>
+              <p><strong>Show Buffers</strong> independently displays fill buffers (F) and dirty write buffers (W).
+                A fill buffer holds a distinct block being fetched; misses to that same block merge and share the fill.
+                Misses are admitted by age when a fill slot and cache line are available. An evicted dirty block
+                occupies a write buffer until its MM write completes, before the new block is fetched.
+                The processor editor sets the buffer capacities and return throughput. Buffer-full misses wait in the instruction timeline.
+                This model does not include LSQ dependencies or load/store bypass.</p>
+              <p>In the instruction rows, <strong>!</strong> marks a cache miss, <strong>2</strong> a miss
+                to a block already loading, <strong>:</strong> waiting for a fill, and <strong>@</strong> waiting
+                in the cache return queue after data arrives. Return throughput limits how many waiting LOAD/STORE
+                instructions receive data per cycle. They are served in age order, independently of execution ports,
+                and do not pay their execution latency again.</p>
+              <p>Hover a buffer cell to see its block address, state, completion cycle, and waiting instructions.
+                Cache, memory, and buffer rows are unavailable when no cache is configured.</p>"
        @close="closeHelp1" />
   </Teleport>
 </template>
 
 <style scoped>
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .header {
+    min-width: 0;
+    gap: 4px;
+  }
+  .section-title-and-info {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+  .header-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .show-label {
+    white-space: nowrap;
+  }
   .execution-validation-error {
     padding: 8px 10px;
     color: #a12622;
@@ -1226,7 +1442,9 @@
   .output-block-wrapper {
     overflow:        auto;
     width:           100%;
-    height:          100%;
+    height:          auto;
+    min-height:      0;
+    flex:            1;
     position:        relative;
     cursor:          default;
     scrollbar-width: none;  /* Firefox */
@@ -1275,9 +1493,18 @@
   .timeline-controls {
     display:     flex;
     align-items: center;
-    gap:         8px;
+    gap:         4px;
     margin-left: auto;
     min-width:   0;
+    flex-shrink: 0;
+  }
+  .timeline-controls .iters-group {
+    gap: 2px;
+    margin-left: 0;
+    white-space: nowrap;
+  }
+  .timeline-controls .blue-button {
+    padding: 2px 4px;
   }
   .iters-group input[type="number"] { width: 4ch; }
 

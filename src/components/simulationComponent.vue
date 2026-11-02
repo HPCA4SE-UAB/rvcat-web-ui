@@ -94,6 +94,8 @@
       if (proc1.blkSize    !== proc2.blkSize)    return false;
       if (proc1.mIssueTime !== proc2.mIssueTime) return false;
       if (proc1.mPenalty   !== proc2.mPenalty)   return false;
+      if (proc1.nFillBuffers !== proc2.nFillBuffers) return false;
+      if (proc1.nWriteBuffers !== proc2.nWriteBuffers) return false;
     }
 
     if (isArray(proc1.instruction_list) && isArray(proc2.instruction_list)) {
@@ -439,6 +441,8 @@
       blkSize:  process.blkSize,
       mIssueTime: process.mIssueTime,
       mPenalty: process.mPenalty,
+      nFillBuffers: process.nFillBuffers ?? 2,
+      nWriteBuffers: process.nWriteBuffers ?? 2,
       instruction_list: JSON.parse(JSON.stringify(instructionList))
     }
     clearTimeout(resultsTimeout)
@@ -449,8 +453,11 @@
         document.getElementById('run-simulation-button').disabled       = true;
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
-        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime } = process
+        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+                nFillBuffers, nWriteBuffers } = process
         getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+                                              nFillBuffers: nFillBuffers ?? 2,
+                                              nWriteBuffers: nWriteBuffers ?? 2,
                                               instruction_list: toRaw(instructionList)}, null, 2),
                             iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')

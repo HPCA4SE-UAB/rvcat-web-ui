@@ -6,6 +6,16 @@ export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
 export const CACHE_BLOCK_SIZES = [8, 16, 32, 64, 128];
 const MEMORY_DATA_SIZES = { byte: 1, word: 4, long: 8 };
 
+export function createMemoryAddressColorMap(addresses = []) {
+  const uniqueAddresses = [...new Set(addresses.filter(Number.isSafeInteger))]
+    .sort((a, b) => a - b)
+
+  return new Map(uniqueAddresses.map((address, index) => [
+    address,
+    `hsl(${Math.round(index * 360 / uniqueAddresses.length)}, 70%, 82%)`
+  ]))
+}
+
 export function getLargestMemoryAccessSize(instructionList = []) {
   return instructionList.reduce((largest, instruction) => {
     if (instruction?.type !== 'MEM' && instruction?.type !== 'VMEM') return largest
@@ -294,11 +304,12 @@ export function charToProcessingState(ch, port, addr) {
     case ".": return "Wait: data dependency";
     case "*": return "Wait: port conflict";
     case "^": return "Wait: issue width full";
-    case "#": return "MM request";
-    case ":": return "Wait: MM block";
-    case "!": return "Wait: MM request slot";
-    case "2": return "Wait: cache access";
-    case "U": return "Write back dirty block";
+    case "#": return "Wait: dirty writeback";
+    case ":": return "Wait: block fill";
+    case "!": return "Wait: cache/MM slot";
+    case "2": return "Wait: matching fill";
+    case "@": return "Wait for cache return: block data ready";
+    case "U": return "Dirty writeback";
     default:  return null;
   }
 }
@@ -670,15 +681,27 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   console.log(`${logPrefix}🔄 Loading ${resourceType}s ...`);
   try {
     let keys = getResourceKeys(`${storagePrefix}.`);
+    let distributionFiles = null;
+    if (keys.length === 0 || resourceType === 'processor' || resourceType === 'program') {
+      try {
+        const response = await fetch('./index.json');
+        if (!response.ok) {
+          throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        distributionFiles = data[storagePrefix];
+      } catch (error) {
+        if (keys.length === 0) throw error;
+        console.warn(`${logPrefix}⚠️ Failed to load index.json; keeping local ${resourceType} order:`, error);
+      }
+    }
+
     if (keys.length === 0) {
-      const response = await fetch('./index.json');
-      const data     = await response.json();
-      const fileList = data[storagePrefix];
-      if (!fileList) {
+      if (!Array.isArray(distributionFiles) || distributionFiles.length === 0) {
         console.log(`No ${storagePrefix} found in index.json`);
         keys = []
       } else {
-        for (const fileName of fileList) {
+        for (const fileName of distributionFiles) {
           const name     = `./${storagePrefix}/${fileName}.json`;
           const response = await fetch(name)
           const filedata = await response.json()
@@ -691,9 +714,18 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
     } else {
       console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from localStorage`);
     }
+
+    if (Array.isArray(distributionFiles)) {
+      const distributionNames = new Set(distributionFiles);
+      keys = [
+        ...distributionFiles.filter(name => keys.includes(name)),
+        ...keys.filter(name => !distributionNames.has(name))
+      ];
+    }
+
     optionsObj[availableKey] = keys;
     if (currentKey && !keys.includes(optionsObj[currentKey])) {
-      optionsObj[currentKey] = keys[0];
+      optionsObj[currentKey] = keys[0] ?? '';
     }
   } catch (error) {
     console.error(`${logPrefix}❌ Failed to load ${resourceType}s:`, error);
@@ -769,6 +801,9 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     const CacheIssueTime = process.mIssueTime || 1
     const CacheBlocks    = process.nBlocks || 0
     const CacheBlockSize = process.blkSize || 32
+    const FillBuffers    = process.nFillBuffers || 2
+    const WriteBuffers   = process.nWriteBuffers || 2
+    const ReturnThroughput = process.rThru || 1
 
     function escapeHtml(value) {
       return String(value)
@@ -932,7 +967,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     // ---- Cache configuration ----
     if (CacheBlocks > 0) {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}&nbsp;IssueTime: ${CacheIssueTime}&nbsp;Fill buffers: ${FillBuffers}&nbsp;Write buffers: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
       </TR>`
     } else {
       cache_row = `<TR>

@@ -70,6 +70,9 @@
       blkSize:    MIN_CACHE_BLOCK_SIZE,
       mPenalty:   1,
       mIssueTime: 1,
+      nFillBuffers: 2,
+      nWriteBuffers: 2,
+      rThru:      1,
       latencies:  Object.fromEntries(
                     instructionTypes.flatMap(type => { return [[type, 1]]; })
                   ),
@@ -85,6 +88,39 @@
 
   const procConfig = reactive(createDefaultConfig());
   const editedSvg  = ref('')
+  const bufferValidationMessage = ref('')
+  const cacheTimingMessage = ref('')
+
+  function validateCacheTiming() {
+    if (!Number.isInteger(procConfig.mIssueTime) ||
+        procConfig.mIssueTime < 1 || procConfig.mIssueTime > 99) {
+      procConfig.mIssueTime = 1
+      cacheTimingMessage.value = 'Miss Issue Time must be an integer from 1 to 99.'
+      return
+    }
+    if (!Number.isInteger(procConfig.mPenalty) ||
+        procConfig.mPenalty < 1 || procConfig.mPenalty > 99) {
+      procConfig.mPenalty = procConfig.mIssueTime
+      cacheTimingMessage.value = 'Miss Penalty must be an integer from 1 to 99.'
+      return
+    }
+    if (procConfig.mPenalty < procConfig.mIssueTime) {
+      procConfig.mPenalty = procConfig.mIssueTime
+      cacheTimingMessage.value = 'Miss Penalty was raised to mIssueTime.'
+      return
+    }
+    cacheTimingMessage.value = ''
+  }
+
+  function validateBufferCount(field, label) {
+    const value = procConfig[field]
+    if (Number.isInteger(value) && value >= 1 && value <= 32) {
+      bufferValidationMessage.value = ''
+      return
+    }
+    bufferValidationMessage.value = `${label} must be an integer from 1 to 32.`
+    procConfig[field] = field === 'rThru' ? 1 : 2
+  }
 
   const portList = computed(() =>
     Object.keys(procConfig.ports)
@@ -95,9 +131,34 @@
   const updateProcessorSettings = async (procInfo) => {
     try {
       Object.assign(procConfig, JSON.parse(JSON.stringify(procInfo)))   // deep copy & fire draw-update
+      procConfig.rThru = procInfo.rThru ?? 1
+      if (!Number.isInteger(procConfig.mIssueTime) ||
+          procConfig.mIssueTime < 1 || procConfig.mIssueTime > 99) {
+        procConfig.mIssueTime = 1
+      }
+      if (!Number.isInteger(procConfig.mPenalty) ||
+          procConfig.mPenalty < 1 || procConfig.mPenalty > 99) {
+        procConfig.mPenalty = procConfig.mIssueTime
+      }
+      if (Number(procConfig.mPenalty) < Number(procConfig.mIssueTime)) {
+        procConfig.mPenalty = Number(procConfig.mIssueTime)
+        console.warn('💻⚠️ MissPenalty was raised to mIssueTime.')
+      }
       if (Number.isFinite(procConfig.blkSize) && procConfig.blkSize < MIN_CACHE_BLOCK_SIZE) {
         console.warn(`💻⚠️ Cache block size ${procConfig.blkSize} is below the minimum; using ${MIN_CACHE_BLOCK_SIZE}.`)
         procConfig.blkSize = MIN_CACHE_BLOCK_SIZE
+      }
+      if (!Number.isInteger(procConfig.nFillBuffers) ||
+          procConfig.nFillBuffers < 1 || procConfig.nFillBuffers > 32) {
+        procConfig.nFillBuffers = 2
+      }
+      if (!Number.isInteger(procConfig.nWriteBuffers) ||
+          procConfig.nWriteBuffers < 1 || procConfig.nWriteBuffers > 32) {
+        procConfig.nWriteBuffers = 2
+      }
+      if (!Number.isInteger(procConfig.rThru) ||
+          procConfig.rThru < 1 || procConfig.rThru > 32) {
+        procConfig.rThru = 1
       }
       if (!procConfig.ports || typeof procConfig.ports !== 'object') {
         procConfig= createDefaultConfig()
@@ -530,14 +591,40 @@
             </div>
 
             <span>Miss Penalty:</span>
-            <input type="number" v-model.number="procConfig.mPenalty" min="1" max="99"
+            <input type="number" v-model.number="procConfig.mPenalty" :min="procConfig.mIssueTime" max="99"
                  id="miss-penalty"
-                 title="Extra latency due to cache miss (1 to 99)"/>
+                 @change="validateCacheTiming"
+                 title="Extra latency due to cache miss; must be at least Miss Issue Time"/>
 
             <span>Miss Issue Time:</span>
             <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99"
                  id="miss-issue-time"
+                 @change="validateCacheTiming"
                  title="Minimum time between Memory accesses (1 to 99)"/>
+            <small v-if="cacheTimingMessage" class="validation-message">
+              {{ cacheTimingMessage }}
+            </small>
+
+            <span>Fill Buffers:</span>
+            <input type="number" v-model.number="procConfig.nFillBuffers" min="1" max="32"
+                 id="fill-buffer-count"
+                 @change="validateBufferCount('nFillBuffers', 'Fill buffer count')"
+                 title="Maximum number of distinct cache-block fills in progress (1 to 32)"/>
+
+            <span>Write Buffers:</span>
+            <input type="number" v-model.number="procConfig.nWriteBuffers" min="1" max="32"
+                 id="write-buffer-count"
+                 @change="validateBufferCount('nWriteBuffers', 'Write buffer count')"
+                 title="Maximum number of dirty cache blocks waiting for Main Memory writes (1 to 32)"/>
+            <small v-if="bufferValidationMessage" class="validation-message">
+              {{ bufferValidationMessage }}
+            </small>
+
+            <span>Return Throughput:</span>
+            <input type="number" v-model.number="procConfig.rThru" min="1" max="32"
+                 id="return-throughput"
+                 @change="validateBufferCount('rThru', 'Return throughput')"
+                 title="Maximum number of cache-miss waiters served per cycle (1 to 32)"/>
           </div>
         </div>
       </div>
@@ -716,7 +803,7 @@
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="Modify the simulated processor’s <strong>configuration settings</strong>, including: (1) <em>Dispatch & Retire</em> widths;
-      (2) <em>ROB</em> size; (3) <em>Cache Memory</em>; (4) <em>Execution Ports</em> (add or remove execution ports, up to a maximum of 10); and
+      (2) <em>ROB</em> size; (3) <em>Cache Memory and miss buffers</em>; (4) <em>Execution Ports</em> (add or remove execution ports, up to a maximum of 10); and
       (5) <em>Execution Latencies</em>"
     title="Processor Settings"
     @close="closeHelp1"/>
@@ -739,8 +826,13 @@
       will always hit in the cache, and, therefore, the latency of memory loads and stores is constant.
       <p>The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
       The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
-      It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles)</p>"
-    title="Cache Memory Settings"
+      It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).</p>
+      <p><strong>Fill Buffers</strong> limit the number of distinct cache blocks being fetched. Misses to the same block share one fill.
+      <strong>Write Buffers</strong> hold dirty blocks evicted while a fill waits for its writeback to finish. A fill waits when either buffer capacity is exhausted.
+      Both capacities must be at least one.</p>
+      <p><strong>Return Throughput</strong> sets how many LOAD/STORE instructions waiting on completed cache fills can receive data per cycle.
+      They are served in program age order by an independent queue and do not pay their execution latency again. Its default is one instruction per cycle.</p>"
+    title="Cache and Miss Buffer Settings"
     @close="closeHelp3"/>
 
   <HelpComponent v-if="showHelp4" :position="helpPosition"
@@ -780,6 +872,11 @@
 </template>
 
 <style scoped>
+  .validation-message {
+    color: #a12622;
+    grid-column: 2;
+  }
+
 
   .horizontal-layout {
     display:     flex;

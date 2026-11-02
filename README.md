@@ -56,10 +56,21 @@ count. Simulation and timeline generation repeat validation before execution
 and report instructions unsupported by the active processor instead of running
 them. Latencies, ports, and memory addresses are derived by the application.
 
-The execution timeline's **Show Ports** control toggles the per-cycle rows for
-all configured execution ports. **Show Cache** independently toggles the Main
-Memory channel and cache-line rows, and is disabled when the selected processor
-has no cache. An `X` marks a port issue cycle; `R`/`W` mark Main Memory
-read/write transfers. Cache rows show `C`/`D` for ready clean/dirty blocks and
-`r`/`w` while a clean/dirty block fill is pending. Hover a cache cell to see its
-block address, readiness cycle, and LRU rank.
+The execution timeline's **Show Ports** control toggles per-cycle execution-port
+rows. **Show Cache** independently toggles Main Memory and cache-line rows;
+**Show Buffers** separately toggles fill-buffer and dirty write-buffer rows.
+Both cache controls are unavailable when the selected processor has no cache.
+Fill and write buffer capacities are configurable in Processor Settings and
+default to two entries each. Misses are admitted by age, and requests to the same
+block share a fill entry. A fill reserves its cache line until the read completes;
+a dirty victim is held in a write buffer until its write completes before the
+replacement block is fetched. `R`/`W` identify active fill/write-buffer entries.
+Secondary misses to an already-loading block use `2`; `:` denotes waiting for
+the fill and `@` waiting in the independent cache return queue. The configurable
+`rThru` parameter (1–32, default 1) limits how many waiting LOAD/STORE instructions
+receive returned data per cycle. They are served in program age order and do not
+pay execution latency again or compete for execution ports.
+The processor table shows the cache settings and lets you edit them by clicking
+the Cache row; **Miss Penalty** is constrained to be at least **Miss Issue Time**.
+The model does not include LSQ dependencies or load/store bypass. Each memory
+block address has a distinct color shared across MM, cache-line, and buffer rows.

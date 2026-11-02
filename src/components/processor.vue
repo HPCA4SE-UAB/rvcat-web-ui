@@ -20,6 +20,7 @@
 
   const processorOptions = reactive(defaultOptions)
   const simulatedSvg     = ref('')
+  let initializingProcessor = false
 
   const loadOptions = () => {
     try {
@@ -55,7 +56,15 @@
   }
 
   const activeField = ref("rob");
-  let cacheConfigOptions = ["cache_nBlk", "cache_BlkSz", "cache_mPenalty", "cache_mIssueTime"]
+  let cacheConfigOptions = [
+    "cache_nBlk",
+    "cache_BlkSz",
+    "cache_mPenalty",
+    "cache_mIssueTime",
+    "cache_nFillBuffers",
+    "cache_nWriteBuffers",
+    "cache_rThru"
+  ]
   let currentCacheOption = 0
 
   const FIELD_CONFIG = {
@@ -88,18 +97,39 @@
       model: "blkSize"
     },
     cache_mPenalty: {
-      label: "missPenalty:",
-      title: "Cache Miss penalty (cycles added to memory operations when cache miss, 1 to 99)",
+      label: "Penalty:",
+      title: "Cache miss penalty (must be at least mIssueTime)",
       min: 1,
       max: 99,
       model: "mPenalty"
     },
     cache_mIssueTime: {
-      label: "mIssueTime:",
+      label: "IssueTime:",
       title: "Memory Issue Time (minimum time between memory accesses, 1 to 99)",
       min: 1,
       max: 99,
       model: "mIssueTime"
+    },
+    cache_nFillBuffers: {
+      label: "FillBuff:",
+      title: "Number of fill buffers (1 to 32)",
+      min: 1,
+      max: 32,
+      model: "nFillBuffers"
+    },
+    cache_nWriteBuffers: {
+      label: "WrtBuff:",
+      title: "Number of write buffers (1 to 32)",
+      min: 1,
+      max: 32,
+      model: "nWriteBuffers"
+    },
+    cache_rThru: {
+      label: "RetThru:",
+      title: "Cache return throughput (1 to 32 instructions per cycle)",
+      min: 1,
+      max: 32,
+      model: "rThru"
     },
     retire: {
       label: "Retire:",
@@ -121,9 +151,14 @@
   const currentMinimum = computed(() =>
     activeField.value === 'cache_BlkSz'
       ? minimumCacheBlockSize.value ?? CACHE_BLOCK_SIZES[0]
-      : currentConfig.value.min
+      : activeField.value === 'cache_mPenalty'
+        ? Math.max(Number(simState.simulatedProcess.mIssueTime) || 1, currentConfig.value.min)
+        : currentConfig.value.min
   )
   const currentTitle = computed(() => {
+    if (activeField.value === 'cache_mPenalty') {
+      return `Cache miss penalty (${currentMinimum.value} to 99; must be at least mIssueTime)`
+    }
     if (activeField.value !== 'cache_BlkSz') return currentConfig.value.title
     if (minimumCacheBlockSize.value === null) {
       return `No supported cache block can hold this program's largest ${largestMemoryAccessSize.value}-byte memory access`
@@ -176,15 +211,25 @@
     if (numValue < min) {
       numValue = min;
       inputValue.value = numValue;
-      showTemporaryError(`El valor mínimo es ${min}`);
+      showTemporaryError(activeField.value === 'cache_mPenalty'
+        ? `MissPenalty cannot be less than mIssueTime (${min})`
+        : `El valor mínimo es ${min}`)
     } else if (numValue > max) {
       numValue = max;
       inputValue.value = numValue;
       showTemporaryError(`El valor máximo es ${max}`);
     }
 
-    if (simState.simulatedProcess[currentConfig.value.model] !== numValue) {
-        simState.simulatedProcess[currentConfig.value.model] = numValue;
+    setParameterValue(numValue)
+  }
+
+  function setParameterValue(value) {
+    const model = currentConfig.value.model
+    simState.simulatedProcess[model] = value
+    if (model === 'mIssueTime' &&
+        Number(simState.simulatedProcess.mPenalty) < value) {
+      simState.simulatedProcess.mPenalty = value
+      showTemporaryError(`MissPenalty raised to ${value}; it cannot be below mIssueTime`)
     }
   }
 
@@ -238,7 +283,7 @@
 
       saveOptions()
 
-      if (simState.state > 1) {  // Processor already initialized
+      if (newName && simState.state > 1 && !initializingProcessor) {  // Processor already initialized
          if (newName !== simState.processorName) {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
            reloadProcessor()
@@ -324,8 +369,13 @@
 // ============================================================================
 
   const initProcessor = async () => {
-    await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
-    reloadProcessor()
+    initializingProcessor = true
+    try {
+      await initResource('processor', processorOptions, 'processorName', 'availableProcessors');
+      reloadProcessor()
+    } finally {
+      initializingProcessor = false
+    }
   };
 
   const reloadProcessor = async () => {
@@ -333,6 +383,7 @@
     try {
       const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
       const data       = JSON.parse(jsonString)
+      normalizeCacheSettings(data)
 
       if (simState.state == 1) {  // This is an initialization step
         simState.state = 2;       // Change to next initialization step
@@ -345,6 +396,23 @@
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
       simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
+    }
+  }
+
+  function normalizeCacheSettings(data) {
+    if (!Number.isInteger(data.mIssueTime) || data.mIssueTime < 1 || data.mIssueTime > 99)
+      data.mIssueTime = 1
+    if (!Number.isInteger(data.mPenalty) || data.mPenalty < 1 || data.mPenalty > 99)
+      data.mPenalty = data.mIssueTime
+    if (!Number.isInteger(data.nFillBuffers) || data.nFillBuffers < 1 || data.nFillBuffers > 32)
+      data.nFillBuffers = 2
+    if (!Number.isInteger(data.nWriteBuffers) || data.nWriteBuffers < 1 || data.nWriteBuffers > 32)
+      data.nWriteBuffers = 2
+    if (!Number.isInteger(data.rThru) || data.rThru < 1 || data.rThru > 32)
+      data.rThru = 1
+    if (Number(data.mPenalty) < Number(data.mIssueTime)) {
+      data.mPenalty = Number(data.mIssueTime)
+      console.warn('💻⚠️ MissPenalty was raised to mIssueTime.')
     }
   }
 
@@ -362,6 +430,9 @@
         blkSize:    simState.simulatedProcess.blkSize    || 4,
         mPenalty:   simState.simulatedProcess.mPenalty   || 1,
         mIssueTime: simState.simulatedProcess.mIssueTime || 1,
+        nFillBuffers: simState.simulatedProcess.nFillBuffers || 2,
+        nWriteBuffers: simState.simulatedProcess.nWriteBuffers || 2,
+        rThru:      simState.simulatedProcess.rThru || 1,
         latencies:  JSON.parse(JSON.stringify(simState.simulatedProcess.latencies)),
         ports:      JSON.parse(JSON.stringify(simState.simulatedProcess.ports))
       }
@@ -376,7 +447,8 @@
     if ( processorOptions.availableProcessors.length > 0)
       processorOptions.processorName = processorOptions.availableProcessors[0]
     else {
-      processorOptions.availableProcessors = ''
+      processorOptions.availableProcessors = []
+      processorOptions.processorName = ''
       alert("Removing all processor configurations forces to load the original processors provided in the distribution")
       initProcessor()
     }
@@ -469,6 +541,7 @@
     try {
       const data = await uploadJSON(null, 'processor')
       if (data) {
+        normalizeCacheSettings(data)
         const exists = processorOptions.availableProcessors.includes(data.name)
         if (exists && !confirm(`A processor with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
           alert('Upload cancelled.')
@@ -532,7 +605,7 @@
     }
     const max    = currentConfig.value.max
     let newValue = simState.simulatedProcess[currentConfig.value.model]
-    simState.simulatedProcess[currentConfig.value.model] = Math.min(newValue+1, max)
+    setParameterValue(Math.min(newValue+1, max))
   }
 
   function decreaseParameter() {
@@ -545,9 +618,9 @@
         : values[0] ?? currentValue
       return
     }
-    const min    = currentConfig.value.min
+    const min    = currentMinimum.value
     let newValue = simState.simulatedProcess[currentConfig.value.model]
-    simState.simulatedProcess[currentConfig.value.model] = Math.max(newValue-1, min)
+    setParameterValue(Math.max(newValue-1, min))
   }
 
 </script>
@@ -639,11 +712,12 @@
           All of them may impose a performance limit. Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instruction scheduler
           (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
           (which always issues the best combination of ready instructions to maximize performance).</p>
-        <p>Click on the <strong>Cache</strong> row to modify the cache configuration (number of blocks, block size, miss penalty and issue time).
+        <p>Click repeatedly on the <strong>Cache</strong> row to cycle through and modify the number of blocks, block size, miss penalty, issue time, fill buffers, and write buffers.
            Setting a Number of Blocks = 0 means all data accesses will always hit in the cache, and, therefore, the latency of memory loads and stores is constant.
-           The cache miss latency indicates the extra time required to execute load and store instructions when they miss in the cache.
+           The cache miss penalty indicates the extra time required to execute load and store instructions when they miss in the cache, and must be at least the issue time.
            The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
-           It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).</p>
+           It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).
+           Fill and write buffer counts are also editable from the Cache row.</p>
 
         <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports
          (only one is used for executing each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
