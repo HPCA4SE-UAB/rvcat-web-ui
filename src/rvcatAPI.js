@@ -1,104 +1,57 @@
 import { inject } from 'vue';
 
+// Python expression that parses a JSON text inside Pyodide.
+// The text travels as an escaped string literal (JSON string escapes are valid
+// Python escapes), so JSON values such as true/false/null are handled by json.loads.
+export function pyJSON(jsonText) {
+  return `__import__('json').loads(${JSON.stringify(String(jsonText))})`;
+}
+
+const pyBool = (value) => (value ? 'True' : 'False');
+
 export function useRVCAT_Api() {
   const { executePython, isReady } = inject('worker');
 
-  const safeExecute = async (code, id) => {
+  // Runs Python code; the result is delivered to the handler registered with `id`
+  const run = async (code, id, description) => {
     if (!isReady.value) {
       throw new Error('Worker not ready');
     }
-    return executePython(code, id);
-  };
-
-  const importRVCAT = async () => {
     try {
-      const code = 'import rvcat';
-      const result = await safeExecute(code, 'import_rvcat');
-      console.log('🧠 RVCAT: imported');
+      const result = await executePython(code, id);
+      console.log(`🧠 RVCAT: ${description}`);
       return result;
     } catch (error) {
-      console.error('🧠❌ RVCAT: failed to import', error);
+      console.error(`🧠❌ RVCAT: ${description} failed:`, error);
       throw error;
     }
   };
 
-  const getDependenceGraph = async (JSONprogramText, n,i,l,s,f) => {
-    try {
-      let internal = "True";
-      let latency  = "True";
-      let small    = "True";
-      let full     = "True";
-      if (!i) {internal = "False"}
-      if (!l) {latency  = "False"}
-      if (!s) {small    = "False"}
-      if (!f) {full     = "False"}
-      const code = `rvcat._program.show_graphviz(${JSONprogramText},${n}, ${internal}, ${latency}, ${small}, ${full})`
-      const result = await safeExecute(code, 'get_dependence_graph');
-      console.log('🧠 RVCAT: dependence Graph (GRAPHVIZ) obtained');
-      return result;
-    } catch (error) {
-      console.error('🧠❌ RVCAT: failed to get dependence graph:', error);
-      throw error;
-    }
-  };
+  const importRVCAT = () => run('import rvcat', 'import_rvcat', 'import');
 
-  const getProgGraph = async (JSONprogramText, n,i,l,s,f) => {
-    try {
-      let internal = "True";
-      let latency  = "True";
-      let small    = "True";
-      let full     = "True";
-      if (!i) {internal = "False"}
-      if (!l) {latency  = "False"}
-      if (!s) {small    = "False"}
-      if (!f) {full     = "False"}
-      const code = `rvcat._program.show_graphviz(${JSONprogramText},${n}, ${internal}, ${latency}, ${small}, ${full})`
-      const result = await safeExecute(code, 'get_prog_graph');
-      console.log('🧠 RVCAT: program Graph (GRAPHVIZ) obtained');
-      return result;
-    } catch (error) {
-      console.error('🧠❌ RVCAT: failed to get program graph:', error);
-      throw error;
-    }
-  };
+  const graphCode = (JSONprogramText, n, internal, latency, small, full) =>
+    `rvcat._program.show_graphviz(${pyJSON(JSONprogramText)}, ${n}, ` +
+    `${pyBool(internal)}, ${pyBool(latency)}, ${pyBool(small)}, ${pyBool(full)})`;
 
-  const getPerformanceAnalysis = async (JSONprocessText) => {
-    try {
-      const code = `rvcat._program.get_performance_analysis(${JSONprocessText})`
-      const result = await safeExecute(code, 'get_performance_analysis');
-      console.log('🧠 RVCAT: performance analysis obtained');
-      return result;
-    } catch (error) {
-      console.error('🧠❌ RVCAT: failed to get performance analysis:', error);
-      throw error;
-    }
-  };
+  // Same Python call, delivered to different handlers (static analysis panel / program editor)
+  const getDependenceGraph = (JSONprogramText, n, i, l, s, f) =>
+    run(graphCode(JSONprogramText, n, i, l, s, f), 'get_dependence_graph', 'dependence graph');
 
-  const getExecutionResults = async (JSONprocessText, n_iters) => {
-    try {
-      const code = `rvcat._scheduler.get_results(${JSONprocessText}, ${n_iters})`
-      const result = await safeExecute(code, 'get_execution_results');
-      console.log('🧠 RVCAT: execution results obtained');
-      return result;
-    } catch (error) {
-      console.error('🧠❌ RVCAT: failed to get execution results:', error);
-      throw error;
-    }
-  };
+  const getProgGraph = (JSONprogramText, n, i, l, s, f) =>
+    run(graphCode(JSONprogramText, n, i, l, s, f), 'get_prog_graph', 'program graph');
 
-   const getTimeline = async (JSONprocessText, n_ret) => {
-    try {
-      const code = `rvcat._scheduler.get_timeline(${JSONprocessText}, nret=${n_ret})`
-      const result = await safeExecute(code, 'get_timeline');
-      console.log('🧠 RVCAT: timeline JSON obtained');
-      return result;
-    } catch (error) {
-      console.error('🧠❌ RVCAT: failed to get timeline:', error);
-      throw error;
-    }
-  };
+  const getPerformanceAnalysis = (JSONprocessText) =>
+    run(`rvcat._program.get_performance_analysis(${pyJSON(JSONprocessText)})`,
+        'get_performance_analysis', 'performance analysis');
 
-  // Return all functions
+  const getExecutionResults = (JSONprocessText, n_iters) =>
+    run(`rvcat._scheduler.get_results(${pyJSON(JSONprocessText)}, ${n_iters})`,
+        'get_execution_results', 'execution results');
+
+  const getTimeline = (JSONprocessText, n_ret) =>
+    run(`rvcat._scheduler.get_timeline(${pyJSON(JSONprocessText)}, nret=${n_ret})`,
+        'get_timeline', 'timeline');
+
   return {
     importRVCAT,
     getPerformanceAnalysis,

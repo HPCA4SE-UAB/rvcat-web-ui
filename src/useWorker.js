@@ -1,6 +1,6 @@
 // Vue composable
 import { ref, onUnmounted } from 'vue';
-import { WorkerManager }    from '../public/workerManager';
+import { WorkerManager }    from './workerManager';
 
 // Singleton worker manager
 let workerManager = null;

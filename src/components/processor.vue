@@ -499,8 +499,7 @@
                 break
 
               case 'port':
-                const port = g.id.slice(2)
-                console.log('Port clicked:', port)
+                console.log('Port clicked:', g.id.slice(2))
                 break
 
               case 'cache':

@@ -1,12 +1,13 @@
 <script setup>
 import { provide } from 'vue'
 import { useWorker } from './useWorker'
+import SimulatorView from './views/SimulatorView.vue'
 
 provide('worker', useWorker())
 </script>
 
 <template>
-    <RouterView />
+    <SimulatorView />
 </template>
 
 <style>

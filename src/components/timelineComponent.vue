@@ -1080,7 +1080,7 @@
 
     const { rowIdx: row, colIdx: col, initCol, lengthCol, initRow, lengthRow,
             char, port, critical,
-            instrIdx, addr } = hitCell
+            instrIdx } = hitCell
 
     if (hitCell.cellType === 'resource-label') {
       simState.highlightedPort = -1

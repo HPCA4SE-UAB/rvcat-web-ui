@@ -242,7 +242,7 @@ import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onU
 import { useDraggable, useResizeObserver}                                           from '@vueuse/core'
 import {
   initResource, removeFromLocalStorage, uploadJSON,
-  migrateTutorialFlow, TUTORIAL_FLOW_VERSION
+  migrateTutorialFlow
 } from '@/common'
 const simState = inject('simulationState');
 
@@ -319,7 +319,7 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
   const x = toRef(tutorialOptions, 'x_pos')
   const y = toRef(tutorialOptions, 'y_pos')
 
-  const { isDragging } = useDraggable(headerRef, {
+  useDraggable(headerRef, {
     initialValue: { x: tutorialOptions.x_pos, y: tutorialOptions.y_pos },
 
     onMove(pos) {
@@ -735,7 +735,7 @@ const cleanupValidationListeners = () => {
 
 const cleanupButtonClickTracking = () => {
   trackedButtonElements.value.forEach(({ element, handler }) => {
-    try { element.removeEventListener('click', handler) } catch {}
+    try { element.removeEventListener('click', handler) } catch { /* element already detached */ }
   })
   trackedButtonElements.value = []
 }

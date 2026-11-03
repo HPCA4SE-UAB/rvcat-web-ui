@@ -88,13 +88,12 @@ const STORAGE_KEY = 'programEditOptions'
   const x = toRef(programEditOptions, 'x_pos')
   const y = toRef(programEditOptions, 'y_pos')
 
-  const { isDragging } = useDraggable(headerRef, {
+  useDraggable(headerRef, {
     initialValue: { x: programEditOptions.x_pos, y: programEditOptions.y_pos },
 
     onMove(pos) {
 
       const w = programEditOptions.windowWidth
-      const h = programEditOptions.windowHeight
 
       const maxX = window.innerWidth  - w
       const maxY = window.innerHeight - HEADER_HEIGHT
@@ -117,7 +116,6 @@ const STORAGE_KEY = 'programEditOptions'
   window.addEventListener("resize", () => {
 
     const w = programEditOptions.windowWidth
-    const h = programEditOptions.windowHeight
 
     x.value = Math.min(x.value, window.innerWidth - w)
     y.value = Math.min(y.value, window.innerHeight - HEADER_HEIGHT)

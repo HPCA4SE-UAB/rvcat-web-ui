@@ -161,7 +161,7 @@
         procConfig.rThru = 1
       }
       if (!procConfig.ports || typeof procConfig.ports !== 'object') {
-        procConfig= createDefaultConfig()
+        Object.assign(procConfig, createDefaultConfig())
         console.warn('💻⚠️ Invalid processor configuration: missing or malformed "ports" property. Resetting to default configuration.')
       }
     } catch(e) {
@@ -445,7 +445,7 @@
 
     // Limpiar y reasignar
     Object.keys(procConfig.ports).forEach(k => delete procConfig.ports[k]);
-    ports.forEach(([oldIdx, portArr], newIdx) => {
+    ports.forEach(([, portArr], newIdx) => {
       procConfig.ports[newIdx] = portArr;
     });
 
@@ -711,8 +711,8 @@
                       </label>
                     </td>
                   </tr>
+                  <template v-if="hasOperations(type) && procEditOptions.expandedTypes[type]">
                   <template
-                      v-if="hasOperations(type) && procEditOptions.expandedTypes[type] && !isTypeChecked(port, type)"
                       v-for="op in typeOperations[type]"
                       :key="`${type}-${op}`"
                     >
@@ -762,8 +762,8 @@
                         </label>
                       </td>
                     </tr>
+                    <template v-if="procEditOptions.expandedOperations[`${type}.${op}`] && hasSizes(type)">
                     <tr
-                      v-if="procEditOptions.expandedOperations[`${type}.${op}`] && hasSizes(type)"
                       v-for="size in typeSizes[type]"
                       :key="`${type}-${op}-${size}`"
                       class="op-row"
@@ -785,6 +785,8 @@
                         -
                       </td>
                     </tr>
+                    </template>
+                  </template>
                   </template>
                 </template>
               </tbody>

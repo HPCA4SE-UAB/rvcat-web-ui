@@ -1,6 +1,5 @@
 import { createApp, reactive } from 'vue'
 import App                     from './App.vue'
-import router                  from './router'
 
 const app = createApp(App)
 
@@ -16,8 +15,6 @@ const SimulationState = reactive({
   simulatedProcess:    {},
   executionResults:    {}
 })
-
-app.use(router)
 
 app.provide('simulationState', SimulationState)
 

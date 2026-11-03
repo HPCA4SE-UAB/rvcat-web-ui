@@ -1,44 +1,56 @@
-# rvcat-web
+# RVCAT-WEB
 
-This template should help get you started developing with Vue 3 in Vite.
+Web interface of RVCAT, an educational tool to analyze the performance of small
+loops on a configurable out-of-order processor (dispatch/retire width, ROB,
+execution ports, latencies and a data cache). It shows the dependence graph and
+performance bounds, simulation results and a cycle-by-cycle execution timeline
+with the critical path.
 
-## Recommended IDE Setup
+The app is fully static: the RVCAT simulator (Python) runs in the browser with
+[Pyodide](https://pyodide.org/) inside a Web Worker (`public/worker.js`), and
+the user interface is built with Vue 3 and Vite.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+| Repository | Role |
+|---|---|
+| [JCMoure/RVCAT](https://github.com/JCMoure/RVCAT) | Python simulator, packaged as `public/rvcat-0.1-py3-none-any.whl` |
+| [JCMoure/rvcat-web-ui](https://github.com/JCMoure/rvcat-web-ui) (`origin`) | Development; every push to `main` deploys a testing site |
+| [HPCA4SE-UAB/rvcat-web-ui](https://github.com/HPCA4SE-UAB/rvcat-web-ui) (`hpca`) | Releases; deploys the site used by students |
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+## Development
 
 ```sh
 npm install
+npm run dev          # development server with hot reload
+npx vitest run       # unit tests (npm run test:unit for watch mode)
+npm run lint         # ESLint (with --fix)
+npm run build        # production build in dist/
 ```
 
-### Compile and Hot-Reload for Development
+## Updating the Python simulator
+
+With the RVCAT repository checked out next to this one (`../RVCAT`, or set
+`RVCAT_DIR`), run:
 
 ```sh
-npm run dev
+npm run update-wheel
 ```
 
-### Compile and Minify for Production
+It builds the wheel with pip and copies it to `public/`. Commit the new wheel.
 
-```sh
-npm run build
-```
+## Releasing
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+1. Push work in progress to `origin` (`git push origin main`) and check the
+   testing site.
+2. Bump `RVCAT_VERSION` in `src/common.js` and `version` in `package.json`
+   (e.g. `1.15` and `1.15.0`) and commit. Users' saved data is cleared when the
+   version changes.
+3. Run `npm run release` (`npm run release -- --dry-run` to only run the checks).
+   It verifies that both remotes are already contained in `main`, runs the
+   version check, lint, tests and build, creates the tag `v<version>` and pushes
+   `main` and the tag to `origin` and `hpca`.
 
-```sh
-npm run test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+GitHub Actions (`.github/workflows/deploy-pages.yml`) runs the same checks on
+every push and pull request, and deploys to GitHub Pages on pushes to `main`.
 
 ## Program JSON files
 

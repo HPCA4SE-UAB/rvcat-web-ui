@@ -76,8 +76,8 @@
   watch( () => programOptions.N, (newN, oldN) => {
     if (newN !== oldN) {
       console.log('📄🔄 N modified from', oldN, 'to', newN);
-      if (inputValue) inputValue.value = newN ?? '';
-      if (typeof isInvalid !== 'undefined') isInvalid.value = false;
+      inputValue.value = newN ?? '';
+      isInvalid.value  = false;
       programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
       if (!programOptions.N) programOptions.N = programOptions.stride;
       simState.simulatedProcess.iters = programOptions.N / programOptions.stride
