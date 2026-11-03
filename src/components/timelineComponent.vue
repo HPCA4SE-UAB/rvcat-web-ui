@@ -699,14 +699,8 @@
       const usagePercent = visibleCycleCount > 0
         ? 100 * usedCycleCount / visibleCycleCount
         : 0
-      const displayedLabel = resource.port === null
-        ? `MM ${usagePercent.toFixed(0)}%`
-        : resource.label
-      const previousFont = ctx.font
-      if (resource.port === null)
-        ctx.font = '9px monospace'
+      const displayedLabel = resource.port === null ? 'MM' : resource.label
       ctx.fillText(displayedLabel, padX + fontXOffset, resourceY + fontYOffset)
-      ctx.font = previousFont
       const visibleMmRequests = resource.port === null
         ? resource.requests.filter(request =>
             request.cycle >= 0 && request.cycle < visibleCycleCount
@@ -731,7 +725,7 @@
           : resource.bufferType === 'write'
             ? `Write buffer ${resource.bufferIndex}: holds an evicted dirty block until its MM write completes`
           : resource.port === null
-            ? `Main Memory: ${mmReadTransfers} read transfers from cache misses (including STORE read-for-write), ${mmWriteTransfers} dirty-block writebacks; busy ${usedCycleCount}/${visibleCycleCount} displayed cycles (${usagePercent.toFixed(1)}%).`
+            ? `MM: ${mmReadTransfers} reads, ${mmWriteTransfers} writes (${usagePercent.toFixed(1)}% busy)`
           : `${resource.label}: ${usedCycleCount}/${visibleCycleCount} cycles used (${usagePercent}%)`
       })
 
@@ -1385,36 +1379,37 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
-       text= "<p>The <strong>Timeline</strong> section shows the program execution over time.
-                Increase the total number of <em>cycles</em> displayed in the timeline to understand the execution incrementally.
-                Set <strong>Show Critical</strong> to highlight the critical path ending at the last instruction retired
-                within the displayed cycles. Changing the cycle limit recalculates that path.</p>
-              <p><strong>Grab</strong> the timeline and move the mouse left/right and up/down, and use the mouse wheel to zoom in/out.
-                Hover over the timeline to see specific info about the selected cell, the selected instruction (initial cell of a row),
-                or the selected cycle (initial cell of a column). Hover over a row's first cell to inspect the instruction
-                and highlight it in the Program panel.</p>
-              <p>To keep generation responsive, the timeline simulates at most 100 retired instructions.
-                The program's <strong>N</strong> still determines memory addresses; the last loop iteration shown may be partial.</p>
-              <p><strong>Show Ports</strong> displays execution-port usage.
-                <strong>Cache</strong> displays Main Memory transfers, cache lines, fill buffers (F), and dirty write buffers (W):
-                C/D mean clean/dirty and ready; r/w mean a fill is in progress. A block keeps the same color
-                in MM, its cache line, and its buffers.
-                The MM row shows channel utilization for the visible cycles; its tooltip reports read transfers
-                caused by cache misses (including STORE read-for-write) and dirty-block writebacks.
-                A fill buffer stays occupied while a distinct block is fetched and until all waiting instructions
-                receive its data through the return queue. Its cache line may be replaced meanwhile; return data
-                comes from the fill buffer. Misses to that same block merge and share the fill.
-                Misses are admitted by age when a fill slot and cache line are available. An evicted dirty block
-                occupies a write buffer until its MM write completes, before the new block is fetched.
-                The processor editor sets the buffer capacities and return throughput. Buffer-full misses wait in the instruction timeline.
-                This model does not include LSQ dependencies or load/store bypass.</p>
-              <p>In the instruction rows, <strong>!</strong> marks a cache miss, <strong>2</strong> a miss
-                to a block already loading, <strong>:</strong> waiting for a fill, and <strong>@</strong> waiting
-                in the cache return queue after data arrives. Return throughput limits how many waiting LOAD/STORE
-                instructions receive data per cycle. They are served in age order, independently of execution ports,
-                and do not pay their execution latency again.</p>
-              <p>Hover a buffer cell to see its block address, state, completion cycle, and waiting instructions.
-                Cache, memory, and buffer rows are unavailable when no cache is configured.</p>"
+       text= "<p>The <strong>Timeline</strong> shows, cycle by cycle, how instructions are dispatched, executed
+                and retired. Drag to move, use the mouse wheel to zoom, and hover any cell for details.</p>
+              <details><summary>Navigation and limits</summary>
+                <p>Hover a row's first cell to inspect that instruction and highlight it in the Program panel;
+                  hover a column's first cell for that cycle. Increase the displayed <em>cycles</em> to follow the
+                  execution step by step.</p>
+                <p>The timeline simulates at most 100 retired instructions, so the last loop iteration may be partial.
+                  The program's <strong>N</strong> still determines the memory addresses.</p>
+              </details>
+              <details><summary>Critical path and ports</summary>
+                <p><strong>Show Critical</strong> highlights the critical path ending at the last instruction retired
+                  within the displayed cycles; changing the cycle limit recalculates it.
+                  <strong>Show Ports</strong> adds one row per execution port.</p>
+              </details>
+              <details><summary>Cache, MM and buffers</summary>
+                <p><strong>Cache</strong> adds rows for Main Memory, cache lines, fill buffers (F) and write buffers (W).
+                  C/D = clean/dirty and ready; r/w = fill in progress. Each block keeps its color in all rows.
+                  Hover the MM label for reads, writes and % busy; hover a buffer cell for its block, state,
+                  completion cycle and waiting instructions. These rows are unavailable without a cache.</p>
+                <p>Misses are admitted by age when a fill buffer and a cache line are free; misses to the same block
+                  share one fill. A fill buffer stays busy until every waiting instruction gets its data, even if its
+                  cache line is replaced meanwhile. An evicted dirty block waits in a write buffer until written to MM,
+                  before the new block is fetched. Buffer sizes and return throughput are set in the processor editor.
+                  The model has no LSQ dependencies or load/store bypass.</p>
+              </details>
+              <details><summary>Symbols in instruction rows (! 2 : @)</summary>
+                <p><strong>!</strong> cache miss · <strong>2</strong> miss to a block already loading ·
+                  <strong>:</strong> waiting for a fill · <strong>@</strong> waiting in the cache return queue.
+                  Return throughput limits how many LOAD/STORE instructions receive data per cycle; they are served
+                  in age order, without using execution ports or paying their latency again.</p>
+              </details>"
        @close="closeHelp1" />
   </Teleport>
 </template>

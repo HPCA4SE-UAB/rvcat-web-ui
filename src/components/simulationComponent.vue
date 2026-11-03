@@ -7,6 +7,8 @@
            saveToLocalStorage, removeFromLocalStorage, initResource,
            getLogicalElementCount, getUnsupportedInstructions,
            validateProgram } from '@/common'
+  import { buildResultContext, defaultResultName,
+           resultMemoryColumns, resultContextLines } from '@/resultContext'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -30,6 +32,30 @@
   let   cleanupHandleResults  = null
   let   resultsTimeout        = null
   const showResultsInfo       = ref({})
+
+  // Memory columns of the stored-results table, by row index
+  const storedMemoryColumns = computed(() =>
+    simulationOptions.availableResults.map((_, index) => resultMemoryColumns(showResultsInfo.value[index]))
+  )
+
+  // Hover box with the program/processor of a stored result
+  const contextHover = ref(null)   // { lines, style }
+  function showResultContext(event, index) {
+    const rect     = event.currentTarget.getBoundingClientRect()
+    const below    = rect.bottom + 220 < window.innerHeight   // otherwise open above the row
+    const maxWidth = Math.min(672, window.innerWidth - 16)
+    const left     = Math.max(8, Math.min(rect.left, window.innerWidth - maxWidth - 8))
+    contextHover.value = {
+      lines: resultContextLines(showResultsInfo.value[index]?.context),
+      style: {
+        left:     `${left}px`,
+        maxWidth: `${maxWidth}px`,
+        ...(below ? { top:    `${rect.bottom + 4}px` }
+                  : { bottom: `${window.innerHeight - rect.top + 4}px` })
+      }
+    }
+  }
+  function hideResultContext() { contextHover.value = null }
 
   const saveOptions = () => {
     try {
@@ -64,6 +90,7 @@
   * ------------------------------------------------------------------ */
   let simResults = {}
   let simProcess = {}
+  let pendingContext = null   // context of the simulation sent to RVCAT, attached to its results
   const isArray  = (arr) => Array.isArray(arr);
 
   const areInstructionsEqual = (instr1, instr2) => {
@@ -282,7 +309,8 @@
     }
     try {
       console.log('🕐✅ Execution Results received')
-      simResults = JSON.parse(data)
+      // Results + snapshot of the simulated program/processor (shown when stored results are hovered)
+      simResults = { ...JSON.parse(data), context: pendingContext }
       saveResults()
       if (resultsTimeout) clearTimeout(resultsTimeout)
       resultsTimeout = setTimeout(() => {
@@ -307,7 +335,7 @@
     if (results.total_iterations === undefined || results.total_iterations === null) {
       return {
         iters:    'X',    instructions: 'X',    cycles:   'X',    cpi:      'X',
-        ipc:      'X',    loads:        'X',    stores:   'X',    MM:       'X'
+        ipc:      'X',    primary:      'X',    secondary: 'X',   MM:       'X'
       };
     }
 
@@ -316,23 +344,20 @@
     const totalInstrs = results["total_instructions"]
     const cpi         = totalCycles / nIters;
     const ipc         = totalInstrs / totalCycles
-    const read_misses = results["read_misses"]
-    const write_misses= results["write_misses"]
     const MM_reads    = results["MM_Reads"]
     const MM_writes   = results["MM_Writes"]
 
-    const formatMisses = (total, primary, secondary) => {
-      const split = Number.isFinite(primary) && Number.isFinite(secondary)
-        ? `P: ${primary.toLocaleString()}, S: ${secondary.toLocaleString()}`
-        : 'P/S unavailable'
-      return `${total.toLocaleString()} (${split}; ${(total / nIters).toFixed(2)}/iter)`
-    }
+    // "a+b = a+b total", or 'X' when a value is missing
+    const formatSum = (a, b) => (Number.isFinite(a) && Number.isFinite(b))
+      ? `${a.toLocaleString()}+${b.toLocaleString()} = ${(a + b).toLocaleString()}`
+      : 'X'
+
     const mmUsagePercent = Number.isFinite(results.MM_usage_percent)
       ? results.MM_usage_percent
       : totalCycles > 0
         ? 100 * (MM_reads + MM_writes) * simState.simulatedProcess.mIssueTime / totalCycles
         : 0
-    const MM_usage = `R ${MM_reads.toLocaleString()} + W ${MM_writes.toLocaleString()} (${mmUsagePercent.toFixed(1)}%)`
+    const mmTransfers = formatSum(MM_reads, MM_writes)
 
     return {
       iters:        nIters.toLocaleString(),
@@ -340,17 +365,9 @@
       cycles:       totalCycles.toLocaleString(),
       cpi:          cpi.toFixed(2),
       ipc:          ipc.toFixed(3),
-      loads:        formatMisses(
-        read_misses,
-        results.read_primary_misses,
-        results.read_secondary_misses
-      ),
-      stores:       formatMisses(
-        write_misses,
-        results.write_primary_misses,
-        results.write_secondary_misses
-      ),
-      MM:           MM_usage
+      primary:      formatSum(results.read_primary_misses,   results.write_primary_misses),
+      secondary:    formatSum(results.read_secondary_misses, results.write_secondary_misses),
+      MM:           mmTransfers === 'X' ? 'X' : `${mmTransfers} (${mmUsagePercent.toFixed(1)}%)`
     };
   });
 
@@ -462,6 +479,7 @@
 
         const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
                 nFillBuffers, nWriteBuffers, rThru } = process
+        pendingContext = buildResultContext(toRaw(process), simState.processorName)
         getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
                                               nFillBuffers: nFillBuffers ?? 2,
                                               nWriteBuffers: nWriteBuffers ?? 2,
@@ -648,13 +666,11 @@
       const res = localStorage.getItem('simResults');
       if (res) {
         const data = JSON.parse(res);
-        let   baseName = 'current';
-        let   name = baseName;
-        let   counter = 1;
-        while (simulationOptions.availableResults.includes(name)) {
-          name = `${baseName} (${counter})`;
-          counter++;
-        }
+        // Results on screen are valid for the current program/processor (they may have been reused
+        // without re-simulating after a name change): describe them with the current configuration
+        if (simState.executionResults && simState.state >= 3)
+          data.context = buildResultContext(toRaw(simState.simulatedProcess), simState.processorName)
+        const name = defaultResultName(data.context, simulationOptions.availableResults);
         localStorage.setItem(`results.${name}`, JSON.stringify(data));
         simulationOptions.availableResults.push(name)
         simulationOptions.resultName = name
@@ -768,8 +784,6 @@
           <label for="cycles-per-iteration">Cycles/iteration:</label>
           <span id="cycles-per-iteration-output" title="Clock cycles per loop iteration">{{ formattedResults.cpi }}</span>
         </div>
-      </div>
-      <div class="row">
         <div class="simulation-inline-item">
           <label for="IPC">IPC:</label>
           <span
@@ -780,17 +794,19 @@
             {{ formattedResults.ipc }}
           </span>
         </div>
+      </div>
+      <div class="row">
         <div class="simulation-inline-item">
-          <label for="RdMiss">RdMisses:</label>
-          <span id="RdMiss-output" title="Total read misses, shown as primary/secondary counts and misses per iteration. Primary misses start a fill; secondary misses join an existing or queued fill.">{{ formattedResults.loads }}</span>
+          <label for="PrimaryMiss">Primary Misses:</label>
+          <span id="PrimaryMiss-output" title="LD+ST = Total. Primary misses start a new fill: LD = caused by a LOAD, ST = caused by a STORE.">{{ formattedResults.primary }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="WrMiss">WrMisses:</label>
-          <span id="WrMiss-output" title="Total write misses, shown as primary/secondary counts and misses per iteration. Primary misses start a fill; secondary misses join an existing or queued fill.">{{ formattedResults.stores }}</span>
+          <label for="SecondaryMiss">Secondary Misses:</label>
+          <span id="SecondaryMiss-output" title="LD+ST = Total. Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.">{{ formattedResults.secondary }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="MM">MM:</label>
-          <span id="MM-output" title="R = Main Memory read transfers caused by cache misses (including STORE read-for-write); W = dirty-block writeback transfers; percentage = Main Memory issue-channel busy cycles divided by total cycles">{{ formattedResults.MM }}</span>
+          <label for="MM">MM Transfers:</label>
+          <span id="MM-output" title="Rd+Wr = Total (%). Rd = Main Memory reads caused by cache misses (including STORE read-for-write); Wr = writes of dirty blocks evicted from the cache; % = fraction of total cycles in which Main Memory is busy.">{{ formattedResults.MM }}</span>
         </div>
       </div>
     </div>
@@ -871,15 +887,17 @@
               <th style="width: 100px;"> Cycles </th>
               <th style="width: 100px;"> C/iter </th>
               <th style="width: 100px;"> IPC    </th>
+              <th style="width: 100px;" title="Primary cache misses (LOAD + STORE)"> Primary </th>
+              <th style="width: 100px;" title="Secondary cache misses (LOAD + STORE)"> Secondary </th>
+              <th style="width: 120px;" title="Main Memory transfers: Rd+Wr (% of cycles MM is busy)"> MM </th>
             </tr>
           </thead>
           <tbody v-if="simulationOptions.resultName">
             <tr v-for="(name, index) in simulationOptions.availableResults" :key="index">
-              <td title="Name of the stored results">
+              <td @mouseenter="showResultContext($event, index)" @mouseleave="hideResultContext">
                 <input type="text"
                   v-model="simulationOptions.availableResults[index]"
                   class="iters-group"
-                  title="Modify File Name if required"
                   @focus="captureOldValue(index)"
                   @blur="renameResult(index)"
                 />
@@ -899,10 +917,24 @@
               <td title="Instructions Per cycle (IPC)">
                 {{ showResultsInfo[index]?.ipc?.toLocaleString() ?? 'X' }}
               </td>
+              <td :title="storedMemoryColumns[index]?.primaryDetail || 'Primary cache misses'">
+                {{ storedMemoryColumns[index]?.primary ?? 'X' }}
+              </td>
+              <td :title="storedMemoryColumns[index]?.secondaryDetail || 'Secondary cache misses'">
+                {{ storedMemoryColumns[index]?.secondary ?? 'X' }}
+              </td>
+              <td title="Rd = MM reads for cache misses; Wr = writes of evicted dirty blocks; % = cycles in which MM is busy">
+                {{ storedMemoryColumns[index]?.MM ?? 'X' }}
+              </td>
             </tr>
           </tbody>
         </table>
     </div>
+    <Teleport to="body">
+      <div v-if="contextHover" class="result-context-box" :style="contextHover.style">
+        <div v-for="(line, i) in contextHover.lines" :key="i">{{ line }}</div>
+      </div>
+    </Teleport>
   </div>
 
   <div v-if="showModalDownload" class="modal-overlay">
@@ -924,12 +956,13 @@
     <HelpComponent v-if="showHelp1" :position="helpPosition"
     text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      <em>Instructions Per Cycle</em> (IPC), Read/Write <em>cache misses</em>, and <em>MM bandwidth</em> usage.
-      Read/write miss totals include both primary misses (which start a fill) and secondary misses
-      (which join an existing or queued fill); the result fields show both counts separately.
-      MM read transfers fetch blocks for cache misses, including STORE read-for-write misses.
-      MM write transfers update dirty blocks evicted from cache; the displayed percentage is the fraction
-      of total cycles in which the MM issue channel is busy.
+      <em>Instructions Per Cycle</em> (IPC), <em>cache misses</em>, and <em>MM transfers</em>.
+      Cache misses are shown as <em>LD+ST = Total</em>, where LD and ST are the misses caused by LOAD and
+      STORE instructions. <em>Primary misses</em> start a new fill; <em>secondary misses</em> join an existing
+      or queued fill of the same block.
+      MM transfers are shown as <em>Rd+Wr = Total (%)</em>: Rd are reads of blocks for cache misses (including
+      STORE read-for-write misses), Wr are writes of dirty blocks evicted from the cache, and the percentage is
+      the fraction of total cycles in which Main Memory is busy.
       To obtain meaningful results, ensure a representative number of loop iterations, N, is selected,
       as very low iteration counts may not fully capture the program's behavior and performance characteristics.
       <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths,
@@ -946,6 +979,10 @@
       This list allows you to compare the current simulation results with those from previous runs,
       enabling you to track performance changes over time or after modifications to the processor configuration
       or program.
+      <p><em>Primary</em> and <em>Secondary</em> show the total cache misses (hover a cell to see the LOAD/STORE split);
+        <em>MM</em> shows Main Memory reads+writes and the percentage of cycles in which MM is busy.
+        Hover a result's <strong>name</strong> to see the program, N and the complete processor configuration
+        that produced it. New results are named <em>Program-Processor-N</em>.</p>
       <p>You can also manage your stored results by renaming them, reordering them for better comparison,
         saving them for later usage, or removing those that are no longer needed.</p>"
     title="Previous Performance Results"
@@ -1022,16 +1059,18 @@
   }
 
   .results-info {
-    font-size:   16px;
+    /* Font size follows the panel width so the 5 metrics of the first row fit in one line */
+    container-type: inline-size;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .results-info .row {
     display:         flex;
-    gap:             5px;
-    margin-bottom:   8px;
+    gap:             4px;
+    margin-bottom:   6px;
     flex-wrap:       wrap;
     justify-content: space-between;
+    font-size:       clamp(9px, 1.6cqi, 16px);
   }
 
   .critical-path-pattern {
@@ -1063,27 +1102,26 @@
   }
   .simulation-inline-item label {
     flex:         1;
-    margin-right: 10px;
+    margin-right: 0.4em;
     font-weight:  600;
     color:       #333;
-    font-size:    1.2em;
+    white-space:  nowrap;
   }
   .simulation-inline-item span {
     text-align:  right;
     flex-shrink: 0;
     font-weight: bold;
-    font-size:   1.1em;
+    white-space: nowrap;
     transition:  color 0.3s ease;
   }
 
   #IPC-output {
     font-weight: bold;
-    font-size: 1.2em;
-    padding: 2px 6px;
+    padding: 0.1em 0.4em;
     border-radius: 4px;
     transition: all 0.3s ease;
     display: inline-block;
-    min-width: 60px;
+    min-width: 3.5em;
     text-align: center;
   }
 
@@ -1180,6 +1218,22 @@
      border:         1px solid #ddd;
      border-radius:  5px;
      margin-right:   2px;
+  }
+
+  .result-context-box {
+    position:      fixed;
+    z-index:       10000;
+    padding:       6px 10px;
+    background:    #fffff0;
+    border:        1px solid #999;
+    border-radius: 6px;
+    box-shadow:    0 4px 12px rgba(0, 0, 0, 0.2);
+    font-family:   ui-monospace, Consolas, monospace;
+    font-size:     12px;
+    line-height:   1.4;
+    white-space:   pre-wrap;
+    overflow-wrap: anywhere;
+    pointer-events: none;
   }
 
   .results-table {
