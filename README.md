@@ -20,7 +20,7 @@ the user interface is built with Vue 3 and Vite.
 
 ```sh
 npm install
-npm run dev          # development server with hot reload
+npm run dev          # development server: http://localhost:5173/rvcat-web-ui/
 npx vitest run       # unit tests (npm run test:unit for watch mode)
 npm run lint         # ESLint (with --fix)
 npm run build        # production build in dist/

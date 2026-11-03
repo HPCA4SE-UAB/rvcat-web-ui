@@ -102,7 +102,8 @@
       simState.simulatedProcess.mPenalty,
       simState.simulatedProcess.mIssueTime,
       simState.simulatedProcess.nFillBuffers,
-      simState.simulatedProcess.nWriteBuffers
+      simState.simulatedProcess.nWriteBuffers,
+      simState.simulatedProcess.rThru
     ],
     requestTimeline,
     { flush: 'sync' }
@@ -147,11 +148,12 @@
       console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire, sched,
               blkSize, nBlocks, mPenalty, mIssueTime,
-              nFillBuffers, nWriteBuffers } = process
+              nFillBuffers, nWriteBuffers, rThru } = process
       getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     nFillBuffers: nFillBuffers ?? 2,
                                     nWriteBuffers: nWriteBuffers ?? 2,
+                                    rThru: rThru ?? 1,
                                     instruction_list: toRaw(instruction_list)}, null, 2),
                   TIMELINE_RETIRE_LIMIT)
         .catch(error => {
