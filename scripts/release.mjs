@@ -49,8 +49,7 @@ run(npx, ['vite', 'build'])
 const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version
 const tag     = `v${version}`
 const head    = git('rev-parse', 'HEAD')
-let tagCommit = null
-try { tagCommit = git('rev-parse', `${tag}^{commit}`) } catch { /* tag does not exist */ }
+const tagCommit = git('tag', '--list', tag) ? git('rev-parse', `${tag}^{commit}`) : null
 
 if (tagCommit && tagCommit !== head) {
   fail(`Tag ${tag} already exists on another commit. Bump the version in package.json and src/common.js.`)
