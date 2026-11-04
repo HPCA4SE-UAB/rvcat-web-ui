@@ -1,5 +1,5 @@
 
-export const RVCAT_VERSION = '1.14';
+export const RVCAT_VERSION = '1.15';
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 export const MAX_LOGICAL_ELEMENT_COUNT = 5000;

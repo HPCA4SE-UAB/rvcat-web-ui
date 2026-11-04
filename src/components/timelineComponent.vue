@@ -24,7 +24,7 @@
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
-  const TIMELINE_RETIRE_LIMIT = 100
+  const TIMELINE_RETIRE_LIMIT = 200
 
   const defaultOptions = {
     instructions:  20,
@@ -1345,10 +1345,10 @@
       <div class="timeline-controls">
         <div class="iters-group">
           <span class="iters-label">Cycles:</span>
-          <input type="number" min="1" v-model.number="timelineOptions.cycles"
-            title="Number of cycles shown"
-            @input="onCyclesTyped"
-            id="timeline-cycles">
+          <input type="number" min="1" v-model.lazy.number="timelineOptions.cycles"
+            title="Number of cycles shown (press Enter to apply)"
+            @change="onCyclesTyped"
+            id="timeline-cycles" style="width: 4.5em">
           <button class="blue-button fit-cycles" @click="fitCyclesButton"
             id="timeline-fit-cycles"
             title="Show as many cycles as fit in the panel width (and keep fitting when the window is resized)">
@@ -1411,7 +1411,7 @@
                 <p>Hover a row's first cell to inspect that instruction and highlight it in the Program panel;
                   hover a column's first cell for that cycle. Increase the displayed <em>cycles</em> to follow the
                   execution step by step.</p>
-                <p>The timeline simulates at most 100 retired instructions, so the last loop iteration may be partial.
+                <p>The timeline simulates at most 200 retired instructions, so the last loop iteration may be partial.
                   The program's <strong>N</strong> still determines the memory addresses.</p>
               </details>
               <details><summary>Critical path and ports</summary>
