@@ -1,6 +1,6 @@
 <script setup>
   import { ref, toRef, toRaw, watchEffect, onMounted, onUnmounted,
-           nextTick, inject, reactive, watch }                       from "vue"
+           nextTick, inject, reactive, watch, computed }             from "vue"
   import { useDraggable, useResizeObserver}                 from '@vueuse/core'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
@@ -8,6 +8,9 @@
            instructionTypes, typeOperations, typeSizes,
            normalizeProgramDefaults                         }  from '@/common'
   import { programDraftFrom, isEmptyProgramDraft }           from '@/editDrafts'
+  import { checkProgram, enforceStructure, VECTOR_TYPES, MEMORY_TYPES } from '@/programChecks'
+  import { analyzeLoop, vectorizeLoop, transformLoop }       from '@/loopTransforms'
+  import { PROGRAM_EDITOR_HELP }                             from '@/programEditorHelp'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -150,7 +153,7 @@ function loadEditedProgram() {
         source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
         stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1
       };
-    });
+    }).map((inst, index, all) => index === all.length - 1 ? inst : enforceStructure(inst));
     console.log('📄Edited Program Reloaded from local storage')
   } catch (e) {
     console.error('📄❌ Failed to load edited program from localStorage:', e);
@@ -208,6 +211,7 @@ function loadEditedProgram() {
       if (data) {
         localStorage.setItem('programTemp', JSON.stringify(data));
         loadEditedProgram()
+        undoProgram.value = null
       }
     } catch (error) {
       console.error('📄❌ Failed to upload program for edition:', error)
@@ -277,6 +281,90 @@ function normalizeInstruction(inst) {
   };
 }
 
+// ---- Coherence of loop stride, lanes and memory accesses (docs/program-editor-rules.md) ----
+const isVectorType = (inst) => VECTOR_TYPES.includes(inst?.type)
+const isMemoryType = (inst) => MEMORY_TYPES.includes(inst?.type)
+
+const checks = computed(() => checkProgram(editedProgram.value))
+// Problems of each instruction, shown on its row number
+const rowIssues = computed(() => {
+  const map = {}
+  for (const [kind, items] of [['error', checks.value.errors], ['warning', checks.value.warnings]]) {
+    for (const item of items) {
+      if (item.index < 0) continue
+      map[item.index] ??= { kind, text: [] }
+      if (kind === 'error') map[item.index].kind = 'error'
+      map[item.index].text.push(`${item.code}: ${item.message}`)
+    }
+  }
+  return map
+})
+
+// Loop stride S = algorithmic operations per iteration, stored in the final BRANCH
+const loopStrideModel = computed({
+  get: () => editedProgram.value.at(-1)?.stride ?? 1,
+  set: (value) => {
+    const branch = editedProgram.value.at(-1)
+    const S = Math.round(Number(value))
+    if (branch) branch.stride = Number.isFinite(S) && S >= 1 ? S : 1
+  }
+})
+
+// Changing the type keeps the structure coherent: stride only for memory, lanes only for vectors
+function onTypeChange(inst) {
+  inst.oper = ''
+  inst.size = ''
+  enforceStructure(inst)
+}
+
+// ---- Unroll / vectorize assistant (src/loopTransforms.js) ----
+const showTransform    = ref(false)
+const transformOptions = reactive({ lanes: 1, unroll: 2, splitAccumulators: false })
+const undoProgram      = ref(null)    // program before the last transformation
+
+const loopInfo = computed(() => analyzeLoop(editedProgram.value))
+// Why the loop cannot be vectorized ('' when it can)
+const vectorizeBlock = computed(() => vectorizeLoop(editedProgram.value, 4).errors.join(' '))
+const transformPreview = computed(() => {
+  if (transformOptions.lanes < 2 && transformOptions.unroll < 2) return null
+  return transformLoop(editedProgram.value, {
+    lanes:  vectorizeBlock.value ? 1 : transformOptions.lanes,
+    unroll: transformOptions.unroll,
+    splitAccumulators: transformOptions.splitAccumulators,
+  })
+})
+// Instructions per algorithmic operation before and after the transformation
+const instrPerAlgOp = (list) => (list?.length ? list.length / (Number(list.at(-1).stride) || 1) : 0)
+
+function openTransform() {
+  transformOptions.lanes  = 1
+  transformOptions.unroll = 2
+  transformOptions.splitAccumulators = false
+  showTransform.value = true
+}
+
+function applyTransform() {
+  const result = transformPreview.value
+  if (!result?.program) return
+  undoProgram.value = editedProgram.value.map(inst => ({ ...inst }))
+  editedProgram.value = result.program.map(inst => ({
+    text:    inst.text    ?? '', type:    inst.type    ?? '', oper:     inst.oper     ?? '',
+    size:    inst.size    ?? '', destin:  inst.destin  ?? '', source1:  inst.source1  ?? '',
+    source2: inst.source2 ?? '', source3: inst.source3 ?? '', constant: String(inst.constant ?? ''),
+    stride:  Number(inst.stride ?? 1), lanes: Number(inst.lanes ?? 1)
+  }))
+  showTransform.value = false
+}
+
+function undoTransform() {
+  if (!undoProgram.value) return
+  editedProgram.value = undoProgram.value
+  undoProgram.value = null
+}
+
+const issueLine = (item) =>
+  `• ${item.code}${item.index >= 0 ? ` (instruction ${item.index})` : ''}: ${item.message}`
+
 function snapshotProgram() {
   return {
     name:             'programTemp',
@@ -332,6 +420,19 @@ function snapshotProgram() {
   const modalName         = ref("")
   const nameError         = ref("")
 
+  // Errors block saving the program; warnings ask for confirmation
+  function requestDownload() {
+    const { errors, warnings } = checks.value
+    if (errors.length) {
+      alert(`The program cannot be saved until these errors are fixed:\n${errors.map(issueLine).join('\n')}`)
+      return
+    }
+    if (warnings.length &&
+        !confirm(`The program has possible incoherences:\n${warnings.map(issueLine).join('\n')}\n\nSave it anyway?`))
+      return
+    showModalDownload.value = true
+  }
+
   async function confirmDownload() {
     const name   = modalName.value.trim();
     const stored = localStorage.getItem('programTemp');
@@ -348,6 +449,7 @@ function snapshotProgram() {
       size: "", destin: "", source1: "c", source2: "", source3: "", constant: "",
       stride: 1, lanes: 1}];
     showModalClear.value = false;
+    undoProgram.value = null
     addInstruction(0);
   }
 
@@ -400,6 +502,20 @@ function snapshotProgram() {
         Actions
       </button>
 
+      <label class="loop-stride-field" id="editor-loop-stride"
+             title="Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.">
+        Alg opers/iter (S):
+        <input type="number" min="1" step="1" v-model.lazy.number="loopStrideModel" id="editor-loop-stride-input" />
+      </label>
+      <button class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
+              title="Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets">
+        Unroll / Vectorize…
+      </button>
+      <button v-if="undoProgram" class="blue-button add-margin" id="undo-loop-transform" @click="undoTransform"
+              title="Go back to the program before the last unroll / vectorize">
+        ↶ Undo
+      </button>
+
       <button class="blue-button toggle-button add-prev-margin" :class="{ active: programEditOptions.showGraph }"
           title="View/Update program's dependence graph on full-screen"
           id="open-edited-program-graph"
@@ -410,8 +526,8 @@ function snapshotProgram() {
 
       <div class="settings-container">
         <div class="buttons">
-          <button class="blue-button" @click="showModalDownload = true"
-               title="Save current edited program"
+          <button class="blue-button" @click="requestDownload"
+               title="Save current edited program (after checking its coherence)"
                id="program-download-button">
             Download
           </button>
@@ -454,15 +570,19 @@ function snapshotProgram() {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(inst, index) in editedProgram.slice(0, editedProgram.length - 1)" :key="index">
-                <td>{{ index }}</td>
+              <tr v-for="(inst, index) in editedProgram.slice(0, editedProgram.length - 1)" :key="index"
+                  :class="rowIssues[index] ? 'row-' + rowIssues[index].kind : ''">
+                <td :title="rowIssues[index]?.text.join('\n')">
+                  {{ index }}<span v-if="rowIssues[index]" class="row-issue">{{ rowIssues[index].kind === 'error' ? '✖' : '⚠' }}</span>
+                </td>
 
                 <td>
                   <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
                 </td>
 
                 <td>
-                  <select v-model="inst.type" class="table-select" title="Select instruction type">
+                  <select v-model="inst.type" class="table-select" title="Select instruction type"
+                          @change="onTypeChange(inst)">
                     <option value="">Select...</option>
                     <option v-for="type in instructionTypes" :key="type" :value="type">
                       {{ type }}
@@ -521,11 +641,15 @@ function snapshotProgram() {
                 </td>
 
                 <td v-if="programEditOptions.showStrideLanes">
-                  <input type="number" v-model="inst.stride" class="table-input" />
+                  <input v-if="isMemoryType(inst)" type="number" step="1" v-model.number="inst.stride" class="table-input"
+                         title="Memory stride s: the access advances lanes × s elements per iteration (negative: backwards from the end of the array; 0: the same elements in every iteration). Usually lanes × s = S." />
+                  <span v-else class="table-input readonly" title="Only memory instructions have a stride">–</span>
                 </td>
 
                 <td v-if="programEditOptions.showStrideLanes">
-                  <input type="number" v-model="inst.lanes" class="table-input" />
+                  <input v-if="isVectorType(inst)" type="number" min="2" step="1" v-model.number="inst.lanes" class="table-input"
+                         title="Vector lanes L: elements processed by this vector instruction" />
+                  <span v-else class="table-input readonly" title="Scalar instruction: 1 lane">1</span>
                 </td>
 
                 <td v-if="programEditOptions.showActions" class="actions-cell">
@@ -569,8 +693,11 @@ function snapshotProgram() {
               </tr>
 
               <!-- 🔒 Fila fija final -->
-              <tr v-if="editedProgram.length" class="fixed-row">
-                <td> {{editedProgram.length-1}} </td>
+              <tr v-if="editedProgram.length" class="fixed-row"
+                  :class="rowIssues[editedProgram.length - 1] ? 'row-' + rowIssues[editedProgram.length - 1].kind : ''">
+                <td :title="rowIssues[editedProgram.length - 1]?.text.join('\n')">
+                  {{editedProgram.length-1}}<span v-if="rowIssues[editedProgram.length - 1]" class="row-issue">{{ rowIssues[editedProgram.length - 1].kind === 'error' ? '✖' : '⚠' }}</span>
+                </td>
 
                 <td title="This final conditional branch is fixed">
                   <span class="table-input readonly">if c go back</span>
@@ -603,8 +730,9 @@ function snapshotProgram() {
                 <td v-if="programEditOptions.showInOut">
                   <span class="table-input readonly"> </span>
                 </td>
-                <td v-if="programEditOptions.showStrideLanes">
-                  <input type="number" v-model="editedProgram[editedProgram.length - 1].stride" class="table-input" />
+                <td v-if="programEditOptions.showStrideLanes"
+                    title="Loop stride S: edit it in 'Alg opers/iter (S)' above">
+                  <span class="table-input readonly"> S={{ loopStrideModel }} </span>
                 </td>
                 <td v-if="programEditOptions.showStrideLanes"
                 title="This final conditional branch is fixed">
@@ -617,6 +745,17 @@ function snapshotProgram() {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+      <div class="coherence-panel" id="program-coherence">
+        <div v-if="!checks.errors.length && !checks.warnings.length" class="coherence-ok">
+          ✔ Loop stride, lanes and memory accesses are coherent
+        </div>
+        <div v-for="(item, k) in checks.errors" :key="'e' + k" class="coherence-error">
+          ✖ <strong>{{ item.code }}</strong><span v-if="item.index >= 0"> · instr {{ item.index }}</span>: {{ item.message }}
+        </div>
+        <div v-for="(item, k) in checks.warnings" :key="'w' + k" class="coherence-warning">
+          ⚠ <strong>{{ item.code }}</strong><span v-if="item.index >= 0"> · instr {{ item.index }}</span>: {{ item.message }}
         </div>
       </div>
     </div>
@@ -658,6 +797,82 @@ function snapshotProgram() {
     </div>
   </div>
 
+  <div v-if="showTransform" class="modal-overlay" @click.self="showTransform = false">
+    <div class="modal transform-modal" id="loop-transform-dialog">
+      <h4>Unroll / vectorize the loop</h4>
+      <p class="transform-intro">
+        Current loop: S = {{ loopInfo.S }}<span v-if="loopInfo.vectorized">, vectorized with {{ loopInfo.lanes }} lanes</span>,
+        {{ editedProgram.length }} instructions per iteration.
+        The assistant sets the loop stride, lanes, memory strides and offsets coherently;
+        edit the result manually only for special cases.
+      </p>
+
+      <div class="transform-options">
+        <label title="Each instruction processes L elements (L iterations of the original loop): S × L">
+          Vectorize:
+          <select v-model.number="transformOptions.lanes" :disabled="!!vectorizeBlock" id="transform-lanes">
+            <option :value="1">no</option>
+            <option v-for="L in [2, 4, 8, 16]" :key="L" :value="L">{{ L }} lanes</option>
+          </select>
+        </label>
+        <label title="Each iteration repeats the body U times: S × U">
+          Unroll:
+          <select v-model.number="transformOptions.unroll" id="transform-unroll">
+            <option :value="1">no</option>
+            <option v-for="U in [2, 3, 4, 6, 8]" :key="U" :value="U">{{ U }} times</option>
+          </select>
+        </label>
+        <label v-if="loopInfo.reductions.length"
+               title="Each unrolled copy accumulates in its own variable: the dependence chain is split into U shorter chains (the partial results are added after the loop)">
+          <input type="checkbox" v-model="transformOptions.splitAccumulators" :disabled="transformOptions.unroll < 2"
+                 id="transform-split" />
+          Partial accumulators for {{ loopInfo.reductions.join(', ') }}
+        </label>
+      </div>
+      <div v-if="vectorizeBlock" class="transform-why">Cannot vectorize: {{ vectorizeBlock }}</div>
+
+      <template v-if="transformPreview">
+        <div v-for="(e, k) in transformPreview.errors" :key="'te' + k" class="coherence-error">✖ {{ e }}</div>
+        <template v-if="transformPreview.program">
+          <div class="transform-summary" id="transform-summary">
+            Result: S = {{ transformPreview.program.at(-1).stride }} ·
+            {{ transformPreview.program.length }} instructions per iteration ·
+            instructions per algorithmic operation {{ instrPerAlgOp(editedProgram).toFixed(2) }} →
+            <strong>{{ instrPerAlgOp(transformPreview.program).toFixed(2) }}</strong>
+          </div>
+          <div v-for="(n, k) in transformPreview.notes" :key="'tn' + k" class="transform-note">• {{ n }}</div>
+          <div v-for="(w, k) in transformPreview.checks.warnings" :key="'tw' + k" class="coherence-warning">
+            ⚠ {{ w.code }}: {{ w.message }}
+          </div>
+          <div class="transform-preview">
+            <table class="instructions-table">
+              <thead>
+                <tr><th>#</th><th>Text</th><th>Type</th><th>Oper</th><th>Lanes</th><th>Stride</th><th>Constant</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="(inst, k) in transformPreview.program" :key="k">
+                  <td>{{ k }}</td><td class="preview-text">{{ inst.text }}</td><td>{{ inst.type }}</td><td>{{ inst.oper }}</td>
+                  <td>{{ inst.type === 'BRANCH' ? '' : (inst.lanes ?? 1) }}</td>
+                  <td>{{ inst.type === 'BRANCH' ? 'S=' + inst.stride : (['MEM', 'VMEM'].includes(inst.type) ? inst.stride : '') }}</td>
+                  <td>{{ inst.constant }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </template>
+      <div v-else class="transform-note">Choose a number of lanes and/or an unrolling factor.</div>
+
+      <div class="modal-actions">
+        <button class="blue-button" id="apply-loop-transform" :disabled="!transformPreview?.program"
+                title="Replace the edited program with the transformed one (↶ Undo restores it)" @click="applyTransform">
+          Apply
+        </button>
+        <button class="blue-button" title="Close without changes" @click="showTransform = false">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div v-if="showModalClear" class="modal-overlay">
     <div class="modal">
       <p>You may have unsaved changes. Do you want to clear current edited program?</p>
@@ -669,13 +884,7 @@ function snapshotProgram() {
   </div>
 
   <Teleport to="body">
-    <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The simulated program consists of a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>,
-          described in high-level informal language.
-          You can set a <strong>loop stride</strong> S (default 1); for a total iteration count N the loop executes N/S times.
-          For each instruction, you can edit: (1) <em>type</em> and operand <em>sizes</em>;
-          (2) input/output operands; and (3) memory <em>strides</em> and vector <em>lanes</em> used.
-        Programs can be uploaded or downloaded in JSON format."
+    <HelpComponent v-if="showHelp" :position="helpPosition" :text="PROGRAM_EDITOR_HELP"
       title="Program Edition"
     @close="closeHelp" />
   </Teleport>
@@ -704,6 +913,73 @@ function snapshotProgram() {
     flex: 1;
     justify-content: center;
   }
+
+  .loop-stride-field {
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.3em;
+    margin-left: 0.6em;
+    font-size:   small;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .loop-stride-field input {
+    width:       3.5em;
+    text-align:  center;
+  }
+  .row-issue {
+    margin-left: 2px;
+    font-size:   0.8em;
+  }
+  .instructions-table tbody tr.row-warning td:first-child { background: #fff3cd; color: #8a6d00; }
+  .instructions-table tbody tr.row-error   td:first-child { background: #fde2e2; color: #b00020; }
+  .coherence-panel {
+    flex-shrink:   0;
+    max-height:    9em;
+    overflow-y:    auto;
+    margin-top:    4px;
+    padding:       3px 6px;
+    font-size:     small;
+    border:        1px solid #ddd;
+    border-radius: 5px;
+  }
+  .transform-modal {
+    width:      min(56rem, 94vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    font-size:  small;
+  }
+  .transform-modal h4 { margin: 0 0 0.4em; }
+  .transform-intro    { margin: 0 0 0.6em; }
+  .transform-options {
+    display:   flex;
+    flex-wrap: wrap;
+    gap:       0.5em 1.5em;
+    align-items: center;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+  }
+  .transform-options label {
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.3em;
+  }
+  .transform-why     { color: #8a6d00; margin-bottom: 0.4em; }
+  .transform-summary { margin: 0.4em 0; }
+  .transform-note    { color: #444; }
+  .transform-preview {
+    max-height: 40vh;
+    overflow:   auto;
+    margin-top: 0.5em;
+    border:     1px solid #ddd;
+  }
+  .transform-preview td { font-size: small; padding: 1px 6px; }
+  .transform-preview .preview-text { text-align: left; white-space: nowrap; }
+
+  .coherence-ok      { color: #2e7d32; }
+  .coherence-error   { color: #b00020; }
+  .coherence-warning { color: #8a6d00; }
 
   .table-container {
      width:          auto;

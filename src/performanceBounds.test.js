@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { throughputBoundRows, latencyBoundRows } from './performanceBounds'
+import { throughputBoundRows, latencyBoundRows, instrTypeOper, instrPorts } from './performanceBounds'
 
 // Guide example (section 4): instruction texts by index
 const program = ['R = T', 'R = R - Two', 'T = A[i]', 'T = T + J', 'J = B[i]',
                  'i = i + 1', 'c = i != N', 'J = J * R', 'if c go back'].map(text => ({ text }))
+// Types and ports (bit masks) of the instructions used in the tooltips
+Object.assign(program[5], { type: 'INT', oper: 'ARITH', ports: 0b101 })   // P0, P2
+Object.assign(program[7], { type: 'FLOAT', oper: 'MUL', ports: 0b1000 })  // P3
+Object.assign(program[8], { type: 'BRANCH', oper: '', ports: 0b1 })       // P0
 
 describe('throughputBoundRows', () => {
   const bounds = [
@@ -24,8 +28,9 @@ describe('throughputBoundRows', () => {
     expect(rows[0].formula).toBe('9 instructions / 4 instructions/cycle (dispatch width) = 2.25 cycles/iter')
 
     const p0 = rows[1]
-    expect(p0.included).toEqual([{ index: 8, title: '8: if c go back' }])
-    expect(p0.excluded[0]).toEqual({ index: 5, title: '5: i = i + 1 — can also use P2' })
+    expect(p0.included).toEqual([{ index: 8, title: '8: if c go back\nBRANCH → can use P0' }])
+    expect(p0.excluded[0]).toEqual({ index: 5,
+      title: '5: i = i + 1\nINT.ARITH → can use P0, P2\nNot counted: it can also use P2' })
 
     const p023 = rows[2]
     expect(p023).toMatchObject({ resource: 'P0+P2+P3', cycles: '2.33', bottleneck: true })
@@ -39,6 +44,16 @@ describe('throughputBoundRows', () => {
   })
 })
 
+describe('instruction details', () => {
+  it('formats Type.Oper and the usable ports', () => {
+    expect(instrTypeOper({ type: 'MEM', oper: 'LOAD' })).toBe('MEM.LOAD')
+    expect(instrTypeOper({ type: 'BRANCH', oper: '' })).toBe('BRANCH')
+    expect(instrTypeOper(undefined)).toBe('')
+    expect(instrPorts({ ports: 28 })).toBe('P2, P3, P4')
+    expect(instrPorts({})).toBe('')
+  })
+})
+
 describe('latencyBoundRows', () => {
   it('describes each cyclic chain', () => {
     const { rows } = latencyBoundRows([
@@ -48,7 +63,7 @@ describe('latencyBoundRows', () => {
     ], program)
     expect(rows[1]).toMatchObject({ recurrence: 'T → T', cycles: '5.00', bottleneck: true })
     expect(rows[1].chain.map(c => c.index)).toEqual([0, 1, 7, 3])
-    expect(rows[1].chain[2].title).toBe('7: J = J * R (latency 4)')
+    expect(rows[1].chain[2].title).toBe('7: J = J * R\nFLOAT.MUL → latency 4')
     expect(rows[1].formula).toBe('(2+2+4+2) = 10 cycles / 2 iterations = 5.00 cycles/iter')
   })
 

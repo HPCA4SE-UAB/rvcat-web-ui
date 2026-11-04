@@ -1,6 +1,7 @@
 // Context and formatting of stored simulation results.
 // Each stored result = RVCAT results + `context` (program name, N, full processor configuration).
 import { typeOperations } from './common.js'
+import { loopStride }     from './algOps.js'
 
 const PROCESSOR_FIELDS = [
   'dispatch', 'retire', 'ROBsize', 'sched',
@@ -11,13 +12,13 @@ const PROCESSOR_FIELDS = [
 // Snapshot of what was simulated: program name, N and the complete processor configuration
 export function buildResultContext(process, processorName) {
   const instructions = Array.isArray(process?.instruction_list) ? process.instruction_list : []
-  const stride = instructions.at(-1)?.stride ?? 1
+  const stride = loopStride(instructions)   // algorithmic operations per loop iteration
   const processor = { name: processorName || '' }
   for (const field of PROCESSOR_FIELDS) processor[field] = process?.[field]
   processor.latencies = structuredClone(process?.latencies ?? {})
   processor.ports     = structuredClone(process?.ports ?? {})
   return {
-    program: { name: process?.name || '', N: (process?.iters ?? 0) * stride },
+    program: { name: process?.name || '', N: (process?.iters ?? 0) * stride, stride },
     processor
   }
 }
@@ -72,7 +73,8 @@ export function resultContextLines(context) {
     return ['No configuration saved for these results.']
   const { program, processor: p } = context
   const lines = [
-    `Program: ${program.name || '?'}  ·  N = ${Number.isFinite(program.N) ? fmt(program.N) : '?'}`,
+    `Program: ${program.name || '?'}  ·  N = ${Number.isFinite(program.N) ? fmt(program.N) : '?'} alg opers` +
+      (program.stride > 1 ? `  ·  loop stride ${program.stride} (${fmt(program.N / program.stride)} iterations)` : ''),
     `Processor: ${p.name || '?'}`,
     `  Dispatch ${p.dispatch} · Retire ${p.retire} · ROB ${p.ROBsize} · Sched ${p.sched}`,
   ]

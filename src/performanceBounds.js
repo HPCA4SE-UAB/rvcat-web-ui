@@ -8,6 +8,28 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 const portName = (p) => `P${p}`
 const instrText = (list, i) => `${i}: ${list[i]?.text ?? ''}`
 
+// Type.Oper of an instruction (the name used by the processor for latencies and ports)
+export function instrTypeOper(instr) {
+  if (!instr?.type) return ''
+  return instr.oper ? `${instr.type}.${instr.oper}` : instr.type
+}
+
+// Ports (bit mask) that an instruction can use, as "P1, P2"
+export function instrPorts(instr) {
+  const mask = Number(instr?.ports ?? 0)
+  const ports = []
+  for (let p = 0; p < 32; p++) if ((mask >> p) & 1) ports.push(portName(p))
+  return ports.join(', ')
+}
+
+// Tooltip of an instruction in the throughput table: text, Type.Oper and usable ports
+function instrPortsTitle(list, i) {
+  const instr = list[i]
+  const typeOper = instrTypeOper(instr)
+  const ports = instrPorts(instr)
+  return `${instrText(list, i)}\n${typeOper || 'type ?'} → ${ports ? 'can use ' + ports : 'no ports'}`
+}
+
 // Keep the `max` rows with the highest cycles, in their original order
 function keepHighest(rows, max) {
   if (rows.length <= max) return { rows, hidden: 0 }
@@ -40,10 +62,10 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
       resource, resourceTitle, formula,
       // Dispatch/retire process every instruction: shown as a range
       allRange:   isPorts ? '' : (instrs.length ? `All (${instrs[0]}–${instrs.at(-1)})` : 'All'),
-      included:   isPorts ? instrs.map(i => ({ index: i, title: instrText(instructionList, i) })) : [],
+      included:   isPorts ? instrs.map(i => ({ index: i, title: instrPortsTitle(instructionList, i) })) : [],
       excluded:   (b.excluded ?? []).map(e => ({
         index: e.index,
-        title: `${instrText(instructionList, e.index)} — can also use ${e.other_ports.map(portName).join(', ')}`,
+        title: `${instrPortsTitle(instructionList, e.index)}\nNot counted: it can also use ${e.other_ports.map(portName).join(', ')}`,
       })),
       cycles:      cycles.toFixed(2),
       cyclesValue: cycles,
@@ -70,7 +92,7 @@ export function latencyBoundRows(bounds, instructionList = [], max = MAX_BOUND_R
         : '',
       chain: chain.map((i, k) => ({
         index: i,
-        title: `${instrText(instructionList, i)} (latency ${lats[k]})`,
+        title: `${instrText(instructionList, i)}\n${instrTypeOper(instructionList[i]) || 'type ?'} → latency ${lats[k]}`,
       })),
       formula: `(${lats.join('+')}) = ${total} cycles / ${plural(b.iterations, 'iteration')} = ${cycles.toFixed(2)} cycles/iter`,
       cycles:      cycles.toFixed(2),

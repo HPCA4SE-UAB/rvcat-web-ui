@@ -6,6 +6,7 @@
   import { createGraphVizGraph }                         from '@/common'
   import { useRVCAT_Api }                              from '@/rvcatAPI'
   import { throughputBoundRows, latencyBoundRows }     from '@/performanceBounds'
+  import { loopStride, cyclesPerAlgOp, algOpFormula, strideWarning, ALG_OP_HELP, ALG_OP_UNIT } from '@/algOps'
 
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -59,6 +60,16 @@
     const { LatencyTime: lat, ThroughputTime: thr, BestTime: best } = performanceData.value
     return `max{latency bound, throughput bound} = max{${lat.toFixed(2)}, ${thr.toFixed(2)}} = ${best.toFixed(2)} cycles/iter`
   })
+  // Algorithmic operations: with loop stride S > 1 (unrolled or SIMD loop) the tables add a
+  // "Cycles/Alg Oper" column = cycles/iter ÷ S, comparable with the baseline loop
+  const stride       = computed(() => loopStride(simState.simulatedProcess?.instruction_list))
+  const showAlgOps   = computed(() => stride.value > 1)
+  const warning      = computed(() => strideWarning(simState.simulatedProcess?.instruction_list))
+  const algOpValue   = (cycles) => cyclesPerAlgOp(cycles, stride.value)?.toFixed(2) ?? '—'
+  const algOpTitle   = (cycles) => algOpFormula(cycles, stride.value)
+  const algOpHeaderTitle = computed(() =>
+    `Cycles per algorithmic operation = cycles/iter ÷ ${stride.value} (loop stride). ${ALG_OP_HELP}`)
+
   // Latency bound selected in the table: highlighted in the graph window
   const selectedChainKey = ref(null)
   const selectedChain = computed(() =>
@@ -268,12 +279,18 @@
       <span class="summary-item summary-min" id="best-limit" :title="minimumTimeFormula">
         Minimum <strong>{{ performanceData.BestTime.toFixed(2) }}</strong> cycles/iter
       </span>
+      <span v-if="showAlgOps" class="summary-item summary-min" id="best-limit-alg-op"
+            :title="`${algOpTitle(performanceData.BestTime)}\n${ALG_OP_HELP}`">
+        = <strong>{{ algOpValue(performanceData.BestTime) }}</strong> {{ ALG_OP_UNIT }}
+      </span>
       <span class="metric-value bound-kind" id="performance-bound"
             title="The minimum time is determined by the latency bound, the throughput bound, or both"
             :class="getBoundClass(performanceData['performance-bound'])">
         {{ boundLabel }}
       </span>
     </div>
+
+    <div v-if="warning" class="stride-warning" id="stride-warning" role="note">⚠ {{ warning }}</div>
 
     <!-- Latency bounds -->
     <div class="section-title-and-info bounds-title">
@@ -296,6 +313,7 @@
             <th title="Variable whose new value depends on its own previous value. Click a row to highlight its chain in the dependence graph.">Recurrence</th>
             <th title="Cyclic chain of dependent instructions (hover a number to see the instruction)">Cyclic dependence chain</th>
             <th title="Cycles per loop iteration determined by the chain (hover a value to see how it is computed)">Cycles/iter</th>
+            <th v-if="showAlgOps" :title="algOpHeaderTitle">Cycles/Alg Oper</th>
           </tr>
         </thead>
         <tbody>
@@ -312,9 +330,10 @@
               </template>
             </td>
             <td class="bound-cycles"><span v-if="row.bottleneck" class="bound-badge" title="This row determines the bound (maximum value)">max</span><span :title="row.formula">{{ row.cycles }}</span></td>
+            <td v-if="showAlgOps" class="bound-cycles bound-algop"><span :title="algOpTitle(row.cyclesValue)">{{ algOpValue(row.cyclesValue) }}</span></td>
           </tr>
           <tr v-if="latencyTable.rows.length === 0">
-            <td colspan="3" class="bound-empty">No cyclic dependences</td>
+            <td :colspan="showAlgOps ? 4 : 3" class="bound-empty">No cyclic dependences</td>
           </tr>
         </tbody>
       </table>
@@ -338,6 +357,7 @@
             <th title="Dispatch or retire width, an execution port, or a combination of ports that share instructions">Resource</th>
             <th title="Instructions that can only use this resource (hover a number to see the instruction). In grey, instructions that can also use other ports.">Instructions</th>
             <th title="Cycles per loop iteration determined by this resource (hover a value to see how it is computed)">Cycles/iter</th>
+            <th v-if="showAlgOps" :title="algOpHeaderTitle">Cycles/Alg Oper</th>
           </tr>
         </thead>
         <tbody>
@@ -359,9 +379,10 @@
               </template>
             </td>
             <td class="bound-cycles"><span v-if="row.bottleneck" class="bound-badge" title="This row determines the bound (maximum value)">max</span><span :title="row.formula">{{ row.cycles }}</span></td>
+            <td v-if="showAlgOps" class="bound-cycles bound-algop"><span :title="algOpTitle(row.cyclesValue)">{{ algOpValue(row.cyclesValue) }}</span></td>
           </tr>
           <tr v-if="throughputTable.rows.length === 0">
-            <td colspan="3" class="bound-empty">No data</td>
+            <td :colspan="showAlgOps ? 4 : 3" class="bound-empty">No data</td>
           </tr>
         </tbody>
       </table>
@@ -391,7 +412,11 @@
       The <strong>throughput bound</strong> comes from the most saturated hardware <em>resource</em>: dispatch width,
       retire width, or a set of execution ports.</p>
       <p>The <strong>minimum time</strong> is the maximum of both bounds; the execution is <em>latency-bound</em> or
-      <em>throughput-bound</em> depending on which one is larger.</p>"
+      <em>throughput-bound</em> depending on which one is larger.</p>
+      <p>An <strong>algorithmic operation</strong> is one iteration of the <em>original</em> loop, before unrolling or
+      vectorization (an O(N) algorithm performs N of them). If each iteration does the work of S original iterations
+      (<em>loop stride</em> S, set in the BRANCH instruction), the tables add a <em>Cycles/Alg Oper</em> column
+      = cycles/iter ÷ S: unlike cycles/iter, it can be compared with the baseline loop.</p>"
     title="Static Performance Analysis"
     @close="closeHelp1"/>
   </Teleport>
@@ -406,7 +431,9 @@
          Sets of ports are listed when they share instructions (e.g. P0+P2 and P2+P3 give P0+P2+P3).</p>
          <p>The highlighted rows give the <strong>throughput bound</strong> (the maximum). Hover a number to see the
          instruction, and a value to see how it is computed. If there are too many resources, only the
-         highest bounds are shown.</p>"
+         highest bounds are shown.</p>
+         <p>For unrolled or vectorized loops (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
+         gives the cost of one iteration of the original loop.</p>"
     title="Throughput bounds"
     @close="closeHelp2"/>
   </Teleport>
@@ -417,7 +444,8 @@
          (e.g. an accumulator or a loop counter), so its instructions cannot overlap across iterations.
          <p>Its minimum time per iteration is the sum of the latencies of the chain divided by the number of
          loop iterations it spans. The highlighted row gives the <strong>latency bound</strong> (the maximum).
-         Hover a number to see the instruction and its latency, and a value to see how it is computed.</p>"
+         Hover a number to see the instruction and its latency, and a value to see how it is computed.</p>
+         <p>For unrolled or vectorized loops (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S.</p>"
     title="Latency bounds"
     @close="closeHelp4"/>
   </Teleport>
@@ -429,8 +457,8 @@
       <p>Click a row of the <em>Latency bounds</em> table to highlight that chain (click it again, or the × in the
       title bar, to show the whole graph). Hovering an instruction number in the tables highlights its nodes.</p>
       <p>The buttons show or hide the non-cyclic instructions, the latencies, the instruction text, and the
-      dependences on constants and read-only inputs. Mouse wheel: zoom; drag: move the graph; <em>Fit</em>:
-      fit to the window width. Drag the title bar to move the window and its corner to resize it.</p>"
+      dependences on constants and read-only inputs. Mouse wheel: zoom; drag: move the graph; double click
+      (or the <em>Zoom … ✕</em> button): back to 100%, where the graph fills the window. Drag the title bar to move the window and its corner to resize it.</p>"
     title="Dependence graph"
     @close="closeHelp3"/>
     </Teleport>
@@ -549,6 +577,19 @@
     color: #888;
   }
 
+  .bound-algop {
+    color: #1a4fb3;
+  }
+  .stride-warning {
+    box-sizing:    border-box;
+    max-width:     44rem;   /* as wide as the summary */
+    margin:        0 0 0.3rem;
+    padding:       4px 8px;
+    font-size:     0.85rem;
+    background:    #fff7e0;
+    border:        1px solid #e0b84a;
+    border-radius: 6px;
+  }
   .bound-excluded {
     margin-left: 0.4em;
     color: #6b7280;

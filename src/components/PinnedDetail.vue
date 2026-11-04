@@ -6,7 +6,7 @@
 
   // Controls keep their normal behaviour; these areas never pin
   const IGNORE = 'button, input, select, textarea, a, label, summary, header, canvas, ' +
-                 '.no-pin, .help-overlay, .pinned-detail'
+                 '.no-pin, .info-icon, .help-overlay, .pinned-detail'
   const MARGIN = 8
 
   const detail = ref(null)   // { text, style }

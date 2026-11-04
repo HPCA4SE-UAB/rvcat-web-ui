@@ -166,14 +166,17 @@
         <span v-if="options.showFull">✔ </span>Constants &amp; inputs
       </button>
       <span class="toolbar-spacer"></span>
-      <button class="blue-button" @click="fit" title="Fit the graph to the window width (mouse wheel: zoom; drag: move)">
-        Fit
+      <!-- Only while zoomed: the graph always fills the window at zoom 100% -->
+      <button v-if="zoom !== 1" class="blue-button" id="graph-reset-zoom" @click="fit"
+              title="Back to zoom 100%: the graph fills the window (also: double click on the graph)">
+        Zoom {{ Math.round(zoom * 100) }}% ✕
       </button>
     </div>
 
-    <div ref="graphRef" class="graph-window-body" id="dependence-graph"
+    <div ref="graphRef" class="graph-window-body no-pin" id="dependence-graph"
+         title="Mouse wheel: zoom · Drag: move · Double click: zoom 100%"
          @wheel.prevent="onWheel" @mousedown="startPan" @mousemove="movePan"
-         @mouseup="endPan" @mouseleave="endPan">
+         @mouseup="endPan" @mouseleave="endPan" @dblclick="fit">
       <div class="graph-zoom" :style="{ width: (zoom * 100) + '%' }" v-html="svg"></div>
       <div v-if="!svg" class="graph-empty">No graph</div>
     </div>

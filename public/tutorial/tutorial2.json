@@ -20,7 +20,7 @@
       "id": "program",
       "type": "step",
       "title": "The loop program",
-      "description": "<b>One iteration of the loop, written as simple machine instructions.</b><br>The loop runs <b>N</b> times (N is set next to the program name).<br>For performance, what matters is the instruction <b>types</b><br>and the <b>data dependences</b> between instructions.",
+      "description": "<b>One iteration of the loop, written as simple machine instructions.</b><br>The loop performs <b>N</b> algorithmic operations (N is set next to the program name).<br>Each iteration does <b>S</b> of them (S=1, or more if it is unrolled or vectorized).<br>For performance, what matters is the instruction <b>types</b><br>and the <b>data dependences</b> between instructions.",
       "selector": ".program-container",
       "position": "right",
       "next": [
@@ -95,7 +95,7 @@
       "id": "latency-more",
       "type": "step",
       "title": "In depth: the dependence graph",
-      "description": "&bull; <b>📈 Dependence graph</b> opens a movable, resizable window.<br>&bull; One box per loop iteration; cyclic dependences are drawn in red.<br>&bull; Clicking a row of <i>Latency bounds</i> highlights its chain.<br>&bull; Hovering an instruction number highlights it in the graph and program.<br>&bull; Mouse wheel: zoom · drag: move · <i>Fit</i>: whole graph.",
+      "description": "&bull; <b>📈 Dependence graph</b> opens a movable, resizable window.<br>&bull; One box per loop iteration; cyclic dependences are drawn in red.<br>&bull; Clicking a row of <i>Latency bounds</i> highlights its chain.<br>&bull; Hovering an instruction number highlights it in the graph and program.<br>&bull; Mouse wheel: zoom · drag: move · double click: whole graph.",
       "selector": "#open-dependence-graph",
       "position": "bottom",
       "next": [
@@ -254,6 +254,19 @@
       "description": "<b>Change one thing, predict the effect, then simulate.</b><br>&bull; Edit the program or the processor (top bar), or change N.<br>&bull; Add a port, change a latency or the ROB size.<br>&bull; <b>Store Results</b> to compare runs side by side.<br><i>Tip:</i> click any value with an explanation to pin it.<br>The <b>?</b> button (bottom right) reopens the tutorials.",
       "selector": "#program-button",
       "position": "bottom",
+      "next": [
+        "end",
+        "algops-more"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "algops-more",
+      "type": "step",
+      "title": "In depth: comparing versions of a loop",
+      "description": "<b>Compare versions per algorithmic operation, not per iteration.</b><br>&bull; An <b>algorithmic operation</b> is one iteration of the original loop:<br>&nbsp;&nbsp;&nbsp;an O(N) algorithm performs N of them.<br>&bull; An unrolled or SIMD version does <b>S</b> of them per iteration (S, next to N),<br>&nbsp;&nbsp;&nbsp;so its <i>Cycles/iter</i> cannot be compared with the original loop.<br>&bull; <b>Cycles/Alg Oper</b> = Cycles/iter ÷ S = <b>Instr/Alg Oper</b> ÷ IPC:<br>&nbsp;&nbsp;&nbsp;fewer instructions (unrolling, SIMD) or more IPC make the loop faster.<br>&bull; Try it: store the results of Base, V2 and BaseSIMD, and mark<br>&nbsp;&nbsp;&nbsp;Base with ☆ to see the <b>Speedup</b> of the other versions.",
+      "selector": ".results-table",
+      "position": "top",
       "next": [
         "end"
       ],

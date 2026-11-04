@@ -9,6 +9,8 @@
            validateProgram } from '@/common'
   import { buildResultContext, defaultResultName,
            resultMemoryColumns, resultContextLines } from '@/resultContext'
+  import { resultStride, resultCyclesPerAlgOp, resultInstrPerAlgOp, speedupOver,
+           ALG_OP_HELP, ALG_OP_UNIT } from '@/algOps'
 
   const { getExecutionResults } = useRVCAT_Api();
   const { registerHandler }     = inject('worker');
@@ -22,7 +24,8 @@
   const defaultOptions = {
     autorun:          false,
     availableResults: [],
-    resultName:       ''
+    resultName:       '',
+    referenceResult:  ''    // stored result used as baseline for the speedup column
   }
 
   const simulationOptions = reactive(defaultOptions)
@@ -34,6 +37,64 @@
   const showResultsInfo       = ref({})
 
   // Memory columns of the stored-results table, by row index
+  // Cycles per algorithmic operation (one iteration of the original loop) of each stored result:
+  // comparable between a baseline loop and its unrolled or vectorized versions
+  const storedAlgOps = computed(() =>
+    simulationOptions.availableResults.map((_, index) => {
+      const result = showResultsInfo.value[index]
+      const value  = resultCyclesPerAlgOp(result)
+      const stride = resultStride(result)
+      return value === null
+        ? { value: 'X', title: 'Unknown: these results were saved without the simulated program' }
+        : { value: value.toFixed(2),
+            title: `${result.total_cycles.toLocaleString()} cycles / (${result.total_iterations.toLocaleString()} iterations × ` +
+                   `${stride} alg opers/iter) = ${value.toFixed(2)} ${ALG_OP_UNIT}` }
+    })
+  )
+  const algOpHeaderTitle = `Cycles per algorithmic operation. ${ALG_OP_HELP}`
+  const instrAlgOpHeaderTitle =
+    'Machine instructions executed per algorithmic operation. Unrolling and SIMD reduce it. ' +
+    'Cycles/Alg Oper = (Instr/Alg Oper) / IPC.'
+  const speedupHeaderTitle =
+    'Speedup over the reference result (★) = its cycles/alg oper ÷ cycles/alg oper of this row. ' +
+    'Click ☆ in a row to make it the reference. Only meaningful between versions of the same algorithm.'
+
+  const storedInstrAlgOps = computed(() =>
+    simulationOptions.availableResults.map((_, index) => {
+      const result = showResultsInfo.value[index]
+      const value  = resultInstrPerAlgOp(result)
+      return value === null
+        ? { value: 'X', title: 'Unknown: these results were saved without the simulated program' }
+        : { value: value.toFixed(2),
+            title: `${result.total_instructions.toLocaleString()} instructions / ` +
+                   `${(result.total_iterations * resultStride(result)).toLocaleString()} alg opers = ` +
+                   `${value.toFixed(2)} instr/alg oper` + '\n' +
+                   `${value.toFixed(2)} instr/alg oper ÷ IPC ${result.ipc?.toFixed(3)} = ` +
+                   `${resultCyclesPerAlgOp(result).toFixed(2)} ${ALG_OP_UNIT}` }
+    })
+  )
+
+  const storedSpeedups = computed(() => {
+    const refIndex = simulationOptions.availableResults.indexOf(simulationOptions.referenceResult)
+    const reference = refIndex >= 0 ? showResultsInfo.value[refIndex] : null
+    return simulationOptions.availableResults.map((name, index) => {
+      if (index === refIndex) return { isRef: true, value: '1.00', title: 'Reference result (speedup 1)' }
+      if (!reference) return { isRef: false, value: '', title: 'Click ☆ to use this result as the reference' }
+      const value = speedupOver(reference, showResultsInfo.value[index])
+      return value === null
+        ? { isRef: false, value: 'X', title: 'Unknown: results saved without the simulated program' }
+        : { isRef: false, value: value.toFixed(2),
+            title: `${resultCyclesPerAlgOp(reference).toFixed(2)} (${simulationOptions.referenceResult}) ÷ ` +
+                   `${resultCyclesPerAlgOp(showResultsInfo.value[index]).toFixed(2)} ${ALG_OP_UNIT} = ` +
+                   `${value.toFixed(2)}× faster` }
+    })
+  })
+
+  function setReferenceResult(name) {
+    simulationOptions.referenceResult = simulationOptions.referenceResult === name ? '' : name
+    saveOptions()
+  }
+
   const storedMemoryColumns = computed(() =>
     simulationOptions.availableResults.map((_, index) => resultMemoryColumns(showResultsInfo.value[index]))
   )
@@ -110,8 +171,9 @@
 
   const areProcessorsEqual = (proc1, proc2) => {
     if (proc1 == {} || proc2 == {})        return false
+    // (Nloop = iters × loop stride is not compared: only the simulated copy has it, and
+    //  iters and the BRANCH stride are compared)
     if (proc1.iters !== proc2.iters)       return false;
-    if (proc1.Nloop !== proc2.Nloop)       return false;
     if (proc1.dispatch !== proc2.dispatch) return false;
     if (proc1.retire !== proc2.retire)     return false;
     if (proc1.sched !== proc2.sched)       return false;
@@ -359,7 +421,20 @@
         : 0
     const mmTransfers = formatSum(MM_reads, MM_writes)
 
+    // Unrolled or vectorized loop (loop stride > 1): also cycles per algorithmic operation
+    const stride = resultStride(results) ?? 1
+    const algOp  = resultCyclesPerAlgOp(results)
+    const instrAlgOp = resultInstrPerAlgOp(results)
+
     return {
+      stride,
+      instrAlgOp:      instrAlgOp === null ? 'X' : instrAlgOp.toFixed(2),
+      instrAlgOpTitle: instrAlgOp === null ? '' :
+        `${totalInstrs.toLocaleString()} instructions / ${(nIters * stride).toLocaleString()} alg opers = ` +
+        `${instrAlgOp.toFixed(2)} instr/alg oper (${(totalInstrs / nIters).toFixed(2)} per iteration ÷ ${stride})`,
+      algOp:        algOp === null ? 'X' : algOp.toFixed(2),
+      algOpTitle:   algOp === null ? '' :
+        `${cpi.toFixed(2)} cycles/iter ÷ ${stride} alg opers/iter (loop stride) = ${algOp.toFixed(2)} ${ALG_OP_UNIT}\n${ALG_OP_HELP}`,
       iters:        nIters.toLocaleString(),
       instructions: totalInstrs.toLocaleString(),
       cycles:       totalCycles.toLocaleString(),
@@ -700,6 +775,7 @@
       try {
         localStorage.setItem(`results.${newName}`, oldData)
         localStorage.removeItem(`results.${oldName}`)
+        if (simulationOptions.referenceResult === oldName) simulationOptions.referenceResult = newName
         simulationOptions.resultName = newName
         updateShowResults()
       } catch (e) {
@@ -783,6 +859,14 @@
         <div class="simulation-inline-item">
           <label for="cycles-per-iteration">Cycles/iter:</label>
           <span id="cycles-per-iteration-output" title="Clock cycles per loop iteration">{{ formattedResults.cpi }}</span>
+        </div>
+        <div v-if="formattedResults.stride > 1" class="simulation-inline-item">
+          <label for="instr-per-alg-op">Instr/Alg Oper:</label>
+          <span id="instr-per-alg-op-output" :title="formattedResults.instrAlgOpTitle">{{ formattedResults.instrAlgOp }}</span>
+        </div>
+        <div v-if="formattedResults.stride > 1" class="simulation-inline-item">
+          <label for="cycles-per-alg-op">Cycles/Alg Oper:</label>
+          <span id="cycles-per-alg-op-output" :title="formattedResults.algOpTitle">{{ formattedResults.algOp }}</span>
         </div>
         <div class="simulation-inline-item">
           <label for="IPC">IPC:</label>
@@ -886,6 +970,9 @@
               <th style="width: 100px;"> Instr  </th>
               <th style="width: 100px;"> Cycles </th>
               <th style="width: 100px;"> Cycles/iter </th>
+              <th style="width: 100px;" :title="instrAlgOpHeaderTitle"> Instr/Alg Oper </th>
+              <th style="width: 100px;" :title="algOpHeaderTitle"> Cycles/Alg Oper </th>
+              <th style="width: 100px;" :title="speedupHeaderTitle"> Speedup </th>
               <th style="width: 100px;"> IPC    </th>
               <th style="width: 100px;" title="Primary cache misses (LOAD + STORE)"> Primary </th>
               <th style="width: 100px;" title="Secondary cache misses (LOAD + STORE)"> Secondary </th>
@@ -914,6 +1001,18 @@
               </td>
               <td title="Cycles per loop iteration">
                 {{ showResultsInfo[index]?.cycles_per_iteration?.toFixed(2) ?? 'X' }}
+              </td>
+              <td :title="storedInstrAlgOps[index]?.title">
+                {{ storedInstrAlgOps[index]?.value ?? 'X' }}
+              </td>
+              <td :title="storedAlgOps[index]?.title">
+                {{ storedAlgOps[index]?.value ?? 'X' }}
+              </td>
+              <td class="speedup-cell" :class="{ reference: storedSpeedups[index]?.isRef }">
+                <button class="ref-button" :class="{ active: storedSpeedups[index]?.isRef }"
+                        :title="storedSpeedups[index]?.isRef ? 'Reference result: click to clear' : 'Use this result as the reference for the speedup'"
+                        @click="setReferenceResult(name)">{{ storedSpeedups[index]?.isRef ? '★' : '☆' }}</button>
+                <span :title="storedSpeedups[index]?.title">{{ storedSpeedups[index]?.value }}{{ storedSpeedups[index]?.value && storedSpeedups[index]?.value !== 'X' ? '×' : '' }}</span>
               </td>
               <td title="Instructions Per cycle (IPC)">
                 {{ showResultsInfo[index]?.ipc?.toFixed(3) ?? 'X' }}
@@ -958,6 +1057,9 @@
     text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
       <em>Instructions Per Cycle</em> (IPC), <em>cache misses</em>, and <em>MM transfers</em>.
+      N counts <em>algorithmic operations</em> (iterations of the original loop); with loop stride S &gt; 1
+      (unrolled or vectorized loop) each iteration does S of them, and <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
+      can be compared with the baseline loop, also in the table of stored results.
       Cache misses are shown as <em>LD+ST = Total</em>, where LD and ST are the misses caused by LOAD and
       STORE instructions. <em>Primary misses</em> start a new fill; <em>secondary misses</em> join an existing
       or queued fill of the same block.
@@ -1234,6 +1336,21 @@
     pointer-events: none;
   }
 
+  .speedup-cell {
+    white-space: nowrap;
+  }
+  .speedup-cell.reference {
+    font-weight: 600;
+  }
+  .ref-button {
+    all:         unset;
+    cursor:      pointer;
+    color:       #b58900;
+    margin-right: 0.3em;
+  }
+  .ref-button:hover {
+    color:       #1a4fb3;
+  }
   .results-table {
     width:           100%;
     border-collapse: collapse;

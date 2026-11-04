@@ -456,7 +456,11 @@
           <span v-if="programOptions.show === 3">mem</span>
         </button>
         <div class="iters-group">
-          <span class="iters-label" :title="`Rang: 1 - ${MAX_N} iters`">
+          <span class="iters-label"
+                :title="`N = algorithmic operations (iterations of the original loop), 1 - ${MAX_N}.` +
+                        (programOptions.stride > 1
+                          ? ` Loop stride ${programOptions.stride}: the loop runs N/${programOptions.stride} iterations.`
+                          : '')">
             N:
           </span>
           <input
@@ -495,6 +499,14 @@
           >
             ▼
           </button>
+          <span class="stride-label" id="program-loop-stride"
+                :class="{ unrolled: programOptions.stride > 1 }"
+                :title="`S = loop stride = algorithmic operations per loop iteration (set in the program editor).` +
+                        ` The loop runs N/S = ${(programOptions.N / programOptions.stride).toLocaleString()} iterations.` +
+                        (programOptions.stride > 1 ? ' Each iteration does the work of ' + programOptions.stride +
+                         ' iterations of the original loop (unrolled or vectorized).' : '')">
+            S={{ programOptions.stride }}
+          </span>
         </div>
       </div>
     </div>
@@ -724,8 +736,15 @@
     white-space: nowrap;
   }
 
-  .iters-group .iters-label {
+  .stride-label {
+    margin-left: 0.4em;
     white-space: nowrap;
+    color:       #777;
+    font-size:   0.9em;
+  }
+  .stride-label.unrolled {
+    color:       #1a4fb3;
+    font-weight: 600;
   }
 
   .iters-group input {

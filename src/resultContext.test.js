@@ -16,7 +16,7 @@ const process = {
 describe('buildResultContext', () => {
   it('stores program name, N (= iters x stride) and a copy of the processor', () => {
     const ctx = buildResultContext(process, 'B2')
-    expect(ctx.program).toEqual({ name: 'Base', N: 1000 })
+    expect(ctx.program).toEqual({ name: 'Base', N: 1000, stride: 4 })
     expect(ctx.processor).toMatchObject({ name: 'B2', dispatch: 2, nBlocks: 4, rThru: 1 })
     expect(ctx.processor.latencies).toEqual(process.latencies)
     expect(ctx.processor.ports).not.toBe(process.ports)
@@ -54,7 +54,7 @@ describe('resultMemoryColumns', () => {
 describe('resultContextLines', () => {
   it('describes program, processor, cache, latencies and compacted ports', () => {
     const lines = resultContextLines(buildResultContext(process, 'B2'))
-    expect(lines[0]).toBe(`Program: Base  ·  N = ${(1000).toLocaleString()}`)
+    expect(lines[0]).toBe(`Program: Base  ·  N = ${(1000).toLocaleString()} alg opers  ·  loop stride 4 (250 iterations)`)
     expect(lines).toContain('  Cache: 4 blocks × 8 B · Miss penalty 12 · Issue time 8')
     expect(lines.at(-1)).toBe('  Ports: P0 INT, MEM.LOAD · P1 BRANCH, FLOAT.ADD')
   })

@@ -1,0 +1,152 @@
+// Coherence rules of an edited program: loop stride, vector lanes, memory strides and offsets.
+// Documented in docs/program-editor-rules.md (rule codes E1..E4, W1..W7).
+//
+// Memory model of RVCAT, for a MEM/VMEM instruction with lanes L, stride s and constant c,
+// in loop iteration k (0, 1, ... N/S - 1), it accesses the elements
+//     s > 0:  c + k·L·s  ... + L-1        (forward, from the start of the array)
+//     s < 0:  N - c + k·L·s ... + L-1     (backward, from the end of the array)
+//     s = 0:  c ... c + L-1               (same elements in every iteration)
+// The loop stride S (BRANCH stride) is the number of algorithmic operations per iteration.
+
+export const VECTOR_TYPES = ['VINT', 'VMEM', 'VFLOAT']
+export const MEMORY_TYPES = ['MEM', 'VMEM']
+
+const isVector = (instr) => VECTOR_TYPES.includes(instr?.type)
+const isMemory = (instr) => MEMORY_TYPES.includes(instr?.type)
+const intOf    = (value, fallback) => {
+  const n = Number(value)
+  return value === '' || value === undefined || value === null || !Number.isFinite(n) ? fallback : n
+}
+const constantOf = (instr) => intOf(String(instr?.constant ?? '').trim(), 0)
+
+// Structural normalization applied by the editor (it makes rules E2/E3 hold by construction):
+// only memory instructions and the BRANCH have a stride; only vector instructions have lanes.
+export function enforceStructure(instr) {
+  if (!instr) return instr
+  if (!isMemory(instr) && instr.type !== 'BRANCH') instr.stride = 1
+  if (!isVector(instr)) instr.lanes = 1
+  else if (!(Number(instr.lanes) >= 2)) instr.lanes = 4
+  return instr
+}
+
+// Returns { errors: [...], warnings: [...] }, each item { code, index (or -1), message }.
+// Errors make the program incoherent for RVCAT; warnings are probably mistakes, but some
+// algorithms need them (stencils, strided accesses...), so they do not block the program.
+export function checkProgram(instructionList) {
+  const list = Array.isArray(instructionList) ? instructionList : []
+  const errors = [], warnings = []
+  const err  = (code, index, message) => errors.push({ code, index, message })
+  const warn = (code, index, message) => warnings.push({ code, index, message })
+
+  const branch = list.at(-1)
+  const S = intOf(branch?.stride, 1)
+
+  // E1: loop stride
+  if (!Number.isInteger(S) || S < 1)
+    err('E1', list.length - 1, `The loop stride S must be an integer ≥ 1 (it is ${branch?.stride}).`)
+
+  list.forEach((instr, index) => {
+    if (!instr?.type || instr.type === 'BRANCH') return
+    const L = intOf(instr.lanes, 1), s = intOf(instr.stride, 1)
+    // E2: lanes
+    if (isVector(instr) && (!Number.isInteger(L) || L < 2))
+      err('E2', index, `${instr.type} is a vector instruction: lanes must be an integer ≥ 2.`)
+    if (!isVector(instr) && L !== 1)
+      err('E2', index, `${instr.type} is a scalar instruction: lanes must be 1.`)
+    // E3: stride only for memory instructions
+    if (!isMemory(instr) && s !== 1)
+      err('E3', index, `Only memory instructions (and the BRANCH) have a stride.`)
+    if (!isMemory(instr)) return
+    // E4: integer stride/offset, not before the start of the array
+    const c = constantOf(instr)
+    if (!Number.isInteger(s)) err('E4', index, 'The memory stride must be an integer.')
+    if (!Number.isInteger(c)) err('E4', index, 'The memory offset (constant) must be an integer.')
+    else if (s >= 0 && c < 0)
+      err('E4', index, `Offset ${c} with stride ${s} ≥ 0 accesses elements before the start of array ` +
+                       `"${instr.source2}". RVCAT arrays start at element 0.`)
+  })
+  if (errors.some(e => e.code === 'E1')) return { errors, warnings }
+
+  // W1, W2: lanes and loop stride
+  const vectors = list.map((instr, index) => ({ instr, index })).filter(v => isVector(v.instr))
+  const laneSet = [...new Set(vectors.map(v => intOf(v.instr.lanes, 1)))]
+  if (laneSet.length > 1)
+    warn('W2', -1, `Vector instructions use different numbers of lanes (${laneSet.join(', ')}); ` +
+                   'usually all of them process the same number of elements.')
+  for (const L of laneSet) {
+    if (L >= 2 && S % L !== 0)
+      warn('W1', list.length - 1,
+           `Vector instructions with ${L} lanes, but the loop stride S = ${S} is not a multiple of ${L}: ` +
+           `if each iteration processes ${L}×U elements (U = unrolling factor), S should be ${L}×U.`)
+  }
+
+  // W3..W6: memory accesses
+  const groups = new Map()   // same array, same operation, lanes and stride
+  list.forEach((instr, index) => {
+    if (!isMemory(instr) || !instr.source2) return
+    const L = intOf(instr.lanes, 1), s = intOf(instr.stride, 1), c = constantOf(instr)
+    if (!Number.isInteger(L) || !Number.isInteger(s) || !Number.isInteger(c)) return
+    const step = L * Math.abs(s)   // elements advanced per loop iteration
+
+    // W3: elements per iteration vs algorithmic operations per iteration
+    if (s !== 0 && step % S !== 0)
+      warn('W3', index,
+           `Advances ${step} element${step === 1 ? '' : 's'} of "${instr.source2}" per iteration (lanes ${L} × stride ${Math.abs(s)}), ` +
+           `but each iteration does S = ${S} algorithmic operations: expected a multiple of ${S} ` +
+           `(usually ${S}: one element per algorithmic operation, stride = S / lanes${S % L === 0 ? ` = ${S / L}` : ''}).`)
+    // W7: backward accesses start at element N - c
+    if (s < 0 && c < L)
+      warn('W7', index,
+           `Backward access (stride ${s}): the first access reads elements N-${c} … N-${c}+${L - 1}; ` +
+           `the offset should be ≥ ${L} to stay inside an array of N elements (e.g. ${L} for A[N-${L}…N-1]).`)
+
+    const key = `${instr.source2}|${instr.oper}|${L}|${s}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push({ index, c, L, s, step })
+  })
+
+  for (const group of groups.values()) {
+    const { L, s, step } = group[0]
+    // W4 (duplicated) and W5 (overlapping) accesses of unrolled copies
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = group[i], b = group[j]
+        if (a.c === b.c)
+          warn('W4', b.index, `Same access as instruction ${a.index} (array "${list[b.index].source2}", offset ${b.c}): ` +
+                              'an unrolled copy usually needs a different offset (constant).')
+        else if (Math.abs(a.c - b.c) < L)
+          warn('W5', b.index, `Its ${L} elements overlap those of instruction ${a.index} (offsets ${a.c} and ${b.c}): ` +
+                              `copies of a vector access usually differ by a multiple of ${L}.`)
+      }
+    }
+    // W6: unrolled copies do not cover all the elements advanced per iteration
+    if (S > 1 && s !== 0 && step % S === 0) {
+      const covered = new Set()
+      for (const g of group) for (let e = 0; e < L; e++) covered.add((((g.c + e) % step) + step) % step)
+      const perAlgOp = step / S
+      if (perAlgOp === 1 && covered.size < step) {
+        const missing = [...Array(step).keys()].filter(e => !covered.has(e))
+        warn('W6', group[0].index,
+             `Array "${list[group[0].index].source2}" (${list[group[0].index].oper}): each iteration advances ${step} elements, ` +
+             `but only ${covered.size} are accessed (missing offset${missing.length > 1 ? 's' : ''} ${missing.slice(0, 6).join(', ')}` +
+             `${missing.length > 6 ? '…' : ''}). Is an unrolled copy missing?`)
+      }
+    }
+  }
+
+  // W8: loop counter "i = i + k" (an INT instruction that increments a memory index; k is in the
+  // constant field, or else in the text)
+  list.forEach((instr, index) => {
+    if (instr?.type !== 'INT' || !instr.destin || instr.destin !== instr.source1) return
+    const counterUsed = list.some(other => isMemory(other) &&
+      (other.oper === 'STORE' ? other.source3 : other.source1) === instr.destin)
+    if (!counterUsed) return
+    const m = /^\s*(\w+)\s*=\s*\1\s*\+\s*(\d+)\s*$/.exec(instr.text ?? '')
+    const k = intOf(String(instr.constant ?? '').trim(), m ? Number(m[2]) : NaN)
+    if (Number.isInteger(k) && k !== S)
+      warn('W8', index, `"${(instr.text ?? '').trim()}" increments the index ${instr.destin} by ${k}, but the loop stride is S = ${S}: ` +
+                        `the index usually advances S elements per iteration.`)
+  })
+
+  return { errors, warnings }
+}
