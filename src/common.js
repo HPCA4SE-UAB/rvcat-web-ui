@@ -390,7 +390,11 @@ export function migrateTutorialFlow(tutorial) {
       if (!Array.isArray(step.next) || step.next.length > 2) {
         throw new Error(`Tutorial step ${index + 1} must have at most two successor ids.`)
       }
-      step.next = step.next.filter(targetId => targetId != null && targetId !== '')
+      // optional button texts (nextLabels) stay aligned with their successors
+      const keep = step.next.map(targetId => targetId != null && targetId !== '')
+      step.next = step.next.filter((_, i) => keep[i])
+      if (Array.isArray(step.nextLabels))
+        step.nextLabels = step.nextLabels.filter((_, i) => keep[i]).map(l => String(l ?? ''))
       const seenTargets = new Set()
       step.next.forEach(targetId => {
         if (targetId === 'end') {
@@ -671,6 +675,41 @@ function getResourceKeys(prefix) {
  * Initialize Programs/Processors/Tutorials resources using data from
  *  distribution files if not already in localStorage
  * ------------------------------------------------------------------ */
+// Distribution tutorials already offered to this user (key outside the 'tutorial.' prefix)
+const DISTRIBUTION_SEEN_KEY = 'tutorialDistributionSeen'
+
+function distributionSeen() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISTRIBUTION_SEEN_KEY)) ?? []) }
+  catch { return new Set() }
+}
+
+function markDistributionSeen(names) {
+  const seen = distributionSeen()
+  names.forEach(name => seen.add(name))
+  localStorage.setItem(DISTRIBUTION_SEEN_KEY, JSON.stringify([...seen]))
+}
+
+// Loads the distribution files that are neither stored nor offered before; returns their names
+export async function addNewDistributionFiles(storagePrefix, distributionFiles, storedKeys) {
+  const seen  = distributionSeen()
+  // tutorials stored before this mechanism existed count as already offered
+  storedKeys.forEach(name => seen.add(name))
+  const added = []
+  for (const fileName of distributionFiles) {
+    if (seen.has(fileName)) continue
+    try {
+      const response = await fetch(`./${storagePrefix}/${fileName}.json`)
+      if (!response.ok) continue
+      localStorage.setItem(`${storagePrefix}.${fileName}`, JSON.stringify(await response.json()))
+      added.push(fileName)
+    } catch (error) {
+      console.warn(`⚠️ Could not load distribution file ${fileName}:`, error)
+    }
+  }
+  markDistributionSeen([...seen, ...added])
+  return added
+}
+
 export async function initResource (resourceType, optionsObj, currentKey, availableKey) {
   const config = resourceConfig[resourceType];
   if (!config) {
@@ -684,7 +723,8 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   try {
     let keys = getResourceKeys(`${storagePrefix}.`);
     let distributionFiles = null;
-    if (keys.length === 0 || resourceType === 'processor' || resourceType === 'program') {
+    if (keys.length === 0 || resourceType === 'processor' || resourceType === 'program' ||
+        resourceType === 'tutorial') {
       try {
         const response = await fetch('./index.json');
         if (!response.ok) {
@@ -712,9 +752,19 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
         }
         keys = getResourceKeys(`${storagePrefix}.`);
         console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from distribution files`);
+        if (resourceType === 'tutorial') markDistributionSeen(distributionFiles)
       }
     } else {
       console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from localStorage`);
+      if (resourceType === 'tutorial' && Array.isArray(distributionFiles)) {
+        // Tutorials added to the distribution later are offered once, even if the user
+        // already has tutorials (a tutorial deleted by the user is not added again)
+        const added = await addNewDistributionFiles(storagePrefix, distributionFiles, keys)
+        if (added.length) {
+          keys = getResourceKeys(`${storagePrefix}.`);
+          console.log(`${logPrefix}✅ Added new distribution ${resourceType}s:`, added)
+        }
+      }
     }
 
     if (Array.isArray(distributionFiles)) {

@@ -9,7 +9,8 @@
                   height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="currentStep?.title"></h3>
-          <button title="Close tutorial, but can be resumed later"
+          <span v-if="previewMode" class="preview-badge" title="Preview from the tutorial editor: closing it returns to the editor">PREVIEW</span>
+          <button :title="previewMode ? 'End preview and return to the tutorial editor' : 'Close tutorial, but can be resumed later'"
           class="tutorial-close" @click="closeTutorial">&times;</button>
         </div>
         <div class="tutorial-content">
@@ -25,15 +26,17 @@
                class="tutorial-btn">
               Previous
             </button>
-            <span class="tutorial-progress">
-              {{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}
+            <span class="tutorial-progress"
+                  :title="isBranchingTutorial ? 'This tutorial lets you choose the level of detail: not all cards are visited' : ''">
+              <template v-if="isBranchingTutorial">Card {{ stepIndex + 1 }}</template>
+              <template v-else>{{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</template>
             </span>
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
                     :title="target.id === 'end' ? 'Finish tutorial' : `Continue to ${target.title}`"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
-              {{ target.id === 'end' ? 'End Tutorial' : target.title }}
+              {{ target.label }}
             </button>
             <button v-if="successorSteps.length === 0"
                     @click="completeTutorial"
@@ -54,6 +57,7 @@
 
         <div class="question-header">
           <span class="question-badge">Question {{ stepIndex + 1 }}</span>
+          <span v-if="previewMode" class="preview-badge">PREVIEW</span>
           <h2 v-html="currentStep?.title"></h2>
         </div>
 
@@ -132,7 +136,7 @@
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
                     class="tutorial-btn tutorial-btn-primary">
-              {{ target.id === 'end' ? 'End Tutorial' : target.title }}
+              {{ target.label }}
             </button>
           </template>
           <button v-else
@@ -212,8 +216,15 @@
               </div>
             </button>
             <button
+              @click="editTutorial(tutorial.id)"
+              title="Edit this tutorial in the tutorial editor"
+              class="tutorial-delete-btn tutorial-edit-btn"
+            >
+            ✎
+            </button>
+            <button
               @click="deleteTutorial(tutorial.id)"
-              title="Delete this tutorial form list (and local storage)"
+              title="Delete this tutorial from the list (and local storage)"
               id="remove-tutorial-button"
               class="tutorial-delete-btn"
             >
@@ -303,6 +314,10 @@ const isActive        = ref(false)
 // ============================================================================
 // emit signal to simulatorView in order to switch panels
 const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
+const props = defineProps({
+  activeView: { type: String, default: 'simulationComponent' },   // panel shown on the right
+  activeFull: { type: String, default: 'none' },                  // full-screen editor, if any
+})
 
 // ============================================================================
 // Draggable & resizable full-screen graph container
@@ -350,12 +365,8 @@ const emit  = defineEmits(['requestSwitchPanel', 'requestSwitchFull'])
 
     x.value = clamp(x.value, VIEWPORT_MARGIN, window.innerWidth - tutorialOptions.windowWidth - VIEWPORT_MARGIN)
     y.value = clamp(y.value, HEADER_HEIGHT, window.innerHeight - tutorialOptions.windowHeight - VIEWPORT_MARGIN)
-
-    const step = currentStep.value
-    if (step) {
-      step.wWidth = tutorialOptions.windowWidth
-      step.wHeight = tutorialOptions.windowHeight
-    }
+    // The measured size is not stored in the step: fixing it as the card style cut the content
+    // of some cards (the card grows with its content; a manual resize is kept by the browser)
   })
 
   const handleWindowResize = () => {
@@ -406,10 +417,16 @@ const successorSteps = computed(() => {
   const steps = currentTutorial.value?.steps || []
   const step = currentStep.value
   if (!step) return []
+  // Button text: the label written for that successor (nextLabels), or the target title
   return (step.next || [])
-    .map(id => id === 'end'
-      ? { id: 'end', title: 'End Tutorial' }
-      : steps.find(candidate => candidate.id === id))
+    .map((id, slot) => {
+      const target = id === 'end'
+        ? { id: 'end', title: 'End Tutorial' }
+        : steps.find(candidate => candidate.id === id)
+      if (!target) return null
+      const custom = step.nextLabels?.[slot]?.trim()
+      return { id: target.id, title: target.title, label: custom || target.title }
+    })
     .filter(Boolean)
 })
 
@@ -419,6 +436,11 @@ const canGoBack = computed(() =>
 
 const isQuestionStep = computed(() =>
   currentStep.value?.type === 'question'
+)
+
+// With branches (cards with two successors) a "k / N" counter is misleading
+const isBranchingTutorial = computed(() =>
+  (currentTutorial.value?.steps ?? []).some(step => (step.next ?? []).length > 1)
 )
 
 const isQuestionCorrect = computed(() => {
@@ -459,9 +481,9 @@ const canProceed = computed(() => {
     const { type, selector, value, minValue } = validation
     switch (type) {
       case 'program_selected':
-        return simState.selectedProgram === value
+        return simState.simulatedProcess?.name === value
       case 'architecture_selected':
-        return simState.selectedProcessor === value
+        return simState.processorName === value
       case 'input_value':
         return document.querySelector(selector)?.value === value
       case 'input_value_min':
@@ -520,13 +542,25 @@ const getTooltipPosition = (targetRect, width, height, preferredPosition) => {
 
 const positionCurrentTooltip = async () => {
   const step = currentStep.value
+  if (!step || !contentRef.value) return
+
+  // Measure the card at its natural size: restore the size from the tutorial file (if any)
+  // and place it where it has the whole width, so its text is not wrapped by the old position
+  const size = authoredSize.get(step) ?? {}
+  step.wWidth  = size.w
+  step.wHeight = size.h
+  // forget a manual resize of the previous card (set by the browser on the element)
+  contentRef.value.style.width  = size.w ? `${size.w}px` : ''
+  contentRef.value.style.height = size.h ? `${size.h}px` : ''
+  x.value = VIEWPORT_MARGIN
+  y.value = HEADER_HEIGHT
+  await nextTick()
+
   const tooltipRect = contentRef.value?.getBoundingClientRect()
-  if (!step || !tooltipRect) return
+  if (!tooltipRect) return
 
   tutorialOptions.windowWidth = tooltipRect.width
   tutorialOptions.windowHeight = tooltipRect.height
-  step.wWidth = tooltipRect.width
-  step.wHeight = tooltipRect.height
 
   if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
     x.value = clamp(step.x_pos, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
@@ -592,6 +626,9 @@ const showCurrentStep = async () => {
   } else {
     element = document.querySelector(sel)
   }
+  // A hidden element (e.g. a panel replaced by a full-screen editor) cannot be highlighted:
+  // the card is then centered instead of being placed next to an invisible box
+  if (element && element.getClientRects().length === 0) element = null
   highlightElement.value = element || null
 
   tutorialOptions.windowWidth = currentStep.value.wWidth || 320
@@ -613,7 +650,11 @@ const showCurrentStep = async () => {
   setupButtonClickTracking()
 }
 
+// Card sizes written in the tutorial file (sizes measured at run time are not kept between cards)
+const authoredSize = new WeakMap()
+
 const processStepActions = (steps) => steps.map(step => {
+  authoredSize.set(step, { w: step.wWidth, h: step.wHeight })
   if (step.action && typeof step.action === 'string') {
     const [actionType, param] = step.action.split(':')
     if (actionType === 'switchTo') {
@@ -659,8 +700,8 @@ const validateCurrentStep = async () => {
   const getElement = (sel) => document.querySelector(sel)
 
   const validators = {
-    program_selected: () =>      simState.selectedProgram === v.value,
-    architecture_selected: () => simState.selectedProcessor === v.value,
+    program_selected: () =>      simState.simulatedProcess?.name === v.value,
+    architecture_selected: () => simState.processorName === v.value,
     input_value: () =>           getElement(v.selector)?.value === v.value,
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
     button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
@@ -886,7 +927,79 @@ const previousStep = async () => {
   }
 }
 
+// ============================================================================
+// PREVIEW from the tutorial editor: runs the draft from a given card without changing
+// the progress of the tutorial in progress; when it ends, the editor is shown again.
+// ============================================================================
+const previewMode = ref(false)
+let savedProgress = null
+
+const startPreview = async () => {
+  const request = simState.tutorialPreview
+  if (!request) return
+  let draft
+  try {
+    draft = migrateTutorialFlow(JSON.parse(localStorage.getItem('tutorialPreview')))
+  } catch (e) {
+    alert(`Cannot preview this tutorial: ${e.message}`)
+    return
+  }
+  if (!draft.steps.length) return
+
+  if (!previewMode.value) {
+    savedProgress = {
+      tutorial:  currentTutorial.value,
+      stepIndex: stepIndex.value,
+      options:   {
+        progressStep:    tutorialOptions.progressStep,
+        progressStepId:  tutorialOptions.progressStepId,
+        progressHistory: [...(tutorialOptions.progressHistory || [])],
+      },
+    }
+  }
+  cleanup()
+  draft.steps = processStepActions(draft.steps)
+  draft.id    = '__preview__'
+  currentTutorial.value = draft
+  stepIndex.value = Math.max(0, draft.steps.findIndex(step => step.id === request.stepId))
+  tutorialOptions.progressHistory = []
+  previewMode.value = true
+
+  emit('requestSwitchPanel', props.activeView)   // leave the full-screen editor
+  resetQuestionState()
+  clickedButtons.value        = new Set()
+  trackedButtonElements.value = []
+  showTutorialMenu.value      = false
+  isActive.value              = true
+  await nextTick()
+  shuffleAnswers()
+  showCurrentStep()
+}
+
+const endPreview = () => {
+  cleanup()
+  isActive.value    = false
+  previewMode.value = false
+  if (savedProgress) {
+    currentTutorial.value = savedProgress.tutorial
+    stepIndex.value       = savedProgress.stepIndex
+    Object.assign(tutorialOptions, savedProgress.options)
+    savedProgress = null
+  }
+  emit('requestSwitchFull', 'tutorial')   // back to the tutorial editor
+}
+
+watch(() => simState.tutorialPreview?.nonce, (nonce) => { if (nonce) startPreview() })
+
+// Edit a tutorial of the menu in the tutorial editor
+const editTutorial = (tutorialId) => {
+  simState.tutorialToEdit = { id: tutorialId, nonce: Date.now() }
+  showTutorialMenu.value  = false
+  if (props.activeFull !== 'tutorial') emit('requestSwitchFull', 'tutorial')
+}
+
 const endTutorial = (fullReset = false) => {
+  if (previewMode.value) { endPreview(); return }
   cleanup()
   isActive.value = false
   if (fullReset) {
@@ -1131,32 +1244,15 @@ onUnmounted(() => {
     100% { box-shadow: 0 0 0 0    rgba(0, 122, 204, 0);   }
   }
 
+  /* Highlight with an outline: unlike a border or a scale transform, it does not change the
+     size or position of the element, so large panels are not cut or pushed over others */
   .tutorial-highlighted {
-    position:      relative;
-    z-index:       9998 !important;
-    border:        4px solid #007acc !important;
-    border-radius: 6px !important;
-    box-shadow:    0 0 20px rgba(0, 122, 204, 0.5) !important;
-    transition:    all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    transform:     scale(1.15) !important;
-    will-change:   transform !important;
-    transform-origin: center center !important;
-  }
-
-  /* Adjust highlight for different zoom levels */
-  @media (max-width: 1200px) {
-    .tutorial-highlighted {
-      border-width:  5px !important;
-      box-shadow:    0 0 15px rgba(0, 122, 204, 0.5) !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .tutorial-highlighted {
-      border-width:  2px !important;
-      box-shadow:    0 0 10px rgba(0, 122, 204, 0.5) !important;
-      transform:     scale(1.1) !important;
-    }
+    position:       relative;
+    z-index:        9998 !important;
+    outline:        4px solid #007acc !important;
+    outline-offset: 2px !important;
+    border-radius:  6px !important;
+    box-shadow:     0 0 20px rgba(0, 122, 204, 0.5) !important;
   }
 
   .tutorial-system {
@@ -1445,6 +1541,32 @@ onUnmounted(() => {
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 10px;
+  }
+
+  .tutorial-delete-btn.tutorial-edit-btn {
+    background: #d6e4fb;
+    color:      #1a4fb3;
+    margin-right: 4px;
+  }
+  .tutorial-delete-btn.tutorial-edit-btn:hover {
+    background: #b9d0f7;
+  }
+
+  .preview-badge,
+  .tutorial-header .preview-badge,
+  .question-header .preview-badge {
+    flex:          0 0 auto;
+    width:         auto;
+    align-self:    center;
+    margin-left:   auto;
+    margin-right:  8px;
+    padding:       1px 6px;
+    border-radius: 4px;
+    background:    #fff3c4;
+    color:         #7a5a00;
+    font-size:     11px;
+    font-weight:   700;
+    letter-spacing: 0.05em;
   }
 
   .tutorial-delete-btn {

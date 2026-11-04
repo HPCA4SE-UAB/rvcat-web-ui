@@ -57,6 +57,12 @@
             <div class="tutorial-img">
               <div v-html="tutorialSvg" v-if="tutorialSvg"></div>
             </div>
+            <div v-if="tutorial.steps.length" class="graph-legend">
+              <span style="--c: blue; --f: lightblue">Card</span>
+              <span style="--c: #b58900; --f: #fff3c4">Optional branch (2nd successor)</span>
+              <span style="--c: purple; --f: #ab82ff">Question</span>
+              <span style="--c: transparent; --f: transparent">Click a node to edit it</span>
+            </div>
           </div>
         </div>
 
@@ -100,6 +106,11 @@
                   {{ stepNumber }}
                 </span>
                 <div class="step-controls">
+                  <button type="button" class="blue-button preview-btn" @click="previewFromCard"
+                    id="tutorial-preview-button"
+                    title="Run this tutorial from this card, as students will see it (closing it returns to the editor)">
+                    ▶ Preview from this card
+                  </button>
                   <button type="button" @click="removeStep(stepNumber)" class="remove-btn"
                     title="Remove selected step" aria-label="Remove selected step">×</button>
                 </div>
@@ -113,6 +124,11 @@
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
                 </option>
               </select>
+              <input v-if="currentStep.next?.[0]" type="text" class="button-label-input"
+                :value="currentStep.nextLabels?.[0] || ''"
+                @input="setSuccessorLabel(currentStep, 0, $event.target.value)"
+                :placeholder="`Button text (default: ${successorTitle(currentStep, 0)})`"
+                title="Text of the button that goes to this successor; empty = title of the target card">
               <label>Second successor (optional)</label>
               <select :value="currentStep.next?.[1] || ''" @change="setSuccessor(currentStep, 1, $event.target.value)">
                 <option value="">No second successor</option>
@@ -122,10 +138,15 @@
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
                 </option>
               </select>
+              <input v-if="currentStep.next?.[1]" type="text" class="button-label-input"
+                :value="currentStep.nextLabels?.[1] || ''"
+                @input="setSuccessorLabel(currentStep, 1, $event.target.value)"
+                :placeholder="`Button text (default: ${successorTitle(currentStep, 1)})`"
+                title="Text of the button that goes to this successor; empty = title of the target card">
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
-              <textarea v-model="currentStep.description" placeholder="What happens"></textarea>
+              <RichTextArea v-model="currentStep.description" placeholder="What the student should learn: start with the key idea in bold" />
               <template v-if="currentStep.type === 'step'">
                 <label>Position</label>
                 <select v-model="currentStep.position">
@@ -165,9 +186,10 @@
                   <option value="switchTo:simulationComponent">     Go to Simulation     </option>
                   <option value="switchTo:staticAnalysisComponent"> Go to Static Analysis</option>
                   <option value="switchTo:timelineComponent">       Go to Timeline       </option>
-                  <option value="switchToFull:processor">           Go to Processor      </option>
-                  <option value="switchToFull:program">             Go to Program        </option>
-                  <option value="switchToFull:tutorial">            Go to Tutorial       </option>
+                  <option value="switchTo:aboutComponent">          Go to About          </option>
+                  <option value="switchToFull:processor">           Open Processor editor</option>
+                  <option value="switchToFull:program">             Open Program editor  </option>
+                  <option value="switchToFull:tutorial">            Open Tutorial editor </option>
                 </select>
 
                 <label>Step Image (opt.)</label>
@@ -258,7 +280,7 @@
             <template v-else-if="currentStep.type === 'question'">
               <div class="form-group left-column">
                 <label>Question text <span class="required">*</span></label>
-                <textarea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text"></textarea>
+                <RichTextArea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text" />
 
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
@@ -320,7 +342,16 @@
       such as clicking some button, or selecting some value in a certain input box.</p>
       <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination End Tutorial.
       Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
-      Older JSON tutorials are migrated to a linear flow when loaded.</p>"
+      Older JSON tutorials are migrated to a linear flow when loaded.</p>
+      <details><summary>Levels of detail, button texts and preview</summary>
+        <p>Use the second successor for optional cards (e.g. <em>In depth</em>) that return to the main path:
+        the graph shows them in yellow. Each successor can have its own <strong>button text</strong>;
+        when empty, the button shows the title of the target card.</p>
+        <p>The text toolbar inserts bold, italic, red highlight, bullet points and line breaks, and
+        <em>Preview</em> shows how the text will look. <strong>▶ Preview from this card</strong> runs the
+        tutorial from the selected card; closing it returns to the editor.</p>
+        <p>To change a tutorial of the menu, click its ✎ button: it is loaded here.</p>
+      </details>"
     title="Tutorial edition, download and upload"
     @close="closeHelp"  />
   </Teleport>
@@ -331,6 +362,7 @@
 <script setup>
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
+import RichTextArea                                      from '@/components/RichTextArea.vue'
 import {
   downloadJSON, uploadJSON, createGraphVizGraph,
   createTutorialStepId, migrateTutorialFlow, TUTORIAL_FLOW_VERSION
@@ -470,6 +502,7 @@ const validationButtonSelectors = [
 const createEmptyStep = () => ({
   id:               createTutorialStepId(),
   next:             [],
+  nextLabels:       [],
   type:            'step',
   title:           '',
   description:     '',
@@ -489,6 +522,7 @@ const createEmptyStep = () => ({
 const createEmptyQuestion = () => ({
   id:           createTutorialStepId(),
   next:         [],
+  nextLabels:   [],
   type:          'question',
   title:         '',
   questionText:  '',
@@ -600,10 +634,34 @@ const handleStepOrderKeydown = (event, stepId) => {
 }
 
 const setSuccessor = (step, slot, targetId) => {
-  const next = [...(step.next || [])]
-  while (next.length <= slot) next.push('')
-  next[slot] = targetId
-  step.next = next.filter(Boolean)
+  // successors and their optional button texts move together
+  const pairs = [0, 1].map(i => ({ id: step.next?.[i] || '', label: step.nextLabels?.[i] || '' }))
+  pairs[slot].id = targetId
+  if (!targetId) pairs[slot].label = ''
+  const kept = pairs.filter(p => p.id)
+  step.next       = kept.map(p => p.id)
+  step.nextLabels = kept.map(p => p.label)
+}
+
+const setSuccessorLabel = (step, slot, label) => {
+  const labels = [...(step.nextLabels || [])]
+  while (labels.length <= slot) labels.push('')
+  labels[slot] = label
+  step.nextLabels = labels.slice(0, (step.next || []).length)
+}
+
+// Title of the card a successor slot points to (default button text)
+const successorTitle = (step, slot) => {
+  const id = step.next?.[slot]
+  if (!id) return ''
+  if (id === 'end') return 'End Tutorial'
+  return tutorial.steps.find(s => s.id === id)?.title || ''
+}
+
+// Exported only when some button has its own text
+const exportLabels = (step) => {
+  const labels = (step.nextLabels || []).slice(0, (step.next || []).length).map(l => (l || '').trim())
+  return labels.some(Boolean) ? labels : null
 }
 
 // ============================================================================
@@ -721,6 +779,7 @@ const convertStepForExport = (step) => {
       }))
     }
     if (step.image) q.image = step.image
+    if (exportLabels(step)) q.nextLabels = exportLabels(step)
     return q
   }
 
@@ -735,6 +794,7 @@ const convertStepForExport = (step) => {
   }
   if (step.image)   s.image  = step.image
   if (step.action)  s.action = step.action
+  if (exportLabels(step)) s.nextLabels = exportLabels(step)
 
   const validation = buildValidation(step)
   if (validation)
@@ -853,22 +913,51 @@ const downloadTutorial = () => {
   downloadJSON(tutorialData, 'tempTut', 'tutorial');
 };
 
+// Loads a tutorial (file format) into the editor draft
+const importTutorialData = (data) => {
+  try {
+    const converted = { ...data, steps: data.steps.map(convertUploadedStep) }
+    const normalized = migrateTutorialFlow(converted)
+    tutorial.name        = normalized.name        || ''
+    tutorial.description = normalized.description || ''
+    tutorial.flowVersion = normalized.flowVersion
+    tutorial.steps       = normalized.steps
+    stepNumber.value     = 0
+  } catch (error) {
+    console.error('🎓❌ Failed to import tutorial flow:', error)
+    alert(`Could not load tutorial: ${error.message}`)
+  }
+}
+
 const uploadTutorial = () => {
-  uploadJSON((data) => {
-    try {
-      const converted = { ...data, steps: data.steps.map(convertUploadedStep) }
-      const normalized = migrateTutorialFlow(converted)
-      tutorial.name        = normalized.name        || ''
-      tutorial.description = normalized.description || ''
-      tutorial.flowVersion = normalized.flowVersion
-      tutorial.steps       = normalized.steps
-      stepNumber.value     = 0
-    } catch (error) {
-      console.error('🎓❌ Failed to import tutorial flow:', error)
-      alert(`Could not load tutorial: ${error.message}`)
-    }
-  }, 'tutorial');
+  uploadJSON(importTutorialData, 'tutorial');
 };
+
+// ✎ in the tutorial menu: load that tutorial into the editor
+watch(() => simState.tutorialToEdit?.nonce, (nonce) => {
+  if (!nonce) return
+  const id = simState.tutorialToEdit.id
+  try {
+    const data = JSON.parse(localStorage.getItem(`tutorial.${id}`))
+    if (tutorial.steps.length &&
+        !confirm(`Replace the current draft ("${tutorial.name || 'untitled'}") with the tutorial "${data.name}"?`))
+      return
+    importTutorialData(data)
+  } catch (error) {
+    alert(`Could not open tutorial "${id}": ${error.message}`)
+  }
+})
+
+// ▶ Preview: run the draft in the tutorial engine, starting at the selected card
+const previewFromCard = () => {
+  if (!currentStep.value) return
+  try {
+    localStorage.setItem('tutorialPreview', JSON.stringify(buildTutorialData()))
+    simState.tutorialPreview = { stepId: currentStep.value.id, nonce: Date.now() }
+  } catch (error) {
+    alert(`Cannot preview: ${error.message}`)
+  }
+}
 
 // ============================================================================
 // Utilities: convertUploadedStep, processTutorialUpdate
@@ -879,6 +968,7 @@ const convertUploadedStep = (step) => {
     const q = {
       id:            step.id,
       next:          step.next,
+      nextLabels:    step.nextLabels || [],
       type:          'question',
       title:         step.title || '',
       questionText:  step.questionText || '',
@@ -901,6 +991,7 @@ const convertUploadedStep = (step) => {
     ...createEmptyStep(),
     id:          step.id,
     next:        step.next,
+    nextLabels:  step.nextLabels || [],
     title:       step.title       || '',
     description: step.description || '',
     image:       step.image       || '',
@@ -936,6 +1027,9 @@ async function updateTutorialGraph(t, selectedIndex) {
   const renderRequest = ++graphRenderRequest
   const dotCode = generateTutorialDot(t, selectedIndex)
   const svg = await createGraphVizGraph(dotCode)
+  // keep the natural size (readable titles); the container scrolls horizontally if needed
+  const vb = svg.viewBox?.baseVal
+  if (vb?.width) svg.style.minWidth = `${Math.round(vb.width * 0.9)}px`
 
   if (renderRequest === graphRenderRequest)
     tutorialSvg.value = svg.outerHTML
@@ -944,7 +1038,7 @@ async function updateTutorialGraph(t, selectedIndex) {
 // ============================================================================
 // GRAPH: generateTutorialDot
 // ============================================================================
-function generateTutorialDot(tut, selectedIndex) {
+function generateTutorialDot(tut) {   // the selected node is highlighted on the SVG
   const num_steps = tut.steps.length
   const indexById = new Map(tut.steps.map((step, index) => [step.id, index]))
   let dot_code = `
@@ -954,20 +1048,21 @@ digraph "Tutorial Graph" {
    style="filled,rounded"; color=grey; tooltip="Tutorial flow-graph"; fillcolor=lightgrey;
    node [style=filled,margin="0.05,0.05", fontname="courier", URL="javascript:void(0)"];
 `
+  // Optional cards: reached as the second successor of some card (e.g. "In depth" branches)
+  const optional = new Set(tut.steps.map(s => s.next?.[1]).filter(id => id && id !== 'end'))
   for (let i = 0; i < num_steps; i++) {
-    let color = "blue"
-    let fill  = "lightblue"
-    let type  = tut.steps[i].type
-    const title = tut.steps[i].title || `${type} ${i}`
-    const label = i === selectedIndex
-      ? `${i}\\n${escapeDotString(title.slice(0, 5))}`
-      : i
+    const step  = tut.steps[i]
+    const type  = step.type
+    const title = step.title || `(untitled ${type})`
+    let color = "blue", fill = "lightblue", kind = "step"
     if (type !== "step") {
-      color = "purple"
-      fill  = "mediumpurple1"
+      color = "purple"; fill = "mediumpurple1"; kind = "question"
+    } else if (optional.has(step.id)) {
+      color = '"#b58900"'; fill = '"#fff3c4"'; kind = "optional branch"
     }
-    dot_code += `    a${i} [id="${getGraphNodeId(tut.steps[i].id)}", color=${color}, fillcolor=${fill}, label="${label}",
-                            tooltip="${escapeDotString(`${type}: ${title}`)}"]\n`
+    const label = `${i}\\n${wrapDotLabel(title)}`
+    dot_code += `    a${i} [id="${getGraphNodeId(step.id)}", shape=box, style="rounded,filled", color=${color}, fillcolor=${fill}, label="${label}",
+                            tooltip="${escapeDotString(`${i} (${kind}): ${title}`)}"]\n`
   }
   dot_code += `
   }
@@ -992,6 +1087,23 @@ digraph "Tutorial Graph" {
 function getGraphNodeId(stepId) {
   const encodedId = Array.from(String(stepId), char => char.codePointAt(0).toString(16)).join('-')
   return `tutorial-step-${encodedId}`
+}
+
+// Title of a graph node: at most 2 lines of 16 characters (escaped for DOT)
+function wrapDotLabel(text, width = 16, maxLines = 2) {
+  const words = String(text).replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean)
+  const lines = []
+  let line = ''
+  for (const word of words) {
+    if (line && (line + ' ' + word).length > width) { lines.push(line); line = word }
+    else line = line ? `${line} ${word}` : word
+  }
+  if (line) lines.push(line)
+  if (lines.length > maxLines) {
+    lines.length = maxLines
+    lines[maxLines - 1] = lines[maxLines - 1].slice(0, width - 1) + '…'
+  }
+  return lines.map(l => escapeDotString(l.length > width ? l.slice(0, width - 1) + '…' : l)).join('\\n')
 }
 
 function escapeDotString(value) {
@@ -1432,6 +1544,7 @@ onUnmounted(() => {
     min-height: 0;
     margin: 0;
     transform-box: fill-box;
+    overflow-x: auto;     /* graph keeps a readable size: scroll when it does not fit */
   }
 
   .tutorial-img > div {
@@ -1442,7 +1555,27 @@ onUnmounted(() => {
     min-width: 0;
     min-height: 0;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
+  }
+
+  .graph-legend {
+    display:     flex;
+    flex-wrap:   wrap;
+    gap:         4px 14px;
+    font-size:   0.8em;
+    color:       #555;
+    padding:     2px 4px;
+  }
+  .graph-legend span::before {
+    content:       '';
+    display:       inline-block;
+    width:         10px;
+    height:        10px;
+    margin-right:  4px;
+    border-radius: 3px;
+    vertical-align: -1px;
+    border:        1px solid var(--c);
+    background:    var(--f);
   }
 
   .tutorial-img svg[viewBox] {

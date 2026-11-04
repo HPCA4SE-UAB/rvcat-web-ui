@@ -13,6 +13,12 @@ provide('worker', useWorker())
 </template>
 
 <style>
+  /* The page never scrolls: the application fills the window and each panel scrolls inside */
+  html {
+    height:   100%;
+    overflow: hidden;
+  }
+
   body {
     font-family: 'Trebuchet MS', sans-serif;
     font-size:  initial;
@@ -43,6 +49,7 @@ provide('worker', useWorker())
   .main {
     height:   100%;
     width:    100%;
+    box-sizing: border-box;   /* the padding stays inside the 100% */
     overflow: auto;
     padding:  1px;
     z-index:  10;

@@ -1,0 +1,263 @@
+{
+  "id": "perfTour",
+  "name": "Understanding loop performance",
+  "description": "Why does a loop take the time it takes? Latency and throughput bounds, simulation and timeline, with optional in-depth cards.",
+  "flowVersion": 2,
+  "steps": [
+    {
+      "id": "welcome",
+      "type": "step",
+      "title": "Welcome to RVCAT",
+      "description": "<b>RVCAT explains why a loop takes the time it takes.</b><br>It simulates a loop running on a configurable out-of-order processor<br>and answers one question: <b>how many cycles does each iteration need?</b><br><br>At each topic you can <b>continue</b>, or open an <i>In depth</i> card first.",
+      "selector": ".header-title",
+      "position": "bottom",
+      "next": [
+        "program"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "program",
+      "type": "step",
+      "title": "The loop program",
+      "description": "<b>One iteration of the loop, written as simple machine instructions.</b><br>The loop runs <b>N</b> times (N is set next to the program name).<br>For performance, what matters is the instruction <b>types</b><br>and the <b>data dependences</b> between instructions.",
+      "selector": ".program-container",
+      "position": "right",
+      "next": [
+        "processor",
+        "program-more"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "program-more",
+      "type": "step",
+      "title": "In depth: the program",
+      "description": "&bull; The <b>type</b> button cycles the columns: operand sizes, latency and<br>&nbsp;&nbsp;&nbsp;ports, inputs/outputs, memory addresses, strides and vector lanes.<br>&bull; Pick another program in the list, or edit it with ✎ (or <b>Edit Program</b>).<br>&bull; Not modeled: registers, branch outcomes and memory ordering.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
+      "selector": ".program-container",
+      "position": "right",
+      "next": [
+        "processor"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "processor",
+      "type": "step",
+      "title": "The processor",
+      "description": "<b>A pipeline described by a few numbers.</b><br>&bull; <b>Dispatch</b> / <b>Retire</b>: instructions per cycle that enter / leave.<br>&bull; <b>Ports</b> P0…Pn: each executes 1 instruction per cycle, of the types listed.<br>&bull; <b>ROB</b>: how many instructions can be in flight at the same time.<br>&bull; <b>Cache</b> (optional): adds the delays of memory accesses.",
+      "selector": ".processor-container",
+      "position": "right",
+      "next": [
+        "bounds",
+        "processor-more"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "processor-more",
+      "type": "step",
+      "title": "In depth: the processor",
+      "description": "&bull; Click 🔄 in the diagram to change dispatch, retire, ROB or cache.<br>&bull; <b>Scheduler</b>: <i>greedy</i> issues the oldest ready instructions;<br>&nbsp;&nbsp;&nbsp;<i>optimal</i> chooses the best combination of ports.<br>&bull; Cache: blocks × block size, miss penalty, issue time, fill and<br>&nbsp;&nbsp;&nbsp;write buffers, and return throughput.<br>&bull; <b>Edit Processor</b> (top bar) changes latencies and ports.",
+      "selector": ".processor-container",
+      "position": "right",
+      "next": [
+        "bounds"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "bounds",
+      "type": "step",
+      "title": "Two bounds on performance",
+      "description": "<b>Minimum time = max( latency bound , throughput bound ).</b><br>&bull; <b>Latency bound</b>: a chain of dependent instructions that repeats<br>&nbsp;&nbsp;&nbsp;every iteration cannot run faster than the sum of its latencies.<br>&bull; <b>Throughput bound</b>: the busiest resource (dispatch, retire or a set<br>&nbsp;&nbsp;&nbsp;of ports) cannot do more work per cycle.<br>The larger bound tells you <b>what limits the loop</b>.",
+      "selector": ".bounds-summary",
+      "position": "bottom",
+      "next": [
+        "latency"
+      ],
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "id": "latency",
+      "type": "step",
+      "title": "Latency bounds",
+      "description": "<b>Each row is a cyclic chain of dependences.</b><br>Cycles/iter = sum of latencies ÷ loop iterations spanned by the chain.<br>The row tagged <b>max</b> gives the latency bound.<br><i>Tip:</i> click a row to see that chain in the dependence graph.",
+      "selector": "#latency-bounds",
+      "position": "bottom",
+      "next": [
+        "throughput",
+        "latency-more"
+      ],
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "id": "latency-more",
+      "type": "step",
+      "title": "In depth: the dependence graph",
+      "description": "&bull; <b>📈 Dependence graph</b> opens a movable, resizable window.<br>&bull; One box per loop iteration; cyclic dependences are drawn in red.<br>&bull; Clicking a row of <i>Latency bounds</i> highlights its chain.<br>&bull; Hovering an instruction number highlights it in the graph and program.<br>&bull; Mouse wheel: zoom · drag: move · <i>Fit</i>: whole graph.",
+      "selector": "#open-dependence-graph",
+      "position": "bottom",
+      "next": [
+        "throughput"
+      ],
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "id": "throughput",
+      "type": "step",
+      "title": "Throughput bounds",
+      "description": "<b>Each row is a resource and the work it must do.</b><br>Cycles/iter = instructions that can only use it ÷ its throughput.<br>The row tagged <b>max</b> gives the throughput bound.<br>Hover (or click) a value to see how it is computed.",
+      "selector": "#throughput-bounds",
+      "position": "left",
+      "next": [
+        "check-bound",
+        "throughput-more"
+      ],
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "id": "throughput-more",
+      "type": "step",
+      "title": "In depth: sets of ports",
+      "description": "&bull; An instruction that can run on P0 <i>or</i> P2 does not load P0 alone:<br>&nbsp;&nbsp;&nbsp;it only counts for sets that contain <b>both</b> ports.<br>&bull; Numbers in <span style=\"color:#6b7280\">grey</span> are instructions that can escape to<br>&nbsp;&nbsp;&nbsp;another port (hover to see which ones).<br>&bull; Sets of ports are listed when they share instructions:<br>&nbsp;&nbsp;&nbsp;P0+P2 and P2+P3 give P0+P2+P3.",
+      "selector": "#throughput-bounds",
+      "position": "left",
+      "next": [
+        "check-bound"
+      ],
+      "action": "switchTo:staticAnalysisComponent"
+    },
+    {
+      "id": "check-bound",
+      "type": "question",
+      "title": "Check: which bound?",
+      "questionText": "A loop has a <b>latency bound of 5.00</b> and a <b>throughput bound of 2.33</b> cycles/iter. What is its minimum time per iteration?",
+      "answerMode": "single",
+      "answers": [
+        {
+          "text": "5.00 cycles/iter: the loop is latency-bound",
+          "isCorrect": true,
+          "explanation": "Right: the slowest constraint wins, max(5.00, 2.33) = 5.00."
+        },
+        {
+          "text": "2.33 cycles/iter: out-of-order execution hides the latency",
+          "isCorrect": false,
+          "explanation": "Out-of-order execution overlaps iterations, but a cyclic chain still needs 5 cycles per iteration."
+        },
+        {
+          "text": "7.33 cycles/iter: both limits add up",
+          "isCorrect": false,
+          "explanation": "The bounds do not add: they are two independent lower limits, and the larger one applies."
+        },
+        {
+          "text": "3.67 cycles/iter: the average of both bounds",
+          "isCorrect": false,
+          "explanation": "There is no averaging: the minimum time is the maximum of the bounds."
+        }
+      ],
+      "next": [
+        "simulate"
+      ]
+    },
+    {
+      "id": "simulate",
+      "type": "step",
+      "title": "Run the simulation",
+      "description": "<b>Now measure it: click Run Simulation.</b><br>Compare <b>Cycles/iter</b> with the minimum time of the static analysis:<br>&bull; close to it: the bounds explain the performance;<br>&bull; much higher: something else slows the loop (memory, scheduling, ROB).",
+      "selector": "#run-simulation-button",
+      "position": "bottom",
+      "next": [
+        "timeline",
+        "simulate-more"
+      ],
+      "action": "switchTo:simulationComponent",
+      "validation": {
+        "type": "button_clicked",
+        "selector": "#run-simulation-button",
+        "message": "Click Run Simulation to continue"
+      }
+    },
+    {
+      "id": "simulate-more",
+      "type": "step",
+      "title": "In depth: simulation results",
+      "description": "&bull; <b>IPC</b>: instructions per cycle (its colour shows dispatch usage).<br>&bull; <b>Primary</b> misses start a block fill; <b>secondary</b> ones join a fill in progress.<br>&bull; <b>MM transfers</b>: main-memory reads + writes, and % of cycles busy.<br>&bull; The diagram shows how busy dispatch, each port, the cache and retire are.<br>&bull; <b>Store Results</b> keeps a run; click its name to see program, N and processor.",
+      "selector": "#simulation-results-info",
+      "position": "bottom",
+      "next": [
+        "timeline"
+      ],
+      "action": "switchTo:simulationComponent"
+    },
+    {
+      "id": "timeline",
+      "type": "step",
+      "title": "The timeline",
+      "description": "<b>Cycle by cycle: what each instruction is doing.</b><br>Rows are instructions (one colour per iteration), columns are cycles:<br><b>D</b> dispatch · <b>E</b> execute · <b>W</b> write result · <b>R</b> retire.<br>The symbols in between show <b>why</b> an instruction waits.<br><b>Critical</b> marks the chain that determines the execution time.",
+      "selector": "#canvas-container",
+      "position": "right",
+      "next": [
+        "check-timeline",
+        "timeline-more"
+      ],
+      "action": "switchTo:timelineComponent"
+    },
+    {
+      "id": "timeline-more",
+      "type": "step",
+      "title": "In depth: waiting symbols",
+      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
+      "selector": "#canvas-container",
+      "position": "right",
+      "next": [
+        "check-timeline"
+      ],
+      "action": "switchTo:timelineComponent"
+    },
+    {
+      "id": "check-timeline",
+      "type": "question",
+      "title": "Check: reading the timeline",
+      "questionText": "An instruction shows <b>D . . . E W R</b> in the timeline. Why does it wait after being dispatched?",
+      "answerMode": "single",
+      "answers": [
+        {
+          "text": "It waits for a source operand produced by an older instruction",
+          "isCorrect": true,
+          "explanation": "Yes: \".\" means a data dependence; it executes (E) when the operand is ready."
+        },
+        {
+          "text": "It waits for a free execution port",
+          "isCorrect": false,
+          "explanation": "A port conflict is shown with \"*\"."
+        },
+        {
+          "text": "It waits for older instructions to retire",
+          "isCorrect": false,
+          "explanation": "That is \"-\", and it appears after the result is written (W)."
+        },
+        {
+          "text": "It waits for a cache miss",
+          "isCorrect": false,
+          "explanation": "Cache waits are shown with \"!\", \":\", \"2\" or \"@\"."
+        }
+      ],
+      "next": [
+        "experiment"
+      ]
+    },
+    {
+      "id": "experiment",
+      "type": "step",
+      "title": "Experiment!",
+      "description": "<b>Change one thing, predict the effect, then simulate.</b><br>&bull; Edit the program or the processor (top bar), or change N.<br>&bull; Add a port, change a latency or the ROB size.<br>&bull; <b>Store Results</b> to compare runs side by side.<br><i>Tip:</i> click any value with an explanation to pin it.<br>The <b>?</b> button (bottom right) reopens the tutorials.",
+      "selector": "#program-button",
+      "position": "bottom",
+      "next": [
+        "end"
+      ],
+      "action": "switchTo:simulationComponent"
+    }
+  ]
+}

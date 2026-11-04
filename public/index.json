@@ -11,7 +11,8 @@
     "V1",
     "V2"
   ],
-   "tutorial": [
-    "navigation-tour"
+  "tutorial": [
+    "navigation-tour",
+    "tutorial2"
   ]
 }

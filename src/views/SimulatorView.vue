@@ -182,7 +182,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <body>
+  <div class="app-root">
     <header :title="`RVCAT version ${RVCAT_VERSION}`">
       <div id="top">
         <div class="header-title">
@@ -319,14 +319,25 @@ onUnmounted(() => {
         />
       </div>
     </main>
-  </body>
+  </div>
 </template>
 
 <style scoped>
 
+/* The application fills exactly the browser window: header + panels area.
+   Each column/panel scrolls inside itself, so the page itself never scrolls. */
+.app-root {
+  height:         100vh;
+  height:         100dvh;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+}
+header { flex: none; }
+
 #top {
   max-height:      5vh;
-  width:           100vw;
+  width:           100%;   /* 100vw would include the scrollbar width */
   padding:         0.6%;
   display:         flex;
   color:           white;
@@ -372,14 +383,15 @@ nav ul li {
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 33% 66.5%;
+  grid-template-columns: 33% calc(67% - 0.3vh);
+  grid-template-rows:    minmax(0, 1fr) auto;   /* panels row fills the height; tutorial row is empty */
   gap:          0.3vh;
-  width:        100vw;
-  min-height:   130vh;
+  flex:         1 1 auto;
+  min-height:   0;
+  width:        100%;
   margin-top:   0.3vh;
-  margin-right: 0.3vh;
   background:   #e3e3e3;
-  overflow:     auto;
+  overflow:     hidden;
   box-sizing:   border-box;
   transition:   all 0.3s ease;
 }
@@ -387,7 +399,7 @@ nav ul li {
 /* Side panel collapsed: narrow strip + right panel */
 .container.side-collapsed {
   grid-template-columns: 28px calc(100% - 28px - 0.3vh);
-  grid-template-rows:    1fr auto;   /* panels keep the full height without the side column */
+  grid-template-rows:    minmax(0, 1fr) auto;
 }
 .side-expand {
   grid-column:    1;
@@ -437,21 +449,14 @@ nav ul li {
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 1; }
 .tutorial  { grid-column: 1; grid-row: 1; }
-.results   { grid-column: 2; grid-row: 1; min-width: 0;}
+.results   { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .process   { grid-column: 1; grid-row: 1; min-width: 0;}
 
 .container.processor-fullscreen,
 .container.program-fullscreen,
 .container.tutorial-fullscreen {
   grid-template-columns: 1fr;
-  grid-template-rows:    1fr;
-  position: fixed;
-  top:      40px;
-  left:     0;
-  right:    0;
-  height:   200vh;
-  bottom:   0;
-  z-index:  999;
+  grid-template-rows:    minmax(0, 1fr) auto;
   padding:  0;
   background: white;
 }
@@ -472,6 +477,9 @@ nav ul li {
   align-items: flex-start;
   justify-content: flex-start;
   gap: 0;
+  min-height: 0;
+  overflow-y: auto;      /* processor + program scroll inside the left column */
+  overflow-x: hidden;
 }
 
 .components-wrapper > * {
@@ -526,7 +534,8 @@ nav ul li {
 .grid-item.program,
 .grid-item.tutorial {
   padding:       0px;
-  max-height: 2400px;
+  max-height: none;
+  overflow:   auto;      /* full-screen editors scroll inside */
   margin:     0 auto;
 }
 
