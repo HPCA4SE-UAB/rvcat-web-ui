@@ -3,8 +3,18 @@
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { downloadJSON, uploadJSON, createGraphVizGraph,
            instructionTypes, typeOperations, typeSizes, get_processor_dot                   } from '@/common'
+  import { processorDraftFrom }                                          from '@/editDrafts'
 
   const simState = inject('simulationState');
+
+  // Opened with no draft, or with the untouched default one: start from the current processor
+  function seedDraftFromCurrentProcessor() {
+    let draft = null
+    try { draft = JSON.parse(localStorage.getItem('processorTemp')) } catch { /* invalid draft */ }
+    if ((!draft || draft.name === 'default') && simState.simulatedProcess?.ports) {
+      localStorage.setItem('processorTemp', JSON.stringify(processorDraftFrom(simState.simulatedProcess)))
+    }
+  }
 
   const props = defineProps({
     isFullscreen: {
@@ -199,6 +209,7 @@
 
     if (fullscreen) { // maybe edited program has changed
       nextTick(() => {
+        seedDraftFromCurrentProcessor();
         loadEditedProcessor();
       })
     }
@@ -573,58 +584,73 @@
             </span>
             <span class="header-title">Cache Memory Settings</span>
           </div>
-          <div class="iters-group">
-            <span>Number of Blocks:</span>
-            <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32"
-                 id="cache-blocks"
-                 title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
+          <div class="cache-fields">
+            <label class="cache-field">
+              <span>Number of Blocks:</span>
+              <input type="number" v-model.number="procConfig.nBlocks" min="0" max="32"
+                   id="cache-blocks"
+                   title="Memory blocks stored into cache (0 => no cache; up to 32)"/>
+            </label>
 
-            <span>Block Size:</span>
-            <div class="button-group">
-              <button @click="procConfig.blkSize = Math.max(MIN_CACHE_BLOCK_SIZE, procConfig.blkSize / 2)">−</button>
-              <input type="number" v-model.number="procConfig.blkSize" readonly
-                   id="block-size"
-                  min="4"
-                  title="Size of Memory block: must be a power of two (4 to 128)"
-               />
-              <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
-            </div>
+            <span class="cache-field">
+              <span>Block Size:</span>
+              <span class="button-group">
+                <button @click="procConfig.blkSize = Math.max(MIN_CACHE_BLOCK_SIZE, procConfig.blkSize / 2)">−</button>
+                <input type="number" v-model.number="procConfig.blkSize" readonly
+                     id="block-size"
+                    min="4"
+                    title="Size of Memory block: must be a power of two (4 to 128)"
+                 />
+                <button @click="procConfig.blkSize = Math.min(128, procConfig.blkSize * 2)">+</button>
+              </span>
+            </span>
 
-            <span>Miss Penalty:</span>
-            <input type="number" v-model.number="procConfig.mPenalty" :min="procConfig.mIssueTime" max="99"
-                 id="miss-penalty"
-                 @change="validateCacheTiming"
-                 title="Extra latency due to cache miss; must be at least Miss Issue Time"/>
+            <label class="cache-field">
+              <span>Miss Penalty:</span>
+              <input type="number" v-model.number="procConfig.mPenalty" :min="procConfig.mIssueTime" max="99"
+                   id="miss-penalty"
+                   @change="validateCacheTiming"
+                   title="Extra latency due to cache miss; must be at least Miss Issue Time"/>
+            </label>
 
-            <span>Miss Issue Time:</span>
-            <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99"
-                 id="miss-issue-time"
-                 @change="validateCacheTiming"
-                 title="Minimum time between Memory accesses (1 to 99)"/>
+            <label class="cache-field">
+              <span>Miss Issue Time:</span>
+              <input type="number" v-model.number="procConfig.mIssueTime" min="1" max="99"
+                   id="miss-issue-time"
+                   @change="validateCacheTiming"
+                   title="Minimum time between Memory accesses (1 to 99)"/>
+            </label>
+
+            <label class="cache-field">
+              <span>Fill Buffers:</span>
+              <input type="number" v-model.number="procConfig.nFillBuffers" min="1" max="32"
+                   id="fill-buffer-count"
+                   @change="validateBufferCount('nFillBuffers', 'Fill buffer count')"
+                   title="Maximum number of distinct cache-block fills in progress (1 to 32)"/>
+            </label>
+
+            <label class="cache-field">
+              <span>Write Buffers:</span>
+              <input type="number" v-model.number="procConfig.nWriteBuffers" min="1" max="32"
+                   id="write-buffer-count"
+                   @change="validateBufferCount('nWriteBuffers', 'Write buffer count')"
+                   title="Maximum number of dirty cache blocks waiting for Main Memory writes (1 to 32)"/>
+            </label>
+
+            <label class="cache-field">
+              <span>Return Throughput:</span>
+              <input type="number" v-model.number="procConfig.rThru" min="1" max="32"
+                   id="return-throughput"
+                   @change="validateBufferCount('rThru', 'Return throughput')"
+                   title="Maximum number of cache-miss waiters served per cycle (1 to 32)"/>
+            </label>
+
             <small v-if="cacheTimingMessage" class="validation-message">
               {{ cacheTimingMessage }}
             </small>
-
-            <span>Fill Buffers:</span>
-            <input type="number" v-model.number="procConfig.nFillBuffers" min="1" max="32"
-                 id="fill-buffer-count"
-                 @change="validateBufferCount('nFillBuffers', 'Fill buffer count')"
-                 title="Maximum number of distinct cache-block fills in progress (1 to 32)"/>
-
-            <span>Write Buffers:</span>
-            <input type="number" v-model.number="procConfig.nWriteBuffers" min="1" max="32"
-                 id="write-buffer-count"
-                 @change="validateBufferCount('nWriteBuffers', 'Write buffer count')"
-                 title="Maximum number of dirty cache blocks waiting for Main Memory writes (1 to 32)"/>
             <small v-if="bufferValidationMessage" class="validation-message">
               {{ bufferValidationMessage }}
             </small>
-
-            <span>Return Throughput:</span>
-            <input type="number" v-model.number="procConfig.rThru" min="1" max="32"
-                 id="return-throughput"
-                 @change="validateBufferCount('rThru', 'Return throughput')"
-                 title="Maximum number of cache-miss waiters served per cycle (1 to 32)"/>
           </div>
         </div>
       </div>
@@ -940,6 +966,32 @@
     flex: 1 1 55%;
   }
 
+  /* Cache settings: each label stays on one line next to its input; pairs wrap as a unit */
+  .cache-fields {
+    display:         flex;
+    flex-wrap:       wrap;
+    justify-content: center;
+    align-items:     center;
+    gap:             4px 14px;
+    padding:         2px 6px;
+  }
+  .cache-field {
+    display:     inline-flex;
+    align-items: center;
+    gap:         4px;
+    white-space: nowrap;
+  }
+  .cache-field input {
+    width:         34px;
+    padding:       2px 4px;
+    border:        1px solid #ccc;
+    border-radius: 4px;
+  }
+  .cache-fields .validation-message {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
   .settings-group.latency-group .table-container {
     flex: 0 0 auto;
   }
@@ -1011,14 +1063,11 @@
     cursor: pointer;
   }
 
+  /* The SVG scales with its container: cap the width so the text keeps a normal size */
   .processor-img {
     width:        100%;
-    height:       100%;
-    max-width:    150%;
-    max-height:   150%;
-    align-items:  center;
-    object-fit:   contain;
-    transform-box: fill-box;
+    max-width:    36rem;
+    margin:       0 auto;
   }
 
   .processor-img svg text {

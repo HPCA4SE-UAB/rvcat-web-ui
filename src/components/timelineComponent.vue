@@ -29,6 +29,7 @@
   const defaultOptions = {
     instructions:  20,
     cycles:        30,
+    autoFitCycles: true,   // cycles follow the available width until the user sets them
     critical:      false,
     showPorts:     true,
     showCache:     true,
@@ -38,6 +39,22 @@
   }
 
   const timelineOptions = reactive(defaultOptions)
+
+  // Number of cycles that fit in the visible width of the timeline (cells are 14 px)
+  function fitCycles() {
+    const wrapper = document.getElementById('canvas-container')
+    if (!wrapper || !wrapper.clientWidth) return
+    const scale = timelineOptions.canvasScale || 1
+    const fitting = Math.floor((wrapper.clientWidth / scale - 2 * 10 - 40) / 14)
+    timelineOptions.canvasOffsetX = 0
+    timelineOptions.cycles = Math.max(10, fitting)
+  }
+  function fitCyclesButton() {
+    timelineOptions.autoFitCycles = true
+    fitCycles()
+  }
+  function onCyclesTyped() { timelineOptions.autoFitCycles = false }
+  function onResizeFit()   { if (timelineOptions.autoFitCycles) fitCycles() }
 
   const loadOptions = () => {
     try {
@@ -227,7 +244,9 @@
     loadOptions()
     addCanvasWrapper()
     requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
+    window.addEventListener('resize', onResizeFit)
     nextTick(() => {
+      if (timelineOptions.autoFitCycles) fitCycles()
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
                timelineOptions.showPorts, timelineOptions.showCache,
@@ -251,6 +270,7 @@
   })
 
   onUnmounted(() => {
+    window.removeEventListener('resize', onResizeFit)
     if (cleanupHandleTimeline) {
       cleanupHandleTimeline()
       cleanupHandleTimeline = null
@@ -1326,20 +1346,26 @@
         <div class="iters-group">
           <span class="iters-label">Cycles:</span>
           <input type="number" min="1" v-model.number="timelineOptions.cycles"
-            title="# cycles"
+            title="Number of cycles shown"
+            @input="onCyclesTyped"
             id="timeline-cycles">
+          <button class="blue-button fit-cycles" @click="fitCyclesButton"
+            id="timeline-fit-cycles"
+            title="Show as many cycles as fit in the panel width (and keep fitting when the window is resized)">
+            Fit
+          </button>
         </div>
 
         <div class="iters-group">
           <span class="show-label">Show:</span>
-          <button class="blue-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
+          <button class="blue-button toggle-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
             title="Show the critical path ending at the last instruction retired in the visible cycles"
             id="timeline-critical"
             @click="toggleCritical">
             <span v-if="timelineOptions.critical">✔ </span>
             Critical
           </button>
-          <button class="blue-button" :class="{ active: timelineOptions.showPorts }"
+          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showPorts }"
             :aria-pressed="timelineOptions.showPorts"
             title="Show or hide execution-port usage rows"
             id="timeline-ports"
@@ -1347,7 +1373,7 @@
             <span v-if="timelineOptions.showPorts">✔ </span>
             Ports
           </button>
-          <button class="blue-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
+          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
             :aria-pressed="timelineOptions.showCache && cacheEnabled"
             :disabled="!cacheEnabled"
             :title="cacheEnabled

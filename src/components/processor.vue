@@ -4,6 +4,7 @@
   import { uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
            createGraphVizGraph, get_processor_dot, CACHE_BLOCK_SIZES,
            getAllowedCacheBlockSizes, getLargestMemoryAccessSize }                         from '@/common'
+  import { processorDraftFrom }                                                         from '@/editDrafts'
 
   const simState = inject('simulationState');
 
@@ -420,22 +421,7 @@
 
   function editProcessor () {
     if (simState.simulatedProcess) {
-      const cleanProcConfig = {
-        name:       'edit',
-        sched:      simState.simulatedProcess.sched      || 'optimal',
-        dispatch:   simState.simulatedProcess.dispatch   || 1,
-        retire:     simState.simulatedProcess.retire     || 1,
-        ROBsize:    simState.simulatedProcess.ROBsize    || 20,
-        nBlocks:    simState.simulatedProcess.nBlocks    || 0,
-        blkSize:    simState.simulatedProcess.blkSize    || 4,
-        mPenalty:   simState.simulatedProcess.mPenalty   || 1,
-        mIssueTime: simState.simulatedProcess.mIssueTime || 1,
-        nFillBuffers: simState.simulatedProcess.nFillBuffers || 2,
-        nWriteBuffers: simState.simulatedProcess.nWriteBuffers || 2,
-        rThru:      simState.simulatedProcess.rThru || 1,
-        latencies:  JSON.parse(JSON.stringify(simState.simulatedProcess.latencies)),
-        ports:      JSON.parse(JSON.stringify(simState.simulatedProcess.ports))
-      }
+      const cleanProcConfig = processorDraftFrom(simState.simulatedProcess)
       localStorage.setItem('processorTemp', JSON.stringify(cleanProcConfig));
       console.log('💻📄 Emit requestSwitchFull for processor edition')
       emit('requestSwitchFull', 'processor')

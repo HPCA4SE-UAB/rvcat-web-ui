@@ -2,12 +2,14 @@
 import { provide } from 'vue'
 import { useWorker } from './useWorker'
 import SimulatorView from './views/SimulatorView.vue'
+import PinnedDetail  from './components/PinnedDetail.vue'
 
 provide('worker', useWorker())
 </script>
 
 <template>
     <SimulatorView />
+    <PinnedDetail />
 </template>
 
 <style>
@@ -176,6 +178,31 @@ provide('worker', useWorker())
   }
   .small-btn {
     padding: 3px 0px;
+  }
+
+  /* Toggle buttons (show/hide something) look different from action buttons:
+     pill shape, white when off (○), light blue when on (✔). */
+  .blue-button.toggle-button {
+    border-radius: 999px;
+    background:    #ffffff;
+    color:         #1a4fb3;
+    border:        1px solid #9db7e3;
+    font-weight:   600;
+    padding:       3px 10px;
+  }
+  .blue-button.toggle-button:not(.active)::before {
+    content: '○ ';
+    color:   #8a9bb8;
+  }
+  .blue-button.toggle-button.active {
+    background:   #dbe7ff;
+    border-color: #1a4fb3;
+    color:        #0d3a8c;
+    box-shadow:   none;
+  }
+  .blue-button.toggle-button:hover {
+    background: #eef3fd;
+    color:      #0d3a8c;
   }
 
   input {

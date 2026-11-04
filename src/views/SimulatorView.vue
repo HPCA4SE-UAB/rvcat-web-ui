@@ -43,9 +43,25 @@ const { importRVCAT }               = useRVCAT_Api();
       }
     }
     localStorage.clear()
-    alert(`💻 New version of RVCAT has been released (V${rvcatOptions.version})`)
+    // Non-blocking notice (an alert() would stop the page while it loads)
+    versionNotice.value = `New version of RVCAT released (V${rvcatOptions.version}). ` +
+                          'Saved settings and results have been reset.'
+    setTimeout(() => { versionNotice.value = '' }, 15000)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
   }
+  const versionNotice = ref('')
+
+// ============================================================================
+// Side panel (processor + program) can be collapsed to give more room to the right panel
+// ============================================================================
+  const SIDE_KEY = 'sidePanelCollapsed'
+  const sideCollapsed = ref(false)
+  try { sideCollapsed.value = localStorage.getItem(SIDE_KEY) === 'true' } catch { /* default */ }
+  watch(sideCollapsed, (v) => {
+    try { localStorage.setItem(SIDE_KEY, String(v)) } catch { /* ignore */ }
+    // The right panel changed width: let width-dependent views (timeline) adapt
+    nextTick(() => window.dispatchEvent(new Event('resize')))
+  })
 
 // ============================================================================
 // Main Simulator Panel UI
@@ -83,6 +99,7 @@ const fullTutorialButtonText  = getButtonText('tutorial',  'Edit Tutorial');
 
 // Container classes
 const containerClasses = computed(() => ({
+  'side-collapsed':       sideCollapsed.value && isNotFullscreen.value,
   'processor-fullscreen': isProcessorFullscreen.value,
   'program-fullscreen':   isProgramFullscreen.value,
   'tutorial-fullscreen':  isTutorialFullscreen.value
@@ -174,6 +191,15 @@ onUnmounted(() => {
           <nav>
             <ul>
               <li>
+                <button class="blue-button side-toggle" :disabled="!isNotFullscreen"
+                  id="side-panel-toggle"
+                  :title="sideCollapsed ? 'Show the processor and program panels' : 'Hide the processor and program panels to give more room to the right panel'"
+                  @click="sideCollapsed = !sideCollapsed">
+                    {{ sideCollapsed ? '▶' : '◀' }} Side panel
+                </button>
+              </li>
+              <li class="separator"></li>
+              <li>
                 <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
                   id="simulation-button"
                   title="Simulate Program's execution and collect performance metrics"
@@ -237,6 +263,11 @@ onUnmounted(() => {
       </div>
     </header>
 
+    <div v-if="versionNotice" class="version-notice" role="status">
+      💻 {{ versionNotice }}
+      <button class="version-notice-close" @click="versionNotice = ''" title="Close">✕</button>
+    </div>
+
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
     <div class="overlay"      :style="{ display: showOverlay ? 'block' : 'none' }">
       <div class="spinner"></div>
@@ -246,10 +277,16 @@ onUnmounted(() => {
 
     <main class="container" :class="containerClasses">
 
-      <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen" id="process-panel">
+      <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen && !sideCollapsed" id="process-panel">
         <processor @requestSwitchFull="toggleFullScreen"/>
         <program :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
       </div>
+      <!-- Collapsed side panel: a narrow strip that brings it back -->
+      <button v-if="checkOK && isNotFullscreen && sideCollapsed" class="side-expand"
+              id="side-panel-expand" title="Show the processor and program panels"
+              @click="sideCollapsed = false">
+        <span>▶</span><span class="side-expand-label">Processor &amp; Program</span>
+      </button>
 
       <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processorEditor-panel">
         <processorEditor :is-fullscreen="isProcessorFullscreen"/>
@@ -345,6 +382,56 @@ nav ul li {
   overflow:     auto;
   box-sizing:   border-box;
   transition:   all 0.3s ease;
+}
+
+/* Side panel collapsed: narrow strip + right panel */
+.container.side-collapsed {
+  grid-template-columns: 28px calc(100% - 28px - 0.3vh);
+  grid-template-rows:    1fr auto;   /* panels keep the full height without the side column */
+}
+.side-expand {
+  grid-column:    1;
+  grid-row:       1;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  padding:        8px 0;
+  border:         none;
+  border-radius:  3px;
+  background:     #d4dbe6;
+  color:          #1a4fb3;
+  cursor:         pointer;
+  font-weight:    600;
+}
+.side-expand:hover { background: #c3cde0; }
+.side-expand-label {
+  writing-mode: vertical-rl;
+  white-space:  nowrap;
+}
+
+.version-notice {
+  position:      fixed;
+  top:           56px;
+  left:          50%;
+  transform:     translateX(-50%);
+  z-index:       2000;
+  display:       flex;
+  align-items:   center;
+  gap:           12px;
+  padding:       8px 12px 8px 16px;
+  background:    #fff8e1;
+  color:         #5a4500;
+  border:        1px solid #e0c060;
+  border-radius: 6px;
+  box-shadow:    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.version-notice-close {
+  background: none;
+  border:     none;
+  cursor:     pointer;
+  font-size:  1em;
+  color:      inherit;
 }
 
 .processor { grid-column: 1; grid-row: 1; }

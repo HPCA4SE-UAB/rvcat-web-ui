@@ -7,9 +7,20 @@
   import { downloadJSON, uploadJSON, createGraphVizGraph,
            instructionTypes, typeOperations, typeSizes,
            normalizeProgramDefaults                         }  from '@/common'
+  import { programDraftFrom, isEmptyProgramDraft }           from '@/editDrafts'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
+  const simState            = inject('simulationState');
+
+  // Opened with an empty draft: start from the program currently selected
+  function seedDraftFromCurrentProgram() {
+    let draft = null
+    try { draft = JSON.parse(localStorage.getItem('programTemp')) } catch { /* invalid draft */ }
+    if (isEmptyProgramDraft(draft) && simState.simulatedProcess?.instruction_list?.length) {
+      localStorage.setItem('programTemp', JSON.stringify(programDraftFrom(simState.simulatedProcess)))
+    }
+  }
 
   const props = defineProps({
     isFullscreen: {
@@ -69,6 +80,7 @@ const STORAGE_KEY = 'programEditOptions'
 
     if (fullscreen) { // maybe edited program has changed
       nextTick(() => {
+        seedDraftFromCurrentProgram();
         loadEditedProgram();
       })
     }
@@ -361,7 +373,7 @@ function snapshotProgram() {
         <span class="header-title">Program Editor</span>
       </div>
 
-      <button class="blue-button add-prev-margin"
+      <button class="blue-button toggle-button add-prev-margin"
               :class="{ active: programEditOptions.showInOut }"
           title="Show/Hide instruction Input/Output operands"
           id="show-inout-operands"
@@ -370,7 +382,7 @@ function snapshotProgram() {
         InOut
       </button>
 
-      <button class="blue-button add-margin"
+      <button class="blue-button toggle-button add-margin"
               :class="{ active: programEditOptions.showStrideLanes }"
           title="Show/Hide instruction Stride & vector lanes"
           id="show-mem-operands"
@@ -379,7 +391,7 @@ function snapshotProgram() {
         Stride/Lanes
       </button>
 
-      <button class="blue-button add-margin"
+      <button class="blue-button toggle-button add-margin"
               :class="{ active: programEditOptions.showActions }"
           title="Show/Hide column with buttons for moving/adding/removing instructions"
           id="show-instruction-actions"
@@ -388,7 +400,7 @@ function snapshotProgram() {
         Actions
       </button>
 
-      <button class="blue-button add-prev-margin" :class="{ active: programEditOptions.showGraph }"
+      <button class="blue-button toggle-button add-prev-margin" :class="{ active: programEditOptions.showGraph }"
           title="View/Update program's dependence graph on full-screen"
           id="open-edited-program-graph"
           @click="openFullScreen">

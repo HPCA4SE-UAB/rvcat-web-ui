@@ -781,7 +781,7 @@
           <span id="cycles-output" title="Total clock cycles">{{ formattedResults.cycles }}</span>
         </div>
         <div class="simulation-inline-item">
-          <label for="cycles-per-iteration">Cycles/iteration:</label>
+          <label for="cycles-per-iteration">Cycles/iter:</label>
           <span id="cycles-per-iteration-output" title="Clock cycles per loop iteration">{{ formattedResults.cpi }}</span>
         </div>
         <div class="simulation-inline-item">
@@ -885,7 +885,7 @@
               <th style="width: 100px;"> Iters  </th>
               <th style="width: 100px;"> Instr  </th>
               <th style="width: 100px;"> Cycles </th>
-              <th style="width: 100px;"> C/iter </th>
+              <th style="width: 100px;"> Cycles/iter </th>
               <th style="width: 100px;"> IPC    </th>
               <th style="width: 100px;" title="Primary cache misses (LOAD + STORE)"> Primary </th>
               <th style="width: 100px;" title="Secondary cache misses (LOAD + STORE)"> Secondary </th>
@@ -894,7 +894,8 @@
           </thead>
           <tbody v-if="simulationOptions.resultName">
             <tr v-for="(name, index) in simulationOptions.availableResults" :key="index">
-              <td @mouseenter="showResultContext($event, index)" @mouseleave="hideResultContext">
+              <td @mouseenter="showResultContext($event, index)" @mouseleave="hideResultContext"
+                  @focusin="showResultContext($event, index)" @focusout="hideResultContext">
                 <input type="text"
                   v-model="simulationOptions.availableResults[index]"
                   class="iters-group"
@@ -912,10 +913,10 @@
                 {{ showResultsInfo[index]?.total_cycles?.toLocaleString() ?? 'X' }}
               </td>
               <td title="Cycles per loop iteration">
-                {{ showResultsInfo[index]?.cycles_per_iteration?.toLocaleString() ?? 'X' }}
+                {{ showResultsInfo[index]?.cycles_per_iteration?.toFixed(2) ?? 'X' }}
               </td>
               <td title="Instructions Per cycle (IPC)">
-                {{ showResultsInfo[index]?.ipc?.toLocaleString() ?? 'X' }}
+                {{ showResultsInfo[index]?.ipc?.toFixed(3) ?? 'X' }}
               </td>
               <td :title="storedMemoryColumns[index]?.primaryDetail || 'Primary cache misses'">
                 {{ storedMemoryColumns[index]?.primary ?? 'X' }}
@@ -1182,14 +1183,11 @@
     align-items:     center;
   }
 
+  /* The SVG scales with its container: cap the width so the text keeps a normal size */
   .processor-img {
     width:        100%;
-    height:       100%;
-    max-width:    150%;
-    max-height:   150%;
-    align-items:  center;
-    object-fit:   contain;
-    transform-box: fill-box;
+    max-width:    40rem;
+    margin:       0 auto;
   }
 
   .processor-img svg text {

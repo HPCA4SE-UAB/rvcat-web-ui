@@ -4,6 +4,7 @@
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
            updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
            normalizeProgramDefaults }                                     from '@/common'
+  import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
 
@@ -152,13 +153,7 @@
   function editProgram () { // switch to full-screen program editor, sending current program data for edition
     if (simState.simulatedProcess) {
 
-      let cleanProgram = {
-        name: simState.simulatedProcess.name,
-        instruction_list: JSON.parse(
-          JSON.stringify(simState.simulatedProcess.instruction_list)
-        )
-      }
-
+      const cleanProgram = programDraftFrom(simState.simulatedProcess)
       localStorage.setItem('programTemp', JSON.stringify(cleanProgram));
       emit('requestSwitchFull', 'program')
       console.log('📄 Emit requestSwitchFull for program edition:')

@@ -321,7 +321,7 @@
       <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination End Tutorial.
       Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
       Older JSON tutorials are migrated to a linear flow when loaded.</p>"
-    title="Tutorial edition, download/upload, "
+    title="Tutorial edition, download and upload"
     @close="closeHelp"  />
   </Teleport>
 
@@ -421,18 +421,19 @@ const validationInputSelectors = [
   { label: 'Timeline show ports',             value: '#timeline-show-ports' },
   { label: 'Timeline show instructions',      value: '#timeline-show-instructions' },
 
-  { label: 'Dependence Graph',                value: '#dependence-graph' },
-  { label: 'Show internal dependences',       value: '#show-internal-dependences' },
-  { label: 'Show latency dependences',        value: '#show-latency-dependences' },
-  { label: 'Show instruction dependences',    value: '#show-instruction-dependences' },
-  { label: 'Show full dependences',           value: '#show-intfull-dependences' },
-  { label: 'Open full dependence graph',      value: '#open-full-dependence-graph' },
+  { label: 'Open dependence graph window',    value: '#open-dependence-graph' },
+  { label: 'Dependence graph (window)',       value: '#dependence-graph' },
+  { label: 'Graph: non-cyclic nodes',         value: '#show-internal-dependences' },
+  { label: 'Graph: latencies',                value: '#show-latency-dependences' },
+  { label: 'Graph: instruction text',         value: '#show-instruction-dependences' },
+  { label: 'Graph: constants & inputs',       value: '#show-full-dependences' },
 
   { label: 'Performance bound information',   value: '#performance-bound' },
   { label: 'Performance latency limit',       value: '#latency-limit' },
   { label: 'Performance throughput limit',    value: '#throughput-limit' },
   { label: 'Performance best limit',          value: '#best-limit' },
-  { label: 'Detailed thorughput limits',      value: '#detailed-thorughput-limits' },
+  { label: 'Latency bounds table',            value: '#latency-bounds' },
+  { label: 'Throughput bounds table',         value: '#throughput-bounds' },
 
   { label: 'Main RVCAT header',               value: '#top' },
   { label: 'Processor panel',                 value: '#processor-panel' },

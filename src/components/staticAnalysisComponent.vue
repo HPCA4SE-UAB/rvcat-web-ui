@@ -1,9 +1,11 @@
 <script setup>
   import { ref, toRaw, onMounted, onUnmounted, onBeforeUnmount,
-           nextTick, inject, watch, reactive }                from 'vue'
+           nextTick, inject, watch, reactive, computed }      from 'vue'
   import HelpComponent             from '@/components/helpComponent.vue'
+  import DependenceGraphWindow     from '@/components/DependenceGraphWindow.vue'
   import { createGraphVizGraph }                         from '@/common'
   import { useRVCAT_Api }                              from '@/rvcatAPI'
+  import { throughputBoundRows, latencyBoundRows }     from '@/performanceBounds'
 
   const { getDependenceGraph, getPerformanceAnalysis } = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -18,13 +20,19 @@
     showIntern:  false,
     showLaten:   false,
     showSmall:   false,
-    showFull:    false,
-    showThrough: false
+    showFull:    false
   }
 
   const dependenceGraphOptions = reactive(defaultOptions)
   const dependenceGraphSvg     = ref('')
-  const showFullScreen         = ref(false);
+
+  // Floating window with the dependence graph (open/closed is remembered)
+  const GRAPH_OPEN_KEY = 'dependenceGraphOpen'
+  const graphOpen = ref(localStorage.getItem(GRAPH_OPEN_KEY) === 'true')
+  watch(graphOpen, (open) => {
+    try { localStorage.setItem(GRAPH_OPEN_KEY, String(open)) } catch { /* ignore */ }
+    if (open) createDependenceGraph()
+  })
 
   let cleanupHandleGraph    = null
   let cleanupHandleAnalysis = null
@@ -35,8 +43,47 @@
     ThroughputTime:      0.0,
     "performance-bound":   "N/A",
     BestTime:            0.0,
-    "Throughput-Bottlenecks": []
+    "Throughput-Bounds": [],
+    "Latency-Bounds":    []
   })
+
+  const throughputTable = computed(() =>
+    throughputBoundRows(performanceData.value['Throughput-Bounds'],
+                        simState.simulatedProcess?.instruction_list ?? [])
+  )
+  const latencyTable = computed(() =>
+    latencyBoundRows(performanceData.value['Latency-Bounds'],
+                     simState.simulatedProcess?.instruction_list ?? [])
+  )
+  const minimumTimeFormula = computed(() => {
+    const { LatencyTime: lat, ThroughputTime: thr, BestTime: best } = performanceData.value
+    return `max{latency bound, throughput bound} = max{${lat.toFixed(2)}, ${thr.toFixed(2)}} = ${best.toFixed(2)} cycles/iter`
+  })
+  // Latency bound selected in the table: highlighted in the graph window
+  const selectedChainKey = ref(null)
+  const selectedChain = computed(() =>
+    latencyTable.value.rows.find(r => r.key === selectedChainKey.value) ?? null)
+
+  function selectChain(row) {
+    if (selectedChainKey.value === row.key) {   // second click: show the whole graph again
+      selectedChainKey.value = null
+      return
+    }
+    selectedChainKey.value = row.key
+    // Show enough iterations to follow the whole cycle back to its first instruction
+    const needed = Math.min(7, (row.iterations ?? 1) + 1)
+    if (dependenceGraphOptions.iters < needed) dependenceGraphOptions.iters = needed
+    graphOpen.value = true
+  }
+
+  // Hovering an instruction number highlights it in the program panel and in the graph
+  function hoverInstruction(index) { simState.instrHighlightedIdx = index }
+
+  const boundLabel = computed(() => ({
+    LATENCY:              'LATENCY-bound',
+    THROUGHPUT:           'THROUGHPUT-bound',
+    'LATENCY+THROUGHPUT': 'LATENCY+THROUGHPUT-bound',
+  }[performanceData.value['performance-bound']] ?? 'N/A'))
 
   const loadOptions = () => {
     try {
@@ -70,7 +117,7 @@
   }
 
   function createDependenceGraph() {
-    if (simState.state >= 3 && simState.simulatedProcess) {
+    if (graphOpen.value && simState.state >= 3 && simState.simulatedProcess) {
       getDependenceGraph(
         JSON.stringify( toRaw(simState.simulatedProcess.instruction_list), null, 2),
         dependenceGraphOptions.iters,
@@ -127,12 +174,6 @@
  /* ------------------------------------------------------------------
   * Dependence Graph options: UI actions
   * ------------------------------------------------------------------ */
-  function toggleIntern () { dependenceGraphOptions.showIntern  = !dependenceGraphOptions.showIntern  }
-  function toggleLaten  () { dependenceGraphOptions.showLaten   = !dependenceGraphOptions.showLaten   }
-  function toggleSmall  () { dependenceGraphOptions.showSmall   = !dependenceGraphOptions.showSmall   }
-  function toggleFull   () { dependenceGraphOptions.showFull    = !dependenceGraphOptions.showFull    }
-  function toggleThrough() { dependenceGraphOptions.showThrough = !dependenceGraphOptions.showThrough }
-
   watch (simState.simulatedProcess, () => {
       getAnalysis()
       createDependenceGraph()
@@ -171,28 +212,11 @@
   }
 
 /* ------------------------------------------------------------------
- * Fullscreen graph
- * ------------------------------------------------------------------ */
-  function openFullScreen() {
-    showFullScreen.value = true;
-    nextTick(() => {
-      const src = document.getElementById("dependence-graph");
-      const dst = document.getElementById("dependence-graph-full");
-      if (src && dst) {
-        dst.innerHTML = "";
-        dst.appendChild(src.querySelector("svg").cloneNode(true));
-      }
-    });
-  }
-  function closeFullScreen()  {
-    showFullScreen.value = false;
-  }
-
-/* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
   const showHelp1 = ref(false);  const showHelp2 = ref(false);  const showHelp3 = ref(false);
-  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);   const helpIcon3 = ref(null);
+  const helpIcon1 = ref(null);   const helpIcon2 = ref(null);
+  const showHelp4 = ref(false);  const helpIcon4 = ref(null);
   const helpPosition = ref({ top: '0%', left: '0%' });
 
   function openHelp1()  { nextTick(() => { showHelp1.value = true }) }
@@ -201,6 +225,8 @@
   function closeHelp2() { showHelp2.value  = false }
   function openHelp3()  { nextTick(() => { showHelp3.value = true }) }
   function closeHelp3() { showHelp3.value  = false }
+  function openHelp4()  { nextTick(() => { showHelp4.value = true }) }
+  function closeHelp4() { showHelp4.value  = false }
 
   // Method to determine CSS class based on performance bound
   const getBoundClass = (bound) => {
@@ -227,423 +253,226 @@
       </div>
     </div>
 
-  <div class="performance-summary">
-    <div class="summary-card compact">
-      <div class="metrics-grid">
-        <div class="metric-item">
-          <span class="metric-label">Bound:</span>
-          <span class="metric-value"
-            id="performance-bound"
-            title="Performance bound: can be latency (cyclic dependencies) or throughput (resources)"
+    <!-- Summary: one line -->
+    <div class="bounds-summary">
+      <span class="summary-item" id="latency-limit"
+            title="Latency bound: minimum cycles per loop iteration due to the longest cyclic chain of data dependencies">
+        Latency <strong>{{ performanceData.LatencyTime.toFixed(2) }}</strong>
+      </span>
+      <span class="summary-sep">·</span>
+      <span class="summary-item" id="throughput-limit"
+            title="Throughput bound: minimum cycles per loop iteration due to the most saturated resource (dispatch, retire or execution ports)">
+        Throughput <strong>{{ performanceData.ThroughputTime.toFixed(2) }}</strong>
+      </span>
+      <span class="summary-sep">·</span>
+      <span class="summary-item summary-min" id="best-limit" :title="minimumTimeFormula">
+        Minimum <strong>{{ performanceData.BestTime.toFixed(2) }}</strong> cycles/iter
+      </span>
+      <span class="metric-value bound-kind" id="performance-bound"
+            title="The minimum time is determined by the latency bound, the throughput bound, or both"
             :class="getBoundClass(performanceData['performance-bound'])">
-            {{ performanceData['performance-bound'] }}
-          </span>
-
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Latency:</span>
-          <span class="metric-value"
-              id="latency-limit"
-              title="Minimum execution time (clock cycles per executed loop iteration) due to cyclic data dependencies among instructions"
-            >
-            {{ performanceData.LatencyTime.toFixed(2) }} cycles/iteration
-          </span>
-
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Throughput:</span>
-          <span class="metric-value"
-            id="throughput-limit"
-            title="Minimum execution time (clock cycles per executed loop iteration) due to execution/dispatch/retire throughput limits"
-            >
-            {{ performanceData.ThroughputTime.toFixed(2) }} cycles/iteration
-          </span>
-
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Best possible time:</span>
-          <span class="metric-value highlight"
-              id="best-limit"
-              title="Minimum execution time (clock cycles per executed loop iteration) due to either throughput or latency limits"
-            >
-            {{ performanceData.BestTime.toFixed(2) }} cycles/iteration
-          </span>
-
-        </div>
-      </div>
+        {{ boundLabel }}
+      </span>
     </div>
-  </div>
 
-    <!-- Bottlenecks Section -->
-    <div class="dropdown-wrapper">
-
-      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+    <!-- Latency bounds -->
+    <div class="section-title-and-info bounds-title">
+      <span ref="helpIcon4" class="info-icon" @click="openHelp4" title="Show Help">
         <img src="/img/info.png" class="info-img">
       </span>
-
-      <button class="dropdown-header" @click="toggleThrough"
-              id="detailed-thorughput-limits"
-              title="Show detailed throughput limits"
-              :aria-expanded="dependenceGraphOptions.showThrough">
-
-        <span class="arrow" aria-hidden="true">
-          {{ dependenceGraphOptions.showThrough ? '▼' : '▶' }}
-        </span>
-
-        <span class="dropdown-title">
-          Throughput Bottlenecks ({{ performanceData['Throughput-Bottlenecks']?.length || 0 }})
-        </span>
+      <span class="header-title">Latency bounds</span>
+      <button class="blue-button graph-open-button" :class="{ active: graphOpen }"
+              id="open-dependence-graph"
+              title="Show/hide the data dependence graph in a movable window"
+              @click="graphOpen = !graphOpen">
+        📈 Dependence graph
       </button>
     </div>
 
-    <Transition name="fold" appear>
-      <div v-show="dependenceGraphOptions.showThrough" class="summary-card compact">
-        <div v-for="(bottleneck, index) in performanceData['Throughput-Bottlenecks']" :key="index" class="bottleneck-item">
-          <div class="bottleneck-index">{{ index + 1 }}: </div>
-          <div class="bottleneck-text">{{ bottleneck }}</div>
-        </div>
-      </div>
-    </Transition>
-
-    <div class="output-block-wrapper" id="simulation-output-container">
-      <div class="graph-toolbar">
-        <span ref="helpIcon3" class="info-icon" @click="openHelp3" title="Show Help">
-          <img src="/img/info.png" class="info-img">
-        </span>
-        <span class="dropdown-title"> Latency-bound Limits </span>
-
-        <div class="controls">
-          <div class="iters-group">
-            <span class="iters-label">Iterations:</span>
-            <input type="number" min="1" max="7" v-model.number="dependenceGraphOptions.iters"
-              title="# loop iterations (1 to 7)"
-              id="dependence-graph-iterations"
-            >
-          </div>
-          <div class="iters-group">
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showIntern }"
-                title="Show/Hide Nodes with only internal data dependencies"
-                id="show-internal-dependences"
-              @click="toggleIntern">
-              <span v-if="dependenceGraphOptions.showIntern">✔ </span>
-              Internal
-            </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showLaten  }"
-                 title="Show/Hide Execution Latencies"
-                 id="show-latency-dependences"
-              @click="toggleLaten">
-              <span v-if="dependenceGraphOptions.showLaten">✔ </span>
-              Latencies
-            </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showSmall  }"
-                 title="Show/Hide Instruction Text"
-                 id="show-instruction-dependences"
-              @click="toggleSmall">
-              <span v-if="dependenceGraphOptions.showSmall">✔ </span>
-              Small
-            </button>
-            <button class="blue-button" :class="{ active: dependenceGraphOptions.showFull   }"
-                 title="Show/Hide constant and read-only input data dependencies"
-                 id="show-full-dependences"
-              @click="toggleFull">
-              <span v-if="dependenceGraphOptions.showFull">✔ </span>
-              Full
-            </button>
-          </div>
-          <button class="icon-button" @click="openFullScreen"
-             title="Open fullscreen"
-             id="open-full-dependence-graph"
-            >
-             <img src="/img/fullscreen.png" class="bt-img">
-          </button>
-        </div>
-      </div>
-
-      <div class="output-block"
-           id="dependence-graph"
-           v-html="dependenceGraphSvg"
-           v-if="dependenceGraphSvg">
+    <div class="bounds-container" id="latency-bounds">
+      <table class="bounds-table">
+        <thead>
+          <tr>
+            <th title="Variable whose new value depends on its own previous value. Click a row to highlight its chain in the dependence graph.">Recurrence</th>
+            <th title="Cyclic chain of dependent instructions (hover a number to see the instruction)">Cyclic dependence chain</th>
+            <th title="Cycles per loop iteration determined by the chain (hover a value to see how it is computed)">Cycles/iter</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in latencyTable.rows" :key="row.key"
+              class="chain-row"
+              :class="{ bottleneck: row.bottleneck, selected: row.key === selectedChainKey }"
+              @click="selectChain(row)">
+            <td class="bound-resource" :title="row.recurrenceTitle">{{ row.recurrence }}</td>
+            <td>
+              <template v-for="(instr, k) in row.chain" :key="k">
+                <span v-if="k > 0" class="bound-arrow">→</span>
+                <span class="bound-instr" :title="instr.title"
+                      @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span>
+              </template>
+            </td>
+            <td class="bound-cycles"><span v-if="row.bottleneck" class="bound-badge" title="This row determines the bound (maximum value)">max</span><span :title="row.formula">{{ row.cycles }}</span></td>
+          </tr>
+          <tr v-if="latencyTable.rows.length === 0">
+            <td colspan="3" class="bound-empty">No cyclic dependences</td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="latencyTable.hidden" class="bounds-note">
+        Showing the {{ latencyTable.rows.length }} highest bounds ({{ latencyTable.hidden }} lower bounds hidden).
       </div>
     </div>
-  </div>
 
-  <div v-if="showFullScreen" class="fullscreen-overlay" @click.self="closeFullScreen">
-    <div class="fullscreen-content">
-      <div class="fullscreen-header">
-        <span>Data Dependence Graph (circular paths in red)</span>
-        <button class="close-btn" @click="closeFullScreen">×</button>
-      </div>
-      <div class="graph-container">
-        <div class="graph-wrapper"
-             v-html="dependenceGraphSvg"
-             v-if="dependenceGraphSvg">
-        </div>
+    <!-- Throughput bounds -->
+    <div class="section-title-and-info bounds-title">
+      <span ref="helpIcon2" class="info-icon" @click="openHelp2" title="Show Help">
+        <img src="/img/info.png" class="info-img">
+      </span>
+      <span class="header-title">Throughput bounds</span>
+    </div>
+
+    <div class="bounds-container" id="throughput-bounds">
+      <table class="bounds-table">
+        <thead>
+          <tr>
+            <th title="Dispatch or retire width, an execution port, or a combination of ports that share instructions">Resource</th>
+            <th title="Instructions that can only use this resource (hover a number to see the instruction). In grey, instructions that can also use other ports.">Instructions</th>
+            <th title="Cycles per loop iteration determined by this resource (hover a value to see how it is computed)">Cycles/iter</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, index) in throughputTable.rows" :key="index" :class="{ bottleneck: row.bottleneck }">
+            <td class="bound-resource" :title="row.resourceTitle">{{ row.resource }}</td>
+            <td>
+              <span v-if="row.allRange">{{ row.allRange }}</span>
+              <template v-else>
+                <span v-if="row.included.length === 0" class="bound-none">none</span>
+                <template v-for="(instr, k) in row.included" :key="'i' + k">
+                  <span v-if="k > 0">, </span>
+                  <span class="bound-instr" :title="instr.title"
+                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span>
+                </template>
+                <span v-if="row.excluded.length" class="bound-excluded">
+                  (<template v-for="(instr, k) in row.excluded" :key="'e' + k"><span v-if="k > 0">, </span><span class="bound-instr" :title="instr.title"
+                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span></template>)
+                </span>
+              </template>
+            </td>
+            <td class="bound-cycles"><span v-if="row.bottleneck" class="bound-badge" title="This row determines the bound (maximum value)">max</span><span :title="row.formula">{{ row.cycles }}</span></td>
+          </tr>
+          <tr v-if="throughputTable.rows.length === 0">
+            <td colspan="3" class="bound-empty">No data</td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="throughputTable.hidden" class="bounds-note">
+        Showing the {{ throughputTable.rows.length }} highest bounds ({{ throughputTable.hidden }} lower bounds hidden).
       </div>
     </div>
+
   </div>
 
   <Teleport to="body">
+    <DependenceGraphWindow v-if="graphOpen"
+      :svg="dependenceGraphSvg"
+      :options="dependenceGraphOptions"
+      :chain="selectedChain"
+      :hover-instr="simState.instrHighlightedIdx"
+      @close="graphOpen = false"
+      @clear-chain="selectedChainKey = null"
+      @set-option="(key, value) => { dependenceGraphOptions[key] = value }"
+      @help="openHelp3" />
+  </Teleport>
+
+  <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<em>Statically</em> determined <strong>throughput</strong> and <strong>latency</strong> bottlenecks. <p>The minimum execution time per loop iteration may be <em>throughput-bound</em>,
-      meaning it is limited by the processor’s instruction <strong>dispatch</strong>, <strong>execution</strong>, or <strong>retirement</strong> capacity for a given subset of instructions.</p>
-      <p>Alternatively, it may be <em>latency-bound</em>, meaning it is constrained by a <strong>circular chain of data dependencies</strong> that forms a cyclic path across loop iterations.</p>"
+    text="<em>Statically</em> determined lower bounds of the execution time, in cycles per loop iteration.
+      <p>The <strong>latency bound</strong> comes from the longest <em>cyclic chain of data dependencies</em> across loop iterations.
+      The <strong>throughput bound</strong> comes from the most saturated hardware <em>resource</em>: dispatch width,
+      retire width, or a set of execution ports.</p>
+      <p>The <strong>minimum time</strong> is the maximum of both bounds; the execution is <em>latency-bound</em> or
+      <em>throughput-bound</em> depending on which one is larger.</p>"
     title="Static Performance Analysis"
     @close="closeHelp1"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Performance may be limited by the <strong>maximum throughput</strong> of a hardware resource,
-         such as <em>dispatch width</em> or a set of <em>execution ports</em> required to execute a particular subset of instructions."
-    title="Throughput-bound execution time"
+    text="Each hardware <strong>resource</strong> imposes a minimum time per iteration:
+         number of instructions that must use it / its throughput (instructions per cycle).
+         <p><em>Dispatch</em> and <em>retire</em> process every instruction. For a set of execution
+         <em>ports</em>, only instructions that can execute <em>exclusively</em> on those ports are counted;
+         instructions shown in grey can also use other ports, so they are not counted.
+         Sets of ports are listed when they share instructions (e.g. P0+P2 and P2+P3 give P0+P2+P3).</p>
+         <p>The highlighted rows give the <strong>throughput bound</strong> (the maximum). Hover a number to see the
+         instruction, and a value to see how it is computed. If there are too many resources, only the
+         highest bounds are shown.</p>"
+    title="Throughput bounds"
     @close="closeHelp2"/>
   </Teleport>
 
   <Teleport to="body">
+    <HelpComponent v-if="showHelp4" :position="helpPosition"
+    text="A <strong>cyclic chain</strong> of dependences regenerates a variable from its own previous value
+         (e.g. an accumulator or a loop counter), so its instructions cannot overlap across iterations.
+         <p>Its minimum time per iteration is the sum of the latencies of the chain divided by the number of
+         loop iterations it spans. The highlighted row gives the <strong>latency bound</strong> (the maximum).
+         Hover a number to see the instruction and its latency, and a value to see how it is computed.</p>"
+    title="Latency bounds"
+    @close="closeHelp4"/>
+  </Teleport>
+
+  <Teleport to="body">
     <HelpComponent v-if="showHelp3" :position="helpPosition"
-    text="The data dependence graph highlights <strong>circular</strong> dependencies (shown in red) that determine <em>latency-bound</em> execution time (cycles per loop iteration).
-      <p>You can show or hide internal dependencies, execution latencies, instruction details, and full input dependencies on constant and read-only values.</p>
-      <p>Click the <strong>fullscreen</strong> button to enlarge the graph.</p>"
-    title="Latency-bound execution time"
+    text="The <strong>data dependence graph</strong> shows one box per loop iteration; <strong>cyclic</strong>
+      dependences (in red) determine the latency bound.
+      <p>Click a row of the <em>Latency bounds</em> table to highlight that chain (click it again, or the × in the
+      title bar, to show the whole graph). Hovering an instruction number in the tables highlights its nodes.</p>
+      <p>The buttons show or hide the non-cyclic instructions, the latencies, the instruction text, and the
+      dependences on constants and read-only inputs. Mouse wheel: zoom; drag: move the graph; <em>Fit</em>:
+      fit to the window width. Drag the title bar to move the window and its corner to resize it.</p>"
+    title="Dependence graph"
     @close="closeHelp3"/>
     </Teleport>
 </template>
 
 <style scoped>
-  .iters-group input[type="number"] { width: 4ch; }
-
-  .graph-toolbar {
+  /* One-line summary of the bounds */
+  .bounds-summary {
     display:     flex;
-    align-items: center;
-    gap:         8px;
-    width:       100%;
+    flex-wrap:   wrap;
+    align-items: baseline;
+    gap:         0.3em 0.5em;
     box-sizing:  border-box;
-    overflow:    hidden;
-    min-width:   0;
-  }
-  .controls {
-    display:     flex;
-    align-items: center;
-    gap:         8px;
-    margin-left: auto;
-    min-width:   0;
-  }
-  .output-block-wrapper {
-    display:        flex;
-    flex-direction: column;
-    overflow:       hidden;
-    width:          100%;
-    min-width:      0;
-  }
-  .output-block {
-    position:   relative;
-    flex:       1;
-    width:      100%;
-    min-width:  0;
-    overflow:   hidden;
-    border:     1px solid #e0e0e0;
-    border-radius: 6px;
-  }
-  .output-block svg {
-    position: absolute;
-    inset:    0;
-    width:    100%;
-    height:   auto;
-    max-width:  100%;
-    display:    block;
-  }
-
-  .icon-button {
-    border:      none;
-    cursor:      pointer;
-    padding:     6px;
-    display:     inline-flex;
-    align-items: center;
-    background:  #b0b0b0;
-    transition:  background 0.2s;
-    justify-content: center;
-    border-radius:   6px;
-    margin-left:     auto;
-  }
-  .icon-button img,
-  .icon-button svg {
-    width:  1.2em;
-    height: 1.2em;
-  }
-  .icon-button:hover {
-    background: #a0a0a0;      /* darker at hover */
-  }
-  .icon-button:active {
-    background: #909090;      /* still darker */
-  }
-  .icon-button:focus {
-    outline:        2px solid #1a4fb3;  /* keypad */
-    outline-offset: 2px;
-  }
-
-  .btn-img {
-    height:2.5vh;
-  }
-
-  .fullscreen-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-  }
-
- .fullscreen-content {
-  position: fixed;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
-  min-height: 300px;
-  width: 800px; /* Tamaño fijo inicial */
-  height: 600px;
-  resize: both;
-  overflow: auto;
-  pointer-events: auto; /* IMPORTANTE: el contenido puede recibir clicks */
-  z-index: 1000;
-}
-
-.fullscreen-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #2c3e50;
-  color: white;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0; /* Evita que el header se encoja */
-}
-
-.fullscreen-header:active {
-  cursor: grabbing;
-}
-
-.fullscreen-header span {
-  flex: 1;
-  text-align: center;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.8;
-}
-
-.close-btn:hover {
-  opacity: 1;
-}
-
-.graph-container {
-  flex: 1;
-  padding: 10px;
-  overflow: hidden;
-  background: #f8f9fa;
-  min-height: 0;
-}
-
-.graph-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.graph-wrapper svg {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-  .performance-analysis {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-  }
-
-  .performance-summary {
-    margin: 0.2rem 0;
-  }
-
-  .summary-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 2px;
-    padding: 0.2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-
-  .card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 1rem;
-    padding-bottom: 0.2rem;
-    border-bottom: 2px solid #e9ecef;
-  }
-
-  /* CSS para diseño horizontal */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .metric-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 0.3rem;
-    background: #f8f9fa;
+    max-width:   44rem;
+    margin:      0.2rem 0 0.3rem;
+    padding:     0.25rem 0.5rem;
+    background:  #f8f9fa;
+    border:      1px solid #dee2e6;
     border-radius: 4px;
   }
+  .summary-item { cursor: help; white-space: nowrap; }
+  .summary-min strong { color: #1a73e8; }
+  .summary-sep { color: #aaa; }
 
-  .metric-label {
-    font-size: 0.95em;
-    color: #6c757d;
-    margin-bottom: 0.1rem;
+  .graph-open-button { margin-left: 1em; }
+
+  .chain-row { cursor: pointer; }
+  .chain-row:hover td { background: #eef3fd; }
+  /* Selected chain: blue frame, keeping the yellow background of a bottleneck row */
+  .bounds-table tr.chain-row.selected td {
+    box-shadow:  inset 0 2px 0 #1a4fb3, inset 0 -2px 0 #1a4fb3;
+  }
+  .bounds-table tr.chain-row.selected td:first-child {
+    box-shadow:  inset 0 2px 0 #1a4fb3, inset 0 -2px 0 #1a4fb3, inset 3px 0 0 #1a4fb3;
+  }
+  .bounds-table tr.chain-row.selected td:last-child {
+    box-shadow:  inset 0 2px 0 #1a4fb3, inset 0 -2px 0 #1a4fb3, inset -3px 0 0 #1a4fb3;
   }
 
   .metric-value {
     font-size: 1em;
     font-weight: 600;
-  }
-
-  .metric-value.highlight {
-    color: #1a73e8;
-    font-size: 1.1em;
   }
 
   .metric-value.latency-bound {
@@ -667,52 +496,106 @@
     border-radius: 3px;
   }
 
-  .bottlenecks-list {
-    background: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 3px;
-    overflow: hidden;
+  .bounds-title {
+    margin: 0.4rem 0 0.2rem;
   }
 
-  .bottleneck-item {
-    display: flex;
-    padding: 0.25rem 1rem;
-    border-bottom: 1px solid #f1f3f4;
-    background: #f8f9fa;
+  .bounds-container {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
   }
 
-  .bottleneck-item:last-child {
-    border-bottom: none;
-  }
-
-  .bottleneck-index {
-    min-width: 20px;
-    color: #5f6368;
-    font-weight: 600;
-    font-size: 0.95em;
-  }
-
-  .bottleneck-text {
-    flex: 1;
-    color: #202124;
+  .bounds-table {
+    /* Compact: keeps each value close to its resource on wide screens */
+    width: 100%;
+    max-width: 44rem;
+    border-collapse: collapse;
     font-size: 0.9em;
-    line-height: 1.4;
+  }
+
+  .bounds-table th {
+    background: #f0f5ff;
+    font-weight: 600;
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 2px solid #c9d7f2;
+    cursor: help;
+  }
+
+  .bounds-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #eceff1;
+    vertical-align: top;
+  }
+
+  .bound-resource {
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: help;
+  }
+
+  .bounds-table tr.bottleneck td {
+    background: #fff3c4;
+    font-weight: 600;
+  }
+
+  .bound-instr {
+    cursor: help;
+    border-bottom: 1px dotted #999;
+  }
+
+  .bound-arrow {
+    margin: 0 0.3em;
+    color: #888;
+  }
+
+  .bound-excluded {
+    margin-left: 0.4em;
+    color: #6b7280;
+    font-weight: normal;
+  }
+
+  .bound-none {
+    color: #6b7280;
+  }
+
+  .bound-cycles {
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    cursor: help;
+  }
+
+  /* Second cue (besides the yellow background) for the rows that give the bound */
+  .bound-badge {
+    margin-right:  0.5em;
+    padding:       0 5px;
+    font-size:     0.75em;
+    font-weight:   700;
+    color:         #fff;
+    background:    #8a5a00;
+    border-radius: 3px;
+    vertical-align: 1px;
+  }
+
+  .bound-empty {
+    color: #888;
+    text-align: center;
+  }
+
+  .bounds-note {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  .bound-kind {
+    margin-top: 2px;
+    font-size: 0.85em;
   }
 
   .annotations-box {
     margin-top: 0.5rem;
-  }
-
-  /* Fold transition */
-  .fold-enter-active, .fold-leave-active {
-    transition: all 0.3s ease;
-    max-height: 500px;
-    overflow: hidden;
-  }
-
-  .fold-enter-from, .fold-leave-to {
-    opacity: 0;
-    max-height: 0;
   }
 
 </style>

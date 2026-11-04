@@ -955,7 +955,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
         const safeTooltip = escapeHtml(tooltip)
 
         op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${safeTooltip}" HREF="#" ID="op:${escapeHtml(p)}:${i}:${safeLabel}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 16 : 14}">${op.big ? `<B>${safeLabel}</B>` : safeLabel}</FONT></TD>`
+          <TD BGCOLOR="${color}" TITLE="${safeTooltip}" HREF="#" ID="op:${escapeHtml(p)}:${i}:${safeLabel}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 18 : 16}">${op.big ? `<B>${safeLabel}</B>` : safeLabel}</FONT></TD>`
       }
 
       op_rows += "</TR>"
