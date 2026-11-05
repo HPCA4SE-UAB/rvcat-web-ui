@@ -1,0 +1,121 @@
+{
+  "name": "f4-AVX",
+  "description": "// compiled with -march=native (AVX): not vectorized, because of the recurrence through C[x]\nvoid f4( float A[], float B[], float C[], int X, float L)\n{\n  C[0]= 0;\n  for (int x=0; x<X; x++)\n    C[x+1] = C[x] + A[x]*B[x];\n}",
+  "declarations": [
+    {"name": "a", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "A", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "x", "role": "index", "type": "INT", "size": "word"},
+    {"name": "b", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "B", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "s", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "C", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "X", "role": "read-only", "type": "INT", "size": "word"}
+  ],
+  "instruction_list": [
+    {
+      "text": "a = A[x]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "a",
+      "source1": "x",
+      "source2": "A",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "b = B[x]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "b",
+      "source1": "x",
+      "source2": "B",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "a = a * b",
+      "type": "FLOAT",
+      "oper": "MUL",
+      "size": "single",
+      "destin": "a",
+      "source1": "a",
+      "source2": "b",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "s = s + a",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "single",
+      "destin": "s",
+      "source1": "s",
+      "source2": "a",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "C[x+1] = s",
+      "type": "MEM",
+      "oper": "STORE",
+      "size": "word",
+      "destin": "",
+      "source1": "s",
+      "source2": "C",
+      "source3": "x",
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "x = x + 1",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "x",
+      "source1": "x",
+      "source2": "",
+      "source3": "",
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "c = x != X",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "x",
+      "source2": "X",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    }
+  ]
+}
