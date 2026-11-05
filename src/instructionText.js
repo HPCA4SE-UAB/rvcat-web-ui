@@ -5,6 +5,8 @@
 //   x = y op z        op: + - * /  & | ^  << >>  == != < <= > >=     (y, z: variable or number)
 //   x = y*z + w       FMA (also w + y*z)
 //   x = sqrt(y)
+//   x = double(y)     conversion to the type and size named: single, double (FLOAT), byte, word, long (INT)
+//                     x[0:3] = double(y[4:7]) converts the upper half of an 8-lane register
 //   x = A[index]      load            A[index] = x      store
 //   index:   i+c, a*i+c (forward) · N-c-i, N-c-a*i (backward from the end) · c (fixed element)
 //   vectors: x[0:3] is a vector register of 4 lanes; A[i:i+3], A[N-4-i:N-1-i] access 4 elements
@@ -21,16 +23,19 @@ const BINARY      = { '+': 'add', '-': 'add', '*': 'mul', '/': 'div', '&': 'logi
                       '<<': 'shift', '>>': 'shift', '==': 'cmp', '!=': 'cmp', '<': 'cmp', '<=': 'cmp',
                       '>': 'cmp', '>=': 'cmp' }
 // Operation of each operation class, for INT and FLOAT types (null: not available)
+// Conversions: function name -> type and size of the result
+export const CONVERSIONS = { single: ['FLOAT', 4], double: ['FLOAT', 8], byte: ['INT', 1], word: ['INT', 4], long: ['INT', 8] }
 const OPER = {
   add:   { INT: 'ARITH', FLOAT: 'ADD' },  mul:   { INT: 'ARITH', FLOAT: 'MUL' },
   div:   { INT: null,    FLOAT: 'DIV' },  fma:   { INT: null,    FLOAT: 'FMA' },
   sqrt:  { INT: null,    FLOAT: 'SQRT' }, logic: { INT: 'LOGIC', FLOAT: null },
   shift: { INT: 'SHIFT', FLOAT: null },   cmp:   { INT: 'ARITH', FLOAT: null },
+  cvt:   { INT: 'CVT',   FLOAT: 'CVT' },
 }
 // Data type imposed by the operation itself
 const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT', cmp: 'INT' }
 const OP_TEXT = { div: '/', fma: 'a*b + c', sqrt: 'sqrt', logic: 'logic operation', shift: 'shift',
-                  cmp: 'comparison', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
+                  cmp: 'comparison', cvt: 'conversion', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
                   size: 'array size in a backward index' }
 
 export const FIELD_LABELS = { type: 'Type', oper: 'Oper', size: 'Size', destin: 'Destin', source1: 'Source1',
@@ -170,8 +175,8 @@ function parseOperand(tokens, i) {
       fail('both ends of a range must use the same index')
     if (L < 2) fail('a range goes from the lower to the higher element (e.g. x[0:3], A[i:i+3])')
   }
-  if (br.range && br.lo.dir === 'fixed')     // x[0:3]: vector register
-    return { op: { k: 'reg', name: x.v, L }, next: close + 1 }
+  if (br.range && br.lo.dir === 'fixed')     // x[0:3]: vector register (x[4:7]: its upper lanes)
+    return { op: { k: 'reg', name: x.v, L, lo: br.lo.b, hi: br.hi.b }, next: close + 1 }
   return { op: { k: 'mem', array: x.v, ...br.lo, L: br.range ? L : 1 }, next: close + 1 }
 }
 
@@ -195,12 +200,15 @@ export function parseInstruction(text) {
     // Right-hand side: operand list with operators
     const items = []
     let i = eq + 1
-    let sqrt = false
-    if (tokens[i]?.v === 'sqrt' && tokens[i + 1]?.v === '(') {
+    let sqrt = false, convert = null
+    const fn = tokens[i]?.v
+    if ((fn === 'sqrt' || CONVERSIONS[fn]) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
       const o = parseOperand(tokens, i + 2)
-      if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail('expected sqrt(x)')
+      if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail(`expected ${fn}(x)`)
+      if (o.op.k === 'num') fail(`${fn}() of a number: write the number in the type you need`)
       items.push(o.op)
-      sqrt = true
+      if (fn === 'sqrt') sqrt = true
+      else convert = fn
       i = tokens.length
     }
     while (i < tokens.length) {
@@ -223,18 +231,19 @@ export function parseInstruction(text) {
     const p = { L, regs }
 
     if (lhs.op.k === 'mem') {                                  // store A[index] = x
-      if (operands.length !== 1 || ops.length || sqrt) fail('a store writes a variable: A[index] = x')
+      if (operands.length !== 1 || ops.length || sqrt || convert) fail('a store writes a variable: A[index] = x')
       if (operands[0].k === 'num') fail('a store writes a variable, not a number')
       if (operands[0].k === 'mem') fail('memory-to-memory copy: load into a variable, then store it')
       return { ok: true, p: { ...p, kind: 'store', value: operands[0].name, mem: lhs.op } }
     }
     if (mems.length) {                                         // load x = A[index]
-      if (operands.length !== 1 || ops.length || sqrt) fail('memory operands are only allowed in x = A[index] and A[index] = x')
+      if (operands.length !== 1 || ops.length || sqrt || convert) fail('memory operands are only allowed in x = A[index] and A[index] = x')
       return { ok: true, p: { ...p, kind: 'load', dest: lhs.op.name, mem: operands[0] } }
     }
     // Operation
     let op, terms
     if (sqrt) { op = 'sqrt'; terms = operands }
+    else if (convert) { op = 'cvt'; terms = operands }
     else if (!ops.length) fail(operands[0].k === 'num' ? 'RVCAT has no instruction to set a constant'
                                                         : 'copy: RVCAT has no move instruction')
     else if (ops.length === 1) { op = BINARY[ops[0]]; terms = operands }
@@ -243,9 +252,12 @@ export function parseInstruction(text) {
     else fail('more than one operation (one instruction does one operation; a*b + c is an FMA)')
     const numbers = terms.filter(o => o.k === 'num')
     if (numbers.length > 1) fail('more than one constant')
-    const sources = [...new Set(terms.filter(o => o.k !== 'num').map(o => o.name))]
-    return { ok: true, p: { ...p, kind: 'compute', dest: lhs.op.name, op, symbol: ops[0] ?? 'sqrt', sources,
-                            constant: numbers[0]?.v ?? '' } }
+    // Writing the upper lanes of a register (x[4:7] = ...) keeps the lower ones: it also reads x
+    const merge = lhs.op.k === 'reg' && lhs.op.lo > 0
+    const sources = [...new Set([...terms.filter(o => o.k !== 'num').map(o => o.name), ...(merge ? [lhs.op.name] : [])])]
+    if (op === 'cvt') regs.forEach(r => { r.cvt = true })
+    return { ok: true, p: { ...p, kind: 'compute', dest: lhs.op.name, op, symbol: ops[0] ?? op, sources, merge,
+                            convert, constant: numbers[0]?.v ?? '' } }
   } catch (e) {
     if (e instanceof NotAnalyzed) return { ok: false, reason: e.message }
     throw e
@@ -285,6 +297,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
 
   // Loop counters: v = v + k
   const steps = new Map()
+  const cvts  = []
   rows.forEach(r => {
     const p = r.ok && r.p
     if (p?.kind === 'compute' && p.symbol === '+' && p.sources.length === 1 && p.sources[0] === p.dest &&
@@ -296,7 +309,10 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
   rows.forEach((r, index) => {
     if (!r.ok) return
     const p = r.p, inst = instrs[index]
-    for (const reg of p.regs) variable(reg.name, index)?.lanes.add(reg.L)
+    for (const reg of p.regs) {
+      const v = variable(reg.name, index)
+      if (!reg.cvt && reg.lo === 0) v?.lanes.add(reg.L)     // conversions use halves of registers
+    }
     if (p.kind === 'branch') { variable(p.cond, index, 'condition'); strong(p.cond, 'INT', index, 'condition'); return }
     if (p.kind === 'load' || p.kind === 'store') {
       const data = p.kind === 'load' ? p.dest : p.value
@@ -317,6 +333,11 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     if (p.op === 'cmp') {
       strong(p.dest, 'INT', index, 'cmp')
       p.sources.forEach(s => { union(s, p.sources[0]); strong(s, 'INT', index, 'cmp') })
+    } else if (p.op === 'cvt') {
+      // the result has the type and size named by the conversion; the source is another class
+      const [kind, bytes] = CONVERSIONS[p.convert]
+      seeds.push({ name: p.dest, kind, bytes, origin: 'text', index, detail: 'cvt' })
+      cvts.push({ index, dest: p.dest, source: p.sources.find(s => s !== p.dest) ?? p.sources[0], kind, bytes })
     } else {
       p.sources.forEach(s => union(s, p.dest))
       if (OP_KIND[p.op]) strong(p.dest, OP_KIND[p.op], index, p.op)
@@ -355,7 +376,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     const strongKind = kindSeeds.find(s => s.origin === 'text')?.kind
     cls.kind = strongKind ?? kindSeeds[0]?.kind ?? null
     const bytesSeeds = cls.seeds.filter(s => s.bytes)
-    cls.bytes = bytesSeeds[0]?.bytes ?? (cls.kind === 'INT' ? 4 : null)
+    cls.bytes = bytesSeeds.find(s => s.origin === 'text')?.bytes ?? bytesSeeds[0]?.bytes ?? (cls.kind === 'INT' ? 4 : null)
     cls.assumed = !bytesSeeds.length && cls.kind === 'INT'
     const problems = []
     const kinds = [...new Set(kindSeeds.map(s => s.kind))]
@@ -374,6 +395,18 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     }
   }
   const classOf = (name) => classes.get(find(name)) ?? { kind: null, bytes: null }
+
+  // Conversions: between INT and FLOAT, or between single and double
+  for (const c of cvts) {
+    const src = classOf(c.source)
+    const target = `${c.kind} ${sizeName(c.kind, c.bytes)}`
+    if (find(c.source) === find(c.dest)) continue                       // reported as T3
+    if (src.kind === 'INT' && c.kind === 'INT')
+      warnings.push({ code: 'T6', index: c.index, message: `Conversion of the integer ${c.source} to ${target}: ` +
+                      'only conversions between INT and FLOAT, or between single and double, are available.' })
+    else if (src.kind === c.kind && src.bytes === c.bytes)
+      warnings.push({ code: 'T6', index: c.index, message: `${c.source} is already ${target}: the conversion does nothing.` })
+  }
 
   for (const v of vars.values()) {
     if (v.lanes.size > 1)
@@ -413,6 +446,12 @@ const show = (v) => (norm(v) === '' ? '(empty)' : `"${norm(v)}"`)
 
 function deriveFields(p, inst, classOf, stepOf) {
   const vec = p.L > 1
+  if (p.op === 'cvt') {
+    const [kind] = CONVERSIONS[p.convert]
+    const s = p.sources
+    return { type: vec ? `V${kind}` : kind, oper: 'CVT', size: p.convert, destin: p.dest,
+             source1: s[0] ?? '', source2: s[1] ?? '', source3: s[2] ?? '', constant: '', stride: null, lanes: p.L }
+  }
   if (p.kind === 'load' || p.kind === 'store') {
     const m = p.mem, cls = classOf(p.data)
     const c = m.dir === 'backward' ? -m.b : m.b

@@ -11,6 +11,7 @@ import { checkProgram } from './programChecks.js'
 import { shiftIndexText, vectorIndexText } from './instructionText.js'
 
 const VECTOR_OF   = { INT: 'VINT', MEM: 'VMEM', FLOAT: 'VFLOAT' }
+const SIZE_BYTES  = { byte: 1, word: 4, long: 8, single: 4, double: 8 }
 const isMemory    = (instr) => instr?.type === 'MEM' || instr?.type === 'VMEM'
 const isVector    = (instr) => ['VINT', 'VMEM', 'VFLOAT'].includes(instr?.type)
 const intOf       = (value, fallback) => {
@@ -154,33 +155,157 @@ export function vectorizeLoop(instructionList, L) {
   if (errors.length) return { program: null, errors, notes }
 
   const body = list.slice(0, -1), branch = list.at(-1)
-  const vectorNames = [...new Set(body.filter((instr, k) => !info.control.has(k) &&
-                       !(isMemory(instr) && intOf(instr.stride, 1) === 0)).map(i => i.destin).filter(Boolean))]
+  const isData = (instr, k) => !info.control.has(k) && !(isMemory(instr) && intOf(instr.stride, 1) === 0)
+
+  const unsized = body.map((instr, k) => (isData(instr, k) && !SIZE_BYTES[instr.size] ? k : -1)).filter(k => k >= 0)
+  if (unsized.length) {
+    errors.push(`Instruction${unsized.length > 1 ? 's' : ''} ${unsized.join(', ')} ha${unsized.length > 1 ? 've' : 's'} no size: ` +
+                'choose it (or the type of its variables in Declarations) before vectorizing.')
+    return { program: null, errors, notes }
+  }
+  // Element sizes: the vector registers hold L elements of the smallest size; elements n times
+  // larger use L/n lanes, so their instructions are done in n parts (two halves for double/single)
+  const bytesOf = new Map()                       // variable -> bytes of its elements
+  body.forEach((instr, k) => { if (isData(instr, k) && instr.destin && SIZE_BYTES[instr.size]) bytesOf.set(instr.destin, SIZE_BYTES[instr.size]) })
+  const sizes = []
   body.forEach((instr, k) => {
-    if (info.control.has(k)) return
-    const s = intOf(instr.stride, 1)
-    if (isMemory(instr) && s === 0) {
-      notes.push(`Instruction ${k} accesses a fixed address: it stays scalar (its value is used by all the lanes).`)
+    if (!isData(instr, k)) return
+    if (SIZE_BYTES[instr.size]) sizes.push(SIZE_BYTES[instr.size])
+    if (instr.oper === 'CVT' && bytesOf.get(instr.source1)) sizes.push(bytesOf.get(instr.source1))
+  })
+  const minBytes = sizes.length ? Math.min(...sizes) : 1
+  const partsOf  = (bytes) => (bytes ? bytes / minBytes : 1)
+  const splitVars = new Set([...bytesOf].filter(([, b]) => partsOf(b) > 1).map(([v]) => v))
+  const maxParts  = Math.max(1, ...sizes.map(partsOf))
+  if (L % maxParts) {
+    errors.push(`Elements of ${maxParts * minBytes} bytes use ${maxParts} times fewer lanes than elements of ${minBytes} bytes: ` +
+                `the number of lanes must be a multiple of ${maxParts}.`)
+    return { program: null, errors, notes }
+  }
+  const vlen = L * minBytes
+  const vectorNames = [...new Set(body.filter(isData).map(i => i.destin).filter(v => v && !splitVars.has(v)))]
+
+  // Name of part p (of n) of a split variable
+  const used = new Set(body.flatMap(i => [i.destin, ...readsOf(i), i.source2]).filter(Boolean))
+  const partNames = new Map()
+  const partName = (v, p, n) => {
+    const key = `${v}|${p}`
+    if (!partNames.has(key)) {
+      let name = n === 2 ? `${v}_${p ? 'hi' : 'lo'}` : `${v}_${p}`
+      while (used.has(name)) name += '_'
+      used.add(name)
+      partNames.set(key, name)
+    }
+    return partNames.get(key)
+  }
+  // Register holding elements first … first+len-1 of variable v in this iteration
+  const regRef = (v, first, len) => {
+    const n = splitVars.has(v) ? partsOf(bytesOf.get(v)) : 1
+    const per = L / n, p = Math.floor(first / per), o = first - p * per
+    const name = n > 1 ? partName(v, p, n) : v
+    return { name, lo: o, text: `${name}[${o}:${o + len - 1}]` }
+  }
+
+  const out = []
+  let splitNote = false
+  body.forEach((instr, k) => {
+    if (!isData(instr, k)) {
+      if (info.control.has(k)) out.push(instr)
+      else {
+        notes.push(`Instruction ${k} accesses a fixed address: it stays scalar (its value is used by all the lanes).`)
+        out.push(instr)
+      }
       return
     }
-    instr.type  = VECTOR_OF[instr.type] ?? instr.type
-    instr.lanes = L
-    if (isMemory(instr)) {
-      // backward access: the first vector covers elements N-c-L+1 … N-c of the original loop
-      if (s < 0) instr.constant = String(intOf(instr.constant, 0) + L - 1)
-      instr.text = rewriteArrayRef(instr.text ?? '', instr.source2, (expr) => {
-        const p = s > 0 ? parseIndex(expr) : null
-        return p ? fmtRange(p.v, p.lo, p.lo + L - 1) : (vectorIndexText(expr, L) ?? `${expr.trim()} (${L} elements)`)
-      })
+    const s = intOf(instr.stride, 1)
+    const vtype = VECTOR_OF[instr.type] ?? instr.type
+    if (instr.oper === 'CVT') {
+      // conversion: done in as many parts as the larger of its source and result needs
+      const n = Math.max(partsOf(SIZE_BYTES[instr.size]), partsOf(bytesOf.get(instr.source1)))
+      const l = L / n
+      if (n > 1) splitNote = true
+      for (let j = 0; j < n; j++) {
+        const dest = regRef(instr.destin, j * l, l), src = regRef(instr.source1, j * l, l)
+        const merge = dest.lo > 0     // upper lanes of the result: the lower ones are kept
+        out.push({ ...instr, type: vtype, lanes: l, destin: dest.name, source1: src.name,
+                   source2: merge ? dest.name : '', source3: '', text: `${dest.text} = ${instr.size}(${src.text})` })
+      }
+      return
     }
-    instr.text = vectorizeNames(instr.text ?? '', vectorNames, L)
+    const n = partsOf(SIZE_BYTES[instr.size])
+    if (n === 1) {
+      const copy = { ...instr, type: vtype, lanes: L }
+      if (isMemory(copy)) {
+        // backward access: the first vector covers elements N-c-L+1 … N-c of the original loop
+        if (s < 0) copy.constant = String(intOf(copy.constant, 0) + L - 1)
+        copy.text = rewriteArrayRef(copy.text ?? '', copy.source2, (expr) => {
+          const p = s > 0 ? parseIndex(expr) : null
+          return p ? fmtRange(p.v, p.lo, p.lo + L - 1) : (vectorIndexText(expr, L) ?? `${expr.trim()} (${L} elements)`)
+        })
+      }
+      copy.text = vectorizeNames(copy.text ?? '', vectorNames, L)
+      out.push(copy)
+      return
+    }
+    // Elements n times larger than the smallest ones: n parts of L/n lanes
+    splitNote = true
+    const l = L / n
+    for (let j = 0; j < n; j++) {
+      const copy = { ...instr, type: vtype, lanes: l }
+      if (isMemory(instr)) {
+        const c = intOf(instr.constant, 0)
+        const constant = s < 0 ? c + (l - 1) * Math.abs(s) + j * l * Math.abs(s) : c + j * l * s
+        copy.stride   = s * n
+        copy.constant = constant === 0 && !String(instr.constant ?? '').trim() ? '' : String(constant)
+        const data = instr.oper === 'STORE' ? instr.source1 : instr.destin
+        const ref  = regRef(data, j * l, l)
+        let range = null
+        rewriteArrayRef(instr.text ?? '', instr.source2, (expr) => {
+          const widened = vectorIndexText(expr, l)
+          range = widened ? shiftIndexText(widened, j * l * s) : null
+          return expr
+        })
+        range ??= `${instr.constant || 0} + ${j * l} (${l} elements)`
+        if (instr.oper === 'STORE') { copy.source1 = ref.name; copy.text = `${instr.source2}[${range}] = ${ref.text}` }
+        else                        { copy.destin  = ref.name; copy.text = `${ref.text} = ${instr.source2}[${range}]` }
+      } else {
+        const refs = new Map()
+        for (const field of ['destin', 'source1', 'source2', 'source3']) {
+          const v = instr[field]
+          if (!v || !(splitVars.has(v) || vectorNames.includes(v))) continue
+          const ref = regRef(v, j * l, l)
+          refs.set(v, ref)
+          copy[field] = ref.name
+        }
+        copy.text = renameRegisters(instr.text ?? '', refs)
+      }
+      out.push(copy)
+    }
   })
-  if (info.counter) setCounterStep(list[info.counter.index], info.counter.step * L)
-  else notes.push('No loop counter "i = i + k" found: check the instructions that control the loop.')
+  if (info.counter) {
+    const counter = out.find(i => i.destin === info.counter.variable && i.source1 === info.counter.variable)
+    if (counter) setCounterStep(counter, info.counter.step * L)
+  } else notes.push('No loop counter "i = i + k" found: check the instructions that control the loop.')
   branch.stride = info.S * L
-  for (const v of info.reductions)
-    notes.push(`Reduction ${v}: it becomes ${L} partial results ${v}[0:${L - 1}], to be combined after the loop (not simulated).`)
-  return { program: list, errors, notes }
+  out.push(branch)
+  if (splitNote)
+    notes.push(`Vector registers of ${vlen} bytes: ${L} elements of ${minBytes} bytes, or ${L / maxParts} of ` +
+               `${maxParts * minBytes} bytes. The instructions on larger elements are done in ${maxParts === 2 ? 'two halves' : `${maxParts} parts`} ` +
+               `(${[...splitVars].map(v => partName(v, 0, partsOf(bytesOf.get(v)))).slice(0, 3).join(', ')}…), and conversions read or write half a register.`)
+  for (const v of info.reductions) {
+    const n = splitVars.has(v) ? partsOf(bytesOf.get(v)) : 1
+    notes.push(n > 1
+      ? `Reduction ${v}: it becomes ${n} partial vectors (${Array.from({ length: n }, (_, p) => partName(v, p, n)).join(', ')}) of ${L / n} lanes, to be combined after the loop (not simulated).`
+      : `Reduction ${v}: it becomes ${L} partial results ${v}[0:${L - 1}], to be combined after the loop (not simulated).`)
+  }
+  return { program: out, errors, notes, vlen }
+}
+
+// Text of a split instruction: each register variable is written as its part, e.g. s_lo[0:3]
+function renameRegisters(text, refs) {
+  if (!refs.size) return text
+  const words = new RegExp(`\\b(${[...refs.keys()].map(escapeRegExp).join('|')})\\b(?!\\s*\\[)`, 'g')
+  return text.split(/(\w+\s*\[[^\]]*\])/).map((part, k) => (k % 2 ? part : part.replace(words, (w) => refs.get(w).text))).join('')
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -266,16 +391,18 @@ export function transformLoop(instructionList, { lanes = 1, unroll = 1, splitAcc
     return { program: null, errors: ['Fix the errors of the program before transforming it.'], notes: [], checks: null }
   let program = (instructionList ?? []).map(i => ({ ...i }))
   const errors = [], notes = []
+  let vlen = null
   if (lanes >= 2) {
     const r = vectorizeLoop(program, lanes)
     errors.push(...r.errors); notes.push(...r.notes)
     if (r.program) program = r.program
+    vlen = r.vlen ?? null
   }
   if (!errors.length && unroll >= 2) {
     const r = unrollLoop(program, unroll, { splitAccumulators })
     errors.push(...r.errors); notes.push(...r.notes)
     if (r.program) program = r.program
   }
-  if (errors.length) return { program: null, errors, notes, checks: null }
-  return { program, errors, notes, checks: checkProgram(program) }
+  if (errors.length) return { program: null, errors, notes, checks: null, vlen }
+  return { program, errors, notes, vlen, checks: checkProgram(program, { vlen }) }
 }

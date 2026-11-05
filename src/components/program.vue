@@ -139,6 +139,7 @@
   function setSimulatedProgram(data) {
     delete simState.simulatedProcess.N
     delete simState.simulatedProcess.declarations
+    delete simState.simulatedProcess.vlen
     Object.assign(simState.simulatedProcess, normalizeProgramDefaults(data))
   }
 

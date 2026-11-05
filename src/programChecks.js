@@ -18,6 +18,28 @@ const intOf    = (value, fallback) => {
   return value === '' || value === undefined || value === null || !Number.isFinite(n) ? fallback : n
 }
 const constantOf = (instr) => intOf(String(instr?.constant ?? '').trim(), 0)
+const SIZE_BYTES = { byte: 1, word: 4, long: 8, single: 4, double: 8 }
+export const VECTOR_WIDTHS = [8, 16, 32, 64]
+
+// Bytes of one element of an instruction (its size). A conversion also handles the elements of
+// its source, so it counts the larger of both sizes (the source size is the one of the last
+// instruction that writes the source variable).
+export function elementBytes(instr, list = []) {
+  const own = SIZE_BYTES[instr?.size] ?? null
+  if (instr?.oper !== 'CVT' || !own) return own
+  const writer = [...list].reverse().find(i => i !== instr && i?.destin && i.destin === instr.source1)
+  const src = SIZE_BYTES[writer?.size] ?? null
+  return src ? Math.max(own, src) : own
+}
+
+// Width in bytes of the vector registers: the one given for the program, or else the largest
+// vector instruction (lanes × element bytes). null when there are no vector instructions.
+export function vectorWidth(instructionList, vlen) {
+  if (Number.isInteger(vlen) && vlen > 0) return vlen
+  const sizes = (instructionList ?? []).filter(isVector)
+    .map(i => intOf(i.lanes, 1) * (elementBytes(i, instructionList) ?? 0)).filter(b => b > 0)
+  return sizes.length ? Math.max(...sizes) : null
+}
 
 // Structural normalization applied by the editor (it makes rules E2/E3 hold by construction):
 // only memory instructions and the BRANCH have a stride; only vector instructions have lanes.
@@ -32,7 +54,7 @@ export function enforceStructure(instr) {
 // Returns { errors: [...], warnings: [...] }, each item { code, index (or -1), message }.
 // Errors make the program incoherent for RVCAT; warnings are probably mistakes, but some
 // algorithms need them (stencils, strided accesses...), so they do not block the program.
-export function checkProgram(instructionList) {
+export function checkProgram(instructionList, { vlen = null } = {}) {
   const list = Array.isArray(instructionList) ? instructionList : []
   const errors = [], warnings = []
   const err  = (code, index, message) => errors.push({ code, index, message })
@@ -67,12 +89,21 @@ export function checkProgram(instructionList) {
   })
   if (errors.some(e => e.code === 'E1')) return { errors, warnings }
 
-  // W1, W2: lanes and loop stride
+  // W1: lanes and loop stride · W2, W9: lanes × element size and the vector register width
   const vectors = list.map((instr, index) => ({ instr, index })).filter(v => isVector(v.instr))
   const laneSet = [...new Set(vectors.map(v => intOf(v.instr.lanes, 1)))]
-  if (laneSet.length > 1)
-    warn('W2', -1, `Vector instructions use different numbers of lanes (${laneSet.join(', ')}); ` +
-                   'usually all of them process the same number of elements.')
+  const W = vectorWidth(list, vlen)
+  for (const { instr, index } of vectors) {
+    const L = intOf(instr.lanes, 1), d = elementBytes(instr, list)
+    if (!W || !d || !Number.isInteger(L)) continue
+    const what = `${L} lanes × ${d} bytes = ${L * d} bytes`
+    if (L * d > W)
+      warn('W9', index, `${what} do not fit in a ${W}-byte vector register: use ${Math.max(1, W / d)} lanes, ` +
+                        `or split the instruction into parts${instr.oper === 'CVT' ? ' (a conversion that doubles the size is done in two halves)' : ''}.`)
+    else if (L * d < W)
+      warn('W2', index, `${what}: it uses only part of the ${W}-byte vector registers ` +
+                        `(${W / d} lanes of ${d} bytes fill them).`)
+  }
   for (const L of laneSet) {
     if (L >= 2 && S % L !== 0)
       warn('W1', list.length - 1,

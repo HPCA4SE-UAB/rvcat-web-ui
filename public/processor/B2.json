@@ -16,6 +16,7 @@
     "INT.ARITH": 1,
     "INT.LOGIC": 1,
     "INT.SHIFT": 1,
+    "INT.CVT": 3,
     "VINT": 1,
     "MEM.STORE": 2,
     "MEM.LOAD": 4,
@@ -26,12 +27,15 @@
     "FLOAT.FMA": 5,
     "FLOAT.DIV": 8,
     "FLOAT.SQRT": 12,
+    "FLOAT.CVT": 3,
     "VFLOAT.ADD": 2,
     "VFLOAT.MUL": 5,
     "VFLOAT.FMA": 5,
     "VFLOAT.DIV": 8,
     "VFLOAT.SQRT": 16,
-    "BRANCH": 1
+    "VFLOAT.CVT": 3,
+    "BRANCH": 1,
+    "VINT.CVT": 3
   },
   "ports": {
     "0": [
@@ -54,7 +58,11 @@
       "FLOAT.ADD",
       "FLOAT.FMA",
       "VFLOAT.ADD",
-      "VFLOAT.FMA"
+      "VFLOAT.FMA",
+      "FLOAT.CVT",
+      "INT.CVT",
+      "VFLOAT.CVT",
+      "VINT.CVT"
     ],
     "2": [
       "INT.ARITH",

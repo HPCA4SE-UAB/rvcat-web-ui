@@ -12,7 +12,8 @@
   import { analyzeProgramText, deriveRowFields, fillFromText, declarationsFromAnalysis,
            declareVariable, checkDeclarations }               from '@/instructionText'
   import { programDraftFrom, isEmptyProgramDraft }           from '@/editDrafts'
-  import { checkProgram, enforceStructure, VECTOR_TYPES, MEMORY_TYPES } from '@/programChecks'
+  import { checkProgram, enforceStructure, VECTOR_TYPES, MEMORY_TYPES,
+           VECTOR_WIDTHS, vectorWidth }                       from '@/programChecks'
   import { analyzeLoop, vectorizeLoop, transformLoop }       from '@/loopTransforms'
   import { PROGRAM_EDITOR_HELP }                             from '@/programEditorHelp'
 
@@ -151,6 +152,9 @@ const editedN = ref(100)
 // Declarations of the program (data type of its variables): seeds of the type inference,
 // set from the JSON file or from the declarations table
 const declarations = ref([])
+// Width in bytes of the vector registers (null: the largest vector instruction)
+const editedVlen = ref(null)
+const autoVlen   = computed(() => vectorWidth(editedProgram.value, null))
 // Text of the instructions vs their fields, and data types (src/instructionText.js)
 const textAnalysis = computed(() => analyzeProgramText(editedProgram.value, declarations.value))
 function validN(value) {
@@ -170,6 +174,7 @@ function loadEditedProgram() {
   try {
     const data = normalizeProgramDefaults(JSON.parse(stored));
     editedN.value = validN(data.N) ?? panelN()
+    editedVlen.value = VECTOR_WIDTHS.includes(data.vlen) ? data.vlen : null
     declarations.value = Array.isArray(data.declarations) ? data.declarations : []
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
@@ -312,7 +317,7 @@ const isVectorType = (inst) => VECTOR_TYPES.includes(inst?.type)
 const isMemoryType = (inst) => MEMORY_TYPES.includes(inst?.type)
 
 const checks = computed(() => {
-  const structure = checkProgram(editedProgram.value)
+  const structure = checkProgram(editedProgram.value, { vlen: editedVlen.value })
   return { errors:   structure.errors,
            warnings: [...structure.warnings, ...textAnalysis.value.warnings],
            infos:    textAnalysis.value.infos }
@@ -445,12 +450,16 @@ function applyTransform() {
     source2: inst.source2 ?? '', source3: inst.source3 ?? '', constant: String(inst.constant ?? ''),
     stride:  Number(inst.stride ?? 1), lanes: Number(inst.lanes ?? 1)
   }))
+  undoVlen = editedVlen.value
+  if (result.vlen) editedVlen.value = result.vlen
   showTransform.value = false
 }
 
+let undoVlen = null
 function undoTransform() {
   if (!undoProgram.value) return
   editedProgram.value = undoProgram.value
+  editedVlen.value = undoVlen
   undoProgram.value = null
 }
 
@@ -464,6 +473,7 @@ function snapshotProgram() {
   return {
     name:             'programTemp',
     N:                editedN.value,
+    ...(editedVlen.value ? { vlen: editedVlen.value } : {}),
     declarations:     declarationsFromAnalysis(textAnalysis.value),
     instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
   };
@@ -548,6 +558,7 @@ function snapshotProgram() {
     showModalClear.value = false;
     undoProgram.value = null
     declarations.value = []
+    editedVlen.value = null
     addInstruction(0);
   }
 
@@ -609,6 +620,14 @@ function snapshotProgram() {
              :title="`N = algorithmic operations (iterations of the original loop), 1 - ${MAX_LOGICAL_ELEMENT_COUNT}. It is saved with the program and becomes the N of the Program panel when the program is selected. The memory trace uses it.`">
         N:
         <input type="number" min="1" :max="MAX_LOGICAL_ELEMENT_COUNT" step="1" v-model.lazy.number="editedNModel" id="editor-n-input" />
+      </label>
+      <label class="loop-stride-field editor-n-field" id="editor-vlen"
+             title="Width in bytes of the vector registers. A vector instruction holds width / element size lanes (e.g. 32 bytes: 8 single or 4 double); a conversion between single and double is done in two halves. Auto: the largest vector instruction of the program.">
+        Vector regs:
+        <select v-model="editedVlen" id="editor-vlen-select">
+          <option :value="null">auto{{ autoVlen ? ` (${autoVlen} B)` : '' }}</option>
+          <option v-for="w in VECTOR_WIDTHS" :key="w" :value="w">{{ w }} B</option>
+        </select>
       </label>
       <button class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
               title="Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets">
@@ -920,7 +939,7 @@ function snapshotProgram() {
       </p>
 
       <div class="transform-options">
-        <label title="Each instruction processes L elements (L iterations of the original loop): S × L">
+        <label title="Each vector holds L elements of the smallest data size of the loop (L iterations of the original loop): S × L. Elements twice as large use L/2 lanes, in two halves">
           Vectorize:
           <select v-model.number="transformOptions.lanes" :disabled="!!vectorizeBlock" id="transform-lanes">
             <option :value="1">no</option>
@@ -948,6 +967,7 @@ function snapshotProgram() {
         <template v-if="transformPreview.program">
           <div class="transform-summary" id="transform-summary">
             Result: S = {{ transformPreview.program.at(-1).stride }} ·
+            <template v-if="transformPreview.vlen">vector registers of {{ transformPreview.vlen }} bytes ·</template>
             {{ transformPreview.program.length }} instructions per iteration ·
             instructions per algorithmic operation {{ instrPerAlgOp(editedProgram).toFixed(2) }} →
             <strong>{{ instrPerAlgOp(transformPreview.program).toFixed(2) }}</strong>

@@ -37,15 +37,53 @@ export function getAllowedCacheBlockSizes(instructionList = []) {
   return CACHE_BLOCK_SIZES.filter(size => size >= largestAccessSize)
 }
 
+// CVT converts to the type and size of the instruction (the destination): INT.CVT float -> int,
+// FLOAT.CVT int -> float or single <-> double
 export const typeOperations = {
-    'INT':    ['ARITH', 'LOGIC', 'SHIFT'],
-    'VINT':   ['ARITH', 'LOGIC', 'SHIFT'],
+    'INT':    ['ARITH', 'LOGIC', 'SHIFT', 'CVT'],
+    'VINT':   ['ARITH', 'LOGIC', 'SHIFT', 'CVT'],
     'MEM':    ['STORE', 'LOAD'],
     'VMEM':   ['STORE', 'LOAD'],
-    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT'],
+    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT'],
     'BRANCH': []
   };
+
+// Processors written before CVT existed: conversions take 3 cycles in the ports of FLOAT.ADD
+// (VFLOAT.ADD for vector conversions)
+export const DEFAULT_CVT_LATENCY = 3
+const CVT_FALLBACK_OP = { INT: 'FLOAT.ADD', FLOAT: 'FLOAT.ADD', VINT: 'VFLOAT.ADD', VFLOAT: 'VFLOAT.ADD' }
+
+// Latencies of each size were saved by older versions of the processor editor as "TYPE-OPER-size";
+// the simulator reads "TYPE.OPER.size". Converts the old keys (in place) and returns the object.
+export function normalizeLatencyKeys(latencies) {
+  if (!latencies || typeof latencies !== 'object') return latencies
+  for (const key of Object.keys(latencies)) {
+    const m = /^([A-Z]+)-([A-Z]+)-([a-z]+)$/.exec(key)
+    if (!m) continue
+    const dotted = `${m[1]}.${m[2]}.${m[3]}`
+    if (!(dotted in latencies)) latencies[dotted] = latencies[key]
+    delete latencies[key]
+  }
+  return latencies
+}
+
+const validLatency = (value) => (Number.isFinite(value) && value >= 1 ? value : undefined)
+
+// Latency and port mask of an instruction in a processor (latencies, opToMask from its ports)
+export function instructionTiming(instr, latencies = {}, opToMask = {}) {
+  const keyOp = `${instr.type}.${instr.oper}`
+  const cvtFallback = instr.oper === 'CVT' ? CVT_FALLBACK_OP[instr.type] : null
+  const latency =
+    validLatency(latencies[`${keyOp}.${instr.size}`]) ??
+    validLatency(latencies[`${instr.type}-${instr.oper}-${instr.size}`]) ??
+    validLatency(latencies[keyOp]) ??
+    (cvtFallback ? DEFAULT_CVT_LATENCY : undefined) ??
+    validLatency(latencies[instr.type]) ??
+    1
+  const ports = opToMask[keyOp] ?? (cvtFallback ? opToMask[cvtFallback] : undefined) ?? opToMask[instr.type] ?? 0
+  return { latency, ports }
+}
 
 export const typeSizes = {
     'INT':    ['byte', 'word', 'long'],
@@ -99,6 +137,10 @@ export function validateProgram(program, options = {}) {
   if (program.N !== undefined &&
       (!Number.isSafeInteger(program.N) || program.N <= 0 || program.N > MAX_LOGICAL_ELEMENT_COUNT)) {
     addError(`Program N (algorithmic operations) must be an integer between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`)
+  }
+
+  if (program.vlen !== undefined && ![8, 16, 32, 64].includes(program.vlen)) {
+    addError('Program vlen (vector register width) must be 8, 16, 32 or 64 bytes.')
   }
 
   if (program.declarations !== undefined) {
@@ -297,8 +339,7 @@ export function getUnsupportedInstructions(process) {
 
   const opToMask = createOperationPortMasks(process.ports)
   return process.instruction_list.flatMap((instruction, index) => {
-    const keyOp = `${instruction.type}.${instruction.oper}`
-    const portMask = opToMask[keyOp] ?? opToMask[instruction.type] ?? 0
+    const portMask = instructionTiming(instruction, process.latencies ?? {}, opToMask).ports
     return portMask === 0 ? [{ index, instruction }] : []
   })
 }
@@ -457,25 +498,13 @@ export function updateProcess(process) {
   // 🔹 Recalcular cada instrucción
   instruction_list.forEach((instr, index) => {
 
-    const keyFull  = `${instr.type}.${instr.oper}.${instr.size}`
-    const keyOp    = `${instr.type}.${instr.oper}`
-    const keyType  = instr.type
-
-    // Latency
-    instr.latency =
-      latencies[keyFull] ??
-      latencies[keyOp]   ??
-      latencies[keyType] ??
-      1
-
-    // Ports
-    instr.ports =
-      opToMask[keyOp] ??
-      opToMask[keyType] ??
-      0
+    // Latency (TYPE.OPER.size, TYPE.OPER, TYPE) and ports (TYPE.OPER, TYPE)
+    const timing  = instructionTiming(instr, latencies ?? {}, opToMask)
+    instr.latency = timing.latency
+    instr.ports   = timing.ports
 
     if (instr.ports === 0) {
-      console.warn(`⚠️ No ports found for instruction ${instr.id} (${keyOp}). Check processor configuration.`)
+      console.warn(`⚠️ No ports found for instruction ${index} (${instr.type}.${instr.oper}). Check processor configuration.`)
       unsupportedInstructions.push({ index, instruction: instr })
     }
   })

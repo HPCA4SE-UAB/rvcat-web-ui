@@ -33,7 +33,7 @@ overwritten): type, operation, size, destination, sources, constant, stride and 
 by hand; if it no longer agrees with the text, a warning <b>T2</b> says so. The text must use these forms:</p>
 <p>&bull; <b>x = y op z</b> with op <b>+ - * /</b>, <b>&amp; | ^ &lt;&lt; &gt;&gt;</b> or a comparison
 (<b>== != &lt; &lt;= &gt; &gt;=</b>); y and z are variables or one number (the constant).<br>
-&bull; <b>x = a*b + c</b> (FMA) and <b>x = sqrt(y)</b>.<br>
+&bull; <b>x = a*b + c</b> (FMA), <b>x = sqrt(y)</b>, and conversions <b>x = double(y)</b> (also single, byte, word, long).<br>
 &bull; <b>x = A[index]</b> (load) and <b>A[index] = x</b> (store), with index <b>i+c</b> or <b>a*i+c</b> (forward),
 <b>N-c-i</b> (backward from the end) or a number (fixed element).<br>
 &bull; Vectors: <b>x[0:3]</b> is a vector register of 4 lanes; <b>A[i:i+3]</b> and <b>A[N-4-i:N-1-i]</b> access 4
@@ -49,6 +49,22 @@ instruction gives it. Contradictions are warned (<b>T3</b>), as are vector regis
 read-only, data), type, size, lanes and the instructions that use them. Choosing a type or size there sets it for the
 variables with the same data and rewrites their instructions. The declarations are saved with the program and checked
 when it is uploaded.</p>
+</details>
+
+<details><summary><b>Conversions and vector registers</b></summary>
+<p>A conversion is written as a call to the type of the result: <b>y = double(x)</b>, <b>y = single(x)</b>
+(FLOAT), <b>y = word(x)</b>, <b>y = long(x)</b>, <b>y = byte(x)</b> (INT). Its fields are the type of the result,
+oper <b>CVT</b> and the size of the result. Conversions go between INT and FLOAT, or between single and double
+(warning <b>T6</b> otherwise).</p>
+<p><b>Vector regs</b> is the width in bytes of the vector registers: a vector instruction holds width / element size
+lanes, e.g. 32 bytes hold 8 single or 4 double. Auto takes the largest vector instruction of the program. Warnings:
+<b>W2</b> an instruction fills only part of the registers, <b>W9</b> it does not fit in them.</p>
+<p>So converting 8 single into double needs two instructions, one per half of the source register, each producing a
+register of 4 double: <b>y_lo[0:3] = double(x[0:3])</b> and <b>y_hi[0:3] = double(x[4:7])</b>. Converting 8 double
+into single takes two halves, each writing half of the result: <b>b[0:3] = single(a_lo[0:3])</b> and
+<b>b[4:7] = single(a_hi[0:3])</b>. Writing the upper lanes keeps the lower ones, so that instruction also reads b.
+The Unroll / Vectorize assistant does this automatically. L lanes are counted for the smallest elements, and the
+instructions on larger elements are done in halves.</p>
 </details>
 
 <details><summary><b>N and the memory trace</b></summary>
@@ -76,7 +92,7 @@ them.</p>
 <details><summary><b>Warnings ⚠ (probable mistakes)</b></summary>
 <p><b>W1</b> With L-lane vector instructions, S should be a multiple of L (S = L×U). <i>Typical mistake:</i> a vectorized
 loop keeps S = 1, so cycles/alg oper is L times too large.<br>
-<b>W2</b> All vector instructions should use the same number of lanes.<br>
+<b>W2</b> Each vector instruction should fill the vector registers: lanes × element size = register width.<br>
 <b>W3</b> Each memory access should advance a multiple of S elements per iteration (L·|s| = S when it reads one element
 per algorithmic operation, so s = S/L). <i>Typical mistake:</i> after unrolling, the strides stay at 1 and the
 iterations read the same elements again.<br>
@@ -86,6 +102,7 @@ iterations read the same elements again.<br>
 <b>W6</b> With S &gt; 1, the copies should cover all the elements advanced per iteration. <i>Typical mistake:</i> an
 unrolled copy is missing.<br>
 <b>W7</b> A backward access (s &lt; 0) should have c ≥ L, or its first access reads past the end of the array.<br>
+<b>W9</b> A vector instruction does not fit in the vector registers (lanes × element size &gt; width).<br>
 <b>W8</b> The loop counter i = i + k (an INT instruction that increments a memory index; k is its constant) should
 advance k = S.</p>
 <p>Some algorithms need these patterns (stencils such as A[i] + A[i+1], strided accesses such as A[2i], values kept in

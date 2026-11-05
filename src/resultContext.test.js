@@ -56,7 +56,7 @@ describe('resultContextLines', () => {
     const lines = resultContextLines(buildResultContext(process, 'B2'))
     expect(lines[0]).toBe(`Program: Base  ·  N = ${(1000).toLocaleString()} alg opers  ·  loop stride 4 (250 iterations)`)
     expect(lines).toContain('  Cache: 4 blocks × 8 B · Miss penalty 12 · Issue time 8')
-    expect(lines.at(-1)).toBe('  Ports: P0 INT, MEM.LOAD · P1 BRANCH, FLOAT.ADD')
+    expect(lines.at(-1)).toBe('  Ports: P0 INT.ARITH, INT.LOGIC, INT.SHIFT, MEM.LOAD · P1 BRANCH, FLOAT.ADD')
   })
   it('reports when there is no cache or no context', () => {
     expect(resultContextLines(buildResultContext({ ...process, nBlocks: 0 }, 'B1'))).toContain('  Cache: none')

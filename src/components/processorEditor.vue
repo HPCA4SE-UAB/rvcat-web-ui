@@ -2,7 +2,8 @@
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { downloadJSON, uploadJSON, createGraphVizGraph,
-           instructionTypes, typeOperations, typeSizes, get_processor_dot                   } from '@/common'
+           instructionTypes, typeOperations, typeSizes, get_processor_dot,
+           normalizeLatencyKeys                                                         } from '@/common'
   import { processorDraftFrom }                                          from '@/editDrafts'
 
   const simState = inject('simulationState');
@@ -141,6 +142,7 @@
   const updateProcessorSettings = async (procInfo) => {
     try {
       Object.assign(procConfig, JSON.parse(JSON.stringify(procInfo)))   // deep copy & fire draw-update
+      normalizeLatencyKeys(procConfig.latencies)                         // old "TYPE-OPER-size" keys
       procConfig.rThru = procInfo.rThru ?? 1
       if (!Number.isInteger(procConfig.mIssueTime) ||
           procConfig.mIssueTime < 1 || procConfig.mIssueTime > 99) {
@@ -801,10 +803,10 @@
                       </td>
                       <td>
                         <input type="number"
-                          v-model.number="procConfig.latencies[`${type}-${op}-${size}`]"
+                          v-model.number="procConfig.latencies[`${type}.${op}.${size}`]"
                           min="1" max="99"
                           class="latency-input"
-                          :id="`${type}-${op}-latency`"
+                          :id="`${type}-${op}-${size}-latency`"
                           :title="`Execution latency in clock cycles for ${type}.${op}.${size} (1 to 99)`" />
                       </td>
                       <td v-for="port in portList" :key="port" class="port-checkbox">

@@ -47,6 +47,7 @@ The text of an instruction is checked against its fields when it has one of the 
 | `x = y op z`, op `& \| ^` / `<< >>` | INT LOGIC / INT SHIFT |
 | `c = y op z`, op `== != < <= > >=` | INT ARITH (comparison) |
 | `x = A[index]` / `A[index] = x` | MEM LOAD / MEM STORE |
+| `x = double(y)`, `single`, `word`, `long`, `byte` | conversion: FLOAT/INT CVT with the size of the result |
 | `x[0:3]` in any of the above | vector instruction with 4 lanes (VINT, VFLOAT, VMEM) |
 | `if c go back` | the final BRANCH |
 
@@ -111,7 +112,46 @@ When a program is uploaded, in the Program panel or in the editor, its declarati
 | T1 (info) | The text does not have a canonical form: its fields are not checked. |
 | T2 | A field differs from what the text gives (empty Type/Oper/Size fields are not reported: they are filled automatically). |
 | T3 | Contradictory data types for variables with the same data (operations, fields or declarations). |
-| T5 | A vector register is used with different numbers of lanes. |
+| T5 | A vector register is used with different numbers of lanes (the halves read or written by conversions are not counted). |
+| T6 | A conversion between integers, or to the type and size it already has. |
+
+## Conversions and vector registers
+
+**Conversions.** A conversion is written as a call to the type of its result:
+- `y = single(x)` or `y = double(x)`: FLOAT result;
+- `y = byte(x)`, `y = word(x)` or `y = long(x)`: INT result.
+
+Its fields are the type of the result (FLOAT/INT, or VFLOAT/VINT), oper **CVT** and the size of the result. Conversions go between INT and FLOAT, or between single and double. The source and the result are different data for the type inference, so a program can mix precisions without T3 warnings.
+
+Warning **T6** marks:
+- conversions between integers;
+- conversions to the same type and size.
+
+**Processors.** CVT is an operation of INT, VINT, FLOAT and VFLOAT. INT.CVT converts a float into an integer.
+- The distributed processors execute CVT in 3 cycles, in the ports of FLOAT.ADD (VFLOAT.ADD for VINT/VFLOAT).
+- Processors written before CVT existed get the same values by default.
+- The latency can depend on the direction through the size-specific latencies (`FLOAT.CVT.double`, `FLOAT.CVT.single`) of the processor editor.
+
+**Vector registers.** The *Vector regs* field of the editor sets the width in bytes of the vector registers (8, 16, 32 or 64). It is saved in the program as `vlen`. *Auto* takes the largest vector instruction of the program.
+
+A vector instruction holds width / element size lanes: 32 bytes hold 8 single or 4 double. Warnings W2 and W9 check that each vector instruction fills the registers and fits in them. For a conversion, the larger of its two element sizes is counted.
+
+**Conversions in halves.** With fixed-width registers, converting between single and double needs two instructions:
+
+| Conversion | Instructions (32-byte registers) |
+|---|---|
+| 8 single → double | `y_lo[0:3] = double(x[0:3])`, `y_hi[0:3] = double(x[4:7])`: each half of x gives a register of 4 double |
+| 8 double → single | `b[0:3] = single(a_lo[0:3])`, `b[4:7] = single(a_hi[0:3])`: each writes half of b |
+
+- In the text, `x[4:7]` names the upper lanes of a register.
+- Writing the upper lanes of a register keeps the lower ones, so that instruction also reads it. This dependence is the reason why b is in *source2* of the second narrowing conversion.
+
+**Assistant.** When the loop mixes element sizes, *Vectorize with L lanes* counts L for the smallest elements:
+- L·(smallest size) is the register width, which becomes the program's *Vector regs*;
+- the instructions on elements k times larger are done in k parts of L/k lanes (variables `v_lo`, `v_hi`);
+- their memory accesses become k copies with stride k·s;
+- conversions read or write half a register;
+- reductions on larger elements become k partial vectors.
 
 ## N and the memory trace
 
@@ -156,12 +196,13 @@ The upload of a program also checks:
 | Code | Rule | Typical mistake | When it is correct anyway |
 |---|---|---|---|
 | W1 | If vector instructions have L lanes, S is a multiple of L (S = L·U). | A loop is vectorized, but S stays at 1, so cycles/alg oper is L times too large. | Each algorithmic operation processes several elements (e.g. one complex number = 2 lanes). |
-| W2 | All vector instructions use the same L. | One instruction keeps an old number of lanes. | Conversions between element sizes. |
+| W2 | Each vector instruction fills the vector registers: L × element size = register width (*Vector regs*, or the largest vector instruction). | One instruction keeps an old number of lanes. | Loops that use only part of the registers on purpose. |
 | W3 | Each memory access advances a multiple of S elements per iteration: L·\|s\| = e·S (e = elements per algorithmic operation, usually 1, so s = S/L). | A loop is unrolled or vectorized, but the memory strides are not updated, so consecutive iterations read the same elements again. | Accesses whose step is not proportional to the algorithmic operations (rare). |
 | W4 | Accesses to the same array, with the same operation, L and s, have different offsets. | An unrolled copy keeps offset 0 instead of `A[i+1]` → c = 1. | The same element is really read twice. |
 | W5 | Those accesses do not partially overlap: their offsets differ by a multiple of L. | Vector copies with offsets 0 and 2 instead of 0 and L. | Stencils, sliding windows (`A[i:i+3]` and `A[i+1:i+4]`). |
 | W6 | With S > 1 and one element per algorithmic operation, the copies of an access cover all L·s elements of each iteration. | An unrolled copy is missing. | The original loop does not access every element. |
 | W7 | A backward access (s < 0) has c ≥ L, so that the first access stays inside the N elements of the array. | c = 0 reads A[N], one element past the end. | — |
+| W9 | A vector instruction fits in the vector registers: L × element size ≤ register width. | 8 doubles in 32-byte registers (8 single fit). | — |
 | W8 | A loop counter `i = i + k` has k = S. The counter is an INT instruction whose destination equals its source and is used as a memory index; k is its *constant*, or else the number in its text. | The counter or S is not updated after unrolling or vectorizing. | The index advances by something other than the algorithmic operations (e.g. bytes). |
 
 RVCAT does not use the value of the counter (addresses come from s and c), so W8 only checks that the program reads coherently.
