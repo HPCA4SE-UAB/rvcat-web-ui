@@ -8,13 +8,14 @@
   "program": [
     "Base",
     "BaseSIMD",
-    "exemple",
+    "example",
     "V1",
     "V2",
     "f2",
     "f2-SIMD",
     "f3",
-    "f3-SIMD"
+    "f3-SIMD",
+    "f4"
   ],
   "tutorial": [
     "navigation-tour",

@@ -9,6 +9,7 @@
            normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT }  from '@/common'
   import MemoryTrace                                         from '@/components/MemoryTrace.vue'
   import DeclarationsTable                                   from '@/components/DeclarationsTable.vue'
+  import ProgramDescription                                  from '@/components/ProgramDescription.vue'
   import { analyzeProgramText, deriveRowFields, fillFromText, declarationsFromAnalysis,
            declareVariable, checkDeclarations }               from '@/instructionText'
   import { programDraftFrom, isEmptyProgramDraft }           from '@/editDrafts'
@@ -154,6 +155,8 @@ const editedN = ref(100)
 const declarations = ref([])
 // Width in bytes of the vector registers (null: the largest vector instruction)
 const editedVlen = ref(null)
+// Source code (e.g. C) of the loop, saved with the program
+const editedDescription = ref('')
 const autoVlen   = computed(() => vectorWidth(editedProgram.value, null))
 // Text of the instructions vs their fields, and data types (src/instructionText.js)
 const textAnalysis = computed(() => analyzeProgramText(editedProgram.value, declarations.value))
@@ -175,6 +178,7 @@ function loadEditedProgram() {
     const data = normalizeProgramDefaults(JSON.parse(stored));
     editedN.value = validN(data.N) ?? panelN()
     editedVlen.value = VECTOR_WIDTHS.includes(data.vlen) ? data.vlen : null
+    editedDescription.value = typeof data.description === 'string' ? data.description : ''
     declarations.value = Array.isArray(data.declarations) ? data.declarations : []
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
@@ -481,6 +485,7 @@ const issueLine = (item) =>
 function snapshotProgram() {
   return {
     name:             'programTemp',
+    ...(editedDescription.value.trim() ? { description: editedDescription.value } : {}),
     N:                editedN.value,
     ...(editedVlen.value ? { vlen: editedVlen.value } : {}),
     declarations:     declarationsFromAnalysis(textAnalysis.value),
@@ -568,6 +573,7 @@ function snapshotProgram() {
     undoProgram.value = null
     declarations.value = []
     editedVlen.value = null
+    editedDescription.value = ''
     addInstruction(0);
   }
 
@@ -893,6 +899,7 @@ function snapshotProgram() {
           ℹ <strong>{{ item.code }}</strong> · instr {{ item.index }}: {{ item.message }}
         </div>
       </div>
+      <ProgramDescription v-model="editedDescription" />
       <DeclarationsTable :variables="textAnalysis.variables" @declare="onDeclare"
                          @highlight="tracedRows = $event" />
       <MemoryTrace :program="editedProgram" :N="editedN" :rowIssues="rowIssues"

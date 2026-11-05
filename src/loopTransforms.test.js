@@ -4,7 +4,7 @@ import { checkProgram } from './programChecks'
 import Base     from '../public/program/Base.json'
 import V2       from '../public/program/V2.json'
 import BaseSIMD from '../public/program/BaseSIMD.json'
-import exemple  from '../public/program/exemple.json'
+import example  from '../public/program/example.json'
 
 const fields = (list) => list.map(i => [i.text, i.type, i.lanes ?? 1, i.stride ?? 1, i.constant ?? ''])
 const clean  = (list) => { const r = checkProgram(list); return [...r.errors, ...r.warnings].map(x => x.code) }
@@ -18,7 +18,7 @@ describe('analyzeLoop', () => {
     expect(info.recurrences).toEqual([])
   })
   it('separates recurrences from reductions', () => {
-    const info = analyzeLoop(exemple.instruction_list)
+    const info = analyzeLoop(example.instruction_list)
     expect(info.recurrences.sort()).toEqual(['t0', 't3'])   // t1 is written before it is read
   })
 })
@@ -82,7 +82,7 @@ describe('vectorizeLoop', () => {
     expect(notes.join(' ')).toMatch(/partial results sum\[0:3\]/)
   })
   it('refuses loops with recurrences or already transformed loops', () => {
-    expect(vectorizeLoop(exemple.instruction_list, 4).errors[0]).toMatch(/Recurrence/)
+    expect(vectorizeLoop(example.instruction_list, 4).errors[0]).toMatch(/Recurrence/)
     expect(vectorizeLoop(V2.instruction_list, 4).errors[0]).toMatch(/already unrolled/)
     expect(vectorizeLoop(BaseSIMD.instruction_list, 4).errors[0]).toMatch(/already vectorized/)
   })

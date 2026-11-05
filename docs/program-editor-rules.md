@@ -190,6 +190,10 @@ Examples that move data across blocks:
 - **Backward reductions.** A reduction of a backward access, such as `s = s + A[N-1-i]`, needs no reversal: the order of the lanes does not matter.
 - **Declarations.** The type of the generated instructions (VINT or VFLOAT) is the one of the data moved, taken from the declarations when the instructions do not say it.
 
+## Source code
+
+The **Source code** section of the editor keeps the code (usually C) of the loop from which the program was generated. It is saved in the program JSON as `description` (a string) and shown in the Program panel: the header of the instruction table reads *&lt;program&gt;: Program Instructions*, and hovering or clicking it shows the code (monospace, keeping its indentation).
+
 ## N and the memory trace
 
 **N** is saved with the program (field `N` of the JSON file, optional). When the program is selected or uploaded in the Program panel, it becomes the current N; programs without N keep the current one. Reloading the page keeps the last N used.

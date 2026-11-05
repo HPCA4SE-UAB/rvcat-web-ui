@@ -151,6 +151,10 @@ export function validateProgram(program, options = {}) {
     addError(`Program N (algorithmic operations) must be an integer between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`)
   }
 
+  if (program.description !== undefined && typeof program.description !== 'string') {
+    addError('Program description (source code of the loop) must be a string.')
+  }
+
   if (program.vlen !== undefined && ![8, 16, 32, 64].includes(program.vlen)) {
     addError('Program vlen (vector register width) must be 8, 16, 32 or 64 bytes.')
   }

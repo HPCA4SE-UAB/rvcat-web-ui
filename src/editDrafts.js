@@ -28,6 +28,7 @@ export function programDraftFrom(process) {
     name:             process.name,
     ...(process.N ? { N: process.N } : {}),
     ...(process.vlen ? { vlen: process.vlen } : {}),
+    ...(typeof process.description === 'string' ? { description: process.description } : {}),
     ...(Array.isArray(process.declarations) ? { declarations: JSON.parse(JSON.stringify(process.declarations)) } : {}),
     instruction_list: JSON.parse(JSON.stringify(process.instruction_list ?? [])),
   }

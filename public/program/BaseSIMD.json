@@ -1,5 +1,6 @@
 {
   "name": "BaseSIMD",
+  "description": "// vectorized by compiler with 4 lanes (SSE)\nfloat Base(float V[], float W[], int N)\n{\n  float sum = 0;\n  for (int i=0; i<N; i++) {\n    sum = sum + V[i];\n    sum = sum + W[i];\n  }\n  return sum;\n}",
   "declarations": [
     {"name": "tmp", "role": "data", "type": "FLOAT", "size": "single", "lanes": 4},
     {"name": "V", "role": "array", "type": "FLOAT", "size": "single"},

@@ -81,6 +81,12 @@ lanes of the backward vector are in reverse order and must be reversed (PERMUTE 
 A reduction of a backward access needs no reversal.</p>
 </details>
 
+<details><summary><b>Source code</b></summary>
+<p>The <b>Source code</b> section keeps the code (e.g. C) of the loop from which the program was generated. It is saved
+with the program (field <i>description</i> of the JSON file) and shown, in the Program panel, when the mouse is over
+the header <i>&lt;program&gt;: Program Instructions</i> or when it is clicked.</p>
+</details>
+
 <details><summary><b>N and the memory trace</b></summary>
 <p><b>N</b> (algorithmic operations) is saved with the program: when the program is selected or uploaded in the
 Program panel, it becomes the current N. The loop runs N/S iterations (N is rounded down to a multiple of S).</p>

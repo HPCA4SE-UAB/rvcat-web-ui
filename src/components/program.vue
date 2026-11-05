@@ -140,6 +140,7 @@
     delete simState.simulatedProcess.N
     delete simState.simulatedProcess.declarations
     delete simState.simulatedProcess.vlen
+    delete simState.simulatedProcess.description
     Object.assign(simState.simulatedProcess, normalizeProgramDefaults(data))
   }
 
@@ -538,7 +539,13 @@
           <thead>
             <tr>
               <th style="width: 100px;">  #    </th>
-              <th style="width: 600px;"> Inst </th>
+              <th style="width: 600px;" class="program-source-header" id="program-source-header" data-pin-code
+                  :title="simState.simulatedProcess?.description
+                          ? simState.simulatedProcess.description
+                          : 'No source code for this program: write it in the Program Editor (Source code)'">
+                {{ programOptions.currentProgram || 'Program' }}: Program Instructions
+                <span v-if="simState.simulatedProcess?.description" class="source-mark">{ }</span>
+              </th>
               <th v-if="programOptions.show === 0"  style="width: 100px;"> Type </th>
               <th v-if="programOptions.show === 0"  style="width: 100px;"> Oper </th>
               <th v-if="programOptions.show === 0"  style="width: 100px;"> Size </th>
@@ -634,6 +641,15 @@
 </template>
 
 <style scoped>
+  .program-source-header { cursor: help; }
+  .program-source-header .source-mark {
+    margin-left: 0.4em;
+    padding:     0 4px;
+    border-radius: 3px;
+    background:  rgba(255, 255, 255, 0.25);
+    font-family: monospace;
+    font-size:   0.85em;
+  }
   .program-container {
     overflow:      auto;
     scroll-behavior: smooth;

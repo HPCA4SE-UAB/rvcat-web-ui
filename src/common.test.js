@@ -34,7 +34,7 @@ describe('default distributed resources', () => {
   it('loads processor and program defaults in index order and selects the first', async () => {
     const index = {
       processor: ['B4', 'B2', 'B1'],
-      program: ['Base', 'BaseSIMD', 'exemple']
+      program: ['Base', 'BaseSIMD', 'example']
     }
     vi.stubGlobal('fetch', vi.fn(async path => ({
       ok: true,
@@ -50,7 +50,7 @@ describe('default distributed resources', () => {
 
     expect(processorOptions.availableProcessors).toEqual(['B4', 'B2', 'B1'])
     expect(processorOptions.processorName).toBe('B4')
-    expect(programOptions.availablePrograms).toEqual(['Base', 'BaseSIMD', 'exemple'])
+    expect(programOptions.availablePrograms).toEqual(['Base', 'BaseSIMD', 'example'])
     expect(programOptions.currentProgram).toBe('Base')
   })
 

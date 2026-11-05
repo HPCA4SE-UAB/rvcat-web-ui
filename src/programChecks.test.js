@@ -3,9 +3,9 @@ import { checkProgram, enforceStructure } from './programChecks'
 import Base     from '../public/program/Base.json'
 import V2       from '../public/program/V2.json'
 import BaseSIMD from '../public/program/BaseSIMD.json'
-import exemple  from '../public/program/exemple.json'
+import example  from '../public/program/example.json'
 
-const programs = { Base, V2, BaseSIMD, exemple }
+const programs = { Base, V2, BaseSIMD, example }
 const load = (name) => programs[name].instruction_list
 const codes = (result) => [...result.errors, ...result.warnings].map(r => r.code)
 
@@ -16,8 +16,8 @@ const branch = (S) => ({ type: 'BRANCH', oper: '', size: '', text: 'if c go back
 
 describe('checkProgram', () => {
   it('accepts the distributed programs without errors or warnings', () => {
-    const found = ['Base', 'V2', 'BaseSIMD', 'exemple'].map(name => [name, codes(checkProgram(load(name)))])
-    expect(found).toEqual([['Base', []], ['V2', []], ['BaseSIMD', []], ['exemple', []]])
+    const found = ['Base', 'V2', 'BaseSIMD', 'example'].map(name => [name, codes(checkProgram(load(name)))])
+    expect(found).toEqual([['Base', []], ['V2', []], ['BaseSIMD', []], ['example', []]])
   })
 
   it('E2/E3: lanes only for vector instructions, stride only for memory instructions', () => {

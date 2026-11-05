@@ -14,7 +14,9 @@
 
   async function show(el) {
     const rect = el.getBoundingClientRect()
-    detail.value = { text: el.getAttribute('title'), style: { left: '0px', top: '0px', visibility: 'hidden' } }
+    // data-pin-code: the explanation is source code (monospace, spaces kept)
+    detail.value = { text: el.getAttribute('title'), code: el.hasAttribute('data-pin-code'),
+                     style: { left: '0px', top: '0px', visibility: 'hidden' } }
     await nextTick()
     const box = boxRef.value.getBoundingClientRect()
     const below = rect.bottom + MARGIN + box.height < window.innerHeight
@@ -49,7 +51,7 @@
   <Teleport to="body">
     <div v-if="detail" ref="boxRef" class="pinned-detail" :style="detail.style" role="tooltip">
       <button class="pinned-detail-close" @click="detail = null" title="Close (Esc)">✕</button>
-      <div class="pinned-detail-text">{{ detail.text }}</div>
+      <div class="pinned-detail-text" :class="{ code: detail.code }">{{ detail.text }}</div>
     </div>
   </Teleport>
 </template>
@@ -58,7 +60,7 @@
   .pinned-detail {
     position:      fixed;
     z-index:       9000;
-    max-width:     min(28rem, calc(100vw - 16px));
+    max-width:     min(40rem, calc(100vw - 16px));
     padding:       6px 28px 6px 10px;
     background:    #fffbe6;
     color:         #222;
@@ -69,6 +71,7 @@
     line-height:   1.4;
   }
   .pinned-detail-text { white-space: pre-line; }
+  .pinned-detail-text.code { white-space: pre; font-family: monospace; overflow-x: auto; }
   .pinned-detail-close {
     position:   absolute;
     top:        2px;

@@ -1,5 +1,5 @@
 {
-  "name": "exemple",
+  "name": "example",
   "declarations": [
     {"name": "t1", "role": "data", "type": "FLOAT", "size": "double"},
     {"name": "t7", "role": "read-only", "type": "FLOAT", "size": "double"},
