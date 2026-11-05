@@ -6,7 +6,11 @@
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
   import { downloadJSON, uploadJSON, createGraphVizGraph,
            instructionTypes, typeOperations, typeSizes,
-           normalizeProgramDefaults                         }  from '@/common'
+           normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT }  from '@/common'
+  import MemoryTrace                                         from '@/components/MemoryTrace.vue'
+  import DeclarationsTable                                   from '@/components/DeclarationsTable.vue'
+  import { analyzeProgramText, deriveRowFields, fillFromText, declarationsFromAnalysis,
+           declareVariable, checkDeclarations }               from '@/instructionText'
   import { programDraftFrom, isEmptyProgramDraft }           from '@/editDrafts'
   import { checkProgram, enforceStructure, VECTOR_TYPES, MEMORY_TYPES } from '@/programChecks'
   import { analyzeLoop, vectorizeLoop, transformLoop }       from '@/loopTransforms'
@@ -141,11 +145,32 @@ const STORAGE_KEY = 'programEditOptions'
 // ============================================================================
 
 const editedProgram = ref([]);
+// N (algorithmic operations) stored with the program: default N when the program is selected,
+// and N of the memory trace. Programs without N take the N of the Program panel.
+const editedN = ref(100)
+// Declarations of the program (data type of its variables): seeds of the type inference,
+// set from the JSON file or from the declarations table
+const declarations = ref([])
+// Text of the instructions vs their fields, and data types (src/instructionText.js)
+const textAnalysis = computed(() => analyzeProgramText(editedProgram.value, declarations.value))
+function validN(value) {
+  const n = Math.round(Number(value))
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, MAX_LOGICAL_ELEMENT_COUNT) : null
+}
+function panelN() {
+  try { return validN(JSON.parse(localStorage.getItem('programOptions'))?.N) ?? 100 } catch { return 100 }
+}
+const editedNModel = computed({
+  get: () => editedN.value,
+  set: (value) => { editedN.value = validN(value) ?? editedN.value }
+})
 function loadEditedProgram() {
   const stored = localStorage.getItem('programTemp');
   if (!stored) return;
   try {
     const data = normalizeProgramDefaults(JSON.parse(stored));
+    editedN.value = validN(data.N) ?? panelN()
+    declarations.value = Array.isArray(data.declarations) ? data.declarations : []
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
         text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
@@ -212,6 +237,7 @@ function loadEditedProgram() {
         localStorage.setItem('programTemp', JSON.stringify(data));
         loadEditedProgram()
         undoProgram.value = null
+        warnDeclarations(data)
       }
     } catch (error) {
       console.error('📄❌ Failed to upload program for edition:', error)
@@ -285,20 +311,85 @@ function normalizeInstruction(inst) {
 const isVectorType = (inst) => VECTOR_TYPES.includes(inst?.type)
 const isMemoryType = (inst) => MEMORY_TYPES.includes(inst?.type)
 
-const checks = computed(() => checkProgram(editedProgram.value))
-// Problems of each instruction, shown on its row number
+const checks = computed(() => {
+  const structure = checkProgram(editedProgram.value)
+  return { errors:   structure.errors,
+           warnings: [...structure.warnings, ...textAnalysis.value.warnings],
+           infos:    textAnalysis.value.infos }
+})
+// Problems of each instruction, shown on its row number (error > warning > info)
+const RANK = { info: 0, warning: 1, error: 2 }
 const rowIssues = computed(() => {
   const map = {}
-  for (const [kind, items] of [['error', checks.value.errors], ['warning', checks.value.warnings]]) {
+  for (const [kind, items] of [['error', checks.value.errors], ['warning', checks.value.warnings], ['info', checks.value.infos]]) {
     for (const item of items) {
       if (item.index < 0) continue
       map[item.index] ??= { kind, text: [] }
-      if (kind === 'error') map[item.index].kind = 'error'
+      if (RANK[kind] > RANK[map[item.index].kind]) map[item.index].kind = kind
       map[item.index].text.push(`${item.code}: ${item.message}`)
     }
   }
   return map
 })
+const ISSUE_MARK = { error: '✖', warning: '⚠', info: 'ℹ' }
+
+// ---- Autofill from the text ----
+// Values of the select fields that are not valid for the type are cleared
+function sanitizeInstruction(inst) {
+  if (inst.oper && !(typeOperations[inst.type] ?? []).includes(inst.oper)) inst.oper = ''
+  if (inst.size && !(typeSizes[inst.type] ?? []).includes(inst.size)) inst.size = ''
+  enforceStructure(inst)
+}
+// Fields that could not be deduced when the text was written (e.g. the stride of A[i] before
+// the counter i = i + 1 exists): they are filled when they can be deduced, unless edited by hand
+const LATER_FIELDS = ['type', 'oper', 'size', 'stride']
+const pendingFields = new WeakMap()
+const pendingOf = (inst) => pendingFields.get(toRaw(inst))
+function keepField(inst, field) { pendingOf(inst)?.delete(field) }
+
+// The text of an instruction changed: every field deduced from it is overwritten
+function applyText(index) {
+  const inst = editedProgram.value[index]
+  if (!inst) return
+  const derived = deriveRowFields(editedProgram.value, index, declarations.value)
+  fillFromText(inst, derived)
+  sanitizeInstruction(inst)
+  pendingFields.set(toRaw(inst), new Set(derived ? LATER_FIELDS.filter(f => derived[f] === null) : []))
+}
+// Empty Type/Oper/Size fields, and the pending ones, are filled as soon as they can be deduced
+// (e.g. when another instruction gives the data type of a variable)
+watch(textAnalysis, (analysis) => {
+  analysis.derived.forEach((d, index) => {
+    const inst = editedProgram.value[index]
+    if (!d || !inst || inst.type === 'BRANCH') return
+    const pending = pendingOf(inst)
+    let changed = false
+    for (const field of LATER_FIELDS) {
+      const empty = field !== 'stride' && !String(inst[field] ?? '').trim()
+      if ((empty || pending?.has(field)) && d[field] !== null && d[field] !== undefined) {
+        if (field === 'stride' && !isMemoryType(inst)) continue
+        if (String(inst[field]) !== String(d[field])) { inst[field] = d[field]; changed = true }
+        pending?.delete(field)
+      }
+    }
+    if (changed) sanitizeInstruction(inst)
+  })
+})
+// Data type set in the declarations table
+function onDeclare(name, selection) {
+  const result = declareVariable(editedProgram.value, declarations.value, name, selection)
+  declarations.value = result.declarations
+  for (const { index, fields } of result.updates) {
+    Object.assign(editedProgram.value[index], fields)
+    sanitizeInstruction(editedProgram.value[index])
+  }
+}
+function warnDeclarations(program) {
+  const messages = checkDeclarations(program)
+  if (messages.length)
+    alert(`The declarations of program "${program.name}" are not coherent with its instructions:\n` +
+          messages.map(m => `• ${m}`).join('\n'))
+}
 
 // Loop stride S = algorithmic operations per iteration, stored in the final BRANCH
 const loopStrideModel = computed({
@@ -312,6 +403,7 @@ const loopStrideModel = computed({
 
 // Changing the type keeps the structure coherent: stride only for memory, lanes only for vectors
 function onTypeChange(inst) {
+  keepField(inst, 'type')
   inst.oper = ''
   inst.size = ''
   enforceStructure(inst)
@@ -362,12 +454,17 @@ function undoTransform() {
   undoProgram.value = null
 }
 
+// Instruction highlighted from the memory trace (-1: none)
+const tracedRows = ref([])
+
 const issueLine = (item) =>
   `• ${item.code}${item.index >= 0 ? ` (instruction ${item.index})` : ''}: ${item.message}`
 
 function snapshotProgram() {
   return {
     name:             'programTemp',
+    N:                editedN.value,
+    declarations:     declarationsFromAnalysis(textAnalysis.value),
     instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
   };
 }
@@ -450,6 +547,7 @@ function snapshotProgram() {
       stride: 1, lanes: 1}];
     showModalClear.value = false;
     undoProgram.value = null
+    declarations.value = []
     addInstruction(0);
   }
 
@@ -506,6 +604,11 @@ function snapshotProgram() {
              title="Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.">
         Alg opers/iter (S):
         <input type="number" min="1" step="1" v-model.lazy.number="loopStrideModel" id="editor-loop-stride-input" />
+      </label>
+      <label class="loop-stride-field editor-n-field" id="editor-n"
+             :title="`N = algorithmic operations (iterations of the original loop), 1 - ${MAX_LOGICAL_ELEMENT_COUNT}. It is saved with the program and becomes the N of the Program panel when the program is selected. The memory trace uses it.`">
+        N:
+        <input type="number" min="1" :max="MAX_LOGICAL_ELEMENT_COUNT" step="1" v-model.lazy.number="editedNModel" id="editor-n-input" />
       </label>
       <button class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
               title="Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets">
@@ -571,13 +674,14 @@ function snapshotProgram() {
             </thead>
             <tbody>
               <tr v-for="(inst, index) in editedProgram.slice(0, editedProgram.length - 1)" :key="index"
-                  :class="rowIssues[index] ? 'row-' + rowIssues[index].kind : ''">
+                  :class="[rowIssues[index] ? 'row-' + rowIssues[index].kind : '', { 'row-traced': tracedRows.includes(index) }]">
                 <td :title="rowIssues[index]?.text.join('\n')">
-                  {{ index }}<span v-if="rowIssues[index]" class="row-issue">{{ rowIssues[index].kind === 'error' ? '✖' : '⚠' }}</span>
+                  {{ index }}<span v-if="rowIssues[index]" class="row-issue">{{ ISSUE_MARK[rowIssues[index].kind] }}</span>
                 </td>
 
                 <td>
-                  <input type="text" v-model="inst.text" class="table-input" title="Free text describing instruction" />
+                  <input type="text" v-model="inst.text" class="table-input" @change="applyText(index)"
+                         title="Text of the instruction, e.g. sum = sum + tmp, tmp = V[i+1], V[N-1-i] = x, x[0:3] = y[0:3] * z[0:3]. When it changes, the fields deduced from it are filled in (help: Instruction text)" />
                 </td>
 
                 <td>
@@ -591,7 +695,7 @@ function snapshotProgram() {
                 </td>
 
                 <td>
-                  <select v-model="inst.oper" :disabled="!inst.type || typeOperations[inst.type].length === 0"
+                  <select v-model="inst.oper" @change="keepField(inst, 'oper')" :disabled="!inst.type || typeOperations[inst.type].length === 0"
                     class="table-select" title="Select operation for this type"
                   >
                     <option value="">Select...</option>
@@ -606,7 +710,7 @@ function snapshotProgram() {
                 </td>
 
                 <td>
-                  <select v-model="inst.size" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
+                  <select v-model="inst.size" @change="keepField(inst, 'size')" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
                     class="table-select" title="Select size for this instruction type & operations"
                   >
                     <option value="">Select...</option>
@@ -641,7 +745,7 @@ function snapshotProgram() {
                 </td>
 
                 <td v-if="programEditOptions.showStrideLanes">
-                  <input v-if="isMemoryType(inst)" type="number" step="1" v-model.number="inst.stride" class="table-input"
+                  <input v-if="isMemoryType(inst)" type="number" step="1" v-model.number="inst.stride" @change="keepField(inst, 'stride')" class="table-input"
                          title="Memory stride s: the access advances lanes × s elements per iteration (negative: backwards from the end of the array; 0: the same elements in every iteration). Usually lanes × s = S." />
                   <span v-else class="table-input readonly" title="Only memory instructions have a stride">–</span>
                 </td>
@@ -696,7 +800,7 @@ function snapshotProgram() {
               <tr v-if="editedProgram.length" class="fixed-row"
                   :class="rowIssues[editedProgram.length - 1] ? 'row-' + rowIssues[editedProgram.length - 1].kind : ''">
                 <td :title="rowIssues[editedProgram.length - 1]?.text.join('\n')">
-                  {{editedProgram.length-1}}<span v-if="rowIssues[editedProgram.length - 1]" class="row-issue">{{ rowIssues[editedProgram.length - 1].kind === 'error' ? '✖' : '⚠' }}</span>
+                  {{editedProgram.length-1}}<span v-if="rowIssues[editedProgram.length - 1]" class="row-issue">{{ ISSUE_MARK[rowIssues[editedProgram.length - 1].kind] }}</span>
                 </td>
 
                 <td title="This final conditional branch is fixed">
@@ -749,7 +853,7 @@ function snapshotProgram() {
       </div>
       <div class="coherence-panel" id="program-coherence">
         <div v-if="!checks.errors.length && !checks.warnings.length" class="coherence-ok">
-          ✔ Loop stride, lanes and memory accesses are coherent
+          ✔ Loop stride, lanes, memory accesses, texts and data types are coherent
         </div>
         <div v-for="(item, k) in checks.errors" :key="'e' + k" class="coherence-error">
           ✖ <strong>{{ item.code }}</strong><span v-if="item.index >= 0"> · instr {{ item.index }}</span>: {{ item.message }}
@@ -757,7 +861,15 @@ function snapshotProgram() {
         <div v-for="(item, k) in checks.warnings" :key="'w' + k" class="coherence-warning">
           ⚠ <strong>{{ item.code }}</strong><span v-if="item.index >= 0"> · instr {{ item.index }}</span>: {{ item.message }}
         </div>
+        <div v-for="(item, k) in checks.infos" :key="'i' + k" class="coherence-info">
+          ℹ <strong>{{ item.code }}</strong> · instr {{ item.index }}: {{ item.message }}
+        </div>
       </div>
+      <DeclarationsTable :variables="textAnalysis.variables" @declare="onDeclare"
+                         @highlight="tracedRows = $event" />
+      <MemoryTrace :program="editedProgram" :N="editedN" :rowIssues="rowIssues"
+                   :blocked="checks.errors.length ? 'Fix the errors (✖) to see the memory trace.' : ''"
+                   @highlight="tracedRows = $event >= 0 ? [$event] : []" />
     </div>
   </div>
 
@@ -923,6 +1035,7 @@ function snapshotProgram() {
     font-weight: 600;
     white-space: nowrap;
   }
+  .editor-n-field { margin-right: 0.6em; }
   .loop-stride-field input {
     width:       3.5em;
     text-align:  center;
@@ -933,6 +1046,8 @@ function snapshotProgram() {
   }
   .instructions-table tbody tr.row-warning td:first-child { background: #fff3cd; color: #8a6d00; }
   .instructions-table tbody tr.row-error   td:first-child { background: #fde2e2; color: #b00020; }
+  .instructions-table tbody tr.row-info    td:first-child { color: #555; }
+  .instructions-table tbody tr.row-traced { outline: 2px solid #007acc; outline-offset: -2px; background: #e8f4fd; }
   .coherence-panel {
     flex-shrink:   0;
     max-height:    9em;
@@ -980,6 +1095,7 @@ function snapshotProgram() {
   .coherence-ok      { color: #2e7d32; }
   .coherence-error   { color: #b00020; }
   .coherence-warning { color: #8a6d00; }
+  .coherence-info    { color: #666; }
 
   .table-container {
      width:          auto;

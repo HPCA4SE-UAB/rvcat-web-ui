@@ -52,8 +52,14 @@ export function useRVCAT_Api() {
     run(`rvcat._scheduler.get_timeline(${pyJSON(JSONprocessText)}, nret=${n_ret})`,
         'get_timeline', 'timeline');
 
+  // Memory addresses of the first and last K loop iterations (program editor)
+  const getMemoryTrace = (JSONprogramText, N, K) =>
+    run(`rvcat._program.get_memory_trace(${pyJSON(JSONprogramText)}, ${N}, ${K})`,
+        'get_memory_trace', 'memory trace');
+
   return {
     importRVCAT,
+    getMemoryTrace,
     getPerformanceAnalysis,
     getDependenceGraph,
     getProgGraph,

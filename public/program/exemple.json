@@ -1,5 +1,19 @@
 {
   "name": "exemple",
+  "declarations": [
+    {"name": "t1", "role": "data", "type": "FLOAT", "size": "double"},
+    {"name": "t7", "role": "read-only", "type": "FLOAT", "size": "double"},
+    {"name": "t0", "role": "data", "type": "FLOAT", "size": "double"},
+    {"name": "t5", "role": "read-only", "type": "FLOAT", "size": "double"},
+    {"name": "t2", "role": "data", "type": "FLOAT", "size": "double"},
+    {"name": "A", "role": "array", "type": "FLOAT", "size": "double"},
+    {"name": "x", "role": "index", "type": "INT", "size": "word"},
+    {"name": "t3", "role": "data", "type": "FLOAT", "size": "double"},
+    {"name": "t4", "role": "read-only", "type": "FLOAT", "size": "double"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "N", "role": "read-only", "type": "INT", "size": "word"},
+    {"name": "B", "role": "array", "type": "FLOAT", "size": "double"}
+  ],
   "instruction_list": [
     {
       "text": "t1 = t7 * t0",

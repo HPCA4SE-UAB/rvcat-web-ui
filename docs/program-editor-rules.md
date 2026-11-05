@@ -35,6 +35,98 @@ Typical values:
 
 The byte address is the array base + element × d. Each array is placed after the previous one, in program order.
 
+## Instruction text
+
+The text of an instruction is checked against its fields when it has one of the canonical forms below (implemented in `src/instructionText.js`). Other texts are allowed, but they are marked **ℹ T1 (not analyzed)** and their fields are not checked.
+
+| Form | Instruction |
+|---|---|
+| `x = y op z`, op `+ -` | INT ARITH / FLOAT ADD |
+| `x = y * z` | INT ARITH / FLOAT MUL |
+| `x = y / z`, `x = sqrt(y)`, `x = a*b + c` (or `c + a*b`) | FLOAT DIV, SQRT, FMA |
+| `x = y op z`, op `& \| ^` / `<< >>` | INT LOGIC / INT SHIFT |
+| `c = y op z`, op `== != < <= > >=` | INT ARITH (comparison) |
+| `x = A[index]` / `A[index] = x` | MEM LOAD / MEM STORE |
+| `x[0:3]` in any of the above | vector instruction with 4 lanes (VINT, VFLOAT, VMEM) |
+| `if c go back` | the final BRANCH |
+
+- Operands are variables or one number, which goes to the *Constant* field.
+- Sources are the variables in order of appearance, without repetitions. For an FMA, the two factors come first and then the addend. For memory instructions the order is fixed: LOAD has *source1* = index and *source2* = array; STORE has *source1* = value, *source2* = array and *source3* = index.
+- Memory index forms:
+  - `i+c` or `a*i+c`: forward, offset c;
+  - `N-c-i` or `N-c-a*i`: backward, offset c;
+  - a number c: fixed element, stride 0;
+  - vector accesses use a range: `A[i:i+3]` or `A[N-4-i:N-1-i]`.
+- The memory stride is deduced from the loop counter `i = i + k`: s = a·k / L, negative for backward accesses.
+- Texts that are not analyzed:
+  - several operations;
+  - copies (`x = y`), which have no RVCAT instruction;
+  - constant assignments;
+  - stores of an expression;
+  - parentheses;
+  - indirect indexes (`A[B[i]]`);
+  - different lanes in one instruction.
+
+**Autofill.** When the text of an instruction changes, every field that can be deduced from it is filled in, overwriting the previous value. Fields that cannot be deduced, such as the type of `x = y + z` when the type of its variables is unknown, are kept. Any field can then be changed by hand; if it no longer agrees with the text, warning T2 says so. Type, operation and size fields that are still empty are filled in as soon as they can be deduced, for example when another instruction gives the data type of the variable.
+
+### Data types
+
+The data type of each variable (INT or FLOAT, and its size) is inferred for the whole program, not only from the previous instructions. For example, in `tmp = V[i]` followed by `sum = sum + tmp` as FLOAT single, the load gets size `word` from the second instruction.
+
+- **Same data.** Variables that exchange values have the same type:
+  - the operands and the result of an operation;
+  - the value and the array of a load or a store.
+- **Type from the operations.** `/`, `sqrt` and FMA are FLOAT. Logic operations, shifts, memory indexes, loop counters, comparisons and the branch condition are INT.
+- **Type from the fields and declarations.** The *Type* and *Size* fields of the instructions, and the declarations of the program, also give the type.
+- **Size.** It is shared by the same data, with single = word (4 bytes) and double = long (8 bytes). An INT with no size anywhere is assumed to be word.
+
+### Declarations
+
+The **Declarations** section, below the coherence checks, can be expanded to see each variable with:
+- its role: array, index, counter, condition, size (N in a backward index), read-only or data;
+- its type and size, and its lanes;
+- the variables with the same data;
+- the instructions that use it.
+
+Choosing a type or size in the table sets it for all the variables with the same data, and rewrites the Type, Oper and Size fields of their instructions.
+
+The declarations are saved in the program JSON, as a list:
+
+```json
+"declarations": [
+  {"name": "V", "role": "array", "type": "FLOAT", "size": "single"},
+  {"name": "i", "role": "index", "type": "INT", "size": "word"}
+]
+```
+
+When a program is uploaded, in the Program panel or in the editor, its declarations are checked against its instructions. A warning lists:
+- contradictions;
+- declared variables that are not used;
+- variables that are not declared.
+
+### Warnings
+
+| Code | Meaning |
+|---|---|
+| T1 (info) | The text does not have a canonical form: its fields are not checked. |
+| T2 | A field differs from what the text gives (empty Type/Oper/Size fields are not reported: they are filled automatically). |
+| T3 | Contradictory data types for variables with the same data (operations, fields or declarations). |
+| T5 | A vector register is used with different numbers of lanes. |
+
+## N and the memory trace
+
+**N** is saved with the program (field `N` of the JSON file, optional). When the program is selected or uploaded in the Program panel, it becomes the current N; programs without N keep the current one. Reloading the page keeps the last N used.
+
+The **Memory trace** section, below the coherence checks, can be expanded to see the memory accesses of the edited program:
+
+- One column per memory instruction (array, lanes L, stride s, offset c, element size), and one row per iteration.
+- The first K and the last K iterations are shown (K = 1 … 16); the omitted iterations are indicated between them.
+- Each cell shows the elements accessed (`A[4..7]`) and their byte addresses (decimal or hexadecimal).
+- The addresses are computed by RVCAT (`Program.get_memory_trace`), with the same model as the simulator: the arrays are placed one after another from address 0, in program order, and each array is as large as its accesses reach.
+- Cells outside the elements swept by the access over the whole loop (iterations × L·|s|) are shown in red. For example, `A[i+1]` in the last iteration, or a backward access with c < L (W7). Accesses to a fixed address (s = 0) are not marked.
+- Hovering a column highlights its instruction. **Copy** copies the trace as tab-separated text.
+- The trace is not computed while the program has errors.
+
 ## Rules enforced by construction
 
 The editor makes these rules impossible to break:
@@ -78,8 +170,7 @@ RVCAT does not use the value of the counter (addresses come from s and c), so W8
 
 These rules cannot be checked from the program fields:
 
-- **The text against the fields.** The text is free, informal language, so the editor cannot check that `V[i+1]` really has c = 1, or that `tmp[0:3]` really has L = 4.
-- **Element sizes across instructions.** For example, a VMEM of words feeding a VFLOAT of doubles. Dependences are by variable name, without types.
+- **Texts without a canonical form** (T1). Only the canonical forms of the text are checked against the fields.
 - **Algorithmic equivalence.** The editor cannot check that the unrolled or vectorized version computes the same as the original loop. This matters for reductions: several partial accumulators must be combined after the loop, and that code is not simulated.
 - **Remainder iterations.** Real code has an epilogue loop when N is not a multiple of S. RVCAT instead rounds N down to a multiple of S.
 

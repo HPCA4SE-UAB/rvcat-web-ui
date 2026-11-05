@@ -96,6 +96,33 @@ export function validateProgram(program, options = {}) {
     addError("Program name must be a non-empty string.")
   }
 
+  if (program.N !== undefined &&
+      (!Number.isSafeInteger(program.N) || program.N <= 0 || program.N > MAX_LOGICAL_ELEMENT_COUNT)) {
+    addError(`Program N (algorithmic operations) must be an integer between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`)
+  }
+
+  if (program.declarations !== undefined) {
+    if (!Array.isArray(program.declarations)) {
+      addError('Program declarations must be a list.')
+    } else {
+      program.declarations.forEach((d, k) => {
+        const where = `Declaration ${k + 1}: `
+        if (!d || typeof d !== 'object' || typeof d.name !== 'string' || !d.name.trim()) {
+          addError(where + 'must have a variable name.')
+          return
+        }
+        if (d.type !== undefined && !['INT', 'FLOAT'].includes(d.type))
+          addError(where + `type of ${d.name} must be INT or FLOAT.`)
+        const sizes = d.type === 'FLOAT' ? ['single', 'double'] : d.type === 'INT' ? ['byte', 'word', 'long']
+                                         : ['byte', 'word', 'long', 'single', 'double']
+        if (d.size !== undefined && !sizes.includes(d.size))
+          addError(where + `size of ${d.name} must be one of: ${sizes.join(', ')}.`)
+        if (d.lanes !== undefined && !(Number.isSafeInteger(d.lanes) && d.lanes >= 1))
+          addError(where + `lanes of ${d.name} must be a positive integer.`)
+      })
+    }
+  }
+
   if (!Array.isArray(program.instruction_list) || program.instruction_list.length === 0) {
     addError('Program must contain a non-empty instruction_list.')
     return errors
@@ -184,7 +211,9 @@ export function validateProgram(program, options = {}) {
   }
 
   if (options.logicalElementCount !== undefined) {
-    const logicalElementCount = options.logicalElementCount
+    // A program with its own N is checked with it (it becomes the current N when uploaded)
+    const logicalElementCount = Number.isSafeInteger(program.N) && program.N > 0
+      ? program.N : options.logicalElementCount
     if (!Number.isSafeInteger(logicalElementCount) ||
         logicalElementCount <= 0 ||
         logicalElementCount > MAX_LOGICAL_ELEMENT_COUNT) {

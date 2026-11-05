@@ -1,5 +1,14 @@
 {
   "name": "BaseSIMD",
+  "declarations": [
+    {"name": "tmp", "role": "data", "type": "FLOAT", "size": "single", "lanes": 4},
+    {"name": "V", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "i", "role": "index", "type": "INT", "size": "word"},
+    {"name": "sum", "role": "data", "type": "FLOAT", "size": "single", "lanes": 4},
+    {"name": "W", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "N", "role": "read-only", "type": "INT", "size": "word"}
+  ],
   "instruction_list": [
     {
       "text": "tmp[0:3] = V[i:i+3]",

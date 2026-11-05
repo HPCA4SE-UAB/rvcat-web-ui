@@ -4,6 +4,7 @@
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
            updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
            normalizeProgramDefaults }                                     from '@/common'
+  import { checkDeclarations }                                      from '@/instructionText'
   import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
@@ -67,7 +68,7 @@
     console.log(`📄✅ Program changed from "${oldProgram}" to "${newProgram}"`);
     saveOptions()
     if (newProgram && simState.state > 1)
-      reloadProgram()
+      reloadProgram(true)
   })
 
   watch( () => [programOptions.show],
@@ -126,13 +127,28 @@
       reloadProgram()   // On initialization, if currentProgram not modified, force program reloading
   };
 
-  const reloadProgram = async () => { // reload program data from localStorage to simState.simulatedProcess, and trigger next initialization step if we are in the right state
+  // A program may store its own N (algorithmic operations): it becomes the current N when the
+  // program is selected or uploaded (not when the page is reloaded, which keeps the last N)
+  function applyProgramN(data) {
+    const n = Math.round(Number(data?.N))
+    if (Number.isFinite(n) && n >= 1) programOptions.N = Math.min(n, MAX_N)
+  }
+
+  // Program fields copied to the simulated process ('N' and 'declarations' are removed so that a
+  // program without them does not keep the ones of the previous program)
+  function setSimulatedProgram(data) {
+    delete simState.simulatedProcess.N
+    delete simState.simulatedProcess.declarations
+    Object.assign(simState.simulatedProcess, normalizeProgramDefaults(data))
+  }
+
+  const reloadProgram = async (useProgramN = false) => { // reload program data from localStorage to simState.simulatedProcess, and trigger next initialization step if we are in the right state
     console.log('📄🔄 Reloading program with:', programOptions.currentProgram);
     try {
       const jsonString = localStorage.getItem(`program.${programOptions.currentProgram}`)
       const data       = JSON.parse(jsonString)
-      const normalizedProgram = normalizeProgramDefaults(data)
-      Object.assign(simState.simulatedProcess, normalizedProgram)
+      setSimulatedProgram(data)
+      if (useProgramN) applyProgramN(data)
       let instrCount = simState.simulatedProcess.instruction_list.length
       programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
       console.log('📄✅ Program reloaded. STRIDE:', programOptions.stride)
@@ -201,8 +217,12 @@
         }
         saveToLocalStorage('program', data.name, data, programOptions.availablePrograms)
         programOptions.currentProgram = data.name;
-        const normalizedProgram = normalizeProgramDefaults(data)
-        Object.assign(simState.simulatedProcess, normalizedProgram)
+        setSimulatedProgram(data)
+        applyProgramN(data)
+        const incoherent = checkDeclarations(data)
+        if (incoherent.length)
+          alert(`The declarations of program "${data.name}" are not coherent with its instructions:\n` +
+                incoherent.map(m => `• ${m}`).join('\n'))
         let instrCount = simState.simulatedProcess.instruction_list.length
         programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
         console.log('📄✅ Program uploaded. STRIDE:', programOptions.stride)

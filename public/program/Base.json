@@ -1,5 +1,14 @@
 {
   "name": "Base",
+  "declarations": [
+    {"name": "tmp", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "V", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "i", "role": "index", "type": "INT", "size": "word"},
+    {"name": "sum", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "W", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "N", "role": "read-only", "type": "INT", "size": "word"}
+  ],
   "instruction_list": [
     {
       "text": "tmp = V[i]",

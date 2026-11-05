@@ -27,6 +27,41 @@ its <em>size</em> (byte 1, word 4, long 8 bytes). In loop iteration k = 0, 1, �
 one element per algorithmic operation.</p>
 </details>
 
+<details><summary><b>Instruction text, autofill and declarations</b></summary>
+<p>When the <b>text</b> of an instruction changes, the fields that can be deduced from it are filled in (and
+overwritten): type, operation, size, destination, sources, constant, stride and lanes. You can then change any field
+by hand; if it no longer agrees with the text, a warning <b>T2</b> says so. The text must use these forms:</p>
+<p>&bull; <b>x = y op z</b> with op <b>+ - * /</b>, <b>&amp; | ^ &lt;&lt; &gt;&gt;</b> or a comparison
+(<b>== != &lt; &lt;= &gt; &gt;=</b>); y and z are variables or one number (the constant).<br>
+&bull; <b>x = a*b + c</b> (FMA) and <b>x = sqrt(y)</b>.<br>
+&bull; <b>x = A[index]</b> (load) and <b>A[index] = x</b> (store), with index <b>i+c</b> or <b>a*i+c</b> (forward),
+<b>N-c-i</b> (backward from the end) or a number (fixed element).<br>
+&bull; Vectors: <b>x[0:3]</b> is a vector register of 4 lanes; <b>A[i:i+3]</b> and <b>A[N-4-i:N-1-i]</b> access 4
+elements.</p>
+<p>The memory stride is deduced from the loop counter <b>i = i + k</b>: s = a·k / L. Other texts (several operations,
+copies, parentheses, indirect indexes…) are marked <b>ℹ T1 not analyzed</b>, and their fields are not checked.</p>
+<p>The <b>data type</b> (INT or FLOAT, and size) is inferred for the whole program. Variables that exchange values
+(the operands and result of an operation, the value and the array of a load or store) have the same type. The type
+comes from the operations (/, sqrt and FMA are FLOAT; logic operations, shifts, indexes and comparisons are INT), from
+the Type and Size fields, and from the declarations; a variable whose type is unknown takes it as soon as another
+instruction gives it. Contradictions are warned (<b>T3</b>), as are vector registers with different lanes (<b>T5</b>).</p>
+<p><b>Declarations</b> (below the checks) lists the variables with their role (array, index, counter, condition,
+read-only, data), type, size, lanes and the instructions that use them. Choosing a type or size there sets it for the
+variables with the same data and rewrites their instructions. The declarations are saved with the program and checked
+when it is uploaded.</p>
+</details>
+
+<details><summary><b>N and the memory trace</b></summary>
+<p><b>N</b> (algorithmic operations) is saved with the program: when the program is selected or uploaded in the
+Program panel, it becomes the current N. The loop runs N/S iterations (N is rounded down to a multiple of S).</p>
+<p><b>Memory trace</b> (below the checks) shows, for the first and the last iterations, the elements and the byte
+addresses accessed by each memory instruction, computed by RVCAT with the same model as the simulator. The arrays
+are placed one after another from address 0, in program order; each one is as large as its accesses reach.
+Elements outside the range swept by the access over the whole loop are shown in red (e.g. A[i+1] in the last
+iteration, or a backward access with offset smaller than its lanes). Hovering a column highlights its instruction;
+<b>Copy</b> copies the trace as tab-separated text. The trace is not shown while the program has errors.</p>
+</details>
+
 <details><summary><b>Errors ✖ (the program cannot be saved)</b></summary>
 <p><b>E1</b> S is an integer ≥ 1.<br>
 <b>E2</b> Vector instructions (VINT, VMEM, VFLOAT) have L ≥ 2 lanes; scalar ones have 1 lane. RVCAT uses L to compute
@@ -71,8 +106,7 @@ dependence chain and reduces the latency bound. The partial results must be adde
 </details>
 
 <details><summary><b>Not checked</b></summary>
-<p>&bull; The text is free: it is not checked against the fields (V[i+1] and its offset 1).<br>
-&bull; Element sizes across instructions (e.g. words loaded into a double operation).<br>
+<p>&bull; Texts that do not have the forms above (they are marked ℹ T1).<br>
 &bull; That the transformed loop computes the same as the original one.<br>
 &bull; Remainder iterations: RVCAT rounds N down to a multiple of S instead of running an epilogue loop.</p>
 </details>

@@ -8,6 +8,7 @@
 // operation a (a = 0 … N−1) of the original loop (L = 1, S = 1) it reads element c + a·s.
 
 import { checkProgram } from './programChecks.js'
+import { shiftIndexText, vectorIndexText } from './instructionText.js'
 
 const VECTOR_OF   = { INT: 'VINT', MEM: 'VMEM', FLOAT: 'VFLOAT' }
 const isMemory    = (instr) => instr?.type === 'MEM' || instr?.type === 'VMEM'
@@ -169,7 +170,7 @@ export function vectorizeLoop(instructionList, L) {
       if (s < 0) instr.constant = String(intOf(instr.constant, 0) + L - 1)
       instr.text = rewriteArrayRef(instr.text ?? '', instr.source2, (expr) => {
         const p = s > 0 ? parseIndex(expr) : null
-        return p ? fmtRange(p.v, p.lo, p.lo + L - 1) : `${expr.trim()} (${L} elements)`
+        return p ? fmtRange(p.v, p.lo, p.lo + L - 1) : (vectorIndexText(expr, L) ?? `${expr.trim()} (${L} elements)`)
       })
     }
     instr.text = vectorizeNames(instr.text ?? '', vectorNames, L)
@@ -222,7 +223,8 @@ export function unrollLoop(instructionList, U, { splitAccumulators = false } = {
           if (j > 0) {
             instr.text = rewriteArrayRef(instr.text ?? '', instr.source2, (expr) => {
               const p = parseIndex(expr)
-              return p ? fmtRange(p.v, p.lo + delta, p.hi + delta) : `${expr.trim()} ${delta >= 0 ? '+' : '-'} ${Math.abs(delta)}`
+              return p ? fmtRange(p.v, p.lo + delta, p.hi + delta)
+                       : (shiftIndexText(expr, delta) ?? `${expr.trim()} ${delta >= 0 ? '+' : '-'} ${Math.abs(delta)}`)
             })
           }
         }
