@@ -1,0 +1,106 @@
+{
+  "name": "f2",
+  "declarations": [
+    {"name": "t", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "A", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "i", "role": "index", "type": "INT", "size": "word"},
+    {"name": "u", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "B", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "D", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "N", "role": "read-only", "type": "INT", "size": "word"}
+  ],
+  "instruction_list": [
+    {
+      "text": "t = A[2*i]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "t",
+      "source1": "i",
+      "source2": "A",
+      "source3": "",
+      "constant": "",
+      "stride": 2,
+      "lanes": 1
+    },
+    {
+      "text": "u = B[i]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "u",
+      "source1": "i",
+      "source2": "B",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "t = t + u",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "single",
+      "destin": "t",
+      "source1": "t",
+      "source2": "u",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "D[i] = t",
+      "type": "MEM",
+      "oper": "STORE",
+      "size": "word",
+      "destin": "",
+      "source1": "t",
+      "source2": "D",
+      "source3": "i",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "i = i + 1",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "i",
+      "source1": "i",
+      "source2": "",
+      "source3": "",
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "c = i != N",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "i",
+      "source2": "N",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    }
+  ]
+}

@@ -7,8 +7,10 @@ import BaseSIMD from '../public/program/BaseSIMD.json'
 import V1       from '../public/program/V1.json'
 import V2       from '../public/program/V2.json'
 import exemple  from '../public/program/exemple.json'
+import f2       from '../public/program/f2.json'
+import f2SIMD   from '../public/program/f2-SIMD.json'
 
-const DISTRIBUTED = { Base, BaseSIMD, V1, V2, exemple }
+const DISTRIBUTED = { Base, BaseSIMD, V1, V2, exemple, f2, 'f2-SIMD': f2SIMD }
 const FIELDS = ['type', 'oper', 'size', 'destin', 'source1', 'source2', 'source3']
 const branch = (S = 1) => ({ text: 'if c go back', type: 'BRANCH', oper: '', size: '', destin: '', source1: 'c',
                              source2: '', source3: '', constant: '', stride: S, lanes: 1 })

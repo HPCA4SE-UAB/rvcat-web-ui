@@ -9,7 +9,9 @@
     "BaseSIMD",
     "exemple",
     "V1",
-    "V2"
+    "V2",
+    "f2",
+    "f2-SIMD"
   ],
   "tutorial": [
     "navigation-tour",
