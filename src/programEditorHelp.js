@@ -41,7 +41,8 @@ SHUFFLE, with the type of its data). The sources may have other lanes, e.g. x[0:
 <b>N-c-i</b> (backward from the end) or a number (fixed element).<br>
 &bull; Vectors: <b>x[0:3]</b> is a vector register of 4 lanes; <b>A[i:i+3]</b> and <b>A[N-4-i:N-1-i]</b> access 4
 elements.</p>
-<p>The memory stride is deduced from the loop counter <b>i = i + k</b>: s = a·k / L. Other texts (several operations,
+<p>The memory stride is deduced from the loop counter <b>i = i + k</b>: s = a·k / L. An index that the loop does not
+change (e.g. a stack pointer s in STK[s+4:s+5]) accesses a fixed address: s = 0. Other texts (several operations,
 copies, parentheses, indirect indexes…) are marked <b>ℹ T1 not analyzed</b>, and their fields are not checked.</p>
 <p>The <b>data type</b> (INT or FLOAT, and size) is inferred for the whole program. Variables that exchange values
 (the operands and result of an operation, the value and the array of a load or store) have the same type. The type
@@ -105,7 +106,8 @@ them.</p>
 <details><summary><b>Warnings ⚠ (probable mistakes)</b></summary>
 <p><b>W1</b> With L-lane vector instructions, S should be a multiple of L (S = L×U). <i>Typical mistake:</i> a vectorized
 loop keeps S = 1, so cycles/alg oper is L times too large.<br>
-<b>W2</b> Each vector instruction should fill the vector registers: lanes × element size = register width.<br>
+<b>W2</b> Each vector computation should fill the vector registers: lanes × element size = register width (memory
+accesses, shuffles and permutes may use part of a register).<br>
 <b>W3</b> Each memory access should advance a multiple of S elements per iteration (L·|s| = S when it reads one element
 per algorithmic operation, so s = S/L). <i>Typical mistake:</i> after unrolling, the strides stay at 1 and the
 iterations read the same elements again.<br>

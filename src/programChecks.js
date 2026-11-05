@@ -97,7 +97,8 @@ export function checkProgram(instructionList, { vlen = null } = {}) {
     const L = intOf(instr.lanes, 1), d = elementBytes(instr, list)
     if (!W || !d || !Number.isInteger(L)) continue
     const what = `${L} lanes × ${d} bytes = ${L * d} bytes`
-    if (L * d < W && (instr.oper === 'SHUFFLE' || instr.oper === 'PERMUTE')) continue   // may move parts of registers
+    // data moves and memory accesses may use parts of registers (e.g. movhps, cvtps2pd from 8 bytes)
+    if (L * d < W && (instr.oper === 'SHUFFLE' || instr.oper === 'PERMUTE' || isMemory(instr))) continue
     if (L * d > W)
       warn('W9', index, `${what} do not fit in a ${W}-byte vector register: use ${Math.max(1, W / d)} lanes, ` +
                         `or split the instruction into parts${instr.oper === 'CVT' ? ' (a conversion that doubles the size is done in two halves)' : ''}.`)
@@ -157,10 +158,14 @@ export function checkProgram(instructionList, { vlen = null } = {}) {
                               `copies of a vector access usually differ by a multiple of ${L}.`)
       }
     }
-    // W6: unrolled copies do not cover all the elements advanced per iteration
+    // W6: unrolled copies do not cover all the elements advanced per iteration (counting all the
+    // accesses to the array with the same operation and step, whatever their lanes)
     if (S > 1 && s !== 0 && step % S === 0) {
       const covered = new Set()
-      for (const g of group) for (let e = 0; e < L; e++) covered.add((((g.c + e) % step) + step) % step)
+      const array = list[group[0].index].source2, oper = list[group[0].index].oper
+      const sameStep = [...groups.values()].flat().filter(g => g.step === step && Math.sign(g.s) === Math.sign(s) &&
+                         list[g.index].source2 === array && list[g.index].oper === oper)
+      for (const g of sameStep) for (let e = 0; e < g.L; e++) covered.add((((g.c + e) % step) + step) % step)
       const perAlgOp = step / S
       if (perAlgOp === 1 && covered.size < step) {
         const missing = [...Array(step).keys()].filter(e => !covered.has(e))

@@ -60,7 +60,7 @@ The text of an instruction is checked against its fields when it has one of the 
   - `N-c-i` or `N-c-a*i`: backward, offset c;
   - a number c: fixed element, stride 0;
   - vector accesses use a range: `A[i:i+3]` or `A[N-4-i:N-1-i]`.
-- The memory stride is deduced from the loop counter `i = i + k`: s = a·k / L, negative for backward accesses.
+- The memory stride is deduced from the loop counter `i = i + k`: s = a·k / L, negative for backward accesses. An index that the loop does not change, such as a stack pointer `s` in `STK[s+4:s+5]`, accesses a fixed address: s = 0.
 - Texts that are not analyzed:
   - several operations;
   - copies (`x = y`), which have no RVCAT instruction;
@@ -233,11 +233,11 @@ The upload of a program also checks:
 | Code | Rule | Typical mistake | When it is correct anyway |
 |---|---|---|---|
 | W1 | If vector instructions have L lanes, S is a multiple of L (S = L·U). | A loop is vectorized, but S stays at 1, so cycles/alg oper is L times too large. | Each algorithmic operation processes several elements (e.g. one complex number = 2 lanes). |
-| W2 | Each vector instruction fills the vector registers: L × element size = register width (*Vector regs*, or the largest vector instruction). | One instruction keeps an old number of lanes. | Loops that use only part of the registers on purpose. |
+| W2 | Each vector computation fills the vector registers: L × element size = register width (*Vector regs*, or the largest vector instruction). Memory accesses, shuffles and permutes are not checked: they may use part of a register (`movhps`, `cvtps2pd` from 8 bytes). | One instruction keeps an old number of lanes. | Loops that use only part of the registers on purpose. |
 | W3 | Each memory access advances a multiple of S elements per iteration: L·\|s\| = e·S (e = elements per algorithmic operation, usually 1, so s = S/L). | A loop is unrolled or vectorized, but the memory strides are not updated, so consecutive iterations read the same elements again. | Accesses whose step is not proportional to the algorithmic operations (rare). |
 | W4 | Accesses to the same array, with the same operation, L and s, have different offsets. | An unrolled copy keeps offset 0 instead of `A[i+1]` → c = 1. | The same element is really read twice. |
 | W5 | Those accesses do not partially overlap: their offsets differ by a multiple of L. | Vector copies with offsets 0 and 2 instead of 0 and L. | Stencils, sliding windows (`A[i:i+3]` and `A[i+1:i+4]`). |
-| W6 | With S > 1 and one element per algorithmic operation, the copies of an access cover all L·s elements of each iteration. | An unrolled copy is missing. | The original loop does not access every element. |
+| W6 | With S > 1 and one element per algorithmic operation, the accesses to an array (same operation and step L·\|s\|, whatever their lanes) cover all the elements advanced in each iteration. | An unrolled copy is missing. | The original loop does not access every element. |
 | W7 | A backward access (s < 0) has c ≥ L, so that the first access stays inside the N elements of the array. | c = 0 reads A[N], one element past the end. | — |
 | W9 | A vector instruction fits in the vector registers: L × element size ≤ register width. | 8 doubles in 32-byte registers (8 single fit). | — |
 | W10 | A PERMUTE is used with vector registers of 16 bytes or less. | There is a single 128-bit block: a SHUFFLE does the same in less time. | — |

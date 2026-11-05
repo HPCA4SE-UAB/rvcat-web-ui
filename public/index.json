@@ -2,7 +2,8 @@
   "processor": [
     "B4",
     "B2",
-    "B1"
+    "B1",
+    "GC"
   ],
   "program": [
     "Base",
@@ -11,7 +12,9 @@
     "V1",
     "V2",
     "f2",
-    "f2-SIMD"
+    "f2-SIMD",
+    "f3",
+    "f3-SIMD"
   ],
   "tutorial": [
     "navigation-tour",

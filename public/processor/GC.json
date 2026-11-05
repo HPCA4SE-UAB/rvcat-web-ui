@@ -1,0 +1,136 @@
+{
+  "name": "GC",
+  "dispatch": 6,
+  "retire": 8,
+  "sched": "optimal",
+  "ROBsize": 200,
+  "nBlocks": 0,
+  "blkSize": 64,
+  "mPenalty": 12,
+  "mIssueTime": 1,
+  "nFillBuffers": 16,
+  "nWriteBuffers": 16,
+  "rThru": 2,
+  "latencies": {
+    "INT": 1,
+    "INT.ARITH": 1,
+    "INT.LOGIC": 1,
+    "INT.SHIFT": 1,
+    "INT.CVT": 6,
+    "VINT": 1,
+    "VINT.ARITH": 1,
+    "VINT.LOGIC": 1,
+    "VINT.SHIFT": 1,
+    "VINT.CVT": 4,
+    "VINT.SHUFFLE": 1,
+    "VINT.PERMUTE": 3,
+    "MEM.STORE": 1,
+    "MEM.LOAD": 5,
+    "VMEM.STORE": 1,
+    "VMEM.LOAD": 6,
+    "FLOAT.ADD": 2,
+    "FLOAT.MUL": 4,
+    "FLOAT.FMA": 4,
+    "FLOAT.DIV": 11,
+    "FLOAT.DIV.double": 14,
+    "FLOAT.SQRT": 12,
+    "FLOAT.SQRT.double": 16,
+    "FLOAT.CVT": 4,
+    "FLOAT.CVT.single": 5,
+    "VFLOAT.ADD": 2,
+    "VFLOAT.MUL": 4,
+    "VFLOAT.FMA": 4,
+    "VFLOAT.DIV": 11,
+    "VFLOAT.DIV.double": 14,
+    "VFLOAT.SQRT": 12,
+    "VFLOAT.SQRT.double": 16,
+    "VFLOAT.CVT": 4,
+    "VFLOAT.CVT.single": 5,
+    "VFLOAT.SHUFFLE": 1,
+    "VFLOAT.PERMUTE": 3,
+    "BRANCH": 1
+  },
+  "ports": {
+    "0": [
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "INT.CVT",
+      "FLOAT.MUL",
+      "FLOAT.FMA",
+      "FLOAT.DIV",
+      "FLOAT.SQRT",
+      "FLOAT.CVT",
+      "VFLOAT.MUL",
+      "VFLOAT.FMA",
+      "VFLOAT.DIV",
+      "VFLOAT.SQRT",
+      "VFLOAT.CVT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT",
+      "VINT.CVT"
+    ],
+    "1": [
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.CVT",
+      "FLOAT.ADD",
+      "FLOAT.MUL",
+      "FLOAT.FMA",
+      "FLOAT.CVT",
+      "VFLOAT.ADD",
+      "VFLOAT.MUL",
+      "VFLOAT.FMA",
+      "VFLOAT.CVT",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHIFT",
+      "VINT.CVT",
+      "VINT.SHUFFLE",
+      "VFLOAT.SHUFFLE"
+    ],
+    "2": [
+      "MEM.LOAD",
+      "VMEM.LOAD"
+    ],
+    "3": [
+      "MEM.LOAD",
+      "VMEM.LOAD"
+    ],
+    "5": [
+      "INT.ARITH",
+      "INT.LOGIC",
+      "FLOAT.ADD",
+      "VFLOAT.ADD",
+      "VINT.ARITH",
+      "VINT.LOGIC",
+      "VINT.SHUFFLE",
+      "VINT.PERMUTE",
+      "VFLOAT.SHUFFLE",
+      "VFLOAT.PERMUTE"
+    ],
+    "6": [
+      "INT.ARITH",
+      "INT.LOGIC",
+      "INT.SHIFT",
+      "BRANCH"
+    ],
+    "7": [
+      "MEM.STORE",
+      "VMEM.STORE"
+    ],
+    "8": [
+      "MEM.STORE",
+      "VMEM.STORE"
+    ],
+    "10": [
+      "INT.ARITH",
+      "INT.LOGIC"
+    ],
+    "11": [
+      "MEM.LOAD",
+      "VMEM.LOAD"
+    ]
+  }
+}

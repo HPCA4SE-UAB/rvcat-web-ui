@@ -438,7 +438,8 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
   }
 
   // Derived fields and comparison with the edited ones
-  const derived = rows.map((r, index) => (r.ok && r.p.kind !== 'branch' ? deriveFields(r.p, instrs[index], classOf, stepOf) : null))
+  const written = (v) => !!vars.get(v)?.written
+  const derived = rows.map((r, index) => (r.ok && r.p.kind !== 'branch' ? deriveFields(r.p, instrs[index], classOf, stepOf, written) : null))
   rows.forEach((r, index) => {
     if (index === last) return
     if (!r.ok) {
@@ -468,7 +469,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
 
 const show = (v) => (norm(v) === '' ? '(empty)' : `"${norm(v)}"`)
 
-function deriveFields(p, inst, classOf, stepOf) {
+function deriveFields(p, inst, classOf, stepOf, written = () => true) {
   const vec = p.L > 1
   if (p.op === 'cvt') {
     const [kind] = CONVERSIONS[p.convert]
@@ -480,7 +481,8 @@ function deriveFields(p, inst, classOf, stepOf) {
     const m = p.mem, cls = classOf(p.data)
     const c = m.dir === 'backward' ? -m.b : m.b
     let stride = null
-    if (m.dir === 'fixed') stride = 0
+    // fixed element, or an index that the loop does not change (e.g. the stack pointer): stride 0
+    if (m.dir === 'fixed' || (m.v && !written(m.v) && stepOf(m.v) === null)) stride = 0
     else {
       const step = stepOf(m.v)
       const elems = step === null ? null : m.a * step
