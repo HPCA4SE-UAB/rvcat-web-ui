@@ -5,6 +5,8 @@
 //   x = y op z        op: + - * /  & | ^  << >>  == != < <= > >=     (y, z: variable or number)
 //   x = y*z + w       FMA (also w + y*z)
 //   x = sqrt(y)
+//   x[0:3] = shuffle(y[0:3], z[0:3])   combines the lanes of one or two vector registers
+//   x[0:7] = permute(y[0:7], z[0:7])   the same, moving elements across 128-bit blocks
 //   x = double(y)     conversion to the type and size named: single, double (FLOAT), byte, word, long (INT)
 //                     x[0:3] = double(y[4:7]) converts the upper half of an 8-lane register
 //   x = A[index]      load            A[index] = x      store
@@ -31,11 +33,13 @@ const OPER = {
   sqrt:  { INT: null,    FLOAT: 'SQRT' }, logic: { INT: 'LOGIC', FLOAT: null },
   shift: { INT: 'SHIFT', FLOAT: null },   cmp:   { INT: 'ARITH', FLOAT: null },
   cvt:   { INT: 'CVT',   FLOAT: 'CVT' },
+  shuffle: { INT: 'SHUFFLE', FLOAT: 'SHUFFLE' },
+  permute: { INT: 'PERMUTE', FLOAT: 'PERMUTE' },
 }
 // Data type imposed by the operation itself
 const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT', cmp: 'INT' }
 const OP_TEXT = { div: '/', fma: 'a*b + c', sqrt: 'sqrt', logic: 'logic operation', shift: 'shift',
-                  cmp: 'comparison', cvt: 'conversion', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
+                  cmp: 'comparison', cvt: 'conversion', shuffle: 'shuffle', permute: 'permute', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
                   size: 'array size in a backward index' }
 
 export const FIELD_LABELS = { type: 'Type', oper: 'Oper', size: 'Size', destin: 'Destin', source1: 'Source1',
@@ -52,7 +56,7 @@ const isMemoryType = (type) => type === 'MEM' || type === 'VMEM'
 // Tokens and linear index expressions
 // ---------------------------------------------------------------------------------------------
 function tokenize(text) {
-  const re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|(<<|>>|<=|>=|==|!=|[-+*/&|^<>=[\]():]))/y
+  const re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|(<<|>>|<=|>=|==|!=|[-+*/&|^<>=[\]():,]))/y
   const tokens = []
   const s = String(text ?? '')
   let pos = 0
@@ -200,9 +204,25 @@ export function parseInstruction(text) {
     // Right-hand side: operand list with operators
     const items = []
     let i = eq + 1
-    let sqrt = false, convert = null
+    let sqrt = false, convert = null, shuffle = null
     const fn = tokens[i]?.v
-    if ((fn === 'sqrt' || CONVERSIONS[fn]) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
+    if ((fn === 'shuffle' || fn === 'permute') && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
+      let j = i + 2
+      for (;;) {
+        const o = parseOperand(tokens, j)
+        if (o.op.k !== 'reg') fail(`${fn} combines vector registers: x[0:3] = ${fn}(y[0:3], z[0:3])`)
+        items.push(o.op)
+        j = o.next
+        if (tokens[j]?.v !== ',') break
+        j++
+      }
+      if (tokens[j]?.v !== ')' || j + 1 !== tokens.length) fail(`expected x[0:3] = ${fn}(y[0:3], z[0:3])`)
+      if (items.length > 2) fail(`${fn} combines one or two vector registers`)
+      if (lhs.op.k !== 'reg' || lhs.op.L < 2) fail(`the result of ${fn} is a vector register, e.g. x[0:3]`)
+      shuffle = fn
+      i = tokens.length
+    }
+    if (!shuffle && (fn === 'sqrt' || CONVERSIONS[fn]) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
       const o = parseOperand(tokens, i + 2)
       if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail(`expected ${fn}(x)`)
       if (o.op.k === 'num') fail(`${fn}() of a number: write the number in the type you need`)
@@ -225,7 +245,8 @@ export function parseInstruction(text) {
     const operands = items.filter(x => x.k !== 'op'), ops = items.filter(x => x.k === 'op').map(x => x.v)
     const mems = [lhs.op, ...operands].filter(o => o.k === 'mem')
     const regs = [lhs.op, ...operands].filter(o => o.k === 'reg')
-    const lanes = new Set([...regs, ...mems].map(o => o.L).filter(L => L > 1))
+    // a shuffle may combine registers of any number of lanes: its lanes are those of the result
+    const lanes = new Set((shuffle ? [lhs.op] : [...regs, ...mems]).map(o => o.L).filter(L => L > 1))
     if (lanes.size > 1) fail(`different numbers of lanes (${[...lanes].join(', ')})`)
     const L = lanes.size ? [...lanes][0] : 1
     const p = { L, regs }
@@ -244,6 +265,7 @@ export function parseInstruction(text) {
     let op, terms
     if (sqrt) { op = 'sqrt'; terms = operands }
     else if (convert) { op = 'cvt'; terms = operands }
+    else if (shuffle) { op = shuffle; terms = operands }
     else if (!ops.length) fail(operands[0].k === 'num' ? 'RVCAT has no instruction to set a constant'
                                                         : 'copy: RVCAT has no move instruction')
     else if (ops.length === 1) { op = BINARY[ops[0]]; terms = operands }
@@ -255,7 +277,9 @@ export function parseInstruction(text) {
     // Writing the upper lanes of a register (x[4:7] = ...) keeps the lower ones: it also reads x
     const merge = lhs.op.k === 'reg' && lhs.op.lo > 0
     const sources = [...new Set([...terms.filter(o => o.k !== 'num').map(o => o.name), ...(merge ? [lhs.op.name] : [])])]
+    // lanes of conversions and of the shuffled registers are not compared (they use parts of registers)
     if (op === 'cvt') regs.forEach(r => { r.cvt = true })
+    if (op === 'shuffle' || op === 'permute') regs.forEach(r => { if (r !== lhs.op) r.cvt = true })
     return { ok: true, p: { ...p, kind: 'compute', dest: lhs.op.name, op, symbol: ops[0] ?? op, sources, merge,
                             convert, constant: numbers[0]?.v ?? '' } }
   } catch (e) {

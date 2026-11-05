@@ -97,6 +97,7 @@ export function checkProgram(instructionList, { vlen = null } = {}) {
     const L = intOf(instr.lanes, 1), d = elementBytes(instr, list)
     if (!W || !d || !Number.isInteger(L)) continue
     const what = `${L} lanes × ${d} bytes = ${L * d} bytes`
+    if (L * d < W && (instr.oper === 'SHUFFLE' || instr.oper === 'PERMUTE')) continue   // may move parts of registers
     if (L * d > W)
       warn('W9', index, `${what} do not fit in a ${W}-byte vector register: use ${Math.max(1, W / d)} lanes, ` +
                         `or split the instruction into parts${instr.oper === 'CVT' ? ' (a conversion that doubles the size is done in two halves)' : ''}.`)
@@ -110,6 +111,12 @@ export function checkProgram(instructionList, { vlen = null } = {}) {
            `Vector instructions with ${L} lanes, but the loop stride S = ${S} is not a multiple of ${L}: ` +
            `if each iteration processes ${L}×U elements (U = unrolling factor), S should be ${L}×U.`)
   }
+
+  // W10: PERMUTE moves elements across 128-bit blocks, which exist only in registers > 16 bytes
+  if (W && W <= 16)
+    vectors.filter(v => v.instr.oper === 'PERMUTE').forEach(v =>
+      warn('W10', v.index, `With vector registers of ${W} bytes there is a single 128-bit block: ` +
+                           'a SHUFFLE moves the same elements, in less time than a PERMUTE.'))
 
   // W3..W6: memory accesses
   const groups = new Map()   // same array, same operation, lanes and stride

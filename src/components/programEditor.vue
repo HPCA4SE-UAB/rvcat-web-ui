@@ -377,6 +377,8 @@ watch(textAnalysis, (analysis) => {
         pending?.delete(field)
       }
     }
+    // a vector type known only now: its lanes come from the text
+    if (changed && VECTOR_TYPES.includes(inst.type) && d.lanes > 1) inst.lanes = d.lanes
     if (changed) sanitizeInstruction(inst)
   })
 })
@@ -385,8 +387,11 @@ function onDeclare(name, selection) {
   const result = declareVariable(editedProgram.value, declarations.value, name, selection)
   declarations.value = result.declarations
   for (const { index, fields } of result.updates) {
-    Object.assign(editedProgram.value[index], fields)
-    sanitizeInstruction(editedProgram.value[index])
+    const inst = editedProgram.value[index]
+    Object.assign(inst, fields)
+    const d = textAnalysis.value.derived[index]
+    if (VECTOR_TYPES.includes(inst.type) && d?.lanes > 1) inst.lanes = d.lanes
+    sanitizeInstruction(inst)
   }
 }
 function warnDeclarations(program) {
@@ -416,7 +421,8 @@ function onTypeChange(inst) {
 
 // ---- Unroll / vectorize assistant (src/loopTransforms.js) ----
 const showTransform    = ref(false)
-const transformOptions = reactive({ lanes: 1, unroll: 2, splitAccumulators: false })
+// blocks: model of the vector registers when data crosses 128-bit blocks ('avx', 'generic'; null: not chosen)
+const transformOptions = reactive({ lanes: 1, unroll: 2, splitAccumulators: false, blocks: null })
 const undoProgram      = ref(null)    // program before the last transformation
 
 const loopInfo = computed(() => analyzeLoop(editedProgram.value))
@@ -428,6 +434,8 @@ const transformPreview = computed(() => {
     lanes:  vectorizeBlock.value ? 1 : transformOptions.lanes,
     unroll: transformOptions.unroll,
     splitAccumulators: transformOptions.splitAccumulators,
+    blocks:            transformOptions.blocks ?? 'generic',
+    declarations:      declarations.value,
   })
 })
 // Instructions per algorithmic operation before and after the transformation
@@ -437,6 +445,7 @@ function openTransform() {
   transformOptions.lanes  = 1
   transformOptions.unroll = 2
   transformOptions.splitAccumulators = false
+  transformOptions.blocks = null
   showTransform.value = true
 }
 
@@ -961,6 +970,20 @@ function snapshotProgram() {
         </label>
       </div>
       <div v-if="vectorizeBlock" class="transform-why">Cannot vectorize: {{ vectorizeBlock }}</div>
+      <div v-if="transformPreview?.rearrange?.question" class="transform-blocks" id="transform-blocks">
+        <div>
+          This loop moves data across the 128-bit blocks of the vector registers:
+          {{ transformPreview.rearrange.reasons.join('; ') }}. How should these moves be done?
+        </div>
+        <label title="x86 AVX: registers made of 128-bit blocks. Moving elements across blocks needs PERMUTE instructions (3 cycles in Intel processors); within a block, SHUFFLE (1 cycle)">
+          <input type="radio" value="avx" v-model="transformOptions.blocks" id="transform-blocks-avx" />
+          AVX: generate the PERMUTE instructions (more latency than SHUFFLE)
+        </label>
+        <label title="Generic vector model, without 128-bit blocks: conversions read and write halves of registers directly, and reversals are SHUFFLE instructions">
+          <input type="radio" value="generic" v-model="transformOptions.blocks" id="transform-blocks-generic" />
+          Generic vector model, without 128-bit blocks
+        </label>
+      </div>
 
       <template v-if="transformPreview">
         <div v-for="(e, k) in transformPreview.errors" :key="'te' + k" class="coherence-error">✖ {{ e }}</div>
@@ -996,7 +1019,8 @@ function snapshotProgram() {
       <div v-else class="transform-note">Choose a number of lanes and/or an unrolling factor.</div>
 
       <div class="modal-actions">
-        <button class="blue-button" id="apply-loop-transform" :disabled="!transformPreview?.program"
+        <button class="blue-button" id="apply-loop-transform"
+                :disabled="!transformPreview?.program || (transformPreview.rearrange?.question && !transformOptions.blocks)"
                 title="Replace the edited program with the transformed one (↶ Undo restores it)" @click="applyTransform">
           Apply
         </button>
@@ -1101,6 +1125,15 @@ function snapshotProgram() {
     gap:         0.3em;
   }
   .transform-why     { color: #8a6d00; margin-bottom: 0.4em; }
+  .transform-blocks {
+    margin:        0.4em 0;
+    padding:       0.4em 0.6em;
+    border:        1px solid #c9a227;
+    border-radius: 5px;
+    background:    #fffbe6;
+  }
+  .modal .transform-blocks label { display: flex; align-items: center; gap: 0.4em; margin: 0.3em 0 0; font-weight: normal; }
+  .modal .transform-blocks input { width: auto; margin: 0; padding: 0; }
   .transform-summary { margin: 0.4em 0; }
   .transform-note    { color: #444; }
   .transform-preview {
@@ -1230,10 +1263,10 @@ function snapshotProgram() {
   }
 
   .add-margin {
-    margin-right: 50px;
+    margin-right: 24px;
   }
   .add-prev-margin {
-    margin-left: 100px;
+    margin-left: 40px;
   }
 
   .modal-overlay {

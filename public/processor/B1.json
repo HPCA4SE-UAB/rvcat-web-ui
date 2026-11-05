@@ -34,8 +34,12 @@
     "VFLOAT.DIV": 8,
     "VFLOAT.SQRT": 16,
     "VFLOAT.CVT": 3,
+    "VFLOAT.SHUFFLE": 1,
+    "VFLOAT.PERMUTE": 3,
     "BRANCH": 1,
-    "VINT.CVT": 3
+    "VINT.CVT": 3,
+    "VINT.SHUFFLE": 1,
+    "VINT.PERMUTE": 3
   },
   "ports": {
     "0": [
@@ -68,7 +72,11 @@
       "FLOAT.CVT",
       "INT.CVT",
       "VFLOAT.CVT",
-      "VINT.CVT"
+      "VINT.CVT",
+      "VINT.SHUFFLE",
+      "VFLOAT.SHUFFLE",
+      "VINT.PERMUTE",
+      "VFLOAT.PERMUTE"
     ]
   }
 }

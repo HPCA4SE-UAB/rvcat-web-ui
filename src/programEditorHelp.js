@@ -34,6 +34,9 @@ by hand; if it no longer agrees with the text, a warning <b>T2</b> says so. The 
 <p>&bull; <b>x = y op z</b> with op <b>+ - * /</b>, <b>&amp; | ^ &lt;&lt; &gt;&gt;</b> or a comparison
 (<b>== != &lt; &lt;= &gt; &gt;=</b>); y and z are variables or one number (the constant).<br>
 &bull; <b>x = a*b + c</b> (FMA), <b>x = sqrt(y)</b>, and conversions <b>x = double(y)</b> (also single, byte, word, long).<br>
+&bull; <b>x[0:3] = shuffle(y[0:3], z[0:3])</b>: combines the lanes of one or two vector registers (VINT or VFLOAT
+SHUFFLE, with the type of its data). The sources may have other lanes, e.g. x[0:7] = shuffle(a[0:3], b[0:3]).
+<b>permute(…)</b> is the same, moving elements across 128-bit blocks (PERMUTE).<br>
 &bull; <b>x = A[index]</b> (load) and <b>A[index] = x</b> (store), with index <b>i+c</b> or <b>a*i+c</b> (forward),
 <b>N-c-i</b> (backward from the end) or a number (fixed element).<br>
 &bull; Vectors: <b>x[0:3]</b> is a vector register of 4 lanes; <b>A[i:i+3]</b> and <b>A[N-4-i:N-1-i]</b> access 4
@@ -65,6 +68,16 @@ into single takes two halves, each writing half of the result: <b>b[0:3] = singl
 <b>b[4:7] = single(a_hi[0:3])</b>. Writing the upper lanes keeps the lower ones, so that instruction also reads b.
 The Unroll / Vectorize assistant does this automatically. L lanes are counted for the smallest elements, and the
 instructions on larger elements are done in halves.</p>
+<p><b>128-bit blocks.</b> In x86 AVX, registers of 32 or 64 bytes are made of 128-bit blocks. SHUFFLE moves elements
+within each block (1 cycle); moving them across blocks needs <b>PERMUTE</b> (3 cycles in Intel processors).
+When a vectorized loop moves data across blocks, the assistant asks which model to use:</p>
+<p>&bull; <b>AVX</b>: it generates the PERMUTE instructions. A conversion reads the lowest elements of a register,
+so the upper half is extracted first (x_up[0:3] = permute(x[0:7])); a conversion to a smaller size is done into
+another register and inserted into the upper half (b[0:7] = permute(b[0:3], b_up[0:3])).<br>
+&bull; <b>Generic</b>: vector registers without 128-bit blocks; conversions read and write halves directly.</p>
+<p>The data moves are needed, for example, when a backward access is combined with forward ones (B[i] = A[N-1-i]): the
+lanes of the backward vector are in reverse order and must be reversed (PERMUTE in AVX, SHUFFLE in the generic model).
+A reduction of a backward access needs no reversal.</p>
 </details>
 
 <details><summary><b>N and the memory trace</b></summary>
@@ -103,6 +116,7 @@ iterations read the same elements again.<br>
 unrolled copy is missing.<br>
 <b>W7</b> A backward access (s &lt; 0) should have c ≥ L, or its first access reads past the end of the array.<br>
 <b>W9</b> A vector instruction does not fit in the vector registers (lanes × element size &gt; width).<br>
+<b>W10</b> A PERMUTE with vector registers of 16 bytes or less (a single 128-bit block): a SHUFFLE does the same.<br>
 <b>W8</b> The loop counter i = i + k (an INT instruction that increments a memory index; k is its constant) should
 advance k = S.</p>
 <p>Some algorithms need these patterns (stencils such as A[i] + A[i+1], strided accesses such as A[2i], values kept in

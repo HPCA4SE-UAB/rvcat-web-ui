@@ -41,18 +41,29 @@ export function getAllowedCacheBlockSizes(instructionList = []) {
 // FLOAT.CVT int -> float or single <-> double
 export const typeOperations = {
     'INT':    ['ARITH', 'LOGIC', 'SHIFT', 'CVT'],
-    'VINT':   ['ARITH', 'LOGIC', 'SHIFT', 'CVT'],
+    'VINT':   ['ARITH', 'LOGIC', 'SHIFT', 'CVT', 'SHUFFLE', 'PERMUTE'],
     'MEM':    ['STORE', 'LOAD'],
     'VMEM':   ['STORE', 'LOAD'],
     'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT', 'SHUFFLE', 'PERMUTE'],
     'BRANCH': []
   };
 
-// Processors written before CVT existed: conversions take 3 cycles in the ports of FLOAT.ADD
-// (VFLOAT.ADD for vector conversions)
+// SHUFFLE (VINT, VFLOAT) combines the lanes of one or two vector registers within each 128-bit
+// block; PERMUTE moves them across 128-bit blocks (x86 AVX).
+// Processors written before CVT or SHUFFLE existed get default values:
+//   CVT:     3 cycles in the ports of FLOAT.ADD (VFLOAT.ADD for vector conversions)
+//   SHUFFLE: 1 cycle in the ports of VINT.LOGIC (the vector integer ALU; float and integer shuffles
+//            use the same ports, as in Intel processors)
+//   PERMUTE: 3 cycles in the same ports as SHUFFLE
 export const DEFAULT_CVT_LATENCY = 3
-const CVT_FALLBACK_OP = { INT: 'FLOAT.ADD', FLOAT: 'FLOAT.ADD', VINT: 'VFLOAT.ADD', VFLOAT: 'VFLOAT.ADD' }
+export const DEFAULT_SHUFFLE_LATENCY = 1
+export const DEFAULT_PERMUTE_LATENCY = 3
+const FALLBACK = {
+  CVT:     { latency: DEFAULT_CVT_LATENCY, op: { INT: 'FLOAT.ADD', FLOAT: 'FLOAT.ADD', VINT: 'VFLOAT.ADD', VFLOAT: 'VFLOAT.ADD' } },
+  SHUFFLE: { latency: DEFAULT_SHUFFLE_LATENCY, op: { VINT: 'VINT.LOGIC', VFLOAT: 'VINT.LOGIC' } },
+  PERMUTE: { latency: DEFAULT_PERMUTE_LATENCY, op: { VINT: 'VINT.LOGIC', VFLOAT: 'VINT.LOGIC' } },
+}
 
 // Latencies of each size were saved by older versions of the processor editor as "TYPE-OPER-size";
 // the simulator reads "TYPE.OPER.size". Converts the old keys (in place) and returns the object.
@@ -73,15 +84,16 @@ const validLatency = (value) => (Number.isFinite(value) && value >= 1 ? value : 
 // Latency and port mask of an instruction in a processor (latencies, opToMask from its ports)
 export function instructionTiming(instr, latencies = {}, opToMask = {}) {
   const keyOp = `${instr.type}.${instr.oper}`
-  const cvtFallback = instr.oper === 'CVT' ? CVT_FALLBACK_OP[instr.type] : null
+  const fallback = FALLBACK[instr.oper]
+  const fallbackOp = fallback?.op[instr.type] ?? null
   const latency =
     validLatency(latencies[`${keyOp}.${instr.size}`]) ??
     validLatency(latencies[`${instr.type}-${instr.oper}-${instr.size}`]) ??
     validLatency(latencies[keyOp]) ??
-    (cvtFallback ? DEFAULT_CVT_LATENCY : undefined) ??
+    (fallbackOp ? fallback.latency : undefined) ??
     validLatency(latencies[instr.type]) ??
     1
-  const ports = opToMask[keyOp] ?? (cvtFallback ? opToMask[cvtFallback] : undefined) ?? opToMask[instr.type] ?? 0
+  const ports = opToMask[keyOp] ?? (fallbackOp ? opToMask[fallbackOp] : undefined) ?? opToMask[instr.type] ?? 0
   return { latency, ports }
 }
 

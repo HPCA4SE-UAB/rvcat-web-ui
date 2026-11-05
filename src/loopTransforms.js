@@ -8,7 +8,11 @@
 // operation a (a = 0 … N−1) of the original loop (L = 1, S = 1) it reads element c + a·s.
 
 import { checkProgram } from './programChecks.js'
-import { shiftIndexText, vectorIndexText } from './instructionText.js'
+import { shiftIndexText, vectorIndexText, analyzeProgramText, sizeName } from './instructionText.js'
+
+// x86 AVX registers are made of 128-bit blocks: SHUFFLE moves elements within each block (1 cycle),
+// PERMUTE moves them across blocks (3 cycles in Intel processors)
+export const BLOCK_BYTES = 16
 
 const VECTOR_OF   = { INT: 'VINT', MEM: 'VMEM', FLOAT: 'VFLOAT' }
 const SIZE_BYTES  = { byte: 1, word: 4, long: 8, single: 4, double: 8 }
@@ -140,7 +144,11 @@ function setCounterStep(instr, step) {
 // ---------------------------------------------------------------------------------------------
 // Vectorize with L lanes: S = L. Memory strides keep their value (L·s elements per iteration).
 // ---------------------------------------------------------------------------------------------
-export function vectorizeLoop(instructionList, L) {
+// options.blocks: 'generic' (vector registers without 128-bit blocks: conversions read and write
+// halves of registers directly, reversals are shuffles) or 'avx' (data moved across 128-bit blocks
+// needs PERMUTE instructions: extract/insert of the halves of a conversion, reversals).
+// Returns rearrange = { question, reasons }: question is true when the choice matters.
+export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarations = [] } = {}) {
   const list = (instructionList ?? []).map(i => ({ ...i }))
   const info = analyzeLoop(list)
   const errors = [], notes = []
@@ -183,17 +191,30 @@ export function vectorizeLoop(instructionList, L) {
     return { program: null, errors, notes }
   }
   const vlen = L * minBytes
+  const kinds = analyzeProgramText(list, declarations)
+  const kindOf = (v) => kinds.classOf(originOf.get(v) ?? v)?.kind ?? 'INT'
+  const rearrange = { question: false, reasons: [] }
+  const reason = (text) => { if (!rearrange.reasons.includes(text)) rearrange.reasons.push(text) }
+  // Instruction that moves elements: PERMUTE when they cross a 128-bit block (AVX model)
+  const moveOper = (crosses) => (blocks === 'avx' && crosses ? 'PERMUTE' : 'SHUFFLE')
+  const moveInstr = (v, bytes, oper, destText, sourcesText, destin, sources, lanes) => {
+    const kind = kindOf(v)
+    return { text: `${destText} = ${oper.toLowerCase()}(${sourcesText})`, type: `V${kind}`, oper,
+             size: sizeName(kind, bytes) ?? '', destin, source1: sources[0] ?? '', source2: sources[1] ?? '',
+             source3: '', constant: '', stride: 1, lanes }
+  }
   const vectorNames = [...new Set(body.filter(isData).map(i => i.destin).filter(v => v && !splitVars.has(v)))]
 
   // Name of part p (of n) of a split variable
   const used = new Set(body.flatMap(i => [i.destin, ...readsOf(i), i.source2]).filter(Boolean))
+  const unique = (base) => { let name = base; while (used.has(name)) name += '_'; used.add(name); return name }
+  const originOf = new Map()                      // generated name -> variable of the original loop
   const partNames = new Map()
   const partName = (v, p, n) => {
     const key = `${v}|${p}`
     if (!partNames.has(key)) {
-      let name = n === 2 ? `${v}_${p ? 'hi' : 'lo'}` : `${v}_${p}`
-      while (used.has(name)) name += '_'
-      used.add(name)
+      const name = unique(n === 2 ? `${v}_${p ? 'hi' : 'lo'}` : `${v}_${p}`)
+      originOf.set(name, v)
       partNames.set(key, name)
     }
     return partNames.get(key)
@@ -224,8 +245,33 @@ export function vectorizeLoop(instructionList, L) {
       const n = Math.max(partsOf(SIZE_BYTES[instr.size]), partsOf(bytesOf.get(instr.source1)))
       const l = L / n
       if (n > 1) splitNote = true
+      const ds = bytesOf.get(instr.source1) ?? minBytes, dd = SIZE_BYTES[instr.size] ?? minBytes
       for (let j = 0; j < n; j++) {
-        const dest = regRef(instr.destin, j * l, l), src = regRef(instr.source1, j * l, l)
+        const dest = regRef(instr.destin, j * l, l)
+        let src = regRef(instr.source1, j * l, l)
+        if ((src.lo > 0 || dest.lo > 0) && vlen > BLOCK_BYTES) {
+          rearrange.question = true
+          reason(`converting the upper ${src.lo > 0 ? 'part of a register' : 'part of the result'} (${instr.text.trim()})`)
+        }
+        // AVX: a conversion reads the lowest elements of a register: extract the upper ones first
+        if (blocks === 'avx' && src.lo > 0) {
+          const full = L / (splitVars.has(instr.source1) ? partsOf(ds) : 1)
+          const name = unique(`${src.name}_up`)
+          originOf.set(name, originOf.get(src.name) ?? instr.source1)
+          out.push(moveInstr(instr.source1, ds, moveOper(src.lo * ds >= BLOCK_BYTES), `${name}[0:${l - 1}]`,
+                             `${src.name}[0:${full - 1}]`, name, [src.name], l))
+          src = { name, lo: 0, text: `${name}[0:${l - 1}]` }
+        }
+        if (blocks === 'avx' && dest.lo > 0) {
+          // AVX: convert into a register, then insert it into the upper part of the result
+          const name = unique(`${dest.name}_up`)
+          originOf.set(name, originOf.get(dest.name) ?? instr.destin)
+          out.push({ ...instr, type: vtype, lanes: l, destin: name, source1: src.name, source2: '', source3: '',
+                     text: `${name}[0:${l - 1}] = ${instr.size}(${src.text})` })
+          out.push(moveInstr(instr.destin, dd, moveOper(dest.lo * dd >= BLOCK_BYTES), `${dest.name}[0:${dest.lo + l - 1}]`,
+                             `${dest.name}[0:${dest.lo - 1}], ${name}[0:${l - 1}]`, dest.name, [dest.name, name], dest.lo + l))
+          continue
+        }
         const merge = dest.lo > 0     // upper lanes of the result: the lower ones are kept
         out.push({ ...instr, type: vtype, lanes: l, destin: dest.name, source1: src.name,
                    source2: merge ? dest.name : '', source3: '', text: `${dest.text} = ${instr.size}(${src.text})` })
@@ -282,6 +328,38 @@ export function vectorizeLoop(instructionList, L) {
       out.push(copy)
     }
   })
+  // Backward accesses combined with forward ones: the lanes of a backward vector are in reverse
+  // order, so loaded vectors are reversed after the load, and stored ones before the store
+  const vecMem = out.filter(i => isMemory(i) && isVector(i))
+  const mixed = vecMem.some(i => intOf(i.stride, 1) > 0) && vecMem.some(i => intOf(i.stride, 1) < 0)
+  let reversals = 0
+  if (mixed) {
+    for (let p = out.length - 1; p >= 0; p--) {
+      const m = out[p]
+      if (!isMemory(m) || !isVector(m) || intOf(m.stride, 1) >= 0) continue
+      const l = intOf(m.lanes, 1), d = SIZE_BYTES[m.size] ?? minBytes
+      const crosses = l * d > BLOCK_BYTES
+      if (crosses) { rearrange.question = true; reason(`reversing the elements of backward accesses (${m.source2})`) }
+      reversals++
+      if (m.oper === 'LOAD') {
+        out.splice(p + 1, 0, moveInstr(m.destin, d, moveOper(crosses), `${m.destin}[0:${l - 1}]`, `${m.destin}[0:${l - 1}]`,
+                                       m.destin, [m.destin], l))
+      } else {
+        const v = m.source1, name = unique(`${v}_rev`)
+        originOf.set(name, originOf.get(v) ?? v)
+        out.splice(p, 0, moveInstr(v, d, moveOper(crosses), `${name}[0:${l - 1}]`, `${v}[0:${l - 1}]`, name, [v], l))
+        const store = out[p + 1]
+        store.source1 = name
+        store.text = store.text.replace(/=(.*)$/, (_, rhs) => `=${rhs.replace(new RegExp(`\\b${escapeRegExp(v)}\\b`), name)}`)
+      }
+    }
+    if (reversals)
+      notes.push(`Backward and forward accesses are combined: ${reversals} vector${reversals > 1 ? 's are' : ' is'} reversed ` +
+                 `(${blocks === 'avx' ? 'PERMUTE across 128-bit blocks' : 'SHUFFLE'}) so that their lanes match.`)
+  }
+  if (blocks === 'avx' && rearrange.question)
+    notes.push('AVX model: data moved across 128-bit blocks uses PERMUTE instructions (3 cycles in Intel processors).')
+
   if (info.counter) {
     const counter = out.find(i => i.destin === info.counter.variable && i.source1 === info.counter.variable)
     if (counter) setCounterStep(counter, info.counter.step * L)
@@ -298,7 +376,7 @@ export function vectorizeLoop(instructionList, L) {
       ? `Reduction ${v}: it becomes ${n} partial vectors (${Array.from({ length: n }, (_, p) => partName(v, p, n)).join(', ')}) of ${L / n} lanes, to be combined after the loop (not simulated).`
       : `Reduction ${v}: it becomes ${L} partial results ${v}[0:${L - 1}], to be combined after the loop (not simulated).`)
   }
-  return { program: out, errors, notes, vlen }
+  return { program: out, errors, notes, vlen, rearrange }
 }
 
 // Text of a split instruction: each register variable is written as its part, e.g. s_lo[0:3]
@@ -385,24 +463,26 @@ export function unrollLoop(instructionList, U, { splitAccumulators = false } = {
 }
 
 // Vectorize (L ≥ 2) and then unroll (U ≥ 2). Returns the program, errors, notes and its checks.
-export function transformLoop(instructionList, { lanes = 1, unroll = 1, splitAccumulators = false } = {}) {
+export function transformLoop(instructionList, { lanes = 1, unroll = 1, splitAccumulators = false, blocks = 'generic',
+                                                declarations = [] } = {}) {
   const before = checkProgram(instructionList)
   if (before.errors.length)
     return { program: null, errors: ['Fix the errors of the program before transforming it.'], notes: [], checks: null }
   let program = (instructionList ?? []).map(i => ({ ...i }))
   const errors = [], notes = []
-  let vlen = null
+  let vlen = null, rearrange = null
   if (lanes >= 2) {
-    const r = vectorizeLoop(program, lanes)
+    const r = vectorizeLoop(program, lanes, { blocks, declarations })
     errors.push(...r.errors); notes.push(...r.notes)
     if (r.program) program = r.program
     vlen = r.vlen ?? null
+    rearrange = r.rearrange ?? null
   }
   if (!errors.length && unroll >= 2) {
     const r = unrollLoop(program, unroll, { splitAccumulators })
     errors.push(...r.errors); notes.push(...r.notes)
     if (r.program) program = r.program
   }
-  if (errors.length) return { program: null, errors, notes, checks: null, vlen }
-  return { program, errors, notes, vlen, checks: checkProgram(program, { vlen }) }
+  if (errors.length) return { program: null, errors, notes, checks: null, vlen, rearrange }
+  return { program, errors, notes, vlen, rearrange, checks: checkProgram(program, { vlen }) }
 }

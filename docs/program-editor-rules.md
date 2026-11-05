@@ -48,6 +48,8 @@ The text of an instruction is checked against its fields when it has one of the 
 | `c = y op z`, op `== != < <= > >=` | INT ARITH (comparison) |
 | `x = A[index]` / `A[index] = x` | MEM LOAD / MEM STORE |
 | `x = double(y)`, `single`, `word`, `long`, `byte` | conversion: FLOAT/INT CVT with the size of the result |
+| `x[0:3] = shuffle(y[0:3], z[0:3])` or `shuffle(y[0:3])` | VINT/VFLOAT SHUFFLE: combines the lanes of one or two vector registers |
+| `x[0:7] = permute(y[0:7], z[0:7])` or `permute(y[0:7])` | VINT/VFLOAT PERMUTE: the same, across 128-bit blocks |
 | `x[0:3]` in any of the above | vector instruction with 4 lanes (VINT, VFLOAT, VMEM) |
 | `if c go back` | the final BRANCH |
 
@@ -153,6 +155,41 @@ A vector instruction holds width / element size lanes: 32 bytes hold 8 single or
 - conversions read or write half a register;
 - reductions on larger elements become k partial vectors.
 
+## Shuffle
+
+`x[0:3] = shuffle(y[0:3], z[0:3])` combines the lanes of one or two vector registers into a vector register.
+- **Type.** It is a VINT or VFLOAT instruction with oper **SHUFFLE**, with the type and size of its data: the result and the sources are the same data for the type inference.
+- **Lanes.** They are those of the result. The sources may have other lanes, e.g. `x[0:7] = shuffle(a[0:3], b[0:3])` joins two halves.
+- **Processors.** In Intel processors (data from uops.info), float shuffles (VSHUFPS) and integer shuffles (VPSHUFD) run in the same ports: p5 in Skylake, p1 and p5 in Ice Lake, Tiger Lake and Alder Lake. They take 1 cycle within a 128-bit block, and 3 cycles across blocks (VPERMPS, see PERMUTE below). They are not shifts: vector shifts run in p0/p1. The distributed processors execute VINT.SHUFFLE and VFLOAT.SHUFFLE in 1 cycle in the ports of the vector integer ALU (VINT.LOGIC); processors written before SHUFFLE existed get the same values by default.
+
+### 128-bit blocks: shuffle and permute
+
+In x86 AVX, the vector registers of 32 bytes (AVX2) or 64 bytes (AVX-512) are made of **128-bit blocks**. To avoid confusion with the lanes of RVCAT, these documents call them *128-bit blocks*, not "lanes" as Intel does.
+
+- **SHUFFLE.** Most shuffles move elements **within each block**: `vshufps`, `vpshufd`, `vunpcklps`, `vpalignr`, `vpermilps`. An element of the result comes from the same block of the sources. They take 1 cycle.
+- **PERMUTE.** Moving elements **across blocks** needs a permutation: `vpermps`/`vpermd`, `vperm2f128`, `vextractf128` or `vinsertf128`. It takes 3 cycles, in the same port.
+- **In RVCAT.** PERMUTE is a VINT/VFLOAT operation with the text `permute(...)`, like `shuffle(...)`. The distributed processors execute it in 3 cycles in the same ports as SHUFFLE, and processors written before PERMUTE existed get these values by default. Warning W10 marks a PERMUTE with registers of 16 bytes or less, which have a single 128-bit block.
+
+Examples that move data across blocks:
+- reversing a vector, as in `B[i] = A[N-1-i]`;
+- the horizontal reduction of a vector after a loop (not simulated);
+- the halves of a conversion between single and double;
+- matrix transposes;
+- deinterleaving structures (RGBRGB… → RRR…, GGG…);
+- sliding windows of 256 bits.
+
+**Assistant.** When a loop vectorized with registers of more than 16 bytes moves data across 128-bit blocks, the Unroll / Vectorize dialog asks which model to use. *Apply* is disabled until one is chosen.
+
+| Data move | AVX model | Generic model (no 128-bit blocks) |
+|---|---|---|
+| Upper half of a widening conversion | `x_up[0:3] = permute(x[0:7])`, then `y_hi[0:3] = double(x_up[0:3])` (the conversion reads the lowest elements) | `y_hi[0:3] = double(x[4:7])` |
+| Upper half of a narrowing conversion | `b_up[0:3] = single(a_hi[0:3])`, then `b[0:7] = permute(b[0:3], b_up[0:3])` | `b[4:7] = single(a_hi[0:3])` |
+| Backward vector combined with forward accesses (its lanes are in reverse order) | `t[0:7] = permute(t[0:7])` after a load, `t_rev[0:7] = permute(t[0:7])` before a store | the same with `shuffle` |
+
+- **Data inside one block.** A move that stays within a 128-bit block is a SHUFFLE also in the AVX model.
+- **Backward reductions.** A reduction of a backward access, such as `s = s + A[N-1-i]`, needs no reversal: the order of the lanes does not matter.
+- **Declarations.** The type of the generated instructions (VINT or VFLOAT) is the one of the data moved, taken from the declarations when the instructions do not say it.
+
 ## N and the memory trace
 
 **N** is saved with the program (field `N` of the JSON file, optional). When the program is selected or uploaded in the Program panel, it becomes the current N; programs without N keep the current one. Reloading the page keeps the last N used.
@@ -203,6 +240,7 @@ The upload of a program also checks:
 | W6 | With S > 1 and one element per algorithmic operation, the copies of an access cover all L·s elements of each iteration. | An unrolled copy is missing. | The original loop does not access every element. |
 | W7 | A backward access (s < 0) has c ≥ L, so that the first access stays inside the N elements of the array. | c = 0 reads A[N], one element past the end. | — |
 | W9 | A vector instruction fits in the vector registers: L × element size ≤ register width. | 8 doubles in 32-byte registers (8 single fit). | — |
+| W10 | A PERMUTE is used with vector registers of 16 bytes or less. | There is a single 128-bit block: a SHUFFLE does the same in less time. | — |
 | W8 | A loop counter `i = i + k` has k = S. The counter is an INT instruction whose destination equals its source and is used as a memory index; k is its *constant*, or else the number in its text. | The counter or S is not updated after unrolling or vectorizing. | The index advances by something other than the algorithmic operations (e.g. bytes). |
 
 RVCAT does not use the value of the counter (addresses come from s and c), so W8 only checks that the program reads coherently.
