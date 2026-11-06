@@ -33,7 +33,7 @@
       "id": "program-more",
       "type": "step",
       "title": "In depth: the program",
-      "description": "&bull; The <b>type</b> button cycles the columns: operand sizes, latency and<br>&nbsp;&nbsp;&nbsp;ports, inputs/outputs, memory addresses, strides and vector lanes.<br>&bull; Pick another program in the list, or edit it with ✎ (or <b>Edit Program</b>).<br>&bull; Not modeled: registers, branch outcomes and memory ordering.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
+      "description": "&bull; The <b>type</b> button switches the columns: type, operation and size,<br>&nbsp;&nbsp;&nbsp;or latency and eligible ports.<br>&bull; Hover an instruction to see what it does (memory access, operands).<br>&bull; Hover the header to see the C code of the loop.<br>&bull; Not modeled: registers and memory ordering. Conditional branches<br>&nbsp;&nbsp;&nbsp;(<i>if c skip k</i>) are taken and mispredicted with given probabilities.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
       "selector": ".program-container",
       "position": "right",
       "next": [
@@ -45,7 +45,7 @@
       "id": "processor",
       "type": "step",
       "title": "The processor",
-      "description": "<b>A pipeline described by a few numbers.</b><br>&bull; <b>Dispatch</b> / <b>Retire</b>: instructions per cycle that enter / leave.<br>&bull; <b>Ports</b> P0…Pn: each executes 1 instruction per cycle, of the types listed.<br>&bull; <b>ROB</b>: how many instructions can be in flight at the same time.<br>&bull; <b>Cache</b> (optional): adds the delays of memory accesses.",
+      "description": "<b>A pipeline described by a few numbers.</b><br>&bull; <b>Dispatch</b> / <b>Retire</b>: instructions per cycle that enter / leave.<br>&bull; <b>Ports</b> P0…Pn: each executes 1 instruction per cycle, of the types listed<br>&nbsp;&nbsp;&nbsp;(click <i>show operation types</i> to see them).<br>&bull; <b>ROB</b>: how many instructions can be in flight at the same time.<br>&bull; <b>Cache</b> (optional): adds the delays of memory accesses.<br>&bull; <b>Branch penalty</b>: cycles lost after a mispredicted branch.",
       "selector": ".processor-container",
       "position": "right",
       "next": [
@@ -58,7 +58,7 @@
       "id": "processor-more",
       "type": "step",
       "title": "In depth: the processor",
-      "description": "&bull; Click 🔄 in the diagram to change dispatch, retire, ROB or cache.<br>&bull; <b>Scheduler</b>: <i>greedy</i> issues the oldest ready instructions;<br>&nbsp;&nbsp;&nbsp;<i>optimal</i> chooses the best combination of ports.<br>&bull; Cache: blocks × block size, miss penalty, issue time, fill and<br>&nbsp;&nbsp;&nbsp;write buffers, and return throughput.<br>&bull; <b>Edit Processor</b> (top bar) changes latencies and ports.",
+      "description": "&bull; Click a cell of the diagram to change it: dispatch, retire, ROB, cache,<br>&nbsp;&nbsp;&nbsp;branch penalty, ports, and the latency of an operation type.<br>&bull; A second click on a cell pins its explanation.<br>&bull; <b>💾</b> saves the modified processor with a name; <b>✱ ↶</b> discards the changes.<br>&bull; The <b>Scheduler</b> is an option of the simulation: <i>greedy</i> issues the oldest<br>&nbsp;&nbsp;&nbsp;ready instructions; <i>optimal</i> chooses the best combination of ports.",
       "selector": ".processor-container",
       "position": "right",
       "next": [
@@ -182,7 +182,7 @@
       "id": "simulate-more",
       "type": "step",
       "title": "In depth: simulation results",
-      "description": "&bull; <b>IPC</b>: instructions per cycle (its colour shows dispatch usage).<br>&bull; <b>Primary</b> misses start a block fill; <b>secondary</b> ones join a fill in progress.<br>&bull; <b>MM transfers</b>: main-memory reads + writes, and % of cycles busy.<br>&bull; The diagram shows how busy dispatch, each port, the cache and retire are.<br>&bull; <b>Store Results</b> keeps a run; click its name to see program, N and processor.",
+      "description": "&bull; <b>IPC</b>: instructions per cycle.<br>&bull; <b>Primary</b> misses start a block fill; <b>secondary</b> ones join a fill in progress.<br>&bull; <b>MM transfers</b>: main-memory reads + writes (hover for the detail).<br>&bull; The diagram shows how busy dispatch, each port, the cache and retire are.<br>&bull; <b>Store Results</b> keeps a run; hover its name to see program, N and processor.",
       "selector": "#simulation-results-info",
       "position": "bottom",
       "next": [
@@ -194,7 +194,7 @@
       "id": "timeline",
       "type": "step",
       "title": "The timeline",
-      "description": "<b>Cycle by cycle: what each instruction is doing.</b><br>Rows are instructions (one colour per iteration), columns are cycles:<br><b>D</b> dispatch · <b>E</b> execute · <b>W</b> write result · <b>R</b> retire.<br>The symbols in between show <b>why</b> an instruction waits.<br><b>Critical</b> marks the chain that determines the execution time.",
+      "description": "<b>Cycle by cycle: what each instruction is doing.</b><br>Rows are instructions (one colour per iteration), columns are cycles:<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b>/<b>S</b> load/store) · <b>W</b> write result · <b>R</b> retire.<br>The symbols in between show <b>why</b> an instruction waits.<br><b>Critical</b> marks in red the chain that determines the execution time.",
       "selector": "#canvas-container",
       "position": "right",
       "next": [
@@ -207,7 +207,7 @@
       "id": "timeline-more",
       "type": "step",
       "title": "In depth: waiting symbols",
-      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
+      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>x</b>: wrong path of a mispredicted branch (squashed)<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
       "selector": "#canvas-container",
       "position": "right",
       "next": [
@@ -251,7 +251,7 @@
       "id": "experiment",
       "type": "step",
       "title": "Experiment!",
-      "description": "<b>Change one thing, predict the effect, then simulate.</b><br>&bull; Edit the program or the processor (top bar), or change N.<br>&bull; Add a port, change a latency or the ROB size.<br>&bull; <b>Store Results</b> to compare runs side by side.<br><i>Tip:</i> click any value with an explanation to pin it.<br>The <b>?</b> button (bottom right) reopens the tutorials.",
+      "description": "<b>Change one thing, predict the effect, then simulate.</b><br>&bull; Click the processor diagram: add a port, change a latency or the ROB size.<br>&bull; Change N, or edit the program (<b>Edit Program</b>).<br>&bull; <b>Store Results</b> to compare runs side by side.<br><i>Tip:</i> click any value with an explanation to pin it.<br>The <b>?</b> button (bottom right) reopens the tutorials.",
       "selector": "#program-button",
       "position": "bottom",
       "next": [
