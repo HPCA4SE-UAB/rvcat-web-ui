@@ -28,13 +28,27 @@ describe('throughputBoundRows', () => {
     expect(rows[0].formula).toBe('9 instructions / 4 instructions/cycle (dispatch width) = 2.25 cycles/iter')
 
     const p0 = rows[1]
-    expect(p0.included).toEqual([{ index: 8, title: '8: if c go back\nBRANCH → can use P0' }])
+    expect(p0.included).toEqual([{ index: 8, title: '8: if c go back\nBRANCH → can use P0', prob: '' }])
     expect(p0.excluded[0]).toEqual({ index: 5,
       title: '5: i = i + 1\nINT.ARITH → can use P0, P2\nNot counted: it can also use P2' })
 
     const p023 = rows[2]
     expect(p023).toMatchObject({ resource: 'P0+P2+P3', cycles: '2.33', bottleneck: true })
     expect(p023.formula).toBe('7 instructions / (3 ports × 1 instruction/cycle) = 2.33 cycles/iter')
+  })
+
+  it('counts conditional instructions with their probability of being executed', () => {
+    const execProb = [1, 1, 1, 0.5, 1, 1, 1, 1, 1]
+    const withProb = [
+      { ...bounds[0], expected: 8.5, cycles: 8.5 / 4 },
+      { resource: 'Ports', ports: [3], instructions: [3, 7], excluded: [], throughput: 1, expected: 1.5, cycles: 1.5 },
+    ]
+    const { rows } = throughputBoundRows(withProb, program, undefined, execProb)
+    expect(rows[0].formula).toBe('8.5 instructions (expected: 9 − 0.5 skipped) / 4 instructions/cycle (dispatch width) = 2.13 cycles/iter')
+    expect(rows[0].conditional.map(c => [c.index, c.prob])).toEqual([[3, '0.5']])
+    expect(rows[1].included.map(c => c.prob)).toEqual(['0.5', ''])
+    expect(rows[1].included[0].title).toMatch(/Conditional: executed with probability 0.5, so it counts 0.5$/)
+    expect(rows[1].formula).toBe('1.5 instructions (expected: 2 − 0.5 skipped) / (1 port × 1 instruction/cycle) = 1.50 cycles/iter')
   })
 
   it('keeps only the highest bounds, in their original order, when there are too many', () => {

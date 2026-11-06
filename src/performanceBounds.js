@@ -42,27 +42,44 @@ function keepHighest(rows, max) {
   return { rows: rows.filter((_, i) => keep.has(i)), hidden: rows.length - max }
 }
 
-export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUND_ROWS) {
+// Probability or expected count as a short number: 0.5, 0.25, 0.996, 0.0039, 8.996
+const probText = (p) => String(Number(p >= 1 ? p.toFixed(3) : p.toPrecision(3)))
+
+// execProb (programs with conditional branches): probability that each instruction is executed
+// in an iteration; conditional instructions count with it ("expected" instructions per iteration)
+export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUND_ROWS, execProb = null) {
   if (!Array.isArray(bounds)) return { rows: [], hidden: 0 }
+  const probOf = (i) => (Array.isArray(execProb) && execProb[i] !== undefined ? Number(execProb[i]) : 1)
+  const isConditional = (i) => probOf(i) < 1 - 1e-9
+  const conditionalNote = (i) => `\nConditional: executed with probability ${probText(probOf(i))}, so it counts ${probText(probOf(i))}`
   const rows = bounds.map(b => {
     const instrs  = b.instructions ?? []
     const isPorts = b.resource === 'Ports'
     const cycles  = Number(b.cycles)
     const resource = isPorts ? b.ports.map(portName).join('+') : b.resource
+    const conditional = instrs.filter(isConditional)
+    const expected = Number.isFinite(b.expected) ? b.expected : instrs.reduce((s, i) => s + probOf(i), 0)
 
     const resourceTitle = isPorts
       ? `${b.ports.length > 1 ? 'Ports' : 'Port'} ${resource}: ${plural(b.throughput, 'instruction')} per cycle`
       : `${b.resource} width: ${plural(b.throughput, 'instruction')} per cycle`
 
+    // instructions per iteration: with conditional ones, the expected number
+    const count = conditional.length
+      ? `${probText(expected)} instructions (expected: ${instrs.length} − ${probText(instrs.length - expected)} skipped)`
+      : plural(instrs.length, 'instruction')
     const formula = isPorts
-      ? `${plural(instrs.length, 'instruction')} / (${plural(b.throughput, 'port')} × 1 instruction/cycle) = ${cycles.toFixed(2)} cycles/iter`
-      : `${plural(instrs.length, 'instruction')} / ${b.throughput} instructions/cycle (${b.resource.toLowerCase()} width) = ${cycles.toFixed(2)} cycles/iter`
+      ? `${count} / (${plural(b.throughput, 'port')} × 1 instruction/cycle) = ${cycles.toFixed(2)} cycles/iter`
+      : `${count} / ${b.throughput} instructions/cycle (${b.resource.toLowerCase()} width) = ${cycles.toFixed(2)} cycles/iter`
 
+    const item = (i) => ({ index: i, title: instrPortsTitle(instructionList, i) + (isConditional(i) ? conditionalNote(i) : ''),
+                           prob: isConditional(i) ? probText(probOf(i)) : '' })
     return {
       resource, resourceTitle, formula,
-      // Dispatch/retire process every instruction: shown as a range
+      // Dispatch/retire process every instruction: shown as a range, and its conditional instructions
       allRange:   isPorts ? '' : (instrs.length ? `All (${instrs[0]}–${instrs.at(-1)})` : 'All'),
-      included:   isPorts ? instrs.map(i => ({ index: i, title: instrPortsTitle(instructionList, i) })) : [],
+      conditional: isPorts ? [] : conditional.map(item),
+      included:   isPorts ? instrs.map(item) : [],
       excluded:   (b.excluded ?? []).map(e => ({
         index: e.index,
         title: `${instrPortsTitle(instructionList, e.index)}\nNot counted: it can also use ${e.other_ports.map(portName).join(', ')}`,

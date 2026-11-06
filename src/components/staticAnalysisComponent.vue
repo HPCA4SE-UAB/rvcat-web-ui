@@ -50,7 +50,8 @@
 
   const throughputTable = computed(() =>
     throughputBoundRows(performanceData.value['Throughput-Bounds'],
-                        simState.simulatedProcess?.instruction_list ?? [])
+                        simState.simulatedProcess?.instruction_list ?? [], undefined,
+                        performanceData.value.ExecProbability)
   )
   const latencyTable = computed(() =>
     latencyBoundRows(performanceData.value['Latency-Bounds'],
@@ -217,7 +218,7 @@
     }
     try {
       // fields of programs with conditional branches: removed so that they do not remain from a previous program
-      for (const key of ['LatencyRange', 'Branches', 'ExecProbability', 'MispredictionsPerIter',
+      for (const key of ['LatencyRange', 'ThroughputRange', 'Branches', 'ExecProbability', 'MispredictionsPerIter',
                          'BranchPenalty', 'MispredictTime', 'EstimatedTime'])
         delete performanceData.value[key]
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
@@ -301,15 +302,23 @@
         and <strong>{{ performanceData.LatencyRange.max.toFixed(2) }}</strong>
         (with the conditional blocks {{ performanceData.LatencyRange.with_blocks.toFixed(2) }},
         without them {{ performanceData.LatencyRange.without_blocks.toFixed(2) }}).
-        Throughput counts each instruction with its probability of being executed.
       </div>
-      <div title="Mispredictions per iteration × branch penalty of the processor. The real cost is larger: the dispatch also waits until the branch resolves">
+      <div v-if="performanceData.ThroughputRange" id="throughput-range"
+           title="The throughput bound counts each conditional instruction with its probability of being executed (expected instructions per iteration). The range gives the bound when every conditional block is executed and when none of them is">
+        Throughput bound <strong>{{ performanceData.ThroughputTime.toFixed(2) }}</strong>, with the expected instructions;
+        between {{ performanceData.ThroughputRange.min.toFixed(2) }} and {{ performanceData.ThroughputRange.max.toFixed(2) }}
+        (with the conditional blocks {{ performanceData.ThroughputRange.with_blocks.toFixed(2) }},
+        without them {{ performanceData.ThroughputRange.without_blocks.toFixed(2) }}).
+      </div>
+      <div id="mispredict-cost"
+           title="After a misprediction, the instructions that follow the branch are not useful from its dispatch until it resolves (estimated with the dependence chain that computes its condition in the iteration) and during the branch penalty. Cost per iteration = Σ mispredictions × (resolution + penalty). It is an approximation: part of the resolution time can overlap with useful work">
         Mispredictions: <strong>{{ performanceData.MispredictionsPerIter.toFixed(3) }}</strong>/iter
         <span v-for="b in performanceData.Branches" :key="b.index" class="branch-info">
-          (branch {{ b.index }}: p={{ b.prob }}, {{ b.estimated ? '2-bit predictor' : 'given rate' }} {{ b.mispredict.toFixed(3) }})
+          (branch {{ b.index }}: p={{ b.prob }}, {{ b.estimated ? '2-bit predictor' : 'given rate' }} {{ b.mispredict.toFixed(3) }};
+          cost {{ b.resolution ?? '?' }} resolution + {{ performanceData.BranchPenalty }} penalty = {{ b.cost ?? performanceData.BranchPenalty }} cycles)
         </span>
-        × penalty {{ performanceData.BranchPenalty }} = {{ performanceData.MispredictTime.toFixed(2) }} cycles/iter
-        → estimate ≥ <strong>{{ performanceData.EstimatedTime.toFixed(2) }}</strong> cycles/iter
+        → {{ performanceData.MispredictTime.toFixed(2) }} cycles/iter
+        → estimate ≈ <strong>{{ performanceData.EstimatedTime.toFixed(2) }}</strong> cycles/iter
       </div>
     </div>
 
@@ -388,12 +397,19 @@
             <td class="bound-resource" :title="row.resourceTitle">{{ row.resource }}</td>
             <td>
               <span v-if="row.allRange">{{ row.allRange }}</span>
+              <span v-if="row.conditional?.length" class="bound-conditional"
+                    title="Conditional instructions: each one counts with its probability of being executed">
+                · conditional:
+                <template v-for="(instr, k) in row.conditional" :key="'c' + k"><span v-if="k > 0">, </span><span class="bound-instr" :title="instr.title"
+                      @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span> <em>(p={{ instr.prob }})</em></template>
+              </span>
               <template v-else>
                 <span v-if="row.included.length === 0" class="bound-none">none</span>
                 <template v-for="(instr, k) in row.included" :key="'i' + k">
                   <span v-if="k > 0">, </span>
                   <span class="bound-instr" :title="instr.title"
-                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span>
+                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span><em
+                        v-if="instr.prob" class="bound-conditional"> (p={{ instr.prob }})</em>
                 </template>
                 <span v-if="row.excluded.length" class="bound-excluded">
                   (<template v-for="(instr, k) in row.excluded" :key="'e' + k"><span v-if="k > 0">, </span><span class="bound-instr" :title="instr.title"
@@ -446,8 +462,12 @@
         </details>
         <details><summary>Conditional branches</summary>
       <p>With conditional branches the latency bound is a range: the chains depend on whether the conditional blocks are executed.
-      The throughput counts each instruction with its probability of being executed. The mispredictions per iteration ×
-      the branch penalty give an estimate of their cost (the real one is larger: dispatch also waits until the branch resolves).</p>
+      The throughput bound counts each instruction with its probability of being executed (the expected number of
+      instructions per iteration; conditional instructions show their probability p); the bounds with every conditional
+      block executed and with none of them give its range.</p>
+      <p>After a misprediction the instructions that follow the branch are not useful from its dispatch until it resolves
+      (approximated by the dependence chain that computes its condition) and during the branch penalty. The estimate adds
+      mispredictions × (resolution + penalty) to the minimum time; part of that time may overlap with useful work.</p>
         </details>
       "
     title="Static Performance Analysis"
@@ -633,6 +653,7 @@
     max-width:     60rem;
   }
   .branch-info { color: #555; }
+  .bound-conditional { color: #7a5a00; font-size: 0.9em; }
   .stride-warning {
     box-sizing:    border-box;
     max-width:     44rem;   /* as wide as the summary */
