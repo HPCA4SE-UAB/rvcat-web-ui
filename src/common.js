@@ -1080,7 +1080,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     const click = allowEdit ? ' Click to edit it.' : ''
     let decode_row = `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Dispatch width: up to ${dispatch} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----

@@ -603,18 +603,24 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The simulated program consists of a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>,
-          described in high-level informal language. N is the total iterations (user-configurable).
-          With a <strong>loop stride</strong> S (default is 1), the loop runs N/S times.
-          For each instruction, the button switches between its <em>type</em>, operation and <em>size</em>, and its
-          <em>latency</em> and eligible <em>execution ports</em>. The tooltip of each instruction describes it briefly:
-          the memory access (array, offset, stride, lanes) or the operation and its operands.
-          Instructions inside a conditional block (<em>if c skip k</em>) are indented.
-        <p>The simulation models <strong>data dependencies</strong> but <strong>does not</strong> model
-          processor registers, memory states or memory dependencies (e.g., store-load orderings). Conditional branches
-          are taken and mispredicted with the probabilities given in the program.</p>
-      <p>A new <em>program</em> can be selected from the list (referring to a JSON file description stored in local storage).
-        Click on the corresponding button to <strong>edit</strong> a program or to <strong>remove</strong> a program from local storage.</p>"
+    text="<p>The simulated program is a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>, described in
+      high-level informal language. N is the number of algorithmic operations (user-configurable); with a <strong>loop stride</strong> S
+      (default 1), the loop runs N/S iterations.</p>
+        <details><summary>Instruction columns and tooltips</summary>
+      <p>The button of the table switches between the <em>type</em>, operation and <em>size</em> of each instruction, and its
+      <em>latency</em> and eligible <em>execution ports</em>. The tooltip of each instruction describes it briefly: the memory access
+      (array, offset, stride, lanes) or the operation and its operands. Instructions inside a conditional block (<em>if c skip k</em>)
+      are indented. The header shows the source code of the loop (C), when the program has it.</p>
+        </details>
+        <details><summary>What the simulation models</summary>
+      <p>The simulation models <strong>data dependencies</strong> but <strong>does not</strong> model processor registers, memory states or
+      memory dependencies (e.g., store-load orderings). Conditional branches are taken and mispredicted with the probabilities given in the program.</p>
+        </details>
+        <details><summary>Selecting, editing and removing programs</summary>
+      <p>A <em>program</em> can be selected from the list (stored in the local storage of the browser). Click on the corresponding button to
+      <strong>edit</strong> the program (Program editor) or to <strong>remove</strong> it from local storage.</p>
+        </details>
+      "
       title="Program Description"
     @close="closeHelp"  />
   </Teleport>

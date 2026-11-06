@@ -18,7 +18,7 @@
   const defaultOptions = {
     processorName:       '',
     availableProcessors: [],
-    opsCollapsed:        false     // operation types of the ports hidden in the diagram
+    opsCollapsed:        true      // operation types of the ports hidden in the diagram (when a processor is loaded)
   }
 
   const processorOptions = reactive(defaultOptions)
@@ -395,6 +395,8 @@
       if (newName && simState.state > 1 && !initializingProcessor) {  // Processor already initialized
          if (newName !== simState.processorName) {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
+           processorOptions.opsCollapsed = true
+           saveOptions()
            reloadProcessor()
          }
       }
@@ -690,6 +692,8 @@
         }
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
         savedSignature.value   = processorSignature(data)
+        processorOptions.opsCollapsed = true
+        saveOptions()
         simState.processorName = data.name
         processorOptions.processorName = data.name
         data.name = simState.simulatedProcess.name || 'unknown'
@@ -878,42 +882,51 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The table describes the <strong>processor microarchitecture</strong> (pipeline). Click a cell to edit it: its controls
-        appear in the header of the panel. A <strong>second click</strong> on the same cell pins its explanation in a box.
-        Hover the cells to see what each parameter means.
-        <h4>Dispatch, ROB and Retire</h4>
+    text="<p>The table describes the <strong>processor microarchitecture</strong> (pipeline). Click a cell to edit it:
+        its controls appear in the header of the panel. A <strong>second click</strong> on the same cell pins its explanation;
+        hover the cells to see what each parameter means.</p>
+        <details><summary>Dispatch, ROB and Retire</summary>
         <p><strong>Dispatch</strong> and <strong>Retire</strong> widths: maximum number of instructions per clock cycle
-          dispatched into or retired from the <strong>Execution Engine</strong>. They may impose a throughput-bound performance limit.
-          The <strong>ROB</strong> (ReOrder Buffer) size is the maximum number of instructions in the Execution Engine.
+          dispatched into or retired from the <strong>Execution Engine</strong>. They may impose a throughput-bound performance limit.</p>
+        <p>The <strong>ROB</strong> (ReOrder Buffer) size is the maximum number of instructions in the Execution Engine.
           It limits the instruction-level parallelism that the processor can exploit, and may impose latency-bound performance limits.
           The instruction scheduler (greedy or optimal) is an option of the simulation (Simulation panel).</p>
-        <h4>Execution ports and operation types</h4>
+        </details>
+        <details><summary>Execution ports and operation types</summary>
         <p>Each operation type has a fixed execution latency and a set of eligible execution ports (only one is used for each instruction).
           A port, named <em>Px</em>, can start executing one instruction every clock cycle.</p>
-        <p>The row above the ports <strong>hides or shows the operation types</strong>, and <strong>＋ port</strong> adds a port (at most 10).
-          Click a <strong>port header</strong> (Px) to insert an operation type in it or to remove the port. When a port is removed,
-          the operation types that only that port executed move to the first remaining port, and the ports are renumbered P0, P1, ...</p>
+        <p>The row above the ports <strong>hides or shows the operation types</strong> (hidden when a processor is loaded),
+          and <strong>＋ port</strong> adds a port (at most 10). Click a <strong>port header</strong> (Px) to insert an operation type
+          in it or to remove the port. When a port is removed, the operation types that only that port executed move to the first
+          remaining port, and the ports are renumbered P0, P1, ...</p>
         <p>Click an <strong>operation type</strong> to edit its latency (the same in every port), or to move it to another port or remove it.
-          For one operation (for example FLOAT.ADD) the latency can be set for every data size or for one size only (single, double, ...).
-          A warning row lists the operation types that no port executes: programs that use them cannot be simulated.
+          For one operation (for example FLOAT.ADD) the latency can be set for every data size or for one size only (single, double, ...).</p>
+        <p>A warning row lists the operation types that no port executes: programs that use them cannot be simulated.
           CVT, SHUFFLE, PERMUTE and CMP without a port of their own use the ports of FLOAT.ADD / VFLOAT.ADD or VINT.LOGIC.</p>
-        <h4>Cache</h4>
+        </details>
+        <details><summary>Cache</summary>
         <p>Click repeatedly on the <strong>Cache</strong> row to cycle through its parameters. A Number of Blocks = 0 means that all data accesses
-          hit in the cache, so the latency of loads and stores is constant. The <strong>miss penalty</strong> is the extra time of a load or store
-          that misses in the cache, and must be at least the issue time. The <strong>issue time</strong> (<em>m</em>) is the minimum time between
-          consecutive block requests to Main Memory: it sets the Main Memory bandwidth (one block every <em>m</em> cycles).
-          The block size is a power of two (8 to 128 bytes), large enough for the largest memory access of the program.</p>
+          hit in the cache, so the latency of loads and stores is constant. The block size is a power of two (8 to 128 bytes),
+          large enough for the largest memory access of the program.</p>
+        <p>The <strong>miss penalty</strong> is the extra time of a load or store that misses in the cache, and must be at least the issue time.
+          The <strong>issue time</strong> (<em>m</em>) is the minimum time between consecutive block requests to Main Memory:
+          it sets the Main Memory bandwidth (one block every <em>m</em> cycles).</p>
+        <details><summary>Fill buffers, write buffers and return throughput</summary>
         <p><strong>Fill Buffers</strong> limit the number of distinct cache blocks being fetched; misses to the same block share one fill.
-          <strong>Write Buffers</strong> hold dirty blocks evicted while a fill waits for their writeback. A fill waits when either buffer is full.
-          <strong>Return Throughput</strong> is the number of loads and stores waiting on completed fills that receive their data per cycle,
+          <strong>Write Buffers</strong> hold dirty blocks evicted while a fill waits for their writeback. A fill waits when either buffer is full.</p>
+        <p><strong>Return Throughput</strong> is the number of loads and stores waiting on completed fills that receive their data per cycle,
           served in program order by an independent queue, without paying their execution latency again (1 by default).</p>
-        <h4>Branch penalty</h4>
+        </details>
+        </details>
+        <details><summary>Branch penalty</summary>
         <p>Cycles lost to refill the front-end after a mispredicted conditional branch is resolved.</p>
-        <h4>Processor configurations</h4>
-        <p>Select a processor from the list (stored in the local storage of the browser), or <em>Add new</em> to load one from a JSON file.
-          Changes made in the panel apply to the current processor at once; the <strong>✱ ↶</strong> button appears while it differs from
+        </details>
+        <details><summary>Processor configurations: select, save, revert, remove</summary>
+        <p>Select a processor from the list (stored in the local storage of the browser), or <em>Add new</em> to load one from a JSON file.</p>
+        <p>Changes made in the panel apply to the current processor at once; the <strong>✱ ↶</strong> button appears while it differs from
           the saved version, and discards the changes. <strong>💾</strong> saves the processor with a name: it is added to the list and,
           optionally, downloaded as a JSON file. <strong>🧹</strong> removes the current processor from the list.</p>
+        </details>
         "
     title="Processor MicroArchitecture Description"
     @close="closeHelp" />

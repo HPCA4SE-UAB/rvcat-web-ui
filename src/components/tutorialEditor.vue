@@ -332,25 +332,27 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="<p>Tutorials can be edited, uploaded from or downloaded to the local file system in JSON format, added or removed to the local menu
-      (able to be executed, stored in the navigator local storage, and preserved across sessions).</p>
-      <p>A tutorial is composed of <strong>general steps</strong> and <strong>question steps</strong>.
-      General steps define an element in the simulator that is highlighted, and may define a action (simulate click on main header buttons).
-      You can specify the position in the screen for the tutorial message in relation to the highlighted screen element.
-      Finally, you can specify some requirement to continue the tutorial,
-      such as clicking some button, or selecting some value in a certain input box.</p>
+    text="<p>Tutorials are made of <strong>step cards</strong> and <strong>question cards</strong>. They can be edited,
+      uploaded from or downloaded to the file system (JSON), and added to or removed from the local menu (stored in the
+      local storage of the browser).</p>
+        <details><summary>Step and question cards</summary>
+      <p>Step cards define an element of the simulator that is highlighted, and may define an action (simulate a click on the
+      main header buttons). You can specify the position of the tutorial message relative to the highlighted element, and a
+      requirement to continue, such as clicking a button or selecting a value in an input box.</p>
+        </details>
+        <details><summary>Successors and levels of detail</summary>
       <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination End Tutorial.
-      Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a correct answer.
-      Older JSON tutorials are migrated to a linear flow when loaded.</p>
-      <details><summary>Levels of detail, button texts and preview</summary>
-        <p>Use the second successor for optional cards (e.g. <em>In depth</em>) that return to the main path:
-        the graph shows them in yellow. Each successor can have its own <strong>button text</strong>;
-        when empty, the button shows the title of the target card.</p>
-        <p>The text toolbar inserts bold, italic, red highlight, bullet points and line breaks, and
-        <em>Preview</em> shows how the text will look. <strong>▶ Preview from this card</strong> runs the
-        tutorial from the selected card; closing it returns to the editor.</p>
-        <p>To change a tutorial of the menu, click its ✎ button: it is loaded here.</p>
-      </details>"
+      Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a
+      correct answer. Older JSON tutorials are migrated to a linear flow when loaded.</p>
+      <p>Use the second successor for optional cards (e.g. <em>In depth</em>) that return to the main path: the graph shows them
+      in yellow. Each successor can have its own <strong>button text</strong>; when empty, the button shows the title of the target card.</p>
+        </details>
+        <details><summary>Text toolbar, preview and the tutorial menu</summary>
+      <p>The text toolbar inserts bold, italic, red highlight, bullet points and line breaks, and <em>Preview</em> shows how the
+      text will look. <strong>▶ Preview from this card</strong> runs the tutorial from the selected card; closing it returns to the editor.</p>
+      <p>To change a tutorial of the menu, click its ✎ button: it is loaded here.</p>
+        </details>
+      "
     title="Tutorial edition, download and upload"
     @close="closeHelp"  />
   </Teleport>

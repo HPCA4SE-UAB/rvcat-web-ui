@@ -647,7 +647,7 @@
     // ---- Decode ----
     let decode_row = `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Usage of dispatch capacity"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle${message}</FONT></TD>
-      <TD ROWSPAN="${results?.branch ? 5 : 4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Pending: usage of ROB capacity" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD ROWSPAN="${results?.branch ? 5 : 4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="Pending: usage of ROB capacity" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -1146,43 +1146,56 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
-      including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
-      <em>Instructions Per Cycle</em> (IPC), <em>cache misses</em>, and <em>MM transfers</em>.
-      The <b>Scheduler</b> (optimal or greedy) and what happens after a mispredicted conditional branch
-      (<b>Mispredictions</b>: dispatch <em>stalls</em>, or the <em>wrong path</em> is executed and then squashed) are options of the
-      simulation, saved with the stored results.
-      N counts <em>algorithmic operations</em> (iterations of the original loop); with loop stride S &gt; 1
-      (unrolled or vectorized loop) each iteration does S of them, and <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
-      can be compared with the baseline loop, also in the table of stored results.
-      Cache misses are shown as <em>LD+ST = Total</em>, where LD and ST are the misses caused by LOAD and
-      STORE instructions. <em>Primary misses</em> start a new fill; <em>secondary misses</em> join an existing
-      or queued fill of the same block.
-      MM transfers are shown as <em>Rd+Wr = Total (%)</em>: Rd are reads of blocks for cache misses (including
-      STORE read-for-write misses), Wr are writes of dirty blocks evicted from the cache, and the percentage is
-      the fraction of total cycles in which Main Memory is busy.
-      To obtain meaningful results, ensure a representative number of loop iterations, N, is selected,
-      as very low iteration counts may not fully capture the program's behavior and performance characteristics.
-      <p>The table below provides statistics of the utilization of core processor resources: dispatch and retire widths,
-        and usage of execution ports and cache/MM hierarchy.
-        These metrics are crucial for identifying potential performance bottlenecks in the simulated execution.</p>
-    "
+    text="<p><strong>Simulate</strong> the execution of N/S loop iterations (S = loop stride) and view aggregate performance
+      metrics and the usage of the processor resources. Hover any value to see its detail.</p>
+        <details><summary>Performance metrics</summary>
+      <p>Total executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em> and
+      <em>Instructions Per Cycle</em> (IPC). N counts <em>algorithmic operations</em> (iterations of the original loop); with loop
+      stride S &gt; 1 (unrolled or vectorized loop) each iteration does S of them, and <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
+      can be compared with the baseline loop, also in the table of stored results.</p>
+      <p>Choose a representative number of iterations N: very low counts may not capture the behavior of the program.</p>
+        </details>
+        <details><summary>Simulation options: Scheduler and Mispredictions</summary>
+      <p>The <b>Scheduler</b> (optimal or greedy) and what happens after a mispredicted conditional branch (<b>Mispredictions</b>:
+      dispatch <em>stalls</em>, or the <em>wrong path</em> is executed and then squashed) are options of the simulation,
+      saved with the stored results.</p>
+      <p>Programs with conditional branches show the <em>mispredictions per iteration</em> and, with the wrong path, the
+      wrong-path instructions and their cache misses.</p>
+        </details>
+        <details><summary>Cache misses and Main Memory transfers</summary>
+      <p><em>Primary misses</em> start a new fill; <em>secondary misses</em> join an existing or queued fill of the same block.
+      The totals are shown; the tooltip splits them into LD and ST, the misses caused by LOAD and STORE instructions.</p>
+      <p><em>MM transfers</em>: reads of blocks for cache misses (including STORE read-for-write misses) plus writes of dirty blocks
+      evicted from the cache. The tooltip gives both, and the fraction of the cycles in which Main Memory is busy.</p>
+        </details>
+        <details><summary>Resource usage table and critical path</summary>
+      <p>The table gives the utilization of the core processor resources: dispatch and retire widths, execution ports,
+      cache/MM hierarchy and, for programs with conditional branches, the misprediction rate. These metrics help to identify
+      the performance bottlenecks.</p>
+      <p>The breakdown of the <strong>critical path</strong> says which resources and dependences determine the execution time.
+      When the critical path repeats a pattern of instructions, the collapsed line <em>Critical-path pattern</em> shows it
+      (highlighted when it covers more than half of the iterations).</p>
+        </details>
+      "
     title="Overall Simulation Results"
     @close="closeHelp1"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Visualize the <strong>performance results</strong> from previous simulations.
-      This list allows you to compare the current simulation results with those from previous runs,
-      enabling you to track performance changes over time or after modifications to the processor configuration
-      or program.
-      <p><em>Primary</em> and <em>Secondary</em> show the total cache misses (hover a cell to see the LOAD/STORE split);
-        <em>MM</em> shows Main Memory reads+writes and the percentage of cycles in which MM is busy.
-        Hover a result's <strong>name</strong> to see the program, N and the complete processor configuration
-        that produced it. New results are named <em>Program-Processor-N</em>.</p>
-      <p>You can also manage your stored results by renaming them, reordering them for better comparison,
-        saving them for later usage, or removing those that are no longer needed.</p>"
+    text="<p>The <strong>performance results</strong> of previous simulations, to compare them with the current one and
+      to follow the effect of changes in the processor or the program.</p>
+        <details><summary>Columns</summary>
+      <p><em>Primary</em> and <em>Secondary</em> are the total cache misses, and <em>MM</em> the Main Memory transfers
+      (hover a cell for the LOAD/STORE or read/write split and the % of cycles in which MM is busy). <em>Mispred/iter</em>
+      gives the mispredicted conditional branches per iteration.</p>
+      <p>Hover a result's <strong>name</strong> to see the program, N, the simulation options and the complete processor
+      configuration that produced it. New results are named <em>Program-Processor-N</em>.</p>
+        </details>
+        <details><summary>Managing stored results</summary>
+      <p>Stored results can be renamed, reordered for a better comparison, saved for later use, or removed.</p>
+        </details>
+      "
     title="Previous Performance Results"
     @close="closeHelp2"/>
   </Teleport>

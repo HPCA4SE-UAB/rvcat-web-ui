@@ -430,58 +430,78 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp1" :position="helpPosition"
-    text="<em>Statically</em> determined lower bounds of the execution time, in cycles per loop iteration.
+    text="<p><em>Statically</em> determined lower bounds of the execution time, in cycles per loop iteration: the
+      <strong>minimum time</strong> is the maximum of the latency bound and the throughput bound.</p>
+        <details><summary>Latency bound and throughput bound</summary>
       <p>The <strong>latency bound</strong> comes from the longest <em>cyclic chain of data dependencies</em> across loop iterations.
-      The <strong>throughput bound</strong> comes from the most saturated hardware <em>resource</em>: dispatch width,
-      retire width, or a set of execution ports.</p>
-      <p>The <strong>minimum time</strong> is the maximum of both bounds; the execution is <em>latency-bound</em> or
-      <em>throughput-bound</em> depending on which one is larger.</p>
-      <p>An <strong>algorithmic operation</strong> is one iteration of the <em>original</em> loop, before unrolling or
-      vectorization (an O(N) algorithm performs N of them). If each iteration does the work of S original iterations
-      (<em>loop stride</em> S, set in the BRANCH instruction), the tables add a <em>Cycles/Alg Oper</em> column
-      = cycles/iter ÷ S: unlike cycles/iter, it can be compared with the baseline loop.</p>"
+      The <strong>throughput bound</strong> comes from the most saturated hardware <em>resource</em>: dispatch width, retire width,
+      or a set of execution ports.</p>
+      <p>The execution is <em>latency-bound</em> or <em>throughput-bound</em> depending on which one is larger.</p>
+        </details>
+        <details><summary>Algorithmic operations (Cycles/Alg Oper)</summary>
+      <p>An <strong>algorithmic operation</strong> is one iteration of the <em>original</em> loop, before unrolling or vectorization
+      (an O(N) algorithm performs N of them). If each iteration does the work of S original iterations (<em>loop stride</em> S,
+      set in the BRANCH instruction), the tables add a <em>Cycles/Alg Oper</em> column = cycles/iter ÷ S: unlike cycles/iter,
+      it can be compared with the baseline loop.</p>
+        </details>
+        <details><summary>Conditional branches</summary>
+      <p>With conditional branches the latency bound is a range: the chains depend on whether the conditional blocks are executed.
+      The throughput counts each instruction with its probability of being executed. The mispredictions per iteration ×
+      the branch penalty give an estimate of their cost (the real one is larger: dispatch also waits until the branch resolves).</p>
+        </details>
+      "
     title="Static Performance Analysis"
     @close="closeHelp1"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp2" :position="helpPosition"
-    text="Each hardware <strong>resource</strong> imposes a minimum time per iteration:
-         number of instructions that must use it / its throughput (instructions per cycle).
-         <p><em>Dispatch</em> and <em>retire</em> process every instruction. For a set of execution
-         <em>ports</em>, only instructions that can execute <em>exclusively</em> on those ports are counted;
-         instructions shown in grey can also use other ports, so they are not counted.
-         Sets of ports are listed when they share instructions (e.g. P0+P2 and P2+P3 give P0+P2+P3).</p>
-         <p>The highlighted rows give the <strong>throughput bound</strong> (the maximum). Hover a number to see the
-         instruction, and a value to see how it is computed. If there are too many resources, only the
-         highest bounds are shown.</p>
-         <p>For unrolled or vectorized loops (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
-         gives the cost of one iteration of the original loop.</p>"
+    text="<p>Each hardware <strong>resource</strong> imposes a minimum time per iteration: the number of instructions that
+      must use it / its throughput (instructions per cycle). The highlighted rows give the <strong>throughput bound</strong> (the maximum).</p>
+        <details><summary>Which instructions are counted</summary>
+      <p><em>Dispatch</em> and <em>retire</em> process every instruction. For a set of execution <em>ports</em>, only instructions
+      that can execute <em>exclusively</em> on those ports are counted; instructions shown in grey can also use other ports, so they
+      are not counted. Sets of ports are listed when they share instructions (e.g. P0+P2 and P2+P3 give P0+P2+P3).
+      If there are too many resources, only the highest bounds are shown.</p>
+        </details>
+        <details><summary>Tooltips and Cycles/Alg Oper</summary>
+      <p>Hover a number to see the instruction, and a value to see how it is computed. For unrolled or vectorized loops
+      (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S gives the cost of one iteration of the original loop.</p>
+        </details>
+      "
     title="Throughput bounds"
     @close="closeHelp2"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp4" :position="helpPosition"
-    text="A <strong>cyclic chain</strong> of dependences regenerates a variable from its own previous value
-         (e.g. an accumulator or a loop counter), so its instructions cannot overlap across iterations.
-         <p>Its minimum time per iteration is the sum of the latencies of the chain divided by the number of
-         loop iterations it spans. The highlighted row gives the <strong>latency bound</strong> (the maximum).
-         Hover a number to see the instruction and its latency, and a value to see how it is computed.</p>
-         <p>For unrolled or vectorized loops (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S.</p>"
+    text="<p>A <strong>cyclic chain</strong> of dependences regenerates a variable from its own previous value (e.g. an
+      accumulator or a loop counter), so its instructions cannot overlap across iterations. The highlighted row gives the
+      <strong>latency bound</strong> (the maximum).</p>
+        <details><summary>How the bound of a chain is computed</summary>
+      <p>Its minimum time per iteration is the sum of the latencies of the chain divided by the number of loop iterations it spans.
+      Hover a number to see the instruction and its latency, and a value to see how it is computed.
+      For unrolled or vectorized loops (loop stride S &gt; 1), <em>Cycles/Alg Oper</em> = cycles/iter ÷ S.</p>
+        </details>
+      "
     title="Latency bounds"
     @close="closeHelp4"/>
   </Teleport>
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp3" :position="helpPosition"
-    text="The <strong>data dependence graph</strong> shows one box per loop iteration; <strong>cyclic</strong>
-      dependences (in red) determine the latency bound.
-      <p>Click a row of the <em>Latency bounds</em> table to highlight that chain (click it again, or the × in the
-      title bar, to show the whole graph). Hovering an instruction number in the tables highlights its nodes.</p>
-      <p>The buttons show or hide the non-cyclic instructions, the latencies, the instruction text, and the
-      dependences on constants and read-only inputs. Mouse wheel: zoom; drag: move the graph; double click
-      (or the <em>Zoom … ✕</em> button): back to 100%, where the graph fills the window. Drag the title bar to move the window and its corner to resize it.</p>"
+    text="<p>The <strong>data dependence graph</strong> shows one box per loop iteration; <strong>cyclic</strong>
+      dependences (in red) determine the latency bound.</p>
+        <details><summary>Highlighting chains and instructions</summary>
+      <p>Click a row of the <em>Latency bounds</em> table to highlight that chain (click it again, or the × in the title bar,
+      to show the whole graph). Hovering an instruction number in the tables highlights its nodes.</p>
+        </details>
+        <details><summary>Buttons, zoom and window</summary>
+      <p>The buttons show or hide the non-cyclic instructions, the latencies, the instruction text, and the dependences on
+      constants and read-only inputs. Mouse wheel: zoom; drag: move the graph; double click (or the <em>Zoom … ✕</em> button):
+      back to 100%, where the graph fills the window. Drag the title bar to move the window and its corner to resize it.</p>
+        </details>
+      "
     title="Dependence graph"
     @close="closeHelp3"/>
     </Teleport>
