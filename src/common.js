@@ -1131,7 +1131,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
     // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Retire width: up to ${retire} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Retire width: up to ${retire} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/cycle</FONT></TD>
     </TR>`
 
     const dot = `

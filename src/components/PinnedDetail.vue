@@ -12,10 +12,28 @@
   const detail = ref(null)   // { text, style }
   const boxRef = ref(null)
 
-  async function show(el) {
+  // Graphviz diagrams inside [data-pin-twice] (Processor panel): the first click on a cell
+  // runs its own action (select a parameter for editing); a second click on the same cell pins
+  // its tooltip, which stays while that cell is clicked again. The attribute value lists the
+  // ids of action cells that never pin (a second click repeats their action).
+  const XLINK = 'http://www.w3.org/1999/xlink'
+  let lastSvgCell = null
+  function svgCell(target) {
+    const zone = target.closest('[data-pin-twice]')
+    const link = target.closest('a')
+    const text = link && (link.getAttribute('xlink:title') || link.getAttributeNS(XLINK, 'title'))
+    const key  = link?.closest('g[id]')?.id ?? text    // the diagram may be redrawn between clicks
+    const never = (zone.getAttribute('data-pin-twice') || '').split(/\s+/)
+    if (!text?.trim() || never.includes(key)) { lastSvgCell = null; return null }
+    const again = key === lastSvgCell
+    lastSvgCell = key
+    return again ? { el: link, text } : null
+  }
+
+  async function show(el, text = el.getAttribute('title')) {
     const rect = el.getBoundingClientRect()
     // data-pin-code: the explanation is source code (monospace, spaces kept)
-    detail.value = { text: el.getAttribute('title'), code: el.hasAttribute('data-pin-code'),
+    detail.value = { text, code: el.hasAttribute('data-pin-code'),
                      style: { left: '0px', top: '0px', visibility: 'hidden' } }
     await nextTick()
     const box = boxRef.value.getBoundingClientRect()
@@ -28,6 +46,13 @@
   function onClick(event) {
     const target = event.target
     if (!(target instanceof Element) || target.closest('.pinned-detail')) return
+    if (target.closest('[data-pin-twice]')) {
+      const cell = svgCell(target)
+      if (cell) show(cell.el, cell.text)
+      else detail.value = null
+      return
+    }
+    lastSvgCell = null
     const el = target.closest('[title]')
     if (!el || target.closest(IGNORE) || !el.getAttribute('title')?.trim()) {
       detail.value = null

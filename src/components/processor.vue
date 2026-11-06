@@ -819,7 +819,7 @@
 
   <div class="graph-section">
     <div class="processor-container">
-      <div class="simProcessor-img" v-html="simulatedSvg" v-if="simulatedSvg"></div>
+      <div class="simProcessor-img" data-pin-twice="a_toggleops a_addport" v-html="simulatedSvg" v-if="simulatedSvg"></div>
     </div>
   </div>
 
@@ -844,7 +844,8 @@
 
         <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports
          (only one is used for executing each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
-         Hover the operation types to see their latencies, and the other rows to see what each parameter means.</p>
+         Hover the operation types to see their latencies, and the other rows to see what each parameter means.
+         A first click on a cell selects it for editing; a <strong>second click</strong> on the same cell pins its explanation in a box.</p>
         <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
          Click on the corresponding button to <strong>edit</strong> the current processor config or
          to <strong>remove</strong> the current config file from local storage.</p>
