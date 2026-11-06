@@ -190,7 +190,7 @@ describe('program validation', () => {
     expect(errors).toContain('Instruction 1: lanes must be a positive safe integer.')
     expect(errors).toContain('Instruction 1: memory constant must be a safe integer offset.')
     expect(errors).toContain('Instruction 2: BRANCH stride must be between 1 and 5000.')
-    expect(errors).toContain('Program must contain exactly one BRANCH instruction.')
+    expect(errors).toContain('Instruction 2: a conditional branch skips k ≥ 1 instructions of the loop body (constant), at most 0.')
   })
 
   it('requires the single branch to be the final instruction', () => {

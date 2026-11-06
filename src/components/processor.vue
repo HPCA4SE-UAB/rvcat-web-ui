@@ -476,14 +476,6 @@
                 activeField.value = action
                 break
 
-              case 'sched':
-                if (simState.simulatedProcess.sched === 'greedy') {
-                  simState.simulatedProcess.sched = 'optimal'
-                } else {
-                  simState.simulatedProcess.sched = 'greedy'
-                }
-                break
-
               case 'port':
                 console.log('Port clicked:', g.id.slice(2))
                 break

@@ -1,10 +1,11 @@
 <script setup>
-  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch }           from "vue"
+  import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch, computed } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
            updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
            normalizeProgramDefaults }                                     from '@/common'
   import { checkDeclarations }                                      from '@/instructionText'
+  import { conditionalDepth, isConditionalBranch }                from '@/branches'
   import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
@@ -165,6 +166,9 @@
       console.error('📄❌ Failed to set program:', error)
     }
   }
+
+  // instructions inside conditional blocks ("if c skip k"): indented
+  const blockDepth = computed(() => conditionalDepth(simState.simulatedProcess?.instruction_list ?? []))
 
   const emit = defineEmits(['requestSwitchFull'])
 
@@ -575,7 +579,12 @@
               <td v-else title="Instruction Number">
                 {{ index }}
               </td>
-              <td title="Instruction description">
+              <td :title="isConditionalBranch(simState.simulatedProcess.instruction_list, index)
+                          ? `Conditional branch: skips the next ${inst.constant || 1} instruction(s) with probability ${inst.prob ?? 0.5}` +
+                            `; misprediction rate ${inst.mispredict ?? 'from a 2-bit predictor'}`
+                          : blockDepth[index] ? 'Conditional instruction: skipped when the branch above is taken' : 'Instruction description'"
+                  :class="{ 'conditional-instr': blockDepth[index] > 0 }"
+                  :style="blockDepth[index] ? { paddingLeft: `${1.4 * blockDepth[index]}em` } : null">
                 {{ inst.text }}
               </td>
               <td v-if="programOptions.show === 0" title="Instruction type">
@@ -642,6 +651,7 @@
 
 <style scoped>
   .program-source-header { cursor: help; }
+  .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
   .program-source-header .source-mark {
     margin-left: 0.4em;
     padding:     0 4px;

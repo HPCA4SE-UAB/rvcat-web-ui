@@ -1,3 +1,5 @@
+import { skipCount, fraction } from './branches.js'
+
 // Coherence rules of an edited program: loop stride, vector lanes, memory strides and offsets.
 // Documented in docs/program-editor-rules.md (rule codes E1..E4, W1..W7).
 //
@@ -87,6 +89,22 @@ export function checkProgram(instructionList, { vlen = null } = {}) {
       err('E4', index, `Offset ${c} with stride ${s} ≥ 0 accesses elements before the start of array ` +
                        `"${instr.source2}". RVCAT arrays start at element 0.`)
   })
+  // E5: conditional branches "if c skip k" (a BRANCH that is not the last instruction)
+  list.forEach((instr, index) => {
+    if (instr?.type !== 'BRANCH' || index === list.length - 1) return
+    const k = skipCount(instr)
+    if (!Number.isInteger(k) || k < 1 || index + k > list.length - 2)
+      err('E5', index, `A conditional branch skips k ≥ 1 of the next instructions (Constant), without skipping the loop branch: ` +
+                       `at most ${list.length - 2 - index} here.`)
+    if (!instr.source1)
+      err('E5', index, 'A conditional branch reads its condition in Source1.')
+    for (const [field, what] of [['prob', 'probability of being taken'], ['mispredict', 'misprediction rate']]) {
+      const v = instr[field]
+      if (v !== undefined && v !== null && String(v).trim() !== '' && fraction(v) === null)
+        err('E5', index, `The ${what} of a conditional branch is a number between 0 and 1.`)
+    }
+  })
+
   if (errors.some(e => e.code === 'E1')) return { errors, warnings }
 
   // W1: lanes and loop stride · W2, W9: lanes × element size and the vector register width

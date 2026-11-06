@@ -28,6 +28,7 @@ export function buildTraceView(trace) {
       index: a.index, array: a.array, oper: a.oper, lanes, stride,
       constant: a.constant === '' || a.constant === undefined ? 0 : Number(a.constant),
       size: a.size, length: trace.iterations * lanes * Math.abs(stride),
+      execProb: Number.isFinite(a.exec_prob) ? a.exec_prob : 1,   // < 1: inside a conditional block
     }
   })
   const shown = trace?.shown ?? []

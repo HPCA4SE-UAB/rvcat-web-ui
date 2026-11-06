@@ -102,7 +102,9 @@
         process.ROBsize,
         process.dispatch,
         process.retire,
-        process.sched,
+        simState.simulationSettings.sched,
+        simState.simulationSettings.speculation,
+        process.bPenalty,
         process.blkSize,
         process.nBlocks,
         process.nFillBuffers,
@@ -163,10 +165,12 @@
       }
       timelinePending = true
       console.log('📈🔄 Request timeline from RVCAT')
-      const { name, ROBsize, dispatch, retire, sched,
+      const { name, ROBsize, dispatch, retire,
               blkSize, nBlocks, mPenalty, mIssueTime,
               nFillBuffers, nWriteBuffers, rThru } = process
-      getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched,
+      const { sched, speculation } = simState.simulationSettings
+      getTimeline(JSON.stringify( { name, Nloop, ROBsize, dispatch, retire, sched, speculation,
+                                    bPenalty: process.bPenalty ?? 5,
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     nFillBuffers: nFillBuffers ?? 2,
                                     nWriteBuffers: nWriteBuffers ?? 2,
@@ -292,12 +296,13 @@
     const recordedPortOwners = timeline.resource_usage?.port_owners
     timeline.portUsageInstrByPort = recordedPortOwners
 
-    for (const [rowIdx, [, , startCycle, port, states]] of timeline.instructions.entries()) {
+    for (const [rowIdx, [, , startCycle, port, states, , , flags]] of timeline.instructions.entries()) {
       const eIndex = states.indexOf("E");
       const lIndex = states.indexOf("L");
       const sIndex = states.indexOf("S");
 
       const Index = eIndex >= 0 ? eIndex : (lIndex >= 0 ? lIndex : sIndex);
+      if (Index < 0 && flags?.wrong) continue      // wrong-path instruction squashed before executing
       if (Index < 0) alert("Timeline problem: all instructions must traverse an E/L/S state");
       const cycle = startCycle + Index;
 
@@ -884,12 +889,13 @@
     // ************************************************************************************
     //   for each inst. & for each cycle, write cell into canvas and push interactive cells
     // ************************************************************************************
-    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, pythonCriticalCycles, addr]] of instructions.entries())
+    for (const [rowIdx, [iter, instrIdx, startCycle, port, states, pythonCriticalCycles, addr, flags]] of instructions.entries())
     {
       if (rowIdx >= totalInstr) return
 
-      // Compute background color based on iteration number
-      const rowBg = iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
+      // Compute background color based on iteration number (wrong-path instructions in grey)
+      const wrongPath = !!flags?.wrong
+      const rowBg = wrongPath ? "#e4e4e4" : iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
       const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
       const memoryOperation = states.includes('L')
         ? 'Load from'
@@ -903,12 +909,12 @@
       let lengthCol = states.length
 
       // First cell is instruction number
-      ctx.fillStyle   = rowBg;
+      ctx.fillStyle   = flags?.mispredicted ? "#ffb870" : rowBg;   // mispredicted branch: orange label
       ctx.strokeStyle = "#bbb";
       ctx.lineWidth   = 1;
       ctx.fillRect    (x, y, labelW, cellH);
       ctx.strokeRect  (x, y, labelW, cellH);
-      ctx.fillStyle = "#000"
+      ctx.fillStyle = wrongPath ? "#777" : "#000"
       ctx.fillText    (String(instrIdx % 10), x + fontXOffset, y + fontYOffset)
 
       interactiveCells.push({
@@ -925,6 +931,8 @@
         latency: simState.simulatedProcess.instruction_list[instrIdx]?.latency,
         instructionText: simState.simulatedProcess.instruction_list[instrIdx]?.text,
         memoryOperation,
+        wrongPath,
+        mispredicted: !!flags?.mispredicted,
         critical: criticalCycles.length > 0,
         criticalCycles: criticalCycles.length
       })
@@ -933,7 +941,7 @@
 
       for (let i = 0; i < totalCycles; ) {
         let ch        = ' '
-        let currColor = "#000"
+        let currColor = wrongPath ? "#777" : "#000"
 
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
@@ -1241,7 +1249,8 @@
 
   function formatInstructionTooltip(cell) {
     const details = [
-      `Iter ${cell.iter}, instr ${cell.instrIdx}`,
+      `Iter ${cell.iter}, instr ${cell.instrIdx}` +
+        (cell.wrongPath ? ' — wrong path (squashed)' : cell.mispredicted ? ' — mispredicted branch' : ''),
       cell.instructionText || 'Instruction description unavailable'
     ]
 

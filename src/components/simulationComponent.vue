@@ -154,6 +154,10 @@
   let pendingContext = null   // context of the simulation sent to RVCAT, attached to its results
   const isArray  = (arr) => Array.isArray(arr);
 
+  // Options of the simulation, stored with the simulated copy so that changing them invalidates results
+  const settings = simState.simulationSettings
+  const withSettings = (process) => ({ ...process, sched: settings.sched, speculation: settings.speculation })
+
   const areInstructionsEqual = (instr1, instr2) => {
     if (instr1.type    !== instr2.type)    return false;
     if (instr1.latency !== instr2.latency)  return false;
@@ -166,6 +170,8 @@
     if (instr1.constant !== instr2.constant) return false;
     if (instr1.stride  !== instr2.stride)   return false;
     if (instr1.lanes   !== instr2.lanes)    return false;
+    if ((instr1.prob ?? '') !== (instr2.prob ?? ''))             return false;
+    if ((instr1.mispredict ?? '') !== (instr2.mispredict ?? '')) return false;
     return true; // ✅ all are equal
   }
 
@@ -177,6 +183,8 @@
     if (proc1.dispatch !== proc2.dispatch) return false;
     if (proc1.retire !== proc2.retire)     return false;
     if (proc1.sched !== proc2.sched)       return false;
+    if (proc1.speculation !== proc2.speculation) return false;
+    if ((proc1.bPenalty ?? 5) !== (proc2.bPenalty ?? 5)) return false;
     if (proc1.ROBsize !== proc2.ROBsize)   return false;
     if (proc1.nBlocks !== proc2.nBlocks)   return false;
     if (proc1.nBlocks > 0) {
@@ -235,7 +243,7 @@
 
   const updateResults= () => {
     if (simState.state >= 3 && simState.simulatedProcess) {
-      const equalProcs = areProcessorsEqual(simState.simulatedProcess, simProcess)
+      const equalProcs = areProcessorsEqual(withSettings(simState.simulatedProcess), simProcess)
       if (equalProcs) {
         if (simState.executionResults == null) simState.executionResults = simResults
         console.log('🕐✅ Same simulated proces: execution results are valid');
@@ -361,6 +369,13 @@
 
   watch( () => simState.simulatedProcess, () => { updateResults() },
     { deep: true, immediate: false }
+  )
+
+  // Options of the simulation: saved in the browser; changing them invalidates the results
+  watch( () => ({ ...simState.simulationSettings }), (value) => {
+      try { localStorage.setItem('simulationSettings', JSON.stringify(value)) } catch { /* not saved */ }
+      updateResults()
+    }
   )
 
   // Handler for 'get_execution_results' message (fired by RVCAT getPerformanceAnalysis function)
@@ -533,7 +548,9 @@
       Nloop,
       dispatch: process.dispatch,
       retire:   process.retire,
-      sched:    process.sched,
+      sched:    settings.sched,
+      speculation: settings.speculation,
+      bPenalty: process.bPenalty ?? 5,
       ROBsize:  process.ROBsize,
       nBlocks:  process.nBlocks,
       blkSize:  process.blkSize,
@@ -552,10 +569,12 @@
         document.getElementById('run-simulation-button').disabled       = true;
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
-        const { iters, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+        const { iters, ROBsize, dispatch, retire, blkSize, nBlocks, mPenalty, mIssueTime,
                 nFillBuffers, nWriteBuffers, rThru } = process
-        pendingContext = buildResultContext(toRaw(process), simState.processorName)
-        getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, blkSize, nBlocks, mPenalty, mIssueTime,
+        const { sched, speculation } = settings
+        pendingContext = buildResultContext(toRaw(process), simState.processorName, settings)
+        getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, speculation,
+                                              bPenalty: process.bPenalty ?? 5, blkSize, nBlocks, mPenalty, mIssueTime,
                                               nFillBuffers: nFillBuffers ?? 2,
                                               nWriteBuffers: nWriteBuffers ?? 2,
                                               rThru: rThru ?? 1,
@@ -832,6 +851,20 @@
           title="Run Simulation" id="run-simulation-button" >
           Run Simulation
         </button>
+        <label class="sim-setting" title="Instruction scheduler (an option of the simulation): optimal issues in each cycle the largest set of ready instructions, the oldest first; greedy issues each ready instruction, in program order, to its first free port">
+          Scheduler:
+          <select v-model="settings.sched" id="simulation-sched">
+            <option value="optimal">optimal</option>
+            <option value="greedy">greedy</option>
+          </select>
+        </label>
+        <label class="sim-setting" title="What the processor does after a mispredicted conditional branch (programs with 'if c skip k'): stall = dispatch stops until the branch resolves, plus the branch penalty of the processor; wrong path = it keeps dispatching and executing the wrong path until the branch resolves (or the ROB is full), then squashes it: its cache accesses act as prefetches or pollute the cache">
+          Mispredictions:
+          <select v-model="settings.speculation" id="simulation-speculation">
+            <option value="stall">stall</option>
+            <option value="wrong-path">wrong path</option>
+          </select>
+        </label>
         <span>AutoRun:</span>
         <input type="checkbox"
               title="Set to run the simulation every time the processor/program/#iterations is modified"
@@ -887,6 +920,21 @@
         <div class="simulation-inline-item">
           <label for="SecondaryMiss">Secondary Misses:</label>
           <span id="SecondaryMiss-output" title="LD+ST = Total. Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.">{{ formattedResults.secondary }}</span>
+        </div>
+        <div v-if="simState.executionResults?.branch" class="simulation-inline-item">
+          <label>Mispredictions/iter:</label>
+          <span id="mispredictions-output"
+                :title="`${simState.executionResults.branch.mispredictions.toLocaleString()} mispredicted of ${simState.executionResults.branch.branches.toLocaleString()} conditional branches. Branch penalty ${simState.executionResults.branch.penalty} cycles; after a misprediction: ${simState.executionResults.branch.speculation}`">
+            {{ simState.executionResults.branch.mispredictions_per_iteration.toFixed(3) }}
+          </span>
+        </div>
+        <div v-if="simState.executionResults?.branch?.speculation === 'wrong-path'" class="simulation-inline-item">
+          <label>Wrong path:</label>
+          <span id="wrong-path-output"
+                :title="`Wrong-path instructions: ${simState.executionResults.branch.wrong_path_dispatched.toLocaleString()} dispatched, ${simState.executionResults.branch.wrong_path_executed.toLocaleString()} started executing. Loads: ${simState.executionResults.branch.wrong_path_reads.toLocaleString()} (${simState.executionResults.branch.wrong_path_read_misses.toLocaleString()} misses); stores (RFO): ${simState.executionResults.branch.wrong_path_writes.toLocaleString()} (${simState.executionResults.branch.wrong_path_write_misses.toLocaleString()} misses)`">
+            {{ simState.executionResults.branch.wrong_path_dispatched.toLocaleString() }} instr ·
+            {{ (simState.executionResults.branch.wrong_path_read_misses + simState.executionResults.branch.wrong_path_write_misses).toLocaleString() }} misses
+          </span>
         </div>
         <div class="simulation-inline-item">
           <label for="MM">MM Transfers:</label>
@@ -1057,6 +1105,9 @@
     text="<strong>Simulate</strong> the execution of N/loop-stride loop iterations and view aggregate performance metrics,
       including the total number of executed <em>instructions</em>, total clock <em>cycles</em>, cycles <em>per loop iteration</em>,
       <em>Instructions Per Cycle</em> (IPC), <em>cache misses</em>, and <em>MM transfers</em>.
+      The <b>Scheduler</b> (optimal or greedy) and what happens after a mispredicted conditional branch
+      (<b>Mispredictions</b>: dispatch <em>stalls</em>, or the <em>wrong path</em> is executed and then squashed) are options of the
+      simulation, saved with the stored results.
       N counts <em>algorithmic operations</em> (iterations of the original loop); with loop stride S &gt; 1
       (unrolled or vectorized loop) each iteration does S of them, and <em>Cycles/Alg Oper</em> = cycles/iter ÷ S
       can be compared with the baseline loop, also in the table of stored results.
@@ -1099,6 +1150,14 @@
   .iters-run span {
     white-space: nowrap;
   }
+  .sim-setting {
+    display:     inline-flex;
+    align-items: center;
+    gap:         0.3em;
+    white-space: nowrap;
+    font-size:   small;
+  }
+  .sim-setting select { font-size: small; }
 
   .execution-validation-error {
     margin: 8px 0;

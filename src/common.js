@@ -44,8 +44,8 @@ export const typeOperations = {
     'VINT':   ['ARITH', 'LOGIC', 'SHIFT', 'CVT', 'SHUFFLE', 'PERMUTE'],
     'MEM':    ['STORE', 'LOAD'],
     'VMEM':   ['STORE', 'LOAD'],
-    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT'],
-    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT', 'SHUFFLE', 'PERMUTE'],
+    'FLOAT':  ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT', 'CMP'],
+    'VFLOAT': ['ADD', 'MUL', 'FMA', 'DIV', 'SQRT', 'CVT', 'SHUFFLE', 'PERMUTE', 'CMP'],
     'BRANCH': []
   };
 
@@ -63,6 +63,8 @@ const FALLBACK = {
   CVT:     { latency: DEFAULT_CVT_LATENCY, op: { INT: 'FLOAT.ADD', FLOAT: 'FLOAT.ADD', VINT: 'VFLOAT.ADD', VFLOAT: 'VFLOAT.ADD' } },
   SHUFFLE: { latency: DEFAULT_SHUFFLE_LATENCY, op: { VINT: 'VINT.LOGIC', VFLOAT: 'VINT.LOGIC' } },
   PERMUTE: { latency: DEFAULT_PERMUTE_LATENCY, op: { VINT: 'VINT.LOGIC', VFLOAT: 'VINT.LOGIC' } },
+  // comparison of FLOAT data (result: an INT condition): ports and latency of the FP addition
+  CMP:     { latency: null, op: { FLOAT: 'FLOAT.ADD', VFLOAT: 'VFLOAT.ADD' } },
 }
 
 // Latencies of each size were saved by older versions of the processor editor as "TYPE-OPER-size";
@@ -90,7 +92,7 @@ export function instructionTiming(instr, latencies = {}, opToMask = {}) {
     validLatency(latencies[`${keyOp}.${instr.size}`]) ??
     validLatency(latencies[`${instr.type}-${instr.oper}-${instr.size}`]) ??
     validLatency(latencies[keyOp]) ??
-    (fallbackOp ? fallback.latency : undefined) ??
+    (fallbackOp ? (fallback.latency ?? validLatency(latencies[fallbackOp]) ?? 1) : undefined) ??
     validLatency(latencies[instr.type]) ??
     1
   const ports = opToMask[keyOp] ?? (fallbackOp ? opToMask[fallbackOp] : undefined) ?? opToMask[instr.type] ?? 0
@@ -216,6 +218,17 @@ export function validateProgram(program, options = {}) {
     const operations = typeOperations[instruction.type]
     if (instruction.type === 'BRANCH') {
       branches.push(index)
+      if (index < program.instruction_list.length - 1) {    // conditional branch "if c skip k"
+        const n = program.instruction_list.length
+        const k = Number(String(instruction.constant ?? '').trim() || 1)
+        if (!Number.isInteger(k) || k < 1 || index + k > n - 2)
+          addInstructionError(`a conditional branch skips k ≥ 1 instructions of the loop body (constant), at most ${n - 2 - index}.`)
+        for (const field of ['prob', 'mispredict']) {
+          const v = instruction[field]
+          if (v !== undefined && v !== null && v !== '' && !(Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 1))
+            addInstructionError(`${field} of a conditional branch must be a number between 0 and 1.`)
+        }
+      }
       if (instruction.oper !== undefined && instruction.oper !== '') {
         addInstructionError('BRANCH oper must be empty.')
       }
@@ -262,9 +275,11 @@ export function validateProgram(program, options = {}) {
     }
   })
 
-  if (branches.length !== 1) {
-    addError('Program must contain exactly one BRANCH instruction.')
-  } else if (branches[0] !== program.instruction_list.length - 1) {
+  // the loop branch is the final instruction; other BRANCH instructions are conditional ("if c skip k")
+  const finalIsBranch = program.instruction_list.at(-1)?.type === 'BRANCH'
+  if (!branches.length) {
+    addError('Program must contain a BRANCH instruction.')
+  } else if (!finalIsBranch) {
     addError('The BRANCH instruction must be the final instruction.')
   }
 
@@ -278,8 +293,8 @@ export function validateProgram(program, options = {}) {
       addError(
         `Logical element count must be between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`
       )
-    } else if (branches.length === 1) {
-      const branch = program.instruction_list[branches[0]]
+    } else if (finalIsBranch) {
+      const branch = program.instruction_list.at(-1)
       const loopStride = branch.stride === undefined ? 1 : branch.stride
       if (Number.isSafeInteger(loopStride) && loopStride > 0) {
         const effectiveElementCount = Math.max(
@@ -398,6 +413,7 @@ export function charToProcessingState(ch, port, addr, memoryOperation = null) {
     case "2": return "Wait: matching fill";
     case "@": return "Wait for cache return: block data ready";
     case "U": return "Dirty writeback";
+    case "x": return "Squashed: wrong path of a mispredicted branch";
     default:  return null;
   }
 }
@@ -920,7 +936,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     const lat      = process.latencies
     const port_ids = Object.keys(ports)
     const ROBsize  = process.ROBsize || 20
-    const sched    = process.sched
+    const bPenalty = process.bPenalty ?? 5
     const dispatch = process.dispatch || 1
     const retire   = process.retire || 1
     const CachePenalty   = process.mPenalty || 1
@@ -1020,21 +1036,13 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
 
     // ---- Dispatch + ROB ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${edit}Dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${edit}Dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Branch penalty: ${bPenalty} cycles</FONT></TD>
       <TD ROWSPAN="${total_rows+5}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="${edit}ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
-    // ---- Waiting Buffer ----
-    let schedLabel = "❌optimal ✅greedy"
-    let toggle = "Toggle scheduler"
-    if (sched !== "greedy"){
-      schedLabel = "✅optimal ❌greedy"
-    }
-    if (!allowEdit)
-      toggle = "Scheduler policy"
-
+    // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
     let wb_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="sched" TITLE="${toggle}"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Scheduler:&nbsp;</FONT><FONT POINT-SIZE="18"><B>${schedLabel}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="Instructions wait here for their operands and a free port. The scheduler policy is an option of the simulation (Simulation panel)"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT></TD>
     </TR>`
 
     // ---- Port headers ----

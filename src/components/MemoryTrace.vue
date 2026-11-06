@@ -147,6 +147,10 @@
                     @mouseenter="emit('highlight', col.index)" @mouseleave="emit('highlight', -1)">
                   #{{ col.index }} {{ col.oper }} {{ col.array }}<span v-if="rowIssues[col.index]" class="trace-issue">{{ rowIssues[col.index].kind === 'error' ? '✖' : '⚠' }}</span>
                   <div class="trace-col-info">L={{ col.lanes }} s={{ col.stride }} c={{ col.constant }} · {{ col.size }} B</div>
+                  <div v-if="col.execProb < 1" class="trace-col-info"
+                       title="Conditional access: executed only in the iterations in which the branch does not skip it">
+                    conditional (p={{ col.execProb.toFixed(2) }})
+                  </div>
                 </th>
               </tr>
             </thead>

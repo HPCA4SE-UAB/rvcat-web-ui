@@ -17,6 +17,7 @@
            VECTOR_WIDTHS, vectorWidth }                       from '@/programChecks'
   import { analyzeLoop, vectorizeLoop, transformLoop }       from '@/loopTransforms'
   import { PROGRAM_EDITOR_HELP }                             from '@/programEditorHelp'
+  import { conditionalDepth, fraction }                     from '@/branches'
 
   const { getProgGraph }    = useRVCAT_Api();
   const { registerHandler } = inject('worker');
@@ -185,7 +186,8 @@ function loadEditedProgram() {
         text:    inst.text    || '', type:    inst.type    || '',  oper:     inst.oper     || '',
         size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
         source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
-        stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1
+        stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1,
+        prob:    inst.prob ?? (inst.type === 'BRANCH' ? 0.5 : ''), mispredict: inst.mispredict ?? ''
       };
     }).map((inst, index, all) => index === all.length - 1 ? inst : enforceStructure(inst));
     console.log('📄Edited Program Reloaded from local storage')
@@ -312,7 +314,11 @@ function normalizeInstruction(inst) {
     source3:  (inst.source3  || '').trim(),
     constant: (inst.constant || '').trim(),
     stride:   inst.stride ?? 1,
-    lanes:    inst.lanes  ?? 1
+    lanes:    inst.lanes  ?? 1,
+    // conditional branch ("if c skip k"): probability of being taken, misprediction rate (empty: predictor)
+    ...(inst.type === 'BRANCH' ? { prob: fraction(inst.prob) ?? 0.5,
+                                   ...(fraction(inst.mispredict) !== null ? { mispredict: fraction(inst.mispredict) } : {}) }
+                               : {})
   };
 }
 
@@ -418,6 +424,10 @@ const loopStrideModel = computed({
 // Changing the type keeps the structure coherent: stride only for memory, lanes only for vectors
 function onTypeChange(inst) {
   keepField(inst, 'type')
+  if (inst.type === 'BRANCH') {           // conditional branch "if c skip k"
+    if (!String(inst.constant ?? '').trim()) inst.constant = '1'
+    if (fraction(inst.prob) === null) inst.prob = 0.5
+  }
   inst.oper = ''
   inst.size = ''
   enforceStructure(inst)
@@ -475,6 +485,9 @@ function undoTransform() {
   editedVlen.value = undoVlen
   undoProgram.value = null
 }
+
+// Instructions inside conditional blocks (indented)
+const blockDepth = computed(() => conditionalDepth(editedProgram.value))
 
 // Instruction highlighted from the memory trace (-1: none)
 const tracedRows = ref([])
@@ -715,6 +728,8 @@ function snapshotProgram() {
 
                 <td>
                   <input type="text" v-model="inst.text" class="table-input" @change="applyText(index)"
+                         :class="{ conditional: blockDepth[index] > 0 }"
+                         :style="blockDepth[index] ? { paddingLeft: `${0.4 + 1.6 * blockDepth[index]}em` } : null"
                          title="Text of the instruction, e.g. sum = sum + tmp, tmp = V[i+1], V[N-1-i] = x, x[0:3] = y[0:3] * z[0:3]. When it changes, the fields deduced from it are filled in (help: Instruction text)" />
                 </td>
 
@@ -781,12 +796,18 @@ function snapshotProgram() {
                 <td v-if="programEditOptions.showStrideLanes">
                   <input v-if="isMemoryType(inst)" type="number" step="1" v-model.number="inst.stride" @change="keepField(inst, 'stride')" class="table-input"
                          title="Memory stride s: the access advances lanes × s elements per iteration (negative: backwards from the end of the array; 0: the same elements in every iteration). Usually lanes × s = S." />
+                  <input v-else-if="inst.type === 'BRANCH'" type="number" step="0.05" min="0" max="1" v-model.number="inst.prob"
+                         class="table-input branch-field" :id="`branch-prob-${index}`"
+                         title="p: probability that this conditional branch is taken, i.e. that it skips the next k instructions (0 to 1)" />
                   <span v-else class="table-input readonly" title="Only memory instructions have a stride">–</span>
                 </td>
 
                 <td v-if="programEditOptions.showStrideLanes">
                   <input v-if="isVectorType(inst)" type="number" min="2" step="1" v-model.number="inst.lanes" class="table-input"
                          title="Vector lanes L: elements processed by this vector instruction" />
+                  <input v-else-if="inst.type === 'BRANCH'" type="number" step="0.01" min="0" max="1" v-model="inst.mispredict"
+                         class="table-input branch-field" placeholder="2-bit" :id="`branch-mispredict-${index}`"
+                         title="m: misprediction rate of this conditional branch (0 to 1, e.g. measured with perf). Empty: the simulator predicts it with a 2-bit counter" />
                   <span v-else class="table-input readonly" title="Scalar instruction: 1 lane">1</span>
                 </td>
 
@@ -1091,6 +1112,11 @@ function snapshotProgram() {
     width:       3.5em;
     text-align:  center;
   }
+  .table-input.conditional {
+    border-left: 3px dashed #9aa7b8;
+    text-align:  left;
+  }
+  .branch-field::placeholder { color: #9aa; }
   .row-issue {
     margin-left: 2px;
     font-size:   0.8em;

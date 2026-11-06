@@ -73,7 +73,7 @@
   function createDefaultConfig() {
     return {
       name:       'default',
-      sched:      'optimal',
+      bPenalty:   5,
       dispatch:   1,
       retire:     1,
       ROBsize:    20,
@@ -144,6 +144,7 @@
       Object.assign(procConfig, JSON.parse(JSON.stringify(procInfo)))   // deep copy & fire draw-update
       normalizeLatencyKeys(procConfig.latencies)                         // old "TYPE-OPER-size" keys
       procConfig.rThru = procInfo.rThru ?? 1
+      procConfig.bPenalty = Number.isInteger(procInfo.bPenalty) ? procInfo.bPenalty : 5
       if (!Number.isInteger(procConfig.mIssueTime) ||
           procConfig.mIssueTime < 1 || procConfig.mIssueTime > 99) {
         procConfig.mIssueTime = 1
@@ -432,13 +433,6 @@
     );
   }
 
-  function toggleScheduler() {
-    if (procConfig.sched === 'greedy') {
-      procConfig.sched = 'optimal'
-    } else {
-      procConfig.sched = 'greedy'
-    }
-  }
 
   function addPort() {
     const existing = portList.value;
@@ -569,12 +563,10 @@
                    id="rob-size"
                    title="max. number of instructions in ROB (1 to 200)"
              />
-            <span>Schedule Opt.:</span>
-            <input type="checkbox"
-                 title="Set checkbox if scheduling algorithm is optimal. Otherwise it is greedy"
-                 id="schedule-check"
-                 :checked="procConfig.sched !== 'greedy'"
-                 @change="toggleScheduler"
+            <span>Branch penalty:</span>
+            <input type="number" v-model.number="procConfig.bPenalty" min="0" max="99"
+                   id="branch-penalty"
+                   title="Cycles to refill the front-end after a mispredicted conditional branch resolves (0 to 99). The scheduler policy is an option of the simulation"
              />
           </div>
         </div>

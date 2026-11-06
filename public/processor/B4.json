@@ -1,9 +1,9 @@
 {
   "name": "B4",
-  "sched": "optimal",
   "dispatch": 4,
   "retire": 5,
   "ROBsize": 64,
+  "bPenalty": 8,
   "nBlocks": 0,
   "blkSize": 8,
   "mPenalty": 12,

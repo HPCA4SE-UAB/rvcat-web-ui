@@ -31,7 +31,8 @@ one element per algorithmic operation.</p>
 <p>When the <b>text</b> of an instruction changes, the fields that can be deduced from it are filled in (and
 overwritten): type, operation, size, destination, sources, constant, stride and lanes. You can then change any field
 by hand; if it no longer agrees with the text, a warning <b>T2</b> says so. The text must use these forms:</p>
-<p>&bull; <b>x = y op z</b> with op <b>+ - * /</b>, <b>&amp; | ^ &lt;&lt; &gt;&gt;</b> or a comparison
+<p>&bull; <b>if c skip k</b>: conditional branch that skips the next k instructions (see Conditional branches).<br>
+&bull; <b>x = y op z</b> with op <b>+ - * /</b>, <b>&amp; | ^ &lt;&lt; &gt;&gt;</b> or a comparison
 (<b>== != &lt; &lt;= &gt; &gt;=</b>); y and z are variables or one number (the constant).<br>
 &bull; <b>x = a*b + c</b> (FMA), <b>x = sqrt(y)</b>, and conversions <b>x = double(y)</b> (also single, byte, word, long).<br>
 &bull; <b>x[0:3] = shuffle(y[0:3], z[0:3])</b>: combines the lanes of one or two vector registers (VINT or VFLOAT
@@ -53,6 +54,21 @@ instruction gives it. Contradictions are warned (<b>T3</b>), as are vector regis
 read-only, data), type, size, lanes and the instructions that use them. Choosing a type or size there sets it for the
 variables with the same data and rewrites their instructions. The declarations are saved with the program and checked
 when it is uploaded.</p>
+</details>
+
+<details><summary><b>Conditional branches</b></summary>
+<p><b>if c skip k</b> is a conditional branch inside the loop body (type BRANCH, not the last instruction): when it is
+taken it skips the next <b>k</b> instructions (Constant field). Its condition c is usually a comparison, e.g.
+<b>t = a &gt;= b</b> (FLOAT.CMP for floats, INT.ARITH for integers). The skipped instructions are shown indented.</p>
+<p>RVCAT does not compute values, so each conditional branch has two fields, in the Stride and Lanes columns:
+<b>p</b> = probability of being taken, and <b>m</b> = misprediction rate (e.g. measured with perf; empty: the simulator
+predicts the branch with a 2-bit counter). The outcomes are generated from p with a fixed seed (reproducible).</p>
+<p>After a misprediction the processor loses <b>Branch penalty</b> cycles (a processor parameter) once the branch
+resolves. The option <b>Mispredictions</b> of the simulation chooses whether dispatch <b>stalls</b> until then, or the
+<b>wrong path</b> is dispatched and executed (until the branch resolves or the ROB is full) and then squashed: its
+cache accesses finish, acting as prefetches or polluting the cache. The dependence graph shows the possible producers of
+a value with their probability, and the latency bound becomes a range. The Unroll / Vectorize assistant does not
+transform loops with conditional branches.</p>
 </details>
 
 <details><summary><b>Conversions and vector registers</b></summary>

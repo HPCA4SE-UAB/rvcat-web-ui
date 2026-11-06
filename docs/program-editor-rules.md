@@ -117,6 +117,36 @@ When a program is uploaded, in the Program panel or in the editor, its declarati
 | T5 | A vector register is used with different numbers of lanes (the halves read or written by conversions are not counted). |
 | T6 | A conversion between integers, or to the type and size it already has. |
 
+## Conditional branches
+
+`if c skip k` is a conditional forward branch inside the loop body: a BRANCH that is not the last instruction (the last one is the loop branch, `if c go back`).
+- **Skip.** When it is taken, it skips the next k instructions (Constant field). It cannot skip the loop branch.
+- **Condition.** It is the variable in Source1, usually the result of a comparison: `t = a >= b` gives FLOAT.CMP when a and b are floats (it uses the ports and latency of FLOAT.ADD when the processor has no FLOAT.CMP), and INT.ARITH for integers.
+- **Indentation.** The instructions that can be skipped are indented in the editor and in the Program panel.
+
+RVCAT does not compute values, so each conditional branch has two fields, shown in the Stride and Lanes columns of the editor:
+
+| Field | Meaning |
+|---|---|
+| `prob` (p) | Probability that the branch is taken (it skips the block). The outcome of each execution is generated from p with a fixed seed, so simulations are reproducible. |
+| `mispredict` (m) | Misprediction rate, e.g. measured with perf. Empty: the simulator predicts the branch with a 2-bit saturating counter. |
+
+**Processor and simulation.**
+- **Branch penalty** (processor parameter `bPenalty`): cycles to refill the front-end after a mispredicted branch resolves. The distributed processors use 4 (B1), 6 (B2), 8 (B4) and 17 (GC).
+- **Mispredictions** (option of the simulation):
+  - *stall*: dispatch stops until the branch resolves, plus the penalty;
+  - *wrong path*: dispatch continues along the wrong path until the branch resolves or the ROB is full. The later branches of the wrong path follow their actual direction, without nested mispredictions. Then the wrong-path instructions are squashed: their cache accesses in flight finish and install their blocks (prefetch or pollution), loads and stores update the LRU order, and stores request their block for ownership (RFO) but never write it.
+- **Scheduler** (option of the simulation, no longer of the processor): optimal or greedy.
+- **Stored results** record the options of the simulation (scheduler, mispredictions) with the processor configuration.
+
+**Simulation.** Programs with conditional branches use renaming at dispatch (each instruction depends on the last dispatched producer of its operands), and memory addresses are computed from the iteration. Programs without conditional branches are simulated exactly as before. The results show the mispredictions per iteration and, with *wrong path*, the wrong-path instructions and their cache misses. In the timeline, wrong-path instructions are grey and end with `x` (squashed), and the mispredicted branch has an orange label.
+
+**Static analysis.**
+- **Throughput.** Each instruction counts with its probability of being executed.
+- **Latency.** The bound is a range: with all the conditional blocks executed, and with none of them.
+- **Mispredictions.** The expected mispredictions per iteration × penalty give an estimate of their cost (a lower bound: the dispatch also waits until the branch resolves).
+- **Dependence graph.** A consumer with several possible producers gets one dashed edge per producer, labeled with its probability. Conditional instructions are dashed and show their probability of being executed, and dotted edges go from the branch to the instructions it can skip (control, speculated: not a data dependence).
+
 ## Conversions and vector registers
 
 **Conversions.** A conversion is written as a call to the type of its result:

@@ -1,0 +1,123 @@
+{
+  "name": "f1",
+  "description": "// jae skips the store when A[x] >= B[x]: 0.299 branch mispredictions per iteration (measured)\nvoid f1( float A[], float B[], float C[], int X, float L)\n{\n  for (int x=0; x<X; x++) {\n    if ( A[x] < B[x] )\n      C[x] = A[x];\n  }\n}",
+  "declarations": [
+    {"name": "a", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "A", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "x", "role": "index", "type": "INT", "size": "word"},
+    {"name": "b", "role": "data", "type": "FLOAT", "size": "single"},
+    {"name": "B", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "t", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "C", "role": "array", "type": "FLOAT", "size": "single"},
+    {"name": "c", "role": "condition", "type": "INT", "size": "word"},
+    {"name": "X", "role": "read-only", "type": "INT", "size": "word"}
+  ],
+  "instruction_list": [
+    {
+      "text": "a = A[x]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "a",
+      "source1": "x",
+      "source2": "A",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "b = B[x]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "word",
+      "destin": "b",
+      "source1": "x",
+      "source2": "B",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "t = a >= b",
+      "type": "FLOAT",
+      "oper": "CMP",
+      "size": "single",
+      "destin": "t",
+      "source1": "a",
+      "source2": "b",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "if t skip 1",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "t",
+      "source2": "",
+      "source3": "",
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1,
+      "prob": 0.5,
+      "mispredict": 0.299
+    },
+    {
+      "text": "C[x] = a",
+      "type": "MEM",
+      "oper": "STORE",
+      "size": "word",
+      "destin": "",
+      "source1": "a",
+      "source2": "C",
+      "source3": "x",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "x = x + 1",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "x",
+      "source1": "x",
+      "source2": "",
+      "source3": "",
+      "constant": "1",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "c = x != X",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "x",
+      "source2": "X",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 1
+    }
+  ]
+}

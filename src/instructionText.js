@@ -31,13 +31,14 @@ const OPER = {
   add:   { INT: 'ARITH', FLOAT: 'ADD' },  mul:   { INT: 'ARITH', FLOAT: 'MUL' },
   div:   { INT: null,    FLOAT: 'DIV' },  fma:   { INT: null,    FLOAT: 'FMA' },
   sqrt:  { INT: null,    FLOAT: 'SQRT' }, logic: { INT: 'LOGIC', FLOAT: null },
-  shift: { INT: 'SHIFT', FLOAT: null },   cmp:   { INT: 'ARITH', FLOAT: null },
+  shift: { INT: 'SHIFT', FLOAT: null },   cmp:   { INT: 'ARITH', FLOAT: 'CMP' },
   cvt:   { INT: 'CVT',   FLOAT: 'CVT' },
   shuffle: { INT: 'SHUFFLE', FLOAT: 'SHUFFLE' },
   permute: { INT: 'PERMUTE', FLOAT: 'PERMUTE' },
 }
 // Data type imposed by the operation itself
-const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT', cmp: 'INT' }
+// (a comparison gives an INT condition, but compares data of any type: FLOAT data -> FLOAT.CMP)
+const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT' }
 const OP_TEXT = { div: '/', fma: 'a*b + c', sqrt: 'sqrt', logic: 'logic operation', shift: 'shift',
                   cmp: 'comparison', cvt: 'conversion', shuffle: 'shuffle', permute: 'permute', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
                   size: 'array size in a backward index' }
@@ -193,7 +194,10 @@ export function parseInstruction(text) {
     if (tokens[0]?.v === 'if') {
       if (tokens.length === 4 && tokens[1].t === 'id' && tokens[2].v === 'go' && tokens[3].v === 'back')
         return { ok: true, p: { kind: 'branch', cond: tokens[1].v, L: 1, regs: [] } }
-      fail('the branch is written "if c go back"')
+      if (tokens.length === 4 && tokens[1].t === 'id' && tokens[2].v === 'skip' && tokens[3].t === 'num' &&
+          Number.isInteger(Number(tokens[3].v)) && Number(tokens[3].v) >= 1)
+        return { ok: true, p: { kind: 'cbranch', cond: tokens[1].v, skip: Number(tokens[3].v), L: 1, regs: [] } }
+      fail('branches are written "if c skip k" (conditional, skips the next k instructions) or "if c go back" (end of the loop)')
     }
     const eq = tokens.findIndex(t => t.t === 'op' && t.v === '=')
     if (eq < 1) fail('expected "destination = expression"')
@@ -337,7 +341,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
       const v = variable(reg.name, index)
       if (!reg.cvt && reg.lo === 0) v?.lanes.add(reg.L)     // conversions use halves of registers
     }
-    if (p.kind === 'branch') { variable(p.cond, index, 'condition'); strong(p.cond, 'INT', index, 'condition'); return }
+    if (p.kind === 'branch' || p.kind === 'cbranch') { variable(p.cond, index, 'condition'); strong(p.cond, 'INT', index, 'condition'); return }
     if (p.kind === 'load' || p.kind === 'store') {
       const data = p.kind === 'load' ? p.dest : p.value
       const dv = variable(data, index, 'data')
@@ -356,7 +360,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     for (const s of p.sources) variable(s, index, p.op === 'cmp' ? null : 'data')
     if (p.op === 'cmp') {
       strong(p.dest, 'INT', index, 'cmp')
-      p.sources.forEach(s => { union(s, p.sources[0]); strong(s, 'INT', index, 'cmp') })
+      p.sources.forEach(s => union(s, p.sources[0]))
     } else if (p.op === 'cvt') {
       // the result has the type and size named by the conversion; the source is another class
       const [kind, bytes] = CONVERSIONS[p.convert]
@@ -371,9 +375,11 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     }
     if (!ignoreFieldsOf?.has(index)) {
       const kind = kindOfType(inst.type)
-      if (kind && p.op !== 'cmp') seeds.push({ name: p.dest, kind, origin: 'field', index, detail: 'Type' })
-      if (kind && sizeBytes(inst.size) && sizeName(kind, sizeBytes(inst.size)) === inst.size)
-        seeds.push({ name: p.dest, bytes: sizeBytes(inst.size), origin: 'field', index, detail: 'Size' })
+      // a comparison: its Type and Size are those of the compared data (the sources)
+      const target = p.op === 'cmp' ? p.sources[0] : p.dest
+      if (kind && target) seeds.push({ name: target, kind, origin: 'field', index, detail: 'Type' })
+      if (kind && target && sizeBytes(inst.size) && sizeName(kind, sizeBytes(inst.size)) === inst.size)
+        seeds.push({ name: target, bytes: sizeBytes(inst.size), origin: 'field', index, detail: 'Size' })
     }
   })
   for (const d of Array.isArray(declarations) ? declarations : []) {
@@ -471,6 +477,22 @@ const show = (v) => (norm(v) === '' ? '(empty)' : `"${norm(v)}"`)
 
 function deriveFields(p, inst, classOf, stepOf, written = () => true) {
   const vec = p.L > 1
+  if (p.kind === 'cbranch')
+    return { type: 'BRANCH', oper: '', size: '', destin: '', source1: p.cond, source2: '', source3: '',
+             constant: String(p.skip), stride: null, lanes: 1 }
+  if (p.op === 'cmp') {
+    // compares data of the class of its sources: FLOAT data -> (V)FLOAT.CMP, else INT.ARITH
+    const src = classOf(p.sources[0] ?? p.dest)
+    const kind = src.kind === 'FLOAT' ? 'FLOAT' : (src.kind === 'INT' ? 'INT' : null)
+    const operKind = kind ?? kindOfType(inst.type)
+    const s = p.sources
+    return {
+      type: kind ? (vec ? `V${kind}` : kind) : null, oper: operKind ? OPER.cmp[operKind] : null,
+      size: src.bytes && operKind ? sizeName(operKind, src.bytes) : null,
+      destin: p.dest, source1: s[0] ?? '', source2: s[1] ?? '', source3: s[2] ?? '',
+      constant: p.constant, stride: null, lanes: p.L,
+    }
+  }
   if (p.op === 'cvt') {
     const [kind] = CONVERSIONS[p.convert]
     const s = p.sources

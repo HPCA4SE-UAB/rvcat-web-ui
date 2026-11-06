@@ -10,7 +10,7 @@ describe('edit drafts', () => {
 
   it('copies the current processor and program', () => {
     expect(processorDraftFrom(process)).toMatchObject({
-      dispatch: 4, retire: 5, ROBsize: 64, sched: 'greedy', nBlocks: 4, rThru: 2,
+      dispatch: 4, retire: 5, ROBsize: 64, bPenalty: 5, nBlocks: 4, rThru: 2,
       nFillBuffers: 2, ports: { 0: ['INT'] },
     })
     const program = programDraftFrom(process)

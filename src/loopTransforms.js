@@ -8,6 +8,10 @@
 // operation a (a = 0 … N−1) of the original loop (L = 1, S = 1) it reads element c + a·s.
 
 import { checkProgram } from './programChecks.js'
+import { conditionalBranches } from './branches.js'
+
+const BRANCHES_NOT_SUPPORTED =
+  'Loops with conditional branches (if c skip k) are not supported by the assistant: edit them manually.'
 import { shiftIndexText, vectorIndexText, analyzeProgramText, sizeName } from './instructionText.js'
 
 // x86 AVX registers are made of 128-bit blocks: SHUFFLE moves elements within each block (1 cycle),
@@ -152,6 +156,7 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
   const list = (instructionList ?? []).map(i => ({ ...i }))
   const info = analyzeLoop(list)
   const errors = [], notes = []
+  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED], notes }
   if (!(Number.isInteger(L) && L >= 2)) errors.push('The number of lanes must be an integer ≥ 2.')
   if (info.vectorized) errors.push('The loop is already vectorized.')
   if (info.S !== 1) errors.push(`The loop is already unrolled (S = ${info.S}): vectorize the original loop, then unroll it.`)
@@ -394,6 +399,7 @@ export function unrollLoop(instructionList, U, { splitAccumulators = false } = {
   const list = (instructionList ?? []).map(i => ({ ...i }))
   const info = analyzeLoop(list)
   const errors = [], notes = []
+  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED], notes }
   if (!(Number.isInteger(U) && U >= 2)) errors.push('The unrolling factor must be an integer ≥ 2.')
   if (errors.length) return { program: null, errors, notes }
 

@@ -6,7 +6,7 @@
 export function processorDraftFrom(process) {
   return {
     name:          'edit',
-    sched:         process.sched         || 'optimal',
+    bPenalty:      process.bPenalty      ?? 5,
     dispatch:      process.dispatch      || 1,
     retire:        process.retire        || 1,
     ROBsize:       process.ROBsize       || 20,

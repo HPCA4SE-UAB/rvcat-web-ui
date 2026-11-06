@@ -21,7 +21,9 @@
     "f0-AVX",
     "f2-AVX",
     "f3-AVX",
-    "f4-AVX"
+    "f4-AVX",
+    "f1",
+    "f1B"
   ],
   "tutorial": [
     "navigation-tour",

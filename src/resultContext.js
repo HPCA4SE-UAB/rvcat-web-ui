@@ -4,13 +4,14 @@ import { typeOperations } from './common.js'
 import { loopStride }     from './algOps.js'
 
 const PROCESSOR_FIELDS = [
-  'dispatch', 'retire', 'ROBsize', 'sched',
+  'dispatch', 'retire', 'ROBsize', 'bPenalty',
   'nBlocks', 'blkSize', 'mPenalty', 'mIssueTime',
   'nFillBuffers', 'nWriteBuffers', 'rThru'
 ]
 
-// Snapshot of what was simulated: program name, N and the complete processor configuration
-export function buildResultContext(process, processorName) {
+// Snapshot of what was simulated: program name, N, the complete processor configuration and
+// the options of the simulation (scheduler, behavior after a mispredicted branch)
+export function buildResultContext(process, processorName, settings = {}) {
   const instructions = Array.isArray(process?.instruction_list) ? process.instruction_list : []
   const stride = loopStride(instructions)   // algorithmic operations per loop iteration
   const processor = { name: processorName || '' }
@@ -19,7 +20,8 @@ export function buildResultContext(process, processorName) {
   processor.ports     = structuredClone(process?.ports ?? {})
   return {
     program: { name: process?.name || '', N: (process?.iters ?? 0) * stride, stride },
-    processor
+    processor,
+    simulation: { sched: settings.sched ?? 'optimal', speculation: settings.speculation ?? 'stall' }
   }
 }
 
@@ -76,8 +78,14 @@ export function resultContextLines(context) {
     `Program: ${program.name || '?'}  ·  N = ${Number.isFinite(program.N) ? fmt(program.N) : '?'} alg opers` +
       (program.stride > 1 ? `  ·  loop stride ${program.stride} (${fmt(program.N / program.stride)} iterations)` : ''),
     `Processor: ${p.name || '?'}`,
-    `  Dispatch ${p.dispatch} · Retire ${p.retire} · ROB ${p.ROBsize} · Sched ${p.sched}`,
+    `  Dispatch ${p.dispatch} · Retire ${p.retire} · ROB ${p.ROBsize}` +
+      (Number.isFinite(p.bPenalty) ? ` · Branch penalty ${p.bPenalty}` : ''),
   ]
+  // results saved before the scheduler became an option of the simulation keep it in the processor
+  const sim = context.simulation ?? (p.sched ? { sched: p.sched } : null)
+  if (sim)
+    lines.splice(1, 0, `Simulation: scheduler ${sim.sched}` +
+      (sim.speculation ? ` · after a misprediction: ${sim.speculation === 'wrong-path' ? 'wrong path executed' : 'dispatch stalls'}` : ''))
   if (p.nBlocks > 0) {
     lines.push(`  Cache: ${p.nBlocks} blocks × ${p.blkSize} B · Miss penalty ${p.mPenalty} · Issue time ${p.mIssueTime}`)
     lines.push(`         Fill buffers ${p.nFillBuffers} · Write buffers ${p.nWriteBuffers} · rThru ${p.rThru}`)

@@ -123,7 +123,8 @@
   function getAnalysis() {
     if (simState.state >= 3 && simState.simulatedProcess) {
       const { name, ROBsize, dispatch, retire, instruction_list } = simState.simulatedProcess
-      getPerformanceAnalysis(JSON.stringify( { name, ROBsize, dispatch, retire, instruction_list: toRaw(instruction_list)}, null, 2));
+      const bPenalty = simState.simulatedProcess.bPenalty ?? 5
+      getPerformanceAnalysis(JSON.stringify( { name, ROBsize, dispatch, retire, bPenalty, instruction_list: toRaw(instruction_list)}, null, 2));
     }
   }
 
@@ -215,6 +216,10 @@
       return;
     }
     try {
+      // fields of programs with conditional branches: removed so that they do not remain from a previous program
+      for (const key of ['LatencyRange', 'Branches', 'ExecProbability', 'MispredictionsPerIter',
+                         'BranchPenalty', 'MispredictTime', 'EstimatedTime'])
+        delete performanceData.value[key]
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
       console.log('🔎✅ Performance Analysis updated')
     } catch (error) {
@@ -288,6 +293,24 @@
             :class="getBoundClass(performanceData['performance-bound'])">
         {{ boundLabel }}
       </span>
+    </div>
+
+    <div v-if="performanceData.LatencyRange" class="branch-analysis" id="branch-analysis">
+      <div title="The latency bound depends on whether the conditional blocks are executed: the minimum is used as the bound">
+        Conditional branches: latency bound between <strong>{{ performanceData.LatencyRange.min.toFixed(2) }}</strong>
+        and <strong>{{ performanceData.LatencyRange.max.toFixed(2) }}</strong>
+        (with the conditional blocks {{ performanceData.LatencyRange.with_blocks.toFixed(2) }},
+        without them {{ performanceData.LatencyRange.without_blocks.toFixed(2) }}).
+        Throughput counts each instruction with its probability of being executed.
+      </div>
+      <div title="Mispredictions per iteration × branch penalty of the processor. The real cost is larger: the dispatch also waits until the branch resolves">
+        Mispredictions: <strong>{{ performanceData.MispredictionsPerIter.toFixed(3) }}</strong>/iter
+        <span v-for="b in performanceData.Branches" :key="b.index" class="branch-info">
+          (branch {{ b.index }}: p={{ b.prob }}, {{ b.estimated ? '2-bit predictor' : 'given rate' }} {{ b.mispredict.toFixed(3) }})
+        </span>
+        × penalty {{ performanceData.BranchPenalty }} = {{ performanceData.MispredictTime.toFixed(2) }} cycles/iter
+        → estimate ≥ <strong>{{ performanceData.EstimatedTime.toFixed(2) }}</strong> cycles/iter
+      </div>
     </div>
 
     <div v-if="warning" class="stride-warning" id="stride-warning" role="note">⚠ {{ warning }}</div>
@@ -580,6 +603,16 @@
   .bound-algop {
     color: #1a4fb3;
   }
+  .branch-analysis {
+    margin:        4px 0;
+    padding:       4px 8px;
+    font-size:     small;
+    border:        1px solid #c9a227;
+    border-radius: 5px;
+    background:    #fffbe6;
+    max-width:     60rem;
+  }
+  .branch-info { color: #555; }
   .stride-warning {
     box-sizing:    border-box;
     max-width:     44rem;   /* as wide as the summary */
