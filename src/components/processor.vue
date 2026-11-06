@@ -3,7 +3,8 @@
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
            createGraphVizGraph, get_processor_dot, CACHE_BLOCK_SIZES,
-           getAllowedCacheBlockSizes, getLargestMemoryAccessSize }                         from '@/common'
+           getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations,
+           instructionTypes }                                                           from '@/common'
   import { processorDraftFrom }                                                         from '@/editDrafts'
 
   const simState = inject('simulationState');
@@ -16,7 +17,8 @@
 
   const defaultOptions = {
     processorName:       '',
-    availableProcessors: []
+    availableProcessors: [],
+    opsCollapsed:        false     // operation types of the ports hidden in the diagram
   }
 
   const processorOptions = reactive(defaultOptions)
@@ -148,7 +150,93 @@
     }
   };
 
-  const currentConfig = computed(() => FIELD_CONFIG[activeField.value]);
+  // Selected operation type (cell of a port) or port of the diagram
+  const selectedOp   = ref(null)    // { port, label }
+  const selectedPort = ref(null)    // port id (string)
+
+  // operations represented by a cell label: "FLOAT.ADD", or a whole type ("INT": all its operations)
+  const opsOfLabel = (label, list) => list.filter(op => op === label || op.startsWith(`${label}.`))
+  const latencyKeys = (label) => (label.includes('.') ? [label]
+    : [label, ...(typeOperations[label] ?? []).map(op => `${label}.${op}`)])
+
+  function latencyOf(label) {
+    const lat = simState.simulatedProcess.latencies ?? {}
+    return lat[label] ?? lat[label.split('.')[0]] ?? 1
+  }
+  function setLatency(label, value) {
+    const lat = simState.simulatedProcess.latencies ??= {}
+    for (const key of latencyKeys(label)) lat[key] = value
+  }
+
+  const currentConfig = computed(() => {
+    if (activeField.value === 'op' && selectedOp.value) {
+      const { label } = selectedOp.value
+      return { label: `${label} latency:`, min: 1, max: 99, get: () => latencyOf(label), set: (v) => setLatency(label, v),
+               title: `Latency of ${label} in cycles (1 to 99). It is the same in every port that executes ${label}` }
+    }
+    if (activeField.value === 'port' && selectedPort.value !== null)
+      return { label: `P${selectedPort.value}:`, min: 0, max: 0, get: () => '', port: true,
+               title: `Port P${selectedPort.value}: insert an operation type, or remove the port` }
+    return FIELD_CONFIG[activeField.value] ?? FIELD_CONFIG.rob
+  });
+  const fieldValue = () => (currentConfig.value.get ? currentConfig.value.get() : simState.simulatedProcess[currentConfig.value.model])
+
+  // ---- Ports and operation types ----
+  const portIds = computed(() => Object.keys(simState.simulatedProcess.ports ?? {}))
+  const allOperations = computed(() => instructionTypes.flatMap(type =>
+    (typeOperations[type] ?? []).length ? typeOperations[type].map(op => `${type}.${op}`) : [type]))
+  const insertableOps = computed(() => {
+    const list = simState.simulatedProcess.ports?.[selectedPort.value] ?? []
+    return allOperations.value.filter(op => !list.includes(op) && !list.includes(op.split('.')[0]))
+  })
+  const opToInsert = ref('')
+  const moveTarget = ref('')
+
+  function insertOperation() {
+    const list = simState.simulatedProcess.ports?.[selectedPort.value]
+    if (!list || !opToInsert.value) return
+    list.push(opToInsert.value)
+    if (!(opToInsert.value in (simState.simulatedProcess.latencies ?? {})))
+      setLatency(opToInsert.value, latencyOf(opToInsert.value))
+    opToInsert.value = ''
+  }
+  function removeOperation() {
+    const { port, label } = selectedOp.value ?? {}
+    const list = simState.simulatedProcess.ports?.[port]
+    if (!list) return
+    simState.simulatedProcess.ports[port] = list.filter(op => !opsOfLabel(label, [op]).length)
+    selectedOp.value = null
+    activeField.value = 'rob'
+  }
+  function moveOperation() {
+    const { port, label } = selectedOp.value ?? {}
+    const from = simState.simulatedProcess.ports?.[port], to = simState.simulatedProcess.ports?.[moveTarget.value]
+    if (!from || !to || moveTarget.value === port) return
+    const moved = opsOfLabel(label, from)
+    simState.simulatedProcess.ports[port] = from.filter(op => !moved.includes(op))
+    for (const op of moved) if (!to.includes(op)) to.push(op)
+    selectedOp.value = { port: moveTarget.value, label }
+    moveTarget.value = ''
+  }
+  function addPort() {
+    const ids = portIds.value.map(Number)
+    const id = String(ids.length ? Math.max(...ids) + 1 : 0)
+    simState.simulatedProcess.ports = { ...simState.simulatedProcess.ports, [id]: [] }
+    selectedPort.value = id
+    activeField.value = 'port'
+  }
+  function removePort() {
+    const id = selectedPort.value
+    if (id === null || portIds.value.length <= 1) return
+    const ops = simState.simulatedProcess.ports[id] ?? []
+    if (ops.length && !confirm(`Remove port P${id} and its ${ops.length} operation type(s)? Instructions that only P${id} executes cannot be simulated.`))
+      return
+    const ports = { ...simState.simulatedProcess.ports }
+    delete ports[id]
+    simState.simulatedProcess.ports = ports
+    selectedPort.value = null
+    activeField.value = 'rob'
+  }
   const largestMemoryAccessSize = computed(() =>
     getLargestMemoryAccessSize(simState.simulatedProcess.instruction_list ?? [])
   )
@@ -187,7 +275,7 @@
     if (errorTimeout) clearTimeout(errorTimeout);
 
     if (rawValue === '' || rawValue === null || rawValue === undefined) {
-      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
+      const lastValidValue = fieldValue();
       inputValue.value = lastValidValue ?? min;
       isInvalid.value = false;
       validationMessage.value = ''
@@ -197,7 +285,7 @@
     let numValue = Number(rawValue);
 
     if (isNaN(numValue)) {
-      const lastValidValue = simState.simulatedProcess[currentConfig.value.model];
+      const lastValidValue = fieldValue();
       inputValue.value = lastValidValue ?? min;
       isInvalid.value = false;
       validationMessage.value = ''
@@ -232,6 +320,7 @@
   }
 
   function setParameterValue(value) {
+    if (currentConfig.value.set) return currentConfig.value.set(value)
     const model = currentConfig.value.model
     simState.simulatedProcess[model] = value
     if (model === 'mIssueTime' &&
@@ -346,7 +435,7 @@
   },
   { deep: true, immediate: true })
 
-  watch(() => simState.simulatedProcess[currentConfig.value.model],
+  watch(() => fieldValue(),
     (newVal) => {
       if (String(inputValue.value) !== String(newVal)) {
         inputValue.value = newVal ?? '';
@@ -451,7 +540,8 @@
 
   const drawProcessor = async () => {
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess, true, simState.highlightedPort)
+      const dotCode      = get_processor_dot (simState.simulatedProcess, true, simState.highlightedPort,
+                                              { collapsed: processorOptions.opsCollapsed })
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -478,7 +568,28 @@
             const action = g.id.slice(2)
             console.log("Action:", action)
 
+            if (action.startsWith('op:')) {       // op:<port>:<row>:<label>
+              const [, port, , label] = action.split(':')
+              selectedOp.value = { port, label }
+              moveTarget.value = ''
+              activeField.value = 'op'
+              return
+            }
+            if (action.startsWith('port:')) {
+              selectedPort.value = action.slice(5)
+              opToInsert.value = ''
+              activeField.value = 'port'
+              return
+            }
             switch (action) {
+              case 'toggleops':
+                processorOptions.opsCollapsed = !processorOptions.opsCollapsed
+                saveOptions()
+                drawProcessor()
+                break
+              case 'addport':
+                addPort()
+                break
               case 'dispatch':
               case 'rob':
               case 'retire':
@@ -591,7 +702,7 @@
       return
     }
     const max    = currentConfig.value.max
-    let newValue = simState.simulatedProcess[currentConfig.value.model]
+    let newValue = fieldValue()
     setParameterValue(Math.min(newValue+1, max))
   }
 
@@ -606,7 +717,7 @@
       return
     }
     const min    = currentMinimum.value
-    let newValue = simState.simulatedProcess[currentConfig.value.model]
+    let newValue = fieldValue()
     setParameterValue(Math.max(newValue-1, min))
   }
 
@@ -639,6 +750,18 @@
           title="Remove processor configuration from list (and local storage)">
         🧹
         </button>
+        <template v-if="currentConfig.port">
+          <span class="iters-label highlight-static" :title="currentConfig.title">{{ currentConfig.label }}</span>
+          <select v-model="opToInsert" id="port-insert-op" title="Operation type to insert in this port">
+            <option value="">insert type…</option>
+            <option v-for="op in insertableOps" :key="op" :value="op">{{ op }}</option>
+          </select>
+          <button class="blue-button small-btn" id="port-insert-button" :disabled="!opToInsert" @click="insertOperation"
+                  title="Insert the selected operation type in this port">＋</button>
+          <button class="blue-button small-btn" id="port-remove-button" :disabled="portIds.length <= 1" @click="removePort"
+                  title="Remove this port">✕ port</button>
+        </template>
+        <template v-else>
         <div class="iters-group rob-group">
           <span class="iters-label"
             :class="{ 'highlight': labelHighlighted }"
@@ -681,6 +804,16 @@
         >
           ▼
         </button>
+        <template v-if="activeField === 'op' && selectedOp">
+          <select v-model="moveTarget" @change="moveOperation" id="op-move-select"
+                  :title="`Move ${selectedOp.label} from P${selectedOp.port} to another port`">
+            <option value="">move to…</option>
+            <option v-for="p in portIds.filter(p => p !== selectedOp.port)" :key="p" :value="p">P{{ p }}</option>
+          </select>
+          <button class="blue-button small-btn" id="op-remove-button" @click="removeOperation"
+                  :title="`Remove ${selectedOp.label} from port P${selectedOp.port}`">✕</button>
+        </template>
+        </template>
       </div>
   </div>
 
@@ -696,9 +829,12 @@
         <p>Click on the corresponding table cells to modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> widths
           (maximum number of instructions dispatched into or retired from the <strong>Execution Engine</strong> per clock cycle),
           or the <strong>ROB</strong> (ReOrder Buffer) size (maximum number of instructions on the <strong>Execution Engine</strong>).
-          All of them may impose a performance limit. Click on the <strong>Waiting Buffer</strong> row to toggle between a <em>greedy</em> instruction scheduler
-          (which issues older ready instructions as soon as possible) and an <em>optimal</em> scheduler
-          (which always issues the best combination of ready instructions to maximize performance).</p>
+          All of them may impose a performance limit. The instruction scheduler (greedy or optimal) is an option of the
+          simulation (Simulation panel).</p>
+        <p>The row above the ports <strong>hides or shows the operation types</strong> of the ports, and <strong>＋ port</strong>
+          adds an execution port. Click a <strong>port header</strong> (Px) to insert an operation type in it or to remove the port.
+          Click an <strong>operation type</strong> to edit its latency (the same in every port), or to move it to another port or remove it.
+          Click the <strong>Branch penalty</strong> row to edit the cycles lost after a mispredicted conditional branch.</p>
         <p>Click repeatedly on the <strong>Cache</strong> row to cycle through and modify the number of blocks, block size, miss penalty, issue time, fill buffers, and write buffers.
            Setting a Number of Blocks = 0 means all data accesses will always hit in the cache, and, therefore, the latency of memory loads and stores is constant.
            The cache miss penalty indicates the extra time required to execute load and store instructions when they miss in the cache, and must be at least the issue time.
@@ -708,7 +844,7 @@
 
         <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports
          (only one is used for executing each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
-         Hover the different <strong>Execution Ports</strong> to see the latencies of the assigned instruction types.</p>
+         Hover the operation types to see their latencies, and the other rows to see what each parameter means.</p>
         <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
          Click on the corresponding button to <strong>edit</strong> the current processor config or
          to <strong>remove</strong> the current config file from local storage.</p>

@@ -389,6 +389,7 @@
       console.log('🕐✅ Execution Results received')
       // Results + snapshot of the simulated program/processor (shown when stored results are hovered)
       simResults = { ...JSON.parse(data), context: pendingContext }
+      patternKey.value++
       saveResults()
       if (resultsTimeout) clearTimeout(resultsTimeout)
       resultsTimeout = setTimeout(() => {
@@ -508,6 +509,14 @@
   const repeatingCriticalPath = computed(() =>
     simState.executionResults?.critical_path?.repeating_pattern ?? null
   )
+
+  // The pattern is useful when it repeats in more than half of the iterations; the details are
+  // collapsed again after each new simulation (patternKey changes)
+  const patternKey = ref(0)
+  const patternUseful = computed(() => {
+    const p = repeatingCriticalPath.value, n = simState.executionResults?.total_iterations
+    return !!p && Number.isFinite(n) && n > 0 && p.repetitions / n > 0.5
+  })
 
   const repeatingCriticalPathText = computed(() => {
     const nodes = repeatingCriticalPath.value?.nodes
@@ -684,7 +693,7 @@
     if (branch) {
       const rate = branch.branches > 0 ? 100 * branch.mispredictions / branch.branches : 0
       branch_row = `<TR>
-        <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="branch" TITLE="Mispredicted conditional branches (if c skip k) of all the conditional branches executed"><FONT POINT-SIZE="20"><B>Branch prediction:&nbsp;</B><B><FONT COLOR="${rate < 10 ? '#2e7d32' : color[Math.min(color.length - 1, Math.floor(rate / 5))]}">${rate.toFixed(1)}%</FONT></B> mispredicted (${branch.mispredictions.toLocaleString('en-US')} of ${branch.branches.toLocaleString('en-US')})</FONT></TD>
+        <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="branch" TITLE="Mispredicted: ${branch.mispredictions.toLocaleString('en-US')} of the ${branch.branches.toLocaleString('en-US')} conditional branches (if c skip k) executed"><FONT POINT-SIZE="20"><B>Branch prediction:&nbsp;</B>&nbsp;&nbsp;&nbsp;Mispred:<B><FONT COLOR="${rate < 10 ? '#2e7d32' : color[Math.min(color.length - 1, Math.floor(rate / 5))]}">${rate.toFixed(1)}%</FONT></B></FONT></TD>
       </TR>`
     }
 
@@ -966,10 +975,20 @@
     <div v-if="executionError" class="execution-validation-error" role="alert">
       {{ executionError }}
     </div>
-    <div v-if="repeatingCriticalPath" id="critical-path-pattern" class="critical-path-pattern">
-      <strong>Repeated critical-path pattern from Loop Iteration {{ repeatingCriticalPath.start_iteration.toLocaleString('en-US') }} to {{ repeatingCriticalPath.end_iteration.toLocaleString('en-US') }} ({{ repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }} critical cycles per repetition).</strong>
-      <p>{{ repeatingCriticalPathText }}</p>
-    </div>
+    <details v-if="repeatingCriticalPath" :key="patternKey" id="critical-path-pattern" class="critical-path-pattern"
+             :class="{ minor: !patternUseful }">
+      <summary v-if="patternUseful"
+               :title="`The same critical path repeats in ${repeatingCriticalPath.repetitions.toLocaleString('en-US')} of the ${simState.executionResults.total_iterations.toLocaleString('en-US')} iterations: it explains the performance of the loop`">
+        <strong>Repeated critical-path pattern: iterations {{ repeatingCriticalPath.start_iteration.toLocaleString('en-US') }} to {{ repeatingCriticalPath.end_iteration.toLocaleString('en-US') }}
+        ({{ repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }} critical cycles per repetition)</strong>
+      </summary>
+      <summary v-else title="The critical path repeats only in a few iterations: it says little about the performance of the loop">
+        Critical-path pattern
+      </summary>
+      <p>Iterations {{ repeatingCriticalPath.start_iteration.toLocaleString('en-US') }} to {{ repeatingCriticalPath.end_iteration.toLocaleString('en-US') }}
+        ({{ repeatingCriticalPath.repetitions.toLocaleString('en-US') }} repetitions, {{ repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }} critical cycles each):
+        {{ repeatingCriticalPathText }}</p>
+    </details>
 
     <div class="sim-running-msg">
       <div class="running-group">
@@ -1275,7 +1294,15 @@
     overflow-wrap: anywhere;
   }
   .critical-path-pattern p {
-    margin: 0;
+    margin: 4px 0 0;
+  }
+  .critical-path-pattern summary { cursor: pointer; }
+  .critical-path-pattern.minor {
+    padding:      2px 10px;
+    border-left:  4px solid #ccc;
+    background:   transparent;
+    color:        #888;
+    font-size:    small;
   }
   .critical-path-pattern small {
     color: #555;

@@ -935,7 +935,8 @@ export function fitSvgToContainer(svg, container) {
   svg.style.height = svgHeight + "px"
 }
 
-export function get_processor_dot(process, allowEdit, highlightPort = -1) {
+// options.collapsed: hide the operation types of the ports (only their headers are shown)
+export function get_processor_dot(process, allowEdit, highlightPort = -1, options = {}) {
 
     const ports    = process.ports
     const lat      = process.latencies
@@ -1033,21 +1034,27 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
     for (let p of port_ids)
       port_ops[p] = compress_ops(ports[p])
 
-    const total_rows = Math.max(...Object.values(port_ops).map(o => o.length))
+    const max_rows   = Math.max(0, ...Object.values(port_ops).map(o => o.length))
+    const total_rows = options.collapsed ? 0 : max_rows
 
-    let edit = "Edit "
-    if (!allowEdit)
-      edit = ""
 
     // ---- Dispatch + ROB ----
+    const click = allowEdit ? ' Click to edit it.' : ''
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${edit}Dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows+6}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="${edit}ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Dispatch width: up to ${dispatch} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD ROWSPAN="${total_rows+6}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
-    let wb_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="Instructions wait here for their operands and a free port. The scheduler policy is an option of the simulation (Simulation panel)"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT></TD>
+    // (the editable panel shows controls: hide/show the operation types, add a port)
+    const toggleText = options.collapsed ? `▼&nbsp;show operation types (${max_rows} rows)` : '▲&nbsp;hide operation types'
+    const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? 'Show' : 'Hide'} the operation types that each port executes"><FONT POINT-SIZE="16">${toggleText}</FONT></TD>`
+    let wb_row = allowEdit
+      ? (port_ids.length >= 2
+          ? `<TR>${toggleCell(port_ids.length - 1)}<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="Add a new execution port (then click its header to insert operation types)"><FONT POINT-SIZE="16">＋&nbsp;port</FONT></TD></TR>`
+          : `<TR>${toggleCell(port_ids.length)}</TR>`)
+      : `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="Instructions wait here for their operands and a free port"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -1060,7 +1067,8 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
         : ' BGCOLOR="#f5f5f5"'
 
       const safePort = escapeHtml(p)
-      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="Port ${safePort}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
+      const nOps = (ports[p] ?? []).length
+      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="Port P${safePort}: executes ${nOps} operation type(s), one instruction per cycle.${allowEdit ? ' Click to insert an operation type or remove the port.' : ''}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
@@ -1087,7 +1095,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
 
         const type    = op_type(op.label)
         const color   = type_color(type)
-        const tooltip = latency_tooltip(op.label)
+        const tooltip = latency_tooltip(op.label) + (allowEdit ? `\nClick to edit the latency, or to move or remove ${op.label} from P${p}.` : '')
         const safeLabel = escapeHtml(op.label)
         const safeTooltip = escapeHtml(tooltip)
 
@@ -1098,9 +1106,11 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
       op_rows += "</TR>"
     }
 
-    let cacheEdit = "Cache config: click repeatedly to cycle through parameter editing"
-    if (!allowEdit)
-      cacheEdit = "Current Cache config"
+    let cacheEdit = CacheBlocks > 0
+      ? `L1 data cache: ${CacheBlocks} blocks of ${CacheBlockSize} bytes; a miss costs ${CachePenalty} cycles, memory accepts a request every ${CacheIssueTime} cycle(s); ${FillBuffers} fill and ${WriteBuffers} write buffers; ${ReturnThroughput} return(s) per cycle.`
+      : 'No cache: every memory access takes the latency of its instruction.'
+    if (allowEdit)
+      cacheEdit += ' Click repeatedly to edit each parameter (0 blocks: no cache).'
 
     let cache_row = ""
     // ---- Cache configuration ----
@@ -1116,12 +1126,12 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
 
     // ---- Branch misprediction penalty ----
     let penalty_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${edit}Branch penalty: cycles to refill the front-end after a mispredicted conditional branch resolves"><FONT POINT-SIZE="20">🔄&nbsp;<B>Branch penalty:</B>&nbsp;${bPenalty} cycles</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="Branch penalty: ${bPenalty} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Branch penalty:&nbsp;</B>&nbsp;&nbsp;${bPenalty} cycles</FONT></TD>
     </TR>`
 
     // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${edit}Retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Retire width: up to ${retire} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
     </TR>`
 
     const dot = `
