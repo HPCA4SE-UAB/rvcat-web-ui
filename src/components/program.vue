@@ -5,7 +5,8 @@
            updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
            normalizeProgramDefaults }                                     from '@/common'
   import { checkDeclarations }                                      from '@/instructionText'
-  import { conditionalDepth, isConditionalBranch }                from '@/branches'
+  import { conditionalDepth }                                     from '@/branches'
+  import { instructionSummary }                                   from '@/instructionSummary'
   import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
   const simState = inject('simulationState');
@@ -27,7 +28,7 @@
     availablePrograms: [],
     N:                 100,
     stride:            1,
-    show:              0  // 0: type/operands, 1: latency/ports, 2: InOut, 3: memory
+    show:              0  // 0: type/operation/size, 1: latency/ports
  }
 
   const programOptions = reactive(defaultOptions)
@@ -37,6 +38,7 @@
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         Object.assign(programOptions, JSON.parse(saved))
+        if (![0, 1].includes(programOptions.show)) programOptions.show = 0   // old views (operands, memory)
         console.log('📄load options')
       }
       else {
@@ -194,7 +196,7 @@
     }
   }
 
-  function toggleLatency() { programOptions.show = (programOptions.show + 1) % 4 }
+  function toggleLatency() { programOptions.show = (programOptions.show + 1) % 2 }
 
   function portsMaskToString(mask) {
     const ports = []
@@ -473,13 +475,11 @@
           🧹
         </button>
         <button class="blue-button"
-            title="Toggle between: type|performance|input-output|memory"
+            title="Toggle between: type (type, operation, size) | perf (latency, ports). The tooltip of each instruction describes it"
             id="show-instr-operands"
           @click="toggleLatency">
           <span v-if="programOptions.show === 0">type</span>
           <span v-if="programOptions.show === 1">perf</span>
-          <span v-if="programOptions.show === 2">InOut</span>
-          <span v-if="programOptions.show === 3">mem</span>
         </button>
         <div class="iters-group">
           <span class="iters-label"
@@ -528,7 +528,7 @@
           <span class="stride-label" id="program-loop-stride"
                 :class="{ unrolled: programOptions.stride > 1 }"
                 :title="`S = loop stride = algorithmic operations per loop iteration (set in the program editor).` +
-                        ` The loop runs N/S = ${(programOptions.N / programOptions.stride).toLocaleString()} iterations.` +
+                        ` The loop runs N/S = ${(programOptions.N / programOptions.stride).toLocaleString('en-US')} iterations.` +
                         (programOptions.stride > 1 ? ' Each iteration does the work of ' + programOptions.stride +
                          ' iterations of the original loop (unrolled or vectorized).' : '')">
             S={{ programOptions.stride }}
@@ -555,13 +555,7 @@
               <th v-if="programOptions.show === 0"  style="width: 100px;"> Size </th>
               <th v-if="programOptions.show === 1"  style="width: 100px;"> Latency </th>
               <th v-if="programOptions.show === 1"  style="width: 200px;"> Ports </th>
-              <th v-if="programOptions.show === 2"  style="width: 80px;"> Dst </th>
-              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src1 </th>
-              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src2 </th>
-              <th v-if="programOptions.show === 2"  style="width: 80px;"> Src3 </th>
-              <th v-if="programOptions.show === 3"  style="width: 150px;"> Address </th>
-              <th v-if="programOptions.show === 3"  style="width: 80px;"> Stride </th>
-              <th v-if="programOptions.show === 3"  style="width: 80px;"> Lanes </th>          </tr>
+          </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
             <tr
@@ -579,10 +573,8 @@
               <td v-else title="Instruction Number">
                 {{ index }}
               </td>
-              <td :title="isConditionalBranch(simState.simulatedProcess.instruction_list, index)
-                          ? `Conditional branch: skips the next ${inst.constant || 1} instruction(s) with probability ${inst.prob ?? 0.5}` +
-                            `; misprediction rate ${inst.mispredict ?? 'from a 2-bit predictor'}`
-                          : blockDepth[index] ? 'Conditional instruction: skipped when the branch above is taken' : 'Instruction description'"
+              <td :title="instructionSummary(simState.simulatedProcess.instruction_list, index) +
+                          (blockDepth[index] ? ' Conditional: skipped when the branch above is taken.' : '')"
                   :class="{ 'conditional-instr': blockDepth[index] > 0 }"
                   :style="blockDepth[index] ? { paddingLeft: `${1.4 * blockDepth[index]}em` } : null">
                 {{ inst.text }}
@@ -602,29 +594,6 @@
               <td v-if="programOptions.show === 1" title="Available execution ports">
                 {{ portsMaskToString(inst.ports) }}
               </td>
-              <td v-if="programOptions.show === 2" title="Destination operand">
-                {{ inst.destin }}
-              </td>
-              <td v-if="programOptions.show === 2" title="Source operand 1">
-                {{ inst.source1 }}
-              </td>
-              <td v-if="programOptions.show === 2" title="Source operand 2">
-                {{ inst.source2 }}
-              </td>
-              <td v-if="programOptions.show === 2" title="Source operand 3">
-                {{ inst.source3 }}
-              </td>
-              <td v-if="programOptions.show === 3"
-                  title="Memory address">
-                {{ (inst.type === 'MEM' || inst.type === 'VMEM') ? inst.source2 : ''}}
-              </td>
-              <td v-if="programOptions.show === 3"
-                  title="Memory & Loop stride">
-                {{ (inst.type === 'MEM' || inst.type === 'VMEM' || inst.type === 'BRANCH') ? inst.stride : '' }}
-              </td>
-              <td v-if="programOptions.show === 3" title="Number of vector lanes">
-                {{ inst.lanes }}
-              </td>
             </tr>
           </tbody>
         </table>
@@ -637,11 +606,13 @@
     text="The simulated program consists of a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>,
           described in high-level informal language. N is the total iterations (user-configurable).
           With a <strong>loop stride</strong> S (default is 1), the loop runs N/S times.
-          For each instruction, you can view: (1) <em>type</em> and operand <em>sizes</em>;
-          (2) <em>latency</em> and eligible <em>execution ports</em>; (3) input/output operands;
-          (4) memory <em>addresses</em>, <em>strides</em>, and vector <em>lanes</em> used.
+          For each instruction, the button switches between its <em>type</em>, operation and <em>size</em>, and its
+          <em>latency</em> and eligible <em>execution ports</em>. The tooltip of each instruction describes it briefly:
+          the memory access (array, offset, stride, lanes) or the operation and its operands.
+          Instructions inside a conditional block (<em>if c skip k</em>) are indented.
         <p>The simulation models <strong>data dependencies</strong> but <strong>does not</strong> model
-          processor registers, memory states, branch outcomes, or memory dependencies (e.g., store-load orderings).</p>
+          processor registers, memory states or memory dependencies (e.g., store-load orderings). Conditional branches
+          are taken and mispredicted with the probabilities given in the program.</p>
       <p>A new <em>program</em> can be selected from the list (referring to a JSON file description stored in local storage).
         Click on the corresponding button to <strong>edit</strong> a program or to <strong>remove</strong> a program from local storage.</p>"
       title="Program Description"

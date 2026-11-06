@@ -37,7 +37,7 @@ export function defaultResultName(context, existingNames = []) {
 }
 
 const sum = (a, b) => (Number.isFinite(a) && Number.isFinite(b) ? a + b : null)
-const fmt = (n) => n.toLocaleString()
+const fmt = (n) => n.toLocaleString('en-US')
 
 // Values shown in the stored-results table (null when the result has no such data)
 export function resultMemoryColumns(r) {
@@ -50,7 +50,8 @@ export function resultMemoryColumns(r) {
     primaryDetail:    primary   === null ? '' : `LD ${fmt(r.read_primary_misses)} + ST ${fmt(r.write_primary_misses)}`,
     secondary:        secondary === null ? null : fmt(secondary),
     secondaryDetail:  secondary === null ? '' : `LD ${fmt(r.read_secondary_misses)} + ST ${fmt(r.write_secondary_misses)}`,
-    MM:               hasMM ? `${fmt(r.MM_Reads)}+${fmt(r.MM_Writes)}${pct}` : null,
+    MM:               hasMM ? fmt(r.MM_Reads + r.MM_Writes) : null,
+    MMDetail:         hasMM ? `Rd ${fmt(r.MM_Reads)} (reads for cache misses) + Wr ${fmt(r.MM_Writes)} (writes of evicted dirty blocks)${pct ? ` · busy${pct}` : ''}` : '',
   }
 }
 

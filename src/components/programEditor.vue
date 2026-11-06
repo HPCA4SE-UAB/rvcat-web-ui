@@ -187,7 +187,8 @@ function loadEditedProgram() {
         size:    inst.size    || '', destin:  inst.destin  || '',  source1:  inst.source1  || '',
         source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
         stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1,
-        prob:    inst.prob ?? (inst.type === 'BRANCH' ? 0.5 : ''), mispredict: inst.mispredict ?? ''
+        prob:    inst.prob ?? (inst.type === 'BRANCH' ? 0.5 : ''), mispredict: inst.mispredict ?? '',
+        mask:    inst.mask ?? ''
       };
     }).map((inst, index, all) => index === all.length - 1 ? inst : enforceStructure(inst));
     console.log('📄Edited Program Reloaded from local storage')
@@ -315,6 +316,7 @@ function normalizeInstruction(inst) {
     constant: (inst.constant || '').trim(),
     stride:   inst.stride ?? 1,
     lanes:    inst.lanes  ?? 1,
+    ...(String(inst.mask ?? '').trim() ? { mask: String(inst.mask).trim() } : {}),
     // conditional branch ("if c skip k"): probability of being taken, misprediction rate (empty: predictor)
     ...(inst.type === 'BRANCH' ? { prob: fraction(inst.prob) ?? 0.5,
                                    ...(fraction(inst.mispredict) !== null ? { mispredict: fraction(inst.mispredict) } : {}) }
@@ -774,7 +776,10 @@ function snapshotProgram() {
                 </td>
 
                 <td v-if="programEditOptions.showInOut">
-                  <input type="text" v-model="inst.destin" class="table-input" />
+                  <input v-if="inst.oper === 'STORE'" type="text" v-model="inst.mask" class="table-input mask-field"
+                         placeholder="mask" :id="`store-mask-${index}`"
+                         title="Mask of a masked vector store (A[i:i+7] = x[0:7] if m[0:7]): only the lanes where it is true are written. Empty: a normal store" />
+                  <input v-else type="text" v-model="inst.destin" class="table-input" />
                 </td>
 
                 <td v-if="programEditOptions.showInOut">
@@ -1116,7 +1121,7 @@ function snapshotProgram() {
     border-left: 3px dashed #9aa7b8;
     text-align:  left;
   }
-  .branch-field::placeholder { color: #9aa; }
+  .branch-field::placeholder, .mask-field::placeholder { color: #9aa; }
   .row-issue {
     margin-left: 2px;
     font-size:   0.8em;

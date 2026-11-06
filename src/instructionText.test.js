@@ -20,9 +20,10 @@ import f3AVX    from '../public/program/f3-AVX.json'
 import f4AVX    from '../public/program/f4-AVX.json'
 import f1       from '../public/program/f1.json'
 import f1B      from '../public/program/f1B.json'
+import f1AVX    from '../public/program/f1-AVX.json'
 
 const DISTRIBUTED = { Base, BaseSIMD, V1, V2, example, f2, 'f2-SIMD': f2SIMD, f3, 'f3-SIMD': f3SIMD, f4, f0, 'f0-SIMD': f0SIMD,
-                      'f0-AVX': f0AVX, 'f2-AVX': f2AVX, 'f3-AVX': f3AVX, 'f4-AVX': f4AVX, f1, f1B }
+                      'f0-AVX': f0AVX, 'f2-AVX': f2AVX, 'f3-AVX': f3AVX, 'f4-AVX': f4AVX, f1, f1B, 'f1-AVX': f1AVX }
 const FIELDS = ['type', 'oper', 'size', 'destin', 'source1', 'source2', 'source3']
 const branch = (S = 1) => ({ text: 'if c go back', type: 'BRANCH', oper: '', size: '', destin: '', source1: 'c',
                              source2: '', source3: '', constant: '', stride: S, lanes: 1 })

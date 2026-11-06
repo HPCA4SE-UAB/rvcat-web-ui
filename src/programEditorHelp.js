@@ -66,7 +66,12 @@ predicts the branch with a 2-bit counter). The outcomes are generated from p wit
 <p>After a misprediction the processor loses <b>Branch penalty</b> cycles (a processor parameter) once the branch
 resolves. The option <b>Mispredictions</b> of the simulation chooses whether dispatch <b>stalls</b> until then, or the
 <b>wrong path</b> is dispatched and executed (until the branch resolves or the ROB is full) and then squashed: its
-cache accesses finish, acting as prefetches or polluting the cache. The dependence graph shows the possible producers of
+cache accesses finish, acting as prefetches or polluting the cache.</p>
+<p><b>Vector masks</b> avoid a branch per element: <b>m[0:7] = a[0:7] &lt; b[0:7]</b> (VFLOAT.CMP) gives a mask,
+<b>t = none(m[0:7])</b> (also any, all; VINT.LOGIC, like vptest) tests it, and <b>C[x:x+7] = a[0:7] if m[0:7]</b> is a
+masked store (VMEM.STORE with the field Mask, shown in the Destin column): only the lanes where m is true are written.
+A branch <b>if t skip 1</b> can skip the store when no lane is true.</p>
+<p>The dependence graph shows the possible producers of
 a value with their probability, and the latency bound becomes a range. The Unroll / Vectorize assistant does not
 transform loops with conditional branches.</p>
 </details>

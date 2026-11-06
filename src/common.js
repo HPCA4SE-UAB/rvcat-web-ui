@@ -261,6 +261,11 @@ export function validateProgram(program, options = {}) {
       addInstructionError('lanes must be a positive safe integer.')
     }
 
+    if (instruction.mask !== undefined && instruction.mask !== '' &&
+        (typeof instruction.mask !== 'string' || instruction.type !== 'VMEM' || instruction.oper !== 'STORE')) {
+      addInstructionError('only a vector store (VMEM.STORE) can have a mask.')
+    }
+
     if (instruction.type === 'MEM' || instruction.type === 'VMEM') {
       if (typeof instruction.source2 !== 'string' || !instruction.source2.trim()) {
         addInstructionError('memory instructions must name an array in source2.')
@@ -1036,8 +1041,8 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
 
     // ---- Dispatch + ROB ----
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${edit}Dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT>&nbsp;&nbsp;&nbsp;<FONT POINT-SIZE="16">Branch penalty: ${bPenalty} cycles</FONT></TD>
-      <TD ROWSPAN="${total_rows+5}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="${edit}ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${edit}Dispatch width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
+      <TD ROWSPAN="${total_rows+6}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="${edit}ROB size" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
@@ -1109,6 +1114,11 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
       </TR>`
     }
 
+    // ---- Branch misprediction penalty ----
+    let penalty_row = `<TR>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${edit}Branch penalty: cycles to refill the front-end after a mispredicted conditional branch resolves"><FONT POINT-SIZE="20">🔄&nbsp;<B>Branch penalty:</B>&nbsp;${bPenalty} cycles</FONT></TD>
+    </TR>`
+
     // ---- Retire ----
     let reg_row = `<TR>
       <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${edit}Retire width"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:</B>&nbsp;${retire}/cycle&nbsp;&nbsp;<B>(Architected Registers)</B></FONT></TD>
@@ -1125,6 +1135,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1) {
               ${port_header}
               ${op_rows}
               ${cache_row}
+              ${penalty_row}
               ${reg_row}
             </TABLE>
           >

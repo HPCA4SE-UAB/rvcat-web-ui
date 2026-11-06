@@ -7,6 +7,8 @@
 //   x = sqrt(y)
 //   x[0:3] = shuffle(y[0:3], z[0:3])   combines the lanes of one or two vector registers
 //   x[0:7] = permute(y[0:7], z[0:7])   the same, moving elements across 128-bit blocks
+//   t = none(m[0:7])  test of a vector mask: any(), none(), all() -> VINT.LOGIC (e.g. vptest)
+//   A[i:i+7] = x[0:7] if m[0:7]       masked store: only the lanes where the mask is true
 //   x = double(y)     conversion to the type and size named: single, double (FLOAT), byte, word, long (INT)
 //                     x[0:3] = double(y[4:7]) converts the upper half of an 8-lane register
 //   x = A[index]      load            A[index] = x      store
@@ -27,6 +29,8 @@ const BINARY      = { '+': 'add', '-': 'add', '*': 'mul', '/': 'div', '&': 'logi
 // Operation of each operation class, for INT and FLOAT types (null: not available)
 // Conversions: function name -> type and size of the result
 export const CONVERSIONS = { single: ['FLOAT', 4], double: ['FLOAT', 8], byte: ['INT', 1], word: ['INT', 4], long: ['INT', 8] }
+// Tests of a vector mask (vptest): a scalar condition from the lanes of a mask register
+const MASK_TESTS = new Set(['any', 'none', 'all'])
 const OPER = {
   add:   { INT: 'ARITH', FLOAT: 'ADD' },  mul:   { INT: 'ARITH', FLOAT: 'MUL' },
   div:   { INT: null,    FLOAT: 'DIV' },  fma:   { INT: null,    FLOAT: 'FMA' },
@@ -35,16 +39,17 @@ const OPER = {
   cvt:   { INT: 'CVT',   FLOAT: 'CVT' },
   shuffle: { INT: 'SHUFFLE', FLOAT: 'SHUFFLE' },
   permute: { INT: 'PERMUTE', FLOAT: 'PERMUTE' },
+  test:    { INT: 'LOGIC',   FLOAT: null },
 }
 // Data type imposed by the operation itself
 // (a comparison gives an INT condition, but compares data of any type: FLOAT data -> FLOAT.CMP)
-const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT' }
+const OP_KIND = { div: 'FLOAT', fma: 'FLOAT', sqrt: 'FLOAT', logic: 'INT', shift: 'INT', test: 'INT' }
 const OP_TEXT = { div: '/', fma: 'a*b + c', sqrt: 'sqrt', logic: 'logic operation', shift: 'shift',
-                  cmp: 'comparison', cvt: 'conversion', shuffle: 'shuffle', permute: 'permute', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
+                  cmp: 'comparison', cvt: 'conversion', shuffle: 'shuffle', permute: 'permute', test: 'mask test', mask: 'mask of a masked store', index: 'memory index', counter: 'loop counter', condition: 'branch condition',
                   size: 'array size in a backward index' }
 
 export const FIELD_LABELS = { type: 'Type', oper: 'Oper', size: 'Size', destin: 'Destin', source1: 'Source1',
-                              source2: 'Source2', source3: 'Source3', constant: 'Constant', stride: 'Stride',
+                              source2: 'Source2', source3: 'Source3', mask: 'Mask', constant: 'Constant', stride: 'Stride',
                               lanes: 'Lanes' }
 
 export const kindOfType = (type) =>
@@ -187,7 +192,7 @@ function parseOperand(tokens, i) {
 
 // Parses the text of an instruction. Returns { ok: true, p } or { ok: false, reason, empty }
 export function parseInstruction(text) {
-  const tokens = tokenize(text)
+  let tokens = tokenize(text)
   if (tokens && !tokens.length) return { ok: false, empty: true, reason: 'empty text' }
   try {
     if (!tokens) fail('unexpected characters')
@@ -201,6 +206,15 @@ export function parseInstruction(text) {
     }
     const eq = tokens.findIndex(t => t.t === 'op' && t.v === '=')
     if (eq < 1) fail('expected "destination = expression"')
+    // masked store: "A[i:i+7] = x[0:7] if m[0:7]"
+    let maskOp = null
+    const ifAt = tokens.findIndex((t, k) => k > eq && t.t === 'id' && t.v === 'if')
+    if (ifAt > 0) {
+      const m = parseOperand(tokens, ifAt + 1)
+      if (m.next !== tokens.length || m.op.k !== 'reg') fail('a mask is written at the end of a store: A[i:i+7] = x[0:7] if m[0:7]')
+      maskOp = m.op
+      tokens = tokens.slice(0, ifAt)
+    }
     const lhs = parseOperand(tokens, 0)
     if (lhs.next !== eq) fail('the destination is a variable, x[0:3] or A[index]')
     if (lhs.op.k === 'num') fail('the destination cannot be a number')
@@ -208,7 +222,7 @@ export function parseInstruction(text) {
     // Right-hand side: operand list with operators
     const items = []
     let i = eq + 1
-    let sqrt = false, convert = null, shuffle = null
+    let sqrt = false, convert = null, shuffle = null, test = null
     const fn = tokens[i]?.v
     if ((fn === 'shuffle' || fn === 'permute') && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
       let j = i + 2
@@ -226,12 +240,14 @@ export function parseInstruction(text) {
       shuffle = fn
       i = tokens.length
     }
-    if (!shuffle && (fn === 'sqrt' || CONVERSIONS[fn]) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
+    if (!shuffle && (fn === 'sqrt' || CONVERSIONS[fn] || MASK_TESTS.has(fn)) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
       const o = parseOperand(tokens, i + 2)
       if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail(`expected ${fn}(x)`)
       if (o.op.k === 'num') fail(`${fn}() of a number: write the number in the type you need`)
+      if (MASK_TESTS.has(fn) && o.op.k !== 'reg') fail(`${fn}() tests the lanes of a vector mask: t = ${fn}(m[0:7])`)
       items.push(o.op)
       if (fn === 'sqrt') sqrt = true
+      else if (MASK_TESTS.has(fn)) test = fn
       else convert = fn
       i = tokens.length
     }
@@ -248,7 +264,8 @@ export function parseInstruction(text) {
     }
     const operands = items.filter(x => x.k !== 'op'), ops = items.filter(x => x.k === 'op').map(x => x.v)
     const mems = [lhs.op, ...operands].filter(o => o.k === 'mem')
-    const regs = [lhs.op, ...operands].filter(o => o.k === 'reg')
+    const regs = [lhs.op, ...operands, ...(maskOp ? [maskOp] : [])].filter(o => o.k === 'reg')
+    if (maskOp && lhs.op.k !== 'mem') fail('only a store can have a mask: A[i:i+7] = x[0:7] if m[0:7]')
     // a shuffle may combine registers of any number of lanes: its lanes are those of the result
     const lanes = new Set((shuffle ? [lhs.op] : [...regs, ...mems]).map(o => o.L).filter(L => L > 1))
     if (lanes.size > 1) fail(`different numbers of lanes (${[...lanes].join(', ')})`)
@@ -256,13 +273,13 @@ export function parseInstruction(text) {
     const p = { L, regs }
 
     if (lhs.op.k === 'mem') {                                  // store A[index] = x
-      if (operands.length !== 1 || ops.length || sqrt || convert) fail('a store writes a variable: A[index] = x')
+      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail('a store writes a variable: A[index] = x')
       if (operands[0].k === 'num') fail('a store writes a variable, not a number')
       if (operands[0].k === 'mem') fail('memory-to-memory copy: load into a variable, then store it')
-      return { ok: true, p: { ...p, kind: 'store', value: operands[0].name, mem: lhs.op } }
+      return { ok: true, p: { ...p, kind: 'store', value: operands[0].name, mem: lhs.op, mask: maskOp?.name ?? '' } }
     }
     if (mems.length) {                                         // load x = A[index]
-      if (operands.length !== 1 || ops.length || sqrt || convert) fail('memory operands are only allowed in x = A[index] and A[index] = x')
+      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail('memory operands are only allowed in x = A[index] and A[index] = x')
       return { ok: true, p: { ...p, kind: 'load', dest: lhs.op.name, mem: operands[0] } }
     }
     // Operation
@@ -270,6 +287,7 @@ export function parseInstruction(text) {
     if (sqrt) { op = 'sqrt'; terms = operands }
     else if (convert) { op = 'cvt'; terms = operands }
     else if (shuffle) { op = shuffle; terms = operands }
+    else if (test) { op = 'test'; terms = operands }
     else if (!ops.length) fail(operands[0].k === 'num' ? 'RVCAT has no instruction to set a constant'
                                                         : 'copy: RVCAT has no move instruction')
     else if (ops.length === 1) { op = BINARY[ops[0]]; terms = operands }
@@ -350,6 +368,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
       union(data, p.mem.array)
       if (p.mem.v) { variable(p.mem.v, index, 'index'); strong(p.mem.v, 'INT', index, 'index') }
       if (p.mem.size) { variable(p.mem.size, index, 'size'); strong(p.mem.size, 'INT', index, 'size') }
+      if (p.mask) { variable(p.mask, index, 'mask'); strong(p.mask, 'INT', index, 'mask') }
       p.data = data
       if (!ignoreFieldsOf?.has(index) && isMemoryType(inst.type) && sizeBytes(inst.size) && !['single', 'double'].includes(inst.size))
         seeds.push({ name: data, bytes: sizeBytes(inst.size), origin: 'field', index, detail: 'Size' })
@@ -459,7 +478,7 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
   })
 
   // Declarations table
-  const ROLE_ORDER = ['array', 'index', 'counter', 'condition', 'size', 'data']
+  const ROLE_ORDER = ['array', 'index', 'counter', 'condition', 'mask', 'size', 'data']
   const variables = [...vars.values()].sort((a, b) => a.first - b.first).map(v => {
     const cls = classOf(v.name)
     const role = ROLE_ORDER.find(r => v.roles.has(r)) ?? 'data'
@@ -514,6 +533,7 @@ function deriveFields(p, inst, classOf, stepOf, written = () => true) {
       type: vec ? 'VMEM' : 'MEM', oper: p.kind === 'load' ? 'LOAD' : 'STORE',
       size: cls.bytes ? INT_SIZES[cls.bytes] ?? null : null,
       destin:  p.kind === 'load' ? p.dest : '',
+      mask:    p.kind === 'store' ? (p.mask ?? '') : '',
       source1: p.kind === 'load' ? (m.v ?? '') : p.value,
       source2: m.array,
       source3: p.kind === 'load' ? '' : (m.v ?? ''),
@@ -537,7 +557,7 @@ function fieldDifferences(inst, d) {
   if (!d) return []
   const diffs = []
   const memory = isMemoryType(d.type ?? inst.type)
-  for (const field of ['type', 'oper', 'size', 'destin', 'source1', 'source2', 'source3']) {
+  for (const field of ['type', 'oper', 'size', 'destin', 'source1', 'source2', 'source3', 'mask']) {
     if (d[field] === null || d[field] === undefined) continue
     if (['type', 'oper', 'size'].includes(field) && norm(inst[field]) === '') continue   // still to be filled
     if (norm(inst[field]) !== norm(d[field])) diffs.push({ field, actual: inst[field], expected: d[field] })
@@ -575,6 +595,7 @@ export function fillFromText(inst, derived) {
   set('oper', derived.oper)
   set('size', derived.size)
   for (const field of ['destin', 'source1', 'source2', 'source3', 'constant']) set(field, derived[field])
+  if (derived.mask !== undefined && (derived.mask || inst.mask)) set('mask', derived.mask)
   if (isMemoryType(inst.type)) set('stride', derived.stride)
   set('lanes', derived.lanes)
   return changed

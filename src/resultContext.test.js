@@ -44,7 +44,12 @@ describe('resultMemoryColumns', () => {
     expect(cols.primary).toBe('150')
     expect(cols.primaryDetail).toBe('LD 120 + ST 30')
     expect(cols.secondary).toBe('12')
-    expect(cols.MM).toBe('150+25 (32.1%)')
+    expect(cols.MM).toBe('175')
+    expect(cols.MMDetail).toMatch(/^Rd 150 .* \+ Wr 25 .*busy \(32\.1%\)$/)
+  })
+  it('writes thousands with a comma (English format)', () => {
+    expect(resultMemoryColumns({ read_primary_misses: 2000, write_primary_misses: 500,
+                                 read_secondary_misses: 0, write_secondary_misses: 0 }).primary).toBe('2,500')
   })
   it('returns null for missing data', () => {
     expect(resultMemoryColumns({})).toMatchObject({ primary: null, secondary: null, MM: null })
@@ -54,7 +59,7 @@ describe('resultMemoryColumns', () => {
 describe('resultContextLines', () => {
   it('describes program, processor, cache, latencies and compacted ports', () => {
     const lines = resultContextLines(buildResultContext(process, 'B2'))
-    expect(lines[0]).toBe(`Program: Base  ·  N = ${(1000).toLocaleString()} alg opers  ·  loop stride 4 (250 iterations)`)
+    expect(lines[0]).toBe(`Program: Base  ·  N = ${(1000).toLocaleString('en-US')} alg opers  ·  loop stride 4 (250 iterations)`)
     expect(lines).toContain('  Cache: 4 blocks × 8 B · Miss penalty 12 · Issue time 8')
     expect(lines.at(-1)).toBe('  Ports: P0 INT.ARITH, INT.LOGIC, INT.SHIFT, MEM.LOAD · P1 BRANCH, FLOAT.ADD')
   })

@@ -132,6 +132,13 @@
       max: 32,
       model: "rThru"
     },
+    bpenalty: {
+      label: "BrPenalty:",
+      title: "Branch penalty: cycles to refill the front-end after a mispredicted conditional branch resolves (0 to 99)",
+      min: 0,
+      max: 99,
+      model: "bPenalty"
+    },
     retire: {
       label: "Retire:",
       title: "Retire width (1 to 9)",
@@ -411,6 +418,8 @@
       data.nWriteBuffers = 2
     if (!Number.isInteger(data.rThru) || data.rThru < 1 || data.rThru > 32)
       data.rThru = 1
+    if (!Number.isInteger(data.bPenalty) || data.bPenalty < 0 || data.bPenalty > 99)
+      data.bPenalty = 5
     if (Number(data.mPenalty) < Number(data.mIssueTime)) {
       data.mPenalty = Number(data.mIssueTime)
       console.warn('💻⚠️ MissPenalty was raised to mIssueTime.')
@@ -473,6 +482,7 @@
               case 'dispatch':
               case 'rob':
               case 'retire':
+              case 'bpenalty':
                 activeField.value = action
                 break
 

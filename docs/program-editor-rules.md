@@ -131,6 +131,16 @@ RVCAT does not compute values, so each conditional branch has two fields, shown 
 | `prob` (p) | Probability that the branch is taken (it skips the block). The outcome of each execution is generated from p with a fixed seed, so simulations are reproducible. |
 | `mispredict` (m) | Misprediction rate, e.g. measured with perf. Empty: the simulator predicts the branch with a 2-bit saturating counter. |
 
+**Vector masks.** A vector loop can replace the branch of each element by a mask (example f1-AVX):
+
+| Text | Instruction |
+|---|---|
+| `m[0:7] = a[0:7] < b[0:7]` | VFLOAT.CMP: a mask, one condition per lane |
+| `t = none(m[0:7])` (also `any`, `all`) | VINT.LOGIC: a scalar condition from the lanes of the mask (like `vptest`) |
+| `C[x:x+7] = a[0:7] if m[0:7]` | VMEM.STORE with the field `mask`: only the lanes where the mask is true are written (like `vmaskmovps`) |
+
+The mask is an extra source of the store (a data dependence). In the editor it is shown in the Destin column of stores, which have no destination. RVCAT accesses the whole block of a masked store, like any store.
+
 **Processor and simulation.**
 - **Branch penalty** (processor parameter `bPenalty`): cycles to refill the front-end after a mispredicted branch resolves. The distributed processors use 4 (B1), 6 (B2), 8 (B4) and 17 (GC).
 - **Mispredictions** (option of the simulation):

@@ -47,7 +47,7 @@
       return value === null
         ? { value: 'X', title: 'Unknown: these results were saved without the simulated program' }
         : { value: value.toFixed(2),
-            title: `${result.total_cycles.toLocaleString()} cycles / (${result.total_iterations.toLocaleString()} iterations × ` +
+            title: `${result.total_cycles.toLocaleString('en-US')} cycles / (${result.total_iterations.toLocaleString('en-US')} iterations × ` +
                    `${stride} alg opers/iter) = ${value.toFixed(2)} ${ALG_OP_UNIT}` }
     })
   )
@@ -66,8 +66,8 @@
       return value === null
         ? { value: 'X', title: 'Unknown: these results were saved without the simulated program' }
         : { value: value.toFixed(2),
-            title: `${result.total_instructions.toLocaleString()} instructions / ` +
-                   `${(result.total_iterations * resultStride(result)).toLocaleString()} alg opers = ` +
+            title: `${result.total_instructions.toLocaleString('en-US')} instructions / ` +
+                   `${(result.total_iterations * resultStride(result)).toLocaleString('en-US')} alg opers = ` +
                    `${value.toFixed(2)} instr/alg oper` + '\n' +
                    `${value.toFixed(2)} instr/alg oper ÷ IPC ${result.ipc?.toFixed(3)} = ` +
                    `${resultCyclesPerAlgOp(result).toFixed(2)} ${ALG_OP_UNIT}` }
@@ -171,6 +171,7 @@
     if (instr1.stride  !== instr2.stride)   return false;
     if (instr1.lanes   !== instr2.lanes)    return false;
     if ((instr1.prob ?? '') !== (instr2.prob ?? ''))             return false;
+    if ((instr1.mask ?? '') !== (instr2.mask ?? ''))             return false;
     if ((instr1.mispredict ?? '') !== (instr2.mispredict ?? '')) return false;
     return true; // ✅ all are equal
   }
@@ -424,10 +425,10 @@
     const MM_reads    = results["MM_Reads"]
     const MM_writes   = results["MM_Writes"]
 
-    // "a+b = a+b total", or 'X' when a value is missing
-    const formatSum = (a, b) => (Number.isFinite(a) && Number.isFinite(b))
-      ? `${a.toLocaleString()}+${b.toLocaleString()} = ${(a + b).toLocaleString()}`
-      : 'X'
+    // total a+b (the detail goes to the tooltip), or 'X' when a value is missing
+    const formatSum = (a, b) => (Number.isFinite(a) && Number.isFinite(b)) ? (a + b).toLocaleString('en-US') : 'X'
+    const formatDetail = (a, b, first, second) => (Number.isFinite(a) && Number.isFinite(b))
+      ? `${first} ${a.toLocaleString('en-US')} + ${second} ${b.toLocaleString('en-US')} = ${(a + b).toLocaleString('en-US')}` : ''
 
     const mmUsagePercent = Number.isFinite(results.MM_usage_percent)
       ? results.MM_usage_percent
@@ -445,19 +446,23 @@
       stride,
       instrAlgOp:      instrAlgOp === null ? 'X' : instrAlgOp.toFixed(2),
       instrAlgOpTitle: instrAlgOp === null ? '' :
-        `${totalInstrs.toLocaleString()} instructions / ${(nIters * stride).toLocaleString()} alg opers = ` +
+        `${totalInstrs.toLocaleString('en-US')} instructions / ${(nIters * stride).toLocaleString('en-US')} alg opers = ` +
         `${instrAlgOp.toFixed(2)} instr/alg oper (${(totalInstrs / nIters).toFixed(2)} per iteration ÷ ${stride})`,
       algOp:        algOp === null ? 'X' : algOp.toFixed(2),
       algOpTitle:   algOp === null ? '' :
         `${cpi.toFixed(2)} cycles/iter ÷ ${stride} alg opers/iter (loop stride) = ${algOp.toFixed(2)} ${ALG_OP_UNIT}\n${ALG_OP_HELP}`,
-      iters:        nIters.toLocaleString(),
-      instructions: totalInstrs.toLocaleString(),
-      cycles:       totalCycles.toLocaleString(),
+      iters:        nIters.toLocaleString('en-US'),
+      instructions: totalInstrs.toLocaleString('en-US'),
+      cycles:       totalCycles.toLocaleString('en-US'),
       cpi:          cpi.toFixed(2),
       ipc:          ipc.toFixed(3),
       primary:      formatSum(results.read_primary_misses,   results.write_primary_misses),
       secondary:    formatSum(results.read_secondary_misses, results.write_secondary_misses),
-      MM:           mmTransfers === 'X' ? 'X' : `${mmTransfers} (${mmUsagePercent.toFixed(1)}%)`
+      MM:           mmTransfers === 'X' ? 'X' : `${mmTransfers} (${mmUsagePercent.toFixed(1)}%)`,
+      primaryTitle:   formatDetail(results.read_primary_misses, results.write_primary_misses, 'LD', 'ST'),
+      secondaryTitle: formatDetail(results.read_secondary_misses, results.write_secondary_misses, 'LD', 'ST'),
+      MMTitle:        formatDetail(MM_reads, MM_writes, 'Rd', 'Wr') +
+                      (mmTransfers === 'X' ? '' : ` · Main Memory busy ${mmUsagePercent.toFixed(1)}% of the cycles`),
     };
   });
 
@@ -633,7 +638,7 @@
     // ---- Decode ----
     let decode_row = `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Usage of dispatch capacity"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle${message}</FONT></TD>
-      <TD ROWSPAN="4" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Pending: usage of ROB capacity" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD ROWSPAN="${results?.branch ? 5 : 4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="Pending: usage of ROB capacity" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -673,6 +678,16 @@
       </TR>`
     }
 
+    // ---- Branch prediction (programs with conditional branches) ----
+    let branch_row = ''
+    const branch = results?.branch
+    if (branch) {
+      const rate = branch.branches > 0 ? 100 * branch.mispredictions / branch.branches : 0
+      branch_row = `<TR>
+        <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="branch" TITLE="Mispredicted conditional branches (if c skip k) of all the conditional branches executed"><FONT POINT-SIZE="20"><B>Branch prediction:&nbsp;</B><B><FONT COLOR="${rate < 10 ? '#2e7d32' : color[Math.min(color.length - 1, Math.floor(rate / 5))]}">${rate.toFixed(1)}%</FONT></B> mispredicted (${branch.mispredictions.toLocaleString('en-US')} of ${branch.branches.toLocaleString('en-US')})</FONT></TD>
+      </TR>`
+    }
+
     usage = 0
     if (results !== null)
       usage = (results.ipc / retire) * 100
@@ -695,6 +710,7 @@
               ${decode_row}
               ${port_header}
               ${cache_row}
+              ${branch_row}
               ${reg_row}
             </TABLE>
           >
@@ -913,32 +929,37 @@
         </div>
       </div>
       <div class="row">
-        <div class="simulation-inline-item">
-          <label for="PrimaryMiss">Primary Misses:</label>
-          <span id="PrimaryMiss-output" title="LD+ST = Total. Primary misses start a new fill: LD = caused by a LOAD, ST = caused by a STORE.">{{ formattedResults.primary }}</span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="SecondaryMiss">Secondary Misses:</label>
-          <span id="SecondaryMiss-output" title="LD+ST = Total. Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.">{{ formattedResults.secondary }}</span>
-        </div>
-        <div v-if="simState.executionResults?.branch" class="simulation-inline-item">
+        <!-- branch statistics (green, left) -->
+        <div v-if="simState.executionResults?.branch" class="simulation-inline-item stat-branch">
           <label>Mispredictions/iter:</label>
           <span id="mispredictions-output"
-                :title="`${simState.executionResults.branch.mispredictions.toLocaleString()} mispredicted of ${simState.executionResults.branch.branches.toLocaleString()} conditional branches. Branch penalty ${simState.executionResults.branch.penalty} cycles; after a misprediction: ${simState.executionResults.branch.speculation}`">
+                :title="`${simState.executionResults.branch.mispredictions.toLocaleString('en-US')} mispredicted of ${simState.executionResults.branch.branches.toLocaleString('en-US')} conditional branches. Branch penalty ${simState.executionResults.branch.penalty} cycles; after a misprediction: ${simState.executionResults.branch.speculation}`">
             {{ simState.executionResults.branch.mispredictions_per_iteration.toFixed(3) }}
           </span>
         </div>
-        <div v-if="simState.executionResults?.branch?.speculation === 'wrong-path'" class="simulation-inline-item">
+        <div v-if="simState.executionResults?.branch?.speculation === 'wrong-path'" class="simulation-inline-item stat-branch">
           <label>Wrong path:</label>
           <span id="wrong-path-output"
-                :title="`Wrong-path instructions: ${simState.executionResults.branch.wrong_path_dispatched.toLocaleString()} dispatched, ${simState.executionResults.branch.wrong_path_executed.toLocaleString()} started executing. Loads: ${simState.executionResults.branch.wrong_path_reads.toLocaleString()} (${simState.executionResults.branch.wrong_path_read_misses.toLocaleString()} misses); stores (RFO): ${simState.executionResults.branch.wrong_path_writes.toLocaleString()} (${simState.executionResults.branch.wrong_path_write_misses.toLocaleString()} misses)`">
-            {{ simState.executionResults.branch.wrong_path_dispatched.toLocaleString() }} instr ·
-            {{ (simState.executionResults.branch.wrong_path_read_misses + simState.executionResults.branch.wrong_path_write_misses).toLocaleString() }} misses
+                :title="`Wrong-path instructions: ${simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US')} dispatched, ${simState.executionResults.branch.wrong_path_executed.toLocaleString('en-US')} started executing. Loads: ${simState.executionResults.branch.wrong_path_reads.toLocaleString('en-US')} (${simState.executionResults.branch.wrong_path_read_misses.toLocaleString('en-US')} misses); stores (RFO): ${simState.executionResults.branch.wrong_path_writes.toLocaleString('en-US')} (${simState.executionResults.branch.wrong_path_write_misses.toLocaleString('en-US')} misses)`">
+            {{ simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US') }} instr ·
+            {{ (simState.executionResults.branch.wrong_path_read_misses + simState.executionResults.branch.wrong_path_write_misses).toLocaleString('en-US') }} misses
           </span>
         </div>
-        <div class="simulation-inline-item">
+        <!-- cache statistics (blue, right) -->
+        <div class="simulation-inline-item stat-cache stat-cache-first">
+          <label for="PrimaryMiss">Primary Misses:</label>
+          <span id="PrimaryMiss-output"
+                :title="`${formattedResults.primaryTitle ? formattedResults.primaryTitle + '. ' : ''}Primary misses start a new fill: LD = caused by a LOAD, ST = caused by a STORE.`">{{ formattedResults.primary }}</span>
+        </div>
+        <div class="simulation-inline-item stat-cache">
+          <label for="SecondaryMiss">Secondary Misses:</label>
+          <span id="SecondaryMiss-output"
+                :title="`${formattedResults.secondaryTitle ? formattedResults.secondaryTitle + '. ' : ''}Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.`">{{ formattedResults.secondary }}</span>
+        </div>
+        <div class="simulation-inline-item stat-cache">
           <label for="MM">MM Transfers:</label>
-          <span id="MM-output" title="Rd+Wr = Total (%). Rd = Main Memory reads caused by cache misses (including STORE read-for-write); Wr = writes of dirty blocks evicted from the cache; % = fraction of total cycles in which Main Memory is busy.">{{ formattedResults.MM }}</span>
+          <span id="MM-output"
+                :title="`${formattedResults.MMTitle ? formattedResults.MMTitle + '. ' : ''}Rd = Main Memory reads caused by cache misses (including STORE read-for-write); Wr = writes of dirty blocks evicted from the cache.`">{{ formattedResults.MM }}</span>
         </div>
       </div>
     </div>
@@ -946,7 +967,7 @@
       {{ executionError }}
     </div>
     <div v-if="repeatingCriticalPath" id="critical-path-pattern" class="critical-path-pattern">
-      <strong>Repeated critical-path pattern from Loop Iteration {{ repeatingCriticalPath.start_iteration.toLocaleString() }} to {{ repeatingCriticalPath.end_iteration.toLocaleString() }} ({{ repeatingCriticalPath.cycles_per_iteration.toLocaleString() }} critical cycles per repetition).</strong>
+      <strong>Repeated critical-path pattern from Loop Iteration {{ repeatingCriticalPath.start_iteration.toLocaleString('en-US') }} to {{ repeatingCriticalPath.end_iteration.toLocaleString('en-US') }} ({{ repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }} critical cycles per repetition).</strong>
       <p>{{ repeatingCriticalPathText }}</p>
     </div>
 
@@ -1022,9 +1043,10 @@
               <th style="width: 100px;" :title="algOpHeaderTitle"> Cycles/Alg Oper </th>
               <th style="width: 100px;" :title="speedupHeaderTitle"> Speedup </th>
               <th style="width: 100px;"> IPC    </th>
+              <th style="width: 90px;" title="Mispredicted conditional branches per loop iteration (programs with if c skip k)"> Mispred/iter </th>
               <th style="width: 100px;" title="Primary cache misses (LOAD + STORE)"> Primary </th>
               <th style="width: 100px;" title="Secondary cache misses (LOAD + STORE)"> Secondary </th>
-              <th style="width: 120px;" title="Main Memory transfers: Rd+Wr (% of cycles MM is busy)"> MM </th>
+              <th style="width: 100px;" title="Main Memory transfers (reads + writes); the detail is in the tooltip"> MM </th>
             </tr>
           </thead>
           <tbody v-if="simulationOptions.resultName">
@@ -1039,13 +1061,13 @@
                 />
               </td>
               <td title="Total loop iterations executed">
-                {{ showResultsInfo[index]?.total_iterations?.toLocaleString() ?? 'X' }}
+                {{ showResultsInfo[index]?.total_iterations?.toLocaleString('en-US') ?? 'X' }}
               </td>
               <td title="Total machine instructions executed">
-                {{ showResultsInfo[index]?.total_instructions?.toLocaleString() ?? 'X' }}
+                {{ showResultsInfo[index]?.total_instructions?.toLocaleString('en-US') ?? 'X' }}
               </td>
               <td title="Total clock cycles taken">
-                {{ showResultsInfo[index]?.total_cycles?.toLocaleString() ?? 'X' }}
+                {{ showResultsInfo[index]?.total_cycles?.toLocaleString('en-US') ?? 'X' }}
               </td>
               <td title="Cycles per loop iteration">
                 {{ showResultsInfo[index]?.cycles_per_iteration?.toFixed(2) ?? 'X' }}
@@ -1065,13 +1087,16 @@
               <td title="Instructions Per cycle (IPC)">
                 {{ showResultsInfo[index]?.ipc?.toFixed(3) ?? 'X' }}
               </td>
+              <td :title="showResultsInfo[index]?.branch ? `${showResultsInfo[index].branch.mispredictions.toLocaleString('en-US')} mispredicted of ${showResultsInfo[index].branch.branches.toLocaleString('en-US')} conditional branches; after a misprediction: ${showResultsInfo[index].branch.speculation}` : 'No conditional branches'">
+                {{ showResultsInfo[index]?.branch ? showResultsInfo[index].branch.mispredictions_per_iteration.toFixed(3) : '—' }}
+              </td>
               <td :title="storedMemoryColumns[index]?.primaryDetail || 'Primary cache misses'">
                 {{ storedMemoryColumns[index]?.primary ?? 'X' }}
               </td>
               <td :title="storedMemoryColumns[index]?.secondaryDetail || 'Secondary cache misses'">
                 {{ storedMemoryColumns[index]?.secondary ?? 'X' }}
               </td>
-              <td title="Rd = MM reads for cache misses; Wr = writes of evicted dirty blocks; % = cycles in which MM is busy">
+              <td :title="storedMemoryColumns[index]?.MMDetail || 'Main Memory transfers'">
                 {{ storedMemoryColumns[index]?.MM ?? 'X' }}
               </td>
             </tr>
@@ -1150,6 +1175,9 @@
   .iters-run span {
     white-space: nowrap;
   }
+  .simulation-inline-item.stat-branch { background: #e6f4e6; }
+  .simulation-inline-item.stat-cache  { background: #e6eef8; }
+  .simulation-inline-item.stat-cache-first { margin-left: auto; }
   .sim-setting {
     display:     inline-flex;
     align-items: center;

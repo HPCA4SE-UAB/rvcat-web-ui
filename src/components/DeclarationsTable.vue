@@ -27,6 +27,7 @@
     array: 'Array in memory: its type is the type of its elements',
     index: 'Memory index (always INT)', counter: 'Loop counter (always INT)',
     condition: 'Condition of a comparison or of the branch (always INT)',
+    mask: 'Mask of a masked store: one condition per lane (INT)',
     size: 'Number of elements in a backward index (N-c-i), always INT',
     data: 'Data computed by the loop', 'read-only': 'Value read by the loop and never written (e.g. N, a constant)',
   }
