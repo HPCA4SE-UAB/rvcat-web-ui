@@ -1436,7 +1436,7 @@
                 <p>Misses are admitted by age when a fill buffer and a cache line are free; misses to the same block
                   share one fill. A fill buffer stays busy until every waiting instruction gets its data, even if its
                   cache line is replaced meanwhile. An evicted dirty block waits in a write buffer until written to MM,
-                  before the new block is fetched. Buffer sizes and return throughput are set in the processor editor.
+                  before the new block is fetched. Buffer sizes and return throughput are set in the Cache row of the Processor panel.
                   The model has no LSQ dependencies or load/store bypass.</p>
               </details>
               <details><summary>Symbols in instruction rows (! 2 : @)</summary>

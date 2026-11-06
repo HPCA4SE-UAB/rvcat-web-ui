@@ -1,8 +1,8 @@
-// Drafts used by the program and processor editors ('programTemp', 'processorTemp').
-// When an editor is opened from the header and its draft is empty or untouched,
-// it starts from the program/processor currently selected.
+// Drafts used by the program editor ('programTemp'): when the editor is opened from the
+// header and its draft is empty or untouched, it starts from the program currently selected.
+// The processor is edited in its own panel; processorDraftFrom gives the configuration to save.
 
-// Processor configuration to edit, from the current simulated process
+// Processor configuration (to save or compare), from the current simulated process
 export function processorDraftFrom(process) {
   return {
     name:          'edit',
@@ -20,6 +20,18 @@ export function processorDraftFrom(process) {
     latencies:     JSON.parse(JSON.stringify(process.latencies ?? {})),
     ports:         JSON.parse(JSON.stringify(process.ports ?? {})),
   }
+}
+
+// Text that is equal for two processors with the same configuration (whatever the name, the
+// order of the keys or the order of the operation types in each port)
+export function processorSignature(process) {
+  const config = processorDraftFrom(process)
+  delete config.name
+  const sorted = (obj) => Object.fromEntries(Object.keys(obj).sort().map(k => [k, obj[k]]))
+  config.latencies = sorted(config.latencies)
+  config.ports = Object.fromEntries(Object.keys(config.ports).sort((a, b) => Number(a) - Number(b))
+    .map(p => [p, [...(config.ports[p] ?? [])].sort()]))
+  return JSON.stringify(sorted(config))
 }
 
 // Program to edit, from the current simulated process

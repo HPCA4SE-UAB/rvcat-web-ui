@@ -81,6 +81,42 @@ export function normalizeLatencyKeys(latencies) {
   return latencies
 }
 
+// ---- Execution ports of a processor ({ "0": ["INT", "FLOAT.ADD", ...], ... }) ----
+export const MAX_PORTS = 10
+
+// operations of a port entry: a whole type ("INT") stands for all its operations
+const expandPortEntry = (entry) => (entry.includes('.') || !(typeOperations[entry] ?? []).length)
+  ? [entry] : typeOperations[entry].map(op => `${entry}.${op}`)
+
+// all the operations of the instruction types ("INT.ARITH", ..., "BRANCH")
+export const allOperationNames = () => instructionTypes.flatMap(type =>
+  (typeOperations[type] ?? []).length ? typeOperations[type].map(op => `${type}.${op}`) : [type])
+
+// Operations that no port executes. CVT, SHUFFLE, PERMUTE and CMP without a port of their own use
+// the ports of another operation (FALLBACK), so they only count when that one has no port either.
+export function unassignedOperations(ports = {}) {
+  const executed = new Set(Object.values(ports).flatMap(list => (list ?? []).flatMap(expandPortEntry)))
+  return allOperationNames().filter(op => {
+    if (executed.has(op)) return false
+    const [type, oper] = op.split('.')
+    const fallbackOp = oper ? FALLBACK[oper]?.op[type] : null
+    return !(fallbackOp && executed.has(fallbackOp))
+  })
+}
+
+// Ports after removing port `id`: the remaining ports are renumbered P0, P1, ... and the
+// operations that only the removed port executed are assigned to P0.
+export function removePortFrom(ports, id) {
+  const removed  = (ports[id] ?? []).flatMap(expandPortEntry)
+  const remaining = Object.keys(ports).filter(p => p !== String(id))
+    .sort((a, b) => Number(a) - Number(b)).map(p => [...(ports[p] ?? [])])
+  if (!remaining.length) return { ports: { ...ports }, moved: [] }
+  const executed = new Set(remaining.flatMap(list => list.flatMap(expandPortEntry)))
+  const moved = removed.filter(op => !executed.has(op))
+  remaining[0].push(...moved)
+  return { ports: Object.fromEntries(remaining.map((list, i) => [String(i), list])), moved }
+}
+
 const validLatency = (value) => (Number.isFinite(value) && value >= 1 ? value : undefined)
 
 // Latency and port mask of an instruction in a processor (latencies, opToMask from its ports)
@@ -1038,21 +1074,30 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     const total_rows = options.collapsed ? 0 : max_rows
 
 
+    const unassigned = allowEdit ? unassignedOperations(ports) : []   // warning row below
+
     // ---- Dispatch + ROB ----
     const click = allowEdit ? ' Click to edit it.' : ''
     let decode_row = `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Dispatch width: up to ${dispatch} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows+6}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
     // (the editable panel shows controls: hide/show the operation types, add a port)
+    // (and warns about operations that no port executes: their instructions cannot be simulated)
     const toggleText = options.collapsed ? `▼&nbsp;show operation types (${max_rows} rows)` : '▲&nbsp;hide operation types'
     const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? 'Show' : 'Hide'} the operation types that each port executes"><FONT POINT-SIZE="16">${toggleText}</FONT></TD>`
+    const warnRow = unassigned.length
+      ? `<TR><TD COLSPAN="${port_ids.length}" BGCOLOR="#fff3cd" HREF="#" ID="unassigned" TITLE="No port executes ${unassigned.join(', ')}: programs that use ${unassigned.length > 1 ? 'them' : 'it'} cannot be simulated. Click a port header to insert ${unassigned.length > 1 ? 'them' : 'it'}."><FONT POINT-SIZE="16" COLOR="#8a5a00">⚠&nbsp;${unassigned.length} operation type${unassigned.length > 1 ? 's' : ''} without port</FONT></TD></TR>`
+      : ''
+    const addCell = port_ids.length < MAX_PORTS
+      ? `<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="Add a new execution port (then click its header to insert operation types)"><FONT POINT-SIZE="16">＋&nbsp;port</FONT></TD>`
+      : `<TD BGCOLOR="#eeeeee" HREF="#" ID="maxports" TITLE="At most ${MAX_PORTS} execution ports"><FONT POINT-SIZE="16" COLOR="#888888">${MAX_PORTS} ports</FONT></TD>`
     let wb_row = allowEdit
       ? (port_ids.length >= 2
-          ? `<TR>${toggleCell(port_ids.length - 1)}<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="Add a new execution port (then click its header to insert operation types)"><FONT POINT-SIZE="16">＋&nbsp;port</FONT></TD></TR>`
-          : `<TR>${toggleCell(port_ids.length)}</TR>`)
+          ? `<TR>${toggleCell(port_ids.length - 1)}${addCell}</TR>`
+          : `<TR>${toggleCell(port_ids.length)}</TR>`) + warnRow
       : `<TR>
       <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="Instructions wait here for their operands and a free port"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT></TD>
     </TR>`

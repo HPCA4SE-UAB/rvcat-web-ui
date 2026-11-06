@@ -172,7 +172,7 @@ Warning **T6** marks:
 **Processors.** CVT is an operation of INT, VINT, FLOAT and VFLOAT. INT.CVT converts a float into an integer.
 - The distributed processors execute CVT in 3 cycles, in the ports of FLOAT.ADD (VFLOAT.ADD for VINT/VFLOAT).
 - Processors written before CVT existed get the same values by default.
-- The latency can depend on the direction through the size-specific latencies (`FLOAT.CVT.double`, `FLOAT.CVT.single`) of the processor editor.
+- The latency can depend on the direction through the size-specific latencies (`FLOAT.CVT.double`, `FLOAT.CVT.single`) of the Processor panel (click the operation type and choose the size).
 
 **Vector registers.** The *Vector regs* field of the editor sets the width in bytes of the vector registers (8, 16, 32 or 64). It is saved in the program as `vlen`. *Auto* takes the largest vector instruction of the program.
 

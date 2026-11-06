@@ -1,11 +1,11 @@
 <script setup>
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
-  import { uploadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
+  import { uploadJSON, downloadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
            createGraphVizGraph, get_processor_dot, CACHE_BLOCK_SIZES,
-           getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations,
-           instructionTypes }                                                           from '@/common'
-  import { processorDraftFrom }                                                         from '@/editDrafts'
+           getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations, typeSizes,
+           allOperationNames, removePortFrom, MAX_PORTS }                                 from '@/common'
+  import { processorDraftFrom, processorSignature }                                     from '@/editDrafts'
 
   const simState = inject('simulationState');
 
@@ -159,20 +159,32 @@
   const latencyKeys = (label) => (label.includes('.') ? [label]
     : [label, ...(typeOperations[label] ?? []).map(op => `${label}.${op}`)])
 
-  function latencyOf(label) {
+  // data sizes with their own latency ("FLOAT.ADD.double"); only for one operation, not a whole type
+  const sizesOf = (label) => (label?.includes('.') ? typeSizes[label.split('.')[0]] ?? [] : [])
+  const selectedSize = ref('')      // '' = every size
+
+  function latencyOf(label, size = '') {
     const lat = simState.simulatedProcess.latencies ?? {}
+    if (size && lat[`${label}.${size}`] !== undefined) return lat[`${label}.${size}`]
     return lat[label] ?? lat[label.split('.')[0]] ?? 1
   }
-  function setLatency(label, value) {
+  // without a size, the latency applies to every operation and size of the label
+  function setLatency(label, value, size = '') {
     const lat = simState.simulatedProcess.latencies ??= {}
+    if (size) { lat[`${label}.${size}`] = value; return }
     for (const key of latencyKeys(label)) lat[key] = value
+    for (const key of Object.keys(lat)) if (key.startsWith(`${label}.`)) lat[key] = value
   }
 
   const currentConfig = computed(() => {
     if (activeField.value === 'op' && selectedOp.value) {
       const { label } = selectedOp.value
-      return { label: `${label} latency:`, min: 1, max: 99, get: () => latencyOf(label), set: (v) => setLatency(label, v),
-               title: `Latency of ${label} in cycles (1 to 99). It is the same in every port that executes ${label}` }
+      const size = selectedSize.value
+      const name = size ? `${label}.${size}` : label
+      return { label: `${name} latency:`, min: 1, max: 99, get: () => latencyOf(label, size), set: (v) => setLatency(label, v, size),
+               title: size
+                 ? `Latency of ${label} on ${size} data in cycles (1 to 99), in every port that executes ${label}`
+                 : `Latency of ${label} in cycles (1 to 99), for every data size and in every port that executes ${label}` }
     }
     if (activeField.value === 'port' && selectedPort.value !== null)
       return { label: `P${selectedPort.value}:`, min: 0, max: 0, get: () => '', port: true,
@@ -183,8 +195,7 @@
 
   // ---- Ports and operation types ----
   const portIds = computed(() => Object.keys(simState.simulatedProcess.ports ?? {}))
-  const allOperations = computed(() => instructionTypes.flatMap(type =>
-    (typeOperations[type] ?? []).length ? typeOperations[type].map(op => `${type}.${op}`) : [type]))
+  const allOperations = computed(() => allOperationNames())
   const insertableOps = computed(() => {
     const list = simState.simulatedProcess.ports?.[selectedPort.value] ?? []
     return allOperations.value.filter(op => !list.includes(op) && !list.includes(op.split('.')[0]))
@@ -219,6 +230,7 @@
     moveTarget.value = ''
   }
   function addPort() {
+    if (portIds.value.length >= MAX_PORTS) return showTemporaryError(`At most ${MAX_PORTS} execution ports`)
     const ids = portIds.value.map(Number)
     const id = String(ids.length ? Math.max(...ids) + 1 : 0)
     simState.simulatedProcess.ports = { ...simState.simulatedProcess.ports, [id]: [] }
@@ -229,11 +241,11 @@
     const id = selectedPort.value
     if (id === null || portIds.value.length <= 1) return
     const ops = simState.simulatedProcess.ports[id] ?? []
-    if (ops.length && !confirm(`Remove port P${id} and its ${ops.length} operation type(s)? Instructions that only P${id} executes cannot be simulated.`))
+    if (ops.length && !confirm(`Remove port P${id}? The operation types that only P${id} executes move to the first remaining port, and the ports are renumbered P0, P1, ...`))
       return
-    const ports = { ...simState.simulatedProcess.ports }
-    delete ports[id]
+    const { ports, moved } = removePortFrom(simState.simulatedProcess.ports, id)
     simState.simulatedProcess.ports = ports
+    if (moved.length) showTemporaryError(`Moved to P0: ${moved.join(', ')}`)   // P0 after renumbering
     selectedPort.value = null
     activeField.value = 'rob'
   }
@@ -456,7 +468,6 @@
 
   onUnmounted(() => {
     console.log('💻👋 Processor Component unmounted')
-    localStorage.removeItem('processorTemp')
     removeClickListeners()
   });
 
@@ -486,6 +497,7 @@
         simState.state = 2;       // Change to next initialization step
         console.log('💻✅ Initialization step (2): processor configuration loaded')
       }
+      savedSignature.value = processorSignature(data)
       data.name = simState.simulatedProcess.name || 'unknown'
       Object.assign(simState.simulatedProcess, data)
       simState.processorName= processorOptions.processorName
@@ -515,15 +527,44 @@
     }
   }
 
-  const emit = defineEmits(['requestSwitchFull'])
+// ---- Changes made in the panel: save with a name (local list + JSON file), or revert ----
+  const savedSignature = ref('')     // configuration of the processor as stored in the list
+  const modified = computed(() => simState.state > 1 && !!savedSignature.value &&
+    processorSignature(simState.simulatedProcess) !== savedSignature.value)
 
-  function editProcessor () {
-    if (simState.simulatedProcess) {
-      const cleanProcConfig = processorDraftFrom(simState.simulatedProcess)
-      localStorage.setItem('processorTemp', JSON.stringify(cleanProcConfig));
-      console.log('💻📄 Emit requestSwitchFull for processor edition')
-      emit('requestSwitchFull', 'processor')
-    }
+  const showSave = ref(false)
+  const saveName = ref('')
+  const saveNameError = computed(() => {
+    const name = saveName.value.trim()
+    if (!name) return 'Write a name'
+    if (!/^[\w.\- ]+$/.test(name)) return 'Use letters, digits, spaces, "_", "-" or "."'
+    return ''
+  })
+  const overwrites = computed(() => {
+    const name = saveName.value.trim()
+    return name !== processorOptions.processorName && processorOptions.availableProcessors.includes(name)
+  })
+
+  function openSave() {
+    saveName.value = processorOptions.processorName || ''
+    showSave.value = true
+  }
+
+  async function confirmSave(download) {
+    if (saveNameError.value) return
+    const name = saveName.value.trim()
+    const data = processorDraftFrom(simState.simulatedProcess)
+    data.name  = name
+    saveToLocalStorage('processor', name, data, processorOptions.availableProcessors)
+    simState.processorName         = name     // already loaded: selecting it does not reload it
+    processorOptions.processorName = name
+    savedSignature.value = processorSignature(data)
+    showSave.value = false
+    if (download) await downloadJSON(data, name, 'processor')
+  }
+
+  function revertProcessor() {
+    reloadProcessor()
   }
 
   function removeProcessor () {
@@ -571,6 +612,7 @@
             if (action.startsWith('op:')) {       // op:<port>:<row>:<label>
               const [, port, , label] = action.split(':')
               selectedOp.value = { port, label }
+              selectedSize.value = ''
               moveTarget.value = ''
               activeField.value = 'op'
               return
@@ -647,6 +689,7 @@
           return
         }
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
+        savedSignature.value   = processorSignature(data)
         simState.processorName = data.name
         processorOptions.processorName = data.name
         data.name = simState.simulatedProcess.name || 'unknown'
@@ -740,10 +783,15 @@
           </option>
           <option value="_add_new_">Add new</option>
         </select>
-        <button class="blue-button small-btn" @click="editProcessor"
-          id="edit-processor-button"
-          title="Edit current processor configuration">
-        📝
+        <button class="blue-button small-btn" @click="openSave"
+          id="save-processor-button"
+          title="Save the processor with a name: it is added to the list (local storage) and can be downloaded as a JSON file">
+        💾
+        </button>
+        <button v-if="modified" class="blue-button small-btn modified-btn" @click="revertProcessor"
+          id="revert-processor-button"
+          :title="`Modified: the processor differs from the saved '${processorOptions.processorName}'. Click to discard the changes`">
+        ✱ ↶
         </button>
         <button class="blue-button small-btn" @click="removeProcessor"
           id="remove-processor-button"
@@ -805,6 +853,11 @@
           ▼
         </button>
         <template v-if="activeField === 'op' && selectedOp">
+          <select v-if="sizesOf(selectedOp.label).length" v-model="selectedSize" id="op-size-select"
+                  :title="`Edit the latency of ${selectedOp.label} for every data size, or for one size only`">
+            <option value="">all sizes</option>
+            <option v-for="s in sizesOf(selectedOp.label)" :key="s" :value="s">{{ s }}</option>
+          </select>
           <select v-model="moveTarget" @change="moveOperation" id="op-move-select"
                   :title="`Move ${selectedOp.label} from P${selectedOp.port} to another port`">
             <option value="">move to…</option>
@@ -825,38 +878,86 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="The table describes the <strong>processor microarchitecture</strong> (pipeline) characteristics.
-        <p>Click on the corresponding table cells to modify the <strong>Dispatch</strong> and/or <strong>Retire</strong> widths
-          (maximum number of instructions dispatched into or retired from the <strong>Execution Engine</strong> per clock cycle),
-          or the <strong>ROB</strong> (ReOrder Buffer) size (maximum number of instructions on the <strong>Execution Engine</strong>).
-          All of them may impose a performance limit. The instruction scheduler (greedy or optimal) is an option of the
-          simulation (Simulation panel).</p>
-        <p>The row above the ports <strong>hides or shows the operation types</strong> of the ports, and <strong>＋ port</strong>
-          adds an execution port. Click a <strong>port header</strong> (Px) to insert an operation type in it or to remove the port.
-          Click an <strong>operation type</strong> to edit its latency (the same in every port), or to move it to another port or remove it.
-          Click the <strong>Branch penalty</strong> row to edit the cycles lost after a mispredicted conditional branch.</p>
-        <p>Click repeatedly on the <strong>Cache</strong> row to cycle through and modify the number of blocks, block size, miss penalty, issue time, fill buffers, and write buffers.
-           Setting a Number of Blocks = 0 means all data accesses will always hit in the cache, and, therefore, the latency of memory loads and stores is constant.
-           The cache miss penalty indicates the extra time required to execute load and store instructions when they miss in the cache, and must be at least the issue time.
-           The cache miss issue time (<strong>m</strong>) is the minimum time required to issue consecutive memory block read/write requests to the Main Memory.
-           It determines the maximum Main Memory bandwidth (one memory block every <strong>m</strong> clock cycles).
-           Fill and write buffer counts are also editable from the Cache row.</p>
-
-        <p>Each instruction type is assigned a fixed execution latency and a set of eligible execution ports
-         (only one is used for executing each instruction). A given execution port, named <em>Px</em>, can start executing one instruction every clock cycle.
-         Hover the operation types to see their latencies, and the other rows to see what each parameter means.
-         A first click on a cell selects it for editing; a <strong>second click</strong> on the same cell pins its explanation in a box.</p>
-        <p>A new <em>processor configuration</em> can be selected from the list (referring to a JSON file description stored in local storage).
-         Click on the corresponding button to <strong>edit</strong> the current processor config or
-         to <strong>remove</strong> the current config file from local storage.</p>
+    text="The table describes the <strong>processor microarchitecture</strong> (pipeline). Click a cell to edit it: its controls
+        appear in the header of the panel. A <strong>second click</strong> on the same cell pins its explanation in a box.
+        Hover the cells to see what each parameter means.
+        <h4>Dispatch, ROB and Retire</h4>
+        <p><strong>Dispatch</strong> and <strong>Retire</strong> widths: maximum number of instructions per clock cycle
+          dispatched into or retired from the <strong>Execution Engine</strong>. They may impose a throughput-bound performance limit.
+          The <strong>ROB</strong> (ReOrder Buffer) size is the maximum number of instructions in the Execution Engine.
+          It limits the instruction-level parallelism that the processor can exploit, and may impose latency-bound performance limits.
+          The instruction scheduler (greedy or optimal) is an option of the simulation (Simulation panel).</p>
+        <h4>Execution ports and operation types</h4>
+        <p>Each operation type has a fixed execution latency and a set of eligible execution ports (only one is used for each instruction).
+          A port, named <em>Px</em>, can start executing one instruction every clock cycle.</p>
+        <p>The row above the ports <strong>hides or shows the operation types</strong>, and <strong>＋ port</strong> adds a port (at most 10).
+          Click a <strong>port header</strong> (Px) to insert an operation type in it or to remove the port. When a port is removed,
+          the operation types that only that port executed move to the first remaining port, and the ports are renumbered P0, P1, ...</p>
+        <p>Click an <strong>operation type</strong> to edit its latency (the same in every port), or to move it to another port or remove it.
+          For one operation (for example FLOAT.ADD) the latency can be set for every data size or for one size only (single, double, ...).
+          A warning row lists the operation types that no port executes: programs that use them cannot be simulated.
+          CVT, SHUFFLE, PERMUTE and CMP without a port of their own use the ports of FLOAT.ADD / VFLOAT.ADD or VINT.LOGIC.</p>
+        <h4>Cache</h4>
+        <p>Click repeatedly on the <strong>Cache</strong> row to cycle through its parameters. A Number of Blocks = 0 means that all data accesses
+          hit in the cache, so the latency of loads and stores is constant. The <strong>miss penalty</strong> is the extra time of a load or store
+          that misses in the cache, and must be at least the issue time. The <strong>issue time</strong> (<em>m</em>) is the minimum time between
+          consecutive block requests to Main Memory: it sets the Main Memory bandwidth (one block every <em>m</em> cycles).
+          The block size is a power of two (8 to 128 bytes), large enough for the largest memory access of the program.</p>
+        <p><strong>Fill Buffers</strong> limit the number of distinct cache blocks being fetched; misses to the same block share one fill.
+          <strong>Write Buffers</strong> hold dirty blocks evicted while a fill waits for their writeback. A fill waits when either buffer is full.
+          <strong>Return Throughput</strong> is the number of loads and stores waiting on completed fills that receive their data per cycle,
+          served in program order by an independent queue, without paying their execution latency again (1 by default).</p>
+        <h4>Branch penalty</h4>
+        <p>Cycles lost to refill the front-end after a mispredicted conditional branch is resolved.</p>
+        <h4>Processor configurations</h4>
+        <p>Select a processor from the list (stored in the local storage of the browser), or <em>Add new</em> to load one from a JSON file.
+          Changes made in the panel apply to the current processor at once; the <strong>✱ ↶</strong> button appears while it differs from
+          the saved version, and discards the changes. <strong>💾</strong> saves the processor with a name: it is added to the list and,
+          optionally, downloaded as a JSON file. <strong>🧹</strong> removes the current processor from the list.</p>
         "
     title="Processor MicroArchitecture Description"
     @close="closeHelp" />
   </Teleport>
 
+  <div v-if="showSave" class="modal-overlay" @click.self="showSave = false">
+    <div class="modal">
+      <h4>Save processor as</h4>
+      <label for="save-processor-name">Name:</label>
+      <input v-model="saveName" type="text" id="save-processor-name" @keyup.enter="confirmSave(true)"
+             title="Name of the processor in the list, and of the downloaded JSON file"/>
+      <div v-if="saveNameError" class="error">{{ saveNameError }}</div>
+      <div v-else-if="overwrites" class="warning">A processor named "{{ saveName.trim() }}" already exists: it will be replaced.</div>
+      <div class="modal-actions">
+        <button class="blue-button" id="save-processor-download" :disabled="!!saveNameError" @click="confirmSave(true)"
+                title="Add the processor to the list and download it as a JSON file">Save and download</button>
+        <button class="blue-button" id="save-processor-only" :disabled="!!saveNameError" @click="confirmSave(false)"
+                title="Add the processor to the list (local storage of this browser)">Save</button>
+        <button class="blue-button" @click="showSave = false" title="Cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <style scoped>
+  .modal-overlay {
+    position: fixed; inset: 0; display: flex; z-index: 1000;
+    background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center;
+  }
+  .modal {
+    background: white; padding: 25px; border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); min-width: min(400px, 90vw);
+  }
+  .modal h4 { margin: 0 0 15px 0; color: #007acc; }
+  .modal label { display: block; margin-bottom: 5px; font-weight: bold; }
+  .modal input {
+    width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc;
+    border-radius: 4px; box-sizing: border-box; font-size: 14px;
+  }
+  .modal .error   { color: #c62828; font-size: 0.9em; }
+  .modal .warning { color: #8a5a00; font-size: 0.9em; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .modified-btn { background: #f0ad4e; }
   .iters-group rob-group {
     gap:         0px;
   }

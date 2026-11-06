@@ -4,7 +4,6 @@ import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, compu
 import processor               from '@/components/processor.vue';
 import program                 from '@/components/program.vue';
 import programEditor           from '@/components/programEditor.vue';
-import processorEditor         from '@/components/processorEditor.vue';
 import tutorialComponent       from '@/components/tutorialComponent.vue';
 import tutorialEditor          from '@/components/tutorialEditor.vue';
 import timelineComponent       from '@/components/timelineComponent.vue';
@@ -82,7 +81,6 @@ const currentComponent = shallowRef(components[currentKey.value])
 
 // Computed to use on template
 const isNotFullscreen       = computed(() => currentFullKey.value === 'none');
-const isProcessorFullscreen = computed(() => currentFullKey.value === 'processor');
 const isProgramFullscreen   = computed(() => currentFullKey.value === 'program');
 const isTutorialFullscreen  = computed(() => currentFullKey.value === 'tutorial');
 
@@ -93,14 +91,12 @@ const getButtonText = (key, baseText) => {
 };
 
 // Button texts using helper
-const fullProcessorButtonText = getButtonText('processor', 'Edit Processor');
 const fullProgramButtonText   = getButtonText('program',   'Edit Program');
 const fullTutorialButtonText  = getButtonText('tutorial',  'Edit Tutorial');
 
 // Container classes
 const containerClasses = computed(() => ({
   'side-collapsed':       sideCollapsed.value && isNotFullscreen.value,
-  'processor-fullscreen': isProcessorFullscreen.value,
   'program-fullscreen':   isProgramFullscreen.value,
   'tutorial-fullscreen':  isTutorialFullscreen.value
 }));
@@ -118,6 +114,12 @@ function onRequestSwitch(key) {
 }
 
 function toggleFullScreen(key) {
+  // The processor is edited in its own panel (older tutorials may still ask for its editor)
+  if (key === 'processor') {
+    currentFullKey.value = 'none'
+    sideCollapsed.value  = false
+    return
+  }
   if (currentFullKey.value === key) {
     currentFullKey.value = 'none'
     return
@@ -242,14 +244,6 @@ onUnmounted(() => {
                 </button>
               </li>
               <li>
-                <button class="blue-button" :class="{ 'active': isProcessorFullscreen }"
-                  id="processor-button"
-                  title="Open/Close processor edition panel"
-                  @click="toggleFullScreen('processor')" >
-                    {{ fullProcessorButtonText }}
-                </button>
-              </li>
-              <li>
                 <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                   id="tutorial-button"
                   title="Open/Close tutorial edition panel"
@@ -278,7 +272,7 @@ onUnmounted(() => {
     <main class="container" :class="containerClasses">
 
       <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen && !sideCollapsed" id="process-panel">
-        <processor @requestSwitchFull="toggleFullScreen"/>
+        <processor/>
         <program :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
       </div>
       <!-- Collapsed side panel: a narrow strip that brings it back -->
@@ -287,10 +281,6 @@ onUnmounted(() => {
               @click="sideCollapsed = false">
         <span>▶</span><span class="side-expand-label">Processor &amp; Program</span>
       </button>
-
-      <div v-if="checkOK" v-show="isProcessorFullscreen" class="grid-item processor" id="processorEditor-panel">
-        <processorEditor :is-fullscreen="isProcessorFullscreen"/>
-      </div>
 
       <div v-if="checkOK" v-show="isProgramFullscreen"   class="grid-item program"   id="programEditor-panel">
         <programEditor   :is-fullscreen="isProgramFullscreen"  />
@@ -452,7 +442,6 @@ nav ul li {
 .results   { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .process   { grid-column: 1; grid-row: 1; min-width: 0;}
 
-.container.processor-fullscreen,
 .container.program-fullscreen,
 .container.tutorial-fullscreen {
   grid-template-columns: 1fr;
@@ -518,9 +507,6 @@ nav ul li {
 }
 
 /* Ocultar otros componentes en pantalla completa */
-.container.processor-fullscreen .grid-item.program,
-.container.processor-fullscreen .grid-item.tutorial,
-.container.processor-fullscreen .grid-item.results,
 .container.program-fullscreen .grid-item.processor,
 .container.program-fullscreen .grid-item.tutorial,
 .container.program-fullscreen .grid-item.results,

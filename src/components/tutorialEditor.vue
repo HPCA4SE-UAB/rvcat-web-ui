@@ -187,7 +187,6 @@
                   <option value="switchTo:staticAnalysisComponent"> Go to Static Analysis</option>
                   <option value="switchTo:timelineComponent">       Go to Timeline       </option>
                   <option value="switchTo:aboutComponent">          Go to About          </option>
-                  <option value="switchToFull:processor">           Open Processor editor</option>
                   <option value="switchToFull:program">             Open Program editor  </option>
                   <option value="switchToFull:tutorial">            Open Tutorial editor </option>
                 </select>
@@ -402,7 +401,7 @@ const predefinedSelectors = [
   { label: 'Program Selector',      value: '#programs-list' },
   { label: 'Processor Selector',    value: '#processors-list' },
   { label: '── Processor Config ──', value: '', disabled: true },
-  { label: 'ROB Size Input',        value: '#rob-size' },
+  { label: 'Save Processor Button', value: '#save-processor-button' },
   { label: 'Simulation iterations', value: '#simulation-iterations' },
   { label: '── Buttons ──',         value: '', disabled: true },
   { label: 'Run Simulation Button', value: '#run-simulation-button' },
@@ -410,14 +409,12 @@ const predefinedSelectors = [
   { label: 'Simulation Tab',        value: '#simulation-button' },
   { label: 'Static Analysis Tab',   value: '#analysis-button' },
   { label: 'Timeline Tab',          value: '#timeline-button' },
-  { label: 'Processor Editor Tab',  value: '#processor-button' },
   { label: 'Program Editor Tab',    value: '#program-button' }
 ]
 
 const validationInputSelectors = [
   { label: 'Custom',               value: '' },
 
-  { label: 'ROB Size',             value: '#rob-size' },
   { label: 'Dispatch Width',       value: '#dispatch-width' },
   { label: 'Retire Width',         value: '#retire-width' },
 
@@ -477,7 +474,6 @@ const validationInputSelectors = [
 
 const validationButtonSelectors = [
   { label: 'Custom',                     value: '' },
-  { label: 'Set processor panel',        value: '#processor-button' },
   { label: 'Set program panel',          value: '#program-button' },
   { label: 'Set tutorial panel',         value: '#tutorial-button' },
   { label: 'Set simulation panel',       value: '#simulation-button' },
@@ -485,14 +481,10 @@ const validationButtonSelectors = [
   { label: 'Set timeline panel',         value: '#timeline-button' },
   { label: 'Set about panel',            value: '#about-button' },
   { label: 'Run Simulation',             value: '#run-simulation-button' },
-  { label: 'Download Processor Config.', value: '#processor-download-button' },
-  { label: 'Upload Processor Config.',   value: '#processor-upload-button' },
+  { label: 'Save Processor Config.',     value: '#save-processor-button' },
   { label: 'Download Program',           value: '#program-download-button' },
   { label: 'Upload Program',             value: '#program-upload-button' },
-  { label: 'Clear Edited Program',       value: '#clear-processor-button' },
-  { label: 'Clear Edited Proc. Config',  value: '#clear-program-button' },
-  { label: 'Remove PortX',               value: '#remove-port0-button' },
-  { label: 'Add Port',                   value: '#add-port-button' },
+  { label: 'Clear Edited Program',       value: '#clear-program-button' },
   { label: 'Toggle Instruction Operands', value: '#show-instr-operands' }
 ]
 

@@ -23,7 +23,7 @@
     {
       "type": "step",
       "title": "Processor description",
-      "description": "A table summarizes the processor pipeline's <b>microarchitecture</b>:<br>\n   (1) <em>Dispatch width</em> – max instructions issued to the Execution Engine per cycle;<br>\n   (2) <em>Scheduling policy</em> – greedy (oldest ready instructions first) or optimal (best combination);<br>\n   (3) <em>Execution ports</em> (P0–Px) – each handles one instruction per cycle from a specific subset of types;<br>\n   (4) <em>ROB size</em> – max instructions in the Execution Engine;<br>\n   (5) <em>Cache config</em> – blocks, block size, miss penalty, and issue time;<br>\n   (6) <em>Retire width</em> – max instructions retired from the Execution Engine per cycle.",
+      "description": "A table summarizes the processor pipeline's <b>microarchitecture</b>:<br>\n   (1) <em>Dispatch width</em> – max instructions issued to the Execution Engine per cycle;<br>\n   (2) <em>Operation types</em> – latency and eligible ports of each type of instruction;<br>\n   (3) <em>Execution ports</em> (P0–Px) – each handles one instruction per cycle from a specific subset of types;<br>\n   (4) <em>ROB size</em> – max instructions in the Execution Engine;<br>\n   (5) <em>Cache config</em> – blocks, block size, miss penalty, and issue time;<br>\n   (6) <em>Branch penalty</em> – cycles lost after a mispredicted branch;<br>\n   (7) <em>Retire width</em> – max instructions retired from the Execution Engine per cycle.",
       "selector": ".processor-container",
       "position": "right",
       "action": "switchTo:aboutComponent"
@@ -65,10 +65,10 @@
     {
       "type": "step",
       "title": "Processor Settings",
-      "description": "Configure different processor microarchitectures.",
-      "selector": ".results",
-      "position": "left",
-      "action": "switchToFull:processor"
+      "description": "Click the cells of the processor table to modify it (widths, ROB, ports, operation types, latencies, cache).<br>\nThe <b>💾</b> button saves the modified processor with a name.",
+      "selector": ".processor-container",
+      "position": "right",
+      "action": "switchTo:aboutComponent"
     },
     {
       "type": "step",
