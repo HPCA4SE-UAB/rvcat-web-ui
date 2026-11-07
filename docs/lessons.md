@@ -13,7 +13,13 @@ the header shows the progress (`Tasks k / n`) and, when every task is done, the 
 **Exit lesson** (with confirmation) returns the simulator to its state before the lesson; the
 completed tasks are kept, so starting the lesson again with the same identifier continues it.
 
-Example: [lessons/L1-example.json](lessons/L1-example.json).
+Lessons:
+
+- [lessons/L1-example.json](lessons/L1-example.json): a short example of every kind of task.
+- [lessons/L2-simd.json](lessons/L2-simd.json): **SIMD vectorization**. What SIMD is and what it gains (f0 / f0-SIMD),
+  the conditions for an efficient vectorization (stride: f2; data sizes: f3; dependences: f4), and an exercise to
+  vectorize Base by hand (a reduction with a vector accumulator), with an optional goal of two accumulators.
+  Processor B4, N = 1000. Secret: `SIMD-L2-K4R8`.
 
 ## File format
 

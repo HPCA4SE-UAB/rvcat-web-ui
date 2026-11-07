@@ -1,0 +1,162 @@
+{
+  "lesson": "L2-simd",
+  "title": "SIMD vectorization",
+  "description": "What SIMD is, what it gains, and which conditions a loop must meet to be vectorized efficiently: programs f0, f2, f3 and f4 with their SIMD versions (4 lanes of 16 bytes) on processor B4. Ends with an exercise: vectorize a loop by hand.",
+  "version": 1,
+  "programs": ["f0", "f0-SIMD", "f2", "f2-SIMD", "f3", "f3-SIMD", "f4", "Base"],
+  "processors": ["B4"],
+  "start": { "program": "f0", "processor": "B4", "N": 1000 },
+  "locks": {
+    "programEditor": false,
+    "tutorialEditor": true,
+    "loopTransforms": true,
+    "upload": true,
+    "remove": true,
+    "processor": "all",
+    "N": { "fixed": 1000 },
+    "simulation": { "sched": "optimal", "speculation": "stall" }
+  },
+  "completion": { "secret": "SIMD-L2-K4R8", "idLabel": "NIU", "idPattern": "^[0-9]{7}$" },
+  "tutorial": {
+    "id": "L2-simd-tutorial",
+    "name": "Lesson L2: SIMD vectorization",
+    "description": "SIMD: what it is, what it gains, and when it pays off",
+    "flowVersion": 2,
+    "steps": [
+      {
+        "id": "intro", "type": "step", "title": "SIMD: one instruction, several data",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "<b>A SIMD instruction (Single Instruction, Multiple Data) operates on a vector register</b><br>that holds several elements, its <b>lanes</b>. With 16-byte registers, an instruction<br>loads, adds or multiplies <b>4 floats</b> (or 2 doubles) at once.<br><br>In this lesson you compare loops with their SIMD versions on processor {{processor}}, with N = {{N}},<br>and you finish by <b>vectorizing a loop by hand</b>. The bar above counts your tasks.",
+        "actions": ["selectProgram:f0", "collapsePorts", "switchTo:simulationComponent"],
+        "next": ["f0"]
+      },
+      {
+        "id": "f0", "type": "step", "title": "The scalar loop f0",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>f0 computes C[x] = A[x] + L·B[x]</b> (hover the header to see the C code).<br>Each iteration processes <b>one element</b> with 8 instructions. Simulate it (▶ Show me) and look at<br>the port usage: <b>P0</b> executes every load and store, 3 memory accesses per element,<br>so f0 cannot go below <b>3 cycles per element</b>. Now: {{cyclesPerAlgOp}} cycles per element.",
+        "actions": ["selectProgram:f0", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["predict-f0"]
+      },
+      {
+        "id": "predict-f0", "type": "predict", "title": "Task 1: predict f0-SIMD",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>f0-SIMD is the same loop vectorized with 4 lanes</b>: two vector loads, a vector multiply,<br>a vector add and a vector store per iteration, and <b>x = x + 4</b>: each iteration does<br>4 algorithmic operations (S = {{stride}}, shown next to N).<br>It has the same number of instructions per iteration as f0.<br><b>Predict its cycles per algorithmic operation</b> (cycles per element), save it, and simulate.",
+        "predictValue": "cyclesPerAlgOp", "predictUnit": "cycles/element", "tolerance": 0.15,
+        "actions": ["selectProgram:f0-SIMD", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["advantages"]
+      },
+      {
+        "id": "advantages", "type": "step", "title": "What SIMD gains",
+        "selector": "#simulation-results-info", "position": "bottom",
+        "description": "f0-SIMD needs <b>{{cyclesPerAlgOp}} cycles per element</b>, about 4 times less than f0.<br>&bull; <b>Fewer instructions</b>: Instr/Alg Oper drops from 8 to 2. Dispatch, ports and retire<br>&nbsp;&nbsp;&nbsp;do the same work per instruction, but each instruction now does 4 times more.<br>&bull; The bottleneck is still <b>P0</b> ({{port.P0}}% busy): 3 vector accesses per iteration,<br>&nbsp;&nbsp;&nbsp;now for 4 elements.<br>&bull; <b>Cycles/Alg Oper</b> compares the versions; Cycles/iter does not (an iteration does more work).",
+        "next": ["q-speedup"]
+      },
+      {
+        "id": "q-speedup", "type": "question", "title": "Task 2: why ×4?",
+        "questionText": "f0-SIMD runs about 4 times faster than f0 on {{processor}}. Why?",
+        "answerMode": "single",
+        "answers": [
+          { "text": "Each iteration has the same instructions and takes about the same cycles, but processes 4 elements instead of 1", "isCorrect": true, "explanation": "Yes: the bottleneck (3 memory accesses on P0) is the same per iteration, and an iteration now covers 4 elements." },
+          { "text": "Vector instructions have a lower latency than scalar ones", "isCorrect": false, "explanation": "No: on B4 a vector load takes 5 cycles and a scalar one 4; latency is not what limits f0." },
+          { "text": "The SIMD version uses 4 times more ports", "isCorrect": false, "explanation": "No: both versions use the same ports; P0 is the bottleneck in both." },
+          { "text": "The SIMD version executes 4 times fewer iterations, each 4 times faster", "isCorrect": false, "explanation": "There are 4 times fewer iterations, but each one takes about the same cycles (≈3), not 4 times fewer." }
+        ],
+        "next": ["conditions"]
+      },
+      {
+        "id": "conditions", "type": "step", "title": "When does vectorization pay off?",
+        "selector": "#programs-list", "position": "right",
+        "description": "f0 is the ideal case. A loop is vectorized efficiently when:<br>&bull; <b>its iterations are independent</b>: lanes compute different iterations at the same time;<br>&bull; <b>its accesses are contiguous</b> (stride 1): one vector load brings 4 consecutive elements;<br>&bull; <b>all its data have the same size</b>: a 16-byte register holds 4 floats but only 2 doubles;<br>&bull; there are enough iterations (here N = {{N}}, a multiple of 4).<br>The next examples break one condition each: <b>f2</b>, <b>f3</b> and <b>f4</b>.",
+        "next": ["f2"]
+      },
+      {
+        "id": "f2", "type": "step", "title": "f2: a strided access",
+        "selector": "[data-instr=\"0\"], [data-instr=\"1\"], [data-instr=\"3\"]", "position": "right",
+        "description": "<b>f2 computes C[x] = A[2x] + B[x]</b>: A is read with <b>stride 2</b> (one element of every two).<br>The 4 elements A[2x], A[2x+2], A[2x+4], A[2x+6] are spread over 8 floats:<br>f2-SIMD needs <b>two vector loads</b> of A and a <b>shuffle</b> that picks the even lanes.<br>Now 4 vector accesses go through P0 per iteration instead of 3.",
+        "actions": ["selectProgram:f2-SIMD", "switchTo:simulationComponent"],
+        "next": ["predict-f2"]
+      },
+      {
+        "id": "predict-f2", "type": "predict", "title": "Task 3: predict f2-SIMD",
+        "selector": "#run-simulation-button", "position": "bottom",
+        "description": "Scalar f2 takes about 3 cycles per element (3 memory accesses on P0).<br><b>Predict the cycles per element of f2-SIMD</b>, with 4 vector accesses per iteration of 4 elements.<br>Save your prediction and simulate.",
+        "predictValue": "cyclesPerAlgOp", "predictUnit": "cycles/element", "tolerance": 0.15,
+        "actions": ["selectProgram:f2-SIMD", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["f3"]
+      },
+      {
+        "id": "f3", "type": "step", "title": "f3: mixed data sizes",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>f3 computes C[x] = A[x] + L·B[x] with L double</b>: each float is converted to double,<br>operated, and converted back to float.<br>A 16-byte register holds 4 floats but only <b>2 doubles</b>: f3-SIMD works in halves of 2 lanes,<br>with conversions, a shuffle, and even stores and loads through the stack (STK) to move the upper half.<br>It needs 23 instructions per iteration of 4 elements. Simulate it (▶ Show me).",
+        "actions": ["selectProgram:f3-SIMD", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["q-f3"]
+      },
+      {
+        "id": "q-f3", "type": "question", "title": "Task 4: why so little gain?",
+        "questionText": "f3 takes about 3.2 cycles per element and f3-SIMD about {{cyclesPerAlgOp}}: a speedup of only about 1.3. Which reasons explain it?",
+        "answerMode": "multiple",
+        "answers": [
+          { "text": "Each double vector instruction processes only 2 elements", "isCorrect": true, "explanation": "Yes: with doubles, the 16-byte registers hold half as many lanes." },
+          { "text": "The conversions and the data moves add instructions that the scalar loop also needs only once per element", "isCorrect": true, "explanation": "Yes: f3-SIMD needs 23 instructions per 4 elements (5.75 per element) against 11 per element of f3: half the instructions, not a quarter." },
+          { "text": "P0 and P1 are both saturated: the extra loads/stores (STK) and the conversions fill them", "isCorrect": true, "explanation": "Yes: the throughput bound is 9 cycles per iteration on P0 and on P1." },
+          { "text": "The iterations of f3 depend on each other", "isCorrect": false, "explanation": "No: the iterations of f3 are independent, as in f0." }
+        ],
+        "next": ["f4"]
+      },
+      {
+        "id": "f4", "type": "step", "title": "f4: dependent iterations",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>f4 computes C[x+1] = C[x] + A[x]·B[x]</b>: each result needs the previous one (a prefix sum).<br>In the program, the running value is kept in <b>s</b>: s = s + a is a <b>cyclic chain</b> across iterations<br>(Static Analysis: chain s → s). The 4 lanes would need 4 consecutive results at once,<br>but each one depends on the previous: a compiler cannot vectorize it like f0, and there is no f4-SIMD.",
+        "actions": ["selectProgram:f4", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain=\"s\"]"],
+        "showMe": ["clickChain:s"],
+        "next": ["q-f4"]
+      },
+      {
+        "id": "q-f4", "type": "question", "title": "Task 5: which loop can be vectorized?",
+        "questionText": "Which of these loops can be vectorized like f0 (4 iterations at once, contiguous vectors)?",
+        "answerMode": "multiple",
+        "answers": [
+          { "text": "for (x=0; x&lt;X; x++) C[x] = A[x] * B[x];", "isCorrect": true, "explanation": "Yes: independent iterations and contiguous accesses." },
+          { "text": "for (x=1; x&lt;X; x++) C[x] = C[x-1] * A[x];", "isCorrect": false, "explanation": "No: C[x] needs C[x-1], computed in the previous iteration (like f4)." },
+          { "text": "for (x=0; x&lt;X; x++) C[x] = A[x] + 2.0f;", "isCorrect": true, "explanation": "Yes: the constant is the same in every lane." },
+          { "text": "for (x=0; x&lt;X; x++) C[x] = A[x+1] - A[x];", "isCorrect": true, "explanation": "Yes: A is only read, so the iterations are independent; it needs two (overlapping) vector loads of A." }
+        ],
+        "next": ["base"]
+      },
+      {
+        "id": "base", "type": "step", "title": "Exercise: vectorize Base by hand",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>Base adds all the elements of V and W into sum</b>. Like f4, sum depends on the previous iteration,<br>but only the <b>final</b> value is needed: it is a <b>reduction</b>, and the additions can be regrouped.<br>Use a vector accumulator <b>sum[0:3]</b> with 4 partial sums (one per lane), added together after the loop:<br><code>tmp[0:3] = V[i:i+3]</code> · <code>sum[0:3] = sum[0:3] + tmp[0:3]</code> · (the same with W) ·<br><code>i = i + 4</code> · <code>c = i != N</code> · <code>if c go back</code>, with <b>Alg opers/iter (S) = 4</b>.<br>Simulate scalar Base (▶ Show me): {{cyclesPerAlgOp}} cycles per element.",
+        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["goal-simd"]
+      },
+      {
+        "id": "goal-simd", "type": "goal", "title": "Task 6: your SIMD version",
+        "selector": "#program-button", "position": "bottom",
+        "description": "Open <b>Edit Program</b>, write your SIMD version of Base (the fields are filled in from the text),<br>save it with a new name (it is added to the list) and simulate it.<br><b>Goal: less than 1.5 cycles per element.</b> A scalar version cannot reach it:<br>the two loads of each element go through P0.<br><i>Note: regrouping floating-point additions can change the rounding of the result.</i>",
+        "goal": "cyclesPerAlgOp < 1.5 && program != \"Base\"",
+        "best": "cyclesPerAlgOp", "bestMode": "min",
+        "next": ["goal-two", "end-card"], "nextLabels": ["In depth: go further", "Finish"]
+      },
+      {
+        "id": "goal-two", "type": "goal", "title": "In depth: two vector accumulators", "optional": true,
+        "selector": "#program-button", "position": "bottom",
+        "description": "Your version is probably <b>latency-bound</b>: the two additions of sum[0:3] form a chain<br>of 2 + 2 cycles per iteration (Static Analysis). Use <b>two vector accumulators</b>,<br>one for V and one for W, so that the chains are independent.<br><b>Optional goal: less than 0.6 cycles per element.</b>",
+        "goal": "cyclesPerAlgOp < 0.6 && program != \"Base\"",
+        "best": "cyclesPerAlgOp", "bestMode": "min",
+        "next": ["end-card"], "nextLabels": ["Finish"]
+      },
+      {
+        "id": "end-card", "type": "step", "title": "Summary",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "&bull; SIMD processes several elements per instruction: fewer instructions per element, so the same<br>&nbsp;&nbsp;&nbsp;processor does more work per cycle (f0: ×4 with 4 lanes).<br>&bull; It pays off with <b>independent iterations</b>, <b>contiguous accesses</b> and <b>equal data sizes</b>;<br>&nbsp;&nbsp;&nbsp;strides (f2) and mixed sizes (f3) need extra instructions; dependences (f4) prevent it,<br>&nbsp;&nbsp;&nbsp;except for <b>reductions</b> (Base), which use vector accumulators.<br>When all your tasks are done, the bar shows your <b>completion code</b>.",
+        "next": []
+      }
+    ]
+  }
+}
