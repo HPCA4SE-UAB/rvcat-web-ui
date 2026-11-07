@@ -1,225 +1,388 @@
 {
   "id": "perfTour",
   "name": "Understanding loop performance",
-  "description": "Why does a loop take the time it takes? Latency and throughput bounds, simulation and timeline, with optional in-depth cards.",
+  "description": "A guided example: why the loop Base takes 4 cycles per iteration on processor B4. Latency and throughput bounds, simulation, critical path and timeline, with optional in-depth cards.",
   "flowVersion": 2,
   "steps": [
     {
       "id": "welcome",
       "type": "step",
-      "title": "Welcome to RVCAT",
-      "description": "<b>RVCAT explains why a loop takes the time it takes.</b><br>It simulates a loop running on a configurable out-of-order processor<br>and answers one question: <b>how many cycles does each iteration need?</b><br><br>At each topic you can <b>continue</b>, or open an <i>In depth</i> card first.",
+      "title": "Why does a loop take the time it takes?",
       "selector": ".header-title",
       "position": "bottom",
+      "description": "<b>This tutorial follows one real example.</b><br>It has selected the program <b>{{program}}</b>, the processor <b>{{processor}}</b> and <b>N = {{N}}</b>.<br>Cards with <b>▶ Show me</b> can act on the simulator for you, or you can do it yourself.<br>At some topics you can open an <i>In depth</i> card first.<br><i>When the tutorial ends, your previous program, processor and N are restored.</i>",
       "next": [
         "program"
       ],
-      "action": "switchTo:simulationComponent"
+      "actions": [
+        "selectProcessor:B4",
+        "selectProgram:Base",
+        "setN:1000",
+        "collapsePorts",
+        "closeGraph",
+        "switchTo:simulationComponent"
+      ]
     },
     {
       "id": "program",
       "type": "step",
-      "title": "The loop program",
-      "description": "<b>One iteration of the loop, written as simple machine instructions.</b><br>The loop performs <b>N</b> algorithmic operations (N is set next to the program name).<br>Each iteration does <b>S</b> of them (S=1, or more if it is unrolled or vectorized).<br>For performance, what matters is the instruction <b>types</b><br>and the <b>data dependences</b> between instructions.",
-      "selector": ".program-container",
+      "title": "The loop: {{program}}",
+      "selector": "#program-source-header",
       "position": "right",
+      "description": "<b>Hover the header of the table to see the C code:</b> the loop adds<br>the elements of two vectors, V and W, into <b>sum</b>.<br>One iteration is written as 7 simple machine instructions:<br>&bull; two loads: <i>{{instr.0}}</i> and <i>{{instr.2}}</i><br>&bull; two floating-point additions: <i>{{instr.1}}</i> (twice)<br>&bull; the loop control: <i>{{instr.4}}</i>, <i>{{instr.5}}</i>, <i>{{instr.6}}</i>.",
       "next": [
-        "processor",
+        "sums",
         "program-more"
       ],
-      "action": "switchTo:simulationComponent"
+      "nextLabels": [
+        "Continue",
+        "In depth: the program"
+      ]
     },
     {
       "id": "program-more",
       "type": "step",
       "title": "In depth: the program",
-      "description": "&bull; The <b>type</b> button switches the columns: type, operation and size,<br>&nbsp;&nbsp;&nbsp;or latency and eligible ports.<br>&bull; Hover an instruction to see what it does (memory access, operands).<br>&bull; Hover the header to see the C code of the loop.<br>&bull; Not modeled: registers and memory ordering. Conditional branches<br>&nbsp;&nbsp;&nbsp;(<i>if c skip k</i>) are taken and mispredicted with given probabilities.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
-      "selector": ".program-container",
+      "selector": "#program-source-header",
       "position": "right",
+      "description": "&bull; The <b>type</b> button switches the columns: type, operation and size,<br>&nbsp;&nbsp;&nbsp;or latency and eligible ports.<br>&bull; Hover an instruction to see what it does (memory access, operands).<br>&bull; Hover the header to see the C code of the loop.<br>&bull; Not modeled: registers and memory ordering. Conditional branches<br>&nbsp;&nbsp;&nbsp;(<i>if c skip k</i>) are taken and mispredicted with given probabilities.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
+      "next": [
+        "sums"
+      ],
+      "nextLabels": [
+        "Continue"
+      ]
+    },
+    {
+      "id": "sums",
+      "type": "step",
+      "title": "A chain that crosses iterations",
+      "selector": "[data-instr=\"1\"], [data-instr=\"3\"]",
+      "position": "right",
+      "description": "<b>Instructions 1 and 3 read and write the same variable, sum.</b><br>Addition 3 needs the result of addition 1, and addition 1 of the next<br>iteration needs the result of addition 3: 1 → 3 → 1 → 3 → …<br>This <b>cyclic chain of dependences</b> cannot be overlapped across iterations,<br>however many resources the processor has.",
+      "next": [
+        "check-chains"
+      ]
+    },
+    {
+      "id": "check-chains",
+      "type": "question",
+      "title": "Check: cyclic chains",
+      "questionText": "Which instructions of {{program}} belong to a <b>cyclic chain</b> (a variable computed from its own previous value)?",
       "next": [
         "processor"
       ],
-      "action": "switchTo:simulationComponent"
+      "answerMode": "multiple",
+      "answers": [
+        {
+          "text": "1 and 3: <i>sum = sum + tmp</i>",
+          "isCorrect": true,
+          "explanation": "Yes: each addition uses the sum of the previous one."
+        },
+        {
+          "text": "4: <i>i = i + 1</i>",
+          "isCorrect": true,
+          "explanation": "Yes: i is computed from its previous value (a 1-cycle chain)."
+        },
+        {
+          "text": "0 and 2: the loads",
+          "isCorrect": false,
+          "explanation": "They read i, but no load uses a value produced by itself."
+        },
+        {
+          "text": "5: <i>c = i != N</i>",
+          "isCorrect": false,
+          "explanation": "c is computed from i, but c is not used to compute c again."
+        }
+      ]
     },
     {
       "id": "processor",
       "type": "step",
-      "title": "The processor",
-      "description": "<b>A pipeline described by a few numbers.</b><br>&bull; <b>Dispatch</b> / <b>Retire</b>: instructions per cycle that enter / leave.<br>&bull; <b>Ports</b> P0…Pn: each executes 1 instruction per cycle, of the types listed<br>&nbsp;&nbsp;&nbsp;(click <i>show operation types</i> to see them).<br>&bull; <b>ROB</b>: how many instructions can be in flight at the same time.<br>&bull; <b>Cache</b> (optional): adds the delays of memory accesses.<br>&bull; <b>Branch penalty</b>: cycles lost after a mispredicted branch.",
-      "selector": ".processor-container",
+      "title": "The processor: {{processor}}",
+      "selector": "#process-panel .processor-container",
       "position": "right",
+      "description": "<b>{{processor}} is described by a few numbers</b> (operation types now shown):<br>&bull; <b>Dispatch</b> {{dispatch}} and <b>Retire</b> {{retire}} instructions per cycle; <b>ROB</b>: {{rob}} instructions in flight.<br>&bull; Each port starts one instruction per cycle: <b>P0</b> executes the loads and stores,<br>&nbsp;&nbsp;&nbsp;FLOAT.ADD runs on <b>P1</b> or <b>P3</b>.<br>&bull; Latencies: a load takes <b>{{latency.MEM.LOAD}}</b> cycles, an addition FLOAT.ADD <b>{{latency.FLOAT.ADD}}</b>.",
       "next": [
-        "bounds",
+        "latency",
         "processor-more"
       ],
-      "action": "switchTo:simulationComponent"
+      "nextLabels": [
+        "Continue",
+        "In depth: the processor"
+      ],
+      "actions": [
+        "switchTo:simulationComponent",
+        "expandPorts"
+      ]
     },
     {
       "id": "processor-more",
       "type": "step",
       "title": "In depth: the processor",
-      "description": "&bull; Click a cell of the diagram to change it: dispatch, retire, ROB, cache,<br>&nbsp;&nbsp;&nbsp;branch penalty, ports, and the latency of an operation type.<br>&bull; A second click on a cell pins its explanation.<br>&bull; <b>💾</b> saves the modified processor with a name; <b>✱ ↶</b> discards the changes.<br>&bull; The <b>Scheduler</b> is an option of the simulation: <i>greedy</i> issues the oldest<br>&nbsp;&nbsp;&nbsp;ready instructions; <i>optimal</i> chooses the best combination of ports.",
-      "selector": ".processor-container",
+      "selector": "#process-panel .processor-container",
       "position": "right",
-      "next": [
-        "bounds"
-      ],
-      "action": "switchTo:simulationComponent"
-    },
-    {
-      "id": "bounds",
-      "type": "step",
-      "title": "Two bounds on performance",
-      "description": "<b>Minimum time = max( latency bound , throughput bound ).</b><br>&bull; <b>Latency bound</b>: a chain of dependent instructions that repeats<br>&nbsp;&nbsp;&nbsp;every iteration cannot run faster than the sum of its latencies.<br>&bull; <b>Throughput bound</b>: the busiest resource (dispatch, retire or a set<br>&nbsp;&nbsp;&nbsp;of ports) cannot do more work per cycle.<br>The larger bound tells you <b>what limits the loop</b>.",
-      "selector": ".bounds-summary",
-      "position": "bottom",
+      "description": "&bull; Click a cell of the diagram to change it: dispatch, retire, ROB, cache,<br>&nbsp;&nbsp;&nbsp;branch penalty, ports, and the latency of an operation type.<br>&bull; A second click on a cell pins its explanation.<br>&bull; <b>💾</b> saves the modified processor with a name; <b>✱ ↶</b> discards the changes.<br>&bull; The <b>Scheduler</b> is an option of the simulation: <i>greedy</i> issues the oldest<br>&nbsp;&nbsp;&nbsp;ready instructions; <i>optimal</i> chooses the best combination of ports.",
       "next": [
         "latency"
       ],
-      "action": "switchTo:staticAnalysisComponent"
+      "nextLabels": [
+        "Continue"
+      ]
     },
     {
       "id": "latency",
       "type": "step",
-      "title": "Latency bounds",
-      "description": "<b>Each row is a cyclic chain of dependences.</b><br>Cycles/iter = sum of latencies ÷ loop iterations spanned by the chain.<br>The row tagged <b>max</b> gives the latency bound.<br><i>Tip:</i> click a row to see that chain in the dependence graph.",
+      "title": "Latency bound",
       "selector": "#latency-bounds",
       "position": "bottom",
+      "description": "<b>Each row is a cyclic chain of dependences.</b><br>The chain of <b>sum</b> has two additions of {{latency.FLOAT.ADD}} cycles per iteration: <b>{{chain.sum}}</b> cycles/iter.<br>The chain of <b>i</b> needs {{chain.i}} cycle/iter.<br>The longest chain gives the <b>latency bound: {{latencyBound}}</b> cycles/iter.<br><b>▶ Show me</b> selects the chain of sum and draws it in the dependence graph (in red).",
       "next": [
         "throughput",
         "latency-more"
       ],
-      "action": "switchTo:staticAnalysisComponent"
+      "nextLabels": [
+        "Continue",
+        "In depth: the dependence graph"
+      ],
+      "actions": [
+        "switchTo:staticAnalysisComponent",
+        "waitFor:#latency-bounds [data-chain=\"sum\"]"
+      ],
+      "showMe": [
+        "clickChain:sum"
+      ]
     },
     {
       "id": "latency-more",
       "type": "step",
       "title": "In depth: the dependence graph",
-      "description": "&bull; <b>📈 Dependence graph</b> opens a movable, resizable window.<br>&bull; One box per loop iteration; cyclic dependences are drawn in red.<br>&bull; Clicking a row of <i>Latency bounds</i> highlights its chain.<br>&bull; Hovering an instruction number highlights it in the graph and program.<br>&bull; Mouse wheel: zoom · drag: move · double click: whole graph.",
       "selector": "#open-dependence-graph",
       "position": "bottom",
+      "description": "&bull; <b>📈 Dependence graph</b> opens a movable, resizable window.<br>&bull; One box per loop iteration; cyclic dependences are drawn in red.<br>&bull; Clicking a row of <i>Latency bounds</i> highlights its chain.<br>&bull; Hovering an instruction number highlights it in the graph and program.<br>&bull; Mouse wheel: zoom · drag: move · double click: whole graph.",
       "next": [
         "throughput"
       ],
-      "action": "switchTo:staticAnalysisComponent"
+      "nextLabels": [
+        "Continue"
+      ],
+      "showMe": [
+        "openGraph"
+      ]
     },
     {
       "id": "throughput",
       "type": "step",
-      "title": "Throughput bounds",
-      "description": "<b>Each row is a resource and the work it must do.</b><br>Cycles/iter = instructions that can only use it ÷ its throughput.<br>The row tagged <b>max</b> gives the throughput bound.<br>Hover (or click) a value to see how it is computed.",
-      "selector": "#throughput-bounds",
+      "title": "Throughput bound",
+      "selector": "#throughput-bounds [data-resource=\"P0\"]",
       "position": "left",
+      "description": "<b>Each row is a resource and the work it must do in one iteration.</b><br>The two loads can only use <b>P0</b>: 2 instructions / 1 port = <b>{{resource.P0}}</b> cycles/iter.<br>Dispatch: 7 instructions / {{dispatch}} per cycle = {{resource.Dispatch}}; retire: {{resource.Retire}}.<br>The busiest resource gives the <b>throughput bound: {{throughputBound}}</b> cycles/iter.",
       "next": [
         "check-bound",
         "throughput-more"
       ],
-      "action": "switchTo:staticAnalysisComponent"
+      "nextLabels": [
+        "Continue",
+        "In depth: sets of ports"
+      ],
+      "actions": [
+        "closeGraph",
+        "switchTo:staticAnalysisComponent",
+        "waitFor:#throughput-bounds [data-resource=\"P0\"]"
+      ]
     },
     {
       "id": "throughput-more",
       "type": "step",
       "title": "In depth: sets of ports",
-      "description": "&bull; An instruction that can run on P0 <i>or</i> P2 does not load P0 alone:<br>&nbsp;&nbsp;&nbsp;it only counts for sets that contain <b>both</b> ports.<br>&bull; Numbers in <span style=\"color:#6b7280\">grey</span> are instructions that can escape to<br>&nbsp;&nbsp;&nbsp;another port (hover to see which ones).<br>&bull; Sets of ports are listed when they share instructions:<br>&nbsp;&nbsp;&nbsp;P0+P2 and P2+P3 give P0+P2+P3.",
       "selector": "#throughput-bounds",
       "position": "left",
+      "description": "&bull; An instruction that can run on P0 <i>or</i> P2 does not load P0 alone:<br>&nbsp;&nbsp;&nbsp;it only counts for sets that contain <b>both</b> ports.<br>&bull; Numbers in <span style=\"color:#6b7280\">grey</span> are instructions that can escape to<br>&nbsp;&nbsp;&nbsp;another port (hover to see which ones).<br>&bull; Sets of ports are listed when they share instructions:<br>&nbsp;&nbsp;&nbsp;P0+P2 and P2+P3 give P0+P2+P3.",
       "next": [
         "check-bound"
       ],
-      "action": "switchTo:staticAnalysisComponent"
+      "nextLabels": [
+        "Continue"
+      ]
     },
     {
       "id": "check-bound",
       "type": "question",
-      "title": "Check: which bound?",
-      "questionText": "A loop has a <b>latency bound of 5.00</b> and a <b>throughput bound of 2.33</b> cycles/iter. What is its minimum time per iteration?",
-      "answerMode": "single",
-      "answers": [
-        {
-          "text": "5.00 cycles/iter: the loop is latency-bound",
-          "isCorrect": true,
-          "explanation": "Right: the slowest constraint wins, max(5.00, 2.33) = 5.00."
-        },
-        {
-          "text": "2.33 cycles/iter: out-of-order execution hides the latency",
-          "isCorrect": false,
-          "explanation": "Out-of-order execution overlaps iterations, but a cyclic chain still needs 5 cycles per iteration."
-        },
-        {
-          "text": "7.33 cycles/iter: both limits add up",
-          "isCorrect": false,
-          "explanation": "The bounds do not add: they are two independent lower limits, and the larger one applies."
-        },
-        {
-          "text": "3.67 cycles/iter: the average of both bounds",
-          "isCorrect": false,
-          "explanation": "There is no averaging: the minimum time is the maximum of the bounds."
-        }
-      ],
+      "title": "Check: minimum time",
+      "questionText": "For {{program}} on {{processor}}, the latency bound is <b>{{latencyBound}}</b> and the throughput bound <b>{{throughputBound}}</b> cycles/iter.<br>What is the <b>minimum time</b> per iteration?",
       "next": [
         "simulate"
-      ]
+      ],
+      "answerMode": "number",
+      "numericValue": "{{minTime}}",
+      "tolerance": 0.01,
+      "numericUnit": "cycles/iter",
+      "numericCorrect": "Right: max({{latencyBound}}, {{throughputBound}}) = {{minTime}}. The loop is <b>{{boundType}}-bound</b>: the chain of sum limits it, not the resources.",
+      "numericWrong": "The bounds do not add up and are not averaged: the slowest constraint wins (the maximum)."
     },
     {
       "id": "simulate",
       "type": "step",
       "title": "Run the simulation",
-      "description": "<b>Now measure it: click Run Simulation.</b><br>Compare <b>Cycles/iter</b> with the minimum time of the static analysis:<br>&bull; close to it: the bounds explain the performance;<br>&bull; much higher: something else slows the loop (memory, scheduling, ROB).",
       "selector": "#run-simulation-button",
       "position": "bottom",
+      "description": "<b>Now measure it.</b> Click <b>Run Simulation</b> (or ▶ Show me):<br>the simulator executes N = {{N}} iterations of {{program}} on {{processor}}, cycle by cycle.",
       "next": [
-        "timeline",
-        "simulate-more"
+        "results"
       ],
-      "action": "switchTo:simulationComponent",
+      "actions": [
+        "switchTo:simulationComponent"
+      ],
+      "showMe": [
+        "runSimulation"
+      ],
       "validation": {
-        "type": "button_clicked",
-        "selector": "#run-simulation-button",
-        "message": "Click Run Simulation to continue"
+        "type": "simulation_done",
+        "message": "Run the simulation (or click ▶ Show me) to continue"
       }
     },
     {
-      "id": "simulate-more",
+      "id": "results",
       "type": "step",
-      "title": "In depth: simulation results",
-      "description": "&bull; <b>IPC</b>: instructions per cycle.<br>&bull; <b>Primary</b> misses start a block fill; <b>secondary</b> ones join a fill in progress.<br>&bull; <b>MM transfers</b>: main-memory reads + writes (hover for the detail).<br>&bull; The diagram shows how busy dispatch, each port, the cache and retire are.<br>&bull; <b>Store Results</b> keeps a run; hover its name to see program, N and processor.",
+      "title": "Simulation results",
       "selector": "#simulation-results-info",
       "position": "bottom",
+      "description": "<b>{{simIterations}} iterations took {{cycles}} cycles: {{cyclesPerIter}} cycles/iter</b>,<br>practically the minimum time predicted by the latency bound ({{minTime}}).<br><b>IPC = {{ipc}}</b>: the 7 instructions of each iteration every ~{{cyclesPerIter|0}} cycles.<br>The bounds explain the performance of this loop.",
+      "next": [
+        "usage",
+        "results-more"
+      ],
+      "nextLabels": [
+        "Continue",
+        "In depth: simulation results"
+      ]
+    },
+    {
+      "id": "results-more",
+      "type": "step",
+      "title": "In depth: simulation results",
+      "selector": "#simulation-results-info",
+      "position": "bottom",
+      "description": "&bull; <b>IPC</b>: instructions per cycle.<br>&bull; <b>Primary</b> misses start a block fill; <b>secondary</b> ones join a fill in progress.<br>&bull; <b>MM transfers</b>: main-memory reads + writes (hover for the detail).<br>&bull; The diagram shows how busy dispatch, each port, the cache and retire are.<br>&bull; <b>Store Results</b> keeps a run; hover its name to see program, N and processor.",
+      "next": [
+        "usage"
+      ],
+      "nextLabels": [
+        "Continue"
+      ]
+    },
+    {
+      "id": "usage",
+      "type": "step",
+      "title": "Usage of the resources",
+      "selector": "#right-panel .processor-container",
+      "position": "left",
+      "description": "<b>The diagram shows how busy each resource was.</b><br>Dispatch used {{dispatchUsage}}% of its capacity, and retire {{retireUsage}}%.<br>Ports: P0 {{port.P0}}%, P1 {{port.P1}}%, P2 {{port.P2}}%, P3 {{port.P3}}%, P4 {{port.P4}}%.<br>No resource is saturated: the processor is mostly <b>waiting</b> for the additions.",
+      "next": [
+        "check-usage"
+      ]
+    },
+    {
+      "id": "check-usage",
+      "type": "question",
+      "title": "Check: usage of P1",
+      "questionText": "Port P1 was busy {{port.P1}}% of the cycles. Why?",
+      "next": [
+        "critical"
+      ],
+      "answerMode": "single",
+      "answers": [
+        {
+          "text": "It starts the 2 additions of each iteration, and an iteration takes ~{{cyclesPerIter|0}} cycles",
+          "isCorrect": true,
+          "explanation": "Yes: 2 additions every {{cyclesPerIter}} cycles keep P1 busy about half of the cycles (a port starts one instruction per cycle)."
+        },
+        {
+          "text": "An addition occupies P1 during its {{latency.FLOAT.ADD}} cycles of latency",
+          "isCorrect": false,
+          "explanation": "No: ports are pipelined. P1 can start a new instruction every cycle, even if the previous one has not finished."
+        },
+        {
+          "text": "Half of the additions run on P3",
+          "isCorrect": false,
+          "explanation": "No: P3 was busy only {{port.P3}}% of the cycles."
+        },
+        {
+          "text": "P1 waits for the loads of P0",
+          "isCorrect": false,
+          "explanation": "Waiting does not count as usage: usage counts the cycles in which the port starts an instruction."
+        }
+      ]
+    },
+    {
+      "id": "critical",
+      "type": "step",
+      "title": "The critical path",
+      "selector": ".critical-cell, #program-source-header",
+      "position": "right",
+      "description": "<b>After the simulation, the first column shows each instruction's share of the critical path.</b><br>The two additions take {{critical.1}}% and {{critical.3}}% of it.<br>From iteration {{patternFrom}} to {{patternTo}} the critical path repeats the same pattern:<br><b>{{patternCycles}} critical cycles per iteration</b>, the two additions of {{latency.FLOAT.ADD}} cycles.",
       "next": [
         "timeline"
-      ],
-      "action": "switchTo:simulationComponent"
+      ]
     },
     {
       "id": "timeline",
       "type": "step",
       "title": "The timeline",
-      "description": "<b>Cycle by cycle: what each instruction is doing.</b><br>Rows are instructions (one colour per iteration), columns are cycles:<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b>/<b>S</b> load/store) · <b>W</b> write result · <b>R</b> retire.<br>The symbols in between show <b>why</b> an instruction waits.<br><b>Critical</b> marks in red the chain that determines the execution time.",
       "selector": "#canvas-container",
-      "position": "right",
+      "position": "left",
+      "description": "<b>Cycle by cycle: what each instruction is doing</b> (rows: instructions, columns: cycles).<br><b>D</b> dispatch · <b>L</b> load · <b>E</b> execute · <b>W</b> write result · <b>R</b> retire.<br>The <span style=\"color:#e53935\"><b>critical path</b></span> is in red: the first load (L L L L), then the E E of each addition.<br>Addition 3 waits (<b>.</b>) for addition 1, and addition 1 of the next iteration waits for addition 3.",
       "next": [
-        "check-timeline",
+        "timeline-rob",
         "timeline-more"
       ],
-      "action": "switchTo:timelineComponent"
+      "nextLabels": [
+        "Continue",
+        "In depth: waiting symbols"
+      ],
+      "actions": [
+        "switchTo:timelineComponent",
+        "timeline:critical=on",
+        "timeline:ports=on",
+        "timeline:cycles=40"
+      ]
     },
     {
       "id": "timeline-more",
       "type": "step",
       "title": "In depth: waiting symbols",
-      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>x</b>: wrong path of a mispredicted branch (squashed)<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
       "selector": "#canvas-container",
-      "position": "right",
+      "position": "left",
+      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>x</b>: wrong path of a mispredicted branch (squashed)<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
+      "next": [
+        "timeline-rob"
+      ],
+      "nextLabels": [
+        "Continue"
+      ]
+    },
+    {
+      "id": "timeline-rob",
+      "type": "step",
+      "title": "Dispatch runs ahead",
+      "selector": "#canvas-container",
+      "position": "left",
+      "description": "<b>Instructions are dispatched faster than the additions can execute.</b><br>Their rows of <b>-</b> (executed, waiting to retire in program order) grow longer and longer,<br>until the <b>ROB</b> is full ({{rob}} instructions, about 9 iterations).<br>From then on, an iteration can only enter when another one retires: one every {{cyclesPerIter|0}} cycles.",
       "next": [
         "check-timeline"
       ],
-      "action": "switchTo:timelineComponent"
+      "actions": [
+        "timeline:cycles=71"
+      ]
     },
     {
       "id": "check-timeline",
       "type": "question",
       "title": "Check: reading the timeline",
       "questionText": "An instruction shows <b>D . . . E W R</b> in the timeline. Why does it wait after being dispatched?",
+      "next": [
+        "predict"
+      ],
       "answerMode": "single",
       "answers": [
         {
@@ -242,35 +405,48 @@
           "isCorrect": false,
           "explanation": "Cache waits are shown with \"!\", \":\", \"2\" or \"@\"."
         }
-      ],
-      "next": [
-        "experiment"
       ]
+    },
+    {
+      "id": "predict",
+      "type": "question",
+      "title": "Predict: a faster addition",
+      "questionText": "If FLOAT.ADD took <b>1 cycle</b> instead of {{latency.FLOAT.ADD}}, what would be the minimum time per iteration of {{program}} on {{processor}}?",
+      "next": [
+        "experiment",
+        "end"
+      ],
+      "nextLabels": [
+        "In depth: check it in the simulator",
+        "Finish"
+      ],
+      "answerMode": "number",
+      "numericValue": 2,
+      "tolerance": 0.01,
+      "numericUnit": "cycles/iter",
+      "numericCorrect": "Right: the chain of sum would take 1 + 1 = 2 cycles/iter, the same as the throughput bound of P0 (2 loads / 1 port): the loop would be limited by both.",
+      "numericWrong": "Compute both bounds again: the chain of sum has two additions, and P0 still executes two loads per iteration."
     },
     {
       "id": "experiment",
       "type": "step",
-      "title": "Experiment!",
-      "description": "<b>Change one thing, predict the effect, then simulate.</b><br>&bull; Click the processor diagram: add a port, change a latency or the ROB size.<br>&bull; Change N, or edit the program (<b>Edit Program</b>).<br>&bull; <b>Store Results</b> to compare runs side by side.<br><i>Tip:</i> click any value with an explanation to pin it.<br>The <b>?</b> button (bottom right) reopens the tutorials.",
-      "selector": "#program-button",
+      "title": "In depth: check the prediction",
+      "selector": "#simulation-results-info",
       "position": "bottom",
-      "next": [
-        "end",
-        "algops-more"
-      ],
-      "action": "switchTo:simulationComponent"
-    },
-    {
-      "id": "algops-more",
-      "type": "step",
-      "title": "In depth: comparing versions of a loop",
-      "description": "<b>Compare versions per algorithmic operation, not per iteration.</b><br>&bull; An <b>algorithmic operation</b> is one iteration of the original loop:<br>&nbsp;&nbsp;&nbsp;an O(N) algorithm performs N of them.<br>&bull; An unrolled or SIMD version does <b>S</b> of them per iteration (S, next to N),<br>&nbsp;&nbsp;&nbsp;so its <i>Cycles/iter</i> cannot be compared with the original loop.<br>&bull; <b>Cycles/Alg Oper</b> = Cycles/iter ÷ S = <b>Instr/Alg Oper</b> ÷ IPC:<br>&nbsp;&nbsp;&nbsp;fewer instructions (unrolling, SIMD) or more IPC make the loop faster.<br>&bull; Try it: store the results of Base, V2 and BaseSIMD, and mark<br>&nbsp;&nbsp;&nbsp;Base with ☆ to see the <b>Speedup</b> of the other versions.",
-      "selector": ".results-table",
-      "position": "top",
+      "description": "<b>▶ Show me</b> changes the latency of FLOAT.ADD to 1 cycle in {{processor}}<br>(only in the Processor panel: ✱ ↶ discards it, and the tutorial restores it at the end)<br>and runs the simulation again.<br>Last simulation: <b>{{cyclesPerIter}} cycles/iter</b> with FLOAT.ADD = {{latency.FLOAT.ADD}} cycle(s)<br>(before ▶ Show me, the result with the original latency).",
       "next": [
         "end"
       ],
-      "action": "switchTo:simulationComponent"
+      "nextLabels": [
+        "Finish"
+      ],
+      "actions": [
+        "switchTo:simulationComponent"
+      ],
+      "showMe": [
+        "setLatency:FLOAT.ADD=1",
+        "runSimulation"
+      ]
     }
   ]
 }

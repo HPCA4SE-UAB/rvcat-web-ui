@@ -24,6 +24,8 @@ const SimulationState = reactive({
   timelineCriticalPathPercentages: null,
   simulatedProcess:    {},
   executionResults:    {},
+  performanceAnalysis: null,                               // last static analysis (tutorial live values)
+  analysisView:        { graphOpen: false, chain: null },  // dependence graph window and selected chain
   simulationSettings:  loadSimulationSettings()
 })
 

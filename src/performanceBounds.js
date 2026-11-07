@@ -101,6 +101,7 @@ export function latencyBoundRows(bounds, instructionList = [], max = MAX_BOUND_R
     const total   = lats.reduce((s, l) => s + l, 0)
     return {
       key:          chain.join(','),   // identifies the chain across re-analyses
+      variable:     b.variable ?? '',
       instructions: chain,
       iterations:   b.iterations,
       recurrence: b.variable ? `${b.variable} → ${b.variable}` : '—',

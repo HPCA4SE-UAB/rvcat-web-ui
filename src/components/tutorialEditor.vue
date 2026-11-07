@@ -174,6 +174,10 @@
                     <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
                     <span>Multiple-choice</span>
                   </label>
+                  <label class="mode-radio" title="The student writes a number; it is correct within the tolerance">
+                    <input type="radio" v-model="currentStep.answerMode" value="number">
+                    <span>Number</span>
+                  </label>
                 </div>
                </template>
             </div>
@@ -190,6 +194,20 @@
                   <option value="switchToFull:program">             Open Program editor  </option>
                   <option value="switchToFull:tutorial">            Open Tutorial editor </option>
                 </select>
+
+              <div class="form-group">
+                <label title="One action per line, run when the card is shown (e.g. selectProgram:Base)">Actions when the card is shown (opt.)</label>
+                <textarea v-model="currentStep.actionsText" rows="3" class="actions-input"
+                          placeholder="selectProgram:Base&#10;selectProcessor:B4&#10;setN:1000"></textarea>
+                <label title="One action per line, run by the ▶ Show me button of the card">Show me actions (opt.)</label>
+                <textarea v-model="currentStep.showMeText" rows="3" class="actions-input"
+                          placeholder="runSimulation"></textarea>
+                <details class="actions-help"><summary>Available actions and live values</summary>
+                  <div v-for="[pattern, text] in TUTORIAL_ACTIONS" :key="pattern"><code>{{ pattern }}</code>: {{ text }}</div>
+                  <p>Texts can show live values of the simulator as <code v-pre>{{name}}</code> (or <code v-pre>{{name|2}}</code> for 2 decimals):
+                    <code>{{ TUTORIAL_VALUE_NAMES.join(', ') }}</code></p>
+                </details>
+              </div>
 
                 <label>Step Image (opt.)</label>
                 <div class="image-upload-section">
@@ -212,6 +230,10 @@
                     <option value="input_value">    Exact input value    </option>
                     <option value="input_value_min">   Minimum input value  </option>
                     <option value="button_clicked">  Button clicked    </option>
+                    <option value="simulation_done"> Simulation run    </option>
+                    <option value="chain_selected">  Latency chain selected </option>
+                    <option value="graph_open">      Dependence graph open  </option>
+                    <option value="timeline_option"> Timeline option on     </option>
                   </select>
                 </div>
 
@@ -219,6 +241,15 @@
                   <div v-if="currentStep.validationType === 'program_selected'" class="form-group">
                     <label>Program name</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="rec, fact, sum, etc.">
+                  </div>
+
+                  <div v-if="currentStep.validationType === 'chain_selected'" class="form-group">
+                    <label>Variable of the chain</label>
+                    <input v-model="currentStep.validationValue" type="text" placeholder="sum">
+                  </div>
+                  <div v-if="currentStep.validationType === 'timeline_option'" class="form-group">
+                    <label>Timeline option</label>
+                    <input v-model="currentStep.validationValue" type="text" placeholder="critical">
                   </div>
 
                   <div v-if="currentStep.validationType === 'architecture_selected'" class="form-group">
@@ -272,6 +303,10 @@
                     <option value="input_value">           Exact input value    </option>
                     <option value="input_value_min">       Minimum input value  </option>
                     <option value="button_clicked">        Button clicked       </option>
+                    <option value="simulation_done">       Simulation run       </option>
+                    <option value="chain_selected">        Latency chain selected </option>
+                    <option value="graph_open">            Dependence graph open  </option>
+                    <option value="timeline_option">       Timeline option on     </option>
                   </select>
               </div>
             </template>
@@ -291,7 +326,25 @@
                 </div>
               </div>
 
-              <div class="answers-section right-column">
+              <div v-if="currentStep.answerMode === 'number'" class="answers-section right-column">
+                <h4>Numeric answer <span class="required">*</span></h4>
+                <div class="form-group">
+                  <label title="A number, or a live value such as {{minTime}}">Correct value</label>
+                  <input v-model="currentStep.numericValue" type="text" placeholder="4 or {{minTime}}">
+                  <label>Tolerance (absolute, default 0.01)</label>
+                  <input v-model="currentStep.tolerance" type="text" placeholder="0.01">
+                  <label>Unit (opt.)</label>
+                  <input v-model="currentStep.numericUnit" type="text" placeholder="cycles/iter">
+                  <label>Explanation when correct</label>
+                  <input v-model="currentStep.numericCorrect" type="text">
+                  <label>Hint when wrong</label>
+                  <input v-model="currentStep.numericWrong" type="text">
+                  <label title="One action per line, run when the question is shown">Actions when the question is shown (opt.)</label>
+                  <textarea v-model="currentStep.actionsText" rows="2" class="actions-input"></textarea>
+                </div>
+              </div>
+
+              <div v-else class="answers-section right-column">
                 <h4>Answers (up to 6)
                    <span class="required">*</span>
                    - {{ currentStep.answerMode === 'single' ? 'Only one must be correct' : 'At least one must be correct' }}
@@ -347,6 +400,17 @@
       <p>Use the second successor for optional cards (e.g. <em>In depth</em>) that return to the main path: the graph shows them
       in yellow. Each successor can have its own <strong>button text</strong>; when empty, the button shows the title of the target card.</p>
         </details>
+        <details><summary>Actions on the simulator, live values and numeric questions</summary>
+      <p>A card can act on the simulator: <em>actions when the card is shown</em> prepare it (select a program or a processor,
+      set N, show a panel), and <em>Show me actions</em> are run by its <strong>▶ Show me</strong> button (run the simulation,
+      select a latency chain, open the dependence graph...), which the student can also do by hand. One action per line;
+      the list of actions is under the action fields. A tutorial with actions restores, when it ends, the program, processor,
+      N and options of before it (closing it with × only pauses it).</p>
+      <p>Texts can include <strong>live values</strong> such as {{cyclesPerIter}} or {{chain.sum}}: they show the current
+      value of the simulator. A question can ask for a <strong>number</strong>: its correct value can be a live value, and it is
+      accepted within the tolerance. Validations can also wait for a simulation, a selected latency chain, the open
+      dependence graph, or a timeline option.</p>
+        </details>
         <details><summary>Text toolbar, preview and the tutorial menu</summary>
       <p>The text toolbar inserts bold, italic, red highlight, bullet points and line breaks, and <em>Preview</em> shows how the
       text will look. <strong>▶ Preview from this card</strong> runs the tutorial from the selected card; closing it returns to the editor.</p>
@@ -364,6 +428,8 @@
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
 import RichTextArea                                      from '@/components/RichTextArea.vue'
+import { TUTORIAL_ACTIONS, actionList, isKnownAction }   from '@/tutorialActions'
+import { TUTORIAL_VALUE_NAMES }                          from '@/tutorialValues'
 import {
   downloadJSON, uploadJSON, createGraphVizGraph,
   createTutorialStepId, migrateTutorialFlow, TUTORIAL_FLOW_VERSION
@@ -505,6 +571,8 @@ const createEmptyStep = () => ({
   selector:        '',
   position:        'bottom',
   action:          '',
+  actionsText:     '',
+  showMeText:      '',
   validationType:  '',
   validationValue: '',
   validationSelector: '',
@@ -522,6 +590,12 @@ const createEmptyQuestion = () => ({
   questionText:  '',
   image:         '',
   answerMode:    'single',
+  actionsText:   '',
+  numericValue:  '',
+  tolerance:     '',
+  numericUnit:   '',
+  numericCorrect: '',
+  numericWrong:  '',
   answers: [
     { text: '', isCorrect: true, explanation: '' },
     { text: '', isCorrect: false, explanation: '' }
@@ -740,6 +814,8 @@ const buildValidation = (step) => {
   switch (step.validationType) {
     case 'program_selected':
     case 'architecture_selected':
+    case 'chain_selected':
+    case 'timeline_option':
       validation.value    = step.validationValue
       break
     case 'input_value':
@@ -774,6 +850,15 @@ const convertStepForExport = (step) => {
     }
     if (step.image) q.image = step.image
     if (exportLabels(step)) q.nextLabels = exportLabels(step)
+    if (actionList(step.actionsText).length) q.actions = actionList(step.actionsText)
+    if (step.answerMode === 'number') {
+      q.answers = []
+      const value = String(step.numericValue ?? '').trim()
+      q.numericValue = value.includes('{{') ? value : Number(value)
+      if (String(step.tolerance ?? '').trim() !== '') q.tolerance = Number(step.tolerance)
+      for (const key of ['numericUnit', 'numericCorrect', 'numericWrong'])
+        if (step[key]) q[key] = step[key]
+    }
     return q
   }
 
@@ -788,6 +873,8 @@ const convertStepForExport = (step) => {
   }
   if (step.image)   s.image  = step.image
   if (step.action)  s.action = step.action
+  if (actionList(step.actionsText).length) s.actions = actionList(step.actionsText)
+  if (actionList(step.showMeText).length)  s.showMe  = actionList(step.showMeText)
   if (exportLabels(step)) s.nextLabels = exportLabels(step)
 
   const validation = buildValidation(step)
@@ -816,6 +903,8 @@ const validateTutorial = () => {
   tutorial.steps.forEach((step, i) => {
     const n = i
     if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
+    const unknown = [...actionList(step.actionsText), ...actionList(step.showMeText)].filter(a => !isKnownAction(a))
+    if (unknown.length)               errors.push(`• Step ${n}: unknown action ${unknown.join(', ')}`)
 
     const successors = (step.next || []).filter(Boolean)
     if (successors.length > 2)         errors.push(`• Step ${n}: At most 2 successors are allowed`)
@@ -830,6 +919,11 @@ const validateTutorial = () => {
     if (step.type === 'question') {
       if (!step.questionText?.trim()) errors.push(`• Step ${n}: Question Text is required`)
       if (!step.answerMode)           errors.push(`• Step ${n}: Answer Mode is required`)
+      if (step.answerMode === 'number') {
+        if (String(step.numericValue ?? '').trim() === '')
+                                      errors.push(`• Step ${n}: the correct value of the numeric question is required`)
+        return
+      }
 
       const validAnswers = step.answers?.filter(a => a.text?.trim()) || []
       if (validAnswers.length < 2)    errors.push(`• Step ${n}: At least 2 answers with text are required`)
@@ -974,6 +1068,12 @@ const convertUploadedStep = (step) => {
         explanation: a.explanation || ''
       }))
     }
+    q.actionsText    = actionList(step.actions).join('\n')
+    q.numericValue   = step.numericValue ?? ''
+    q.tolerance      = step.tolerance ?? ''
+    q.numericUnit    = step.numericUnit || ''
+    q.numericCorrect = step.numericCorrect || ''
+    q.numericWrong   = step.numericWrong || ''
     while (q.answers.length < 2) {
       q.answers.push({ text: '', isCorrect: false, explanation: '' })
     }
@@ -991,7 +1091,9 @@ const convertUploadedStep = (step) => {
     image:       step.image       || '',
     selector:    step.selector    || '',
     position:    step.position    || 'bottom',
-    action:      step.action      || ''
+    action:      step.action      || '',
+    actionsText: actionList(step.actions).join('\n'),
+    showMeText:  actionList(step.showMe).join('\n')
   }
 
   if (step.validation) {
@@ -1992,5 +2094,10 @@ onUnmounted(() => {
   .add-answer-btn:hover {
     background: #4b5563;
   }
+
+
+  .actions-input { width: 100%; font-family: monospace; font-size: 0.9em; box-sizing: border-box; }
+  .actions-help { font-size: 0.85em; color: #444; margin-top: 0.3em; }
+  .actions-help code { background: #f3f4f6; padding: 0 3px; border-radius: 3px; }
 
 </style>

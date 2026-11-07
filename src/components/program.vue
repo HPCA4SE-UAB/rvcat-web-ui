@@ -563,8 +563,9 @@
               :key="index"
               :style="rowStyle(index)"
               :class="{ highlighted: index === simState.instrHighlightedIdx }"
+              :data-instr="index"
             >
-              <td v-if="getCriticalPercentage(index) != null"
+              <td v-if="getCriticalPercentage(index) != null" class="critical-cell"
                   :title="activeView === 'timelineComponent'
                     ? 'Percentage of visible critical-path cycles attributed to this instruction'
                     : 'Percentage of time aggregated to in critical path'">

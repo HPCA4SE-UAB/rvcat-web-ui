@@ -76,6 +76,11 @@
   const selectedChain = computed(() =>
     latencyTable.value.rows.find(r => r.key === selectedChainKey.value) ?? null)
 
+  // State seen by the tutorials (validations and actions)
+  watch([graphOpen, selectedChain], ([open, chain]) => {
+    simState.analysisView = { graphOpen: open, chain: chain?.variable ?? null }
+  }, { immediate: true })
+
   function selectChain(row) {
     if (selectedChainKey.value === row.key) {   // second click: show the whole graph again
       selectedChainKey.value = null
@@ -222,6 +227,7 @@
                          'BranchPenalty', 'MispredictTime', 'EstimatedTime'])
         delete performanceData.value[key]
       Object.assign(performanceData.value, JSON.parse(data))  // let VUE understand reactive action
+      simState.performanceAnalysis = performanceData.value     // live values of the tutorials
       console.log('🔎✅ Performance Analysis updated')
     } catch (error) {
       console.error('🔎❌Error handling performance analysis:', error)
@@ -350,7 +356,7 @@
         </thead>
         <tbody>
           <tr v-for="row in latencyTable.rows" :key="row.key"
-              class="chain-row"
+              class="chain-row" :data-chain="row.variable"
               :class="{ bottleneck: row.bottleneck, selected: row.key === selectedChainKey }"
               @click="selectChain(row)">
             <td class="bound-resource" :title="row.recurrenceTitle">{{ row.recurrence }}</td>
@@ -393,7 +399,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, index) in throughputTable.rows" :key="index" :class="{ bottleneck: row.bottleneck }">
+          <tr v-for="(row, index) in throughputTable.rows" :key="index" :class="{ bottleneck: row.bottleneck }"
+              :data-resource="row.resource">
             <td class="bound-resource" :title="row.resourceTitle">{{ row.resource }}</td>
             <td>
               <span v-if="row.allRange">{{ row.allRange }}</span>

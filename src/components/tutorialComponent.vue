@@ -8,13 +8,14 @@
                   width: currentStep?.wWidth ? `${currentStep.wWidth}px` : undefined,
                   height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
         <div class="tutorial-header" ref="headerRef">
-          <h3 v-html="currentStep?.title"></h3>
+          <h3 v-html="rt(currentStep?.title)"></h3>
           <span v-if="previewMode" class="preview-badge" title="Preview from the tutorial editor: closing it returns to the editor">PREVIEW</span>
           <button :title="previewMode ? 'End preview and return to the tutorial editor' : 'Close tutorial, but can be resumed later'"
           class="tutorial-close" @click="closeTutorial">&times;</button>
         </div>
         <div class="tutorial-content">
-          <p class="step-description" v-html="currentStep?.description"></p>
+          <p class="step-description" v-html="rt(currentStep?.description)"></p>
+          <div v-if="actionsRunning" class="tutorial-running">⏳ The tutorial is acting on the simulator…</div>
           <div v-if="currentStep?.image" class="step-image"
             @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Step image">
@@ -31,12 +32,17 @@
               <template v-if="isBranchingTutorial">Card {{ stepIndex + 1 }}</template>
               <template v-else>{{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</template>
             </span>
+            <button v-if="showMeActions.length" @click="runShowMe" :disabled="actionsRunning"
+                    id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
+                    title="Let the tutorial do it on the simulator (you can also do it yourself)">
+              ▶ Show me
+            </button>
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
                     :title="target.id === 'end' ? 'Finish tutorial' : `Continue to ${target.title}`"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
-              {{ target.label }}
+              {{ rt(target.label) }}
             </button>
             <button v-if="successorSteps.length === 0"
                     @click="completeTutorial"
@@ -58,11 +64,11 @@
         <div class="question-header">
           <span class="question-badge">Question {{ stepIndex + 1 }}</span>
           <span v-if="previewMode" class="preview-badge">PREVIEW</span>
-          <h2 v-html="currentStep?.title"></h2>
+          <h2 v-html="rt(currentStep?.title)"></h2>
         </div>
 
         <div class="question-body">
-          <p class="question-text" v-html="currentStep?.questionText"></p>
+          <p class="question-text" v-html="rt(currentStep?.questionText)"></p>
 
           <div v-if="currentStep?.image" class="question-image" @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Question image">
@@ -71,10 +77,22 @@
 
           <div class="question-mode-info">
             <span v-if="currentStep?.answerMode === 'single'">Select ONE correct answer</span>
+            <span v-else-if="isNumericQuestion">Write a number</span>
             <span v-else>Select ALL correct answers</span>
           </div>
 
-          <div class="answers-list">
+          <div v-if="isNumericQuestion" class="numeric-answer">
+            <input v-model="numericAnswer" type="text" inputmode="decimal" id="tutorial-numeric-answer"
+                   :disabled="questionAnswered && isQuestionCorrect" @keyup.enter="submitAnswer"
+                   placeholder="your answer" />
+            <span v-if="currentStep?.numericUnit" class="numeric-unit">{{ currentStep.numericUnit }}</span>
+            <div v-if="questionAnswered"
+                 :class="['answer-feedback', isQuestionCorrect ? 'feedback-correct' : 'feedback-wrong']"
+                 v-html="rt(isQuestionCorrect ? currentStep.numericCorrect : currentStep.numericWrong)">
+            </div>
+          </div>
+
+          <div v-else class="answers-list">
             <div v-for="(answer, index) in shuffledAnswers" :key="answer.originalIndex" class="answer-wrapper">
               <button
                 @click="selectAnswer(answer.originalIndex)"
@@ -82,7 +100,7 @@
                 :disabled="questionAnswered && isQuestionCorrect"
               >
                 <span class="answer-letter">{{ String.fromCharCode(65 + index) }}</span>
-                <span class="answer-text" v-html="answer.text"></span>
+                <span class="answer-text" v-html="rt(answer.text)"></span>
                 <span v-if="questionAnswered && isQuestionCorrect  &&
                             answer.isCorrect" class="answer-indicator correct">✓</span>
                 <span v-if="questionAnswered && !isQuestionCorrect &&
@@ -96,7 +114,7 @@
               <div v-if="questionAnswered && selectedAnswers.includes(answer.originalIndex)
                          && answer.explanation"
                    :class="['answer-feedback', answer.isCorrect ? 'feedback-correct' : 'feedback-wrong']"
-                   v-html="answer.explanation">
+                   v-html="rt(answer.explanation)">
               </div>
             </div>
           </div>
@@ -121,7 +139,7 @@
 
           <button v-if="!questionAnswered"
                   @click="submitAnswer"
-                  :disabled="selectedAnswers.length === 0"
+                  :disabled="!canSubmit"
                   class="tutorial-btn tutorial-btn-primary">
             Submit Answer
           </button>
@@ -136,7 +154,7 @@
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
                     class="tutorial-btn tutorial-btn-primary">
-              {{ target.label }}
+              {{ rt(target.label) }}
             </button>
           </template>
           <button v-else
@@ -255,6 +273,9 @@ import {
   initResource, removeFromLocalStorage, uploadJSON,
   migrateTutorialFlow
 } from '@/common'
+import { renderTutorialText, tutorialNumber }                                    from '@/tutorialValues'
+import { createActionRunner, actionList, takeSnapshot, savedSnapshot, clearSnapshot } from '@/tutorialActions'
+import { processorDraftFrom, processorSignature }                               from '@/editDrafts'
 const simState = inject('simulationState');
 
 // ============================================================================
@@ -443,8 +464,25 @@ const isBranchingTutorial = computed(() =>
   (currentTutorial.value?.steps ?? []).some(step => (step.next ?? []).length > 1)
 )
 
+// Text of the cards with the live values of the simulator ({{name}})
+const rt = (text) => renderTutorialText(text, simState)
+
+// Numeric questions (answerMode "number"): numericValue (a number or a live value such as
+// "{{minTime}}"), tolerance (absolute, 0.01 by default), numericCorrect / numericWrong texts
+const numericAnswer     = ref('')
+const isNumericQuestion = computed(() => currentStep.value?.type === 'question' && currentStep.value.answerMode === 'number')
+const canSubmit = computed(() => isNumericQuestion.value
+  ? numericAnswer.value.trim() !== '' && Number.isFinite(Number(numericAnswer.value.replace(',', '.')))
+  : selectedAnswers.value.length > 0)
+
 const isQuestionCorrect = computed(() => {
   if (!currentStep.value || currentStep.value.type !== 'question') return false
+  if (isNumericQuestion.value) {
+    const target = tutorialNumber(currentStep.value.numericValue, simState)
+    const given  = Number(numericAnswer.value.replace(',', '.'))
+    const tol    = Number(currentStep.value.tolerance ?? 0.01)
+    return target !== null && Number.isFinite(given) && Math.abs(given - target) <= tol + 1e-9
+  }
 
   const answers        = currentStep.value.answers || []
   const correctIndices = answers.reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
@@ -491,7 +529,7 @@ const canProceed = computed(() => {
       case 'button_clicked':
         return selector && clickedButtons.value.has(selector.trim())
       default:
-        return true
+        return extraValidation(validation)
     }
   } catch (e) {
     console.warn('👨‍🎓⚠️Validation check error:', e)
@@ -585,6 +623,61 @@ const positionCurrentTooltip = async () => {
   y.value = clamp((window.innerHeight - tooltipRect.height) / 2, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
 }
 
+// ============================================================================
+// ACTIONS ON THE SIMULATOR (card fields actions / showMe) and state restored at the end
+// ============================================================================
+const actionsRunning = ref(false)
+const showMeActions  = computed(() => actionList(currentStep.value?.showMe))
+const tutorialHasActions = (tutorial) =>
+  (tutorial?.steps ?? []).some(s => actionList(s.actions).length || actionList(s.showMe).length)
+
+let previewSnapshot = null
+async function restoreSnapshot(snap = savedSnapshot()) {
+  if (!snap) return
+  await runActions([`selectProcessor:${snap.processor}`])
+  if (snap.processorConfig && processorSignature(simState.simulatedProcess) !== processorSignature(snap.processorConfig)) {
+    const config = JSON.parse(JSON.stringify(snap.processorConfig))
+    delete config.name                       // the name of the simulated process is the program's
+    Object.assign(simState.simulatedProcess, config)
+  }
+  await runActions([`selectProgram:${snap.program}`, ...(snap.N ? [`setN:${snap.N}`] : [])])
+  if (snap.settings) Object.assign(simState.simulationSettings, snap.settings)
+  if (snap.view) emit('requestSwitchPanel', snap.view)
+}
+
+const runActions = createActionRunner({
+  simState,
+  switchPanel: (name) => emit('requestSwitchPanel', name),
+  snapshot: { restore: () => restoreSnapshot(previewMode.value ? previewSnapshot : savedSnapshot()) },
+})
+
+async function runCardActions(list) {
+  if (!actionList(list).length) return
+  actionsRunning.value = true
+  try { await runActions(list) } finally { actionsRunning.value = false }
+}
+
+async function runShowMe() {
+  await runCardActions(currentStep.value?.showMe)
+  await highlightCurrent()
+}
+
+// Simulations done since the card was shown (validation simulation_done)
+const simulationCount = ref(0)
+let   stepSimulationStart = 0
+watch(() => simState.executionResults, (r) => { if (r && Object.keys(r).length) simulationCount.value++ })
+
+// Validations on the state of the simulator
+function extraValidation(v) {
+  switch (v.type) {
+    case 'simulation_done': return simulationCount.value > stepSimulationStart
+    case 'chain_selected':  return simState.analysisView?.chain === v.value
+    case 'graph_open':      return !!simState.analysisView?.graphOpen
+    case 'timeline_option': return v.value === 'critical' ? !!simState.timelineCriticalPathEnabled : true
+    default:                return true
+  }
+}
+
 const clearHighlights = () => {
   document.querySelectorAll('.tutorial-highlighted').forEach(el => {
     el.classList.remove('tutorial-highlighted', 'tutorial-highlight-pulse')
@@ -595,12 +688,14 @@ const showCurrentStep = async () => {
   if (currentStep.value?.type === 'question') {
     clearHighlights()
     highlightElement.value = null
+    stepSimulationStart = simulationCount.value
+    await runCardActions(currentStep.value.actions)
     return
   }
 
-  if (!currentStep.value?.selector) return
+  stepSimulationStart = simulationCount.value
 
-  // Execute step action
+  // Execute step action (old single action) and the actions of the card
   if (currentStep.value.action) {
     try {
       await currentStep.value.action()
@@ -610,44 +705,48 @@ const showCurrentStep = async () => {
       console.error('👨‍🎓❌ Step action error:', e)
     }
   }
+  const step = currentStep.value
+  await runCardActions(step.actions)
+  if (currentStep.value !== step) return       // the student moved on meanwhile
 
+  await highlightCurrent()
+  setupValidationListeners()
+  setupButtonClickTracking()
+}
+
+// Highlight the element(s) of the selector of the card (a list of selectors may match several
+// elements, e.g. two rows of the program) and place the card next to the first one
+async function highlightCurrent() {
   clearHighlights()
+  const sel = currentStep.value?.selector
+  if (!sel) { highlightElement.value = null; await nextTick(); await positionCurrentTooltip(); return }
 
-  // Find element
-  let element
-  const sel = currentStep.value.selector
-
+  let elements = []
   if (sel.includes(':contains(')) {
     const match = sel.match(/^([^:]+):contains\("([^"]+)"\)$/)
     if (match) {
-      element = Array.from(document.querySelectorAll(match[1]))
-        .find(el => el.textContent.includes(match[2]))
+      elements = Array.from(document.querySelectorAll(match[1]))
+        .filter(el => el.textContent.includes(match[2])).slice(0, 1)
     }
   } else {
-    element = document.querySelector(sel)
+    // a list of selectors ("a, b") highlights every match; a single selector, its first match
+    try { elements = sel.includes(',') ? Array.from(document.querySelectorAll(sel)) : [document.querySelector(sel)].filter(Boolean) }
+    catch { elements = [] }
   }
   // A hidden element (e.g. a panel replaced by a full-screen editor) cannot be highlighted:
   // the card is then centered instead of being placed next to an invisible box
-  if (element && element.getClientRects().length === 0) element = null
-  highlightElement.value = element || null
+  elements = elements.filter(el => el.getClientRects().length > 0)
+  const element = elements[0] ?? null
+  highlightElement.value = element
 
   tutorialOptions.windowWidth = currentStep.value.wWidth || 320
   tutorialOptions.windowHeight = currentStep.value.wHeight || 180
 
-  if (element) {
-    highlightElement.value = element
-    element.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
-    if (!isElementVisible(element)) {
-      element.scrollIntoView({ behavior: 'auto', block: 'center' })
-    }
-    console.log(`👨‍🎓⏺️ Highlighted Element: ${element} X: ${currentStep.value.x_pos} Y: ${currentStep.value.y_pos} W: ${currentStep.value.wWidth} H: ${currentStep.value.wHeight}`)
-  }
+  for (const el of elements) el.classList.add('tutorial-highlighted', 'tutorial-highlight-pulse')
+  if (element && !isElementVisible(element)) element.scrollIntoView({ behavior: 'auto', block: 'center' })
 
   await nextTick()
   await positionCurrentTooltip()
-
-  setupValidationListeners()
-  setupButtonClickTracking()
 }
 
 // Card sizes written in the tutorial file (sizes measured at run time are not kept between cards)
@@ -706,6 +805,7 @@ const validateCurrentStep = async () => {
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
     button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
   }
+  validators[v.type] ??= () => extraValidation(v)
 
   const isValid = validators[v.type]?.() ?? true
   if (!isValid) showValidationMessage(v.message || 'Please complete this action')
@@ -819,11 +919,12 @@ const selectAnswer = (index) => {
 }
 
 const submitAnswer = () => {
-  if (selectedAnswers.value.length) questionAnswered.value = true
+  if (canSubmit.value) questionAnswered.value = true
 }
 
 const resetQuestionState = () => {
   selectedAnswers.value  = []
+  numericAnswer.value    = ''
   questionAnswered.value = false
 }
 
@@ -852,6 +953,7 @@ const getErrorMessage = () => {
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
   const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
 
+  if (isNumericQuestion.value)                         return 'Not quite. Try again!'
   if (currentStep.value.answerMode === 'single')       return 'Incorrect answer. Try again!'
   if (selectedWrong.length && !selectedCorrect.length) return 'Wrong answer selected. Try again!'
   if (selectedWrong.length)                            return 'You selected some correct answers, but also wrong ones. Try again!'
@@ -867,6 +969,11 @@ const startTutorial = async (tutorialId) => {
 
   await loadCurrentTutorial (tutorialId)
   if (!currentTutorial.value) return
+  // A tutorial that acts on the simulator restores, when it ends, the previous state
+  if (tutorialHasActions(currentTutorial.value))
+    takeSnapshot(simState, props.activeView, processorDraftFrom(simState.simulatedProcess))
+  else
+    clearSnapshot()
 
   tutorialOptions.progressHistory = []
   tutorialOptions.progressStepId = currentStep.value?.id || ''
@@ -958,6 +1065,11 @@ const startPreview = async () => {
     }
   }
   cleanup()
+  if (!previewMode.value && tutorialHasActions(draft))
+    previewSnapshot = { program: simState.simulatedProcess?.name, processor: simState.processorName,
+                        N: document.querySelector('#program-iterations')?.value ?? '',
+                        settings: { ...simState.simulationSettings }, view: props.activeView,
+                        processorConfig: processorDraftFrom(simState.simulatedProcess) }
   draft.steps = processStepActions(draft.steps)
   draft.id    = '__preview__'
   currentTutorial.value = draft
@@ -976,10 +1088,11 @@ const startPreview = async () => {
   showCurrentStep()
 }
 
-const endPreview = () => {
+const endPreview = async () => {
   cleanup()
   isActive.value    = false
   previewMode.value = false
+  if (previewSnapshot) { await restoreSnapshot(previewSnapshot); previewSnapshot = null }
   if (savedProgress) {
     currentTutorial.value = savedProgress.tutorial
     stepIndex.value       = savedProgress.stepIndex
@@ -998,11 +1111,14 @@ const editTutorial = (tutorialId) => {
   if (props.activeFull !== 'tutorial') emit('requestSwitchFull', 'tutorial')
 }
 
-const endTutorial = (fullReset = false) => {
+const endTutorial = async (fullReset = false) => {
   if (previewMode.value) { endPreview(); return }
   cleanup()
   isActive.value = false
   if (fullReset) {
+    // finished or stopped: the simulator returns to its state before the tutorial
+    // (closing with × only pauses the tutorial, and keeps its state)
+    if (savedSnapshot()) { await restoreSnapshot(); clearSnapshot() }
     currentTutorial.value  = null
     stepIndex.value        = 0
     highlightElement.value = null
@@ -2124,5 +2240,23 @@ onUnmounted(() => {
       transform: translate(-50%, -50%) scale(1);
     }
   }
+
+
+  /* Actions of the cards on the simulator, and numeric answers */
+  .tutorial-running {
+    margin: 0.4em 0; padding: 0.3em 0.6em; border-radius: 4px;
+    background: #fff7e0; color: #7a5a00; font-size: 0.9em;
+  }
+  .tutorial-btn-showme {
+    background: #e8f5e9; border-color: #66bb6a; color: #1b5e20; font-weight: 600;
+  }
+  .tutorial-btn-showme:disabled { opacity: 0.6; cursor: wait; }
+  .numeric-answer { margin: 0.8em 0; }
+  .numeric-answer input {
+    width: 9em; padding: 0.4em 0.6em; font-size: 1.1em;
+    border: 1px solid #b0b8c4; border-radius: 6px;
+  }
+  .numeric-unit { margin-left: 0.5em; color: #555; }
+  .numeric-answer .answer-feedback { margin-top: 0.6em; }
 
 </style>
