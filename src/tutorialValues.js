@@ -17,7 +17,7 @@
 export const TUTORIAL_VALUE_NAMES = [
   'program', 'processor', 'N', 'iterations', 'dispatch', 'retire', 'rob', 'bPenalty', 'latency.TYPE.OPER', 'instr.K',
   'latencyBound', 'throughputBound', 'minTime', 'boundType', 'chain.VAR', 'resource.NAME',
-  'cycles', 'instructions', 'simIterations', 'cyclesPerIter', 'ipc', 'dispatchUsage', 'retireUsage',
+  'cycles', 'instructions', 'simIterations', 'cyclesPerIter', 'cyclesPerAlgOp', 'stride', 'ipc', 'dispatchUsage', 'retireUsage',
   'port.P', 'critical.K', 'patternFrom', 'patternTo', 'patternCycles', 'mispredPerIter',
 ]
 
@@ -67,6 +67,9 @@ export function tutorialValue(name, simState, extra = {}) {
     case 'instructions':   return val(num(r?.total_instructions))
     case 'simIterations':  return val(num(r?.total_iterations))
     case 'cyclesPerIter':  return val(num(r?.cycles_per_iteration), 2)
+    case 'cyclesPerAlgOp': return val(num(r?.cycles_per_iteration) === null ? null
+      : r.cycles_per_iteration / (Number(p.instruction_list?.at(-1)?.stride) || 1), 2)
+    case 'stride':         return val(Number(p.instruction_list?.at(-1)?.stride) || 1)
     case 'ipc':            return val(num(r?.ipc), 3)
     case 'dispatchUsage':  return val(r && p.dispatch ? 100 * r.ipc / p.dispatch : null, 1)
     case 'retireUsage':    return val(r && p.retire ? 100 * r.ipc / p.retire : null, 1)

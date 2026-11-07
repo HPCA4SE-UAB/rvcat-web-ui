@@ -156,6 +156,16 @@
 
   // Options of the simulation, stored with the simulated copy so that changing them invalidates results
   const settings = simState.simulationSettings
+
+  // Options fixed by a lesson (locks.simulation: { sched, speculation })
+  const fixedOption = (key) => (simState.lessonAllow ?? []).includes(`simulation.${key}`)
+    ? null : simState.lesson?.locks?.simulation?.[key] ?? null
+  watch(() => [fixedOption('sched'), fixedOption('speculation'), settings.sched, settings.speculation], () => {
+    for (const key of ['sched', 'speculation']) {
+      const fixed = fixedOption(key)
+      if (fixed && settings[key] !== fixed) settings[key] = fixed
+    }
+  }, { immediate: true })
   const withSettings = (process) => ({ ...process, sched: settings.sched, speculation: settings.speculation })
 
   const areInstructionsEqual = (instr1, instr2) => {
@@ -878,14 +888,14 @@
         </button>
         <label class="sim-setting" title="Instruction scheduler (an option of the simulation): optimal issues in each cycle the largest set of ready instructions, the oldest first; greedy issues each ready instruction, in program order, to its first free port">
           Scheduler:
-          <select v-model="settings.sched" id="simulation-sched">
+          <select v-model="settings.sched" id="simulation-sched" :disabled="!!fixedOption('sched')">
             <option value="optimal">optimal</option>
             <option value="greedy">greedy</option>
           </select>
         </label>
         <label class="sim-setting" title="What the processor does after a mispredicted conditional branch (programs with 'if c skip k'): stall = dispatch stops until the branch resolves, plus the branch penalty of the processor; wrong path = it keeps dispatching and executing the wrong path until the branch resolves (or the ROB is full), then squashes it: its cache accesses act as prefetches or pollute the cache">
           Mispredictions:
-          <select v-model="settings.speculation" id="simulation-speculation">
+          <select v-model="settings.speculation" id="simulation-speculation" :disabled="!!fixedOption('speculation')">
             <option value="stall">stall</option>
             <option value="wrong-path">wrong path</option>
           </select>

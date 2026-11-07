@@ -16,6 +16,41 @@
         <div class="tutorial-content">
           <p class="step-description" v-html="rt(currentStep?.description)"></p>
           <div v-if="actionsRunning" class="tutorial-running">⏳ The tutorial is acting on the simulator…</div>
+
+          <!-- Prediction: written before simulating, compared with the result of the next simulation -->
+          <div v-if="currentStep?.type === 'predict'" class="task-box" id="tutorial-predict">
+            <div class="task-row">
+              <label for="tutorial-prediction">Your prediction:</label>
+              <input id="tutorial-prediction" v-model="predictionInput" type="text" inputmode="decimal"
+                     :disabled="!!taskState.result" @keyup.enter="savePrediction" />
+              <span v-if="currentStep.predictUnit">{{ currentStep.predictUnit }}</span>
+              <button class="tutorial-btn" :disabled="!!taskState.result || !validPrediction" @click="savePrediction">Save</button>
+            </div>
+            <div v-if="taskState.prediction !== undefined && !taskState.result" class="task-status">
+              Prediction {{ taskState.prediction }} saved: now run the simulation.
+            </div>
+            <div v-if="taskState.result" class="task-status" :class="taskState.result.good ? 'task-ok' : 'task-far'">
+              Prediction {{ taskState.prediction }} · simulated {{ formatNumber(taskState.result.actual) }}
+              (difference {{ formatNumber(taskState.result.actual - taskState.prediction) }}){{
+                taskState.result.good === null ? '' : taskState.result.good ? ' · good prediction' : ' · far from the result' }}
+            </div>
+          </div>
+
+          <!-- Goal: a condition on the results, checked after every simulation -->
+          <div v-if="currentStep?.type === 'goal'" class="task-box" id="tutorial-goal">
+            <div class="task-row"><b>Goal:</b> <code>{{ currentStep.goal }}</code>
+              <span v-if="currentStep.program"> with program <b>{{ currentStep.program }}</b></span></div>
+            <div v-if="(currentStep.allow ?? []).length" class="task-row task-allow">
+              Allowed now: {{ currentStep.allow.join(', ') }}</div>
+            <div v-if="taskState.last" class="task-status" :class="taskState.last.ok ? 'task-ok' : 'task-far'">
+              Last simulation: {{ taskState.last.ok ? '✓ achieved' : '✗ not yet' }}
+              <span v-if="taskState.last.message"> · {{ taskState.last.message }}</span>
+              <span v-for="(v, name) in taskState.last.values" :key="name"> · {{ name }} = {{ formatNumber(v) }}</span>
+            </div>
+            <div v-else class="task-status">Run a simulation to check the goal.</div>
+            <div v-if="taskState.done && currentStep.best" class="task-status task-ok">
+              Best {{ currentStep.best }}: {{ formatNumber(taskState.best) }}</div>
+          </div>
           <div v-if="currentStep?.image" class="step-image"
             @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Step image">
@@ -219,7 +254,7 @@
 
         <div v-else class="tutorial-list">
           <div
-            v-for="tutorial in availableTutorials"
+            v-for="tutorial in visibleTutorials"
             :key="tutorial.id"
             class="tutorial-item-wrapper"
           >
@@ -233,14 +268,14 @@
                 <p v-html="tutorial.description"></p>
               </div>
             </button>
-            <button
+            <button v-if="!lessonLocked('tutorialEditor')"
               @click="editTutorial(tutorial.id)"
               title="Edit this tutorial in the tutorial editor"
               class="tutorial-delete-btn tutorial-edit-btn"
             >
             ✎
             </button>
-            <button
+            <button v-if="!lessonLocked('remove')"
               @click="deleteTutorial(tutorial.id)"
               title="Delete this tutorial from the list (and local storage)"
               id="remove-tutorial-button"
@@ -250,7 +285,7 @@
             </button>
           </div>
 
-          <button
+          <button v-if="!lessonLocked('upload')"
             @click="addTutorial"
             title="Upload new tutorial"
             class="tutorial-menu-item"
@@ -276,6 +311,8 @@ import {
 import { renderTutorialText, tutorialNumber }                                    from '@/tutorialValues'
 import { createActionRunner, actionList, takeSnapshot, savedSnapshot, clearSnapshot } from '@/tutorialActions'
 import { processorDraftFrom, processorSignature }                               from '@/editDrafts'
+import { isLocked, evaluateCondition }                                          from '@/lessons'
+import { tutorialValue }                                                        from '@/tutorialValues'
 const simState = inject('simulationState');
 
 // ============================================================================
@@ -326,9 +363,11 @@ const isActive        = ref(false)
     }
   }
 
-  const availableTutorials = computed(() =>
-    tutorialOptions.available
-  )
+  // During a lesson only its tutorial is offered
+  const visibleTutorials = computed(() => simState.lesson
+    ? tutorialOptions.available.filter(t => t.id === simState.lesson.tutorial)
+    : tutorialOptions.available)
+  const lessonLocked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
 
 // ============================================================================
 // PROPS & EMITS
@@ -509,6 +548,10 @@ const canProceed = computed(() => {
   // Returns true if user can advance to next step
   // Returns false if validation requirements aren't met
 
+  const type = currentStep.value?.type
+  if (type === 'predict') return !!taskState.value.result
+  if (type === 'goal')    return !!taskState.value.done
+
   const validation = currentStep.value?.validation
   if (!validation) return true
 
@@ -665,7 +708,96 @@ async function runShowMe() {
 // Simulations done since the card was shown (validation simulation_done)
 const simulationCount = ref(0)
 let   stepSimulationStart = 0
-watch(() => simState.executionResults, (r) => { if (r && Object.keys(r).length) simulationCount.value++ })
+watch(() => simState.executionResults, (r) => {
+  if (!r || !Object.keys(r).length) return
+  simulationCount.value++
+  checkTaskAfterSimulation()
+})
+
+// ============================================================================
+// TASKS (cards predict and goal; questions): state per card, recorded in the lesson
+// ============================================================================
+// taskStates: { cardId: { prediction, predictedAt, result, last, done, best } } (this session);
+// in a lesson, the completed tasks are also kept in simState.lesson.done
+const taskStates = ref({})
+const taskState  = computed(() => taskStates.value[currentStep.value?.id] ?? {})
+const setTask    = (id, data) => { taskStates.value = { ...taskStates.value, [id]: { ...(taskStates.value[id] ?? {}), ...data } } }
+const formatNumber = (v) => (typeof v === 'number' ? Number(v.toFixed(3)).toLocaleString('en-US') : String(v ?? '…'))
+
+function markTask(id, data = {}) {
+  const lesson = simState.lesson
+  if (!lesson || !(lesson.tasks ?? []).includes(id)) return
+  lesson.done = { ...(lesson.done ?? {}), [id]: { ...(lesson.done?.[id] ?? {}), ...data, done: true } }
+}
+
+const predictionInput = ref('')
+const validPrediction = computed(() => predictionInput.value.trim() !== '' &&
+  Number.isFinite(Number(predictionInput.value.replace(',', '.'))))
+function savePrediction() {
+  if (!validPrediction.value || taskState.value.result) return
+  setTask(currentStep.value.id, { prediction: Number(predictionInput.value.replace(',', '.')), predictedAt: simulationCount.value })
+}
+
+function checkTaskAfterSimulation() {
+  const step = currentStep.value
+  if (!isActive.value || !step) return
+  const st = taskStates.value[step.id] ?? {}
+  if (step.type === 'predict' && st.prediction !== undefined && !st.result && simulationCount.value > st.predictedAt) {
+    const actual = tutorialValue(step.predictValue ?? 'cyclesPerIter', simState)?.value ?? null
+    const tol = step.tolerance === undefined ? null : Number(step.tolerance)
+    const good = tol === null || actual === null ? null : Math.abs(actual - st.prediction) <= tol + 1e-9
+    setTask(step.id, { result: { actual, good } })
+    markTask(step.id, { prediction: st.prediction, actual })
+  }
+  if (step.type === 'goal') {
+    if (step.program && simState.simulatedProcess?.name !== step.program) {
+      setTask(step.id, { last: { ok: false, message: `the goal is for program ${step.program}`, values: {} } })
+      return
+    }
+    const { ok, values, error } = evaluateCondition(step.goal, simState)
+    const last = { ok, values, message: error ? `condition error: ${error}` : '' }
+    if (!ok) { setTask(step.id, { last }); return }
+    const value = step.best ? tutorialValue(step.best, simState)?.value ?? null : null
+    const better = value !== null && (st.best === undefined ||
+      ((step.bestMode ?? 'min') === 'min' ? value < st.best : value > st.best))
+    const best = better ? value : st.best
+    setTask(step.id, { last, done: true, best })
+    markTask(step.id, { values, ...(best !== undefined ? { best } : {}) })
+  }
+}
+
+// While a goal card is shown, the lesson allows what the goal lists (e.g. "processor.rob")
+watch(() => [isActive.value, currentStep.value], () => {
+  const step = currentStep.value
+  simState.lessonAllow = isActive.value && step?.type === 'goal' ? [...(step.allow ?? [])] : []
+  predictionInput.value = step ? String(taskStates.value[step.id]?.prediction ?? '') : ''
+})
+
+// The lesson starts and stops its tutorial
+watch(() => simState.lessonTutorial?.nonce, async () => {
+  const request = simState.lessonTutorial
+  if (!request) return
+  if (request.action === 'stop') {
+    if (currentTutorial.value) await endTutorial(true)
+    return
+  }
+  const { id } = request
+  if (!tutorialOptions.available.some(t => t.id === id)) {
+    try {
+      const t = JSON.parse(localStorage.getItem(`tutorial.${id}`))
+      tutorialOptions.available = [...tutorialOptions.available, { id, name: t.name, description: t.description }]
+    } catch (e) { console.error('👨‍🎓❌ Lesson tutorial not found:', e); return }
+  }
+  if (currentTutorial.value && isActive.value) await endTutorial(true)
+  taskStates.value = {}
+  await startTutorial(id)
+})
+
+// After a lesson, forget the tutorials whose files it removed (embedded in the lesson)
+watch(() => simState.lesson, (lesson) => {
+  if (lesson) return
+  tutorialOptions.available = tutorialOptions.available.filter(t => localStorage.getItem(`tutorial.${t.id}`) !== null)
+})
 
 // Validations on the state of the simulator
 function extraValidation(v) {
@@ -919,7 +1051,11 @@ const selectAnswer = (index) => {
 }
 
 const submitAnswer = () => {
-  if (canSubmit.value) questionAnswered.value = true
+  if (!canSubmit.value) return
+  questionAnswered.value = true
+  if (isQuestionCorrect.value)
+    markTask(currentStep.value.id, isNumericQuestion.value ? { answer: Number(numericAnswer.value.replace(',', '.')) }
+                                                           : { answer: [...selectedAnswers.value] })
 }
 
 const resetQuestionState = () => {

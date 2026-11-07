@@ -9,12 +9,22 @@ import tutorialEditor          from '@/components/tutorialEditor.vue';
 import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
+import LessonPanel             from '@/components/LessonPanel.vue';
+import { isLocked }            from '@/lessons';
 import simulationComponent     from '@/components/simulationComponent.vue';
 
 import { useRVCAT_Api }        from '@/rvcatAPI';
 import { RVCAT_VERSION }       from '@/common';
 
 const simState                      = inject('simulationState');
+// Locks of the lesson in progress (editors in the header)
+const lessonLocked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+// a locked editor that is open is closed
+watch(() => [simState.lesson, simState.lessonAllow], () => {
+  if ((currentFullKey.value === 'program' && lessonLocked('programEditor')) ||
+      (currentFullKey.value === 'tutorial' && lessonLocked('tutorialEditor')))
+    currentFullKey.value = 'none'
+})
 const { isReady, registerHandler }  = inject('worker');
 const { importRVCAT }               = useRVCAT_Api();
 
@@ -235,7 +245,7 @@ onUnmounted(() => {
               </li>
 
               <li class="separator"></li>
-              <li>
+              <li v-if="!lessonLocked('programEditor')">
                 <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
                   id="program-button"
                   title="Open/Close program edition panel"
@@ -243,7 +253,7 @@ onUnmounted(() => {
                     {{ fullProgramButtonText }}
                 </button>
               </li>
-              <li>
+              <li v-if="!lessonLocked('tutorialEditor')">
                 <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                   id="tutorial-button"
                   title="Open/Close tutorial edition panel"
@@ -251,11 +261,16 @@ onUnmounted(() => {
                     {{ fullTutorialButtonText }}
                 </button>
               </li>
+              <li class="separator"></li>
+              <li>
+                <LessonPanel :active-view="currentKey" @requestSwitchPanel="onRequestSwitch" />
+              </li>
             </ul>
           </nav>
         </div>
       </div>
     </header>
+    <div id="lesson-bar-slot"></div>
 
     <div v-if="versionNotice" class="version-notice" role="status">
       💻 {{ versionNotice }}

@@ -1,0 +1,140 @@
+# RVCAT lessons
+
+A **lesson** is a JSON file that the teacher gives to the students. It defines:
+
+- the programs and processors that can be used (the others are hidden during the lesson);
+- one tutorial, whose cards include the **tasks** of the lesson (questions, predictions and goals);
+- **locks**: what the student cannot change (editors, processor parameters, N, simulation options);
+- optionally, a **completion code** for each student identifier.
+
+The student loads it with **📘 Lessons → Load lesson file…**, starts it, writes the identifier
+assigned by the teacher (if the lesson has a completion code) and follows its tutorial. A bar under
+the header shows the progress (`Tasks k / n`) and, when every task is done, the completion code.
+**Exit lesson** (with confirmation) returns the simulator to its state before the lesson; the
+completed tasks are kept, so starting the lesson again with the same identifier continues it.
+
+Example: [lessons/L1-example.json](lessons/L1-example.json).
+
+## File format
+
+```json
+{
+  "lesson": "L1-example",
+  "title": "Example: bounds, ROB and your own loop",
+  "description": "Shown when the lesson is started",
+  "version": 1,
+  "programs":   ["Base", "V1", { "name": "Mine", "instruction_list": [ ... ] }],
+  "processors": ["B4"],
+  "tutorial":   { "id": "L1-tutorial", "name": "...", "flowVersion": 2, "steps": [ ... ] },
+  "start":      { "program": "Base", "processor": "B4", "N": 1000 },
+  "locks":      { ... },
+  "completion": { "secret": "RVCAT-L1-7Q2X", "idLabel": "NIU", "idPattern": "^[0-9]{7}$" }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `lesson` | Identifier: letters, digits and `-`. It is part of the completion code. |
+| `programs`, `processors` | Each element is the **name** of a program/processor of RVCAT, or a complete **embedded** object (the same JSON as a program or processor file, with its `name`). |
+| `tutorial` | Name of a tutorial of RVCAT, or an embedded tutorial (with `id`). |
+| `start` | Program, processor and N selected when the lesson starts. |
+| `locks` | See below. |
+| `completion` | Optional. `secret`: letters, digits and `-`. `idLabel`: name of the identifier (NIU, DNI...). `idPattern`: regular expression that the identifier must match. |
+
+**Names or embedded objects.** While the lesson is being prepared, names are comfortable (the
+programs are edited with the program editor). To distribute it, the **⬇** button of the lesson in
+the Lessons menu downloads a **self-contained copy**: every name is replaced by the stored object,
+so the lesson does not change if the programs of RVCAT change later. Embedded resources replace
+the ones with the same name only during the lesson.
+
+## Locks
+
+```json
+"locks": {
+  "programEditor": false,
+  "tutorialEditor": true,
+  "loopTransforms": true,
+  "upload": true,
+  "remove": true,
+  "processor": "all",
+  "N": { "fixed": 1000 },
+  "simulation": { "sched": "optimal", "speculation": "stall" }
+}
+```
+
+| Lock | Default | Effect when `true` |
+|---|---|---|
+| `programEditor` | false | Hides *Edit Program* and 📝. |
+| `tutorialEditor` | true | Hides *Edit Tutorial* and ✎. |
+| `loopTransforms` | true | Hides the *Unroll / Vectorize* assistant of the program editor. |
+| `upload` | true | Hides *Add new* in the lists of programs and processors, and *ADD NEW TUTORIAL*. |
+| `remove` | true | Hides the 🧹 buttons. |
+| `processor` | `[]` | `"all"`, or a list of `dispatch`, `retire`, `rob`, `cache`, `bPenalty`, `ports`, `latencies`: those cells of the Processor panel cannot be changed. |
+| `N` | none | `{ "fixed": 1000 }` or `{ "min": 100, "max": 5000 }`. |
+| `simulation` | `{}` | Fixed simulation options: `sched` (optimal, greedy), `speculation` (stall, wrong-path). |
+
+Programs saved in the program editor during the lesson are added to its list (they cannot replace
+a program of the lesson).
+
+## Tasks: cards of the tutorial
+
+Every card of type `question`, `predict` or `goal` is a task, unless it has `"optional": true`.
+The cards can use everything of the tutorials: `actions` (run when the card is shown), `showMe`
+(run by its ▶ Show me button), live values `{{name}}` in the texts, validations.
+
+**Question** (single, multiple or numeric answer): done when answered correctly.
+
+```json
+{ "id": "bound", "type": "question", "title": "...", "questionText": "What is the latency bound?",
+  "answerMode": "number", "answers": [], "numericValue": "{{latencyBound}}", "tolerance": 0.01,
+  "numericUnit": "cycles/iter", "numericCorrect": "...", "numericWrong": "...", "next": ["..."] }
+```
+
+**Predict**: the student writes a number before simulating; the next simulation gives the real value.
+Done after that simulation (any prediction). With `tolerance`, the card says whether the prediction was good.
+
+```json
+{ "id": "p1", "type": "predict", "title": "...", "selector": "#run-simulation-button", "position": "bottom",
+  "description": "Predict the cycles per iteration, save it, and simulate.",
+  "predictValue": "cyclesPerIter", "predictUnit": "cycles/iter", "tolerance": 0.3,
+  "showMe": ["runSimulation"], "next": ["..."] }
+```
+
+**Goal**: a condition on the results, checked after every simulation while the card is shown.
+Done when it is true once; with `best`, the best value obtained is recorded (`bestMode`: `min` or `max`).
+`allow` lifts locks while the card is shown: `processor.rob`, `processor` (all its fields), `N`,
+`programEditor`, `simulation.sched`... `program` requires that the simulated program is that one.
+
+```json
+{ "id": "g1", "type": "goal", "title": "...", "selector": "#process-panel .processor-container", "position": "right",
+  "description": "Find the smallest ROB that keeps V1 below 2.1 cycles/iter.",
+  "goal": "cyclesPerIter < 2.1", "program": "V1", "allow": ["processor.rob"], "best": "rob", "bestMode": "min",
+  "next": ["..."] }
+```
+
+Conditions use the names of the live values (`cyclesPerIter`, `cyclesPerAlgOp`, `cycles`, `ipc`,
+`port.P1`, `rob`, `dispatch`, `latency.FLOAT.ADD`, `program`, `latencyBound`...; the complete list is
+in the help of the tutorial editor), numbers, strings (`"V2"`), `+ - * /`, `< <= > >= == !=`, `&& || !`
+and parentheses. A name with `+` is written as `{{resource.P1+P3}}`.
+
+The tutorial editor does not edit `predict` and `goal` cards: lessons are written in JSON.
+
+## Completion code
+
+When every task is done, the bar shows a code such as `77255-46554`. It depends only on the lesson
+identifier, the student identifier and the secret:
+
+```
+t  = UPPER(lesson) | UPPER(student ID) | UPPER(secret)
+h1 = MOD( Σ CODE(t_i) · MOD(131·i² + 71·i + 17, 997), 99991 )      (i = 1 ... length of t)
+h2 = MOD( Σ CODE(t_i) · MOD(37·i² + 113·i + 29, 991), 99989 )
+code = h1 (5 digits) - h2 (5 digits)
+```
+
+The spreadsheet [lessons/lesson-codes.xlsx](lessons/lesson-codes.xlsx) checks the codes delivered
+by the students: write the lesson id and the secret, and the list of identifiers and codes
+(Excel, LibreOffice Calc or Google Sheets).
+
+**Security.** The code proves that the lesson was completed with that identifier, and a code copied
+from a classmate does not fit another identifier. But the secret is inside the lesson file: a student
+who reads it can compute a valid code without doing the lesson. Use it for low-stakes activities.

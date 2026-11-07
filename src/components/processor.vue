@@ -6,8 +6,17 @@
            getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations, typeSizes,
            allOperationNames, removePortFrom, MAX_PORTS }                                 from '@/common'
   import { processorDraftFrom, processorSignature }                                     from '@/editDrafts'
+  import { isLocked }                                                                   from '@/lessons'
 
   const simState = inject('simulationState');
+
+  // ---- Lessons: only the processors of the lesson, and its locks ----
+  const visibleProcessors = computed(() => simState.lesson ? simState.lesson.processors : processorOptions.availableProcessors)
+  const locked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  // field of the processor edited by each cell of the diagram
+  const CELL_FIELD = { dispatch: 'dispatch', retire: 'retire', rob: 'rob', cache: 'cache', bpenalty: 'bPenalty', addport: 'ports' }
+  const editLocked = computed(() => ['dispatch', 'retire', 'rob', 'cache', 'bPenalty', 'ports', 'latencies']
+    .every(f => locked(`processor.${f}`)))
 
 // ============================================================================
 // Processor options & localStorage
@@ -332,6 +341,7 @@
   }
 
   function setParameterValue(value) {
+    if (activeField.value === 'op' && locked('processor.latencies')) return lockedMessage()
     if (currentConfig.value.set) return currentConfig.value.set(value)
     const model = currentConfig.value.model
     simState.simulatedProcess[model] = value
@@ -611,6 +621,11 @@
             const action = g.id.slice(2)
             console.log("Action:", action)
 
+            // locked by the lesson: the cell only shows its explanation
+            const field = action.startsWith('op:') ? null : action.startsWith('port:') ? 'ports' : CELL_FIELD[action]
+            if (action.startsWith('op:') && locked('processor.latencies') && locked('processor.ports')) return lockedMessage()
+            if (field && locked(`processor.${field}`)) return lockedMessage()
+
             if (action.startsWith('op:')) {       // op:<port>:<row>:<label>
               const [, port, , label] = action.split(':')
               selectedOp.value = { port, label }
@@ -667,6 +682,13 @@
       })
     })
   }
+
+  function lockedMessage() {
+    showTemporaryError('This parameter cannot be changed in this lesson')
+  }
+
+  // Reload the current processor (its stored version may have changed: lessons)
+  watch(() => simState.reloadNonce, () => { if (simState.state > 1) reloadProcessor() })
 
   const removeClickListeners = () => {
     clickListeners.forEach(({ node, handler }) => {
@@ -782,12 +804,12 @@
         <select v-model="processorOptions.processorName" class="form-select"
             id="processors-list" title="Select Processor Configuration">
           <option value="" disabled>Select</option>
-          <option v-for="processor in processorOptions.availableProcessors" :key="processor" :value="processor" >
+          <option v-for="processor in visibleProcessors" :key="processor" :value="processor" >
             {{ processor }}
           </option>
-          <option value="_add_new_">Add new</option>
+          <option v-if="!locked('upload')" value="_add_new_">Add new</option>
         </select>
-        <button class="blue-button small-btn" @click="openSave"
+        <button v-if="!editLocked" class="blue-button small-btn" @click="openSave"
           id="save-processor-button"
           title="Save the processor with a name: it is added to the list (local storage) and can be downloaded as a JSON file">
         💾
@@ -797,7 +819,7 @@
           :title="`Modified: the processor differs from the saved '${processorOptions.processorName}'. Click to discard the changes`">
         ✱ ↶
         </button>
-        <button class="blue-button small-btn" @click="removeProcessor"
+        <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProcessor"
           id="remove-processor-button"
           title="Remove processor configuration from list (and local storage)">
         🧹
@@ -856,7 +878,7 @@
         >
           ▼
         </button>
-        <template v-if="activeField === 'op' && selectedOp">
+        <template v-if="activeField === 'op' && selectedOp && !locked('processor.ports')">
           <select v-if="sizesOf(selectedOp.label).length" v-model="selectedSize" id="op-size-select"
                   :title="`Edit the latency of ${selectedOp.label} for every data size, or for one size only`">
             <option value="">all sizes</option>

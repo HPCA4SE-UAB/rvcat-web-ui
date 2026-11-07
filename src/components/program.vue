@@ -9,7 +9,19 @@
   import { instructionSummary }                                   from '@/instructionSummary'
   import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
+  import { isLocked }             from '@/lessons'
   const simState = inject('simulationState');
+
+  // ---- Lessons: only the programs of the lesson (and those saved during it), and its locks ----
+  const visiblePrograms = computed(() => simState.lesson
+    ? [...simState.lesson.programs, ...(simState.lesson.extraPrograms ?? [])]
+    : programOptions.availablePrograms)
+  const locked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  const nLimits = computed(() => {
+    const n = simState.lesson?.locks?.N
+    if (!n || (simState.lessonAllow ?? []).includes('N')) return null
+    return n.fixed ? { min: n.fixed, max: n.fixed } : { min: n.min ?? 1, max: n.max ?? MAX_LOGICAL_ELEMENT_COUNT }
+  })
 
   const props = defineProps({
     activeView: String
@@ -77,6 +89,27 @@
   watch( () => [programOptions.show],
     () => { saveOptions() }
   )
+
+  // N limited by the lesson (fixed, or a range)
+  watch([() => programOptions.N, nLimits], () => {
+    const lim = nLimits.value
+    if (lim && (programOptions.N < lim.min || programOptions.N > lim.max))
+      programOptions.N = Math.min(Math.max(programOptions.N, lim.min), lim.max)
+  })
+
+  // Reload the current program (its stored version may have changed: lessons)
+  watch(() => simState.reloadNonce, () => { if (simState.state > 1) reloadProgram(true) })
+
+  // A program saved in the program editor is added to the list and selected
+  watch(() => simState.programSaved?.nonce, () => {
+    const name = simState.programSaved?.name
+    if (!name) return
+    if (!programOptions.availablePrograms.includes(name)) programOptions.availablePrograms.push(name)
+    if (simState.lesson && !visiblePrograms.value.includes(name))
+      simState.lesson.extraPrograms = [...(simState.lesson.extraPrograms ?? []), name]
+    if (programOptions.currentProgram === name) reloadProgram(true)
+    else programOptions.currentProgram = name
+  })
 
   watch( () => programOptions.N, (newN, oldN) => {
     if (newN !== oldN) {
@@ -459,17 +492,17 @@
         <select v-model="programOptions.currentProgram" class="form-select"
             id="programs-list" title="Select Program">
           <option value="" disabled>Select</option>
-          <option v-for="program in programOptions.availablePrograms" :key="program" :value="program">
+          <option v-for="program in visiblePrograms" :key="program" :value="program">
             {{ program }}
           </option>
-           <option value="_add_new_">Add new</option>
+           <option v-if="!locked('upload')" value="_add_new_">Add new</option>
         </select>
-        <button class="blue-button small-btn" @click="editProgram"
+        <button v-if="!locked('programEditor')" class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
             title="Edit current program">
           📝
         </button>
-        <button class="blue-button small-btn" @click="removeProgram"
+        <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
             title="Remove program from list (and local storage)">
           🧹
@@ -495,6 +528,7 @@
             pattern=   "[0-9]*"
             :placeholder="100"
             v-model=  "inputValue"
+            :disabled="nLimits?.min === nLimits?.max && !!nLimits"
             @blur=    "validateField"
             @keypress="handleKeyPress"
             @input=   "handleInput"

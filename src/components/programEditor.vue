@@ -4,7 +4,8 @@
   import { useDraggable, useResizeObserver}                 from '@vueuse/core'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
-  import { downloadJSON, uploadJSON, createGraphVizGraph,
+  import { isLocked }                                      from '@/lessons'
+  import { downloadJSON, uploadJSON, createGraphVizGraph, saveToLocalStorage,
            instructionTypes, typeOperations, typeSizes,
            normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT }  from '@/common'
   import MemoryTrace                                         from '@/components/MemoryTrace.vue'
@@ -569,13 +570,23 @@ function snapshotProgram() {
     showModalDownload.value = true
   }
 
-  async function confirmDownload() {
+  // The program is added to the list of the Program panel (and selected), and downloaded
+  async function confirmDownload(download = true) {
     const name   = modalName.value.trim();
+    if (!name) { nameError.value = 'Write a name'; return }
+    // during a lesson, its programs cannot be replaced: they are restored when it ends
+    if (simState.lesson?.programs?.includes(name)) {
+      nameError.value = `"${name}" is a program of the lesson: choose another name`
+      return
+    }
+    nameError.value = ''
     const stored = localStorage.getItem('programTemp');
     if (stored) {
       const data = JSON.parse(stored)
       data.name = name
-      await downloadJSON(data, name, 'program')
+      saveToLocalStorage('program', name, data)
+      simState.programSaved = { name, nonce: Date.now() }
+      if (download) await downloadJSON(data, name, 'program')
     }
     showModalDownload.value = false;
   }
@@ -659,7 +670,8 @@ function snapshotProgram() {
           <option v-for="w in VECTOR_WIDTHS" :key="w" :value="w">{{ w }} B</option>
         </select>
       </label>
-      <button class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
+      <button v-if="!isLocked(simState.lesson, 'loopTransforms', simState.lessonAllow ?? [])"
+              class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
               title="Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets">
         Unroll / Vectorize…
       </button>
@@ -964,7 +976,8 @@ function snapshotProgram() {
           title="file name of new program" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" title="Accept Download" @click="confirmDownload">Save</button>
+        <button class="blue-button" id="save-program-download" title="Add the program to the list of the Program panel and download it as a JSON file" @click="confirmDownload(true)">Save and download</button>
+        <button class="blue-button" id="save-program-only" title="Add the program to the list of the Program panel (and select it)" @click="confirmDownload(false)">Save</button>
         <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">Cancel</button>
       </div>
     </div>

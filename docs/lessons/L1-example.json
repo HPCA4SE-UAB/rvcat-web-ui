@@ -1,0 +1,82 @@
+{
+  "lesson": "L1-example",
+  "title": "Example: bounds, ROB and your own loop",
+  "description": "Base and V1 on processor B4: predict, check a bound, size the ROB and write a faster version of the loop.",
+  "version": 1,
+  "programs": ["Base", "V1", "V2"],
+  "processors": ["B4"],
+  "start": { "program": "Base", "processor": "B4", "N": 1000 },
+  "locks": {
+    "programEditor": false,
+    "tutorialEditor": true,
+    "loopTransforms": true,
+    "upload": true,
+    "remove": true,
+    "processor": "all",
+    "N": { "fixed": 1000 },
+    "simulation": { "sched": "optimal", "speculation": "stall" }
+  },
+  "completion": { "secret": "RVCAT-L1-7Q2X", "idLabel": "NIU", "idPattern": "^[0-9]{7}$" },
+  "tutorial": {
+    "id": "L1-example-tutorial",
+    "name": "Lesson L1: bounds, ROB and your own loop",
+    "description": "Tasks of the example lesson",
+    "flowVersion": 2,
+    "steps": [
+      {
+        "id": "intro", "type": "step", "title": "Lesson L1",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "<b>This lesson has 4 tasks</b>: a prediction, a question and two goals.<br>The bar above shows your progress; when every task is done it shows your <b>completion code</b>.<br>You can use the programs {{program}}, V1 and V2 on processor {{processor}}, with N = {{N}}.",
+        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "next": ["predict-base"]
+      },
+      {
+        "id": "predict-base", "type": "predict", "title": "Task 1: predict",
+        "selector": "#run-simulation-button", "position": "bottom",
+        "description": "<b>Before simulating</b>, predict the cycles per iteration of <b>{{program}}</b> on {{processor}}.<br>Hint: two additions of {{latency.FLOAT.ADD}} cycles depend on each other in every iteration.<br>Write your prediction, <b>Save</b> it, and then run the simulation.",
+        "predictValue": "cyclesPerIter", "predictUnit": "cycles/iter", "tolerance": 0.3,
+        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["bound"]
+      },
+      {
+        "id": "bound", "type": "question", "title": "Task 2: the latency bound",
+        "questionText": "Open <b>Static Analysis</b>: what is the <b>latency bound</b> of {{program}} on {{processor}} (cycles/iter)?",
+        "answerMode": "number", "answers": [], "numericValue": "{{latencyBound}}", "tolerance": 0.01, "numericUnit": "cycles/iter",
+        "numericCorrect": "Right: the chain of sum has two additions of {{latency.FLOAT.ADD}} cycles, {{latencyBound}} cycles/iter.",
+        "numericWrong": "Look at the row tagged max of the Latency bounds table.",
+        "actions": ["switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
+        "next": ["v1"]
+      },
+      {
+        "id": "v1", "type": "step", "title": "Program V1",
+        "selector": "[data-instr=\"2\"], [data-instr=\"3\"]", "position": "right",
+        "description": "<b>V1 adds V[i] + W[i] first</b>, and only then adds the result to sum:<br>the chain of sum has a single addition per iteration, so V1 can run twice as fast as Base.<br>But to overlap iterations, the processor needs room for many instructions in flight: the <b>ROB</b>.",
+        "actions": ["selectProgram:V1", "switchTo:simulationComponent"],
+        "next": ["goal-rob"]
+      },
+      {
+        "id": "goal-rob", "type": "goal", "title": "Task 3: size the ROB",
+        "selector": "#process-panel .processor-container", "position": "right",
+        "description": "With ROB 64, V1 runs about 2 cycles/iter. <b>Find the smallest ROB</b> that keeps it <b>below 2.1 cycles/iter</b>.<br>Click the ROB cell of the processor to change it (now allowed), and simulate after each change.<br>The goal is achieved once; keep trying to lower the ROB: your best value is recorded.",
+        "goal": "cyclesPerIter < 2.1", "program": "V1", "allow": ["processor.rob"], "best": "rob", "bestMode": "min",
+        "actions": ["selectProgram:V1", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["goal-own"]
+      },
+      {
+        "id": "goal-own", "type": "goal", "title": "Task 4: your own loop",
+        "selector": "#program-button", "position": "bottom",
+        "description": "<b>Write your own version of the loop</b> with <b>Edit Program</b> (top bar), save it with a new name<br>(it is added to the list) and simulate it. Goal: <b>less than 3 cycles per algorithmic operation</b><br>(cycles/iter ÷ S, where S is the number of elements added per iteration).<br>It must be your program: Base, V1 and V2 do not count.",
+        "goal": "cyclesPerAlgOp < 3 && program != \"Base\" && program != \"V1\" && program != \"V2\"",
+        "next": ["end-card"]
+      },
+      {
+        "id": "end-card", "type": "step", "title": "End of the lesson",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "When the 4 tasks are done, the bar shows your <b>completion code</b>: give it to your teacher with your NIU.<br><b>Exit lesson</b> returns the simulator to its state before the lesson.",
+        "next": []
+      }
+    ]
+  }
+}
