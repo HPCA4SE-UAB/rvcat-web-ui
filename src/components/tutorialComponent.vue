@@ -1613,7 +1613,8 @@ onUnmounted(() => {
 <style>
 
   /* description of a card (HTML): paragraphs <p> are separated by a small space */
-  .step-description         { margin: 0.2em 0 1em; }
+  .step-description         { margin: 0.2em 0 1em; color: #666; line-height: 1.5; }
+  .step-description pre     { margin: 0.3em 0 0.6em; padding: 6px 10px; background: #f6f8fa; border-radius: 4px; color: #333; font-size: 0.9em; line-height: 1.35; }
   .step-description p       { margin: 0 0 0.5em; }
   .step-description p:last-child { margin-bottom: 0; }
   .step-done-description    { margin-top: 0.6em; padding-top: 0.6em; border-top: 1px solid #e5e7eb; }
