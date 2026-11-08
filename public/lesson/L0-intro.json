@@ -163,7 +163,7 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p><p>The <b>Timeline</b> shows each instruction (rows) cycle by cycle (columns):</p><p><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.</p>",
+        "description": "<p>The <b>Timeline</b> of the <b>sequential execution</b> of the program (not the real execution) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).</p><p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.</p>",
         "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29"],
         "next": ["pipeline"]
       },
