@@ -71,15 +71,10 @@
         "id": "simulate", "type": "step", "title": "3. Measure: simulate the loop",
         "selector": "#run-simulation-button", "position": "bottom",
         "description": "<b>Simulate N = 1,000 iterations</b> of the loop on a processor similar to the real one:<br>click the button (or ▶ Show me).",
+        "doneDescription": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can execute multiple instructions at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
         "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],
         "validation": { "type": "simulation_done", "message": "Run the simulation (or click ▶ Show me) to continue" },
-        "next": ["results"]
-      },
-      {
-        "id": "results", "type": "step", "title": "Results",
-        "selector": "#simulation-results-info", "position": "bottom",
-        "description": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can execute multiple instructions at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
         "next": ["predict-v1", "ilp-more"], "nextLabels": ["Continue", "In depth: several instructions at once"]
       },
       {
@@ -91,7 +86,8 @@
       {
         "id": "predict-v1", "type": "predict", "title": "Predict: version V1",
         "selector": "#program-source-header", "position": "right",
-        "description": "<b>V1 only changes the order of the additions:</b> sum = sum + (V[i] + W[i]).<br>It still has 7 instructions per iteration (look at the table).<br>Base takes 4 cycles per iteration. <b>How many cycles per iteration will V1 take?</b><br>Write your prediction, save it, and simulate.",
+        "description": "<p><b>V1 only changes the order of the additions:</b>&nbsp;&nbsp; sum = sum + (V[i] + W[i]).</p><p>It still has 7 instructions per iteration (look at the table).</p><p>Base takes 4 cycles per iteration.<br><b>How many cycles per iteration will V1 take?</b></p><p><b>Click the table header</b> to see the C code of V1 (needed to continue).</p><p>Write your prediction, save it, and simulate.</p>",
+        "validation": { "type": "button_clicked", "selector": "#program-source-header", "message": "Click the header of the table to see the C code" },
         "predictValue": "cyclesPerIter", "predictUnit": "cycles/iter", "tolerance": 0.5,
         "actions": ["selectProgram:V1", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],

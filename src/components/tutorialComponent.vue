@@ -15,6 +15,9 @@
         </div>
         <div class="tutorial-content">
           <div class="step-description" v-html="rt(currentStep?.description)"></div>
+          <!-- second part of the card, shown when its validation is met (e.g. the results of the simulation) -->
+          <div v-if="currentStep?.doneDescription && canProceed" class="step-description step-done-description"
+               v-html="rt(currentStep.doneDescription)"></div>
           <div v-if="actionsRunning" class="tutorial-running">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
 
           <!-- Prediction: written before simulating, compared with the result of the next simulation -->
@@ -550,8 +553,8 @@ const canProceed = computed(() => {
   // Returns false if validation requirements aren't met
 
   const type = currentStep.value?.type
-  if (type === 'predict') return !!taskState.value.result
-  if (type === 'goal')    return !!taskState.value.done
+  if (type === 'predict' && !taskState.value.result) return false
+  if (type === 'goal'    && !taskState.value.done)   return false
 
   const validation = currentStep.value?.validation
   if (!validation) return true
@@ -571,7 +574,7 @@ const canProceed = computed(() => {
       case 'input_value_min':
         return parseInt(document.querySelector(selector)?.value) >= minValue
       case 'button_clicked':
-        return selector && clickedButtons.value.has(selector.trim())
+        return selector && clickedButtons.value.has(clickKey(currentStep.value, selector))
       default:
         return extraValidation(validation)
     }
@@ -909,7 +912,10 @@ watch(() => simState.lesson, (lesson) => {
 // Validations on the state of the simulator
 function extraValidation(v) {
   switch (v.type) {
-    case 'simulation_done': return simulationCount.value > stepSimulationStart || resultsStillShown()
+    case 'simulation_done': {        // a simulation done in this card (or remembered), whose results are shown
+      const r = simState.executionResults
+      return !!r && Object.keys(r).length > 0 && (simulationCount.value > stepSimulationStart || resultsStillShown())
+    }
     case 'chain_selected':  return simState.analysisView?.chain === v.value
     case 'graph_open':      return !!simState.analysisView?.graphOpen
     case 'timeline_option': return v.value === 'critical' ? !!simState.timelineCriticalPathEnabled : true
@@ -1049,7 +1055,7 @@ const validateCurrentStep = async () => {
     architecture_selected: () => simState.processorName === v.value,
     input_value: () =>           getElement(v.selector)?.value === v.value,
     input_value_min: () =>       parseInt(getElement(v.selector)?.value) >= v.minValue,
-    button_clicked: () =>        v.selector && clickedButtons.value.has(v.selector.trim())
+    button_clicked: () =>        v.selector && clickedButtons.value.has(clickKey(currentStep.value, v.selector))
   }
   validators[v.type] ??= () => extraValidation(v)
 
@@ -1084,6 +1090,9 @@ const setupValidationListeners = () => {
   })
 }
 
+// a click is required by each card that asks for it (the same element in two cards: two clicks)
+const clickKey = (step, selector) => `${step?.id ?? ''}|${selector.trim()}`
+
 const setupButtonClickTracking = () => {
   cleanupButtonClickTracking()
 
@@ -1096,9 +1105,10 @@ const setupButtonClickTracking = () => {
     const btn = document.querySelector(selector)
     if (!btn) return false
 
+    const key = clickKey(currentStep.value, selector)
     const handler = () => {
       console.log(`👨‍🎓⏺️ Button clicked: ${selector}`)
-      clickedButtons.value.add(selector)
+      clickedButtons.value.add(key)
       validationState.value = { t: Date.now() }
     }
     btn.addEventListener('click', handler)
@@ -1606,6 +1616,11 @@ onUnmounted(() => {
   .step-description         { margin: 1em 0; }
   .step-description p       { margin: 0 0 0.5em; }
   .step-description p:last-child { margin-bottom: 0; }
+  .step-done-description    { margin-top: 0.6em; padding-top: 0.6em; border-top: 1px solid #e5e7eb; }
+  #tutorial-predict .task-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4em 1em; }
+  #tutorial-predict #tutorial-prediction { width: 6em; }
+  #tutorial-predict { margin-bottom: 0.8em; }
+  #tutorial-predict .task-status { margin-top: 0.5em; }
 
   .tutorial-highlight-pulse {
     animation:        tutorial-pulse 5s infinite ease-in-out;

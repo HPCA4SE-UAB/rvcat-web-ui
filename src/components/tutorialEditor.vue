@@ -847,6 +847,7 @@ const convertStepTexts = (step) => {
     position:    step.position
   }
   if (step.anchor)  s.anchor = step.anchor
+  if (step.doneDescription) s.doneDescription = step.doneDescription
   if (step.image)   s.image  = step.image
   if (step.action)  s.action = step.action
   if (actionList(step.actionsText).length) s.actions = actionList(step.actionsText)
@@ -1082,6 +1083,7 @@ const convertUploadedTexts = (step) => {
     selector:    step.selector    || '',
     position:    step.position    || 'bottom',
     anchor:      step.anchor      || '',
+    doneDescription: step.doneDescription || '',
     action:      step.action      || '',
     actionsText: actionList(step.actions).join('\n'),
     showMeText:  actionList(step.showMe).join('\n')
