@@ -1467,8 +1467,19 @@ const initTutorial = async () => {
       console.error(`👨‍🎓❌ Failed to load tutorial: ${name}`, e)
     }
   }
+  // the tutorial of the lesson in progress (stored by the lesson, not in the distribution list)
+  const lessonTutorialId = simState.lesson?.tutorial
+  if (lessonTutorialId && !tutorials.some(t => t.id === lessonTutorialId)) {
+    try {
+      const t = JSON.parse(localStorage.getItem(`tutorial.${lessonTutorialId}`))
+      if (t) tutorials.push({ id: lessonTutorialId, name: t.name, description: t.description })
+    } catch { /* the lesson starts its tutorial again */ }
+  }
   tutorialOptions.available = tutorials   // fire options saving
   await loadCurrentTutorial (inProgressID)
+  // a lesson in progress (e.g. after reloading the page): its card is shown again where it was,
+  // with the cards visited before (Previous)
+  if (lessonTutorialId && currentTutorial.value?.id === lessonTutorialId && !isActive.value) resumeTutorial()
 }
 
 const loadCurrentTutorial = async (ID) => {
