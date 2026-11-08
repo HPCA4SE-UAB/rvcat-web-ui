@@ -541,6 +541,7 @@
   })
 
   const reloadExecutionResults = async () => {
+    if (simState.simulationBlocked) return        // a tutorial card waits for something first
     executionError.value = ''
     const process = simState.simulatedProcess
     const instructionList = Array.isArray(process?.instruction_list)
@@ -886,8 +887,8 @@
         <span class="header-title">{{displayText}}</span>
       </div>
       <div class="iters-run">
-        <button class="blue-button" @click="reloadExecutionResults"
-          :title="t('Run Simulation')" id="run-simulation-button" >
+        <button class="blue-button" @click="reloadExecutionResults" :disabled="!!simState.simulationBlocked"
+          :title="simState.simulationBlocked || t('Run Simulation')" id="run-simulation-button" >
           {{ t('Run Simulation') }}
         </button>
         <label class="sim-setting" :title="t('Instruction scheduler (an option of the simulation): optimal issues in each cycle the largest set of ready instructions, the oldest first; greedy issues each ready instruction, in program order, to its first free port')">

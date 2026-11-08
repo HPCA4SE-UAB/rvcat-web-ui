@@ -16,12 +16,12 @@
         <div class="tutorial-content">
           <div class="step-description" v-html="rt(currentStep?.description)"></div>
           <!-- second part of the card, shown when its validation is met (e.g. the results of the simulation) -->
-          <div v-if="currentStep?.doneDescription && canProceed" class="step-description step-done-description"
+          <div v-if="currentStep?.doneDescription && validationMet" class="step-description step-done-description"
                v-html="rt(currentStep.doneDescription)"></div>
           <div v-if="actionsRunning" class="tutorial-running">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
 
           <!-- Prediction: written before simulating, compared with the result of the next simulation -->
-          <div v-if="currentStep?.type === 'predict'" class="task-box" id="tutorial-predict">
+          <div v-if="currentStep?.type === 'predict' && validationMet" class="task-box" id="tutorial-predict">
             <div class="task-row">
               <label for="tutorial-prediction">{{ t('Your prediction:') }}</label>
               <input id="tutorial-prediction" v-model="predictionInput" type="text" inputmode="decimal"
@@ -36,6 +36,7 @@
               {{ t('Prediction {p} · simulated {a} (difference {d})', { p: taskState.prediction, a: formatNumber(taskState.result.actual), d: formatNumber(taskState.result.actual - taskState.prediction) }) }}{{
                 taskState.result.good === null ? '' : taskState.result.good ? ' · ' + t('good prediction') : ' · ' + t('far from the result') }}
             </div>
+            <div v-if="taskState.result && predictComment" class="task-comment" v-html="predictComment"></div>
           </div>
 
           <!-- Goal: a condition on the results, checked after every simulation -->
@@ -69,7 +70,7 @@
               <template v-if="isBranchingTutorial">{{ t('Card {n}', { n: stepIndex + 1 }) }}</template>
               <template v-else>{{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</template>
             </span>
-            <button v-if="showMeActions.length && !taskAccomplished" @click="runShowMe" :disabled="actionsRunning"
+            <button v-if="showMeActions.length && !taskAccomplished && showMeReady" @click="runShowMe" :disabled="actionsRunning"
                     id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
                     :title="t('Let the tutorial do it on the simulator (you can also do it yourself)')">
               ▶ {{ t('Show me') }}
@@ -548,14 +549,18 @@ const shuffledAnswers = computed(() => {
   return shuffledAnswerIndices.value.map(i => ({ ...answers[i], originalIndex: i }))
 })
 
+// The user can advance when the validation of the card is met and, in a prediction or goal card,
+// its task is done. In a prediction card the validation comes first (e.g. look at the C code):
+// then the prediction is asked (doneDescription and the prediction box), and only when it is
+// saved the simulation can be run (Show me, or the Run Simulation button, blocked until then)
 const canProceed = computed(() => {
-  // Returns true if user can advance to next step
-  // Returns false if validation requirements aren't met
-
   const type = currentStep.value?.type
   if (type === 'predict' && !taskState.value.result) return false
   if (type === 'goal'    && !taskState.value.done)   return false
+  return validationMet.value
+})
 
+const validationMet = computed(() => {
   const validation = currentStep.value?.validation
   if (!validation) return true
 
@@ -772,6 +777,16 @@ watch(currentStep, (step) => {
 // ============================================================================
 const actionsRunning = ref(false)
 const showMeActions  = computed(() => actionList(currentStep.value?.showMe))
+// In a prediction card, Show me (it simulates) is offered once the prediction is saved
+const showMeReady = computed(() => currentStep.value?.type !== 'predict'
+  || (validationMet.value && taskState.value.prediction !== undefined))
+// Comment after the result of a prediction (texts of the card predictGood / predictFar)
+const predictComment = computed(() => {
+  const step = currentStep.value, r = taskState.value.result
+  if (!step || !r || r.good === null) return ''
+  return rt(r.good ? step.predictGood : step.predictFar) || ''
+})
+
 // Show me is not offered once what it does is done: the simulation of a prediction, the goal,
 // or the validation of the card
 const taskAccomplished = computed(() => {
@@ -1602,6 +1617,12 @@ const handleClickOutside = (e) => {
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
 
+// The Run Simulation button is blocked while a prediction card waits for its prediction
+watch(() => isActive.value && currentStep.value?.type === 'predict' && !taskState.value.result
+             && !(validationMet.value && taskState.value.prediction !== undefined),
+  (blocked) => { simState.simulationBlocked = blocked ? t('First save your prediction (tutorial card)') : '' },
+  { immediate: true })
+
 onMounted(async () => {
   loadOptions()
   document.addEventListener('click', handleClickOutside)
@@ -1615,6 +1636,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleWindowResize)
   contentObserver?.disconnect()
   clearTimeout(replaceTimer)
+  simState.simulationBlocked = ''
   cleanup ()
 })
 </script>
@@ -1631,6 +1653,7 @@ onUnmounted(() => {
   #tutorial-predict #tutorial-prediction { width: 6em; }
   #tutorial-predict { margin-bottom: 0.8em; }
   #tutorial-predict .task-status { margin-top: 0.5em; }
+  #tutorial-predict .task-comment { margin-top: 0.4em; color: #555; }
   .task-status.task-ok  { color: #2e7d32; }
   .task-status.task-far { color: #c62828; }
 

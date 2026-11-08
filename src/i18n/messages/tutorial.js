@@ -64,4 +64,5 @@ export default {
   "Cannot preview this tutorial: {1}": { es: "No se puede previsualizar este tutorial: {1}", ca: "No es pot previsualitzar aquest tutorial: {1}" },
   "A tutorial with name: \"{1}\" has been already loaded.": { es: "Ya hay un tutorial cargado con el nombre «{1}».", ca: "Ja hi ha un tutorial carregat amb el nom «{1}»." },
   "Removing all tutorial configurations forces to load the original tutorials provided in the distribution": { es: "Al quitar todos los tutoriales se cargan los tutoriales originales de la distribución", ca: "En treure tots els tutorials es carreguen els tutorials originals de la distribució" },
+  "First save your prediction (tutorial card)": { es: "Primero guarda tu predicción (tarjeta del tutorial)", ca: "Primer desa la teva predicció (targeta del tutorial)" },
 }
