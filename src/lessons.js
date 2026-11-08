@@ -45,6 +45,7 @@ export const LESSON_PARTS = {
   cacheStats:        'cache misses and MM transfers of the Simulation panel',
   simOptions:        'Scheduler, Mispredictions and AutoRun options of the Simulation panel',
   storedResults:     'stored results of the Simulation panel',
+  criticalPattern:   'repeated critical-path pattern of the Simulation panel',
 }
 
 const ID_RE = /^[A-Za-z0-9-]{1,40}$/

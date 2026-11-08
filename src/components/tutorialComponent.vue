@@ -14,7 +14,7 @@
           class="tutorial-close" @click="closeTutorial">&times;</button>
         </div>
         <div class="tutorial-content">
-          <p class="step-description" v-html="rt(currentStep?.description)"></p>
+          <div class="step-description" v-html="rt(currentStep?.description)"></div>
           <div v-if="actionsRunning" class="tutorial-running">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
 
           <!-- Prediction: written before simulating, compared with the result of the next simulation -->
@@ -301,7 +301,7 @@
 
 <script setup>
 
-import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, toRef, toRaw, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDraggable, useResizeObserver}                                           from '@vueuse/core'
 import {
   initResource, removeFromLocalStorage, uploadJSON,
@@ -595,11 +595,15 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, 
 
 // ---- Placement of a card in an empty zone near its target ----
 // The visible content of the simulator (text, tables, diagrams, controls) is collected as
-// obstacles; the card goes to the position that covers the least content and, among those,
-// the closest to the preferred side of the target (bottom, top, right, left; inside-bottom
-// and inside-top place it within the target, e.g. a panel used as an anchor)
+// obstacles, with a small gap around them; the card goes to the position that covers the least
+// content and, among those, the closest to the preferred side of the target (bottom, top,
+// right, left; inside-bottom and inside-top place it within the target, e.g. a panel used as
+// an anchor). The highlighted target keeps a wider gap.
 const CONTENT_TAGS = new Set(['TABLE', 'svg', 'IMG', 'BUTTON', 'SELECT', 'INPUT', 'TEXTAREA', 'PRE', 'H1', 'H2', 'H3', 'H4', 'LABEL'])
-function contentObstacles() {
+const CONTENT_GAP = 10
+const TARGET_GAP  = 18
+const inflate = (r, g) => ({ left: r.left - g, top: r.top - g, right: r.right + g, bottom: r.bottom + g })
+function contentObstacles(avoidRect) {
   const maxArea = window.innerWidth * window.innerHeight * 0.4
   const rects = []
   const roots = [document.querySelector('main.container'), document.querySelector('#lesson-bar-slot')].filter(Boolean)
@@ -613,16 +617,26 @@ function contentObstacles() {
       const r = el.getBoundingClientRect()
       if (r.width < 2 || r.height < 2 || r.width * r.height > maxArea) continue
       if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) continue
-      rects.push(r)
+      rects.push(inflate(r, CONTENT_GAP))
     }
   }
+  if (avoidRect) rects.push(inflate(avoidRect, TARGET_GAP))
   return rects
 }
 
-function placeInEmptyZone(refRect, width, height, preferred, avoidRect) {
+function coveredArea(obstacles, left, top, width, height) {
+  let covered = 0
+  for (const o of obstacles) {
+    const w = Math.min(left + width, o.right) - Math.max(left, o.left)
+    if (w <= 0) continue
+    const h = Math.min(top + height, o.bottom) - Math.max(top, o.top)
+    if (h > 0) covered += w * h
+  }
+  return covered
+}
+
+function placeInEmptyZone(refRect, width, height, preferred, avoidRect, obstacles = contentObstacles(avoidRect)) {
   const margin = VIEWPORT_MARGIN
-  const obstacles = contentObstacles()
-  if (avoidRect) obstacles.push(avoidRect)
   const cx = refRect.left + refRect.width / 2, cy = refRect.top + refRect.height / 2
   const side = (preferred || 'bottom').replace('inside-', '')
   const point = { bottom: [cx, refRect.bottom], top: [cx, refRect.top], right: [refRect.right, cy], left: [refRect.left, cy] }[side] ?? [cx, refRect.bottom]
@@ -638,21 +652,15 @@ function placeInEmptyZone(refRect, width, height, preferred, avoidRect) {
   let best = null
   for (let top = yMin; top <= Math.max(yMin, yMax); top += STEP) {
     for (let left = xMin; left <= Math.max(xMin, xMax); left += STEP) {
-      let covered = 0
-      for (const o of obstacles) {
-        const w = Math.min(left + width, o.right) - Math.max(left, o.left)
-        if (w <= 0) continue
-        const h = Math.min(top + height, o.bottom) - Math.max(top, o.top)
-        if (h > 0) covered += w * h
-      }
+      const covered = coveredArea(obstacles, left, top, width, height)
       const dx = Math.max(left - point[0], 0, point[0] - left - width)
       const dy = Math.max(top - point[1], 0, point[1] - top - height)
       // (and, slightly, centered on that point)
       const cost = covered * 4 + Math.hypot(dx, dy) + 0.01 * Math.hypot(left + width / 2 - point[0], top + height / 2 - point[1])
-      if (!best || cost < best.cost) best = { cost, left, top }
+      if (!best || cost < best.cost) best = { cost, covered, left, top }
     }
   }
-  return best ?? { left: xMin, top: yMin }
+  return best ?? { left: xMin, top: yMin, covered: 0 }
 }
 
 const positionCurrentTooltip = async () => {
@@ -687,18 +695,9 @@ const positionCurrentTooltip = async () => {
       return
     }
 
-    // near an anchor (a selector used only to place the card, e.g. a panel), or the highlighted
-    // target, or the right panel; the highlighted target is never covered
-    const target = highlightElement.value
-    let anchor = null
-    if (step.anchor) {
-      try { anchor = [...document.querySelectorAll(step.anchor)].find(el => el.getClientRects().length > 0) ?? null } catch { anchor = null }
-    }
-    const refEl = anchor ?? target ?? document.querySelector('#right-panel')
-    const refRect = refEl?.getBoundingClientRect()
-    if (refRect && refRect.width > 0) {
-      const position = placeInEmptyZone(refRect, tooltipRect.width, tooltipRect.height,
-        step.position || 'bottom', target?.getBoundingClientRect())
+    const place = cardReference(step)
+    if (place) {
+      const position = placeInEmptyZone(place.refRect, tooltipRect.width, tooltipRect.height, place.preferred, place.avoidRect)
       x.value = position.left
       y.value = position.top
       return
@@ -709,6 +708,51 @@ const positionCurrentTooltip = async () => {
   } finally {
     measuring.value = false
   }
+}
+
+// The card is placed near an anchor (a selector used only to place it, e.g. a panel), or the
+// highlighted target, or the right panel; the highlighted target is never covered
+function cardReference(step) {
+  const target = highlightElement.value
+  let anchor = null
+  if (step.anchor) {
+    try { anchor = [...document.querySelectorAll(step.anchor)].find(el => el.getClientRects().length > 0) ?? null } catch { anchor = null }
+  }
+  const refEl = anchor ?? target ?? document.querySelector('#right-panel')
+  const refRect = refEl?.getBoundingClientRect()
+  if (!refRect || refRect.width <= 0) return null
+  const avoid = target?.getBoundingClientRect()
+  return { refRect, preferred: step.position || 'bottom', avoidRect: avoid && avoid.width > 0 ? avoid : null }
+}
+
+// When the simulator shows new content (e.g. the results of a simulation started from the card),
+// a card that now covers it moves to the place that covers the least (unless it was moved by hand)
+let contentObserver = null
+let replaceTimer = null
+function replaceIfCovering() {
+  const step = currentStep.value
+  const el = contentRef.value
+  if (!step || !el || isQuestionStep.value || measuring.value || actionsRunning.value) return
+  if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) return
+  const place = cardReference(step)
+  if (!place) return
+  const r = el.getBoundingClientRect()
+  const obstacles = contentObstacles(place.avoidRect)
+  const now = coveredArea(obstacles, r.left, r.top, r.width, r.height)
+  if (now === 0) return
+  const best = placeInEmptyZone(place.refRect, r.width, r.height, place.preferred, place.avoidRect, obstacles)
+  if (best.covered < now * 0.8) { x.value = best.left; y.value = best.top }
+}
+function observeContent() {
+  contentObserver?.disconnect()
+  const main = document.querySelector('main.container')
+  if (!main) return
+  contentObserver = new MutationObserver((records) => {
+    if (records.every(rec => rec.target.closest?.('.tutorial-system') || rec.target.parentElement?.closest('.tutorial-system'))) return
+    clearTimeout(replaceTimer)
+    replaceTimer = setTimeout(replaceIfCovering, 400)
+  })
+  contentObserver.observe(main, { childList: true, subtree: true, characterData: true })
 }
 
 // A card moved by the student (or placed in the tutorial file) appears directly at its place
@@ -759,14 +803,23 @@ async function runShowMe() {
   await highlightCurrent()
 }
 
-// Simulations done since the card was shown (validation simulation_done)
+// Simulations done since the card was shown (validation simulation_done). The results of the
+// simulation that validated a card are remembered: going back to the card, it is still valid
+// while those results are shown (a change of program, processor... clears them)
 const simulationCount = ref(0)
 let   stepSimulationStart = 0
+const resultsOfCard = new Map()        // card id -> results that validated it
 watch(() => simState.executionResults, (r) => {
   if (!r || !Object.keys(r).length) return
   simulationCount.value++
+  const step = currentStep.value
+  if (step?.validation?.type === 'simulation_done') resultsOfCard.set(step.id, toRaw(r))
   checkTaskAfterSimulation()
 })
+function resultsStillShown() {
+  const r = simState.executionResults
+  return !!r && resultsOfCard.get(currentStep.value?.id) === toRaw(r)
+}
 
 // ============================================================================
 // TASKS (cards predict and goal; questions): state per card, recorded in the lesson
@@ -856,7 +909,7 @@ watch(() => simState.lesson, (lesson) => {
 // Validations on the state of the simulator
 function extraValidation(v) {
   switch (v.type) {
-    case 'simulation_done': return simulationCount.value > stepSimulationStart
+    case 'simulation_done': return simulationCount.value > stepSimulationStart || resultsStillShown()
     case 'chain_selected':  return simState.analysisView?.chain === v.value
     case 'graph_open':      return !!simState.analysisView?.graphOpen
     case 'timeline_option': return v.value === 'critical' ? !!simState.timelineCriticalPathEnabled : true
@@ -892,12 +945,19 @@ const showCurrentStep = async () => {
     }
   }
   const step = currentStep.value
+  // placed at once if its target is already shown, so it does not appear first somewhere else
+  if (actionList(step.actions).length && !Number.isFinite(step.x_pos) && targetShown(step.selector)) await highlightCurrent()
   await runCardActions(step.actions)
   if (currentStep.value !== step) return       // the student moved on meanwhile
 
   await highlightCurrent()
   setupValidationListeners()
   setupButtonClickTracking()
+}
+
+function targetShown(sel) {
+  if (!sel || sel.includes(':contains(')) return false
+  try { return [...document.querySelectorAll(sel)].some(el => el.getClientRects().length > 0) } catch { return false }
 }
 
 // Highlight the element(s) of the selector of the card (a list of selectors may match several
@@ -1526,6 +1586,7 @@ const handleClickOutside = (e) => {
 onMounted(async () => {
   loadOptions()
   document.addEventListener('click', handleClickOutside)
+  observeContent()
   console.log('👨‍🎓🎯 TutorialEngine mounted')
 })
 
@@ -1533,11 +1594,18 @@ onUnmounted(() => {
   console.log('👨‍🎓🧹 Tutorial Engine unmounted')
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleWindowResize)
+  contentObserver?.disconnect()
+  clearTimeout(replaceTimer)
   cleanup ()
 })
 </script>
 
 <style>
+
+  /* description of a card (HTML): paragraphs <p> are separated by a small space */
+  .step-description         { margin: 1em 0; }
+  .step-description p       { margin: 0 0 0.5em; }
+  .step-description p:last-child { margin-bottom: 0; }
 
   .tutorial-highlight-pulse {
     animation:        tutorial-pulse 5s infinite ease-in-out;

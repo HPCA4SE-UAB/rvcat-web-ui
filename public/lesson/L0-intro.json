@@ -22,7 +22,7 @@
   ],
   "start": { "program": "Base", "processor": "L0-CPU", "N": 1000 },
   "hidden": ["processor", "programColumns", "timeline", "timelineCritical", "timelineResources", "analysis",
-             "usage", "cacheStats", "simOptions", "storedResults"],
+             "usage", "cacheStats", "simOptions", "storedResults", "criticalPattern"],
   "locks": {
     "programEditor": true, "tutorialEditor": true, "loopTransforms": true, "upload": true, "remove": true,
     "processor": "all",
@@ -45,13 +45,14 @@
       {
         "id": "loop", "type": "step", "title": "1. The loop VectSum",
         "selector": "#program-source-header", "position": "right",
-        "description": "<b>Hover over the table header (or click it) to see the C code:</b> the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each loop iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
+        "description": "<b>Click the table header to see the C code</b> (needed to continue): the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each loop iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
+        "validation": { "type": "button_clicked", "selector": "#program-source-header", "message": "Click the header of the table to see the C code" },
         "next": ["compiler", "compiler-more"], "nextLabels": ["Continue", "In depth: time and cycles"]
       },
       {
         "id": "compiler-more", "type": "step", "title": "In depth: time, cycles and complexity",
         "selector": "#program-source-header", "position": "right",
-        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle typically lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear time complexity, Θ(N)</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T<sub>1</sub> does.<br>&bull; Real measurements (Intel Core i5-12400, N = 5000):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
+        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle typically lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear time complexity, Θ(N)</b>, <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T<sub>1</sub> does.<br>&bull; Real measurements (Intel Core i5-12400, N = 5000):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
         "next": ["compiler"], "nextLabels": ["Continue"]
       },
       {
@@ -78,8 +79,14 @@
       {
         "id": "results", "type": "step", "title": "Results",
         "selector": "#simulation-results-info", "position": "bottom",
-        "description": "<b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.<br><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.<br>Now, two versions written by hand. Before simulating them, <b>predict</b>.",
-        "next": ["predict-v1"]
+        "description": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can execute multiple instructions at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
+        "next": ["predict-v1", "ilp-more"], "nextLabels": ["Continue", "In depth: several instructions at once"]
+      },
+      {
+        "id": "ilp-more", "type": "step", "title": "In depth: a processor that executes several instructions at once",
+        "selector": "#simulation-results-info", "position": "bottom",
+        "description": "<p>The program is a <b>sequence</b> of instructions, but the processor does not have to execute them one by one.</p><p>A <b>multiple-issue</b> (superscalar) processor starts and finishes <b>several instructions per cycle</b> (this one, up to 4),<br>has several <b>execution units</b> working in parallel, and keeps many instructions <b>in flight</b>, each one at a different stage.</p><p>It finds by itself which instructions are <b>independent</b> and overlaps them; the result is the same as executing them in order.</p><p>So <b>IPC can be greater than 1</b>, but only if there are enough independent instructions: the rest of the lesson shows what limits it.</p>",
+        "next": ["predict-v1"], "nextLabels": ["Continue"]
       },
       {
         "id": "predict-v1", "type": "predict", "title": "Predict: version V1",
@@ -215,7 +222,7 @@
         "id": "summary", "type": "step", "title": "8. Summary",
         "selector": "#lesson-bar", "position": "bottom",
         "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
-        "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources", "selectProgram:Base", "switchTo:simulationComponent"],
+        "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern", "selectProgram:Base", "switchTo:simulationComponent"],
         "next": []
       }
     ]

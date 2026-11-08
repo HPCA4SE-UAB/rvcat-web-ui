@@ -392,5 +392,6 @@
   .lesson-hide-simOptions .sim-setting,
   .lesson-hide-simOptions #autorun-label,
   .lesson-hide-simOptions #automatic-simulation-check,
+  .lesson-hide-criticalPattern #critical-path-pattern,
   .lesson-hide-storedResults .stored-results-part { display: none !important; }
 </style>
