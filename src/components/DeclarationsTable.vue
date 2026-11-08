@@ -40,11 +40,11 @@
   const setSize = (v, size) => emit('declare', v.name, { type: v.kind ?? '', size })
 
   const statusTitle = (v) =>
-    v.conflict ? `Incoherent data type: ${v.conflict}`
-    : !v.kind && v.role !== 'array' ? 'Data type unknown: choose it here, or in the Type field of an instruction'
-    : v.assumed ? 'Size not given by any instruction: word (4 bytes) assumed'
-    : 'Coherent'
-  const statusText = (v) => (v.conflict ? '⚠' : !v.kind && v.role !== 'array' ? '?' : v.assumed ? 'assumed' : '✔')
+    v.conflict ? t('Incoherent data type: {c}', { c: v.conflict })
+    : !v.kind && v.role !== 'array' ? t('Data type unknown: choose it here, or in the Type field of an instruction')
+    : v.assumed ? t('Size not given by any instruction: word (4 bytes) assumed')
+    : t('Coherent')
+  const statusText = (v) => (v.conflict ? '⚠' : !v.kind && v.role !== 'array' ? '?' : v.assumed ? t('assumed') : '✔')
 </script>
 
 <template>
@@ -52,7 +52,7 @@
     <div class="decl-header">
       <button class="decl-toggle" id="declarations-toggle" @click="options.open = !options.open"
               :title="t('Show/hide the data type of each variable, inferred from the instructions and saved with the program')">
-        {{ options.open ? '▾' : '▸' }} Declarations
+        {{ options.open ? '▾' : '▸' }} {{ t('Declarations') }}
       </button>
       <span class="decl-summary">
         {{ variables.length }} variable{{ variables.length === 1 ? '' : 's' }}
@@ -61,16 +61,16 @@
       </span>
     </div>
     <div v-if="options.open" class="decl-body">
-      <div v-if="!variables.length" class="decl-note">Write the text of the instructions to see their variables.</div>
+      <div v-if="!variables.length" class="decl-note">{{ t('Write the text of the instructions to see their variables.') }}</div>
       <table v-else class="decl-table">
         <thead>
           <tr>
-            <th>Variable</th><th>Role</th>
-            <th :title="t('Data type (arrays: type of their elements). Changing it rewrites the instructions of this variable and of the ones that exchange values with it')">Type</th>
-            <th>Size</th>
-            <th :title="t('Lanes of the vector register (x[0:3] → 4)')">Lanes</th>
-            <th :title="t('Variables with the same data type, because they exchange values (operands and result, value and array)')">Same data as</th>
-            <th>Instructions</th><th></th>
+            <th>{{ t('Variable') }}</th><th>{{ t('Role') }}</th>
+            <th :title="t('Data type (arrays: type of their elements). Changing it rewrites the instructions of this variable and of the ones that exchange values with it')">{{ t('Type') }}</th>
+            <th>{{ t('Size') }}</th>
+            <th :title="t('Lanes of the vector register (x[0:3] → 4)')">{{ t('Lanes') }}</th>
+            <th :title="t('Variables with the same data type, because they exchange values (operands and result, value and array)')">{{ t('Same data as') }}</th>
+            <th>{{ t('Instructions') }}</th><th></th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +85,7 @@
             </td>
             <td>
               <select :value="v.size ?? ''" @change="setSize(v, $event.target.value)" :id="`decl-size-${v.name}`"
-                      :title="v.bytes ? `${v.bytes} bytes` : 'Size unknown'">
+                      :title="v.bytes ? t('{n} bytes', { n: v.bytes }) : t('Size unknown')">
                 <option value="">?</option>
                 <option v-for="s in SIZES[v.kind ?? '']" :key="s" :value="s">{{ s }}</option>
               </select>

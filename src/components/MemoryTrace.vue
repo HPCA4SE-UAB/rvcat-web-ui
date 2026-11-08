@@ -60,7 +60,7 @@
       trace.value = JSON.parse(data)
       error.value = ''
     } catch (e) {
-      error.value = `Invalid trace: ${e.message}`
+      error.value = t('Invalid trace: {e}', { e: e.message })
     }
   }
 
@@ -73,21 +73,21 @@
 
   // ---- Presentation ----
   const columnTitle = (col) =>
-    `Instruction ${col.index}: ${props.program[col.index]?.text ?? ''}\n` +
-    `${col.oper} of array ${col.array}, ${col.size}-byte elements, lanes ${col.lanes}, ` +
-    `stride ${col.stride}, offset ${col.constant}\n` +
-    `Advances ${col.lanes * Math.abs(col.stride)} elements = ${col.lanes * Math.abs(col.stride) * col.size} bytes per iteration` +
+    t('Instruction {i}: {text}', { i: col.index, text: props.program[col.index]?.text ?? '' }) + '\n' +
+    t('{oper} of array {array}, {size}-byte elements, lanes {lanes}, stride {stride}, offset {c}',
+      { oper: col.oper, array: col.array, size: col.size, lanes: col.lanes, stride: col.stride, c: col.constant }) + '\n' +
+    t('Advances {n} elements = {b} bytes per iteration', { n: col.lanes * Math.abs(col.stride), b: col.lanes * Math.abs(col.stride) * col.size }) +
     (props.rowIssues[col.index] ? `\n\n${props.rowIssues[col.index].text.join('\n')}` : '')
 
   const cellTitle = (col, cell, k) =>
-    `Iteration ${k}: ${elementRange(col.array, cell)}, bytes ${byteRange(cell, false)}` +
+    t('Iteration {k}: {elements}, bytes {bytes}', { k, elements: elementRange(col.array, cell), bytes: byteRange(cell, false) }) +
     ` (${byteRange(cell, true)})` +
-    (cell.outside ? `\nOutside the ${col.length} elements swept by this access over the loop ` +
-                    `(${trace.value.iterations} iterations × ${col.lanes * Math.abs(col.stride)})` : '')
+    (cell.outside ? '\n' + t('Outside the {n} elements swept by this access over the loop ({it} iterations × {step})',
+                              { n: col.length, it: trace.value.iterations, step: col.lanes * Math.abs(col.stride) }) : '')
 
   const arrayTitle = (a) =>
-    `Array ${a.name}: base address ${a.base} (${formatAddress(a.base, true)}), ${a.bytes} bytes. ` +
-    'RVCAT places the arrays one after another, in program order, with the size reached by their accesses.'
+    t('Array {name}: base address {base} ({hex}), {bytes} bytes.', { name: a.name, base: a.base, hex: formatAddress(a.base, true), bytes: a.bytes }) + ' ' +
+    t('RVCAT places the arrays one after another, in program order, with the size reached by their accesses.')
 
   async function copyTrace() {
     if (!view.value) return
@@ -96,7 +96,7 @@
       copied.value = true
       setTimeout(() => { copied.value = false }, 1500)
     } catch (e) {
-      error.value = `Cannot copy: ${e.message}`
+      error.value = t('Cannot copy: {e}', { e: e.message })
     }
   }
 </script>
@@ -106,23 +106,23 @@
     <div class="trace-header">
       <button class="trace-toggle" id="memory-trace-toggle" @click="options.open = !options.open"
               :title="t('Show/hide the memory addresses accessed in the first and last iterations of the loop')">
-        {{ options.open ? '▾' : '▸' }} Memory trace
+        {{ options.open ? '▾' : '▸' }} {{ t('Memory trace') }}
       </button>
       <template v-if="options.open">
         <label :title="t('Iterations shown at the beginning and at the end of the loop')">
-          first / last
+          {{ t('first / last') }}
           <input type="number" min="1" :max="TRACE_MAX_K" v-model.lazy.number="options.K" id="memory-trace-k" />
-          iterations
+          {{ t('iterations') }}
         </label>
         <label :title="t('Byte addresses in hexadecimal')">
           <input type="checkbox" v-model="options.hex" id="memory-trace-hex" /> hex
         </label>
         <span v-if="view && !blocked" class="trace-summary">
-          N = {{ view.N }} alg opers · S = {{ view.S }} · {{ view.iterations }} iterations
+          N = {{ view.N }} alg opers · S = {{ view.S }} · {{ view.iterations }} {{ t('iterations') }}
         </span>
         <button v-if="view && !blocked" class="trace-copy" id="memory-trace-copy" @click="copyTrace"
                 :title="t('Copy the trace as tab-separated text')">
-          {{ copied ? '✔ Copied' : 'Copy' }}
+          {{ copied ? '✔ ' + t('Copied') : t('Copy') }}
         </button>
       </template>
     </div>

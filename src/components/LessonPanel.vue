@@ -1,5 +1,5 @@
 <script setup>
-  import { t } from '@/i18n'
+  import { t, localized } from '@/i18n'
   // Lessons: menu (load a lesson file, start, export a self-contained copy, remove), the bar of
   // the lesson in progress (student, tasks, completion code, exit) and their dialogs.
   import { ref, computed, inject, watch, nextTick, onMounted } from 'vue'
@@ -41,18 +41,18 @@
     event.target.value = ''
     if (!file) return
     let lesson
-    try { lesson = JSON.parse(await file.text()) } catch { message.value = `${file.name} is not a JSON file`; return }
+    try { lesson = JSON.parse(await file.text()) } catch { message.value = t('{f} is not a JSON file', { f: file.name }); return }
     const errors = validateLesson(lesson)
     const missing = errors.length ? [] : lessonResources(lesson, storage).missing
     if (errors.length || missing.length) {
-      message.value = [...errors, ...missing.map(m => `${m} is not in this RVCAT (embed it in the lesson)`)].join('; ')
+      message.value = [...errors, ...missing.map(m => t('{m} is not in this RVCAT (embed it in the lesson)', { m }))].join('; ')
       return
     }
     write(lessonKey(lesson.lesson), lesson)
     lessons.value = [...lessons.value.filter(l => l.id !== lesson.lesson),
                      { id: lesson.lesson, title: lesson.title, description: lesson.description ?? '' }]
     write(INDEX_KEY, lessons.value)
-    message.value = `Lesson "${lesson.title}" loaded`
+    message.value = t('Lesson "{title}" loaded', { title: localized(lesson.title) })
   }
 
   async function exportSelfContained(id) {
@@ -71,12 +71,12 @@
   const startingId = ref(null)                 // lesson waiting for the student identifier
   const studentId  = ref('')
   const startingLesson = computed(() => startingId.value ? read(lessonKey(startingId.value)) : null)
-  const idLabel    = computed(() => startingLesson.value?.completion?.idLabel ?? 'Student ID')
+  const idLabel    = computed(() => localized(startingLesson.value?.completion?.idLabel) ?? t('Student ID'))
   const idError    = computed(() => {
     const c = startingLesson.value?.completion
     if (!c) return ''
-    if (!studentId.value.trim()) return `Write your ${idLabel.value}`
-    return validStudentId(studentId.value, c.idPattern) ? '' : `This is not a valid ${idLabel.value}`
+    if (!studentId.value.trim()) return t('Write your {label}', { label: idLabel.value })
+    return validStudentId(studentId.value, c.idPattern) ? '' : t('This is not a valid {label}', { label: idLabel.value })
   })
 
   function askStart(id) {
@@ -94,7 +94,7 @@
     startingId.value = null
     if (!lesson) return
     const res = lessonResources(lesson, storage)
-    if (res.missing.length) { message.value = `Not found: ${res.missing.join(', ')}`; showMenu.value = true; return }
+    if (res.missing.length) { message.value = t('Not found: {list}', { list: res.missing.join(', ') }); showMenu.value = true; return }
 
     // embedded resources replace stored ones with the same name until the lesson ends
     const backup = {}
@@ -211,20 +211,20 @@
   <div class="lesson-menu-anchor">
     <button v-if="!lesson" class="blue-button" id="lessons-button" :class="{ active: showMenu }"
             :title="t('Lessons: a set of programs, processors and a tutorial with tasks')" @click="showMenu = !showMenu">
-      📘 Lessons
+      📘 {{ t('Lessons') }}
     </button>
     <div v-if="showMenu && !lesson" class="lesson-menu" id="lesson-menu">
-      <h4>Lessons</h4>
-      <div v-if="!lessons.length" class="lesson-empty">No lessons loaded: load a lesson file given by your teacher.</div>
+      <h4>{{ t('Lessons') }}</h4>
+      <div v-if="!lessons.length" class="lesson-empty">{{ t('No lessons loaded: load a lesson file given by your teacher.') }}</div>
       <div v-for="l in lessons" :key="l.id" class="lesson-item">
         <button class="lesson-start" :title="l.description || 'Start this lesson'" @click="askStart(l.id)">
-          <strong>{{ l.title }}</strong><span>{{ l.id }}</span>
+          <strong>{{ localized(l.title) }}</strong><span>{{ l.id }}</span>
         </button>
         <button class="lesson-small" :title="t('Download a self-contained copy (programs, processors and tutorial included)')"
                 @click="exportSelfContained(l.id)">⬇</button>
         <button class="lesson-small" :title="t('Remove this lesson from the list')" @click="removeLesson(l.id)">🧹</button>
       </div>
-      <button class="blue-button lesson-load" id="lesson-load-button" @click="pickFile">Load lesson file…</button>
+      <button class="blue-button lesson-load" id="lesson-load-button" @click="pickFile">{{ t('Load lesson file…') }}</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="loadFile" />
       <div v-if="message" class="lesson-message">{{ message }}</div>
     </div>
@@ -233,47 +233,46 @@
   <!-- Bar of the lesson in progress -->
   <Teleport defer to="#lesson-bar-slot">
     <div v-if="lesson" class="lesson-bar" id="lesson-bar">
-      <span class="lesson-title">📘 {{ lesson.title }}</span>
+      <span class="lesson-title">📘 {{ localized(lesson.title) }}</span>
       <span v-if="lesson.studentId" class="lesson-student">{{ lesson.idLabel }}: <b>{{ lesson.studentId }}</b></span>
-      <span class="lesson-progress" :title="`Tasks of the lesson completed (questions, predictions and goals of its tutorial)`">
-        Tasks {{ doneCount }} / {{ lesson.tasks.length }}
+      <span class="lesson-progress" :title="t('Tasks of the lesson completed (questions, predictions and goals of its tutorial)')">
+        {{ t('Tasks {d} / {n}', { d: doneCount, n: lesson.tasks.length }) }}
       </span>
       <span v-if="completed && code" class="lesson-code" id="lesson-code"
             :title="t('Give this code to your teacher: it shows that you completed the lesson with your identifier')">
-        ✔ Completed · code <b>{{ code }}</b>
-        <button class="lesson-small" @click="copyCode">{{ copied ? 'copied' : 'copy' }}</button>
+        ✔ {{ t('Completed · code') }} <b>{{ code }}</b>
+        <button class="lesson-small" @click="copyCode">{{ copied ? t('copied') : t('copy') }}</button>
       </span>
-      <span v-else-if="completed" class="lesson-code">✔ Completed</span>
+      <span v-else-if="completed" class="lesson-code">{{ t('✔ Completed') }}</span>
       <button class="lesson-small" :title="t('Start the tutorial of the lesson again (your completed tasks are kept)')" @click="restartTutorial">↻ tutorial</button>
-      <button class="lesson-exit" id="lesson-exit-button" @click="askExit = true">Exit lesson</button>
+      <button class="lesson-exit" id="lesson-exit-button" @click="askExit = true">{{ t('Exit lesson') }}</button>
     </div>
   </Teleport>
 
   <Teleport to="body">
     <div v-if="startingId" class="lesson-overlay" @click.self="startingId = null">
       <div class="lesson-dialog">
-        <h4>{{ startingLesson?.title }}</h4>
-        <p v-if="startingLesson?.description" v-html="startingLesson.description"></p>
+        <h4>{{ localized(startingLesson?.title) }}</h4>
+        <p v-if="startingLesson?.description" v-html="localized(startingLesson.description)"></p>
         <label for="lesson-student-id">{{ idLabel }}:</label>
         <input id="lesson-student-id" v-model="studentId" type="text" @keyup.enter="confirmStart" />
         <div v-if="idError" class="lesson-error">{{ idError }}</div>
-        <p class="lesson-note">Write the identifier assigned by your teacher: when you complete the lesson you will get a code for it.</p>
+        <p class="lesson-note">{{ t('Write the identifier assigned by your teacher: when you complete the lesson you will get a code for it.') }}</p>
         <div class="lesson-actions">
-          <button class="blue-button" id="lesson-start-confirm" :disabled="!!idError" @click="confirmStart">Start</button>
-          <button class="blue-button" @click="startingId = null">Cancel</button>
+          <button class="blue-button" id="lesson-start-confirm" :disabled="!!idError" @click="confirmStart">{{ t('Start') }}</button>
+          <button class="blue-button" @click="startingId = null">{{ t('Cancel') }}</button>
         </div>
       </div>
     </div>
 
     <div v-if="askExit" class="lesson-overlay" @click.self="askExit = false">
       <div class="lesson-dialog">
-        <h4>Exit the lesson?</h4>
-        <p>The simulator returns to its state before the lesson. Your completed tasks are kept: if you start the lesson
-           again with the same identifier, you continue where you left it.</p>
-        <p v-if="code">Completion code: <b>{{ code }}</b></p>
+        <h4>{{ t('Exit the lesson?') }}</h4>
+        <p>{{ t('The simulator returns to its state before the lesson. Your completed tasks are kept: if you start the lesson again with the same identifier, you continue where you left it.') }}</p>
+        <p v-if="code">{{ t('Completion code:') }} <b>{{ code }}</b></p>
         <div class="lesson-actions">
-          <button class="blue-button" id="lesson-exit-confirm" @click="exitLesson">Exit</button>
-          <button class="blue-button" @click="askExit = false">Stay</button>
+          <button class="blue-button" id="lesson-exit-confirm" @click="exitLesson">{{ t('Exit') }}</button>
+          <button class="blue-button" @click="askExit = false">{{ t('Stay') }}</button>
         </div>
       </div>
     </div>

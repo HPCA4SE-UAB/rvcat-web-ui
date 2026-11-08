@@ -1,5 +1,5 @@
 <script setup>
-  import { t } from '@/i18n'
+  import { t, locale } from '@/i18n'
   import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
            watch, inject, reactive, computed}                         from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
@@ -141,7 +141,7 @@
         logicalElementCount: Nloop
       })
       if (validationErrors.length) {
-        timelineError.value = `Cannot generate timeline for invalid program: ${validationErrors.join(' ')}`
+        timelineError.value = t('Cannot generate timeline for invalid program: {errors}', { errors: validationErrors.join(' ') })
         clearTimelineView()
         console.error('📈❌ Cannot generate timeline for invalid program:', validationErrors)
         return
@@ -153,7 +153,7 @@
           .map(({ index, instruction }) => `#${index + 1} (${instruction.type}.${instruction.oper})`)
           .join(', ')
         timelineError.value =
-          `Cannot generate timeline: the active processor has no execution port for ${instructionList}.`
+          t('Cannot generate timeline: the active processor has no execution port for {list}.', { list: instructionList })
         clearTimelineView()
         console.error('📈❌ Cannot generate timeline for unsupported instructions:', unsupportedInstructions)
         return
@@ -304,7 +304,7 @@
 
       const Index = eIndex >= 0 ? eIndex : (lIndex >= 0 ? lIndex : sIndex);
       if (Index < 0 && flags?.wrong) continue      // wrong-path instruction squashed before executing
-      if (Index < 0) alert("Timeline problem: all instructions must traverse an E/L/S state");
+      if (Index < 0) alert(t('Timeline problem: all instructions must traverse an E/L/S state'));
       const cycle = startCycle + Index;
 
       // Verificar que cycle esté dentro del rango
@@ -422,6 +422,9 @@
   let hoverRow    = null
   let hoverCol    = null
   let visibleCriticalPath = null
+
+  // Tooltips of the cells are built when drawing: redrawn in the new language
+  watch(locale, () => { if (timeline.value && timelineCanvas.value) scheduleDraw(timelineOptions.cycles, timelineOptions.cycles) })
 
   function scheduleDraw(cycles, oldCycles) {
     if (rafPending) return
@@ -745,14 +748,14 @@
         cellType: 'resource-label',
         resourceIndex: resourceRowIndex,
         tooltip: resource.cacheLineIndex !== undefined
-          ? `Cache line ${resource.cacheLineIndex}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer`
+          ? t('Cache line {i}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer', { i: resource.cacheLineIndex })
           : resource.bufferType === 'fill'
-            ? `Fill buffer ${resource.bufferIndex}: holds one distinct block fill; misses to the same block share the entry`
+            ? t('Fill buffer {i}: holds one distinct block fill; misses to the same block share the entry', { i: resource.bufferIndex })
           : resource.bufferType === 'write'
-            ? `Write buffer ${resource.bufferIndex}: holds an evicted dirty block until its MM write completes`
+            ? t('Write buffer {i}: holds an evicted dirty block until its MM write completes', { i: resource.bufferIndex })
           : resource.port === null
-            ? `MM: ${mmReadTransfers} reads, ${mmWriteTransfers} writes (${usagePercent.toFixed(1)}% busy)`
-          : `${resource.label}: ${usedCycleCount}/${visibleCycleCount} cycles used (${usagePercent}%)`
+            ? t('MM: {r} reads, {w} writes ({p}% busy)', { r: mmReadTransfers, w: mmWriteTransfers, p: usagePercent.toFixed(1) })
+          : t('{label}: {used}/{visible} cycles used ({p}%)', { label: resource.label, used: usedCycleCount, visible: visibleCycleCount, p: usagePercent })
       })
 
       for (let cycle = 0; cycle < totalCycles; cycle++) {
@@ -856,31 +859,31 @@
           linkedInstructionRows,
           linkedResourceRows,
           tooltip: resource.bufferType && !bufferEntry?.valid
-            ? `${resource.bufferType === 'fill' ? 'Fill' : 'Write'} buffer ${resource.bufferIndex}: empty`
+            ? t(resource.bufferType === 'fill' ? 'Fill buffer {i}: empty' : 'Write buffer {i}: empty', { i: resource.bufferIndex })
             : resource.bufferType === 'fill'
-              ? `Fill block at addr ${bufferEntry.address} (${bufferEntry.state}` +
-                `${bufferEntry.ready_cycle == null ? '' : `; ready at cycle ${bufferEntry.ready_cycle}`}` +
-                `; waiting instructions ${bufferEntry.instruction_indices.map(index => index + 1).join(', ')})`
+              ? t('Fill block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
+                `${bufferEntry.ready_cycle == null ? '' : '; ' + t('ready at cycle {c}', { c: bufferEntry.ready_cycle })}` +
+                `; ${t('waiting instructions {list}', { list: bufferEntry.instruction_indices.map(index => index + 1).join(', ') })})`
             : resource.bufferType === 'write'
-              ? `Write dirty block at addr ${bufferEntry.address} (${bufferEntry.state}` +
-                `${bufferEntry.ready_cycle == null ? '' : `; available at cycle ${bufferEntry.ready_cycle}`})`
+              ? t('Write dirty block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
+                `${bufferEntry.ready_cycle == null ? '' : '; ' + t('available at cycle {c}', { c: bufferEntry.ready_cycle })})`
             : resource.cacheLineIndex !== undefined
             ? !cacheLine?.valid
-              ? `Cache line ${resource.cacheLineIndex}: empty`
-              : `Block at addr ${cacheLine.address} (${cacheLine.dirty ? 'dirty' : 'clean'}; ` +
+              ? t('Cache line {i}: empty', { i: resource.cacheLineIndex })
+              : t('Block at addr {a}', { a: cacheLine.address }) + ` (${cacheLine.dirty ? t('dirty') : t('clean')}; ` +
               `${cacheLine.loading
                 ? cacheLine.ready_cycle == null
-                  ? 'loading'
-                  : `loading, ready at cycle ${cacheLine.ready_cycle}`
-                : 'ready'}; ` +
-                `LRU rank ${cacheLine.lru})`
+                  ? t('loading')
+                  : t('loading, ready at cycle {c}', { c: cacheLine.ready_cycle })
+                : t('ready')}; ` +
+                `${t('LRU rank {r}', { r: cacheLine.lru })})`
             : memoryRequests
                 .map(({ operation, address }) => {
                   if (operation === 'read_for_write')
-                    return `Read block for writing at addr ${address}`
+                    return t('Read block for writing at addr {a}', { a: address })
                   if (operation === 'write')
-                    return `Write dirty block at addr ${address}`
-                  return `Read block at addr ${address}`
+                    return t('Write dirty block at addr {a}', { a: address })
+                  return t('Read block at addr {a}', { a: address })
                 })
                 .join('\n')
         })
@@ -1207,38 +1210,38 @@
   function formatProcessingTooltip(cell) {
     const detail = cell.waitDetail
     if (cell.char === '!' && detail?.reason === 'cache')
-      return `Cache MISS: block addr ${detail.block_address}`
+      return t('Cache MISS: block addr {a}', { a: detail.block_address })
     if (cell.char === '2' && detail?.reason === 'cache')
-      return `2ary MISS: block addr ${detail.block_address}`
+      return t('2ary MISS: block addr {a}', { a: detail.block_address })
     if (cell.char === '@' && detail?.reason === 'cache-return')
-      return `Wait for cache return: block addr ${detail.block_address}`
+      return t('Wait for cache return: block addr {a}', { a: detail.block_address })
     if (cell.char === '.' && detail?.reason === 'data') {
       const dependencies = [...new Set(detail.dependencies ?? [])]
         .map(index => timeline.value.instructions[index])
         .filter(Boolean)
         .map(([iteration, instruction]) => `instr ${instruction} (iter ${iteration})`)
       if (dependencies.length)
-        return `Wait for data from ${dependencies.join(', ')}`
+        return t('Wait for data from {list}', { list: dependencies.join(', ') })
     }
     if (cell.char === '*' && detail?.reason === 'ports') {
       const ports = detail.ports.map(port => `P${port}`).join(', ')
-      return ports ? `Port conflict: ${ports}` : 'Port conflict'
+      return ports ? t('Port conflict: {ports}', { ports }) : t('Port conflict')
     }
     if (cell.char === '*' && detail?.reason === 'issue-bandwidth') {
-      return 'Wait: issue width full'
+      return t('Wait: issue width full')
     }
     if (detail?.reason === 'cache') {
       if (detail.buffer_state === 'queued_fill')
-        return `Wait for fill-buffer slot for block at addr ${detail.block_address}`
+        return t('Wait for fill-buffer slot for block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'queued_write')
-        return `Wait for write-buffer slot before filling block at addr ${detail.block_address}`
+        return t('Wait for write-buffer slot before filling block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'queued_line')
-        return `Wait for a cache line before filling block at addr ${detail.block_address}`
+        return t('Wait for a cache line before filling block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'waiting_mm')
-        return `Wait for MM issue slot for block at addr ${detail.block_address}`
+        return t('Wait for MM issue slot for block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'waiting_writeback')
-        return `Wait for dirty writeback before filling block at addr ${detail.block_address}`
-      return `Wait for block at addr ${detail.block_address}`
+        return t('Wait for dirty writeback before filling block at addr {a}', { a: detail.block_address })
+      return t('Wait for block at addr {a}', { a: detail.block_address })
     }
     return charToProcessingState(
       cell.char,
@@ -1251,23 +1254,23 @@
   function formatInstructionTooltip(cell) {
     const details = [
       `Iter ${cell.iter}, instr ${cell.instrIdx}` +
-        (cell.wrongPath ? ' — wrong path (squashed)' : cell.mispredicted ? ' — mispredicted branch' : ''),
-      cell.instructionText || 'Instruction description unavailable'
+        (cell.wrongPath ? ' — ' + t('wrong path (squashed)') : cell.mispredicted ? ' — ' + t('mispredicted branch') : ''),
+      cell.instructionText || t('Instruction description unavailable')
     ]
 
     const executionInfo = []
     if (cell.port !== null && cell.port !== undefined)
       executionInfo.push(`P${cell.port}`)
     if (Number.isFinite(cell.latency))
-      executionInfo.push(`${cell.latency} ${cell.latency === 1 ? 'cycle' : 'cycles'}`)
+      executionInfo.push(`${cell.latency} ${cell.latency === 1 ? t('cycle') : t('cycles')}`)
     if (executionInfo.length)
       details.push(executionInfo.join(' + '))
 
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
-      details.push(`${cell.memoryOperation} MEM address ${cell.addr}`)
+      details.push(`${t(cell.memoryOperation)} ${t('MEM address')} ${cell.addr}`)
 
     if (cell.criticalCycles > 0)
-      details.push(`${cell.criticalCycles} critical cycle${cell.criticalCycles === 1 ? '' : 's'}`)
+      details.push(t(cell.criticalCycles === 1 ? '1 critical cycle' : '{n} critical cycles', { n: cell.criticalCycles }))
     return details.join('\n')
   }
 
@@ -1349,12 +1352,12 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Execution Timeline - {{ simState.simulatedProcess.name }} on {{ simState.processorName }}</span>
+        <span class="header-title">{{ t('Execution Timeline - {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName }) }}</span>
       </div>
 
       <div class="timeline-controls">
         <div class="iters-group">
-          <span class="iters-label">Cycles:</span>
+          <span class="iters-label">{{ t('Cycles:') }}</span>
           <input type="number" min="1" v-model.lazy.number="timelineOptions.cycles"
             :title="t('Number of cycles shown (press Enter to apply)')"
             @change="onCyclesTyped"
@@ -1362,18 +1365,18 @@
           <button class="blue-button fit-cycles" @click="fitCyclesButton"
             id="timeline-fit-cycles"
             :title="t('Show as many cycles as fit in the panel width (and keep fitting when the window is resized)')">
-            Fit
+            {{ t('Fit') }}
           </button>
         </div>
 
         <div class="iters-group">
-          <span class="show-label">Show:</span>
+          <span class="show-label">{{ t('Show:') }}</span>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
             :title="t('Show the critical path ending at the last instruction retired in the visible cycles')"
             id="timeline-critical"
             @click="toggleCritical">
             <span v-if="timelineOptions.critical">✔ </span>
-            Critical
+            {{ t('Critical') }}
           </button>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.showPorts }"
             :aria-pressed="timelineOptions.showPorts"
@@ -1381,18 +1384,18 @@
             id="timeline-ports"
             @click="togglePorts">
             <span v-if="timelineOptions.showPorts">✔ </span>
-            Ports
+            {{ t('Ports') }}
           </button>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
             :aria-pressed="timelineOptions.showCache && cacheEnabled"
             :disabled="!cacheEnabled"
             :title="cacheEnabled
-              ? 'Show or hide Main Memory transfers, cache lines, fill buffers, and write buffers'
-              : 'Show Cache is unavailable because the selected processor has no cache'"
+              ? t('Show or hide Main Memory transfers, cache lines, fill buffers, and write buffers')
+              : t('Show Cache is unavailable because the selected processor has no cache')"
             id="timeline-cache"
             @click="toggleCache">
             <span v-if="timelineOptions.showCache">✔ </span>
-            Cache
+            {{ t('Cache') }}
           </button>
         </div>
       </div>

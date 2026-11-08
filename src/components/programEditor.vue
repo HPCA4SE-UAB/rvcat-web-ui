@@ -410,7 +410,7 @@ function onDeclare(name, selection) {
 function warnDeclarations(program) {
   const messages = checkDeclarations(program)
   if (messages.length)
-    alert(`The declarations of program "${program.name}" are not coherent with its instructions:\n` +
+    alert(t('The declarations of program "{name}" are not coherent with its instructions:', { name: program.name }) + '\n' +
           messages.map(m => `• ${m}`).join('\n'))
 }
 
@@ -561,11 +561,11 @@ function snapshotProgram() {
   function requestDownload() {
     const { errors, warnings } = checks.value
     if (errors.length) {
-      alert(`The program cannot be saved until these errors are fixed:\n${errors.map(issueLine).join('\n')}`)
+      alert(t('The program cannot be saved until these errors are fixed:') + '\n' + errors.map(issueLine).join('\n'))
       return
     }
     if (warnings.length &&
-        !confirm(`The program has possible incoherences:\n${warnings.map(issueLine).join('\n')}\n\nSave it anyway?`))
+        !confirm(t('The program has possible incoherences:') + '\n' + warnings.map(issueLine).join('\n') + '\n\n' + t('Save it anyway?')))
       return
     showModalDownload.value = true
   }
@@ -573,10 +573,10 @@ function snapshotProgram() {
   // The program is added to the list of the Program panel (and selected), and downloaded
   async function confirmDownload(download = true) {
     const name   = modalName.value.trim();
-    if (!name) { nameError.value = 'Write a name'; return }
+    if (!name) { nameError.value = t('Write a name'); return }
     // during a lesson, its programs cannot be replaced: they are restored when it ends
     if (simState.lesson?.programs?.includes(name)) {
-      nameError.value = `"${name}" is a program of the lesson: choose another name`
+      nameError.value = t('"{name}" is a program of the lesson: choose another name', { name })
       return
     }
     nameError.value = ''
@@ -622,7 +622,7 @@ function snapshotProgram() {
         <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')">
            <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Program Editor</span>
+        <span class="header-title">{{ t('Program Editor') }}</span>
       </div>
 
       <button class="blue-button toggle-button add-prev-margin"
@@ -631,7 +631,7 @@ function snapshotProgram() {
           id="show-inout-operands"
         @click="toggleInOut">
         <span v-if="programEditOptions.showInOut">✔ </span>
-        InOut
+        {{ t('InOut') }}
       </button>
 
       <button class="blue-button toggle-button add-margin"
@@ -640,7 +640,7 @@ function snapshotProgram() {
           id="show-mem-operands"
         @click="toggleStrideLanes">
         <span v-if="programEditOptions.showStrideLanes">✔ </span>
-        Stride/Lanes
+        {{ t('Stride/Lanes') }}
       </button>
 
       <button class="blue-button toggle-button add-margin"
@@ -649,22 +649,22 @@ function snapshotProgram() {
           id="show-instruction-actions"
           @click="toggleActions">
         <span v-if="programEditOptions.showActions">✔ </span>
-        Actions
+        {{ t('Actions') }}
       </button>
 
       <label class="loop-stride-field" id="editor-loop-stride"
              :title="t('Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.')">
-        Alg opers/iter (S):
+        {{ t('Alg opers/iter (S):') }}
         <input type="number" min="1" step="1" v-model.lazy.number="loopStrideModel" id="editor-loop-stride-input" />
       </label>
       <label class="loop-stride-field editor-n-field" id="editor-n"
-             :title="`N = algorithmic operations (iterations of the original loop), 1 - ${MAX_LOGICAL_ELEMENT_COUNT}. It is saved with the program and becomes the N of the Program panel when the program is selected. The memory trace uses it.`">
+             :title="t('N = algorithmic operations (iterations of the original loop), 1 - {max}. It is saved with the program and becomes the N of the Program panel when the program is selected. The memory trace uses it.', { max: MAX_LOGICAL_ELEMENT_COUNT })">
         N:
         <input type="number" min="1" :max="MAX_LOGICAL_ELEMENT_COUNT" step="1" v-model.lazy.number="editedNModel" id="editor-n-input" />
       </label>
       <label class="loop-stride-field editor-n-field" id="editor-vlen"
              :title="t('Width in bytes of the vector registers. A vector instruction holds width / element size lanes (e.g. 32 bytes: 8 single or 4 double); a conversion between single and double is done in two halves. Auto: the largest vector instruction of the program.')">
-        Vector regs:
+        {{ t('Vector regs:') }}
         <select v-model="editedVlen" id="editor-vlen-select">
           <option :value="null">auto{{ autoVlen ? ` (${autoVlen} B)` : '' }}</option>
           <option v-for="w in VECTOR_WIDTHS" :key="w" :value="w">{{ w }} B</option>
@@ -673,11 +673,11 @@ function snapshotProgram() {
       <button v-if="!isLocked(simState.lesson, 'loopTransforms', simState.lessonAllow ?? [])"
               class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
               :title="t('Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets')">
-        Unroll / Vectorize…
+        {{ t('Unroll / Vectorize…') }}
       </button>
       <button v-if="undoProgram" class="blue-button add-margin" id="undo-loop-transform" @click="undoTransform"
               :title="t('Go back to the program before the last unroll / vectorize')">
-        ↶ Undo
+        {{ t('↶ Undo') }}
       </button>
 
       <button class="blue-button toggle-button add-prev-margin" :class="{ active: programEditOptions.showGraph }"
@@ -685,7 +685,7 @@ function snapshotProgram() {
           id="open-edited-program-graph"
           @click="openFullScreen">
         <span v-if="programEditOptions.showGraph">✔ </span>
-        View Graph
+        {{ t('View Graph') }}
       </button>
 
       <div class="settings-container">
@@ -693,19 +693,19 @@ function snapshotProgram() {
           <button class="blue-button" @click="requestDownload"
                :title="t('Save current edited program (after checking its coherence)')"
                id="program-download-button">
-            Download
+            {{ t('Download') }}
           </button>
           <button class="blue-button" @click="uploadForEdition"
                :title="t('Load new program from file system for edition')"
                id="program-upload-button">
-            Upload
+            {{ t('Upload') }}
           </button>
         </div>
         <div class="buttons">
           <button class="blue-button  add-margin" @click="showModalClear = true"
                 :title="t('Clear edition and start new program from scratch')"
                 id="clear-program-button">
-            Clear
+            {{ t('Clear') }}
           </button>
 
         </div>
@@ -719,10 +719,10 @@ function snapshotProgram() {
             <thead>
               <tr>
                 <th style="width: 20px;">  # </th>
-                <th style="width: 600px;"> Text    </th>
-                <th style="width: 100px;"> Type    </th>
-                <th style="width: 100px;"> Oper    </th>
-                <th style="width: 100px;"> Size    </th>
+                <th style="width: 600px;"> {{ t('Text') }}    </th>
+                <th style="width: 100px;"> {{ t('Type') }}    </th>
+                <th style="width: 100px;"> {{ t('Oper') }}    </th>
+                <th style="width: 100px;"> {{ t('Size') }}    </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Destin  </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Source1 </th>
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Source2 </th>
@@ -730,7 +730,7 @@ function snapshotProgram() {
                 <th v-if="programEditOptions.showInOut"   style="width: 80px;">  Constant</th>
                 <th v-if="programEditOptions.showStrideLanes" style="width: 80px;">  Stride </th>
                 <th v-if="programEditOptions.showStrideLanes" style="width: 80px;">  Lanes  </th>
-                <th v-if="programEditOptions.showActions" style="width: 100px;"> Actions </th>
+                <th v-if="programEditOptions.showActions" style="width: 100px;"> {{ t('Actions') }} </th>
               </tr>
             </thead>
             <tbody>
@@ -750,7 +750,7 @@ function snapshotProgram() {
                 <td>
                   <select v-model="inst.type" class="table-select" :title="t('Select instruction type')"
                           @change="onTypeChange(inst)">
-                    <option value="">Select...</option>
+                    <option value="">{{ t('Select...') }}</option>
                     <option v-for="type in instructionTypes" :key="type" :value="type">
                       {{ type }}
                     </option>
@@ -761,7 +761,7 @@ function snapshotProgram() {
                   <select v-model="inst.oper" @change="keepField(inst, 'oper')" :disabled="!inst.type || typeOperations[inst.type].length === 0"
                     class="table-select" :title="t('Select operation for this type')"
                   >
-                    <option value="">Select...</option>
+                    <option value="">{{ t('Select...') }}</option>
                     <option
                       v-for="operation in typeOperations[inst.type]"
                       :key="operation"
@@ -776,7 +776,7 @@ function snapshotProgram() {
                   <select v-model="inst.size" @change="keepField(inst, 'size')" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
                     class="table-select" :title="t('Select size for this instruction type & operations')"
                   >
-                    <option value="">Select...</option>
+                    <option value="">{{ t('Select...') }}</option>
                     <option
                       v-for="size in typeSizes[inst.type]"
                       :key="size"
@@ -925,7 +925,7 @@ function snapshotProgram() {
       </div>
       <div class="coherence-panel" id="program-coherence">
         <div v-if="!checks.errors.length && !checks.warnings.length" class="coherence-ok">
-          ✔ Loop stride, lanes, memory accesses, texts and data types are coherent
+          ✔ {{ t('Loop stride, lanes, memory accesses, texts and data types are coherent') }}
         </div>
         <div v-for="(item, k) in checks.errors" :key="'e' + k" class="coherence-error">
           ✖ <strong>{{ item.code }}</strong><span v-if="item.index >= 0"> · instr {{ item.index }}</span>: {{ item.message }}
@@ -957,7 +957,7 @@ function snapshotProgram() {
       }"
     >
       <div class="fullscreen-header" ref="headerRef">
-        <span>Dependence Graph of Edited program (circular paths in red)</span>
+        <span>{{ t('Dependence Graph of Edited program (circular paths in red)') }}</span>
         <button class="close-btn" @click="closeFullScreen">×</button>
       </div>
       <div class="graph-container">
@@ -970,64 +970,62 @@ function snapshotProgram() {
 
   <div v-if="showModalDownload" class="modal-overlay">
     <div class="modal">
-      <h4>Save Program As</h4>
-      <label for="config-name">Name:</label>
+      <h4>{{ t('Save Program As') }}</h4>
+      <label for="config-name">{{ t('Name:') }}</label>
       <input id="save-program-name" type="text" v-model="modalName"
           :title="t('file name of new program')" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" id="save-program-download" :title="t('Add the program to the list of the Program panel and download it as a JSON file')" @click="confirmDownload(true)">Save and download</button>
-        <button class="blue-button" id="save-program-only" :title="t('Add the program to the list of the Program panel (and select it)')" @click="confirmDownload(false)">Save</button>
-        <button class="blue-button" :title="t('Cancel Upload')"   @click="showModalDownload=false">Cancel</button>
+        <button class="blue-button" id="save-program-download" :title="t('Add the program to the list of the Program panel and download it as a JSON file')" @click="confirmDownload(true)">{{ t('Save and download') }}</button>
+        <button class="blue-button" id="save-program-only" :title="t('Add the program to the list of the Program panel (and select it)')" @click="confirmDownload(false)">{{ t('Save') }}</button>
+        <button class="blue-button" :title="t('Cancel Upload')"   @click="showModalDownload=false">{{ t('Cancel') }}</button>
       </div>
     </div>
   </div>
 
   <div v-if="showTransform" class="modal-overlay" @click.self="showTransform = false">
     <div class="modal transform-modal" id="loop-transform-dialog">
-      <h4>Unroll / vectorize the loop</h4>
+      <h4>{{ t('Unroll / vectorize the loop') }}</h4>
       <p class="transform-intro">
-        Current loop: S = {{ loopInfo.S }}<span v-if="loopInfo.vectorized">, vectorized with {{ loopInfo.lanes }} lanes</span>,
-        {{ editedProgram.length }} instructions per iteration.
-        The assistant sets the loop stride, lanes, memory strides and offsets coherently;
-        edit the result manually only for special cases.
+        {{ t('Current loop:') }} S = {{ loopInfo.S }}<span v-if="loopInfo.vectorized">, {{ t('vectorized with {n} lanes', { n: loopInfo.lanes }) }}</span>,
+        {{ t('{n} instructions per iteration.', { n: editedProgram.length }) }}
+        {{ t('The assistant sets the loop stride, lanes, memory strides and offsets coherently; edit the result manually only for special cases.') }}
       </p>
 
       <div class="transform-options">
         <label :title="t('Each vector holds L elements of the smallest data size of the loop (L iterations of the original loop): S × L. Elements twice as large use L/2 lanes, in two halves')">
-          Vectorize:
+          {{ t('Vectorize:') }}
           <select v-model.number="transformOptions.lanes" :disabled="!!vectorizeBlock" id="transform-lanes">
-            <option :value="1">no</option>
-            <option v-for="L in [2, 4, 8, 16]" :key="L" :value="L">{{ L }} lanes</option>
+            <option :value="1">{{ t('no') }}</option>
+            <option v-for="L in [2, 4, 8, 16]" :key="L" :value="L">{{ t('{n} lanes', { n: L }) }}</option>
           </select>
         </label>
         <label :title="t('Each iteration repeats the body U times: S × U')">
-          Unroll:
+          {{ t('Unroll:') }}
           <select v-model.number="transformOptions.unroll" id="transform-unroll">
-            <option :value="1">no</option>
-            <option v-for="U in [2, 3, 4, 6, 8]" :key="U" :value="U">{{ U }} times</option>
+            <option :value="1">{{ t('no') }}</option>
+            <option v-for="U in [2, 3, 4, 6, 8]" :key="U" :value="U">{{ t('{n} times', { n: U }) }}</option>
           </select>
         </label>
         <label v-if="loopInfo.reductions.length"
                :title="t('Each unrolled copy accumulates in its own variable: the dependence chain is split into U shorter chains (the partial results are added after the loop)')">
           <input type="checkbox" v-model="transformOptions.splitAccumulators" :disabled="transformOptions.unroll < 2"
                  id="transform-split" />
-          Partial accumulators for {{ loopInfo.reductions.join(', ') }}
+          {{ t('Partial accumulators for {list}', { list: loopInfo.reductions.join(', ') }) }}
         </label>
       </div>
-      <div v-if="vectorizeBlock" class="transform-why">Cannot vectorize: {{ vectorizeBlock }}</div>
+      <div v-if="vectorizeBlock" class="transform-why">{{ t('Cannot vectorize: {why}', { why: vectorizeBlock }) }}</div>
       <div v-if="transformPreview?.rearrange?.question" class="transform-blocks" id="transform-blocks">
         <div>
-          This loop moves data across the 128-bit blocks of the vector registers:
-          {{ transformPreview.rearrange.reasons.join('; ') }}. How should these moves be done?
+          {{ t('This loop moves data across the 128-bit blocks of the vector registers: {reasons}. How should these moves be done?', { reasons: transformPreview.rearrange.reasons.join('; ') }) }}
         </div>
         <label :title="t('x86 AVX: registers made of 128-bit blocks. Moving elements across blocks needs PERMUTE instructions (3 cycles in Intel processors); within a block, SHUFFLE (1 cycle)')">
           <input type="radio" value="avx" v-model="transformOptions.blocks" id="transform-blocks-avx" />
-          AVX: generate the PERMUTE instructions (more latency than SHUFFLE)
+          {{ t('AVX: generate the PERMUTE instructions (more latency than SHUFFLE)') }}
         </label>
         <label :title="t('Generic vector model, without 128-bit blocks: conversions read and write halves of registers directly, and reversals are SHUFFLE instructions')">
           <input type="radio" value="generic" v-model="transformOptions.blocks" id="transform-blocks-generic" />
-          Generic vector model, without 128-bit blocks
+          {{ t('Generic vector model, without 128-bit blocks') }}
         </label>
       </div>
 
@@ -1035,10 +1033,10 @@ function snapshotProgram() {
         <div v-for="(e, k) in transformPreview.errors" :key="'te' + k" class="coherence-error">✖ {{ e }}</div>
         <template v-if="transformPreview.program">
           <div class="transform-summary" id="transform-summary">
-            Result: S = {{ transformPreview.program.at(-1).stride }} ·
-            <template v-if="transformPreview.vlen">vector registers of {{ transformPreview.vlen }} bytes ·</template>
-            {{ transformPreview.program.length }} instructions per iteration ·
-            instructions per algorithmic operation {{ instrPerAlgOp(editedProgram).toFixed(2) }} →
+            {{ t('Result:') }} S = {{ transformPreview.program.at(-1).stride }} ·
+            <template v-if="transformPreview.vlen">{{ t('vector registers of {n} bytes', { n: transformPreview.vlen }) }} ·</template>
+            {{ t('{n} instructions per iteration', { n: transformPreview.program.length }) }} ·
+            {{ t('instructions per algorithmic operation') }} {{ instrPerAlgOp(editedProgram).toFixed(2) }} →
             <strong>{{ instrPerAlgOp(transformPreview.program).toFixed(2) }}</strong>
           </div>
           <div v-for="(n, k) in transformPreview.notes" :key="'tn' + k" class="transform-note">• {{ n }}</div>
@@ -1048,7 +1046,7 @@ function snapshotProgram() {
           <div class="transform-preview">
             <table class="instructions-table">
               <thead>
-                <tr><th>#</th><th>Text</th><th>Type</th><th>Oper</th><th>Lanes</th><th>Stride</th><th>Constant</th></tr>
+                <tr><th>#</th><th>{{ t('Text') }}</th><th>{{ t('Type') }}</th><th>{{ t('Oper') }}</th><th>Lanes</th><th>Stride</th><th>Constant</th></tr>
               </thead>
               <tbody>
                 <tr v-for="(inst, k) in transformPreview.program" :key="k">
@@ -1062,25 +1060,25 @@ function snapshotProgram() {
           </div>
         </template>
       </template>
-      <div v-else class="transform-note">Choose a number of lanes and/or an unrolling factor.</div>
+      <div v-else class="transform-note">{{ t('Choose a number of lanes and/or an unrolling factor.') }}</div>
 
       <div class="modal-actions">
         <button class="blue-button" id="apply-loop-transform"
                 :disabled="!transformPreview?.program || (transformPreview.rearrange?.question && !transformOptions.blocks)"
                 :title="t('Replace the edited program with the transformed one (↶ Undo restores it)')" @click="applyTransform">
-          Apply
+          {{ t('Apply') }}
         </button>
-        <button class="blue-button" :title="t('Close without changes')" @click="showTransform = false">Cancel</button>
+        <button class="blue-button" :title="t('Close without changes')" @click="showTransform = false">{{ t('Cancel') }}</button>
       </div>
     </div>
   </div>
 
   <div v-if="showModalClear" class="modal-overlay">
     <div class="modal">
-      <p>You may have unsaved changes. Do you want to clear current edited program?</p>
+      <p>{{ t('You may have unsaved changes. Do you want to clear current edited program?') }}</p>
       <div class="modal-actions">
-        <button class="blue-button" :title="t('Yes, clear!')" @click="clearProgram">Continue</button>
-        <button class="blue-button" :title="t('No, cancel!')" @click="showModalClear = false">Cancel</button>
+        <button class="blue-button" :title="t('Yes, clear!')" @click="clearProgram">{{ t('Continue') }}</button>
+        <button class="blue-button" :title="t('No, cancel!')" @click="showModalClear = false">{{ t('Cancel') }}</button>
       </div>
     </div>
   </div>

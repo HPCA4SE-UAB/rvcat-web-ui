@@ -15,6 +15,7 @@
 // "Export" replaces the names by the objects: a self-contained file, unaffected by later changes.
 
 import { tutorialValue } from '@/tutorialValues'
+import { t } from '@/i18n'
 
 // Locks of a lesson (true = the student cannot do it). processor: "all" or a list of fields
 // (dispatch, retire, rob, cache, bPenalty, ports, latencies); N: { fixed } or { min, max };
@@ -39,27 +40,27 @@ const resourceName = (r) => (typeof r === 'string' ? r : (r?.name ?? r?.id ?? ''
 export function validateLesson(lesson) {
   const errors = []
   if (!lesson || typeof lesson !== 'object') return ['The file is not a lesson']
-  if (!ID_RE.test(lesson.lesson ?? '')) errors.push('"lesson" must be an identifier (letters, digits and "-")')
-  if (!lesson.title) errors.push('"title" is required')
+  if (!ID_RE.test(lesson.lesson ?? '')) errors.push(t('"lesson" must be an identifier (letters, digits and "-")'))
+  if (!lesson.title) errors.push(t('"title" is required'))
   for (const key of ['programs', 'processors']) {
-    if (!Array.isArray(lesson[key]) || !lesson[key].length) errors.push(`"${key}" must list at least one ${key.slice(0, -1)}`)
-    else if (lesson[key].some(r => !resourceName(r))) errors.push(`every element of "${key}" needs a name`)
+    if (!Array.isArray(lesson[key]) || !lesson[key].length) errors.push(t('"{1}" must list at least one {2}', { 1: key, 2: key.slice(0, -1) }))
+    else if (lesson[key].some(r => !resourceName(r))) errors.push(t('every element of "{1}" needs a name', { 1: key }))
   }
-  if (!lesson.tutorial) errors.push('"tutorial" is required')
-  else if (typeof lesson.tutorial === 'object' && !Array.isArray(lesson.tutorial.steps)) errors.push('the embedded tutorial has no steps')
+  if (!lesson.tutorial) errors.push(t('"tutorial" is required'))
+  else if (typeof lesson.tutorial === 'object' && !Array.isArray(lesson.tutorial.steps)) errors.push(t('the embedded tutorial has no steps'))
   const start = lesson.start ?? {}
   if (start.program && !lesson.programs?.some(r => resourceName(r) === start.program))
-    errors.push(`start program "${start.program}" is not in "programs"`)
+    errors.push(t('start program "{1}" is not in "programs"', { 1: start.program }))
   if (start.processor && !lesson.processors?.some(r => resourceName(r) === start.processor))
-    errors.push(`start processor "${start.processor}" is not in "processors"`)
+    errors.push(t('start processor "{1}" is not in "processors"', { 1: start.processor }))
   const c = lesson.completion
   if (c) {
-    if (!ID_RE.test(c.secret ?? '')) errors.push('"completion.secret" must have letters, digits or "-"')
-    if (c.idPattern) { try { new RegExp(c.idPattern) } catch { errors.push('"completion.idPattern" is not a valid regular expression') } }
+    if (!ID_RE.test(c.secret ?? '')) errors.push(t('"completion.secret" must have letters, digits or "-"'))
+    if (c.idPattern) { try { new RegExp(c.idPattern) } catch { errors.push(t('"completion.idPattern" is not a valid regular expression')) } }
   }
   const locks = lesson.locks ?? {}
   if (Array.isArray(locks.processor) && locks.processor.some(f => !PROCESSOR_FIELDS.includes(f)))
-    errors.push(`"locks.processor" fields: ${PROCESSOR_FIELDS.join(', ')} (or "all")`)
+    errors.push(t('"locks.processor" fields: {1} (or "all")', { 1: PROCESSOR_FIELDS.join(', ') }))
   return errors
 }
 

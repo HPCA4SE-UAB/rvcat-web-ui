@@ -58,7 +58,7 @@
       <button type="button" @click="highlight" :title="t('Highlight in red: the most important idea')"><span class="red">A</span></button>
       <button type="button" @click="bullet"    :title="t('New line with a bullet point')">&bull; Item</button>
       <button type="button" @click="newLine"   :title="t('Line break (&lt;br&gt;)')">↵ Line</button>
-      <span class="rich-hint">HTML allowed</span>
+      <span class="rich-hint">{{ t('HTML allowed') }}</span>
       <label class="rich-preview-toggle" :title="t('Show how the text will look in the tutorial card')">
         <input type="checkbox" v-model="showPreview"> Preview
       </label>
@@ -67,7 +67,7 @@
               @input="emit('update:modelValue', $event.target.value)"></textarea>
     <div v-if="showPreview" class="rich-preview" aria-label="Preview">
       <div v-if="modelValue" v-html="modelValue"></div>
-      <div v-else class="rich-empty">(empty)</div>
+      <div v-else class="rich-empty">{{ t('(empty)') }}</div>
     </div>
   </div>
 </template>

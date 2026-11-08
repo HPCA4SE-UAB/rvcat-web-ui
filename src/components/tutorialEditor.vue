@@ -3,20 +3,20 @@
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Tutorial  Editor</span>
+        <span class="header-title">{{ t('Tutorial  Editor') }}</span>
       </div>
 
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
           <button class="blue-button" :title="t('Save current tutorial on your local file system')"
-                @click="downloadTutorial">   Download </button>
+                @click="downloadTutorial">   {{ t('Download') }} </button>
           <button class="blue-button" :title="t('Load new tutorial from your local file system')"
-                @click="uploadTutorial"> Upload   </button>
+                @click="uploadTutorial"> {{ t('Upload') }}   </button>
         </div>
 
         <div class="buttons">
           <button class="blue-button" :title="t('Clear current tutorial draft and start fresh')"
-                @click="clearDraft">  Clear Draft  </button>
+                @click="clearDraft">  {{ t('Clear Draft') }}  </button>
         </div>
       </div>
     </div>
@@ -28,21 +28,21 @@
         <div class="section tutorial-header">
           <div class="form-group left-column">
             <div class="label-input-row">
-              <label>Name <span class="required">*</span></label>
+              <label>{{ t('Name') }} <span class="required">*</span></label>
               <input v-model="tutorial.name" type="text" :placeholder="t('Enter tutorial name, used to identify tutorial')" :title="t('Tutorial name, used to identify tutorial')" class="name-input">
             </div>
-            <label>Description</label>
+            <label>{{ t('Description') }}</label>
             <textarea v-model="tutorial.description" :placeholder="t('Brief description of the tutorial')" :title="t('Description of the tutorial')"></textarea>
             <div class="buttons">
               <button class="blue-button" :title="t('Add new step to the tutorial (after selected step)')"
                 :disabled="stepNumber >= maxSteps"
-                @click="addStep('step', stepNumber)">Add new Step</button>
+                @click="addStep('step', stepNumber)">{{ t('Add new Step') }}</button>
               <button class="blue-button" :title="t('Add new question to the tutorial (after selected step)')"
                 :disabled="stepNumber >= maxSteps"
-                @click="addStep('question', stepNumber)">Add new Question</button>
+                @click="addStep('question', stepNumber)">{{ t('Add new Question') }}</button>
               <button class="blue-button" :title="t('Duplicate selected step (after the selected one)')"
                 :disabled="stepNumber < 0 || stepNumber >= maxSteps"
-                @click="addStep(null, stepNumber)">Duplicate</button>
+                @click="addStep(null, stepNumber)">{{ t('Duplicate') }}</button>
             </div>
             <button v-if="tutorial.steps.length" type="button"
               class="step-order-toggle"
@@ -58,10 +58,10 @@
               <div v-html="tutorialSvg" v-if="tutorialSvg"></div>
             </div>
             <div v-if="tutorial.steps.length" class="graph-legend">
-              <span style="--c: blue; --f: lightblue">Card</span>
-              <span style="--c: #b58900; --f: #fff3c4">Optional branch (2nd successor)</span>
-              <span style="--c: purple; --f: #ab82ff">Question</span>
-              <span style="--c: transparent; --f: transparent">Click a node to edit it</span>
+              <span style="--c: blue; --f: lightblue">{{ t('Card') }}</span>
+              <span style="--c: #b58900; --f: #fff3c4">{{ t('Optional branch (2nd successor)') }}</span>
+              <span style="--c: purple; --f: #ab82ff">{{ t('Question') }}</span>
+              <span style="--c: transparent; --f: transparent">{{ t('Click a node to edit it') }}</span>
             </div>
           </div>
         </div>
@@ -69,8 +69,8 @@
         <section v-if="tutorial.steps.length && isStepOrderOpen" id="step-order-panel"
           class="step-order-section" aria-labelledby="step-order-title">
           <div class="step-order-heading">
-            <h3 id="step-order-title">Card order</h3>
-            <span>Numbers match the graph (starting at 0). Drag a row to change order; connections stay the same.</span>
+            <h3 id="step-order-title">{{ t('Card order') }}</h3>
+            <span>{{ t('Numbers match the graph (starting at 0). Drag a row to change order; connections stay the same.') }}</span>
           </div>
           <ol class="step-order-list">
             <li v-for="(step, index) in tutorial.steps" :key="step.id"
@@ -115,10 +115,10 @@
                     :title="t('Remove selected step')" aria-label="Remove selected step">×</button>
                 </div>
               </div>
-              <label>First successor</label>
+              <label>{{ t('First successor') }}</label>
               <select :value="currentStep.next?.[0] || ''" @change="setSuccessor(currentStep, 0, $event.target.value)">
-                <option value="">No successor</option>
-                <option value="end" :disabled="currentStep.next?.[1] === 'end'">End Tutorial</option>
+                <option value="">{{ t('No successor') }}</option>
+                <option value="end" :disabled="currentStep.next?.[1] === 'end'">{{ t('End Tutorial') }}</option>
                 <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
                   :disabled="step.id === currentStep.id || step.id === currentStep.next?.[1]">
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
@@ -129,10 +129,10 @@
                 @input="setSuccessorLabel(currentStep, 0, $event.target.value)"
                 :placeholder="`Button text (default: ${successorTitle(currentStep, 0)})`"
                 :title="t('Text of the button that goes to this successor; empty = title of the target card')">
-              <label>Second successor (optional)</label>
+              <label>{{ t('Second successor (optional)') }}</label>
               <select :value="currentStep.next?.[1] || ''" @change="setSuccessor(currentStep, 1, $event.target.value)">
-                <option value="">No second successor</option>
-                <option value="end" :disabled="currentStep.next?.[0] === 'end'">End Tutorial</option>
+                <option value="">{{ t('No second successor') }}</option>
+                <option value="end" :disabled="currentStep.next?.[0] === 'end'">{{ t('End Tutorial') }}</option>
                 <option v-for="(step, index) in tutorial.steps" :key="step.id" :value="step.id"
                   :disabled="step.id === currentStep.id || step.id === currentStep.next?.[0]">
                   {{ index }} — {{ step.title || (step.type === 'question' ? 'Question' : 'Step') }}
@@ -145,17 +145,17 @@
                 :title="t('Text of the button that goes to this successor; empty = title of the target card')">
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
-              <label>Description</label>
+              <label>{{ t('Description') }}</label>
               <RichTextArea v-model="currentStep.description" :placeholder="t('What the student should learn: start with the key idea in bold')" />
               <template v-if="currentStep.type === 'step'">
-                <label>Position</label>
+                <label>{{ t('Position') }}</label>
                 <select v-model="currentStep.position">
-                  <option value="bottom">Bottom</option>
-                  <option value="top">Top</option>
-                  <option value="left">Left</option>
-                  <option value="right">Right</option>
+                  <option value="bottom">{{ t('Bottom') }}</option>
+                  <option value="top">{{ t('Top') }}</option>
+                  <option value="left">{{ t('Left') }}</option>
+                  <option value="right">{{ t('Right') }}</option>
                 </select>
-                <label>Element to Highlight <span class="required">*</span></label>
+                <label>{{ t('Element to Highlight') }} <span class="required">*</span></label>
                 <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
                   <option v-for="opt in predefinedSelectors" :key="opt.label" :value="opt.value" :disabled="opt.disabled">
                     {{ opt.label }}
@@ -164,19 +164,19 @@
                 <input v-model="currentStep.selector" type="text" :placeholder="t('CSS selector (e.g., #my-button, .my-class)')" class="selector-input">
               </template>
               <template v-if="currentStep.type === 'question'">
-                <label>Answer Mode <span class="required">*</span></label>
+                <label>{{ t('Answer Mode') }} <span class="required">*</span></label>
                 <div class="answer-mode-selector">
                   <label class="mode-radio">
                     <input type="radio" v-model="currentStep.answerMode" value="single" @change="onAnswerModeChange(step)">
-                    <span>Single-choice</span>
+                    <span>{{ t('Single-choice') }}</span>
                   </label>
                   <label class="mode-radio">
                     <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
-                    <span>Multiple-choice</span>
+                    <span>{{ t('Multiple-choice') }}</span>
                   </label>
                   <label class="mode-radio" :title="t('The student writes a number; it is correct within the tolerance')">
                     <input type="radio" v-model="currentStep.answerMode" value="number">
-                    <span>Number</span>
+                    <span>{{ t('Number') }}</span>
                   </label>
                 </div>
                </template>
@@ -184,86 +184,86 @@
 
             <template v-if="currentStep.type === 'step'">
               <div class="form-group">
-                <label>Action (optional)</label>
+                <label>{{ t('Action (optional)') }}</label>
                 <select v-model="currentStep.action">
-                  <option value="">                                 No action            </option>
-                  <option value="switchTo:simulationComponent">     Go to Simulation     </option>
-                  <option value="switchTo:staticAnalysisComponent"> Go to Static Analysis</option>
-                  <option value="switchTo:timelineComponent">       Go to Timeline       </option>
-                  <option value="switchTo:aboutComponent">          Go to About          </option>
-                  <option value="switchToFull:program">             Open Program editor  </option>
-                  <option value="switchToFull:tutorial">            Open Tutorial editor </option>
+                  <option value="">                                 {{ t('No action') }}            </option>
+                  <option value="switchTo:simulationComponent">     {{ t('Go to Simulation') }}     </option>
+                  <option value="switchTo:staticAnalysisComponent"> {{ t('Go to Static Analysis') }}</option>
+                  <option value="switchTo:timelineComponent">       {{ t('Go to Timeline') }}       </option>
+                  <option value="switchTo:aboutComponent">          {{ t('Go to About') }}          </option>
+                  <option value="switchToFull:program">             {{ t('Open Program editor') }}  </option>
+                  <option value="switchToFull:tutorial">            {{ t('Open Tutorial editor') }} </option>
                 </select>
 
               <div class="form-group">
-                <label :title="t('One action per line, run when the card is shown (e.g. selectProgram:Base)')">Actions when the card is shown (opt.)</label>
+                <label :title="t('One action per line, run when the card is shown (e.g. selectProgram:Base)')">{{ t('Actions when the card is shown (opt.)') }}</label>
                 <textarea v-model="currentStep.actionsText" rows="3" class="actions-input"
                           placeholder="selectProgram:Base&#10;selectProcessor:B4&#10;setN:1000"></textarea>
-                <label :title="t('One action per line, run by the ▶ Show me button of the card')">Show me actions (opt.)</label>
+                <label :title="t('One action per line, run by the ▶ Show me button of the card')">{{ t('Show me actions (opt.)') }}</label>
                 <textarea v-model="currentStep.showMeText" rows="3" class="actions-input"
                           placeholder="runSimulation"></textarea>
-                <details class="actions-help"><summary>Available actions and live values</summary>
-                  <div v-for="[pattern, text] in TUTORIAL_ACTIONS" :key="pattern"><code>{{ pattern }}</code>: {{ text }}</div>
-                  <p>Texts can show live values of the simulator as <code v-pre>{{name}}</code> (or <code v-pre>{{name|2}}</code> for 2 decimals):
+                <details class="actions-help"><summary>{{ t('Available actions and live values') }}</summary>
+                  <div v-for="[pattern, text] in TUTORIAL_ACTIONS" :key="pattern"><code>{{ pattern }}</code>: {{ t(text) }}</div>
+                  <p>{{ t('Texts can show live values of the simulator as') }} <code v-pre>{{name}}</code> ({{ t('or') }} <code v-pre>{{name|2}}</code> {{ t('for 2 decimals') }}):
                     <code>{{ TUTORIAL_VALUE_NAMES.join(', ') }}</code></p>
                 </details>
               </div>
 
-                <label>Step Image (opt.)</label>
+                <label>{{ t('Step Image (opt.)') }}</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
                   <div v-if="currentStep.image" class="image-preview">
                     <img :src="currentStep.image" alt="Image preview">
-                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
+                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">{{ t('× Remove') }}</button>
                   </div>
                 </div>
               </div>
 
               <div v-if="currentStep.validationType" class="validation-card">
-                <label>Validation</label>
+                <label>{{ t('Validation') }}</label>
                 <div class="form-group">
-                  <label>Type</label>
+                  <label>{{ t('Type') }}</label>
                   <select v-model="currentStep.validationType">
-                    <option value=""> No validation </option>
-                    <option value="program_selected">  Program selected     </option>
-                    <option value="architecture_selected"> Architecture selected</option>
-                    <option value="input_value">    Exact input value    </option>
-                    <option value="input_value_min">   Minimum input value  </option>
-                    <option value="button_clicked">  Button clicked    </option>
-                    <option value="simulation_done"> Simulation run    </option>
-                    <option value="chain_selected">  Latency chain selected </option>
-                    <option value="graph_open">      Dependence graph open  </option>
-                    <option value="timeline_option"> Timeline option on     </option>
+                    <option value=""> {{ t('No validation') }} </option>
+                    <option value="program_selected">  {{ t('Program selected') }}     </option>
+                    <option value="architecture_selected"> {{ t('Architecture selected') }}</option>
+                    <option value="input_value">    {{ t('Exact input value') }}    </option>
+                    <option value="input_value_min">   {{ t('Minimum input value') }}  </option>
+                    <option value="button_clicked">  {{ t('Button clicked') }}    </option>
+                    <option value="simulation_done"> {{ t('Simulation run') }}    </option>
+                    <option value="chain_selected">  {{ t('Latency chain selected') }} </option>
+                    <option value="graph_open">      {{ t('Dependence graph open') }}  </option>
+                    <option value="timeline_option"> {{ t('Timeline option on') }}     </option>
                   </select>
                 </div>
 
                 <div v-if="currentStep.validationType" class="validation-details">
                   <div v-if="currentStep.validationType === 'program_selected'" class="form-group">
-                    <label>Program name</label>
+                    <label>{{ t('Program name') }}</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="Base, f0, V1...">
                   </div>
 
                   <div v-if="currentStep.validationType === 'chain_selected'" class="form-group">
-                    <label>Variable of the chain</label>
+                    <label>{{ t('Variable of the chain') }}</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="sum">
                   </div>
                   <div v-if="currentStep.validationType === 'timeline_option'" class="form-group">
-                    <label>Timeline option</label>
+                    <label>{{ t('Timeline option') }}</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="critical">
                   </div>
 
                   <div v-if="currentStep.validationType === 'architecture_selected'" class="form-group">
-                    <label>Architecture name</label>
+                    <label>{{ t('Architecture name') }}</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="B1, B4, GC...">
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value'" class="form-group">
-                    <label>Expected value</label>
+                    <label>{{ t('Expected value') }}</label>
                     <input v-model="currentStep.validationValue" type="text" placeholder="16">
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value' || currentStep.validationType === 'input_value_min'" class="form-group">
-                    <label>Input Field</label>
+                    <label>{{ t('Input Field') }}</label>
                     <select v-model="currentStep.validationSelectorPreset" @change="onValidationSelectorPresetChange(currentStep)" class="selector-preset">
                       <option v-for="opt in validationInputSelectors" :key="opt.label" :value="opt.value">
                         {{ opt.label }}
@@ -273,12 +273,12 @@
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value_min'" class="form-group">
-                    <label>Minimum value</label>
+                    <label>{{ t('Minimum value') }}</label>
                     <input v-model="currentStep.validationMinValue" type="number" placeholder="10">
                   </div>
 
                   <div v-if="currentStep.validationType === 'button_clicked'" class="form-group">
-                    <label>Button to Click</label>
+                    <label>{{ t('Button to Click') }}</label>
                     <select v-model="currentStep.validationSelectorPreset" @change="onValidationSelectorPresetChange(currentStep)" class="selector-preset">
                       <option v-for="opt in validationButtonSelectors" :key="opt.label" :value="opt.value">
                         {{ opt.label }}
@@ -288,58 +288,58 @@
                   </div>
 
                   <div class="form-group">
-                    <label>Error message</label>
+                    <label>{{ t('Error message') }}</label>
                     <input v-model="currentStep.validationMessage" type="text" :placeholder="t('Complete this action to continue')">
                   </div>
                 </div>
               </div>
 
               <div v-else class="form-group">
-                <label>Validation</label>
+                <label>{{ t('Validation') }}</label>
                 <select v-model="currentStep.validationType">
-                    <option value="">                      No validation        </option>
-                    <option value="program_selected">      Program selected     </option>
-                    <option value="architecture_selected"> Architecture selected</option>
-                    <option value="input_value">           Exact input value    </option>
-                    <option value="input_value_min">       Minimum input value  </option>
-                    <option value="button_clicked">        Button clicked       </option>
-                    <option value="simulation_done">       Simulation run       </option>
-                    <option value="chain_selected">        Latency chain selected </option>
-                    <option value="graph_open">            Dependence graph open  </option>
-                    <option value="timeline_option">       Timeline option on     </option>
+                    <option value="">                      {{ t('No validation') }}        </option>
+                    <option value="program_selected">      {{ t('Program selected') }}     </option>
+                    <option value="architecture_selected"> {{ t('Architecture selected') }}</option>
+                    <option value="input_value">           {{ t('Exact input value') }}    </option>
+                    <option value="input_value_min">       {{ t('Minimum input value') }}  </option>
+                    <option value="button_clicked">        {{ t('Button clicked') }}       </option>
+                    <option value="simulation_done">       {{ t('Simulation run') }}       </option>
+                    <option value="chain_selected">        {{ t('Latency chain selected') }} </option>
+                    <option value="graph_open">            {{ t('Dependence graph open') }}  </option>
+                    <option value="timeline_option">       {{ t('Timeline option on') }}     </option>
                   </select>
               </div>
             </template>
 
             <template v-else-if="currentStep.type === 'question'">
               <div class="form-group left-column">
-                <label>Question text <span class="required">*</span></label>
+                <label>{{ t('Question text') }} <span class="required">*</span></label>
                 <RichTextArea v-model="currentStep.questionText" :placeholder="t('Enter your question here...')" :title="t('Question text')" />
 
-                <label>Question Image (optional)</label>
+                <label>{{ t('Question Image (optional)') }}</label>
                 <div class="image-upload-section">
                   <input type="file" accept="image/*" @change="(e) => handleImageUpload(e, currentStep)" class="image-input">
                   <div v-if="currentStep.image" class="image-preview">
                     <img :src="currentStep.image" alt="Question image preview">
-                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">× Remove</button>
+                    <button @click="currentStep.image = ''" class="remove-image-btn" type="button">{{ t('× Remove') }}</button>
                   </div>
                 </div>
               </div>
 
               <div v-if="currentStep.answerMode === 'number'" class="answers-section right-column">
-                <h4>Numeric answer <span class="required">*</span></h4>
+                <h4>{{ t('Numeric answer') }} <span class="required">*</span></h4>
                 <div class="form-group">
-                  <label title="A number, or a live value such as {{minTime}}">Correct value</label>
+                  <label :title="t('A number, or a live value such as') + ' {{minTime}}'">{{ t('Correct value') }}</label>
                   <input v-model="currentStep.numericValue" type="text" placeholder="4 or {{minTime}}">
-                  <label>Tolerance (absolute, default 0.01)</label>
+                  <label>{{ t('Tolerance (absolute, default 0.01)') }}</label>
                   <input v-model="currentStep.tolerance" type="text" placeholder="0.01">
-                  <label>Unit (opt.)</label>
+                  <label>{{ t('Unit (opt.)') }}</label>
                   <input v-model="currentStep.numericUnit" type="text" placeholder="cycles/iter">
-                  <label>Explanation when correct</label>
+                  <label>{{ t('Explanation when correct') }}</label>
                   <input v-model="currentStep.numericCorrect" type="text">
-                  <label>Hint when wrong</label>
+                  <label>{{ t('Hint when wrong') }}</label>
                   <input v-model="currentStep.numericWrong" type="text">
-                  <label :title="t('One action per line, run when the question is shown')">Actions when the question is shown (opt.)</label>
+                  <label :title="t('One action per line, run when the question is shown')">{{ t('Actions when the question is shown (opt.)') }}</label>
                   <textarea v-model="currentStep.actionsText" rows="2" class="actions-input"></textarea>
                 </div>
               </div>
@@ -352,10 +352,10 @@
                 <div v-for="(answer, ansIndex) in currentStep.answers" :key="ansIndex" class="answer-card" :class="{ 'correct-answer': answer.isCorrect }">
                   <div class="answer-header">
                     <span class="answer-letter">{{ String.fromCharCode(65 + ansIndex) }}</span>
-                    <label>Answer Text <span class="required">*</span></label>
+                    <label>{{ t('Answer Text') }} <span class="required">*</span></label>
                     <label class="correct-checkbox">
                       <input type="checkbox" v-model="answer.isCorrect" @change="onCorrectAnswerChange(currentStep, ansIndex)">
-                      <span>Correct</span>
+                      <span>{{ t('Correct') }}</span>
                     </label>
                     <button v-if="currentStep.answers.length > 2" @click="removeAnswer(currentStep, ansIndex)" class="remove-answer-btn">×</button>
                   </div>
@@ -366,14 +366,14 @@
 
                   <div class="feedback-group">
                     <div class="form-group">
-                      <label v-if="answer.isCorrect">✓ Explanation (shown when user selects this correct answer)</label>
-                      <label v-else>✗ Explanation (shown when user selects this wrong answer)</label>
+                      <label v-if="answer.isCorrect">{{ t('✓ Explanation (shown when user selects this correct answer)') }}</label>
+                      <label v-else>{{ t('✗ Explanation (shown when user selects this wrong answer)') }}</label>
                       <input v-model="answer.explanation" type="text" :placeholder="answer.isCorrect ? 'Great! This is correct because...' : 'This is incorrect because...'">
                     </div>
                   </div>
                 </div>
 
-                <button v-if="currentStep.answers.length < 6" @click="addAnswer(currentStep)" class="add-answer-btn">+ Add Answer</button>
+                <button v-if="currentStep.answers.length < 6" @click="addAnswer(currentStep)" class="add-answer-btn">{{ t('+ Add Answer') }}</button>
               </div>
             </template>
 
@@ -400,6 +400,7 @@ import HelpComponent                                     from '@/components/help
 import RichTextArea                                      from '@/components/RichTextArea.vue'
 import { TUTORIAL_ACTIONS, actionList, isKnownAction }   from '@/tutorialActions'
 import { TUTORIAL_VALUE_NAMES }                          from '@/tutorialValues'
+import { flattenStep, flattenTexts, restoreTexts }       from '@/i18nContent'
 import {
   downloadJSON, uploadJSON, createGraphVizGraph,
   createTutorialStepId, migrateTutorialFlow, TUTORIAL_FLOW_VERSION
@@ -760,7 +761,7 @@ const handleImageUpload = (event, step) => {
   if (!file) return
 
   if (file.size > MAX_IMAGE_SIZE) {
-    alert('Image is too large. Please use an image smaller than 500KB.')
+    alert(t('Image is too large. Please use an image smaller than 500KB.'))
     event.target.value = ''
     return
   }
@@ -803,7 +804,9 @@ const buildValidation = (step) => {
   return validation
 }
 
-const convertStepForExport = (step) => {
+const convertStepForExport = (step) => restoreTexts(convertStepTexts(step), step._i18n, step._i18nLang)
+
+const convertStepTexts = (step) => {
   if (step.type === 'question') {
     const q = {
       id:           step.id,
@@ -854,12 +857,12 @@ const convertStepForExport = (step) => {
   return s
 }
 
-const buildTutorialData = () => ({
+const buildTutorialData = () => restoreTexts({
   flowVersion: TUTORIAL_FLOW_VERSION,
   name:        tutorial.name,
   description: tutorial.description,
   steps:       tutorial.steps.map(convertStepForExport)
-})
+}, tutorial._i18n, tutorial._i18nLang)
 
 // ============================================================================
 // VALIDATION
@@ -867,45 +870,45 @@ const buildTutorialData = () => ({
 const validateTutorial = () => {
   const errors = []
 
-  if (!tutorial.name?.trim())         errors.push('• Tutorial Name is required')
-  if (!tutorial.steps.length)         errors.push('• At least one step or question is required')
+  if (!tutorial.name?.trim())         errors.push(t('• Tutorial Name is required'))
+  if (!tutorial.steps.length)         errors.push(t('• At least one step or question is required'))
 
   tutorial.steps.forEach((step, i) => {
     const n = i
-    if (!step.title?.trim())          errors.push(`• Step ${n}: Title is required`)
+    if (!step.title?.trim())          errors.push(t('• Step {1}: Title is required', { 1: n }))
     const unknown = [...actionList(step.actionsText), ...actionList(step.showMeText)].filter(a => !isKnownAction(a))
-    if (unknown.length)               errors.push(`• Step ${n}: unknown action ${unknown.join(', ')}`)
+    if (unknown.length)               errors.push(t('• Step {1}: unknown action {2}', { 1: n, 2: unknown.join(', ') }))
 
     const successors = (step.next || []).filter(Boolean)
-    if (successors.length > 2)         errors.push(`• Step ${n}: At most 2 successors are allowed`)
+    if (successors.length > 2)         errors.push(t('• Step {1}: At most 2 successors are allowed', { 1: n }))
     if (new Set(successors).size !== successors.length)
-                                      errors.push(`• Step ${n}: Successors must be different`)
-    if (successors.includes(step.id)) errors.push(`• Step ${n}: A card cannot link to itself`)
+                                      errors.push(t('• Step {1}: Successors must be different', { 1: n }))
+    if (successors.includes(step.id)) errors.push(t('• Step {1}: A card cannot link to itself', { 1: n }))
     successors.forEach(targetId => {
       if (targetId !== 'end' && !tutorial.steps.some(target => target.id === targetId))
-                                      errors.push(`• Step ${n}: Successor does not exist`)
+                                      errors.push(t('• Step {1}: Successor does not exist', { 1: n }))
     })
 
     if (step.type === 'question') {
-      if (!step.questionText?.trim()) errors.push(`• Step ${n}: Question Text is required`)
-      if (!step.answerMode)           errors.push(`• Step ${n}: Answer Mode is required`)
+      if (!step.questionText?.trim()) errors.push(t('• Step {1}: Question Text is required', { 1: n }))
+      if (!step.answerMode)           errors.push(t('• Step {1}: Answer Mode is required', { 1: n }))
       if (step.answerMode === 'number') {
         if (String(step.numericValue ?? '').trim() === '')
-                                      errors.push(`• Step ${n}: the correct value of the numeric question is required`)
+                                      errors.push(t('• Step {1}: the correct value of the numeric question is required', { 1: n }))
         return
       }
 
       const validAnswers = step.answers?.filter(a => a.text?.trim()) || []
-      if (validAnswers.length < 2)    errors.push(`• Step ${n}: At least 2 answers with text are required`)
+      if (validAnswers.length < 2)    errors.push(t('• Step {1}: At least 2 answers with text are required', { 1: n }))
 
       const correctAnswers = step.answers?.filter(a => a.isCorrect && a.text?.trim()) || []
       if (step.answerMode === 'single' && correctAnswers.length !== 1) {
-                                      errors.push(`• Step ${n}: Single-choice mode requires exactly one correct answer`)
+                                      errors.push(t('• Step {1}: Single-choice mode requires exactly one correct answer', { 1: n }))
       } else if (correctAnswers.length === 0) {
-                                      errors.push(`• Step ${n}: At least one answer must be marked as correct`)
+                                      errors.push(t('• Step {1}: At least one answer must be marked as correct', { 1: n }))
       }
     } else if (!step.selector?.trim()) {
-                                      errors.push(`• Step ${n}: CSS Selector is required`)
+                                      errors.push(t('• Step {1}: CSS Selector is required', { 1: n }))
     }
   })
 
@@ -940,6 +943,8 @@ function loadEditedTutorial() {
     const normalized = migrateTutorialFlow(data)
     tutorial.name        = normalized.name        || ''
     tutorial.description = normalized.description || ''
+    tutorial._i18n       = data._i18n
+    tutorial._i18nLang   = data._i18nLang
     tutorial.flowVersion = normalized.flowVersion
     tutorial.steps       = normalized.steps
     stepNumber.value     = 0
@@ -951,9 +956,10 @@ function loadEditedTutorial() {
 }
 
 const clearDraft = (check = true) => {
-  if ( !check || confirm('Are you sure you want to clear the current draft? This action cannot be undone.') ) {
+  if ( !check || confirm(t('Are you sure you want to clear the current draft? This action cannot be undone.')) ) {
     tutorial.name        = ''
     tutorial.description = ''
+    tutorial._i18n       = undefined
     tutorial.flowVersion = TUTORIAL_FLOW_VERSION
     tutorial.steps       = []
     stepNumber.value     = -1
@@ -974,16 +980,19 @@ const downloadTutorial = () => {
 // Loads a tutorial (file format) into the editor draft
 const importTutorialData = (data) => {
   try {
+    const head = flattenTexts({ name: data.name, description: data.description }, ['name', 'description'])
     const converted = { ...data, steps: data.steps.map(convertUploadedStep) }
     const normalized = migrateTutorialFlow(converted)
-    tutorial.name        = normalized.name        || ''
-    tutorial.description = normalized.description || ''
+    tutorial.name        = head.flat.name         || ''
+    tutorial.description = head.flat.description  || ''
+    tutorial._i18n       = head.i18n
+    tutorial._i18nLang   = head.lang
     tutorial.flowVersion = normalized.flowVersion
     tutorial.steps       = normalized.steps
     stepNumber.value     = 0
   } catch (error) {
     console.error('🎓❌ Failed to import tutorial flow:', error)
-    alert(`Could not load tutorial: ${error.message}`)
+    alert(t('Could not load tutorial: {1}', { 1: error.message }))
   }
 }
 
@@ -998,11 +1007,11 @@ watch(() => simState.tutorialToEdit?.nonce, (nonce) => {
   try {
     const data = JSON.parse(localStorage.getItem(`tutorial.${id}`))
     if (tutorial.steps.length &&
-        !confirm(`Replace the current draft ("${tutorial.name || 'untitled'}") with the tutorial "${data.name}"?`))
+        !confirm(t('Replace the current draft ("{1}") with the tutorial "{2}"?', { 1: tutorial.name || 'untitled', 2: data.name })))
       return
     importTutorialData(data)
   } catch (error) {
-    alert(`Could not open tutorial "${id}": ${error.message}`)
+    alert(t('Could not open tutorial "{1}": {2}', { 1: id, 2: error.message }))
   }
 })
 
@@ -1013,7 +1022,7 @@ const previewFromCard = () => {
     localStorage.setItem('tutorialPreview', JSON.stringify(buildTutorialData()))
     simState.tutorialPreview = { stepId: currentStep.value.id, nonce: Date.now() }
   } catch (error) {
-    alert(`Cannot preview: ${error.message}`)
+    alert(t('Cannot preview: {1}', { 1: error.message }))
   }
 }
 
@@ -1021,7 +1030,15 @@ const previewFromCard = () => {
 // Utilities: convertUploadedStep, processTutorialUpdate
 // ============================================================================
 
-const convertUploadedStep = (step) => {
+// Multilingual texts ({ en, es, ca }) are edited in the current language (restored when exporting)
+const convertUploadedStep = (source) => {
+  const { flat, i18n, lang } = flattenStep(source)
+  const step = convertUploadedTexts(flat)
+  if (Object.keys(i18n).length) { step._i18n = i18n; step._i18nLang = lang }
+  return step
+}
+
+const convertUploadedTexts = (step) => {
   if (step.type === 'question') {
     const q = {
       id:            step.id,

@@ -135,7 +135,7 @@
   <div ref="windowRef" class="graph-window"
        :style="{ left: geometry.x + 'px', top: geometry.y + 'px', width: geometry.w + 'px', height: geometry.h + 'px' }">
     <div ref="headerRef" class="graph-window-header no-pin" :title="t('Drag to move the window')">
-      <span class="graph-window-title">Data dependence graph</span>
+      <span class="graph-window-title">{{ t('Data dependence graph') }}</span>
       <span v-if="chain" class="graph-window-chain">
         {{ chain.recurrence }}: {{ chain.cycles }} cycles/iter
         <button class="chain-clear" @click.stop="emit('clear-chain')" :title="t('Show the whole graph')">×</button>
@@ -146,25 +146,25 @@
 
     <div class="graph-window-toolbar">
       <label class="iters" :title="t('Number of loop iterations shown (1 to 7)')">
-        Iterations
+        {{ t('Iterations') }}
         <input type="number" min="1" max="7" :value="options.iters" @change="setIterations" id="dependence-graph-iterations">
       </label>
       <button class="blue-button toggle-button" :class="{ active: options.showIntern }" @click="toggle('showIntern')"
               id="show-internal-dependences"
               :title="t('Show also the instructions that are not in any cyclic dependence chain')">
-        <span v-if="options.showIntern">✔ </span>Non-cyclic nodes
+        <span v-if="options.showIntern">✔ </span>{{ t('Non-cyclic nodes') }}
       </button>
       <button class="blue-button toggle-button" :class="{ active: options.showLaten }" @click="toggle('showLaten')"
               id="show-latency-dependences" :title="t('Show the latency of each instruction')">
-        <span v-if="options.showLaten">✔ </span>Latencies
+        <span v-if="options.showLaten">✔ </span>{{ t('Latencies') }}
       </button>
       <button class="blue-button toggle-button" :class="{ active: !options.showSmall }" @click="toggle('showSmall')"
               id="show-instruction-dependences" :title="t('Show the text of each instruction (otherwise only its number)')">
-        <span v-if="!options.showSmall">✔ </span>Instruction text
+        <span v-if="!options.showSmall">✔ </span>{{ t('Instruction text') }}
       </button>
       <button class="blue-button toggle-button" :class="{ active: options.showFull }" @click="toggle('showFull')"
               id="show-full-dependences" :title="t('Show the dependences on constants and read-only inputs')">
-        <span v-if="options.showFull">✔ </span>Constants &amp; inputs
+        <span v-if="options.showFull">✔ </span>{{ t('Constants & inputs') }}
       </button>
       <span class="toolbar-spacer"></span>
       <!-- Only while zoomed: the graph always fills the window at zoom 100% -->
@@ -179,7 +179,7 @@
          @wheel.prevent="onWheel" @mousedown="startPan" @mousemove="movePan"
          @mouseup="endPan" @mouseleave="endPan" @dblclick="fit">
       <div class="graph-zoom" :style="{ width: (zoom * 100) + '%' }" v-html="svg"></div>
-      <div v-if="!svg" class="graph-empty">No graph</div>
+      <div v-if="!svg" class="graph-empty">{{ t('No graph') }}</div>
     </div>
   </div>
 </template>

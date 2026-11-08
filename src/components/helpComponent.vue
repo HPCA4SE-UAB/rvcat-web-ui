@@ -145,10 +145,10 @@
     <div v-if="spot" class="help-spot" :style="spotStyle"></div>
     <div ref="dialogRef" class="help-dialog" :style="positionStyle">
       <div class="help-title">
-        <b>Help - {{title}}</b>
+        <b>{{ t('Help') }} - {{title}}</b>
         <button v-if="hasSections" class="sections-button" @click="toggleAll"
-                :title="allOpen ? 'Close every section' : 'Open every section'">
-          {{ allOpen ? '▴ close all' : '▾ open all' }}
+                :title="allOpen ? t('Close every section') : t('Open every section')">
+          {{ allOpen ? '▴ ' + t('close all') : '▾ ' + t('open all') }}
         </button>
         <button class="close-button" @click="close" :title="t('Close (or click outside)')">x</button>
       </div>

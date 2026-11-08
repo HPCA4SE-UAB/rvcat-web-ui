@@ -8,10 +8,11 @@
 // operation a (a = 0 … N−1) of the original loop (L = 1, S = 1) it reads element c + a·s.
 
 import { checkProgram } from './programChecks.js'
+import { t } from '@/i18n'
 import { conditionalBranches } from './branches.js'
 
-const BRANCHES_NOT_SUPPORTED =
-  'Loops with conditional branches (if c skip k) are not supported by the assistant: edit them manually.'
+const BRANCHES_NOT_SUPPORTED = () =>
+  t('Loops with conditional branches (if c skip k) are not supported by the assistant: edit them manually.')
 import { shiftIndexText, vectorIndexText, analyzeProgramText, sizeName } from './instructionText.js'
 
 // x86 AVX registers are made of 128-bit blocks: SHUFFLE moves elements within each block (1 cycle),
@@ -156,15 +157,14 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
   const list = (instructionList ?? []).map(i => ({ ...i }))
   const info = analyzeLoop(list)
   const errors = [], notes = []
-  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED], notes }
-  if (!(Number.isInteger(L) && L >= 2)) errors.push('The number of lanes must be an integer ≥ 2.')
-  if (info.vectorized) errors.push('The loop is already vectorized.')
-  if (info.S !== 1) errors.push(`The loop is already unrolled (S = ${info.S}): vectorize the original loop, then unroll it.`)
+  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED()], notes }
+  if (!(Number.isInteger(L) && L >= 2)) errors.push(t('The number of lanes must be an integer ≥ 2.'))
+  if (info.vectorized) errors.push(t('The loop is already vectorized.'))
+  if (info.S !== 1) errors.push(t('The loop is already unrolled (S = {1}): vectorize the original loop, then unroll it.', { 1: info.S }))
   if (info.recurrences.length)
-    errors.push(`Recurrence through ${info.recurrences.join(', ')}: each iteration needs the result of the previous ` +
-                'one, so the iterations cannot be computed in parallel lanes.')
+    errors.push(t('Recurrence through {1}: each iteration needs the result of the previous one, so the iterations cannot be computed in parallel lanes.', { 1: info.recurrences.join(', ') }))
   if (info.indirect.length)
-    errors.push(`Indirect accesses through ${info.indirect.join(', ')} (gather/scatter) are not supported by the assistant.`)
+    errors.push(t('Indirect accesses through {1} (gather/scatter) are not supported by the assistant.', { 1: info.indirect.join(', ') }))
   if (errors.length) return { program: null, errors, notes }
 
   const body = list.slice(0, -1), branch = list.at(-1)
@@ -172,8 +172,9 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
 
   const unsized = body.map((instr, k) => (isData(instr, k) && !SIZE_BYTES[instr.size] ? k : -1)).filter(k => k >= 0)
   if (unsized.length) {
-    errors.push(`Instruction${unsized.length > 1 ? 's' : ''} ${unsized.join(', ')} ha${unsized.length > 1 ? 've' : 's'} no size: ` +
-                'choose it (or the type of its variables in Declarations) before vectorizing.')
+    errors.push(t(unsized.length > 1
+      ? 'Instructions {list} have no size: choose it (or the type of their variables in Declarations) before vectorizing.'
+      : 'Instruction {list} has no size: choose it (or the type of its variables in Declarations) before vectorizing.', { list: unsized.join(', ') }))
     return { program: null, errors, notes }
   }
   // Element sizes: the vector registers hold L elements of the smallest size; elements n times
@@ -191,8 +192,7 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
   const splitVars = new Set([...bytesOf].filter(([, b]) => partsOf(b) > 1).map(([v]) => v))
   const maxParts  = Math.max(1, ...sizes.map(partsOf))
   if (L % maxParts) {
-    errors.push(`Elements of ${maxParts * minBytes} bytes use ${maxParts} times fewer lanes than elements of ${minBytes} bytes: ` +
-                `the number of lanes must be a multiple of ${maxParts}.`)
+    errors.push(t('Elements of {1} bytes use {2} times fewer lanes than elements of {3} bytes: the number of lanes must be a multiple of {4}.', { 1: maxParts * minBytes, 2: maxParts, 3: minBytes, 4: maxParts }))
     return { program: null, errors, notes }
   }
   const vlen = L * minBytes
@@ -238,7 +238,7 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
     if (!isData(instr, k)) {
       if (info.control.has(k)) out.push(instr)
       else {
-        notes.push(`Instruction ${k} accesses a fixed address: it stays scalar (its value is used by all the lanes).`)
+        notes.push(t('Instruction {1} accesses a fixed address: it stays scalar (its value is used by all the lanes).', { 1: k }))
         out.push(instr)
       }
       return
@@ -256,7 +256,7 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
         let src = regRef(instr.source1, j * l, l)
         if ((src.lo > 0 || dest.lo > 0) && vlen > BLOCK_BYTES) {
           rearrange.question = true
-          reason(`converting the upper ${src.lo > 0 ? 'part of a register' : 'part of the result'} (${instr.text.trim()})`)
+          reason(t('converting the upper {1} ({2})', { 1: src.lo > 0 ? t('part of a register') : t('part of the result'), 2: instr.text.trim() }))
         }
         // AVX: a conversion reads the lowest elements of a register: extract the upper ones first
         if (blocks === 'avx' && src.lo > 0) {
@@ -344,7 +344,7 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
       if (!isMemory(m) || !isVector(m) || intOf(m.stride, 1) >= 0) continue
       const l = intOf(m.lanes, 1), d = SIZE_BYTES[m.size] ?? minBytes
       const crosses = l * d > BLOCK_BYTES
-      if (crosses) { rearrange.question = true; reason(`reversing the elements of backward accesses (${m.source2})`) }
+      if (crosses) { rearrange.question = true; reason(t('reversing the elements of backward accesses ({1})', { 1: m.source2 })) }
       reversals++
       if (m.oper === 'LOAD') {
         out.splice(p + 1, 0, moveInstr(m.destin, d, moveOper(crosses), `${m.destin}[0:${l - 1}]`, `${m.destin}[0:${l - 1}]`,
@@ -359,27 +359,28 @@ export function vectorizeLoop(instructionList, L, { blocks = 'generic', declarat
       }
     }
     if (reversals)
-      notes.push(`Backward and forward accesses are combined: ${reversals} vector${reversals > 1 ? 's are' : ' is'} reversed ` +
-                 `(${blocks === 'avx' ? 'PERMUTE across 128-bit blocks' : 'SHUFFLE'}) so that their lanes match.`)
+      notes.push(t('Backward and forward accesses are combined: {n} vector(s) reversed ({how}) so that their lanes match.',
+                   { n: reversals, how: blocks === 'avx' ? t('PERMUTE across 128-bit blocks') : 'SHUFFLE' }))
   }
   if (blocks === 'avx' && rearrange.question)
-    notes.push('AVX model: data moved across 128-bit blocks uses PERMUTE instructions (3 cycles in Intel processors).')
+    notes.push(t('AVX model: data moved across 128-bit blocks uses PERMUTE instructions (3 cycles in Intel processors).'))
 
   if (info.counter) {
     const counter = out.find(i => i.destin === info.counter.variable && i.source1 === info.counter.variable)
     if (counter) setCounterStep(counter, info.counter.step * L)
-  } else notes.push('No loop counter "i = i + k" found: check the instructions that control the loop.')
+  } else notes.push(t('No loop counter "i = i + k" found: check the instructions that control the loop.'))
   branch.stride = info.S * L
   out.push(branch)
   if (splitNote)
-    notes.push(`Vector registers of ${vlen} bytes: ${L} elements of ${minBytes} bytes, or ${L / maxParts} of ` +
-               `${maxParts * minBytes} bytes. The instructions on larger elements are done in ${maxParts === 2 ? 'two halves' : `${maxParts} parts`} ` +
-               `(${[...splitVars].map(v => partName(v, 0, partsOf(bytesOf.get(v)))).slice(0, 3).join(', ')}…), and conversions read or write half a register.`)
+    notes.push(t('Vector registers of {vlen} bytes: {L} elements of {b} bytes, or {L2} of {b2} bytes. The instructions on larger elements are done in {parts} ({names}…), and conversions read or write half a register.',
+                 { vlen, L, b: minBytes, L2: L / maxParts, b2: maxParts * minBytes,
+                   parts: maxParts === 2 ? t('two halves') : t('{n} parts', { n: maxParts }),
+                   names: [...splitVars].map(v => partName(v, 0, partsOf(bytesOf.get(v)))).slice(0, 3).join(', ') }))
   for (const v of info.reductions) {
     const n = splitVars.has(v) ? partsOf(bytesOf.get(v)) : 1
     notes.push(n > 1
-      ? `Reduction ${v}: it becomes ${n} partial vectors (${Array.from({ length: n }, (_, p) => partName(v, p, n)).join(', ')}) of ${L / n} lanes, to be combined after the loop (not simulated).`
-      : `Reduction ${v}: it becomes ${L} partial results ${v}[0:${L - 1}], to be combined after the loop (not simulated).`)
+      ? t('Reduction {1}: it becomes {2} partial vectors ({3}) of {4} lanes, to be combined after the loop (not simulated).', { 1: v, 2: n, 3: Array.from({ length: n }, (_, p) => partName(v, p, n)).join(', '), 4: L / n })
+      : t('Reduction {1}: it becomes {2} partial results {3}[0:{4}], to be combined after the loop (not simulated).', { 1: v, 2: L, 3: v, 4: L - 1 }))
   }
   return { program: out, errors, notes, vlen, rearrange }
 }
@@ -399,8 +400,8 @@ export function unrollLoop(instructionList, U, { splitAccumulators = false } = {
   const list = (instructionList ?? []).map(i => ({ ...i }))
   const info = analyzeLoop(list)
   const errors = [], notes = []
-  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED], notes }
-  if (!(Number.isInteger(U) && U >= 2)) errors.push('The unrolling factor must be an integer ≥ 2.')
+  if (conditionalBranches(list).length) return { program: null, errors: [BRANCHES_NOT_SUPPORTED()], notes }
+  if (!(Number.isInteger(U) && U >= 2)) errors.push(t('The unrolling factor must be an integer ≥ 2.'))
   if (errors.length) return { program: null, errors, notes }
 
   const body = list.slice(0, -1), branch = list.at(-1)
@@ -452,19 +453,17 @@ export function unrollLoop(instructionList, U, { splitAccumulators = false } = {
     const counter = out.find(i => i.destin === info.counter.variable && i.source1 === info.counter.variable)
     if (counter) setCounterStep(counter, info.counter.step * U)
   } else {
-    notes.push('No loop counter "i = i + k" found: check the instructions that control the loop.')
+    notes.push(t('No loop counter "i = i + k" found: check the instructions that control the loop.'))
   }
   branch.stride = info.S * U
   out.push(branch)
 
   for (const [v, names] of renames)
-    notes.push(`Reduction ${v}: ${U} partial accumulators ${names.join(', ')}; they break the dependence chain ` +
-               'and must be added after the loop (not simulated).')
+    notes.push(t('Reduction {1}: {2} partial accumulators {3}; they break the dependence chain and must be added after the loop (not simulated).', { 1: v, 2: U, 3: names.join(', ') }))
   if (!splitAccumulators && info.reductions.length)
-    notes.push(`Reduction ${info.reductions.join(', ')}: the copies still form one dependence chain ` +
-               '(use partial accumulators to break it).')
+    notes.push(t('Reduction {1}: the copies still form one dependence chain (use partial accumulators to break it).', { 1: info.reductions.join(', ') }))
   for (const v of info.recurrences)
-    notes.push(`Recurrence through ${v}: the copies form one dependence chain that cannot be broken.`)
+    notes.push(t('Recurrence through {1}: the copies form one dependence chain that cannot be broken.', { 1: v }))
   return { program: out, errors, notes }
 }
 
@@ -473,7 +472,7 @@ export function transformLoop(instructionList, { lanes = 1, unroll = 1, splitAcc
                                                 declarations = [] } = {}) {
   const before = checkProgram(instructionList)
   if (before.errors.length)
-    return { program: null, errors: ['Fix the errors of the program before transforming it.'], notes: [], checks: null }
+    return { program: null, errors: [t('Fix the errors of the program before transforming it.')], notes: [], checks: null }
   let program = (instructionList ?? []).map(i => ({ ...i }))
   const errors = [], notes = []
   let vlen = null, rearrange = null

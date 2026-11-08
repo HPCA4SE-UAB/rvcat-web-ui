@@ -10,71 +10,70 @@
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="rt(currentStep?.title)"></h3>
           <span v-if="previewMode" class="preview-badge" :title="t('Preview from the tutorial editor: closing it returns to the editor')">PREVIEW</span>
-          <button :title="previewMode ? 'End preview and return to the tutorial editor' : 'Close tutorial, but can be resumed later'"
+          <button :title="previewMode ? t('End preview and return to the tutorial editor') : t('Close tutorial, but can be resumed later')"
           class="tutorial-close" @click="closeTutorial">&times;</button>
         </div>
         <div class="tutorial-content">
           <p class="step-description" v-html="rt(currentStep?.description)"></p>
-          <div v-if="actionsRunning" class="tutorial-running">⏳ The tutorial is acting on the simulator…</div>
+          <div v-if="actionsRunning" class="tutorial-running">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
 
           <!-- Prediction: written before simulating, compared with the result of the next simulation -->
           <div v-if="currentStep?.type === 'predict'" class="task-box" id="tutorial-predict">
             <div class="task-row">
-              <label for="tutorial-prediction">Your prediction:</label>
+              <label for="tutorial-prediction">{{ t('Your prediction:') }}</label>
               <input id="tutorial-prediction" v-model="predictionInput" type="text" inputmode="decimal"
                      :disabled="!!taskState.result" @keyup.enter="savePrediction" />
               <span v-if="currentStep.predictUnit">{{ currentStep.predictUnit }}</span>
-              <button class="tutorial-btn" :disabled="!!taskState.result || !validPrediction" @click="savePrediction">Save</button>
+              <button class="tutorial-btn" :disabled="!!taskState.result || !validPrediction" @click="savePrediction">{{ t('Save') }}</button>
             </div>
             <div v-if="taskState.prediction !== undefined && !taskState.result" class="task-status">
-              Prediction {{ taskState.prediction }} saved: now run the simulation.
+              {{ t('Prediction {p} saved: now run the simulation.', { p: taskState.prediction }) }}
             </div>
             <div v-if="taskState.result" class="task-status" :class="taskState.result.good ? 'task-ok' : 'task-far'">
-              Prediction {{ taskState.prediction }} · simulated {{ formatNumber(taskState.result.actual) }}
-              (difference {{ formatNumber(taskState.result.actual - taskState.prediction) }}){{
-                taskState.result.good === null ? '' : taskState.result.good ? ' · good prediction' : ' · far from the result' }}
+              {{ t('Prediction {p} · simulated {a} (difference {d})', { p: taskState.prediction, a: formatNumber(taskState.result.actual), d: formatNumber(taskState.result.actual - taskState.prediction) }) }}{{
+                taskState.result.good === null ? '' : taskState.result.good ? ' · ' + t('good prediction') : ' · ' + t('far from the result') }}
             </div>
           </div>
 
           <!-- Goal: a condition on the results, checked after every simulation -->
           <div v-if="currentStep?.type === 'goal'" class="task-box" id="tutorial-goal">
-            <div class="task-row"><b>Goal:</b> <code>{{ currentStep.goal }}</code>
-              <span v-if="currentStep.program"> with program <b>{{ currentStep.program }}</b></span></div>
+            <div class="task-row"><b>{{ t('Goal:') }}</b> <code>{{ currentStep.goal }}</code>
+              <span v-if="currentStep.program"> {{ t('with program') }} <b>{{ currentStep.program }}</b></span></div>
             <div v-if="(currentStep.allow ?? []).length" class="task-row task-allow">
-              Allowed now: {{ currentStep.allow.join(', ') }}</div>
+              {{ t('Allowed now:') }} {{ currentStep.allow.join(', ') }}</div>
             <div v-if="taskState.last" class="task-status" :class="taskState.last.ok ? 'task-ok' : 'task-far'">
-              Last simulation: {{ taskState.last.ok ? '✓ achieved' : '✗ not yet' }}
+              {{ t('Last simulation:') }} {{ taskState.last.ok ? '✓ ' + t('achieved') : '✗ ' + t('not yet') }}
               <span v-if="taskState.last.message"> · {{ taskState.last.message }}</span>
               <span v-for="(v, name) in taskState.last.values" :key="name"> · {{ name }} = {{ formatNumber(v) }}</span>
             </div>
-            <div v-else class="task-status">Run a simulation to check the goal.</div>
+            <div v-else class="task-status">{{ t('Run a simulation to check the goal.') }}</div>
             <div v-if="taskState.done && currentStep.best" class="task-status task-ok">
-              Best {{ currentStep.best }}: {{ formatNumber(taskState.best) }}</div>
+              {{ t('Best') }} {{ currentStep.best }}: {{ formatNumber(taskState.best) }}</div>
           </div>
           <div v-if="currentStep?.image" class="step-image"
             @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Step image">
-            <span class="image-hint">Click to enlarge</span>
+            <span class="image-hint">{{ t('Click to enlarge') }}</span>
           </div>
           <div class="tutorial-actions">
             <button @click="previousStep" :disabled="!canGoBack"
                :title="t('Go to previous step on the tutorial')"
                class="tutorial-btn">
-              Previous
+              {{ t('Previous') }}
             </button>
             <span class="tutorial-progress"
-                  :title="isBranchingTutorial ? 'This tutorial lets you choose the level of detail: not all cards are visited' : ''">
-              <template v-if="isBranchingTutorial">Card {{ stepIndex + 1 }}</template>
+                  :title="isBranchingTutorial ? t('This tutorial lets you choose the level of detail: not all cards are visited') : ''">
+              <template v-if="isBranchingTutorial">{{ t('Card {n}', { n: stepIndex + 1 }) }}</template>
               <template v-else>{{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</template>
             </span>
             <button v-if="showMeActions.length" @click="runShowMe" :disabled="actionsRunning"
                     id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
                     :title="t('Let the tutorial do it on the simulator (you can also do it yourself)')">
-              ▶ Show me
+              ▶ {{ t('Show me') }}
             </button>
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
-                    :title="target.id === 'end' ? 'Finish tutorial' : `Continue to ${target.title}`"
+                    :title="target.id === 'end' ? t('Finish tutorial') : t('Continue to {title}', { title: rt(target.title) })"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               {{ rt(target.label) }}
@@ -84,7 +83,7 @@
                     :title="t('Finish tutorial; disabled if an action must be done first')"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
-              Finish
+              {{ t('Finish') }}
             </button>
           </div>
         </div>
@@ -97,7 +96,7 @@
         <button @click="closeTutorial" class="question-close">&times;</button>
 
         <div class="question-header">
-          <span class="question-badge">Question {{ stepIndex + 1 }}</span>
+          <span class="question-badge">{{ t('Question {n}', { n: stepIndex + 1 }) }}</span>
           <span v-if="previewMode" class="preview-badge">PREVIEW</span>
           <h2 v-html="rt(currentStep?.title)"></h2>
         </div>
@@ -107,13 +106,13 @@
 
           <div v-if="currentStep?.image" class="question-image" @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Question image">
-            <span class="image-hint">Click to enlarge</span>
+            <span class="image-hint">{{ t('Click to enlarge') }}</span>
           </div>
 
           <div class="question-mode-info">
-            <span v-if="currentStep?.answerMode === 'single'">Select ONE correct answer</span>
-            <span v-else-if="isNumericQuestion">Write a number</span>
-            <span v-else>Select ALL correct answers</span>
+            <span v-if="currentStep?.answerMode === 'single'">{{ t('Select ONE correct answer') }}</span>
+            <span v-else-if="isNumericQuestion">{{ t('Write a number') }}</span>
+            <span v-else>{{ t('Select ALL correct answers') }}</span>
           </div>
 
           <div v-if="isNumericQuestion" class="numeric-answer">
@@ -157,7 +156,7 @@
           <!-- Summary message section -->
           <div v-if="questionAnswered" class="feedback-section">
             <div v-if="isQuestionCorrect" class="feedback-box feedback-correct">
-              <h4>✓ Correct!</h4>
+              <h4>{{ t('✓ Correct!') }}</h4>
             </div>
             <div v-else class="feedback-box feedback-wrong">
               <h4>✗ {{ getErrorMessage() }}</h4>
@@ -169,20 +168,20 @@
           <button @click="previousStep" :disabled="!canGoBack"
                :title="t('Go to previous step on the tutorial')"
                class="tutorial-btn">
-            Previous
+            {{ t('Previous') }}
           </button>
 
           <button v-if="!questionAnswered"
                   @click="submitAnswer"
                   :disabled="!canSubmit"
                   class="tutorial-btn tutorial-btn-primary">
-            Submit Answer
+            {{ t('Submit Answer') }}
           </button>
 
           <button v-else-if="!isQuestionCorrect"
                   @click="retryQuestion"
                   class="tutorial-btn tutorial-btn-retry">
-            Try Again
+            {{ t('Try Again') }}
           </button>
 
           <template v-else-if="isQuestionCorrect && successorSteps.length">
@@ -196,7 +195,7 @@
                   @click="completeTutorial"
                   :title="t('Finish the tutorial')"
                   class="tutorial-btn tutorial-btn-primary">
-            Finish
+            {{ t('Finish') }}
           </button>
         </div>
       </div>
@@ -218,13 +217,13 @@
 
       <!-- Tutorial Menu -->
       <div v-if="showTutorialMenu" class="tutorial-menu">
-        <h4>Available Tutorials</h4>
+        <h4>{{ t('Available Tutorials') }}</h4>
 
         <!-- Show resume option if there's a paused tutorial -->
         <div v-if="currentTutorial" class="tutorial-paused-section">
           <div class="tutorial-paused-header">
-            <h5>📚 Tutorial in Progress</h5>
-            <p class="tutorial-paused-info" v-html="currentTutorial.name"></p>
+            <h5>{{ t('📚 Tutorial in Progress') }}</h5>
+            <p class="tutorial-paused-info" v-html="rt(currentTutorial.name)"></p>
           </div>
 
           <div class="tutorial-action-buttons">
@@ -233,8 +232,8 @@
               class="tutorial-action-btn tutorial-resume-btn">
               <div class="tutorial-action-icon">▶️</div>
               <div class="tutorial-action-content">
-                <strong>Resume</strong>
-                <span>Step {{ stepIndex + 1 }} of {{ currentTutorial.steps.length }}</span>
+                <strong>{{ t('Resume') }}</strong>
+                <span>{{ t('Step {n} of {total}', { n: stepIndex + 1, total: currentTutorial.steps.length }) }}</span>
               </div>
             </button>
 
@@ -243,8 +242,8 @@
               class="tutorial-action-btn tutorial-stop-btn">
               <div class="tutorial-action-icon">⏹️</div>
               <div class="tutorial-action-content">
-                <strong>Stop</strong>
-                <span>Start fresh</span>
+                <strong>{{ t('Stop') }}</strong>
+                <span>{{ t('Start fresh') }}</span>
               </div>
             </button>
           </div>
@@ -264,8 +263,8 @@
               class="tutorial-menu-item"
             >
               <div class="tutorial-item-content">
-                <strong v-html="tutorial.name"></strong>
-                <p v-html="tutorial.description"></p>
+                <strong v-html="rt(tutorial.name)"></strong>
+                <p v-html="rt(tutorial.description)"></p>
               </div>
             </button>
             <button v-if="!lessonLocked('tutorialEditor')"
@@ -291,7 +290,7 @@
             class="tutorial-menu-item"
           >
             <div class="tutorial-item-content">
-              <strong>ADD NEW TUTORIAL</strong>
+              <strong>{{ t('ADD NEW TUTORIAL') }}</strong>
             </div>
           </button>
         </div>
@@ -301,7 +300,6 @@
 </template>
 
 <script setup>
-  import { t } from '@/i18n'
 
 import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDraggable, useResizeObserver}                                           from '@vueuse/core'
@@ -310,6 +308,7 @@ import {
   migrateTutorialFlow
 } from '@/common'
 import { renderTutorialText, tutorialNumber }                                    from '@/tutorialValues'
+import { t, localized }                                                          from '@/i18n'
 import { createActionRunner, actionList, takeSnapshot, savedSnapshot, clearSnapshot } from '@/tutorialActions'
 import { processorDraftFrom, processorSignature }                               from '@/editDrafts'
 import { isLocked, evaluateCondition }                                          from '@/lessons'
@@ -482,11 +481,11 @@ const successorSteps = computed(() => {
   return (step.next || [])
     .map((id, slot) => {
       const target = id === 'end'
-        ? { id: 'end', title: 'End Tutorial' }
+        ? { id: 'end', title: t('End Tutorial') }
         : steps.find(candidate => candidate.id === id)
       if (!target) return null
-      const custom = step.nextLabels?.[slot]?.trim()
-      return { id: target.id, title: target.title, label: custom || target.title }
+      const custom = String(localized(step.nextLabels?.[slot]) ?? '').trim()
+      return { id: target.id, title: target.title, label: custom || target.title }   // translated when shown (rt)
     })
     .filter(Boolean)
 })
@@ -505,7 +504,8 @@ const isBranchingTutorial = computed(() =>
 )
 
 // Text of the cards with the live values of the simulator ({{name}})
-const rt = (text) => renderTutorialText(text, simState)
+// Texts of the tutorials can be given in several languages: { en, es, ca } (localized)
+const rt = (text) => renderTutorialText(localized(text), simState)
 
 // Numeric questions (answerMode "number"): numericValue (a number or a live value such as
 // "{{minTime}}"), tolerance (absolute, 0.01 by default), numericCorrect / numericWrong texts
@@ -752,11 +752,11 @@ function checkTaskAfterSimulation() {
   }
   if (step.type === 'goal') {
     if (step.program && simState.simulatedProcess?.name !== step.program) {
-      setTask(step.id, { last: { ok: false, message: `the goal is for program ${step.program}`, values: {} } })
+      setTask(step.id, { last: { ok: false, message: t('the goal is for program {p}', { p: step.program }), values: {} } })
       return
     }
     const { ok, values, error } = evaluateCondition(step.goal, simState)
-    const last = { ok, values, message: error ? `condition error: ${error}` : '' }
+    const last = { ok, values, message: error ? t('condition error: {e}', { e: error }) : '' }
     if (!ok) { setTask(step.id, { last }); return }
     const value = step.best ? tutorialValue(step.best, simState)?.value ?? null : null
     const better = value !== null && (st.best === undefined ||
@@ -941,7 +941,7 @@ const validateCurrentStep = async () => {
   validators[v.type] ??= () => extraValidation(v)
 
   const isValid = validators[v.type]?.() ?? true
-  if (!isValid) showValidationMessage(v.message || 'Please complete this action')
+  if (!isValid) showValidationMessage(rt(v.message) || t('Please complete this action'))
   return isValid
 }
 
@@ -1090,12 +1090,12 @@ const getErrorMessage = () => {
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
   const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
 
-  if (isNumericQuestion.value)                         return 'Not quite. Try again!'
-  if (currentStep.value.answerMode === 'single')       return 'Incorrect answer. Try again!'
-  if (selectedWrong.length && !selectedCorrect.length) return 'Wrong answer selected. Try again!'
-  if (selectedWrong.length)                            return 'You selected some correct answers, but also wrong ones. Try again!'
-  if (selectedCorrect.length < correctIndices.length)  return 'Not all correct answers selected. Try again!'
-  return 'Try again!'
+  if (isNumericQuestion.value)                         return t('Not quite. Try again!')
+  if (currentStep.value.answerMode === 'single')       return t('Incorrect answer. Try again!')
+  if (selectedWrong.length && !selectedCorrect.length) return t('Wrong answer selected. Try again!')
+  if (selectedWrong.length)                            return t('You selected some correct answers, but also wrong ones. Try again!')
+  if (selectedCorrect.length < correctIndices.length)  return t('Not all correct answers selected. Try again!')
+  return t('Try again!')
 }
 
 // ============================================================================
@@ -1185,7 +1185,7 @@ const startPreview = async () => {
   try {
     draft = migrateTutorialFlow(JSON.parse(localStorage.getItem('tutorialPreview')))
   } catch (e) {
-    alert(`Cannot preview this tutorial: ${e.message}`)
+    alert(t('Cannot preview this tutorial: {1}', { 1: e.message }))
     return
   }
   if (!draft.steps.length) return
@@ -1383,7 +1383,7 @@ const addTutorial = async () => {
         included = true
     }
     if (included) {
-      alert(`A tutorial with name: "${data.id}" has been already loaded.`)
+      alert(t('A tutorial with name: "{1}" has been already loaded.', { 1: data.id }))
       return
     }
     tutorialOptions.available.push({
@@ -1415,7 +1415,7 @@ function deleteTutorial (tutorialId) {
   tutorialOptions.progressHistory = []
   if ( tutorialOptions.available.length == 0)
   {
-    alert("Removing all tutorial configurations forces to load the original tutorials provided in the distribution")
+    alert(t('Removing all tutorial configurations forces to load the original tutorials provided in the distribution'))
     initTutorial()
   }
   showTutorialMenu.value = true

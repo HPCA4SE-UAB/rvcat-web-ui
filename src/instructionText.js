@@ -1,3 +1,4 @@
+import { t as tr } from '@/i18n'
 // Consistency between the text of an instruction and its fields (program editor).
 // Documented in docs/program-editor-rules.md ("Instruction text").
 //
@@ -168,22 +169,22 @@ const fail = (reason) => { throw new NotAnalyzed(reason) }
 // Operand at tokens[i]: number, variable, vector register x[a:b], memory reference A[index]
 function parseOperand(tokens, i) {
   const x = tokens[i]
-  if (!x) fail('an operand is missing')
+  if (!x) fail(tr('an operand is missing'))
   if (x.t === 'num') return { op: { k: 'num', v: x.v }, next: i + 1 }
-  if (x.t !== 'id') fail(`unexpected "${x.v}"`)
+  if (x.t !== 'id') fail(tr('unexpected "{1}"', { 1: x.v }))
   if (tokens[i + 1]?.t !== 'op' || tokens[i + 1].v !== '[') return { op: { k: 'var', name: x.v }, next: i + 1 }
   const close = tokens.findIndex((t, k) => k > i + 1 && t.t === 'op' && t.v === ']')
-  if (close < 0) fail('"]" is missing')
+  if (close < 0) fail(tr('"]" is missing'))
   const inner = tokens.slice(i + 2, close)
   if (inner.some(t => t.t === 'op' && (t.v === '[' || t.v === '(')))
-    fail('indirect or complex index (only i+c, a*i+c, N-c-i or a number)')
+    fail(tr('indirect or complex index (only i+c, a*i+c, N-c-i or a number)'))
   const br = parseBracket(inner)
-  if (!br) fail(`index "${inner.map(t => t.v).join('')}" is not of the form i+c, a*i+c, N-c-i or a number`)
+  if (!br) fail(tr('index "{1}" is not of the form i+c, a*i+c, N-c-i or a number', { 1: inner.map(t => t.v).join('') }))
   const L = br.hi.b - br.lo.b + 1
   if (br.range) {
     if (br.lo.dir !== br.hi.dir || br.lo.v !== br.hi.v || br.lo.a !== br.hi.a || br.lo.size !== br.hi.size)
-      fail('both ends of a range must use the same index')
-    if (L < 2) fail('a range goes from the lower to the higher element (e.g. x[0:3], A[i:i+3])')
+      fail(tr('both ends of a range must use the same index'))
+    if (L < 2) fail(tr('a range goes from the lower to the higher element (e.g. x[0:3], A[i:i+3])'))
   }
   if (br.range && br.lo.dir === 'fixed')     // x[0:3]: vector register (x[4:7]: its upper lanes)
     return { op: { k: 'reg', name: x.v, L, lo: br.lo.b, hi: br.hi.b }, next: close + 1 }
@@ -195,29 +196,29 @@ export function parseInstruction(text) {
   let tokens = tokenize(text)
   if (tokens && !tokens.length) return { ok: false, empty: true, reason: 'empty text' }
   try {
-    if (!tokens) fail('unexpected characters')
+    if (!tokens) fail(tr('unexpected characters'))
     if (tokens[0]?.v === 'if') {
       if (tokens.length === 4 && tokens[1].t === 'id' && tokens[2].v === 'go' && tokens[3].v === 'back')
         return { ok: true, p: { kind: 'branch', cond: tokens[1].v, L: 1, regs: [] } }
       if (tokens.length === 4 && tokens[1].t === 'id' && tokens[2].v === 'skip' && tokens[3].t === 'num' &&
           Number.isInteger(Number(tokens[3].v)) && Number(tokens[3].v) >= 1)
         return { ok: true, p: { kind: 'cbranch', cond: tokens[1].v, skip: Number(tokens[3].v), L: 1, regs: [] } }
-      fail('branches are written "if c skip k" (conditional, skips the next k instructions) or "if c go back" (end of the loop)')
+      fail(tr('branches are written "if c skip k" (conditional, skips the next k instructions) or "if c go back" (end of the loop)'))
     }
     const eq = tokens.findIndex(t => t.t === 'op' && t.v === '=')
-    if (eq < 1) fail('expected "destination = expression"')
+    if (eq < 1) fail(tr('expected "destination = expression"'))
     // masked store: "A[i:i+7] = x[0:7] if m[0:7]"
     let maskOp = null
     const ifAt = tokens.findIndex((t, k) => k > eq && t.t === 'id' && t.v === 'if')
     if (ifAt > 0) {
       const m = parseOperand(tokens, ifAt + 1)
-      if (m.next !== tokens.length || m.op.k !== 'reg') fail('a mask is written at the end of a store: A[i:i+7] = x[0:7] if m[0:7]')
+      if (m.next !== tokens.length || m.op.k !== 'reg') fail(tr('a mask is written at the end of a store: A[i:i+7] = x[0:7] if m[0:7]'))
       maskOp = m.op
       tokens = tokens.slice(0, ifAt)
     }
     const lhs = parseOperand(tokens, 0)
-    if (lhs.next !== eq) fail('the destination is a variable, x[0:3] or A[index]')
-    if (lhs.op.k === 'num') fail('the destination cannot be a number')
+    if (lhs.next !== eq) fail(tr('the destination is a variable, x[0:3] or A[index]'))
+    if (lhs.op.k === 'num') fail(tr('the destination cannot be a number'))
 
     // Right-hand side: operand list with operators
     const items = []
@@ -228,23 +229,23 @@ export function parseInstruction(text) {
       let j = i + 2
       for (;;) {
         const o = parseOperand(tokens, j)
-        if (o.op.k !== 'reg') fail(`${fn} combines vector registers: x[0:3] = ${fn}(y[0:3], z[0:3])`)
+        if (o.op.k !== 'reg') fail(tr('{1} combines vector registers: x[0:3] = {2}(y[0:3], z[0:3])', { 1: fn, 2: fn }))
         items.push(o.op)
         j = o.next
         if (tokens[j]?.v !== ',') break
         j++
       }
-      if (tokens[j]?.v !== ')' || j + 1 !== tokens.length) fail(`expected x[0:3] = ${fn}(y[0:3], z[0:3])`)
-      if (items.length > 2) fail(`${fn} combines one or two vector registers`)
-      if (lhs.op.k !== 'reg' || lhs.op.L < 2) fail(`the result of ${fn} is a vector register, e.g. x[0:3]`)
+      if (tokens[j]?.v !== ')' || j + 1 !== tokens.length) fail(tr('expected x[0:3] = {1}(y[0:3], z[0:3])', { 1: fn }))
+      if (items.length > 2) fail(tr('{1} combines one or two vector registers', { 1: fn }))
+      if (lhs.op.k !== 'reg' || lhs.op.L < 2) fail(tr('the result of {1} is a vector register, e.g. x[0:3]', { 1: fn }))
       shuffle = fn
       i = tokens.length
     }
     if (!shuffle && (fn === 'sqrt' || CONVERSIONS[fn] || MASK_TESTS.has(fn)) && tokens[i]?.t === 'id' && tokens[i + 1]?.v === '(') {
       const o = parseOperand(tokens, i + 2)
-      if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail(`expected ${fn}(x)`)
-      if (o.op.k === 'num') fail(`${fn}() of a number: write the number in the type you need`)
-      if (MASK_TESTS.has(fn) && o.op.k !== 'reg') fail(`${fn}() tests the lanes of a vector mask: t = ${fn}(m[0:7])`)
+      if (tokens[o.next]?.v !== ')' || o.next + 1 !== tokens.length) fail(tr('expected {1}(x)', { 1: fn }))
+      if (o.op.k === 'num') fail(tr('{1}() of a number: write the number in the type you need', { 1: fn }))
+      if (MASK_TESTS.has(fn) && o.op.k !== 'reg') fail(tr('{1}() tests the lanes of a vector mask: t = {2}(m[0:7])', { 1: fn, 2: fn }))
       items.push(o.op)
       if (fn === 'sqrt') sqrt = true
       else if (MASK_TESTS.has(fn)) test = fn
@@ -260,26 +261,26 @@ export function parseInstruction(text) {
       if (t.t !== 'op' || !BINARY[t.v]) fail(t.v === '(' || t.v === ')' ? 'parentheses are not supported' : `unexpected "${t.v}"`)
       items.push({ k: 'op', v: t.v })
       i++
-      if (i >= tokens.length) fail('an operand is missing')
+      if (i >= tokens.length) fail(tr('an operand is missing'))
     }
     const operands = items.filter(x => x.k !== 'op'), ops = items.filter(x => x.k === 'op').map(x => x.v)
     const mems = [lhs.op, ...operands].filter(o => o.k === 'mem')
     const regs = [lhs.op, ...operands, ...(maskOp ? [maskOp] : [])].filter(o => o.k === 'reg')
-    if (maskOp && lhs.op.k !== 'mem') fail('only a store can have a mask: A[i:i+7] = x[0:7] if m[0:7]')
+    if (maskOp && lhs.op.k !== 'mem') fail(tr('only a store can have a mask: A[i:i+7] = x[0:7] if m[0:7]'))
     // a shuffle may combine registers of any number of lanes: its lanes are those of the result
     const lanes = new Set((shuffle ? [lhs.op] : [...regs, ...mems]).map(o => o.L).filter(L => L > 1))
-    if (lanes.size > 1) fail(`different numbers of lanes (${[...lanes].join(', ')})`)
+    if (lanes.size > 1) fail(tr('different numbers of lanes ({1})', { 1: [...lanes].join(', ') }))
     const L = lanes.size ? [...lanes][0] : 1
     const p = { L, regs }
 
     if (lhs.op.k === 'mem') {                                  // store A[index] = x
-      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail('a store writes a variable: A[index] = x')
-      if (operands[0].k === 'num') fail('a store writes a variable, not a number')
-      if (operands[0].k === 'mem') fail('memory-to-memory copy: load into a variable, then store it')
+      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail(tr('a store writes a variable: A[index] = x'))
+      if (operands[0].k === 'num') fail(tr('a store writes a variable, not a number'))
+      if (operands[0].k === 'mem') fail(tr('memory-to-memory copy: load into a variable, then store it'))
       return { ok: true, p: { ...p, kind: 'store', value: operands[0].name, mem: lhs.op, mask: maskOp?.name ?? '' } }
     }
     if (mems.length) {                                         // load x = A[index]
-      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail('memory operands are only allowed in x = A[index] and A[index] = x')
+      if (operands.length !== 1 || ops.length || sqrt || convert || test) fail(tr('memory operands are only allowed in x = A[index] and A[index] = x'))
       return { ok: true, p: { ...p, kind: 'load', dest: lhs.op.name, mem: operands[0] } }
     }
     // Operation
@@ -293,9 +294,9 @@ export function parseInstruction(text) {
     else if (ops.length === 1) { op = BINARY[ops[0]]; terms = operands }
     else if (ops.length === 2 && ops[0] === '*' && ops[1] === '+') { op = 'fma'; terms = operands }
     else if (ops.length === 2 && ops[0] === '+' && ops[1] === '*') { op = 'fma'; terms = [operands[1], operands[2], operands[0]] }
-    else fail('more than one operation (one instruction does one operation; a*b + c is an FMA)')
+    else fail(tr('more than one operation (one instruction does one operation; a*b + c is an FMA)'))
     const numbers = terms.filter(o => o.k === 'num')
-    if (numbers.length > 1) fail('more than one constant')
+    if (numbers.length > 1) fail(tr('more than one constant'))
     // Writing the upper lanes of a register (x[4:7] = ...) keeps the lower ones: it also reads x
     const merge = lhs.op.k === 'reg' && lhs.op.lo > 0
     const sources = [...new Set([...terms.filter(o => o.k !== 'num').map(o => o.name), ...(merge ? [lhs.op.name] : [])])]
@@ -417,8 +418,8 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     classes.get(root).names.push(name)
   }
   for (const s of seeds) classes.get(find(s.name)).seeds.push(s)
-  const describe = (s) => (s.origin === 'declaration' ? `declaration of ${s.detail}`
-                          : s.origin === 'field' ? `${s.detail} field of #${s.index}` : `#${s.index} (${OP_TEXT[s.detail] ?? s.detail})`)
+  const describe = (s) => (s.origin === 'declaration' ? tr('declaration of {v}', { v: s.detail })
+                          : s.origin === 'field' ? tr('{f} field of #{i}', { f: s.detail, i: s.index }) : `#${s.index} (${tr(OP_TEXT[s.detail] ?? s.detail)})`)
   const warnings = [], infos = []
   for (const cls of classes.values()) {
     const kindSeeds = cls.seeds.filter(s => s.kind)
@@ -430,17 +431,18 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     const problems = []
     const kinds = [...new Set(kindSeeds.map(s => s.kind))]
     if (kinds.length > 1)
-      problems.push(kinds.map(k => `${k} (${[...new Set(kindSeeds.filter(s => s.kind === k).map(describe))].join(', ')})`).join(' and '))
+      problems.push(kinds.map(k => `${k} (${[...new Set(kindSeeds.filter(s => s.kind === k).map(describe))].join(', ')})`).join(' ' + tr('and') + ' '))
     const sizes = [...new Set(bytesSeeds.map(s => s.bytes))]
     if (sizes.length > 1)
-      problems.push(sizes.map(b => `${b} bytes (${[...new Set(bytesSeeds.filter(s => s.bytes === b).map(describe))].join(', ')})`).join(' and '))
+      problems.push(sizes.map(b => `${tr('{n} bytes', { n: b })} (${[...new Set(bytesSeeds.filter(s => s.bytes === b).map(describe))].join(', ')})`).join(' ' + tr('and') + ' '))
     if (cls.kind === 'FLOAT' && cls.bytes && !FLOAT_SIZES[cls.bytes])
-      problems.push(`a FLOAT has 4 (single) or 8 (double) bytes, not ${cls.bytes}`)
+      problems.push(tr('a FLOAT has 4 (single) or 8 (double) bytes, not {n}', { n: cls.bytes }))
     cls.conflict = problems.length ? problems.join('; ') : null
     if (cls.conflict) {
       const at = [...cls.seeds.filter(s => s.index >= 0).map(s => s.index), -1][0]
-      warnings.push({ code: 'T3', index: at,
-        message: `Data type of ${cls.names.join(', ')}${cls.names.length > 1 ? ' (they exchange values)' : ''}: ${cls.conflict}.` })
+      warnings.push({ code: 'T3', index: at, declaration: cls.seeds.some(s => s.origin === 'declaration'),
+        message: tr('Data type of {names}', { names: cls.names.join(', ') }) +
+                 (cls.names.length > 1 ? ' (' + tr('they exchange values') + ')' : '') + `: ${cls.conflict}.` })
     }
   }
   const classOf = (name) => classes.get(find(name)) ?? { kind: null, bytes: null }
@@ -451,15 +453,14 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
     const target = `${c.kind} ${sizeName(c.kind, c.bytes)}`
     if (find(c.source) === find(c.dest)) continue                       // reported as T3
     if (src.kind === 'INT' && c.kind === 'INT')
-      warnings.push({ code: 'T6', index: c.index, message: `Conversion of the integer ${c.source} to ${target}: ` +
-                      'only conversions between INT and FLOAT, or between single and double, are available.' })
+      warnings.push({ code: 'T6', index: c.index, message: tr('Conversion of the integer {s} to {t}: only conversions between INT and FLOAT, or between single and double, are available.', { s: c.source, t: target }) })
     else if (src.kind === c.kind && src.bytes === c.bytes)
-      warnings.push({ code: 'T6', index: c.index, message: `${c.source} is already ${target}: the conversion does nothing.` })
+      warnings.push({ code: 'T6', index: c.index, message: tr('{s} is already {t}: the conversion does nothing.', { s: c.source, t: target }) })
   }
 
   for (const v of vars.values()) {
     if (v.lanes.size > 1)
-      warnings.push({ code: 'T5', index: v.first, message: `Vector register ${v.name} is used with different numbers of lanes (${[...v.lanes].join(', ')}).` })
+      warnings.push({ code: 'T5', index: v.first, message: tr('Vector register {v} is used with different numbers of lanes ({list}).', { v: v.name, list: [...v.lanes].join(', ') }) })
   }
 
   // Derived fields and comparison with the edited ones
@@ -468,13 +469,13 @@ export function analyzeProgramText(list, declarations = [], { ignoreFieldsOf = n
   rows.forEach((r, index) => {
     if (index === last) return
     if (!r.ok) {
-      if (!r.empty) infos.push({ code: 'T1', index, message: `Text not analyzed (${r.reason}): its fields are not checked.` })
+      if (!r.empty) infos.push({ code: 'T1', index, message: tr('Text not analyzed ({reason}): its fields are not checked.', { reason: r.reason }) })
       return
     }
     const diffs = fieldDifferences(instrs[index], derived[index])
     if (diffs.length)
-      warnings.push({ code: 'T2', index, message: 'Fields differ from the text: ' +
-        diffs.map(d => `${FIELD_LABELS[d.field]} is ${show(d.actual)}, the text gives ${show(d.expected)}`).join('; ') + '.' })
+      warnings.push({ code: 'T2', index, message: tr('Fields differ from the text:') + ' ' +
+        diffs.map(d => tr('{f} is {a}, the text gives {e}', { f: FIELD_LABELS[d.field], a: show(d.actual), e: show(d.expected) })).join('; ') + '.' })
   })
 
   // Declarations table
@@ -646,10 +647,10 @@ export function checkDeclarations(program) {
   const list = program.instruction_list ?? []
   const analysis = analyzeProgramText(list, decls)
   const used = new Set(analysis.variables.map(v => v.name))
-  const messages = decls.filter(d => d?.name && !used.has(d.name)).map(d => `Declared variable ${d.name} is not used by the program.`)
-  messages.push(...analysis.warnings.filter(w => w.code === 'T3' && w.message.includes('declaration')).map(w => w.message))
+  const messages = decls.filter(d => d?.name && !used.has(d.name)).map(d => tr('Declared variable {v} is not used by the program.', { v: d.name }))
+  messages.push(...analysis.warnings.filter(w => w.code === 'T3' && w.declaration).map(w => w.message))
   for (const v of analysis.variables) {
-    if (!decls.some(d => d?.name === v.name)) messages.push(`Variable ${v.name} is not declared.`)
+    if (!decls.some(d => d?.name === v.name)) messages.push(tr('Variable {v} is not declared.', { v: v.name }))
   }
   return messages
 }
