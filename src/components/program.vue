@@ -588,7 +588,7 @@
               <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
               <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Size') }} </th>
               <th class="type-col" v-if="programOptions.show === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
-              <th class="type-col" v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
+              <th class="type-col ports-col" v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
           </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
@@ -626,7 +626,7 @@
               <td class="type-col" v-if="programOptions.show === 1" :title="t('Instruction Latency')">
                 {{ inst.latency }}
               </td>
-              <td class="type-col" v-if="programOptions.show === 1" :title="t('Available execution ports')">
+              <td class="type-col ports-col" v-if="programOptions.show === 1" :title="t('Available execution ports')">
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>

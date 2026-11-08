@@ -46,6 +46,8 @@ export const LESSON_PARTS = {
   simOptions:        'Scheduler, Mispredictions and AutoRun options of the Simulation panel',
   storedResults:     'stored results of the Simulation panel',
   criticalPattern:   'repeated critical-path pattern of the Simulation panel',
+  programPorts:      'column of execution ports of the Program panel',
+  timelineCycles:    'number of cycles of the Timeline (fixed) and its Fit button',
 }
 
 const ID_RE = /^[A-Za-z0-9-]{1,40}$/

@@ -242,8 +242,9 @@
     if (snap.view) emit('requestSwitchPanel', snap.view)
   }
 
-  function restartTutorial() {
-    simState.lessonTutorial = { id: lesson.value.tutorial, action: 'start', nonce: Date.now() }
+  // the card of the lesson where the student left it (or the first card)
+  function resumeTutorial() {
+    simState.lessonTutorial = { id: lesson.value.tutorial, action: 'resume', nonce: Date.now() }
   }
 </script>
 
@@ -285,7 +286,7 @@
         <button class="lesson-small" @click="copyCode">{{ copied ? t('copied') : t('copy') }}</button>
       </span>
       <span v-else-if="completed" class="lesson-code">{{ t('✔ Completed') }}</span>
-      <button class="lesson-small" :title="t('Start the tutorial of the lesson again (your completed tasks are kept)')" @click="restartTutorial">↻ tutorial</button>
+      <button class="lesson-small" id="lesson-tutorial-button" :title="t('Show the tutorial of the lesson where you left it')" @click="resumeTutorial">▶ tutorial</button>
       <button class="lesson-exit" id="lesson-exit-button" @click="askExit = true">{{ t('Exit lesson') }}</button>
     </div>
   </Teleport>
@@ -383,6 +384,8 @@
 </style>
 
 <style>
+  /* the number of cycles of the timeline cannot be changed */
+  .lesson-hide-timelineCycles #timeline-cycles { pointer-events: none; background: #eee; color: #555; }
   /* Parts of the simulator hidden by the lesson in progress (lesson "hidden", actions reveal/hide) */
   .lesson-hide-timeline #timeline-button,
   .lesson-hide-analysis #analysis-button,
@@ -398,5 +401,8 @@
   .lesson-hide-simOptions #autorun-label,
   .lesson-hide-simOptions #automatic-simulation-check,
   .lesson-hide-criticalPattern #critical-path-pattern,
+  .lesson-hide-programPorts .ports-col,
+  .lesson-hide-timelineCycles #timeline-fit-cycles,
+  .lesson-hide-timelineResources .show-label,
   .lesson-hide-storedResults .stored-results-part { display: none !important; }
 </style>

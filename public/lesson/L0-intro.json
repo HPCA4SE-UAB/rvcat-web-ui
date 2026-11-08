@@ -22,7 +22,7 @@
   ],
   "start": { "program": "Base", "processor": "L0-CPU", "N": 1000 },
   "hidden": ["processor", "programColumns", "timeline", "timelineCritical", "timelineResources", "analysis",
-             "usage", "cacheStats", "simOptions", "storedResults", "criticalPattern"],
+             "usage", "cacheStats", "simOptions", "storedResults", "criticalPattern", "programPorts", "timelineCycles"],
   "locks": {
     "programEditor": true, "tutorialEditor": true, "loopTransforms": true, "upload": true, "remove": true,
     "processor": "all",
@@ -136,10 +136,15 @@
         "next": ["latency"]
       },
       {
-        "id": "latency", "type": "step", "title": "5. Latency",
-        "selector": "#process-panel .processor-container", "position": "right",
-        "description": "<b>The processor is now shown.</b> Each type of instruction takes a fixed number of cycles<br>to execute: its <b>latency</b>. Here: <b>load 4</b>, float addition <b>2</b>, integer operations and branch <b>1</b>.<br>(The <b>type</b> button of the Program panel shows the latency of each instruction.)<br>The processor executes instructions in <b>ports</b> P1…P4: each one starts one instruction per cycle.",
-        "actions": ["reveal:processor,programColumns", "selectProgram:Base"],
+        "id": "latency",
+        "type": "step",
+        "title": "5. Latency",
+        "selector": "#show-instr-operands",
+        "position": "bottom",
+        "description": "<p>The columns <b>Type</b>, <b>Oper</b> and <b>Size</b> describe each instruction: its type (MEM, FLOAT, INT, BRANCH), its operation (LOAD, ADD…) and the size of its data.</p><p>In each processor, the execution time of an instruction, its <b>latency</b>, depends on these characteristics.</p><p><b>Click the type button</b> of the Program panel to see the latencies of these instructions in the processor used by default (you will see it later).</p>",
+        "doneDescription": "<p>The column <b>Latency</b> gives the cycles that each instruction takes to execute in this processor:<br><b>load 4</b>, float addition <b>2</b>, integer operations and branch <b>1</b>.</p>",
+        "validation": {"type": "button_clicked", "selector": "#show-instr-operands", "message": "Click the type button of the Program panel"},
+        "actions": ["sidePanel:show", "reveal:programColumns", "selectProgram:Base", "programView:type"],
         "next": ["sequential"]
       },
       {
@@ -151,11 +156,15 @@
         "next": ["seq-sim"]
       },
       {
-        "id": "seq-sim", "type": "step", "title": "Check it: the timeline",
-        "selector": "#canvas-container", "position": "left",
-        "description": "This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).<br>The <b>Timeline</b> shows each instruction (rows) cycle by cycle (columns):<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).<br>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.",
-        "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base",
-                    "runSimulation", "reveal:timeline", "switchTo:timelineComponent", "timeline:cycles=40"],
+        "id": "seq-sim",
+        "type": "step",
+        "title": "Check it: the timeline",
+        "selector": "#canvas-container",
+        "anchor": "#right-panel",
+        "position": "inside-right",
+        "wWidth": 400,
+        "description": "<p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p><p>The <b>Timeline</b> shows each instruction (rows) cycle by cycle (columns):</p><p><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.</p>",
+        "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29"],
         "next": ["pipeline"]
       },
       {
@@ -175,11 +184,11 @@
         "id": "ooo", "type": "step", "title": "A real processor: many instructions at once",
         "selector": "#canvas-container", "position": "left",
         "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>{{cyclesPerIter}} cycles per iteration</b>.",
-        "actions": ["revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
+        "actions": ["reveal:processor,programPorts", "revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
         "next": ["critical", "ooo-more"], "nextLabels": ["Continue", "In depth: out-of-order execution"]
       },
       {
-        "id": "ooo-more", "type": "step", "title": "In depth: out-of-order execution",
+        "id": "ooo-more", "type": "step", "title": "In depth: out-of-order execution", "actions": ["sidePanel:show"],
         "selector": "#process-panel .processor-container", "position": "right",
         "description": "&bull; Instructions <b>wait</b> in a buffer until their input data are ready (<b>.</b>) and a port is free (<b>*</b>).<br>&bull; The <b>ROB</b> (reorder buffer) keeps them in program order: they <b>retire</b> in order (<b>R</b>),<br>&nbsp;&nbsp;&nbsp;so the result is the same as a sequential execution. <b>-</b> means: executed, waiting to retire.<br>&bull; The ROB size limits how many instructions are in flight: the <b>execution window</b>.<br>&bull; <b>Dispatch / retire width</b> and the <b>ports</b> limit how many instructions are processed per cycle.",
         "next": ["critical"], "nextLabels": ["Continue"]
@@ -208,7 +217,7 @@
         "selector": "#process-panel .processor-container", "position": "right",
         "description": "<b>Make Base run below 2.5 cycles per iteration</b> changing only the <b>latency of FLOAT.ADD</b>.<br>In the Processor panel, click <i>show operation types</i>, then the FLOAT cell, and change its latency;<br>then simulate (Simulation panel). <i>Predict first: what latency do you need?</i>",
         "goal": "cyclesPerIter < 2.5", "program": "Base", "allow": ["processor.latencies"],
-        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "actions": ["sidePanel:show", "selectProgram:Base", "switchTo:simulationComponent"],
         "next": ["bounds"]
       },
       {
@@ -239,7 +248,7 @@
         "id": "summary", "type": "step", "title": "9. Summary",
         "selector": "#lesson-bar", "position": "bottom",
         "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
-        "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern", "selectProgram:Base", "switchTo:simulationComponent"],
+        "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern,timelineCycles", "selectProgram:Base", "switchTo:simulationComponent"],
         "next": []
       }
     ]

@@ -330,6 +330,7 @@ const defaultOptions = {
   progressStep:    0,
   progressStepId: "",
   progressHistory: [],
+  cardStates:     {},
   windowWidth:   200,
   windowHeight:  200,
   x_pos:          10,
@@ -495,8 +496,15 @@ const successorSteps = computed(() => {
 })
 
 const canGoBack = computed(() =>
-  Array.isArray(tutorialOptions.progressHistory) && tutorialOptions.progressHistory.length > 0
+  (Array.isArray(tutorialOptions.progressHistory) && tutorialOptions.progressHistory.length > 0)
+  || predecessorIndex() !== -1
 )
+// the first card that leads to the current one (Previous when the history was lost)
+function predecessorIndex() {
+  const steps = currentTutorial.value?.steps ?? []
+  const id = currentStep.value?.id
+  return id ? steps.findIndex(step => (step.next ?? []).includes(id)) : -1
+}
 
 const isQuestionStep = computed(() =>
   currentStep.value?.type === 'question'
@@ -557,11 +565,12 @@ const canProceed = computed(() => {
   const type = currentStep.value?.type
   if (type === 'predict' && !taskState.value.result) return false
   if (type === 'goal'    && !taskState.value.done)   return false
-  return validationMet.value
+  return validationMet.value || !!taskState.value.solved
 })
 
 const validationMet = computed(() => {
   const validation = currentStep.value?.validation
+  if (validation && taskState.value.solved && validation.type !== 'simulation_done') return true
   if (!validation) return true
 
   // Force reactivity
@@ -677,7 +686,7 @@ const positionCurrentTooltip = async () => {
 
   // Measure the card at its natural size: restore the size from the tutorial file (if any)
   // and place it where it has the whole width, so its text is not wrapped by the old position
-  const size = authoredSize.get(step) ?? {}
+  const size = authoredSize.get(toRaw(step)) ?? {}
   step.wWidth  = size.w
   step.wHeight = size.h
   // forget a manual resize of the previous card (set by the browser on the element)
@@ -851,9 +860,22 @@ function resultsStillShown() {
 // ============================================================================
 // TASKS (cards predict and goal; questions): state per card, recorded in the lesson
 // ============================================================================
-// taskStates: { cardId: { prediction, predictedAt, result, last, done, best } } (this session);
-// in a lesson, the completed tasks are also kept in simState.lesson.done
+// taskStates: { cardId: { prediction, predictedAt, result, last, done, best, answer, solved,
+// hiddenBefore } }, kept with the progress of the tutorial (tutorialOptions.cardStates): a card
+// already solved is shown solved when the tutorial is resumed or the student goes back to it.
+// In a lesson, the completed tasks are also kept in simState.lesson.done
 const taskStates = ref({})
+watch(taskStates, (states) => {
+  const id = currentTutorial.value?.id
+  if (!id || id === '__preview__') return
+  tutorialOptions.cardStates = { ...(tutorialOptions.cardStates ?? {}), [id]: states }
+}, { deep: true })
+function loadCardStates(id, resuming) {
+  const all = { ...(tutorialOptions.cardStates ?? {}) }
+  if (!resuming) delete all[id]
+  tutorialOptions.cardStates = all
+  taskStates.value = resuming ? JSON.parse(JSON.stringify(all[id] ?? {})) : {}
+}
 const taskState  = computed(() => taskStates.value[currentStep.value?.id] ?? {})
 const setTask    = (id, data) => { taskStates.value = { ...taskStates.value, [id]: { ...(taskStates.value[id] ?? {}), ...data } } }
 const formatNumber = (v) => (typeof v === 'number' ? Number(v.toFixed(3)).toLocaleString('en-US') : String(v ?? '…'))
@@ -916,6 +938,10 @@ watch(() => simState.lessonTutorial?.nonce, async () => {
     return
   }
   const { id } = request
+  if (request.action === 'resume' && currentTutorial.value?.id === id) {
+    if (!isActive.value) resumeTutorial()
+    return
+  }
   if (!tutorialOptions.available.some(t => t.id === id)) {
     try {
       const t = JSON.parse(localStorage.getItem(`tutorial.${id}`))
@@ -923,7 +949,6 @@ watch(() => simState.lessonTutorial?.nonce, async () => {
     } catch (e) { console.error('👨‍🎓❌ Lesson tutorial not found:', e); return }
   }
   if (currentTutorial.value && isActive.value) await endTutorial(true)
-  taskStates.value = {}
   await startTutorial(id)
 })
 
@@ -953,8 +978,18 @@ const clearHighlights = () => {
   })
 }
 
+// A question answered before: its answer is shown again (answered)
+function restoreAnswer() {
+  const answer = taskState.value.answer
+  if (answer === undefined || !taskState.value.solved) return
+  if (Array.isArray(answer)) selectedAnswers.value = [...answer]
+  else numericAnswer.value = String(answer)
+  questionAnswered.value = true
+}
+
 const showCurrentStep = async () => {
   if (currentStep.value?.type === 'question') {
+    restoreAnswer()
     clearHighlights()
     highlightElement.value = null
     stepSimulationStart = simulationCount.value
@@ -1029,7 +1064,7 @@ async function highlightCurrent() {
 const authoredSize = new WeakMap()
 
 const processStepActions = (steps) => steps.map(step => {
-  authoredSize.set(step, { w: step.wWidth, h: step.wHeight })
+  authoredSize.set(toRaw(step), { w: step.wWidth, h: step.wHeight })
   if (step.action && typeof step.action === 'string') {
     const [actionType, param] = step.action.split(':')
     if (actionType === 'switchTo') {
@@ -1201,6 +1236,8 @@ const selectAnswer = (index) => {
 const submitAnswer = () => {
   if (!canSubmit.value) return
   questionAnswered.value = true
+  if (isQuestionCorrect.value) setTask(currentStep.value.id, { answer: isNumericQuestion.value
+    ? Number(numericAnswer.value.replace(',', '.')) : [...selectedAnswers.value] })
   if (isQuestionCorrect.value)
     markTask(currentStep.value.id, isNumericQuestion.value ? { answer: Number(numericAnswer.value.replace(',', '.')) }
                                                            : { answer: [...selectedAnswers.value] })
@@ -1261,6 +1298,7 @@ const startTutorial = async (tutorialId) => {
 
   tutorialOptions.progressHistory = []
   tutorialOptions.progressStepId = currentStep.value?.id || ''
+  loadCardStates(tutorialId, false)
   resetQuestionState()
 
   clickedButtons.value        = new Set()
@@ -1278,6 +1316,13 @@ const goToStep = async (newIndex, { recordHistory = true } = {}) => {
   if (newIndex < 0 || newIndex >= currentTutorial.value.steps.length) return
   if (recordHistory && currentStep.value)
     tutorialOptions.progressHistory.push(currentStep.value.id)
+  // the parts of the simulator hidden by a lesson follow the cards: going on, the card keeps
+  // those hidden when it was entered; going back, they are hidden again
+  const targetId = currentTutorial.value.steps[newIndex].id
+  if (simState.lesson) {
+    if (recordHistory) setTask(targetId, { hiddenBefore: [...(simState.lesson.hidden ?? [])] })
+    else if (taskStates.value[targetId]?.hiddenBefore) simState.lesson.hidden = [...taskStates.value[targetId].hiddenBefore]
+  }
 
   isActive.value = false
   stepIndex.value = newIndex
@@ -1304,6 +1349,7 @@ const nextStep = async (targetId) => {
   }
   const targetIndex = currentTutorial.value.steps.findIndex(step => step.id === targetId)
   if (targetIndex === -1) return
+  setTask(currentStep.value.id, { solved: true })
   await goToStep(targetIndex)
 }
 
@@ -1316,6 +1362,8 @@ const previousStep = async () => {
       return
     }
   }
+  const index = predecessorIndex()
+  if (index !== -1) await goToStep(index, { recordHistory: false })
 }
 
 // ============================================================================
@@ -1410,6 +1458,9 @@ const endTutorial = async (fullReset = false) => {
     tutorialOptions.progressStep =  0
     tutorialOptions.progressStepId = ""
     tutorialOptions.progressHistory = []
+    const all = { ...(tutorialOptions.cardStates ?? {}) }
+    delete all[currentTutorial.value?.id]
+    tutorialOptions.cardStates = all
   }
 }
 
@@ -1523,6 +1574,7 @@ const loadCurrentTutorial = async (ID) => {
   tutorialOptions.progressStepId = fullTutorial.steps[stepIndex.value]?.id || ''
   tutorialOptions.inProgressID = ID
   tutorialOptions.progressStep = stepIndex.value
+  if (isResuming) loadCardStates(ID, true)
   console.log(`👨‍🎓🔄 Tutorial in progress: ${ID} (Step ${stepIndex.value+1})`)
 }
 
@@ -1598,6 +1650,7 @@ watch(  // Watch for tutorial changes on specific properties
     progressStep: tutorialOptions.progressStep,
     progressStepId: tutorialOptions.progressStepId,
     progressHistory: tutorialOptions.progressHistory,
+    cardStates:   tutorialOptions.cardStates,
     windowWidth:  tutorialOptions.windowWidth,
     windowHeight: tutorialOptions.windowHeight,
     x_pos:        tutorialOptions.x_pos,

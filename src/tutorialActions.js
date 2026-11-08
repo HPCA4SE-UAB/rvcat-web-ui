@@ -26,6 +26,8 @@ export const TUTORIAL_ACTIONS = [
   ['reveal:PART,PART',         'show parts of the simulator hidden by the lesson'],
   ['hide:PART,PART',           'hide parts of the simulator during the lesson'],
   ['setProcessor:FIELD=VALUE', 'change a parameter of the current processor: dispatch, retire, ROBsize, bPenalty, nBlocks...'],
+  ['sidePanel:hide|show',      'hide or show the side panel (processor and program), to give room to the right panel'],
+  ['programView:type|perf',    'columns of the Program panel: type (type, operation, size) or perf (latency, ports)'],
 ]
 
 // "type:argument" -> { type, arg, key, value } (key=value arguments are split)
@@ -158,6 +160,19 @@ export function createActionRunner(ctx) {
       } else {
         await setTimelineToggle(a.key, a.value !== 'off')
       }
+    },
+    async sidePanel(a) {
+      const collapsed = !!$('#side-panel-expand')
+      if ((a.arg === 'hide') !== collapsed) {
+        const button = collapsed ? $('#side-panel-expand') : $('#side-panel-toggle')
+        if (button) { clickElement(button); await sleep(400) }
+      }
+    },
+    async programView(a) {
+      const button = $('#show-instr-operands')
+      if (!button) return
+      const shown = button.textContent.trim()           // "type" or "perf"
+      if (shown !== a.arg) { clickElement(button); await sleep(200) }
     },
     async expandPorts()   { await togglePorts(true) },
     async collapsePorts() { await togglePorts(false) },

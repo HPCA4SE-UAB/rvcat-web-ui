@@ -20,7 +20,7 @@ export default {
   "copied": { es: "copiado", ca: "copiat" },
   "copy": { es: "copiar", ca: "copia" },
   "✔ Completed": { es: "✔ Completada", ca: "✔ Completada" },
-  "Start the tutorial of the lesson again (your completed tasks are kept)": { es: "Volver a empezar el tutorial de la lección (las tareas completadas se conservan)", ca: "Torna a començar el tutorial de la lliçó (les tasques completades es conserven)" },
+  "Show the tutorial of the lesson where you left it": { es: "Mostrar el tutorial de la lección donde lo dejaste", ca: "Mostra el tutorial de la lliçó on el vas deixar" },
   "Exit lesson": { es: "Salir de la lección", ca: "Surt de la lliçó" },
   "Write the identifier assigned by your teacher: when you complete the lesson you will get a code for it.": { es: "Escribe el identificador que te ha asignado tu profesor: al completar la lección obtendrás un código para él.", ca: "Escriu l'identificador que t'ha assignat el teu professor: en completar la lliçó obtindràs un codi per a aquest identificador." },
   "Start": { es: "Empezar", ca: "Comença" },
