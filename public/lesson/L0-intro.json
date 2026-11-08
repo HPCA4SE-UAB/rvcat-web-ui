@@ -37,7 +37,7 @@
     "steps": [
       {
         "id": "welcome", "type": "step", "title": "Welcome to RVCAT",
-        "selector": "#lesson-bar", "position": "bottom",
+        "selector": "#lesson-bar", "anchor": "#right-panel", "position": "inside-bottom",
         "description": "<b>RVCAT explains why a loop takes the time it takes.</b><br>This lesson follows one example and shows the simulator little by little.<br>&bull; <b>Continue</b> follows the main path; <b>In depth</b> cards explain more, for those who need it.<br>&bull; The bar above counts the questions and predictions (nothing is graded).<br>&bull; <b>Exit lesson</b> leaves it at any time; it is always in the <b>📘 Lessons</b> menu.",
         "actions": ["switchTo:simulationComponent"],
         "next": ["loop"], "nextLabels": ["Start"]
@@ -45,13 +45,13 @@
       {
         "id": "loop", "type": "step", "title": "1. The loop VectSum",
         "selector": "#program-source-header", "position": "right",
-        "description": "<b>Hover the header of the table to see the C code:</b> the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T0 + T1·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
+        "description": "<b>Hover over the table header (or click it) to see the C code:</b> the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each loop iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
         "next": ["compiler", "compiler-more"], "nextLabels": ["Continue", "In depth: time and cycles"]
       },
       {
         "id": "compiler-more", "type": "step", "title": "In depth: time, cycles and complexity",
         "selector": "#program-source-header", "position": "right",
-        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear complexity, Θ(N)</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T1 does.<br>&bull; Real measurements (N = 5000): 20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
+        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle typically lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear time complexity, Θ(N)</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T<sub>1</sub> does.<br>&bull; Real measurements (Intel Core i5-12400, N = 5000):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
         "next": ["compiler"], "nextLabels": ["Continue"]
       },
       {

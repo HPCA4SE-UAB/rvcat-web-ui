@@ -4,7 +4,7 @@
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
       <div class="tutorial-tooltip" ref="contentRef"
-        :style="{ left: x + 'px', top: y + 'px',
+        :style="{ left: x + 'px', top: y + 'px', visibility: measuring ? 'hidden' : undefined,
                   width: currentStep?.wWidth ? `${currentStep.wWidth}px` : undefined,
                   height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
         <div class="tutorial-header" ref="headerRef">
@@ -593,33 +593,66 @@ const isElementVisible = (el) => {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max))
 
-const getTooltipPosition = (targetRect, width, height, preferredPosition) => {
+// ---- Placement of a card in an empty zone near its target ----
+// The visible content of the simulator (text, tables, diagrams, controls) is collected as
+// obstacles; the card goes to the position that covers the least content and, among those,
+// the closest to the preferred side of the target (bottom, top, right, left; inside-bottom
+// and inside-top place it within the target, e.g. a panel used as an anchor)
+const CONTENT_TAGS = new Set(['TABLE', 'svg', 'IMG', 'BUTTON', 'SELECT', 'INPUT', 'TEXTAREA', 'PRE', 'H1', 'H2', 'H3', 'H4', 'LABEL'])
+function contentObstacles() {
+  const maxArea = window.innerWidth * window.innerHeight * 0.4
+  const rects = []
+  const roots = [document.querySelector('main.container'), document.querySelector('#lesson-bar-slot')].filter(Boolean)
+  for (const root of roots) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)
+    for (let el = walker.currentNode; el; el = walker.nextNode()) {
+      if (el.closest('.tutorial-overlay, .tutorial-system')) continue
+      const own = CONTENT_TAGS.has(el.tagName) ||
+        [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+      if (!own) continue
+      const r = el.getBoundingClientRect()
+      if (r.width < 2 || r.height < 2 || r.width * r.height > maxArea) continue
+      if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) continue
+      rects.push(r)
+    }
+  }
+  return rects
+}
+
+function placeInEmptyZone(refRect, width, height, preferred, avoidRect) {
   const margin = VIEWPORT_MARGIN
-  const centerX = targetRect.left + targetRect.width / 2 - width / 2
-  const centerY = targetRect.top + targetRect.height / 2 - height / 2
-  const candidates = [
-    { side: 'bottom', space: window.innerHeight - targetRect.bottom - margin, top: targetRect.bottom + margin, left: centerX, required: height },
-    { side: 'top', space: targetRect.top - margin, top: targetRect.top - height - margin, left: centerX, required: height },
-    { side: 'right', space: window.innerWidth - targetRect.right - margin, top: centerY, left: targetRect.right + margin, required: width },
-    { side: 'left', space: targetRect.left - margin, top: centerY, left: targetRect.left - width - margin, required: width }
-  ].map(candidate => {
-    const left = clamp(candidate.left, margin, window.innerWidth - width - margin)
-    const top = clamp(candidate.top, HEADER_HEIGHT, window.innerHeight - height - margin)
-    const overlaps = left < targetRect.right && left + width > targetRect.left
-      && top < targetRect.bottom && top + height > targetRect.top
-    return { ...candidate, left, top, fits: candidate.space >= candidate.required && !overlaps, overlaps }
-  })
-
-  const preferred = candidates.find(candidate => candidate.side === preferredPosition)
-  const selected = preferred?.fits
-    ? preferred
-    : candidates.filter(candidate => !candidate.overlaps)
-      .sort((a, b) => b.space - a.space)[0]
-
-  return selected
-    ? { left: selected.left, top: selected.top }
-    : { left: clamp(centerX, margin, window.innerWidth - width - margin),
-        top: clamp(centerY, HEADER_HEIGHT, window.innerHeight - height - margin) }
+  const obstacles = contentObstacles()
+  if (avoidRect) obstacles.push(avoidRect)
+  const cx = refRect.left + refRect.width / 2, cy = refRect.top + refRect.height / 2
+  const side = (preferred || 'bottom').replace('inside-', '')
+  const point = { bottom: [cx, refRect.bottom], top: [cx, refRect.top], right: [refRect.right, cy], left: [refRect.left, cy] }[side] ?? [cx, refRect.bottom]
+  let xMin = margin, yMin = HEADER_HEIGHT
+  let xMax = window.innerWidth - width - margin, yMax = window.innerHeight - height - margin
+  if ((preferred || '').startsWith('inside-')) {       // within the anchor, when the card fits in it
+    const inner = { xMin: Math.max(xMin, refRect.left + margin), xMax: Math.min(xMax, refRect.right - width - margin),
+                    yMin: Math.max(yMin, refRect.top + margin),  yMax: Math.min(yMax, refRect.bottom - height - margin) }
+    if (inner.xMin <= inner.xMax) { xMin = inner.xMin; xMax = inner.xMax }
+    if (inner.yMin <= inner.yMax) { yMin = inner.yMin; yMax = inner.yMax }
+  }
+  const STEP = 12
+  let best = null
+  for (let top = yMin; top <= Math.max(yMin, yMax); top += STEP) {
+    for (let left = xMin; left <= Math.max(xMin, xMax); left += STEP) {
+      let covered = 0
+      for (const o of obstacles) {
+        const w = Math.min(left + width, o.right) - Math.max(left, o.left)
+        if (w <= 0) continue
+        const h = Math.min(top + height, o.bottom) - Math.max(top, o.top)
+        if (h > 0) covered += w * h
+      }
+      const dx = Math.max(left - point[0], 0, point[0] - left - width)
+      const dy = Math.max(top - point[1], 0, point[1] - top - height)
+      // (and, slightly, centered on that point)
+      const cost = covered * 4 + Math.hypot(dx, dy) + 0.01 * Math.hypot(left + width / 2 - point[0], top + height / 2 - point[1])
+      if (!best || cost < best.cost) best = { cost, left, top }
+    }
+  }
+  return best ?? { left: xMin, top: yMin }
 }
 
 const positionCurrentTooltip = async () => {
@@ -634,38 +667,58 @@ const positionCurrentTooltip = async () => {
   // forget a manual resize of the previous card (set by the browser on the element)
   contentRef.value.style.width  = size.w ? `${size.w}px` : ''
   contentRef.value.style.height = size.h ? `${size.h}px` : ''
+  // the card is measured out of sight: it appears only at its final place
+  measuring.value = true
+  const savedX = x.value, savedY = y.value
   x.value = VIEWPORT_MARGIN
   y.value = HEADER_HEIGHT
   await nextTick()
 
-  const tooltipRect = contentRef.value?.getBoundingClientRect()
-  if (!tooltipRect) return
+  try {
+    const tooltipRect = contentRef.value?.getBoundingClientRect()
+    if (!tooltipRect) { x.value = savedX; y.value = savedY; return }
 
-  tutorialOptions.windowWidth = tooltipRect.width
-  tutorialOptions.windowHeight = tooltipRect.height
+    tutorialOptions.windowWidth = tooltipRect.width
+    tutorialOptions.windowHeight = tooltipRect.height
 
-  if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
-    x.value = clamp(step.x_pos, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
-    y.value = clamp(step.y_pos, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
-    return
+    if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
+      x.value = clamp(step.x_pos, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
+      y.value = clamp(step.y_pos, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+      return
+    }
+
+    // near an anchor (a selector used only to place the card, e.g. a panel), or the highlighted
+    // target, or the right panel; the highlighted target is never covered
+    const target = highlightElement.value
+    let anchor = null
+    if (step.anchor) {
+      try { anchor = [...document.querySelectorAll(step.anchor)].find(el => el.getClientRects().length > 0) ?? null } catch { anchor = null }
+    }
+    const refEl = anchor ?? target ?? document.querySelector('#right-panel')
+    const refRect = refEl?.getBoundingClientRect()
+    if (refRect && refRect.width > 0) {
+      const position = placeInEmptyZone(refRect, tooltipRect.width, tooltipRect.height,
+        step.position || 'bottom', target?.getBoundingClientRect())
+      x.value = position.left
+      y.value = position.top
+      return
+    }
+
+    x.value = clamp((window.innerWidth - tooltipRect.width) / 2, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
+    y.value = clamp((window.innerHeight - tooltipRect.height) / 2, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+  } finally {
+    measuring.value = false
   }
-
-  const targetRect = highlightElement.value?.getBoundingClientRect()
-  if (targetRect) {
-    const position = getTooltipPosition(
-      targetRect,
-      tooltipRect.width,
-      tooltipRect.height,
-      step.position || 'bottom'
-    )
-    x.value = position.left
-    y.value = position.top
-    return
-  }
-
-  x.value = clamp((window.innerWidth - tooltipRect.width) / 2, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
-  y.value = clamp((window.innerHeight - tooltipRect.height) / 2, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
 }
+
+// A card moved by the student (or placed in the tutorial file) appears directly at its place
+const measuring = ref(false)
+watch(currentStep, (step) => {
+  if (step && Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
+    x.value = step.x_pos
+    y.value = step.y_pos
+  }
+}, { flush: 'sync' })
 
 // ============================================================================
 // ACTIONS ON THE SIMULATOR (card fields actions / showMe) and state restored at the end

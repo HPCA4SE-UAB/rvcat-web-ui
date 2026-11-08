@@ -154,6 +154,8 @@
                   <option value="top">{{ t('Top') }}</option>
                   <option value="left">{{ t('Left') }}</option>
                   <option value="right">{{ t('Right') }}</option>
+                  <option value="inside-bottom">{{ t('Inside, bottom') }}</option>
+                  <option value="inside-top">{{ t('Inside, top') }}</option>
                 </select>
                 <label>{{ t('Element to Highlight') }} <span class="required">*</span></label>
                 <select v-model="currentStep.selectorPreset" @change="onSelectorPresetChange(currentStep)" class="selector-preset">
@@ -844,6 +846,7 @@ const convertStepTexts = (step) => {
     selector:    step.selector,
     position:    step.position
   }
+  if (step.anchor)  s.anchor = step.anchor
   if (step.image)   s.image  = step.image
   if (step.action)  s.action = step.action
   if (actionList(step.actionsText).length) s.actions = actionList(step.actionsText)
@@ -1078,6 +1081,7 @@ const convertUploadedTexts = (step) => {
     image:       step.image       || '',
     selector:    step.selector    || '',
     position:    step.position    || 'bottom',
+    anchor:      step.anchor      || '',
     action:      step.action      || '',
     actionsText: actionList(step.actions).join('\n'),
     showMeText:  actionList(step.showMe).join('\n')

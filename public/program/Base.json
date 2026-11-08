@@ -1,6 +1,6 @@
 {
   "name": "Base",
-  "description": "float Base(float V[], float W[], int N)\n{\n  float sum = 0;\n  for (int i=0; i<N; i++) {\n    sum = sum + V[i];\n    sum = sum + W[i];\n  }\n  return sum;\n}",
+  "description": "float Base(float V[], float W[], int N)\n{\n  float sum = 0;\n  for (int i=0; i<N; i++) {\n    sum = sum + V[i] + W[i];\n  }\n  return sum;\n}",
   "declarations": [
     {"name": "tmp", "role": "data", "type": "FLOAT", "size": "single"},
     {"name": "V", "role": "array", "type": "FLOAT", "size": "single"},

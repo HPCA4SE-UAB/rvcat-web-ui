@@ -170,6 +170,8 @@ export default {
   "Top": { es: "Arriba", ca: "A dalt" },
   "Left": { es: "Izquierda", ca: "Esquerra" },
   "Right": { es: "Derecha", ca: "Dreta" },
+  "Inside, bottom": { es: "Dentro, abajo", ca: "A dins, a sota" },
+  "Inside, top": { es: "Dentro, arriba", ca: "A dins, a dalt" },
   "Element to Highlight": { es: "Elemento que se resalta", ca: "Element que es ressalta" },
   "CSS selector (e.g., #my-button, .my-class)": { es: "Selector CSS (p. ej., #my-button, .my-class)", ca: "Selector CSS (p. ex., #my-button, .my-class)" },
   "Answer Mode": { es: "Tipo de respuesta", ca: "Tipus de resposta" },
