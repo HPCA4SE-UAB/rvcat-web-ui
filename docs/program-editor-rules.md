@@ -232,7 +232,7 @@ Examples that move data across blocks:
 
 ## Source code
 
-The **Source code** section of the editor keeps the code (usually C) of the loop from which the program was generated. It is saved in the program JSON as `description` (a string) and shown in the Program panel: the header of the instruction table reads *&lt;program&gt;: Program Instructions*, and hovering or clicking it shows the code (monospace, keeping its indentation).
+The **Source code** section of the editor keeps the code (usually C) of the loop from which the program was generated. It is saved in the program JSON as `description` (a string) and shown in the Program panel: the header of the instruction table reads *Program { }*, and hovering or clicking it shows the code (monospace, keeping its indentation).
 
 ## N and the memory trace
 

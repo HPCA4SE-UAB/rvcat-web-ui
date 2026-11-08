@@ -141,7 +141,7 @@
         "title": "5. Latency",
         "selector": "#show-instr-operands",
         "position": "bottom",
-        "description": "<p>The columns <b>Type</b>, <b>Oper</b> and <b>Size</b> describe each instruction: its type (MEM, FLOAT, INT, BRANCH), its operation (LOAD, ADD…) and the size of its data.</p><p>In each processor, the execution time of an instruction, its <b>latency</b>, depends on these characteristics.</p><p><b>Click the type button</b> of the Program panel to see the latencies of these instructions in the processor used by default (you will see it later).</p>",
+        "description": "<p>The columns <b>Type</b>, <b>Oper</b> and <b>Size</b> describe each instruction: its type (MEM, FLOAT, INT, BRANCH), its operation (LOAD, ADD…) and the size of its data.</p><p>In each processor, the execution time of an instruction, its <span style=\"color:#c62828\">latency</span>, depends on the instruction <b>type.oper.size</b>.</p><p><b>Click the type button</b> of the Program panel to see the latencies of these instructions in the configured processor.<br>We will show you how to change them later.</p>",
         "doneDescription": "<p>The column <b>Latency</b> gives the cycles that each instruction takes to execute in this processor:<br><b>load 4</b>, float addition <b>2</b>, integer operations and branch <b>1</b>.</p>",
         "validation": {"type": "button_clicked", "selector": "#show-instr-operands", "message": "Click the type button of the Program panel"},
         "actions": ["sidePanel:show", "reveal:programColumns", "selectProgram:Base", "programView:type"],

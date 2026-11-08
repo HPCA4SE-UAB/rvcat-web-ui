@@ -581,7 +581,7 @@
                   :title="simState.simulatedProcess?.description
                           ? simState.simulatedProcess.description
                           : t('No source code for this program: write it in the Program Editor (Source code)')">
-                {{ programOptions.currentProgram || t('Program') }}: {{ t('Program Instructions') }}
+                {{ t('Program') }}
                 <span v-if="simState.simulatedProcess?.description" class="source-mark">{ }</span>
               </th>
               <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>

@@ -18,7 +18,6 @@ export default {
   "The loop runs N/S = {n} iterations.": { es: "El bucle ejecuta N/S = {n} iteraciones.", ca: "El bucle executa N/S = {n} iteracions." },
   "Each iteration does the work of {s} iterations of the original loop (unrolled or vectorized).": { es: "Cada iteración hace el trabajo de {s} iteraciones del bucle original (desenrollado o vectorizado).", ca: "Cada iteració fa la feina de {s} iteracions del bucle original (desenrotllat o vectoritzat)." },
   "No source code for this program: write it in the Program Editor (Source code)": { es: "Este programa no tiene código fuente: escríbelo en el editor de programas (Source code)", ca: "Aquest programa no té codi font: escriu-lo a l'editor de programes (Source code)" },
-  "Program Instructions": { es: "Instrucciones del programa", ca: "Instruccions del programa" },
   "Oper": { es: "Oper", ca: "Oper" },
   "Latency": { es: "Latencia", ca: "Latència" },
   "Ports": { es: "Puertos", ca: "Ports" },
