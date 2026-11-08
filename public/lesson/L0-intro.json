@@ -38,27 +38,27 @@
       {
         "id": "welcome", "type": "step", "title": "Welcome to RVCAT",
         "selector": "#lesson-bar", "anchor": "#right-panel", "position": "inside-bottom",
-        "description": "<b>RVCAT explains why a loop takes the time it takes.</b><br>This lesson follows one example and shows the simulator little by little.<br>&bull; <b>Continue</b> follows the main path; <b>In depth</b> cards explain more, for those who need it.<br>&bull; The bar above counts the questions and predictions (nothing is graded).<br>&bull; <b>Exit lesson</b> leaves it at any time; it is always in the <b>📘 Lessons</b> menu.",
+        "description": "<p><b>RVCAT explains why a loop takes the time it takes.</b></p><p>This lesson follows one example and shows the simulator little by little.</p><p>&bull; <b>Continue</b> follows the main path; <b>In depth</b> cards explain more, for those who need it.</p><p>&bull; The bar above counts the questions and predictions (nothing is graded).</p><p>&bull; <b>Exit lesson</b> leaves it at any time; it is always in the <b>📘 Lessons</b> menu.</p>",
         "actions": ["switchTo:simulationComponent"],
         "next": ["loop"], "nextLabels": ["Start"]
       },
       {
         "id": "loop", "type": "step", "title": "1. The loop VectSum",
         "selector": "#program-source-header", "position": "right",
-        "description": "<b>Click the table header to see the C code</b> (needed to continue): the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each loop iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
+        "description": "<p><b>Click the table header to see the C code</b> (needed to continue):<br>the function adds all the N elements of two vectors, V and W.<br>Time grows with N: <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>.&nbsp;&nbsp; T<sub>0</sub>: constant time outside the loop; T<sub>1</sub>: time per iteration.</p><p>Measured on a real processor (Intel Core i5-12400), each loop iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;That is the question of this lesson.</p>",
         "validation": { "type": "button_clicked", "selector": "#program-source-header", "message": "Click the header of the table to see the C code" },
         "next": ["compiler", "compiler-more"], "nextLabels": ["Continue", "In depth: time and cycles"]
       },
       {
         "id": "compiler-more", "type": "step", "title": "In depth: time, cycles and complexity",
         "selector": "#program-source-header", "position": "right",
-        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle typically lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear time complexity, Θ(N)</b>, <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T<sub>1</sub> does.<br>&bull; Real measurements (Intel Core i5-12400, N = 5000):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
+        "description": "<p>&bull; The processor works at the rate of a <b>clock</b>: one cycle typically lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.</p><p>&bull; VectSum has <b>linear time complexity, Θ(N)</b>, <b>T = T<sub>0</sub> + T<sub>1</sub>·N</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T<sub>1</sub> does.</p><p>&bull; Real measurements (Intel Core i5-12400, N = 5000):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20,020 cycles = 4 cycles per iteration, at 4.38 GHz.</p>",
         "next": ["compiler"], "nextLabels": ["Continue"]
       },
       {
         "id": "compiler", "type": "step", "title": "2. From C to machine instructions",
         "selector": ".program-container", "position": "right",
-        "description": "<b>The compiler translates the C loop into machine instructions</b>, the simple operations that<br>a given processor (its ISA) executes. RVCAT shows them in a readable form, one per row:<br>two <b>loads</b> (read V[i] and W[i] from memory), two <b>additions</b> of floats, and the loop control<br>(i = i + 1, compare, branch): <b>7 instructions per iteration</b>.",
+        "description": "<p><b>The compiler translates the C loop into <span style=\"color:#c62828\">machine instructions</span></b>,<br>the simple operations that a given processor (its ISA) executes.<br>RVCAT shows machine instructions in a readable form, one per row:<br>&bull; two <b>loads</b> (read V[i] and W[i] from memory),<br>&bull; two <b>additions</b> of floats (sum = sum + tmp),<br>&bull; and the loop control (i = i + 1, compare, branch):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>7 instructions per iteration</b>.</p>",
         "next": ["simulate", "isa-more"], "nextLabels": ["Continue", "In depth: the compiler"]
       },
       {

@@ -1613,7 +1613,7 @@ onUnmounted(() => {
 <style>
 
   /* description of a card (HTML): paragraphs <p> are separated by a small space */
-  .step-description         { margin: 1em 0; }
+  .step-description         { margin: 0.2em 0 1em; }
   .step-description p       { margin: 0 0 0.5em; }
   .step-description p:last-child { margin-bottom: 0; }
   .step-done-description    { margin-top: 0.6em; padding-top: 0.6em; border-top: 1px solid #e5e7eb; }
