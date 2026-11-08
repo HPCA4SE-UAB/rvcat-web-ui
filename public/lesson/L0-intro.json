@@ -59,20 +59,20 @@
         "id": "compiler", "type": "step", "title": "2. From C to machine instructions",
         "selector": ".program-container", "position": "right",
         "description": "<p><b>The <span style=\"color:#c62828\">compiler</span> translates the C loop into <span style=\"color:#c62828\">machine instructions</span></b>,<br>the simple operations that a given processor (its ISA) executes.<br>RVCAT shows machine instructions in a readable form, one per row:<br>&bull; two <b>loads</b> (read V[i] and W[i] from memory),<br>&bull; two <b>additions</b> of floats (sum = sum + tmp),<br>&bull; and the loop control (i = i + 1, compare, branch):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>7 instructions per iteration</b>.</p>",
-        "next": ["simulate", "isa-more"], "nextLabels": ["Continue", "In depth: the compiler"]
+        "next": ["isa-what", "isa-more"], "nextLabels": ["Continue", "In depth: the compiler"]
       },
       {
         "id": "isa-more", "type": "step", "title": "In depth: what the compiler can do",
         "selector": ".program-container", "position": "right",
         "description": "<p>The compiler can transform the code to run faster, and the programmer controls it in two ways:</p><p>&bull; <b>(A) enabling or disabling strategies</b> with options (flags) added to the compilation command of gcc<br>&nbsp;&nbsp;&nbsp;or another compiler, e.g. <i>gcc -O2 vectsum.c</i>, or <i>-ffast-math</i>, which allows changing<br>&nbsp;&nbsp;&nbsp;the order of floating-point additions (it can change the rounding);</p><p>&bull; <b>(B) rewriting the source code by hand</b> to make the compiler's task easier.</p><p>The versions <b>V1</b> and <b>V2</b> that you will see are examples of (B).</p>",
-        "next": ["simulate", "isa-what"], "nextLabels": ["Continue", "In depth: machine instructions and ISA"]
+        "next": ["isa-what"], "nextLabels": ["Continue"]
       },
-      {"id": "isa-what", "type": "step", "title": "In depth: machine instructions and ISA", "selector": ".program-container", "position": "right", "description": "<p>A <b>machine instruction</b> is a simple operation, coded in binary, that the processor executes directly:<br>read or write a memory location, an arithmetic operation, a comparison, a branch to another instruction.</p><p>An <b>Instruction Set Architecture (ISA)</b> is the specification of the machine instructions that a family of processors<br>executes: their operations, operands, registers, memory addressing and binary format.<br>A program compiled for an ISA runs on every processor that implements it, whatever its internal design.</p><p>Common ISAs: <b>x86-64</b> (Intel and AMD: PCs and servers), <b>ARM</b> (AArch64: phones, Apple computers, servers)<br>and <b>RISC-V</b> (an open and free ISA: embedded systems, research, a growing number of processors).</p><p><i>RVCAT does not model a real ISA: it simulates abstract instructions, similar in all of them.</i><br>The next optional cards show the machine code (assembly) of the loop of Base in each ISA.</p>", "next": ["simulate", "asm-x86"], "nextLabels": ["Continue", "In depth: x86-64 code"]},
-      {"id": "asm-x86", "type": "step", "title": "In depth: the loop of Base in x86-64", "selector": ".program-container", "position": "right", "description": "<p>Machine code (assembly) of the loop, compiled with <i>gcc -O2</i> (simplified; it may change with the compiler version):</p><pre>.L3:                                    // RVCAT rows\n  addss  xmm0, DWORD PTR [rdi+rax*4]    // 0, 1: tmp = V[i]; sum = sum + tmp\n  addss  xmm0, DWORD PTR [rsi+rax*4]    // 2, 3: tmp = W[i]; sum = sum + tmp\n  add    rax, 1                         // 4: i = i + 1\n  cmp    rdx, rax                       // 5: c = i != N\n  jne    .L3                            // 6: if c go back</pre><p>x86-64 can combine a load and an addition in one instruction (an operand in memory): 5 instructions.<br>Inside, the processor splits them into simple operations (micro-operations), like the 7 rows of RVCAT.</p>", "next": ["simulate", "asm-arm"], "nextLabels": ["Continue", "In depth: ARM code"]},
+      {"id": "isa-what", "type": "step", "title": "3. Machine instructions and ISA", "selector": ".program-container", "position": "right", "description": "<p>A <b>machine instruction</b> is a simple operation, coded in binary, that the processor executes directly:<br>read or write a memory location, an arithmetic operation, a comparison, a branch to another instruction.</p><p>An <b>Instruction Set Architecture (ISA)</b> is the specification of the machine instructions that a family of processors<br>executes: their operations, operands, registers, memory addressing and binary format.<br>A program compiled for an ISA runs on every processor that implements it, whatever its internal design.</p><p>Common ISAs: <b>x86-64</b> (Intel and AMD: PCs and servers), <b>ARM</b> (AArch64: phones, Apple computers, servers)<br>and <b>RISC-V</b> (an open and free ISA: embedded systems, research, a growing number of processors).</p><p><i>RVCAT does not model a real ISA: it simulates abstract instructions, similar in all of them.</i><br>Optional cards show the machine code (assembly) of the loop of Base in each ISA.</p>", "next": ["simulate", "asm-x86"], "nextLabels": ["Continue", "In depth: x86-64 code"]},
+      {"id": "asm-x86", "type": "step", "title": "In depth: the loop of Base in x86-64", "selector": ".program-container", "position": "right", "description": "<p>Machine code (assembly, in the UNIX/AT&amp;T syntax) of the loop, compiled with <i>gcc -O2</i> (it may change with the compiler version):</p><pre>.L3:                                    # RVCAT rows\n        addss   (%rdi,%rax), %xmm0      # 0, 1: tmp = V[i]; sum = sum + tmp\n        addss   (%rsi,%rax), %xmm0      # 2, 3: tmp = W[i]; sum = sum + tmp\n        addq    $4, %rax                # 4: i = i + 1\n        cmpq    %rax, %rdx              # 5: c = i != N\n        jne     .L3                     # 6: if c go back</pre><p>x86-64 can combine a load and an addition in one instruction (an operand in memory): 5 instructions.<br>Inside, the processor splits them into simple operations (micro-operations), like the 7 rows of RVCAT.</p><p>The compiler advances a byte offset instead of the index i: %rax is the position of V[i] and W[i]<br>in bytes, so it adds 4 (the size of a float) to go to the next element, and %rdx holds 4·N.</p>", "next": ["simulate", "asm-arm"], "nextLabels": ["Continue", "In depth: ARM code"]},
       {"id": "asm-arm", "type": "step", "title": "In depth: the loop of Base in ARM (AArch64)", "selector": ".program-container", "position": "right", "description": "<p>Machine code (assembly) of the loop, compiled with <i>gcc -O2</i> (simplified; it may change with the compiler version):</p><pre>.L3:                                    // RVCAT rows\n  ldr    s1, [x0, x3, lsl 2]            // 0: tmp = V[i]\n  ldr    s2, [x1, x3, lsl 2]            // 2: tmp = W[i]\n  add    x3, x3, 1                      // 4: i = i + 1\n  fadd   s0, s0, s1                     // 1: sum = sum + tmp\n  cmp    x2, x3                         // 5: c = i != N\n  fadd   s0, s0, s2                     // 3: sum = sum + tmp\n  bne    .L3                            // 6: if c go back</pre><p>ARM loads and computes in separate instructions: 7 instructions, one for each row of RVCAT.</p>", "next": ["simulate", "asm-riscv"], "nextLabels": ["Continue", "In depth: RISC-V code"]},
       {"id": "asm-riscv", "type": "step", "title": "In depth: the loop of Base in RISC-V", "selector": ".program-container", "position": "right", "description": "<p>Machine code (assembly) of the loop, compiled with <i>gcc -O2</i> (simplified; it may change with the compiler version):</p><pre>.L3:                                    # RVCAT rows\n  flw     fa4, 0(a0)                    # 0: tmp = V[i]\n  flw     fa5, 0(a1)                    # 2: tmp = W[i]\n  addi    a0, a0, 4                     # 4: next element of V\n  addi    a1, a1, 4                     #    next element of W\n  fadd.s  fa0, fa0, fa4                 # 1: sum = sum + tmp\n  fadd.s  fa0, fa0, fa5                 # 3: sum = sum + tmp\n  bne     a0, a2, .L3                   # 5, 6: if not at the end, go back</pre><p>Also 7 instructions, but different: the compiler advances two pointers instead of the index i,<br>and one branch instruction (bne) compares and jumps.</p>", "next": ["simulate"], "nextLabels": ["Continue"]},
       {
-        "id": "simulate", "type": "step", "title": "3. Measure: simulate the loop",
+        "id": "simulate", "type": "step", "title": "4. Measure: simulate the loop",
         "selector": "#run-simulation-button", "position": "bottom",
         "description": "<b>Simulate N = 1,000 iterations</b> of the loop on a processor similar to the real one:<br>click the button (or ▶ Show me).",
         "doneDescription": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can execute multiple instructions at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
@@ -119,7 +119,7 @@
         "next": ["latency"]
       },
       {
-        "id": "latency", "type": "step", "title": "4. Latency",
+        "id": "latency", "type": "step", "title": "5. Latency",
         "selector": "#process-panel .processor-container", "position": "right",
         "description": "<b>The processor is now shown.</b> Each type of instruction takes a fixed number of cycles<br>to execute: its <b>latency</b>. Here: <b>load 4</b>, float addition <b>2</b>, integer operations and branch <b>1</b>.<br>(The <b>type</b> button of the Program panel shows the latency of each instruction.)<br>The processor executes instructions in <b>ports</b> P1…P4: each one starts one instruction per cycle.",
         "actions": ["reveal:processor,programColumns", "selectProgram:Base"],
@@ -142,7 +142,7 @@
         "next": ["pipeline"]
       },
       {
-        "id": "pipeline", "type": "step", "title": "5. Overlap: two instructions at once",
+        "id": "pipeline", "type": "step", "title": "6. Overlap: two instructions at once",
         "selector": "#canvas-container", "position": "left",
         "description": "<b>Now 2 instructions can be in flight</b> (ROB = 2): while one executes, the next one is dispatched,<br>like a car wash with several stages. Time drops to <b>{{cyclesPerIter}} cycles</b> per iteration.<br>The dots <b>.</b> mean that an instruction <b>waits</b> for the result of a previous one.",
         "actions": ["setProcessor:ROBsize=2", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
@@ -168,7 +168,7 @@
         "next": ["critical"], "nextLabels": ["Continue"]
       },
       {
-        "id": "critical", "type": "step", "title": "6. The critical path",
+        "id": "critical", "type": "step", "title": "7. The critical path",
         "selector": "#canvas-container", "position": "left",
         "description": "<b>Critical</b> marks in red the chain of instructions that determines the time.<br>Each addition to <b>sum</b> needs the result of the previous one, also across iterations:<br>sum → sum → sum… Two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>.<br>Every other instruction executes <b>for free</b>, overlapped with this chain.",
         "actions": ["reveal:timelineCritical", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=40"],
@@ -195,7 +195,7 @@
         "next": ["bounds"]
       },
       {
-        "id": "bounds", "type": "step", "title": "7. Two bounds on performance",
+        "id": "bounds", "type": "step", "title": "8. Two bounds on performance",
         "selector": ".bounds-summary", "position": "bottom",
         "description": "<b>Static Analysis</b> computes, without simulating, two lower bounds of the time per iteration:<br>&bull; <b>latency bound</b>: the longest cyclic chain of dependences (sum: <b>{{latencyBound}}</b> cycles);<br>&bull; <b>throughput bound</b>: the busiest resource (here port P2, with the 2 loads: <b>{{throughputBound}}</b>).<br><b>Minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration.",
         "actions": ["revertProcessor", "selectProgram:Base", "reveal:analysis", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
@@ -219,7 +219,7 @@
         "next": ["summary"]
       },
       {
-        "id": "summary", "type": "step", "title": "8. Summary",
+        "id": "summary", "type": "step", "title": "9. Summary",
         "selector": "#lesson-bar", "position": "bottom",
         "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
         "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern", "selectProgram:Base", "switchTo:simulationComponent"],
