@@ -1,7 +1,7 @@
 {
   "lesson": "L0-intro",
   "title": "Lesson 0: how a processor runs a loop",
-  "description": "A short guided tour of RVCAT with one example, the loop VectSum: from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds. About 20 minutes; optional cards go deeper.",
+  "description": "<p>A short guided tour of RVCAT with one example, the loop <b>VectSum</b>:<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 20 minutes; optional cards go deeper.</p>",
   "version": 1,
   "intro": true,
   "programs": ["Base", "V1", "V2"],

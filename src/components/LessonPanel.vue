@@ -210,6 +210,9 @@
 
 // ---- Exit: confirmation, then everything returns to its state before the lesson ----
   const askExit = ref(false)
+  // a description (HTML) as a tooltip
+  const plainText = (html) => String(html ?? '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+
   async function exitLesson() {
     askExit.value = false
     const session = read(SESSION_KEY) ?? {}
@@ -255,7 +258,7 @@
       <h4>{{ t('Lessons') }}</h4>
       <div v-if="!lessons.length" class="lesson-empty">{{ t('No lessons loaded: load a lesson file given by your teacher.') }}</div>
       <div v-for="l in lessons" :key="l.id" class="lesson-item">
-        <button class="lesson-start" :title="l.description || 'Start this lesson'" @click="askStart(l.id)">
+        <button class="lesson-start" :title="plainText(localized(l.description)) || 'Start this lesson'" @click="askStart(l.id)">
           <strong>{{ localized(l.title) }}</strong><span>{{ l.id }}</span>
         </button>
         <button class="lesson-small" :title="t('Download a self-contained copy (programs, processors and tutorial included)')"
@@ -291,7 +294,7 @@
     <div v-if="startingId" class="lesson-overlay" @click.self="startingId = null">
       <div class="lesson-dialog">
         <h4>{{ localized(startingLesson?.title) }}</h4>
-        <p v-if="startingLesson?.description" v-html="localized(startingLesson.description)"></p>
+        <div v-if="startingLesson?.description" class="lesson-description" v-html="localized(startingLesson.description)"></div>
         <label for="lesson-student-id">{{ idLabel }}:</label>
         <input id="lesson-student-id" v-model="studentId" type="text" @keyup.enter="confirmStart" />
         <div v-if="idError" class="lesson-error">{{ idError }}</div>
@@ -306,7 +309,7 @@
     <div v-if="showIntro" class="lesson-overlay" id="intro-lesson-offer">
       <div class="lesson-dialog">
         <h4>📘 {{ localized(introOffer.title) }}</h4>
-        <p v-html="localized(introOffer.description)"></p>
+        <div class="lesson-description" v-html="localized(introOffer.description)"></div>
         <p class="lesson-note">{{ t('You can skip it now and start it later from the Lessons menu.') }}</p>
         <div class="lesson-actions">
           <button class="blue-button" id="intro-lesson-start" @click="answerIntro(true)">{{ t('Start') }}</button>
@@ -374,6 +377,8 @@
   .lesson-dialog input { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 15px; }
   .lesson-error { color: #c62828; font-size: 0.9em; margin-top: 4px; }
   .lesson-note { color: #666; font-size: 0.85em; }
+  .lesson-description { margin: 0.8em 0; }
+  .lesson-description :deep(p) { margin: 0 0 0.5em; }
   .lesson-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 </style>
 
