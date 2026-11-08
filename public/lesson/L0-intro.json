@@ -74,8 +74,8 @@
       {
         "id": "simulate", "type": "step", "title": "4. Measure: simulate the loop",
         "selector": "#run-simulation-button", "position": "bottom",
-        "description": "<b>Simulate N = 1,000 iterations</b> of the loop on a processor similar to the real one:<br>click the button (or ▶ Show me).",
-        "doneDescription": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can execute multiple instructions at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
+        "description": "<b>Simulate N = 1,000 iterations</b> of the loop on a processor similar to the real one:<br>click the \"Run Simulation\" button (or ▶ Show me).",
+        "doneDescription": "<p><b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.</p><p><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.</p><p><b>Key: current processors can <span style=\"color:#c62828\">execute multiple instructions</span> at the same time</b> (Instruction-Level Parallelism, <b>ILP</b>).</p><p><b>Want to improve performance?</b> Next come two versions of VectSum rewritten by hand: before simulating them, <b>predict</b> their time.</p>",
         "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],
         "validation": { "type": "simulation_done", "message": "Run the simulation (or click ▶ Show me) to continue" },

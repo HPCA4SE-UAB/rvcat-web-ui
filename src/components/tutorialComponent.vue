@@ -32,7 +32,7 @@
             <div v-if="taskState.prediction !== undefined && !taskState.result" class="task-status">
               {{ t('Prediction {p} saved: now run the simulation.', { p: taskState.prediction }) }}
             </div>
-            <div v-if="taskState.result" class="task-status" :class="taskState.result.good ? 'task-ok' : 'task-far'">
+            <div v-if="taskState.result" class="task-status" :class="{ 'task-ok': taskState.result.good === true, 'task-far': taskState.result.good === false }">
               {{ t('Prediction {p} · simulated {a} (difference {d})', { p: taskState.prediction, a: formatNumber(taskState.result.actual), d: formatNumber(taskState.result.actual - taskState.prediction) }) }}{{
                 taskState.result.good === null ? '' : taskState.result.good ? ' · ' + t('good prediction') : ' · ' + t('far from the result') }}
             </div>
@@ -69,7 +69,7 @@
               <template v-if="isBranchingTutorial">{{ t('Card {n}', { n: stepIndex + 1 }) }}</template>
               <template v-else>{{ stepIndex + 1 }} / {{ currentTutorial.steps.length }}</template>
             </span>
-            <button v-if="showMeActions.length" @click="runShowMe" :disabled="actionsRunning"
+            <button v-if="showMeActions.length && !taskAccomplished" @click="runShowMe" :disabled="actionsRunning"
                     id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
                     :title="t('Let the tutorial do it on the simulator (you can also do it yourself)')">
               ▶ {{ t('Show me') }}
@@ -772,6 +772,15 @@ watch(currentStep, (step) => {
 // ============================================================================
 const actionsRunning = ref(false)
 const showMeActions  = computed(() => actionList(currentStep.value?.showMe))
+// Show me is not offered once what it does is done: the simulation of a prediction, the goal,
+// or the validation of the card
+const taskAccomplished = computed(() => {
+  const step = currentStep.value
+  if (!step) return false
+  if (step.type === 'predict') return !!taskState.value.result
+  if (step.type === 'goal')    return !!taskState.value.done
+  return !!step.validation && canProceed.value
+})
 const tutorialHasActions = (tutorial) =>
   (tutorial?.steps ?? []).some(s => actionList(s.actions).length || actionList(s.showMe).length)
 
@@ -1622,6 +1631,8 @@ onUnmounted(() => {
   #tutorial-predict #tutorial-prediction { width: 6em; }
   #tutorial-predict { margin-bottom: 0.8em; }
   #tutorial-predict .task-status { margin-top: 0.5em; }
+  .task-status.task-ok  { color: #2e7d32; }
+  .task-status.task-far { color: #c62828; }
 
   .tutorial-highlight-pulse {
     animation:        tutorial-pulse 5s infinite ease-in-out;
