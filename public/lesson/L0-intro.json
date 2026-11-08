@@ -1,0 +1,223 @@
+{
+  "lesson": "L0-intro",
+  "title": "Lesson 0: how a processor runs a loop",
+  "description": "A short guided tour of RVCAT with one example, the loop VectSum: from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds. About 20 minutes; optional cards go deeper.",
+  "version": 1,
+  "intro": true,
+  "programs": ["Base", "V1", "V2"],
+  "processors": [
+    {
+      "name": "L0-CPU",
+      "dispatch": 4, "retire": 4, "ROBsize": 100, "bPenalty": 5,
+      "nBlocks": 0, "blkSize": 64, "mPenalty": 10, "mIssueTime": 1, "nFillBuffers": 2, "nWriteBuffers": 2, "rThru": 1,
+      "latencies": { "INT": 1, "BRANCH": 1, "FLOAT": 2, "MEM": 4, "MEM.LOAD": 4, "MEM.STORE": 1,
+                     "VINT": 1, "VFLOAT": 2, "VMEM": 4, "VMEM.LOAD": 4, "VMEM.STORE": 1 },
+      "ports": {
+        "1": ["INT", "BRANCH"],
+        "2": ["MEM", "VMEM"],
+        "3": ["INT", "VINT"],
+        "4": ["FLOAT", "INT", "VFLOAT"]
+      }
+    }
+  ],
+  "start": { "program": "Base", "processor": "L0-CPU", "N": 1000 },
+  "hidden": ["processor", "programColumns", "timeline", "timelineCritical", "timelineResources", "analysis",
+             "usage", "cacheStats", "simOptions", "storedResults"],
+  "locks": {
+    "programEditor": true, "tutorialEditor": true, "loopTransforms": true, "upload": true, "remove": true,
+    "processor": "all",
+    "N": { "fixed": 1000 },
+    "simulation": { "sched": "optimal", "speculation": "stall" }
+  },
+  "tutorial": {
+    "id": "L0-intro-tutorial",
+    "name": "Lesson 0: how a processor runs a loop",
+    "description": "Introductory lesson",
+    "flowVersion": 2,
+    "steps": [
+      {
+        "id": "welcome", "type": "step", "title": "Welcome to RVCAT",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "<b>RVCAT explains why a loop takes the time it takes.</b><br>This lesson follows one example and shows the simulator little by little.<br>&bull; <b>Continue</b> follows the main path; <b>In depth</b> cards explain more, for those who need it.<br>&bull; The bar above counts the questions and predictions (nothing is graded).<br>&bull; <b>Exit lesson</b> leaves it at any time; it is always in the <b>📘 Lessons</b> menu.",
+        "actions": ["switchTo:simulationComponent"],
+        "next": ["loop"], "nextLabels": ["Start"]
+      },
+      {
+        "id": "loop", "type": "step", "title": "1. The loop VectSum",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>Hover the header of the table to see the C code:</b> the function adds all the N elements<br>of two vectors, V and W. Its time grows with N: <b>T = T0 + T1·N</b>.<br>Measured on a real processor (Intel Core i5-12400), each iteration takes <b>4 clock cycles</b>.<br><b>Where do those 4 cycles come from?</b> That is the question of this lesson.",
+        "next": ["compiler", "compiler-more"], "nextLabels": ["Continue", "In depth: time and cycles"]
+      },
+      {
+        "id": "compiler-more", "type": "step", "title": "In depth: time, cycles and complexity",
+        "selector": "#program-source-header", "position": "right",
+        "description": "&bull; The processor works at the rate of a <b>clock</b>: one cycle lasts 0.2 to 1 ns (1 to 5 GHz).<br>&nbsp;&nbsp;&nbsp;We measure time in <b>cycles</b>: seconds = cycles / frequency.<br>&bull; VectSum has <b>linear complexity, Θ(N)</b>: doubling N doubles the time.<br>&nbsp;&nbsp;&nbsp;Complexity does not depend on the processor; the constant T1 does.<br>&bull; Real measurements (N = 5000): 20,020 cycles = 4 cycles per iteration, at 4.38 GHz.",
+        "next": ["compiler"], "nextLabels": ["Continue"]
+      },
+      {
+        "id": "compiler", "type": "step", "title": "2. From C to machine instructions",
+        "selector": ".program-container", "position": "right",
+        "description": "<b>The compiler translates the C loop into machine instructions</b>, the simple operations that<br>a given processor (its ISA) executes. RVCAT shows them in a readable form, one per row:<br>two <b>loads</b> (read V[i] and W[i] from memory), two <b>additions</b> of floats, and the loop control<br>(i = i + 1, compare, branch): <b>7 instructions per iteration</b>.",
+        "next": ["simulate", "isa-more"], "nextLabels": ["Continue", "In depth: the compiler"]
+      },
+      {
+        "id": "isa-more", "type": "step", "title": "In depth: what the compiler can do",
+        "selector": ".program-container", "position": "right",
+        "description": "The compiler can transform the code to run faster, and the programmer controls it in two ways:<br>&bull; <b>(A) enabling or disabling strategies</b>, e.g. <i>gcc -O2</i>, or <i>-ffast-math</i>, which allows<br>&nbsp;&nbsp;&nbsp;changing the order of floating-point additions (it can change the rounding);<br>&bull; <b>(B) rewriting the source code by hand</b> to make the compiler's task easier.<br>The versions <b>V1</b> and <b>V2</b> that you will see are examples of (B).<br><i>(RVCAT does not model a real ISA: it simulates these abstract instructions.)</i>",
+        "next": ["simulate"], "nextLabels": ["Continue"]
+      },
+      {
+        "id": "simulate", "type": "step", "title": "3. Measure: simulate the loop",
+        "selector": "#run-simulation-button", "position": "bottom",
+        "description": "<b>Simulate N = 1,000 iterations</b> of the loop on a processor similar to the real one:<br>click the button (or ▶ Show me).",
+        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "validation": { "type": "simulation_done", "message": "Run the simulation (or click ▶ Show me) to continue" },
+        "next": ["results"]
+      },
+      {
+        "id": "results", "type": "step", "title": "Results",
+        "selector": "#simulation-results-info", "position": "bottom",
+        "description": "<b>{{instructions}} instructions in {{cycles}} cycles: {{cyclesPerIter}} cycles per iteration</b>, like the real processor.<br><b>IPC = {{ipc}}</b> instructions per cycle: the processor executes almost 2 instructions every cycle.<br>Now, two versions written by hand. Before simulating them, <b>predict</b>.",
+        "next": ["predict-v1"]
+      },
+      {
+        "id": "predict-v1", "type": "predict", "title": "Predict: version V1",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>V1 only changes the order of the additions:</b> sum = sum + (V[i] + W[i]).<br>It still has 7 instructions per iteration (look at the table).<br>Base takes 4 cycles per iteration. <b>How many cycles per iteration will V1 take?</b><br>Write your prediction, save it, and simulate.",
+        "predictValue": "cyclesPerIter", "predictUnit": "cycles/iter", "tolerance": 0.5,
+        "actions": ["selectProgram:V1", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["predict-v2"]
+      },
+      {
+        "id": "predict-v2", "type": "predict", "title": "Predict: version V2",
+        "selector": "#program-source-header", "position": "right",
+        "description": "<b>V2 is unrolled:</b> each iteration adds two elements of each vector (i = i + 2),<br>with 11 instructions instead of 2 × 7 = 14: <b>fewer instructions per element</b>.<br><b>How many cycles per element</b> (cycles/iter ÷ 2) will V2 take?",
+        "predictValue": "cyclesPerAlgOp", "predictUnit": "cycles/element", "tolerance": 0.5,
+        "actions": ["selectProgram:V2", "switchTo:simulationComponent"],
+        "showMe": ["runSimulation"],
+        "next": ["paradox"]
+      },
+      {
+        "id": "paradox", "type": "question", "title": "A paradox?",
+        "questionText": "Per element: Base runs 7 instructions in 4 cycles, V1 runs 7 instructions in 2 cycles, and V2 runs 5.5 instructions in 4 cycles (the same on the real processor). Which statement is true?",
+        "answerMode": "single",
+        "answers": [
+          { "text": "The number of instructions alone does not determine the time", "isCorrect": true, "explanation": "Right: V1 is twice as fast with the same instructions, and V2 is not faster with fewer. We need a model of how the processor executes them." },
+          { "text": "Fewer instructions always run faster", "isCorrect": false, "explanation": "V2 executes fewer instructions per element than Base, and takes the same time." },
+          { "text": "Changing the order of the additions cannot change the time", "isCorrect": false, "explanation": "V1 only changes that order, and runs twice as fast." },
+          { "text": "Half the iterations means half the time", "isCorrect": false, "explanation": "V2 does half the iterations, but each one does twice the work: same time per element." }
+        ],
+        "next": ["latency"]
+      },
+      {
+        "id": "latency", "type": "step", "title": "4. Latency",
+        "selector": "#process-panel .processor-container", "position": "right",
+        "description": "<b>The processor is now shown.</b> Each type of instruction takes a fixed number of cycles<br>to execute: its <b>latency</b>. Here: <b>load 4</b>, float addition <b>2</b>, integer operations and branch <b>1</b>.<br>(The <b>type</b> button of the Program panel shows the latency of each instruction.)<br>The processor executes instructions in <b>ports</b> P1…P4: each one starts one instruction per cycle.",
+        "actions": ["reveal:processor,programColumns", "selectProgram:Base"],
+        "next": ["sequential"]
+      },
+      {
+        "id": "sequential", "type": "question", "title": "One instruction at a time",
+        "questionText": "Imagine a processor that handles <b>one instruction at a time</b>: <b>D</b>ispatch (1 cycle), <b>E</b>xecute (its latency) and <b>W</b>rite the result (1 cycle), and only then the next instruction. How many cycles does one iteration of Base take (2 loads, 2 float additions, 3 integer/branch)?",
+        "answerMode": "number", "answers": [], "numericValue": 29, "tolerance": 0.01, "numericUnit": "cycles",
+        "numericCorrect": "Right: 2 × (1+4+1) + 2 × (1+2+1) + 3 × (1+1+1) = 12 + 8 + 9 = 29 cycles. Seven times more than the 4 measured!",
+        "numericWrong": "Each instruction takes 1 + latency + 1 cycles, and they do not overlap: add the 7 instructions.",
+        "next": ["seq-sim"]
+      },
+      {
+        "id": "seq-sim", "type": "step", "title": "Check it: the timeline",
+        "selector": "#canvas-container", "position": "left",
+        "description": "This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).<br>The <b>Timeline</b> shows each instruction (rows) cycle by cycle (columns):<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).<br>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.",
+        "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base",
+                    "runSimulation", "reveal:timeline", "switchTo:timelineComponent", "timeline:cycles=40"],
+        "next": ["pipeline"]
+      },
+      {
+        "id": "pipeline", "type": "step", "title": "5. Overlap: two instructions at once",
+        "selector": "#canvas-container", "position": "left",
+        "description": "<b>Now 2 instructions can be in flight</b> (ROB = 2): while one executes, the next one is dispatched,<br>like a car wash with several stages. Time drops to <b>{{cyclesPerIter}} cycles</b> per iteration.<br>The dots <b>.</b> mean that an instruction <b>waits</b> for the result of a previous one.",
+        "actions": ["setProcessor:ROBsize=2", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
+        "next": ["ooo", "pipeline-more"], "nextLabels": ["Continue", "In depth: pipelining"]
+      },
+      {
+        "id": "pipeline-more", "type": "step", "title": "In depth: pipelining",
+        "selector": "#canvas-container", "position": "left",
+        "description": "&bull; <b>Pipelining</b> divides the processing of an instruction in stages that work at the same time,<br>&nbsp;&nbsp;&nbsp;each one on a different instruction (an assembly line).<br>&bull; A <b>bypass</b> gives the result of an instruction directly to the next one that needs it.<br>&bull; An instruction can start executing only when its <b>input data</b> are ready: a <b>data dependence</b>.<br>&bull; With ROB = 2 the time is close to the sum of the latencies: 4+2+4+2+1+1+1 = 15, plus some cycles.",
+        "next": ["ooo"], "nextLabels": ["Continue"]
+      },
+      {
+        "id": "ooo", "type": "step", "title": "A real processor: many instructions at once",
+        "selector": "#canvas-container", "position": "left",
+        "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>{{cyclesPerIter}} cycles per iteration</b>.",
+        "actions": ["revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
+        "next": ["critical", "ooo-more"], "nextLabels": ["Continue", "In depth: out-of-order execution"]
+      },
+      {
+        "id": "ooo-more", "type": "step", "title": "In depth: out-of-order execution",
+        "selector": "#process-panel .processor-container", "position": "right",
+        "description": "&bull; Instructions <b>wait</b> in a buffer until their input data are ready (<b>.</b>) and a port is free (<b>*</b>).<br>&bull; The <b>ROB</b> (reorder buffer) keeps them in program order: they <b>retire</b> in order (<b>R</b>),<br>&nbsp;&nbsp;&nbsp;so the result is the same as a sequential execution. <b>-</b> means: executed, waiting to retire.<br>&bull; The ROB size limits how many instructions are in flight: the <b>execution window</b>.<br>&bull; <b>Dispatch / retire width</b> and the <b>ports</b> limit how many instructions are processed per cycle.",
+        "next": ["critical"], "nextLabels": ["Continue"]
+      },
+      {
+        "id": "critical", "type": "step", "title": "6. The critical path",
+        "selector": "#canvas-container", "position": "left",
+        "description": "<b>Critical</b> marks in red the chain of instructions that determines the time.<br>Each addition to <b>sum</b> needs the result of the previous one, also across iterations:<br>sum → sum → sum… Two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>.<br>Every other instruction executes <b>for free</b>, overlapped with this chain.",
+        "actions": ["reveal:timelineCritical", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=40"],
+        "next": ["why-v1"]
+      },
+      {
+        "id": "why-v1", "type": "question", "title": "Why is V1 twice as fast?",
+        "questionText": "V1 computes tmp = V[i] + W[i] and then sum = sum + tmp. Why does it take 2 cycles per iteration instead of 4?",
+        "answerMode": "single",
+        "answers": [
+          { "text": "Only one addition per iteration depends on the previous iteration: the chain of sum has 2 cycles", "isCorrect": true, "explanation": "Yes: V[i] + W[i] does not depend on sum, so it overlaps with the chain." },
+          { "text": "V1 executes fewer instructions", "isCorrect": false, "explanation": "No: V1 executes the same 7 instructions per iteration." },
+          { "text": "The additions of V1 have a lower latency", "isCorrect": false, "explanation": "No: they are the same float additions, of 2 cycles." },
+          { "text": "V1 uses more ports", "isCorrect": false, "explanation": "It uses the same ports; the difference is the chain of dependences." }
+        ],
+        "next": ["goal-latency"]
+      },
+      {
+        "id": "goal-latency", "type": "goal", "title": "Experiment: a faster addition",
+        "selector": "#process-panel .processor-container", "position": "right",
+        "description": "<b>Make Base run below 2.5 cycles per iteration</b> changing only the <b>latency of FLOAT.ADD</b>.<br>In the Processor panel, click <i>show operation types</i>, then the FLOAT cell, and change its latency;<br>then simulate (Simulation panel). <i>Predict first: what latency do you need?</i>",
+        "goal": "cyclesPerIter < 2.5", "program": "Base", "allow": ["processor.latencies"],
+        "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
+        "next": ["bounds"]
+      },
+      {
+        "id": "bounds", "type": "step", "title": "7. Two bounds on performance",
+        "selector": ".bounds-summary", "position": "bottom",
+        "description": "<b>Static Analysis</b> computes, without simulating, two lower bounds of the time per iteration:<br>&bull; <b>latency bound</b>: the longest cyclic chain of dependences (sum: <b>{{latencyBound}}</b> cycles);<br>&bull; <b>throughput bound</b>: the busiest resource (here port P2, with the 2 loads: <b>{{throughputBound}}</b>).<br><b>Minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration.",
+        "actions": ["revertProcessor", "selectProgram:Base", "reveal:analysis", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
+        "showMe": ["clickChain:sum"],
+        "next": ["bound-v2", "bounds-more"], "nextLabels": ["Continue", "In depth: the dependence graph"]
+      },
+      {
+        "id": "bounds-more", "type": "step", "title": "In depth: the dependence graph",
+        "selector": "#open-dependence-graph", "position": "bottom",
+        "description": "&bull; The <b>dependence graph</b> shows one box per iteration and the arrows of the data dependences.<br>&bull; <b>Cyclic</b> dependences, in red, cross iterations: they set the latency bound.<br>&bull; Click a row of <i>Latency bounds</i> to highlight its chain (▶ Show me does it for sum).",
+        "showMe": ["openGraph"],
+        "next": ["bound-v2"], "nextLabels": ["Continue"]
+      },
+      {
+        "id": "bound-v2", "type": "question", "title": "The bounds of V2",
+        "questionText": "Look at the static analysis of <b>V2</b> (selected now). What is its minimum time per iteration, in cycles?",
+        "answerMode": "number", "answers": [], "numericValue": "{{minTime}}", "tolerance": 0.01, "numericUnit": "cycles/iter",
+        "numericCorrect": "Right: the chain of sum has 4 additions of 2 cycles = {{latencyBound}} cycles per iteration of 2 elements: 4 cycles per element, like Base. Unrolling did not shorten the chain.",
+        "numericWrong": "Take the maximum of the latency bound and the throughput bound of V2.",
+        "actions": ["selectProgram:V2", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
+        "next": ["summary"]
+      },
+      {
+        "id": "summary", "type": "step", "title": "8. Summary",
+        "selector": "#lesson-bar", "position": "bottom",
+        "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
+        "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources", "selectProgram:Base", "switchTo:simulationComponent"],
+        "next": []
+      }
+    ]
+  }
+}

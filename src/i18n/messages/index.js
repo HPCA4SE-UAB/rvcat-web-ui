@@ -11,6 +11,7 @@ import lesson     from './lesson'
 import editors    from './editors'
 import checks     from './checks'
 import help       from './help'
+import about      from './about'
 
-export const AREAS = { header, processor, program, simulation, analysis, timeline, tutorial, lesson, editors, checks, help }
+export const AREAS = { header, processor, program, simulation, analysis, timeline, tutorial, lesson, editors, checks, help, about }
 export const MESSAGES = Object.assign({}, ...Object.values(AREAS))

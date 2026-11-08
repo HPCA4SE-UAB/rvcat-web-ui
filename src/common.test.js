@@ -307,6 +307,19 @@ describe('processor graph markup', () => {
     expect(dot).toContain('RetThru: 2')
   })
 
+  it('shows a bare type in a port as the whole type', () => {
+    const dot = get_processor_dot({
+      ports: { 1: ['INT', 'BRANCH'], 2: ['MEM'] },
+      latencies: { INT: 1, BRANCH: 1, MEM: 4 },
+      ROBsize: 20,
+      sched: 'optimal'
+    }, false)
+
+    expect(dot).toContain('ID="op:1:0:INT"')
+    expect(dot).toContain('ID="op:1:1:BRANCH"')
+    expect(dot).toContain('ID="op:2:0:MEM"')
+  })
+
   it('escapes operation data before inserting it into Graphviz HTML labels', () => {
     const dot = get_processor_dot({
       ports: { 0: ['INT.<"\'&'] },

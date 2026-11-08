@@ -1038,16 +1038,18 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
     function compress_ops(ops) {
       const grouped = {}
+      const whole = new Set()          // a bare type ("INT") executes all its operations
       for (let op of ops) {
         const [type, sub] = op.split(".")
         if (!grouped[type]) grouped[type] = new Set()
         if (sub) grouped[type].add(sub)
+        else whole.add(type)
       }
 
       const result = []
       for (let type in grouped) {
         const all_ops = typeOperations[type] || []
-        if (all_ops.length === 0 || grouped[type].size === all_ops.length) {
+        if (whole.has(type) || all_ops.length === 0 || grouped[type].size === all_ops.length) {
           result.push({
             label: type,
             big: true

@@ -32,6 +32,21 @@ export const DEFAULT_LOCKS = {
 }
 export const PROCESSOR_FIELDS = ['dispatch', 'retire', 'rob', 'cache', 'bPenalty', 'ports', 'latencies']
 
+// Parts of the simulator that a lesson can hide at the beginning ("hidden": [...]) and that its
+// tutorial shows later with the action reveal:PART (or hides again with hide:PART)
+export const LESSON_PARTS = {
+  processor:         'Processor panel',
+  programColumns:    'columns of type and latency of the Program panel',
+  timeline:          'Timeline panel',
+  timelineCritical:  'Critical button of the Timeline',
+  timelineResources: 'Ports and Cache buttons of the Timeline',
+  analysis:          'Static Analysis panel',
+  usage:             'diagram of resource usage of the Simulation panel',
+  cacheStats:        'cache misses and MM transfers of the Simulation panel',
+  simOptions:        'Scheduler, Mispredictions and AutoRun options of the Simulation panel',
+  storedResults:     'stored results of the Simulation panel',
+}
+
 const ID_RE = /^[A-Za-z0-9-]{1,40}$/
 
 const resourceName = (r) => (typeof r === 'string' ? r : (r?.name ?? r?.id ?? ''))
@@ -58,6 +73,8 @@ export function validateLesson(lesson) {
     if (!ID_RE.test(c.secret ?? '')) errors.push(t('"completion.secret" must have letters, digits or "-"'))
     if (c.idPattern) { try { new RegExp(c.idPattern) } catch { errors.push(t('"completion.idPattern" is not a valid regular expression')) } }
   }
+  const unknownParts = (lesson.hidden ?? []).filter(p => !(p in LESSON_PARTS))
+  if (unknownParts.length) errors.push(t('"hidden": unknown parts {1}', { 1: unknownParts.join(', ') }))
   const locks = lesson.locks ?? {}
   if (Array.isArray(locks.processor) && locks.processor.some(f => !PROCESSOR_FIELDS.includes(f)))
     errors.push(t('"locks.processor" fields: {1} (or "all")', { 1: PROCESSOR_FIELDS.join(', ') }))

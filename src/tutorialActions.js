@@ -23,6 +23,9 @@ export const TUTORIAL_ACTIONS = [
   ['waitFor:SELECTOR',         'wait until an element is shown'],
   ['wait:MS',                  'wait some milliseconds'],
   ['restoreState',             'restore the program, processor, N and options of before the tutorial'],
+  ['reveal:PART,PART',         'show parts of the simulator hidden by the lesson'],
+  ['hide:PART,PART',           'hide parts of the simulator during the lesson'],
+  ['setProcessor:FIELD=VALUE', 'change a parameter of the current processor: dispatch, retire, ROBsize, bPenalty, nBlocks...'],
 ]
 
 // "type:argument" -> { type, arg, key, value } (key=value arguments are split)
@@ -174,6 +177,23 @@ export function createActionRunner(ctx) {
     async waitFor(a) { await waitUntil(() => { const el = $(a.arg); return el && el.getClientRects().length > 0 }, 10000) },
     async wait(a)    { await sleep(Number(a.arg) || 300) },
     async restoreState() { await ctx.snapshot?.restore() },
+    async reveal(a) { setHidden(a.arg, false) },
+    async hide(a)   { setHidden(a.arg, true) },
+    async setProcessor(a) {
+      const value = Number(a.value)
+      if (a.key && Number.isFinite(value) && simState.simulatedProcess) simState.simulatedProcess[a.key] = value
+      await sleep(300)
+    },
+  }
+
+  // parts hidden by the lesson in progress (outside a lesson there is nothing to show or hide)
+  function setHidden(arg, hidden) {
+    const lesson = simState.lesson
+    if (!lesson) return
+    const parts = arg.split(',').map(s => s.trim()).filter(Boolean)
+    const now = new Set(lesson.hidden ?? [])
+    for (const p of parts) hidden ? now.add(p) : now.delete(p)
+    lesson.hidden = [...now]
   }
 
   async function togglePorts(show) {

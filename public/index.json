@@ -29,5 +29,8 @@
   "tutorial": [
     "navigation-tour",
     "tutorial2"
+  ],
+  "lesson": [
+    "L0-intro"
   ]
 }

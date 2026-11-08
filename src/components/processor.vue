@@ -694,7 +694,10 @@
   watch(locale, () => { if (simState.state > 1) drawProcessor() })
 
   // Reload the current processor (its stored version may have changed: lessons)
-  watch(() => simState.reloadNonce, () => { if (simState.state > 1) reloadProcessor() })
+  // (a processor that is no longer stored, e.g. one of a lesson that ended, is selected again by the caller)
+  watch(() => simState.reloadNonce, () => {
+    if (simState.state > 1 && localStorage.getItem(`processor.${processorOptions.processorName}`)) reloadProcessor()
+  })
 
   const removeClickListeners = () => {
     clickListeners.forEach(({ node, handler }) => {
@@ -799,7 +802,7 @@
 </script>
 
 <template>
-  <div class="header">
+  <div class="header processor-part">
       <div class="section-title-and-info">
         <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
@@ -902,7 +905,7 @@
       </div>
   </div>
 
-  <div class="graph-section">
+  <div class="graph-section processor-part">
     <div class="processor-container">
       <div class="simProcessor-img" data-pin-twice="a_toggleops a_addport" v-html="simulatedSvg" v-if="simulatedSvg"></div>
     </div>

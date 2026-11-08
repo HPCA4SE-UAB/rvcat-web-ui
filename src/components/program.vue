@@ -584,11 +584,11 @@
                 {{ programOptions.currentProgram || t('Program') }}: {{ t('Program Instructions') }}
                 <span v-if="simState.simulatedProcess?.description" class="source-mark">{ }</span>
               </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Size') }} </th>
-              <th v-if="programOptions.show === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
-              <th v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
+              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>
+              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
+              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Size') }} </th>
+              <th class="type-col" v-if="programOptions.show === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
+              <th class="type-col" v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
           </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
@@ -614,19 +614,19 @@
                   :style="blockDepth[index] ? { paddingLeft: `${1.4 * blockDepth[index]}em` } : null">
                 {{ inst.text }}
               </td>
-              <td v-if="programOptions.show === 0" :title="t('Instruction type')">
+              <td class="type-col" v-if="programOptions.show === 0" :title="t('Instruction type')">
                 {{ inst.type }}
               </td>
-              <td v-if="programOptions.show === 0" :title="t('Operation type')">
+              <td class="type-col" v-if="programOptions.show === 0" :title="t('Operation type')">
                 {{ inst.oper }}
               </td>
-              <td v-if="programOptions.show === 0" :title="t('Operation size')">
+              <td class="type-col" v-if="programOptions.show === 0" :title="t('Operation size')">
                 {{ inst.size}}
               </td>
-              <td v-if="programOptions.show === 1" :title="t('Instruction Latency')">
+              <td class="type-col" v-if="programOptions.show === 1" :title="t('Instruction Latency')">
                 {{ inst.latency }}
               </td>
-              <td v-if="programOptions.show === 1" :title="t('Available execution ports')">
+              <td class="type-col" v-if="programOptions.show === 1" :title="t('Available execution ports')">
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>

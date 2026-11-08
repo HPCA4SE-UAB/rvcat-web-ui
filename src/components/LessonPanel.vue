@@ -124,6 +124,7 @@
       tutorial:   tutorialId,
       locks:      normalizeLocks(lesson.locks),
       tasks:      lessonTasks(res.tutorial.data),
+      hidden:     [...(lesson.hidden ?? [])],
       done:       read(progressKey(id, student)) ?? {},
       extraPrograms: [],
       hasCompletion: !!lesson.completion,
@@ -168,7 +169,44 @@
   onMounted(() => {
     const session = read(SESSION_KEY)
     if (session?.state && !simState.lesson) simState.lesson = session.state
+    loadDistributionLessons()
   })
+
+// ---- Parts of the simulator hidden by the lesson: classes of the body (CSS below) ----
+  watch(() => simState.lesson?.hidden ?? [], (hidden) => {
+    const body = document.body.classList
+    for (const c of [...body]) if (c.startsWith('lesson-hide-')) body.remove(c)
+    for (const part of hidden) body.add(`lesson-hide-${part}`)
+  }, { immediate: true, deep: true })
+
+// ---- Lessons of the distribution (public/lesson, listed in index.json "lesson") ----
+// They are always in the menu; the introductory one ("intro": true) is offered the first time
+// the simulator is used, and after every new version (the local storage is cleared then)
+  const INTRO_KEY = 'introLessonOffered'
+  const introOffer = ref(null)          // { id, title, description }
+  async function loadDistributionLessons() {
+    let names = []
+    try { names = (await (await fetch('./index.json')).json()).lesson ?? [] } catch { return }
+    for (const name of names) {
+      try {
+        const lesson = await (await fetch(`./lesson/${name}.json`)).json()
+        if (validateLesson(lesson).length) { console.warn('📘⚠️ Invalid lesson', name, validateLesson(lesson)); continue }
+        write(lessonKey(lesson.lesson), lesson)
+        const entry = { id: lesson.lesson, title: lesson.title, description: lesson.description ?? '' }
+        lessons.value = [...lessons.value.filter(l => l.id !== lesson.lesson), entry]
+        if (lesson.intro && !localStorage.getItem(INTRO_KEY) && !simState.lesson) introOffer.value = entry
+      } catch (e) { console.warn('📘⚠️ Cannot load lesson', name, e) }
+    }
+    write(INDEX_KEY, lessons.value)
+  }
+  // offered when the simulator is ready (program and processor loaded)
+  const showIntro = computed(() => !!introOffer.value && simState.state >= 3 && !simState.lesson)
+  function answerIntro(start) {
+    localStorage.setItem(INTRO_KEY, 'yes')
+    const offer = introOffer.value
+    introOffer.value = null
+    if (start && offer) askStart(offer.id)
+  }
 
 // ---- Exit: confirmation, then everything returns to its state before the lesson ----
   const askExit = ref(false)
@@ -265,6 +303,18 @@
       </div>
     </div>
 
+    <div v-if="showIntro" class="lesson-overlay" id="intro-lesson-offer">
+      <div class="lesson-dialog">
+        <h4>📘 {{ localized(introOffer.title) }}</h4>
+        <p v-html="localized(introOffer.description)"></p>
+        <p class="lesson-note">{{ t('You can skip it now and start it later from the Lessons menu.') }}</p>
+        <div class="lesson-actions">
+          <button class="blue-button" id="intro-lesson-start" @click="answerIntro(true)">{{ t('Start') }}</button>
+          <button class="blue-button" id="intro-lesson-skip" @click="answerIntro(false)">{{ t('Skip') }}</button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="askExit" class="lesson-overlay" @click.self="askExit = false">
       <div class="lesson-dialog">
         <h4>{{ t('Exit the lesson?') }}</h4>
@@ -325,4 +375,22 @@
   .lesson-error { color: #c62828; font-size: 0.9em; margin-top: 4px; }
   .lesson-note { color: #666; font-size: 0.85em; }
   .lesson-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+</style>
+
+<style>
+  /* Parts of the simulator hidden by the lesson in progress (lesson "hidden", actions reveal/hide) */
+  .lesson-hide-timeline #timeline-button,
+  .lesson-hide-analysis #analysis-button,
+  .lesson-hide-processor .processor-part,
+  .lesson-hide-programColumns .type-col,
+  .lesson-hide-programColumns #show-instr-operands,
+  .lesson-hide-timelineCritical #timeline-critical,
+  .lesson-hide-timelineResources #timeline-ports,
+  .lesson-hide-timelineResources #timeline-cache,
+  .lesson-hide-usage .sim-usage-part,
+  .lesson-hide-cacheStats .stat-cache,
+  .lesson-hide-simOptions .sim-setting,
+  .lesson-hide-simOptions #autorun-label,
+  .lesson-hide-simOptions #automatic-simulation-check,
+  .lesson-hide-storedResults .stored-results-part { display: none !important; }
 </style>

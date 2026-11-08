@@ -904,7 +904,7 @@
             <option value="wrong-path">wrong path</option>
           </select>
         </label>
-        <span>{{ t('AutoRun:') }}</span>
+        <span id="autorun-label">{{ t('AutoRun:') }}</span>
         <input type="checkbox"
               :title="t('Set to run the simulation every time the processor/program/#iterations is modified')"
               id="automatic-simulation-check"
@@ -1008,12 +1008,12 @@
         <div id="simulation-running"><p>{{ t('Simulation on course...') }}</p></div>
       </div>
     </div>
-    <div class="graph-section">
+    <div class="graph-section sim-usage-part">
       <div class="processor-container">
         <div class="processor-img" v-html="resultsSvg" v-if="resultsSvg"></div>
       </div>
     </div>
-    <div class="header">
+    <div class="header stored-results-part">
       <div class="section-title-and-info">
         <span ref="helpIcon2" class="info-icon" @click="openHelp2" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
@@ -1061,7 +1061,7 @@
         </button>
       </div>
     </div>
-    <div class="table-container">
+    <div class="table-container stored-results-part">
         <table class="results-table">
           <thead>
             <tr>
