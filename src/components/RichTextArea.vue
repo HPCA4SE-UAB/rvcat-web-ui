@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Text area for tutorial texts: a small formatting toolbar (inserts HTML tags around the
   // selection) and a live preview that looks like the tutorial card.
   import { ref, nextTick } from 'vue'
@@ -52,13 +53,13 @@
 <template>
   <div class="rich-text">
     <div class="rich-toolbar" role="toolbar" aria-label="Text format">
-      <button type="button" @click="bold"      title="Bold: key words (wraps the selected text in &lt;b&gt;)"><b>B</b></button>
-      <button type="button" @click="italic"    title="Italic (wraps the selected text in &lt;i&gt;)"><i>I</i></button>
-      <button type="button" @click="highlight" title="Highlight in red: the most important idea"><span class="red">A</span></button>
-      <button type="button" @click="bullet"    title="New line with a bullet point">&bull; Item</button>
-      <button type="button" @click="newLine"   title="Line break (&lt;br&gt;)">↵ Line</button>
+      <button type="button" @click="bold"      :title="t('Bold: key words (wraps the selected text in &lt;b&gt;)')"><b>B</b></button>
+      <button type="button" @click="italic"    :title="t('Italic (wraps the selected text in &lt;i&gt;)')"><i>I</i></button>
+      <button type="button" @click="highlight" :title="t('Highlight in red: the most important idea')"><span class="red">A</span></button>
+      <button type="button" @click="bullet"    :title="t('New line with a bullet point')">&bull; Item</button>
+      <button type="button" @click="newLine"   :title="t('Line break (&lt;br&gt;)')">↵ Line</button>
       <span class="rich-hint">HTML allowed</span>
-      <label class="rich-preview-toggle" title="Show how the text will look in the tutorial card">
+      <label class="rich-preview-toggle" :title="t('Show how the text will look in the tutorial card')">
         <input type="checkbox" v-model="showPreview"> Preview
       </label>
     </div>

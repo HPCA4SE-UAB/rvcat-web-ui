@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Floating, movable and resizable window with the data dependence graph.
   // Graph options are owned by the parent (they regenerate the graph in RVCAT);
   // the window geometry and zoom are stored here.
@@ -133,48 +134,48 @@
 <template>
   <div ref="windowRef" class="graph-window"
        :style="{ left: geometry.x + 'px', top: geometry.y + 'px', width: geometry.w + 'px', height: geometry.h + 'px' }">
-    <div ref="headerRef" class="graph-window-header no-pin" title="Drag to move the window">
+    <div ref="headerRef" class="graph-window-header no-pin" :title="t('Drag to move the window')">
       <span class="graph-window-title">Data dependence graph</span>
       <span v-if="chain" class="graph-window-chain">
         {{ chain.recurrence }}: {{ chain.cycles }} cycles/iter
-        <button class="chain-clear" @click.stop="emit('clear-chain')" title="Show the whole graph">×</button>
+        <button class="chain-clear" @click.stop="emit('clear-chain')" :title="t('Show the whole graph')">×</button>
       </span>
-      <button class="graph-window-btn" @click.stop="emit('help')" title="Show help">?</button>
-      <button class="graph-window-btn" @click.stop="emit('close')" title="Close">✕</button>
+      <button class="graph-window-btn" @click.stop="emit('help')" :title="t('Show help')">?</button>
+      <button class="graph-window-btn" @click.stop="emit('close')" :title="t('Close')">✕</button>
     </div>
 
     <div class="graph-window-toolbar">
-      <label class="iters" title="Number of loop iterations shown (1 to 7)">
+      <label class="iters" :title="t('Number of loop iterations shown (1 to 7)')">
         Iterations
         <input type="number" min="1" max="7" :value="options.iters" @change="setIterations" id="dependence-graph-iterations">
       </label>
       <button class="blue-button toggle-button" :class="{ active: options.showIntern }" @click="toggle('showIntern')"
               id="show-internal-dependences"
-              title="Show also the instructions that are not in any cyclic dependence chain">
+              :title="t('Show also the instructions that are not in any cyclic dependence chain')">
         <span v-if="options.showIntern">✔ </span>Non-cyclic nodes
       </button>
       <button class="blue-button toggle-button" :class="{ active: options.showLaten }" @click="toggle('showLaten')"
-              id="show-latency-dependences" title="Show the latency of each instruction">
+              id="show-latency-dependences" :title="t('Show the latency of each instruction')">
         <span v-if="options.showLaten">✔ </span>Latencies
       </button>
       <button class="blue-button toggle-button" :class="{ active: !options.showSmall }" @click="toggle('showSmall')"
-              id="show-instruction-dependences" title="Show the text of each instruction (otherwise only its number)">
+              id="show-instruction-dependences" :title="t('Show the text of each instruction (otherwise only its number)')">
         <span v-if="!options.showSmall">✔ </span>Instruction text
       </button>
       <button class="blue-button toggle-button" :class="{ active: options.showFull }" @click="toggle('showFull')"
-              id="show-full-dependences" title="Show the dependences on constants and read-only inputs">
+              id="show-full-dependences" :title="t('Show the dependences on constants and read-only inputs')">
         <span v-if="options.showFull">✔ </span>Constants &amp; inputs
       </button>
       <span class="toolbar-spacer"></span>
       <!-- Only while zoomed: the graph always fills the window at zoom 100% -->
       <button v-if="zoom !== 1" class="blue-button" id="graph-reset-zoom" @click="fit"
-              title="Back to zoom 100%: the graph fills the window (also: double click on the graph)">
+              :title="t('Back to zoom 100%: the graph fills the window (also: double click on the graph)')">
         Zoom {{ Math.round(zoom * 100) }}% ✕
       </button>
     </div>
 
     <div ref="graphRef" class="graph-window-body no-pin" id="dependence-graph"
-         title="Mouse wheel: zoom · Drag: move · Double click: zoom 100%"
+         :title="t('Mouse wheel: zoom · Drag: move · Double click: zoom 100%')"
          @wheel.prevent="onWheel" @mousedown="startPan" @mousemove="movePan"
          @mouseup="endPan" @mouseleave="endPan" @dblclick="fit">
       <div class="graph-zoom" :style="{ width: (zoom * 100) + '%' }" v-html="svg"></div>

@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Click (or tap) on any element that has an explanation in its `title` shows that
   // explanation in a box that stays until clicking elsewhere or pressing Escape.
   // Hover-only tooltips are not available on touch screens, and pinned boxes help in class.
@@ -75,7 +76,7 @@
 <template>
   <Teleport to="body">
     <div v-if="detail" ref="boxRef" class="pinned-detail" :style="detail.style" role="tooltip">
-      <button class="pinned-detail-close" @click="detail = null" title="Close (Esc)">✕</button>
+      <button class="pinned-detail-close" @click="detail = null" :title="t('Close (Esc)')">✕</button>
       <div class="pinned-detail-text" :class="{ code: detail.code }">{{ detail.text }}</div>
     </div>
   </Teleport>

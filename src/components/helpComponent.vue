@@ -32,6 +32,7 @@
 </script>
 
 <script setup>
+  import { t } from '@/i18n'
   import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 
   const props = defineProps({
@@ -149,7 +150,7 @@
                 :title="allOpen ? 'Close every section' : 'Open every section'">
           {{ allOpen ? '▴ close all' : '▾ open all' }}
         </button>
-        <button class="close-button" @click="close" title="Close (or click outside)">x</button>
+        <button class="close-button" @click="close" :title="t('Close (or click outside)')">x</button>
       </div>
       <div ref="contentRef" class="dialog-content" v-html="text"></div>
     </div>

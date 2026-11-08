@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Memory trace of the edited program: elements and byte addresses accessed by each memory
   // instruction in the first and last K iterations. The addresses come from RVCAT
   // (get_memory_trace), so they are the ones the simulator uses.
@@ -104,23 +105,23 @@
   <div class="memory-trace" id="memory-trace">
     <div class="trace-header">
       <button class="trace-toggle" id="memory-trace-toggle" @click="options.open = !options.open"
-              title="Show/hide the memory addresses accessed in the first and last iterations of the loop">
+              :title="t('Show/hide the memory addresses accessed in the first and last iterations of the loop')">
         {{ options.open ? '▾' : '▸' }} Memory trace
       </button>
       <template v-if="options.open">
-        <label title="Iterations shown at the beginning and at the end of the loop">
+        <label :title="t('Iterations shown at the beginning and at the end of the loop')">
           first / last
           <input type="number" min="1" :max="TRACE_MAX_K" v-model.lazy.number="options.K" id="memory-trace-k" />
           iterations
         </label>
-        <label title="Byte addresses in hexadecimal">
+        <label :title="t('Byte addresses in hexadecimal')">
           <input type="checkbox" v-model="options.hex" id="memory-trace-hex" /> hex
         </label>
         <span v-if="view && !blocked" class="trace-summary">
           N = {{ view.N }} alg opers · S = {{ view.S }} · {{ view.iterations }} iterations
         </span>
         <button v-if="view && !blocked" class="trace-copy" id="memory-trace-copy" @click="copyTrace"
-                title="Copy the trace as tab-separated text">
+                :title="t('Copy the trace as tab-separated text')">
           {{ copied ? '✔ Copied' : 'Copy' }}
         </button>
       </template>
@@ -142,13 +143,13 @@
           <table class="trace-table">
             <thead>
               <tr>
-                <th title="Loop iteration (k)">it</th>
+                <th :title="t('Loop iteration (k)')">it</th>
                 <th v-for="col in view.columns" :key="col.index" :title="columnTitle(col)"
                     @mouseenter="emit('highlight', col.index)" @mouseleave="emit('highlight', -1)">
                   #{{ col.index }} {{ col.oper }} {{ col.array }}<span v-if="rowIssues[col.index]" class="trace-issue">{{ rowIssues[col.index].kind === 'error' ? '✖' : '⚠' }}</span>
                   <div class="trace-col-info">L={{ col.lanes }} s={{ col.stride }} c={{ col.constant }} · {{ col.size }} B</div>
                   <div v-if="col.execProb < 1" class="trace-col-info"
-                       title="Conditional access: executed only in the iterations in which the branch does not skip it">
+                       :title="t('Conditional access: executed only in the iterations in which the branch does not skip it')">
                     conditional (p={{ col.execProb.toFixed(2) }})
                   </div>
                 </th>

@@ -2,6 +2,7 @@
 // Each stored result = RVCAT results + `context` (program name, N, full processor configuration).
 import { typeOperations } from './common.js'
 import { loopStride }     from './algOps.js'
+import { t }              from '@/i18n'
 
 const PROCESSOR_FIELDS = [
   'dispatch', 'retire', 'ROBsize', 'bPenalty',
@@ -51,7 +52,7 @@ export function resultMemoryColumns(r) {
     secondary:        secondary === null ? null : fmt(secondary),
     secondaryDetail:  secondary === null ? '' : `LD ${fmt(r.read_secondary_misses)} + ST ${fmt(r.write_secondary_misses)}`,
     MM:               hasMM ? fmt(r.MM_Reads + r.MM_Writes) : null,
-    MMDetail:         hasMM ? `Rd ${fmt(r.MM_Reads)} (reads for cache misses) + Wr ${fmt(r.MM_Writes)} (writes of evicted dirty blocks)${pct ? ` · busy${pct}` : ''}` : '',
+    MMDetail:         hasMM ? `Rd ${fmt(r.MM_Reads)} (${t('reads for cache misses')}) + Wr ${fmt(r.MM_Writes)} (${t('writes of evicted dirty blocks')})${pct ? ` · ${t('busy')}${pct}` : ''}` : '',
   }
 }
 
@@ -73,31 +74,31 @@ function compactPortOperations(list) {
 // Lines of the hover box over the name of a stored result
 export function resultContextLines(context) {
   if (!context?.program || !context?.processor)
-    return ['No configuration saved for these results.']
+    return [t('No configuration saved for these results.')]
   const { program, processor: p } = context
   const lines = [
-    `Program: ${program.name || '?'}  ·  N = ${Number.isFinite(program.N) ? fmt(program.N) : '?'} alg opers` +
-      (program.stride > 1 ? `  ·  loop stride ${program.stride} (${fmt(program.N / program.stride)} iterations)` : ''),
-    `Processor: ${p.name || '?'}`,
+    `${t('Program')}: ${program.name || '?'}  ·  N = ${Number.isFinite(program.N) ? fmt(program.N) : '?'} alg opers` +
+      (program.stride > 1 ? `  ·  ${t('loop stride {s} ({n} iterations)', { s: program.stride, n: fmt(program.N / program.stride) })}` : ''),
+    `${t('Processor')}: ${p.name || '?'}`,
     `  Dispatch ${p.dispatch} · Retire ${p.retire} · ROB ${p.ROBsize}` +
-      (Number.isFinite(p.bPenalty) ? ` · Branch penalty ${p.bPenalty}` : ''),
+      (Number.isFinite(p.bPenalty) ? ` · ${t('Branch penalty')} ${p.bPenalty}` : ''),
   ]
   // results saved before the scheduler became an option of the simulation keep it in the processor
   const sim = context.simulation ?? (p.sched ? { sched: p.sched } : null)
   if (sim)
-    lines.splice(1, 0, `Simulation: scheduler ${sim.sched}` +
-      (sim.speculation ? ` · after a misprediction: ${sim.speculation === 'wrong-path' ? 'wrong path executed' : 'dispatch stalls'}` : ''))
+    lines.splice(1, 0, `${t('Simulation')}: ${t('scheduler')} ${sim.sched}` +
+      (sim.speculation ? ` · ${t('after a misprediction')}: ${sim.speculation === 'wrong-path' ? t('wrong path executed') : t('dispatch stalls')}` : ''))
   if (p.nBlocks > 0) {
-    lines.push(`  Cache: ${p.nBlocks} blocks × ${p.blkSize} B · Miss penalty ${p.mPenalty} · Issue time ${p.mIssueTime}`)
+    lines.push(`  Cache: ${p.nBlocks} ${t('blocks')} × ${p.blkSize} B · ${t('Miss penalty')} ${p.mPenalty} · ${t('Issue time')} ${p.mIssueTime}`)
     lines.push(`         Fill buffers ${p.nFillBuffers} · Write buffers ${p.nWriteBuffers} · rThru ${p.rThru}`)
   } else {
-    lines.push('  Cache: none')
+    lines.push(`  Cache: ${t('none')}`)
   }
   const latencies = Object.entries(p.latencies ?? {}).map(([k, v]) => `${k} ${v}`)
-  if (latencies.length) lines.push(`  Latencies: ${latencies.join(' · ')}`)
+  if (latencies.length) lines.push(`  ${t('Latencies')}: ${latencies.join(' · ')}`)
   const ports = Object.entries(p.ports ?? {})
     .sort((a, b) => Number(a[0]) - Number(b[0]))
     .map(([port, list]) => `P${port} ${compactPortOperations(list ?? []).join(', ')}`)
-  if (ports.length) lines.push(`  Ports: ${ports.join(' · ')}`)
+  if (ports.length) lines.push(`  ${t('Ports')}: ${ports.join(' · ')}`)
   return lines
 }

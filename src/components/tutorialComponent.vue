@@ -9,7 +9,7 @@
                   height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="rt(currentStep?.title)"></h3>
-          <span v-if="previewMode" class="preview-badge" title="Preview from the tutorial editor: closing it returns to the editor">PREVIEW</span>
+          <span v-if="previewMode" class="preview-badge" :title="t('Preview from the tutorial editor: closing it returns to the editor')">PREVIEW</span>
           <button :title="previewMode ? 'End preview and return to the tutorial editor' : 'Close tutorial, but can be resumed later'"
           class="tutorial-close" @click="closeTutorial">&times;</button>
         </div>
@@ -58,7 +58,7 @@
           </div>
           <div class="tutorial-actions">
             <button @click="previousStep" :disabled="!canGoBack"
-               title="Go to previous step on the tutorial"
+               :title="t('Go to previous step on the tutorial')"
                class="tutorial-btn">
               Previous
             </button>
@@ -69,7 +69,7 @@
             </span>
             <button v-if="showMeActions.length" @click="runShowMe" :disabled="actionsRunning"
                     id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
-                    title="Let the tutorial do it on the simulator (you can also do it yourself)">
+                    :title="t('Let the tutorial do it on the simulator (you can also do it yourself)')">
               ▶ Show me
             </button>
             <button v-for="target in successorSteps" :key="target.id"
@@ -81,7 +81,7 @@
             </button>
             <button v-if="successorSteps.length === 0"
                     @click="completeTutorial"
-                    title="Finish tutorial; disabled if an action must be done first"
+                    :title="t('Finish tutorial; disabled if an action must be done first')"
                     :disabled="!canProceed"
                     :class="['tutorial-btn', canProceed ? 'tutorial-btn-primary' : 'tutorial-btn-disabled']">
               Finish
@@ -119,7 +119,7 @@
           <div v-if="isNumericQuestion" class="numeric-answer">
             <input v-model="numericAnswer" type="text" inputmode="decimal" id="tutorial-numeric-answer"
                    :disabled="questionAnswered && isQuestionCorrect" @keyup.enter="submitAnswer"
-                   placeholder="your answer" />
+                   :placeholder="t('your answer')" />
             <span v-if="currentStep?.numericUnit" class="numeric-unit">{{ currentStep.numericUnit }}</span>
             <div v-if="questionAnswered"
                  :class="['answer-feedback', isQuestionCorrect ? 'feedback-correct' : 'feedback-wrong']"
@@ -167,7 +167,7 @@
 
         <div class="question-actions">
           <button @click="previousStep" :disabled="!canGoBack"
-               title="Go to previous step on the tutorial"
+               :title="t('Go to previous step on the tutorial')"
                class="tutorial-btn">
             Previous
           </button>
@@ -194,7 +194,7 @@
           </template>
           <button v-else
                   @click="completeTutorial"
-                  title="Finish the tutorial"
+                  :title="t('Finish the tutorial')"
                   class="tutorial-btn tutorial-btn-primary">
             Finish
           </button>
@@ -212,7 +212,7 @@
 
     <!-- Tutorial Launcher Button -->
     <div v-if="!isActive" class="tutorial-launcher">
-      <button @click="toggleTutorialMenu" title="Open Tutorial" class="tutorial-launcher-btn">
+      <button @click="toggleTutorialMenu" :title="t('Open Tutorial')" class="tutorial-launcher-btn">
         <span class="tutorial-icon">?</span>
       </button>
 
@@ -229,7 +229,7 @@
 
           <div class="tutorial-action-buttons">
             <button @click="resumeTutorial"
-              title="Resume the tutorial at the step where was left"
+              :title="t('Resume the tutorial at the step where was left')"
               class="tutorial-action-btn tutorial-resume-btn">
               <div class="tutorial-action-icon">▶️</div>
               <div class="tutorial-action-content">
@@ -239,7 +239,7 @@
             </button>
 
             <button @click="stopTutorial"
-              title="Stop the tutorial and reset tutorial progress to first step"
+              :title="t('Stop the tutorial and reset tutorial progress to first step')"
               class="tutorial-action-btn tutorial-stop-btn">
               <div class="tutorial-action-icon">⏹️</div>
               <div class="tutorial-action-content">
@@ -260,7 +260,7 @@
           >
             <button
               @click="startTutorial(tutorial.id)"
-              title="Start this tutorial"
+              :title="t('Start this tutorial')"
               class="tutorial-menu-item"
             >
               <div class="tutorial-item-content">
@@ -270,14 +270,14 @@
             </button>
             <button v-if="!lessonLocked('tutorialEditor')"
               @click="editTutorial(tutorial.id)"
-              title="Edit this tutorial in the tutorial editor"
+              :title="t('Edit this tutorial in the tutorial editor')"
               class="tutorial-delete-btn tutorial-edit-btn"
             >
             ✎
             </button>
             <button v-if="!lessonLocked('remove')"
               @click="deleteTutorial(tutorial.id)"
-              title="Delete this tutorial from the list (and local storage)"
+              :title="t('Delete this tutorial from the list (and local storage)')"
               id="remove-tutorial-button"
               class="tutorial-delete-btn"
             >
@@ -287,7 +287,7 @@
 
           <button v-if="!lessonLocked('upload')"
             @click="addTutorial"
-            title="Upload new tutorial"
+            :title="t('Upload new tutorial')"
             class="tutorial-menu-item"
           >
             <div class="tutorial-item-content">
@@ -301,6 +301,7 @@
 </template>
 
 <script setup>
+  import { t } from '@/i18n'
 
 import { ref, toRef, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDraggable, useResizeObserver}                                           from '@vueuse/core'

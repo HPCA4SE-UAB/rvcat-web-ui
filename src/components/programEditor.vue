@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   import { ref, toRef, toRaw, watchEffect, onMounted, onUnmounted,
            nextTick, inject, reactive, watch, computed }             from "vue"
   import { useDraggable, useResizeObserver}                 from '@vueuse/core'
@@ -17,7 +18,6 @@
   import { checkProgram, enforceStructure, VECTOR_TYPES, MEMORY_TYPES,
            VECTOR_WIDTHS, vectorWidth }                       from '@/programChecks'
   import { analyzeLoop, vectorizeLoop, transformLoop }       from '@/loopTransforms'
-  import { PROGRAM_EDITOR_HELP }                             from '@/programEditorHelp'
   import { conditionalDepth, fraction }                     from '@/branches'
 
   const { getProgGraph }    = useRVCAT_Api();
@@ -619,7 +619,7 @@ function snapshotProgram() {
   <div>
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help">
+        <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')">
            <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Program Editor</span>
@@ -627,7 +627,7 @@ function snapshotProgram() {
 
       <button class="blue-button toggle-button add-prev-margin"
               :class="{ active: programEditOptions.showInOut }"
-          title="Show/Hide instruction Input/Output operands"
+          :title="t('Show/Hide instruction Input/Output operands')"
           id="show-inout-operands"
         @click="toggleInOut">
         <span v-if="programEditOptions.showInOut">✔ </span>
@@ -636,7 +636,7 @@ function snapshotProgram() {
 
       <button class="blue-button toggle-button add-margin"
               :class="{ active: programEditOptions.showStrideLanes }"
-          title="Show/Hide instruction Stride & vector lanes"
+          :title="t('Show/Hide instruction Stride & vector lanes')"
           id="show-mem-operands"
         @click="toggleStrideLanes">
         <span v-if="programEditOptions.showStrideLanes">✔ </span>
@@ -645,7 +645,7 @@ function snapshotProgram() {
 
       <button class="blue-button toggle-button add-margin"
               :class="{ active: programEditOptions.showActions }"
-          title="Show/Hide column with buttons for moving/adding/removing instructions"
+          :title="t('Show/Hide column with buttons for moving/adding/removing instructions')"
           id="show-instruction-actions"
           @click="toggleActions">
         <span v-if="programEditOptions.showActions">✔ </span>
@@ -653,7 +653,7 @@ function snapshotProgram() {
       </button>
 
       <label class="loop-stride-field" id="editor-loop-stride"
-             title="Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.">
+             :title="t('Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.')">
         Alg opers/iter (S):
         <input type="number" min="1" step="1" v-model.lazy.number="loopStrideModel" id="editor-loop-stride-input" />
       </label>
@@ -663,7 +663,7 @@ function snapshotProgram() {
         <input type="number" min="1" :max="MAX_LOGICAL_ELEMENT_COUNT" step="1" v-model.lazy.number="editedNModel" id="editor-n-input" />
       </label>
       <label class="loop-stride-field editor-n-field" id="editor-vlen"
-             title="Width in bytes of the vector registers. A vector instruction holds width / element size lanes (e.g. 32 bytes: 8 single or 4 double); a conversion between single and double is done in two halves. Auto: the largest vector instruction of the program.">
+             :title="t('Width in bytes of the vector registers. A vector instruction holds width / element size lanes (e.g. 32 bytes: 8 single or 4 double); a conversion between single and double is done in two halves. Auto: the largest vector instruction of the program.')">
         Vector regs:
         <select v-model="editedVlen" id="editor-vlen-select">
           <option :value="null">auto{{ autoVlen ? ` (${autoVlen} B)` : '' }}</option>
@@ -672,16 +672,16 @@ function snapshotProgram() {
       </label>
       <button v-if="!isLocked(simState.lesson, 'loopTransforms', simState.lessonAllow ?? [])"
               class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
-              title="Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets">
+              :title="t('Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets')">
         Unroll / Vectorize…
       </button>
       <button v-if="undoProgram" class="blue-button add-margin" id="undo-loop-transform" @click="undoTransform"
-              title="Go back to the program before the last unroll / vectorize">
+              :title="t('Go back to the program before the last unroll / vectorize')">
         ↶ Undo
       </button>
 
       <button class="blue-button toggle-button add-prev-margin" :class="{ active: programEditOptions.showGraph }"
-          title="View/Update program's dependence graph on full-screen"
+          :title="t('View/Update program\'s dependence graph on full-screen')"
           id="open-edited-program-graph"
           @click="openFullScreen">
         <span v-if="programEditOptions.showGraph">✔ </span>
@@ -691,19 +691,19 @@ function snapshotProgram() {
       <div class="settings-container">
         <div class="buttons">
           <button class="blue-button" @click="requestDownload"
-               title="Save current edited program (after checking its coherence)"
+               :title="t('Save current edited program (after checking its coherence)')"
                id="program-download-button">
             Download
           </button>
           <button class="blue-button" @click="uploadForEdition"
-               title="Load new program from file system for edition"
+               :title="t('Load new program from file system for edition')"
                id="program-upload-button">
             Upload
           </button>
         </div>
         <div class="buttons">
           <button class="blue-button  add-margin" @click="showModalClear = true"
-                title="Clear edition and start new program from scratch"
+                :title="t('Clear edition and start new program from scratch')"
                 id="clear-program-button">
             Clear
           </button>
@@ -744,11 +744,11 @@ function snapshotProgram() {
                   <input type="text" v-model="inst.text" class="table-input" @change="applyText(index)"
                          :class="{ conditional: blockDepth[index] > 0 }"
                          :style="blockDepth[index] ? { paddingLeft: `${0.4 + 1.6 * blockDepth[index]}em` } : null"
-                         title="Text of the instruction, e.g. sum = sum + tmp, tmp = V[i+1], V[N-1-i] = x, x[0:3] = y[0:3] * z[0:3]. When it changes, the fields deduced from it are filled in (help: Instruction text)" />
+                         :title="t('Text of the instruction, e.g. sum = sum + tmp, tmp = V[i+1], V[N-1-i] = x, x[0:3] = y[0:3] * z[0:3]. When it changes, the fields deduced from it are filled in (help: Instruction text)')" />
                 </td>
 
                 <td>
-                  <select v-model="inst.type" class="table-select" title="Select instruction type"
+                  <select v-model="inst.type" class="table-select" :title="t('Select instruction type')"
                           @change="onTypeChange(inst)">
                     <option value="">Select...</option>
                     <option v-for="type in instructionTypes" :key="type" :value="type">
@@ -759,7 +759,7 @@ function snapshotProgram() {
 
                 <td>
                   <select v-model="inst.oper" @change="keepField(inst, 'oper')" :disabled="!inst.type || typeOperations[inst.type].length === 0"
-                    class="table-select" title="Select operation for this type"
+                    class="table-select" :title="t('Select operation for this type')"
                   >
                     <option value="">Select...</option>
                     <option
@@ -774,7 +774,7 @@ function snapshotProgram() {
 
                 <td>
                   <select v-model="inst.size" @change="keepField(inst, 'size')" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0"
-                    class="table-select" title="Select size for this instruction type & operations"
+                    class="table-select" :title="t('Select size for this instruction type & operations')"
                   >
                     <option value="">Select...</option>
                     <option
@@ -790,7 +790,7 @@ function snapshotProgram() {
                 <td v-if="programEditOptions.showInOut">
                   <input v-if="inst.oper === 'STORE'" type="text" v-model="inst.mask" class="table-input mask-field"
                          placeholder="mask" :id="`store-mask-${index}`"
-                         title="Mask of a masked vector store (A[i:i+7] = x[0:7] if m[0:7]): only the lanes where it is true are written. Empty: a normal store" />
+                         :title="t('Mask of a masked vector store (A[i:i+7] = x[0:7] if m[0:7]): only the lanes where it is true are written. Empty: a normal store')" />
                   <input v-else type="text" v-model="inst.destin" class="table-input" />
                 </td>
 
@@ -812,20 +812,20 @@ function snapshotProgram() {
 
                 <td v-if="programEditOptions.showStrideLanes">
                   <input v-if="isMemoryType(inst)" type="number" step="1" v-model.number="inst.stride" @change="keepField(inst, 'stride')" class="table-input"
-                         title="Memory stride s: the access advances lanes × s elements per iteration (negative: backwards from the end of the array; 0: the same elements in every iteration). Usually lanes × s = S." />
+                         :title="t('Memory stride s: the access advances lanes × s elements per iteration (negative: backwards from the end of the array; 0: the same elements in every iteration). Usually lanes × s = S.')" />
                   <input v-else-if="inst.type === 'BRANCH'" type="number" step="0.05" min="0" max="1" v-model.number="inst.prob"
                          class="table-input branch-field" :id="`branch-prob-${index}`"
-                         title="p: probability that this conditional branch is taken, i.e. that it skips the next k instructions (0 to 1)" />
-                  <span v-else class="table-input readonly" title="Only memory instructions have a stride">–</span>
+                         :title="t('p: probability that this conditional branch is taken, i.e. that it skips the next k instructions (0 to 1)')" />
+                  <span v-else class="table-input readonly" :title="t('Only memory instructions have a stride')">–</span>
                 </td>
 
                 <td v-if="programEditOptions.showStrideLanes">
                   <input v-if="isVectorType(inst)" type="number" min="2" step="1" v-model.number="inst.lanes" class="table-input"
-                         title="Vector lanes L: elements processed by this vector instruction" />
+                         :title="t('Vector lanes L: elements processed by this vector instruction')" />
                   <input v-else-if="inst.type === 'BRANCH'" type="number" step="0.01" min="0" max="1" v-model="inst.mispredict"
                          class="table-input branch-field" placeholder="2-bit" :id="`branch-mispredict-${index}`"
-                         title="m: misprediction rate of this conditional branch (0 to 1, e.g. measured with perf). Empty: the simulator predicts it with a 2-bit counter" />
-                  <span v-else class="table-input readonly" title="Scalar instruction: 1 lane">1</span>
+                         :title="t('m: misprediction rate of this conditional branch (0 to 1, e.g. measured with perf). Empty: the simulator predicts it with a 2-bit counter')" />
+                  <span v-else class="table-input readonly" :title="t('Scalar instruction: 1 lane')">1</span>
                 </td>
 
                 <td v-if="programEditOptions.showActions" class="actions-cell">
@@ -834,7 +834,7 @@ function snapshotProgram() {
                     @click="moveInstructionUp(index)"
                     :disabled="index === 0"
                     class="action-btn"
-                    title="Move up"
+                    :title="t('Move up')"
                   >
                     ▲
                   </button>
@@ -843,7 +843,7 @@ function snapshotProgram() {
                     @click="moveInstructionDown(index)"
                     :disabled="index === editedProgram.length - 2"
                     class="action-btn"
-                    title="Move down"
+                    :title="t('Move down')"
                   >
                     ▼
                   </button>
@@ -852,7 +852,7 @@ function snapshotProgram() {
                     @click="removeInstruction(index)"
                     :disabled="editedProgram.length === 2"
                     class="action-btn delete"
-                    title="Delete"
+                    :title="t('Delete')"
                   >
                     ✕
                   </button>
@@ -860,7 +860,7 @@ function snapshotProgram() {
                   <button
                     @click="addInstruction(index)"
                     class="action-btn"
-                    title="Insert new instruction before this one"
+                    :title="t('Insert new instruction before this one')"
                   >
                     ▶️
                   </button>
@@ -875,19 +875,19 @@ function snapshotProgram() {
                   {{editedProgram.length-1}}<span v-if="rowIssues[editedProgram.length - 1]" class="row-issue">{{ ISSUE_MARK[rowIssues[editedProgram.length - 1].kind] }}</span>
                 </td>
 
-                <td title="This final conditional branch is fixed">
+                <td :title="t('This final conditional branch is fixed')">
                   <span class="table-input readonly">if c go back</span>
                 </td>
 
-                <td title="This final conditional branch is fixed">
+                <td :title="t('This final conditional branch is fixed')">
                   <span class="table-select readonly">BRANCH</span>
                 </td>
 
-                <td title="This final conditional branch is fixed">
+                <td :title="t('This final conditional branch is fixed')">
                   <span class="table-select readonly"> </span>
                 </td>
 
-                <td title="This final conditional branch is fixed">
+                <td :title="t('This final conditional branch is fixed')">
                   <span class="table-select readonly"> </span>
                 </td>
 
@@ -907,15 +907,15 @@ function snapshotProgram() {
                   <span class="table-input readonly"> </span>
                 </td>
                 <td v-if="programEditOptions.showStrideLanes"
-                    title="Loop stride S: edit it in 'Alg opers/iter (S)' above">
+                    :title="t('Loop stride S: edit it in \'Alg opers/iter (S)\' above')">
                   <span class="table-input readonly"> S={{ loopStrideModel }} </span>
                 </td>
                 <td v-if="programEditOptions.showStrideLanes"
-                title="This final conditional branch is fixed">
+                :title="t('This final conditional branch is fixed')">
                   <span class="table-input readonly"> 1 </span>
                 </td>
                 <td v-if="programEditOptions.showActions" class="actions-cell"
-                  title="This final conditional branch is fixed">
+                  :title="t('This final conditional branch is fixed')">
                   <span class="table-input readonly"> 🔒 </span>
                 </td>
               </tr>
@@ -973,12 +973,12 @@ function snapshotProgram() {
       <h4>Save Program As</h4>
       <label for="config-name">Name:</label>
       <input id="save-program-name" type="text" v-model="modalName"
-          title="file name of new program" />
+          :title="t('file name of new program')" />
       <div v-if="nameError" class="error">{{ nameError }}</div>
       <div class="modal-actions">
-        <button class="blue-button" id="save-program-download" title="Add the program to the list of the Program panel and download it as a JSON file" @click="confirmDownload(true)">Save and download</button>
-        <button class="blue-button" id="save-program-only" title="Add the program to the list of the Program panel (and select it)" @click="confirmDownload(false)">Save</button>
-        <button class="blue-button" title="Cancel Upload"   @click="showModalDownload=false">Cancel</button>
+        <button class="blue-button" id="save-program-download" :title="t('Add the program to the list of the Program panel and download it as a JSON file')" @click="confirmDownload(true)">Save and download</button>
+        <button class="blue-button" id="save-program-only" :title="t('Add the program to the list of the Program panel (and select it)')" @click="confirmDownload(false)">Save</button>
+        <button class="blue-button" :title="t('Cancel Upload')"   @click="showModalDownload=false">Cancel</button>
       </div>
     </div>
   </div>
@@ -994,14 +994,14 @@ function snapshotProgram() {
       </p>
 
       <div class="transform-options">
-        <label title="Each vector holds L elements of the smallest data size of the loop (L iterations of the original loop): S × L. Elements twice as large use L/2 lanes, in two halves">
+        <label :title="t('Each vector holds L elements of the smallest data size of the loop (L iterations of the original loop): S × L. Elements twice as large use L/2 lanes, in two halves')">
           Vectorize:
           <select v-model.number="transformOptions.lanes" :disabled="!!vectorizeBlock" id="transform-lanes">
             <option :value="1">no</option>
             <option v-for="L in [2, 4, 8, 16]" :key="L" :value="L">{{ L }} lanes</option>
           </select>
         </label>
-        <label title="Each iteration repeats the body U times: S × U">
+        <label :title="t('Each iteration repeats the body U times: S × U')">
           Unroll:
           <select v-model.number="transformOptions.unroll" id="transform-unroll">
             <option :value="1">no</option>
@@ -1009,7 +1009,7 @@ function snapshotProgram() {
           </select>
         </label>
         <label v-if="loopInfo.reductions.length"
-               title="Each unrolled copy accumulates in its own variable: the dependence chain is split into U shorter chains (the partial results are added after the loop)">
+               :title="t('Each unrolled copy accumulates in its own variable: the dependence chain is split into U shorter chains (the partial results are added after the loop)')">
           <input type="checkbox" v-model="transformOptions.splitAccumulators" :disabled="transformOptions.unroll < 2"
                  id="transform-split" />
           Partial accumulators for {{ loopInfo.reductions.join(', ') }}
@@ -1021,11 +1021,11 @@ function snapshotProgram() {
           This loop moves data across the 128-bit blocks of the vector registers:
           {{ transformPreview.rearrange.reasons.join('; ') }}. How should these moves be done?
         </div>
-        <label title="x86 AVX: registers made of 128-bit blocks. Moving elements across blocks needs PERMUTE instructions (3 cycles in Intel processors); within a block, SHUFFLE (1 cycle)">
+        <label :title="t('x86 AVX: registers made of 128-bit blocks. Moving elements across blocks needs PERMUTE instructions (3 cycles in Intel processors); within a block, SHUFFLE (1 cycle)')">
           <input type="radio" value="avx" v-model="transformOptions.blocks" id="transform-blocks-avx" />
           AVX: generate the PERMUTE instructions (more latency than SHUFFLE)
         </label>
-        <label title="Generic vector model, without 128-bit blocks: conversions read and write halves of registers directly, and reversals are SHUFFLE instructions">
+        <label :title="t('Generic vector model, without 128-bit blocks: conversions read and write halves of registers directly, and reversals are SHUFFLE instructions')">
           <input type="radio" value="generic" v-model="transformOptions.blocks" id="transform-blocks-generic" />
           Generic vector model, without 128-bit blocks
         </label>
@@ -1067,10 +1067,10 @@ function snapshotProgram() {
       <div class="modal-actions">
         <button class="blue-button" id="apply-loop-transform"
                 :disabled="!transformPreview?.program || (transformPreview.rearrange?.question && !transformOptions.blocks)"
-                title="Replace the edited program with the transformed one (↶ Undo restores it)" @click="applyTransform">
+                :title="t('Replace the edited program with the transformed one (↶ Undo restores it)')" @click="applyTransform">
           Apply
         </button>
-        <button class="blue-button" title="Close without changes" @click="showTransform = false">Cancel</button>
+        <button class="blue-button" :title="t('Close without changes')" @click="showTransform = false">Cancel</button>
       </div>
     </div>
   </div>
@@ -1079,15 +1079,15 @@ function snapshotProgram() {
     <div class="modal">
       <p>You may have unsaved changes. Do you want to clear current edited program?</p>
       <div class="modal-actions">
-        <button class="blue-button" title="Yes, clear!" @click="clearProgram">Continue</button>
-        <button class="blue-button" title="No, cancel!" @click="showModalClear = false">Cancel</button>
+        <button class="blue-button" :title="t('Yes, clear!')" @click="clearProgram">Continue</button>
+        <button class="blue-button" :title="t('No, cancel!')" @click="showModalClear = false">Cancel</button>
       </div>
     </div>
   </div>
 
   <Teleport to="body">
-    <HelpComponent v-if="showHelp" :position="helpPosition" :text="PROGRAM_EDITOR_HELP"
-      title="Program Edition"
+    <HelpComponent v-if="showHelp" :position="helpPosition" :text="t('help.programEditor')"
+      :title="t('Program Edition')"
     @close="closeHelp" />
   </Teleport>
 </template>

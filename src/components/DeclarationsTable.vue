@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Declarations of the edited program: data type of each variable, inferred from the texts and
   // fields of the instructions (src/instructionText.js). Setting the type of a variable here sets
   // it for all the variables that exchange values with it, and rewrites their instructions.
@@ -50,7 +51,7 @@
   <div class="declarations" id="declarations">
     <div class="decl-header">
       <button class="decl-toggle" id="declarations-toggle" @click="options.open = !options.open"
-              title="Show/hide the data type of each variable, inferred from the instructions and saved with the program">
+              :title="t('Show/hide the data type of each variable, inferred from the instructions and saved with the program')">
         {{ options.open ? '▾' : '▸' }} Declarations
       </button>
       <span class="decl-summary">
@@ -65,10 +66,10 @@
         <thead>
           <tr>
             <th>Variable</th><th>Role</th>
-            <th title="Data type (arrays: type of their elements). Changing it rewrites the instructions of this variable and of the ones that exchange values with it">Type</th>
+            <th :title="t('Data type (arrays: type of their elements). Changing it rewrites the instructions of this variable and of the ones that exchange values with it')">Type</th>
             <th>Size</th>
-            <th title="Lanes of the vector register (x[0:3] → 4)">Lanes</th>
-            <th title="Variables with the same data type, because they exchange values (operands and result, value and array)">Same data as</th>
+            <th :title="t('Lanes of the vector register (x[0:3] → 4)')">Lanes</th>
+            <th :title="t('Variables with the same data type, because they exchange values (operands and result, value and array)')">Same data as</th>
             <th>Instructions</th><th></th>
           </tr>
         </thead>

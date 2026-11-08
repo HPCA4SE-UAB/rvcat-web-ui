@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 // Algorithmic operations (alg ops): one iteration of the ORIGINAL loop, before unrolling or
 // vectorization (SIMD). An O(N) algorithm performs N algorithmic operations.
 //
@@ -28,8 +29,8 @@ export function cyclesPerAlgOp(cyclesPerIter, stride) {
 export function algOpFormula(cyclesPerIter, stride) {
   const value = cyclesPerAlgOp(cyclesPerIter, stride)
   if (value === null) return ''
-  return `${Number(cyclesPerIter).toFixed(2)} cycles/iter ÷ ${stride} alg opers/iter (loop stride) = ` +
-         `${value.toFixed(2)} ${ALG_OP_UNIT}`
+  return t('{c} cycles/iter ÷ {s} alg opers/iter (loop stride) = {v} {unit}',
+           { c: Number(cyclesPerIter).toFixed(2), s: stride, v: value.toFixed(2), unit: ALG_OP_UNIT })
 }
 
 // Explanation used in headers and tooltips
@@ -80,15 +81,11 @@ export function strideWarning(instructionList) {
   if (loopStride(list) !== 1) return ''
   const lanes = Math.max(1, ...list.map(i => Number(i?.lanes) || 1))
   if (lanes > 1)
-    return `Vector instructions with ${lanes} lanes, but the loop stride is 1: if each iteration does the ` +
-           `work of ${lanes} original iterations, set the stride of the BRANCH instruction to ${lanes} ` +
-           `so that cycles/alg oper is correct.`
+    return t('Vector instructions with {n} lanes, but the loop stride is 1: if each iteration does the work of {n} original iterations, set the stride of the BRANCH instruction to {n} so that cycles/alg oper is correct.', { n: lanes })
   for (const instr of list) {
     const m = /^\s*(\w+)\s*=\s*\1\s*\+\s*(\d+)\s*$/.exec(instr?.text ?? '')
     if (instr?.type?.startsWith('INT') && m && Number(m[2]) > 1)
-      return `"${instr.text.trim()}" suggests that each iteration does the work of ${m[2]} original ` +
-             `iterations, but the loop stride is 1: set the stride of the BRANCH instruction to ${m[2]} ` +
-             `so that cycles/alg oper is correct.`
+      return t('"{text}" suggests that each iteration does the work of {n} original iterations, but the loop stride is 1: set the stride of the BRANCH instruction to {n} so that cycles/alg oper is correct.', { text: instr.text.trim(), n: m[2] })
   }
   return ''
 }

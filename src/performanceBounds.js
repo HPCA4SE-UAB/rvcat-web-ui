@@ -4,7 +4,15 @@
 
 export const MAX_BOUND_ROWS = 12   // more rows than this: show only the highest bounds
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+import { t } from '@/i18n'
+
+// singular / plural texts in the language of the interface
+const WORDS = {
+  instruction: ['1 instruction', '{n} instructions'],
+  iteration:   ['1 iteration', '{n} iterations'],
+  port:        ['1 port', '{n} ports'],
+}
+const plural = (n, word) => t(n === 1 ? WORDS[word][0] : WORDS[word][1], { n })
 const portName = (p) => `P${p}`
 const instrText = (list, i) => `${i}: ${list[i]?.text ?? ''}`
 
@@ -27,7 +35,7 @@ function instrPortsTitle(list, i) {
   const instr = list[i]
   const typeOper = instrTypeOper(instr)
   const ports = instrPorts(instr)
-  return `${instrText(list, i)}\n${typeOper || 'type ?'} → ${ports ? 'can use ' + ports : 'no ports'}`
+  return `${instrText(list, i)}\n${typeOper || t('type ?')} → ${ports ? t('can use {ports}', { ports }) : t('no ports')}`
 }
 
 // Keep the `max` rows with the highest cycles, in their original order
@@ -51,7 +59,7 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
   if (!Array.isArray(bounds)) return { rows: [], hidden: 0 }
   const probOf = (i) => (Array.isArray(execProb) && execProb[i] !== undefined ? Number(execProb[i]) : 1)
   const isConditional = (i) => probOf(i) < 1 - 1e-9
-  const conditionalNote = (i) => `\nConditional: executed with probability ${probText(probOf(i))}, so it counts ${probText(probOf(i))}`
+  const conditionalNote = (i) => '\n' + t('Conditional: executed with probability {p}, so it counts {p}', { p: probText(probOf(i)) })
   const rows = bounds.map(b => {
     const instrs  = b.instructions ?? []
     const isPorts = b.resource === 'Ports'
@@ -61,28 +69,28 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
     const expected = Number.isFinite(b.expected) ? b.expected : instrs.reduce((s, i) => s + probOf(i), 0)
 
     const resourceTitle = isPorts
-      ? `${b.ports.length > 1 ? 'Ports' : 'Port'} ${resource}: ${plural(b.throughput, 'instruction')} per cycle`
-      : `${b.resource} width: ${plural(b.throughput, 'instruction')} per cycle`
+      ? t(b.ports.length > 1 ? 'Ports {r}: {n} per cycle' : 'Port {r}: {n} per cycle', { r: resource, n: plural(b.throughput, 'instruction') })
+      : t('{r} width: {n} per cycle', { r: b.resource, n: plural(b.throughput, 'instruction') })
 
     // instructions per iteration: with conditional ones, the expected number
     const count = conditional.length
-      ? `${probText(expected)} instructions (expected: ${instrs.length} − ${probText(instrs.length - expected)} skipped)`
+      ? t('{e} instructions (expected: {n} − {s} skipped)', { e: probText(expected), n: instrs.length, s: probText(instrs.length - expected) })
       : plural(instrs.length, 'instruction')
     const formula = isPorts
-      ? `${count} / (${plural(b.throughput, 'port')} × 1 instruction/cycle) = ${cycles.toFixed(2)} cycles/iter`
-      : `${count} / ${b.throughput} instructions/cycle (${b.resource.toLowerCase()} width) = ${cycles.toFixed(2)} cycles/iter`
+      ? `${count} / (${plural(b.throughput, 'port')} × ${t('1 instruction/cycle')}) = ${cycles.toFixed(2)} cycles/iter`
+      : `${count} / ${b.throughput} ${t('instructions/cycle')} (${t(b.resource === 'Dispatch' ? 'dispatch width' : 'retire width')}) = ${cycles.toFixed(2)} cycles/iter`
 
     const item = (i) => ({ index: i, title: instrPortsTitle(instructionList, i) + (isConditional(i) ? conditionalNote(i) : ''),
                            prob: isConditional(i) ? probText(probOf(i)) : '' })
     return {
       resource, resourceTitle, formula,
       // Dispatch/retire process every instruction: shown as a range, and its conditional instructions
-      allRange:   isPorts ? '' : (instrs.length ? `All (${instrs[0]}–${instrs.at(-1)})` : 'All'),
+      allRange:   isPorts ? '' : (instrs.length ? `${t('All')} (${instrs[0]}–${instrs.at(-1)})` : t('All')),
       conditional: isPorts ? [] : conditional.map(item),
       included:   isPorts ? instrs.map(item) : [],
       excluded:   (b.excluded ?? []).map(e => ({
         index: e.index,
-        title: `${instrPortsTitle(instructionList, e.index)}\nNot counted: it can also use ${e.other_ports.map(portName).join(', ')}`,
+        title: `${instrPortsTitle(instructionList, e.index)}\n${t('Not counted: it can also use {ports}', { ports: e.other_ports.map(portName).join(', ') })}`,
       })),
       cycles:      cycles.toFixed(2),
       cyclesValue: cycles,
@@ -106,13 +114,13 @@ export function latencyBoundRows(bounds, instructionList = [], max = MAX_BOUND_R
       iterations:   b.iterations,
       recurrence: b.variable ? `${b.variable} → ${b.variable}` : '—',
       recurrenceTitle: b.variable
-        ? `Each value of ${b.variable} depends on its value ${plural(b.iterations, 'iteration')} before`
+        ? t('Each value of {v} depends on its value {n} before', { v: b.variable, n: plural(b.iterations, 'iteration') })
         : '',
       chain: chain.map((i, k) => ({
         index: i,
-        title: `${instrText(instructionList, i)}\n${instrTypeOper(instructionList[i]) || 'type ?'} → latency ${lats[k]}`,
+        title: `${instrText(instructionList, i)}\n${instrTypeOper(instructionList[i]) || t('type ?')} → ${t('latency {n}', { n: lats[k] })}`,
       })),
-      formula: `(${lats.join('+')}) = ${total} cycles / ${plural(b.iterations, 'iteration')} = ${cycles.toFixed(2)} cycles/iter`,
+      formula: `(${lats.join('+')}) = ${total} ${t('cycles')} / ${plural(b.iterations, 'iteration')} = ${cycles.toFixed(2)} cycles/iter`,
       cycles:      cycles.toFixed(2),
       cyclesValue: cycles,
       bottleneck:  Boolean(b.bottleneck),

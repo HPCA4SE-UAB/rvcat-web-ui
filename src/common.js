@@ -1,4 +1,6 @@
 
+import { t } from '@/i18n'
+
 export const RVCAT_VERSION = '1.15';
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
@@ -177,50 +179,50 @@ export function validateProgram(program, options = {}) {
   const addError = (message) => errors.push(message)
 
   if (!program || typeof program !== 'object' || Array.isArray(program)) {
-    return ['Program must be a JSON object.']
+    return [t('Program must be a JSON object.')]
   }
 
   if (typeof program.name !== 'string' || !program.name.trim()) {
-    addError("Program name must be a non-empty string.")
+    addError(t('Program name must be a non-empty string.'))
   }
 
   if (program.N !== undefined &&
       (!Number.isSafeInteger(program.N) || program.N <= 0 || program.N > MAX_LOGICAL_ELEMENT_COUNT)) {
-    addError(`Program N (algorithmic operations) must be an integer between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`)
+    addError(t('Program N (algorithmic operations) must be an integer between 1 and {1}.', { 1: MAX_LOGICAL_ELEMENT_COUNT }))
   }
 
   if (program.description !== undefined && typeof program.description !== 'string') {
-    addError('Program description (source code of the loop) must be a string.')
+    addError(t('Program description (source code of the loop) must be a string.'))
   }
 
   if (program.vlen !== undefined && ![8, 16, 32, 64].includes(program.vlen)) {
-    addError('Program vlen (vector register width) must be 8, 16, 32 or 64 bytes.')
+    addError(t('Program vlen (vector register width) must be 8, 16, 32 or 64 bytes.'))
   }
 
   if (program.declarations !== undefined) {
     if (!Array.isArray(program.declarations)) {
-      addError('Program declarations must be a list.')
+      addError(t('Program declarations must be a list.'))
     } else {
       program.declarations.forEach((d, k) => {
-        const where = `Declaration ${k + 1}: `
+        const where = t('Declaration {1}: ', { 1: k + 1 })
         if (!d || typeof d !== 'object' || typeof d.name !== 'string' || !d.name.trim()) {
-          addError(where + 'must have a variable name.')
+          addError(where + t('must have a variable name.'))
           return
         }
         if (d.type !== undefined && !['INT', 'FLOAT'].includes(d.type))
-          addError(where + `type of ${d.name} must be INT or FLOAT.`)
+          addError(where + t('type of {1} must be INT or FLOAT.', { 1: d.name }))
         const sizes = d.type === 'FLOAT' ? ['single', 'double'] : d.type === 'INT' ? ['byte', 'word', 'long']
                                          : ['byte', 'word', 'long', 'single', 'double']
         if (d.size !== undefined && !sizes.includes(d.size))
-          addError(where + `size of ${d.name} must be one of: ${sizes.join(', ')}.`)
+          addError(where + t('size of {1} must be one of: {2}.', { 1: d.name, 2: sizes.join(', ') }))
         if (d.lanes !== undefined && !(Number.isSafeInteger(d.lanes) && d.lanes >= 1))
-          addError(where + `lanes of ${d.name} must be a positive integer.`)
+          addError(where + t('lanes of {1} must be a positive integer.', { 1: d.name }))
       })
     }
   }
 
   if (!Array.isArray(program.instruction_list) || program.instruction_list.length === 0) {
-    addError('Program must contain a non-empty instruction_list.')
+    addError(t('Program must contain a non-empty instruction_list.'))
     return errors
   }
 
@@ -228,26 +230,26 @@ export function validateProgram(program, options = {}) {
   const branches = []
 
   program.instruction_list.forEach((instruction, index) => {
-    const prefix = `Instruction ${index + 1}: `
+    const prefix = t('Instruction {1}: ', { 1: index + 1 })
     const addInstructionError = (message) => addError(prefix + message)
 
     if (!instruction || typeof instruction !== 'object' || Array.isArray(instruction)) {
-      addInstructionError('must be an object.')
+      addInstructionError(t('must be an object.'))
       return
     }
 
     if (typeof instruction.text !== 'string' || !instruction.text.trim()) {
-      addInstructionError('text must be a non-empty string.')
+      addInstructionError(t('text must be a non-empty string.'))
     }
 
     for (const field of textFields.slice(1)) {
       if (instruction[field] !== undefined && typeof instruction[field] !== 'string') {
-        addInstructionError(`${field} must be a string when provided.`)
+        addInstructionError(t('{1} must be a string when provided.', { 1: field }))
       }
     }
 
     if (typeof instruction.type !== 'string' || !instructionTypes.includes(instruction.type)) {
-      addInstructionError(`type must be one of: ${instructionTypes.join(', ')}.`)
+      addInstructionError(t('type must be one of: {1}.', { 1: instructionTypes.join(', ') }))
       return
     }
 
@@ -258,60 +260,60 @@ export function validateProgram(program, options = {}) {
         const n = program.instruction_list.length
         const k = Number(String(instruction.constant ?? '').trim() || 1)
         if (!Number.isInteger(k) || k < 1 || index + k > n - 2)
-          addInstructionError(`a conditional branch skips k ≥ 1 instructions of the loop body (constant), at most ${n - 2 - index}.`)
+          addInstructionError(t('a conditional branch skips k ≥ 1 instructions of the loop body (constant), at most {1}.', { 1: n - 2 - index }))
         for (const field of ['prob', 'mispredict']) {
           const v = instruction[field]
           if (v !== undefined && v !== null && v !== '' && !(Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 1))
-            addInstructionError(`${field} of a conditional branch must be a number between 0 and 1.`)
+            addInstructionError(t('{1} of a conditional branch must be a number between 0 and 1.', { 1: field }))
         }
       }
       if (instruction.oper !== undefined && instruction.oper !== '') {
-        addInstructionError('BRANCH oper must be empty.')
+        addInstructionError(t('BRANCH oper must be empty.'))
       }
       if (instruction.size !== undefined && instruction.size !== '') {
-        addInstructionError('BRANCH size must be empty.')
+        addInstructionError(t('BRANCH size must be empty.'))
       }
     } else {
       if (typeof instruction.oper !== 'string' || !operations.includes(instruction.oper)) {
-        addInstructionError(`oper must be one of: ${operations.join(', ')}.`)
+        addInstructionError(t('oper must be one of: {1}.', { 1: operations.join(', ') }))
       }
 
       const sizes = typeSizes[instruction.type]
       if (typeof instruction.size !== 'string' || !sizes.includes(instruction.size)) {
-        addInstructionError(`size must be one of: ${sizes.join(', ')}.`)
+        addInstructionError(t('size must be one of: {1}.', { 1: sizes.join(', ') }))
       }
     }
 
     const stride = instruction.stride === undefined ? 1 : instruction.stride
     if (!Number.isSafeInteger(stride)) {
-      addInstructionError('stride must be a safe integer.')
+      addInstructionError(t('stride must be a safe integer.'))
     } else if (instruction.type === 'BRANCH' &&
                (stride <= 0 || stride > MAX_LOGICAL_ELEMENT_COUNT)) {
       addInstructionError(
-        `BRANCH stride must be between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`
+        t('BRANCH stride must be between 1 and {1}.', { 1: MAX_LOGICAL_ELEMENT_COUNT })
       )
     }
 
     const lanes = instruction.lanes === undefined ? 1 : instruction.lanes
     if (!Number.isSafeInteger(lanes) || lanes <= 0) {
-      addInstructionError('lanes must be a positive safe integer.')
+      addInstructionError(t('lanes must be a positive safe integer.'))
     }
 
     if (instruction.mask !== undefined && instruction.mask !== '' &&
         (typeof instruction.mask !== 'string' || instruction.type !== 'VMEM' || instruction.oper !== 'STORE')) {
-      addInstructionError('only a vector store (VMEM.STORE) can have a mask.')
+      addInstructionError(t('only a vector store (VMEM.STORE) can have a mask.'))
     }
 
     if (instruction.type === 'MEM' || instruction.type === 'VMEM') {
       if (typeof instruction.source2 !== 'string' || !instruction.source2.trim()) {
-        addInstructionError('memory instructions must name an array in source2.')
+        addInstructionError(t('memory instructions must name an array in source2.'))
       }
       if (instruction.constant !== undefined &&
           instruction.constant !== '' &&
           (typeof instruction.constant !== 'string' ||
            !/^[+-]?\d+$/.test(instruction.constant.trim()) ||
            !Number.isSafeInteger(Number(instruction.constant.trim())))) {
-        addInstructionError('memory constant must be a safe integer offset.')
+        addInstructionError(t('memory constant must be a safe integer offset.'))
       }
     }
   })
@@ -319,9 +321,9 @@ export function validateProgram(program, options = {}) {
   // the loop branch is the final instruction; other BRANCH instructions are conditional ("if c skip k")
   const finalIsBranch = program.instruction_list.at(-1)?.type === 'BRANCH'
   if (!branches.length) {
-    addError('Program must contain a BRANCH instruction.')
+    addError(t('Program must contain a BRANCH instruction.'))
   } else if (!finalIsBranch) {
-    addError('The BRANCH instruction must be the final instruction.')
+    addError(t('The BRANCH instruction must be the final instruction.'))
   }
 
   if (options.logicalElementCount !== undefined) {
@@ -332,7 +334,7 @@ export function validateProgram(program, options = {}) {
         logicalElementCount <= 0 ||
         logicalElementCount > MAX_LOGICAL_ELEMENT_COUNT) {
       addError(
-        `Logical element count must be between 1 and ${MAX_LOGICAL_ELEMENT_COUNT}.`
+        t('Logical element count must be between 1 and {1}.', { 1: MAX_LOGICAL_ELEMENT_COUNT })
       )
     } else if (finalIsBranch) {
       const branch = program.instruction_list.at(-1)
@@ -363,14 +365,14 @@ export function validateProgram(program, options = {}) {
           if (!Number.isSafeInteger(firstElement) || !Number.isSafeInteger(lastElement) ||
               !Number.isSafeInteger(lastLane)) {
             addError(
-              `Instruction ${index + 1}: memory addresses exceed the supported integer range.`
+              t('Instruction {1}: memory addresses exceed the supported integer range.', { 1: index + 1 })
             )
             return
           }
           if (Math.min(firstElement, lastElement) < 0) {
             addError(
-              `Instruction ${index + 1}: memory access for array "${instruction.source2}" ` +
-              `reaches before its base address at N=${effectiveElementCount}.`
+              t('Instruction {1}: memory access for array "{2}" reaches before its base address at N={3}.',
+                { 1: index + 1, 2: instruction.source2, 3: effectiveElementCount })
             )
           }
         })
@@ -429,32 +431,32 @@ export function getLogicalElementCount(instructionList, loopIterations) {
 export function charToProcessingState(ch, port, addr, memoryOperation = null) {
   if (port != null) {
     if (ch === "L")
-      return `Load addr ${addr} on P${port}`
+      return t('Load addr {1} on P{2}', { 1: addr, 2: port })
     else if (ch === "S")
-      return `Store addr ${addr} on P${port}`
+      return t('Store addr {1} on P{2}', { 1: addr, 2: port })
     else
-      return `Issued to P${port}`
+      return t('Issued to P{1}', { 1: port })
   }
   switch (ch) {
-    case "E": return "Executing";
-    case "L": return "Load running";
-    case "S": return "Store running";
-    case "R": return "Retire (write register)";
-    case "D": return "Dispatch";
-    case "-": return "Wait for older instr. to retire";
+    case "E": return t('Executing');
+    case "L": return t('Load running');
+    case "S": return t('Store running');
+    case "R": return t('Retire (write register)');
+    case "D": return t('Dispatch');
+    case "-": return t('Wait for older instr. to retire');
     case "W": return memoryOperation === "Store to"
-      ? "Write result to cache"
-      : "Write result to ROB";
-    case ".": return "Wait: data dependency";
-    case "*": return "Wait: port conflict";
-    case "^": return "Wait: issue width full";
-    case "#": return "Wait: dirty writeback";
-    case ":": return "Wait: block fill";
-    case "!": return "Wait: cache/MM slot";
-    case "2": return "Wait: matching fill";
-    case "@": return "Wait for cache return: block data ready";
-    case "U": return "Dirty writeback";
-    case "x": return "Squashed: wrong path of a mispredicted branch";
+      ? t('Write result to cache')
+      : t('Write result to ROB');
+    case ".": return t('Wait: data dependency');
+    case "*": return t('Wait: port conflict');
+    case "^": return t('Wait: issue width full');
+    case "#": return t('Wait: dirty writeback');
+    case ":": return t('Wait: block fill');
+    case "!": return t('Wait: cache/MM slot');
+    case "2": return t('Wait: matching fill');
+    case "@": return t('Wait for cache return: block data ready');
+    case "U": return t('Dirty writeback');
+    case "x": return t('Squashed: wrong path of a mispredicted branch');
     default:  return null;
   }
 }
@@ -657,14 +659,14 @@ export async function uploadJSON(onSuccess, resourceType, validationOptions = {}
         if (resourceType === 'program') {
           const validationErrors = validateProgram(data, validationOptions)
           if (validationErrors.length) {
-            alert(`Invalid program:\n${validationErrors.map(error => `• ${error}`).join('\n')}`)
+            alert(t('Invalid program:\n{1}', { 1: validationErrors.map(error => `• ${error}`).join('\n') }))
             resolve(null)
             return
           }
         }
 
         if (!data.name && !data.id) {
-          alert(`The JSON file must contain a 'name' or 'id' field.`);
+          alert(t('The JSON file must contain a \'name\' or \'id\' field.'));
           resolve(null);
           return;
         }
@@ -677,7 +679,7 @@ export async function uploadJSON(onSuccess, resourceType, validationOptions = {}
         resolve(data);
       } catch (error) {
         console.error(`${resourceConfig[resourceType]?.logPrefix}📥❌ Failed to upload&parse JSON:`, error);
-        alert('Could not load JSON file. Please check the file format.');
+        alert(t('Could not load JSON file. Please check the file format.'));
         resolve(null);
       }
     };
@@ -1021,12 +1023,12 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
         .filter(k => k.startsWith(op + "."))
 
       if (variants.length === 0)
-        return base !== undefined ? `${op} latency: ${base}` : ""
+        return base !== undefined ? t('{op} latency: {n}', { op, n: base }) : ""
 
-      let txt = `${op} latencies:\n`
+      let txt = t('{op} latencies:', { op }) + '\n'
 
       if (base !== undefined)
-        txt += `base: ${base}\n`
+        txt += `${t('base')}: ${base}\n`
 
       for (let v of variants)
         txt += `${v}: ${lat[v]}\n`
@@ -1077,29 +1079,32 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     const unassigned = allowEdit ? unassignedOperations(ports) : []   // warning row below
 
     // ---- Dispatch + ROB ----
-    const click = allowEdit ? ' Click to edit it.' : ''
+    const click = allowEdit ? ' ' + t('Click to edit it.') : ''
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="Dispatch width: up to ${dispatch} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/cycle</FONT></TD>
-      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="ROB (reorder buffer): up to ${ROBsize} instructions in flight, from dispatch to retire; when it is full, dispatch stops.${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">entries</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}</FONT></TD>
+      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${t('ROB (reorder buffer): up to {n} instructions in flight, from dispatch to retire; when it is full, dispatch stops.', { n: ROBsize })}${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">${t('entries')}</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
     // (the editable panel shows controls: hide/show the operation types, add a port)
     // (and warns about operations that no port executes: their instructions cannot be simulated)
-    const toggleText = options.collapsed ? `▼&nbsp;show operation types (${max_rows} rows)` : '▲&nbsp;hide operation types'
-    const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? 'Show' : 'Hide'} the operation types that each port executes"><FONT POINT-SIZE="16">${toggleText}</FONT></TD>`
+    const toggleText = options.collapsed ? `▼&nbsp;${t('show operation types ({n} rows)', { n: max_rows })}` : `▲&nbsp;${t('hide operation types')}`
+    const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? t('Show the operation types that each port executes') : t('Hide the operation types that each port executes')}"><FONT POINT-SIZE="16">${toggleText}</FONT></TD>`
     const warnRow = unassigned.length
-      ? `<TR><TD COLSPAN="${port_ids.length}" BGCOLOR="#fff3cd" HREF="#" ID="unassigned" TITLE="No port executes ${unassigned.join(', ')}: programs that use ${unassigned.length > 1 ? 'them' : 'it'} cannot be simulated. Click a port header to insert ${unassigned.length > 1 ? 'them' : 'it'}."><FONT POINT-SIZE="16" COLOR="#8a5a00">⚠&nbsp;${unassigned.length} operation type${unassigned.length > 1 ? 's' : ''} without port</FONT></TD></TR>`
+      ? `<TR><TD COLSPAN="${port_ids.length}" BGCOLOR="#fff3cd" HREF="#" ID="unassigned" TITLE="${unassigned.length > 1
+        ? t('No port executes {ops}: programs that use them cannot be simulated. Click a port header to insert them.', { ops: unassigned.join(', ') })
+        : t('No port executes {ops}: programs that use it cannot be simulated. Click a port header to insert it.', { ops: unassigned.join(', ') })}"><FONT POINT-SIZE="16" COLOR="#8a5a00">⚠&nbsp;${unassigned.length > 1
+        ? t('{n} operation types without port', { n: unassigned.length }) : t('1 operation type without port')}</FONT></TD></TR>`
       : ''
     const addCell = port_ids.length < MAX_PORTS
-      ? `<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="Add a new execution port (then click its header to insert operation types)"><FONT POINT-SIZE="16">＋&nbsp;port</FONT></TD>`
-      : `<TD BGCOLOR="#eeeeee" HREF="#" ID="maxports" TITLE="At most ${MAX_PORTS} execution ports"><FONT POINT-SIZE="16" COLOR="#888888">${MAX_PORTS} ports</FONT></TD>`
+      ? `<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="${t('Add a new execution port (then click its header to insert operation types)')}"><FONT POINT-SIZE="16">＋&nbsp;${t('port')}</FONT></TD>`
+      : `<TD BGCOLOR="#eeeeee" HREF="#" ID="maxports" TITLE="${t('At most {n} execution ports', { n: MAX_PORTS })}"><FONT POINT-SIZE="16" COLOR="#888888">${t('{n} ports', { n: MAX_PORTS })}</FONT></TD>`
     let wb_row = allowEdit
       ? (port_ids.length >= 2
           ? `<TR>${toggleCell(port_ids.length - 1)}${addCell}</TR>`
           : `<TR>${toggleCell(port_ids.length)}</TR>`) + warnRow
       : `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="Instructions wait here for their operands and a free port"><FONT POINT-SIZE="20"><B>Waiting Buffer</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="${t('Instructions wait here for their operands and a free port')}"><FONT POINT-SIZE="20"><B>${t('Waiting Buffer')}</B></FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -1113,7 +1118,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
       const safePort = escapeHtml(p)
       const nOps = (ports[p] ?? []).length
-      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="Port P${safePort}: executes ${nOps} operation type(s), one instruction per cycle.${allowEdit ? ' Click to insert an operation type or remove the port.' : ''}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
+      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="${t('Port P{p}: executes {n} operation type(s), one instruction per cycle.', { p: safePort, n: nOps })}${allowEdit ? ' ' + t('Click to insert an operation type or remove the port.') : ''}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
     }
 
     port_header += "</TR>"
@@ -1140,7 +1145,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
         const type    = op_type(op.label)
         const color   = type_color(type)
-        const tooltip = latency_tooltip(op.label) + (allowEdit ? `\nClick to edit the latency, or to move or remove ${op.label} from P${p}.` : '')
+        const tooltip = latency_tooltip(op.label) + (allowEdit ? '\n' + t('Click to edit the latency, or to move or remove {op} from P{p}.', { op: op.label, p }) : '')
         const safeLabel = escapeHtml(op.label)
         const safeTooltip = escapeHtml(tooltip)
 
@@ -1152,31 +1157,32 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     }
 
     let cacheEdit = CacheBlocks > 0
-      ? `L1 data cache: ${CacheBlocks} blocks of ${CacheBlockSize} bytes; a miss costs ${CachePenalty} cycles, memory accepts a request every ${CacheIssueTime} cycle(s); ${FillBuffers} fill and ${WriteBuffers} write buffers; ${ReturnThroughput} return(s) per cycle.`
-      : 'No cache: every memory access takes the latency of its instruction.'
+      ? t('L1 data cache: {blocks} blocks of {size} bytes; a miss costs {penalty} cycles, memory accepts a request every {issue} cycle(s); {fill} fill and {write} write buffers; {ret} return(s) per cycle.',
+          { blocks: CacheBlocks, size: CacheBlockSize, penalty: CachePenalty, issue: CacheIssueTime, fill: FillBuffers, write: WriteBuffers, ret: ReturnThroughput })
+      : t('No cache: every memory access takes the latency of its instruction.')
     if (allowEdit)
-      cacheEdit += ' Click repeatedly to edit each parameter (0 blocks: no cache).'
+      cacheEdit += ' ' + t('Click repeatedly to edit each parameter (0 blocks: no cache).')
 
     let cache_row = ""
     // ---- Cache configuration ----
     if (CacheBlocks > 0) {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} blocks&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;Penalty: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} ${t('blocks')}&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;${t('Penalty')}: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
       </TR>`
     } else {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;No cache</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${t('No cache')}</FONT></TD>
       </TR>`
     }
 
     // ---- Branch misprediction penalty ----
     let penalty_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="Branch penalty: ${bPenalty} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Branch penalty:&nbsp;</B>&nbsp;&nbsp;${bPenalty} cycles</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${t('Branch penalty: {n} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.', { n: bPenalty })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>${t('Branch penalty')}:&nbsp;</B>&nbsp;&nbsp;${bPenalty} ${t('cycles')}</FONT></TD>
     </TR>`
 
     // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="Retire width: up to ${retire} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/cycle</FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}</FONT></TD>
     </TR>`
 
     const dot = `

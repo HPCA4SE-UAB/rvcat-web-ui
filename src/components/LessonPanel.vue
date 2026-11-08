@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Lessons: menu (load a lesson file, start, export a self-contained copy, remove), the bar of
   // the lesson in progress (student, tasks, completion code, exit) and their dialogs.
   import { ref, computed, inject, watch, nextTick, onMounted } from 'vue'
@@ -209,7 +210,7 @@
   <!-- Header button and menu -->
   <div class="lesson-menu-anchor">
     <button v-if="!lesson" class="blue-button" id="lessons-button" :class="{ active: showMenu }"
-            title="Lessons: a set of programs, processors and a tutorial with tasks" @click="showMenu = !showMenu">
+            :title="t('Lessons: a set of programs, processors and a tutorial with tasks')" @click="showMenu = !showMenu">
       📘 Lessons
     </button>
     <div v-if="showMenu && !lesson" class="lesson-menu" id="lesson-menu">
@@ -219,9 +220,9 @@
         <button class="lesson-start" :title="l.description || 'Start this lesson'" @click="askStart(l.id)">
           <strong>{{ l.title }}</strong><span>{{ l.id }}</span>
         </button>
-        <button class="lesson-small" title="Download a self-contained copy (programs, processors and tutorial included)"
+        <button class="lesson-small" :title="t('Download a self-contained copy (programs, processors and tutorial included)')"
                 @click="exportSelfContained(l.id)">⬇</button>
-        <button class="lesson-small" title="Remove this lesson from the list" @click="removeLesson(l.id)">🧹</button>
+        <button class="lesson-small" :title="t('Remove this lesson from the list')" @click="removeLesson(l.id)">🧹</button>
       </div>
       <button class="blue-button lesson-load" id="lesson-load-button" @click="pickFile">Load lesson file…</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="loadFile" />
@@ -238,12 +239,12 @@
         Tasks {{ doneCount }} / {{ lesson.tasks.length }}
       </span>
       <span v-if="completed && code" class="lesson-code" id="lesson-code"
-            title="Give this code to your teacher: it shows that you completed the lesson with your identifier">
+            :title="t('Give this code to your teacher: it shows that you completed the lesson with your identifier')">
         ✔ Completed · code <b>{{ code }}</b>
         <button class="lesson-small" @click="copyCode">{{ copied ? 'copied' : 'copy' }}</button>
       </span>
       <span v-else-if="completed" class="lesson-code">✔ Completed</span>
-      <button class="lesson-small" title="Start the tutorial of the lesson again (your completed tasks are kept)" @click="restartTutorial">↻ tutorial</button>
+      <button class="lesson-small" :title="t('Start the tutorial of the lesson again (your completed tasks are kept)')" @click="restartTutorial">↻ tutorial</button>
       <button class="lesson-exit" id="lesson-exit-button" @click="askExit = true">Exit lesson</button>
     </div>
   </Teleport>

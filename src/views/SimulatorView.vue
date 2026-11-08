@@ -1,4 +1,5 @@
 <script setup>
+  import { t, locale, setLocale, LANGUAGES } from '@/i18n'
 import { ref, shallowRef, onMounted, onUnmounted, inject, nextTick, watch, computed } from 'vue';
 
 import processor               from '@/components/processor.vue';
@@ -51,10 +52,12 @@ const { importRVCAT }               = useRVCAT_Api();
         console.error('Error when parsing localStorage:', error)
       }
     }
+    const language = localStorage.getItem('language')     // the language is kept
     localStorage.clear()
+    if (language) localStorage.setItem('language', language)
     // Non-blocking notice (an alert() would stop the page while it loads)
-    versionNotice.value = `New version of RVCAT released (V${rvcatOptions.version}). ` +
-                          'Saved settings and results have been reset.'
+    versionNotice.value = t('New version of RVCAT released (V{version}). Saved settings and results have been reset.',
+                            { version: rvcatOptions.version })
     setTimeout(() => { versionNotice.value = '' }, 15000)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rvcatOptions))
   }
@@ -96,7 +99,7 @@ const isTutorialFullscreen  = computed(() => currentFullKey.value === 'tutorial'
 
 const getButtonText = (key, baseText) => {
   return computed(() =>
-    currentFullKey.value === key ? `📍${baseText}` : `📌${baseText}`
+    currentFullKey.value === key ? `📍${t(baseText)}` : `📌${t(baseText)}`
   );
 };
 
@@ -205,42 +208,42 @@ onUnmounted(() => {
               <li>
                 <button class="blue-button side-toggle" :disabled="!isNotFullscreen"
                   id="side-panel-toggle"
-                  :title="sideCollapsed ? 'Show the processor and program panels' : 'Hide the processor and program panels to give more room to the right panel'"
+                  :title="sideCollapsed ? t('Show the processor and program panels') : t('Hide the processor and program panels to give more room to the right panel')"
                   @click="sideCollapsed = !sideCollapsed">
-                    {{ sideCollapsed ? '▶' : '◀' }} Side panel
+                    {{ sideCollapsed ? '▶' : '◀' }} {{ t('Side panel') }}
                 </button>
               </li>
               <li class="separator"></li>
               <li>
                 <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
                   id="simulation-button"
-                  title="Simulate Program's execution and collect performance metrics"
+                  :title="t('Simulate Program\'s execution and collect performance metrics')"
                   @click="onRequestSwitch('simulationComponent')" >
-                    Simulation
+                    {{ t('Simulation') }}
                 </button>
               </li>
               <li>
                 <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
                   id="timeline-button"
-                  title="Detailed Timeline of Program's execution"
+                  :title="t('Detailed Timeline of Program\'s execution')"
                   @click="onRequestSwitch('timelineComponent')" >
-                    Timeline
+                    {{ t('Timeline') }}
                 </button>
               </li>
               <li>
                 <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
                   id="analysis-button"
-                  title="Static Performance Analysis: identify potential bottleneck (throughput or latency/dependencies)"
+                  :title="t('Static Performance Analysis: identify potential bottleneck (throughput or latency/dependencies)')"
                   @click="onRequestSwitch('staticAnalysisComponent')" >
-                    Static Analysis
+                    {{ t('Static Analysis') }}
                 </button>
               </li>
               <li>
                 <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
                   id="about-button"
-                  title="Credits on the design and development for this tool"
+                  :title="t('Credits on the design and development for this tool')"
                   @click="onRequestSwitch('aboutComponent')" >
-                    About
+                    {{ t('About') }}
                 </button>
               </li>
 
@@ -248,7 +251,7 @@ onUnmounted(() => {
               <li v-if="!lessonLocked('programEditor')">
                 <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
                   id="program-button"
-                  title="Open/Close program edition panel"
+                  :title="t('Open/Close program edition panel')"
                   @click="toggleFullScreen('program')" >
                     {{ fullProgramButtonText }}
                 </button>
@@ -256,7 +259,7 @@ onUnmounted(() => {
               <li v-if="!lessonLocked('tutorialEditor')">
                 <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
                   id="tutorial-button"
-                  title="Open/Close tutorial edition panel"
+                  :title="t('Open/Close tutorial edition panel')"
                   @click="toggleFullScreen('tutorial')" >
                     {{ fullTutorialButtonText }}
                 </button>
@@ -268,20 +271,27 @@ onUnmounted(() => {
             </ul>
           </nav>
         </div>
+        <!-- Language of the interface -->
+        <div class="lang-select">
+          <select :value="locale" @change="setLocale($event.target.value)" id="language-select"
+                  :title="t('Language of the interface')">
+            <option v-for="l in LANGUAGES" :key="l.code" :value="l.code" :title="l.name">{{ l.label }}</option>
+          </select>
+        </div>
       </div>
     </header>
     <div id="lesson-bar-slot"></div>
 
     <div v-if="versionNotice" class="version-notice" role="status">
       💻 {{ versionNotice }}
-      <button class="version-notice-close" @click="versionNotice = ''" title="Close">✕</button>
+      <button class="version-notice-close" @click="versionNotice = ''" :title="t('Close')">✕</button>
     </div>
 
     <div class="blur-overlay" :style="{ display: showOverlay ? 'block' : 'none' }"></div>
     <div class="overlay"      :style="{ display: showOverlay ? 'block' : 'none' }">
       <div class="spinner"></div>
-      <p>{{ loadingMessage }}</p>
-      <p>Please wait. Loading can take several seconds</p>
+      <p>{{ t(loadingMessage) }}</p>
+      <p>{{ t('Please wait. Loading can take several seconds') }}</p>
     </div>
 
     <main class="container" :class="containerClasses">
@@ -292,9 +302,9 @@ onUnmounted(() => {
       </div>
       <!-- Collapsed side panel: a narrow strip that brings it back -->
       <button v-if="checkOK && isNotFullscreen && sideCollapsed" class="side-expand"
-              id="side-panel-expand" title="Show the processor and program panels"
+              id="side-panel-expand" :title="t('Show the processor and program panels')"
               @click="sideCollapsed = false">
-        <span>▶</span><span class="side-expand-label">Processor &amp; Program</span>
+        <span>▶</span><span class="side-expand-label">{{ t('Processor & Program') }}</span>
       </button>
 
       <div v-if="checkOK" v-show="isProgramFullscreen"   class="grid-item program"   id="programEditor-panel">
@@ -364,6 +374,10 @@ nav ul li {
   margin: 0 5px;
 }
 
+.lang-select select {
+  font-size: 0.9em; padding: 2px 4px; border-radius: 4px; border: 1px solid #cfe9d9;
+  background: white; color: #1b5e20; cursor: pointer;
+}
 .separator {
   width: 1px;
   background-color: rgba(0, 0, 0, 0.15);

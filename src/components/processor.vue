@@ -1,4 +1,5 @@
 <script setup>
+  import { t, locale } from '@/i18n'
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { uploadJSON, downloadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
@@ -190,15 +191,16 @@
       const { label } = selectedOp.value
       const size = selectedSize.value
       const name = size ? `${label}.${size}` : label
-      return { label: `${name} latency:`, min: 1, max: 99, get: () => latencyOf(label, size), set: (v) => setLatency(label, v, size),
+      return { label: t('{name} latency:', { name }), min: 1, max: 99, get: () => latencyOf(label, size), set: (v) => setLatency(label, v, size),
                title: size
-                 ? `Latency of ${label} on ${size} data in cycles (1 to 99), in every port that executes ${label}`
-                 : `Latency of ${label} in cycles (1 to 99), for every data size and in every port that executes ${label}` }
+                 ? t('Latency of {op} on {size} data in cycles (1 to 99), in every port that executes {op}', { op: label, size })
+                 : t('Latency of {op} in cycles (1 to 99), for every data size and in every port that executes {op}', { op: label }) }
     }
     if (activeField.value === 'port' && selectedPort.value !== null)
       return { label: `P${selectedPort.value}:`, min: 0, max: 0, get: () => '', port: true,
-               title: `Port P${selectedPort.value}: insert an operation type, or remove the port` }
-    return FIELD_CONFIG[activeField.value] ?? FIELD_CONFIG.rob
+               title: t('Port P{p}: insert an operation type, or remove the port', { p: selectedPort.value }) }
+    const config = FIELD_CONFIG[activeField.value] ?? FIELD_CONFIG.rob
+    return { ...config, label: t(config.label), title: t(config.title) }
   });
   const fieldValue = () => (currentConfig.value.get ? currentConfig.value.get() : simState.simulatedProcess[currentConfig.value.model])
 
@@ -239,7 +241,7 @@
     moveTarget.value = ''
   }
   function addPort() {
-    if (portIds.value.length >= MAX_PORTS) return showTemporaryError(`At most ${MAX_PORTS} execution ports`)
+    if (portIds.value.length >= MAX_PORTS) return showTemporaryError(t('At most {n} execution ports', { n: MAX_PORTS }))
     const ids = portIds.value.map(Number)
     const id = String(ids.length ? Math.max(...ids) + 1 : 0)
     simState.simulatedProcess.ports = { ...simState.simulatedProcess.ports, [id]: [] }
@@ -250,11 +252,11 @@
     const id = selectedPort.value
     if (id === null || portIds.value.length <= 1) return
     const ops = simState.simulatedProcess.ports[id] ?? []
-    if (ops.length && !confirm(`Remove port P${id}? The operation types that only P${id} executes move to the first remaining port, and the ports are renumbered P0, P1, ...`))
+    if (ops.length && !confirm(t('Remove port P{p}? The operation types that only P{p} executes move to the first remaining port, and the ports are renumbered P0, P1, ...', { p: id })))
       return
     const { ports, moved } = removePortFrom(simState.simulatedProcess.ports, id)
     simState.simulatedProcess.ports = ports
-    if (moved.length) showTemporaryError(`Moved to P0: ${moved.join(', ')}`)   // P0 after renumbering
+    if (moved.length) showTemporaryError(t('Moved to P0: {ops}', { ops: moved.join(', ') }))   // P0 after renumbering
     selectedPort.value = null
     activeField.value = 'rob'
   }
@@ -274,13 +276,14 @@
   )
   const currentTitle = computed(() => {
     if (activeField.value === 'cache_mPenalty') {
-      return `Cache miss penalty (${currentMinimum.value} to 99; must be at least mIssueTime)`
+      return t('Cache miss penalty ({min} to 99; must be at least mIssueTime)', { min: currentMinimum.value })
     }
     if (activeField.value !== 'cache_BlkSz') return currentConfig.value.title
     if (minimumCacheBlockSize.value === null) {
-      return `No supported cache block can hold this program's largest ${largestMemoryAccessSize.value}-byte memory access`
+      return t("No supported cache block can hold this program's largest {size}-byte memory access", { size: largestMemoryAccessSize.value })
     }
-    return `Cache block size (${allowedCacheBlockSizes.value.join(', ')} bytes); minimum access size: ${largestMemoryAccessSize.value} bytes`
+    return t('Cache block size ({sizes} bytes); minimum access size: {size} bytes',
+             { sizes: allowedCacheBlockSizes.value.join(', '), size: largestMemoryAccessSize.value })
   })
 
   const inputValue   = ref('');
@@ -318,8 +321,8 @@
         const lastValidValue = simState.simulatedProcess.blkSize
         inputValue.value = lastValidValue
         const requirement = minimumCacheBlockSize.value === null
-          ? `This program needs a ${largestMemoryAccessSize.value}-byte block, larger than the 128-byte maximum.`
-          : `Choose one of these cache block sizes (bytes): ${allowedCacheBlockSizes.value.join(', ')}.`
+          ? t('This program needs a {size}-byte block, larger than the 128-byte maximum.', { size: largestMemoryAccessSize.value })
+          : t('Choose one of these cache block sizes (bytes): {sizes}.', { sizes: allowedCacheBlockSizes.value.join(', ') })
         showTemporaryError(requirement)
         return
       }
@@ -329,12 +332,12 @@
       numValue = min;
       inputValue.value = numValue;
       showTemporaryError(activeField.value === 'cache_mPenalty'
-        ? `MissPenalty cannot be less than mIssueTime (${min})`
-        : `El valor mínimo es ${min}`)
+        ? t('MissPenalty cannot be less than mIssueTime ({min})', { min })
+        : t('The minimum value is {min}', { min }))
     } else if (numValue > max) {
       numValue = max;
       inputValue.value = numValue;
-      showTemporaryError(`El valor máximo es ${max}`);
+      showTemporaryError(t('The maximum value is {max}', { max }));
     }
 
     setParameterValue(numValue)
@@ -348,7 +351,7 @@
     if (model === 'mIssueTime' &&
         Number(simState.simulatedProcess.mPenalty) < value) {
       simState.simulatedProcess.mPenalty = value
-      showTemporaryError(`MissPenalty raised to ${value}; it cannot be below mIssueTime`)
+      showTemporaryError(t('MissPenalty raised to {value}; it cannot be below mIssueTime', { value }))
     }
   }
 
@@ -548,8 +551,8 @@
   const saveName = ref('')
   const saveNameError = computed(() => {
     const name = saveName.value.trim()
-    if (!name) return 'Write a name'
-    if (!/^[\w.\- ]+$/.test(name)) return 'Use letters, digits, spaces, "_", "-" or "."'
+    if (!name) return t('Write a name')
+    if (!/^[\w.\- ]+$/.test(name)) return t('Use letters, digits, spaces, "_", "-" or "."')
     return ''
   })
   const overwrites = computed(() => {
@@ -586,7 +589,7 @@
     else {
       processorOptions.availableProcessors = []
       processorOptions.processorName = ''
-      alert("Removing all processor configurations forces to load the original processors provided in the distribution")
+      alert(t('Removing all processor configurations forces to load the original processors provided in the distribution'))
       initProcessor()
     }
   }
@@ -684,8 +687,11 @@
   }
 
   function lockedMessage() {
-    showTemporaryError('This parameter cannot be changed in this lesson')
+    showTemporaryError(t('This parameter cannot be changed in this lesson'))
   }
+
+  // The diagram has texts: redrawn in the new language
+  watch(locale, () => { if (simState.state > 1) drawProcessor() })
 
   // Reload the current processor (its stored version may have changed: lessons)
   watch(() => simState.reloadNonce, () => { if (simState.state > 1) reloadProcessor() })
@@ -707,8 +713,8 @@
       if (data) {
         normalizeCacheSettings(data)
         const exists = processorOptions.availableProcessors.includes(data.name)
-        if (exists && !confirm(`A processor with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
-          alert('Upload cancelled.')
+        if (exists && !confirm(t('A processor with the name "{name}" is already loaded. Do you want to overwrite it?', { name: data.name }))) {
+          alert(t('Upload cancelled.'))
           processorOptions.processorName = oldProcessor
           return
         }
@@ -795,45 +801,45 @@
 <template>
   <div class="header">
       <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help">
+        <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">Processor</span>
+        <span class="header-title">{{ t('Processor') }}</span>
       </div>
       <div class="settings-container">
         <select v-model="processorOptions.processorName" class="form-select"
-            id="processors-list" title="Select Processor Configuration">
-          <option value="" disabled>Select</option>
+            id="processors-list" :title="t('Select Processor Configuration')">
+          <option value="" disabled>{{ t('Select') }}</option>
           <option v-for="processor in visibleProcessors" :key="processor" :value="processor" >
             {{ processor }}
           </option>
-          <option v-if="!locked('upload')" value="_add_new_">Add new</option>
+          <option v-if="!locked('upload')" value="_add_new_">{{ t('Add new') }}</option>
         </select>
         <button v-if="!editLocked" class="blue-button small-btn" @click="openSave"
           id="save-processor-button"
-          title="Save the processor with a name: it is added to the list (local storage) and can be downloaded as a JSON file">
+          :title="t('Save the processor with a name: it is added to the list (local storage) and can be downloaded as a JSON file')">
         💾
         </button>
         <button v-if="modified" class="blue-button small-btn modified-btn" @click="revertProcessor"
           id="revert-processor-button"
-          :title="`Modified: the processor differs from the saved '${processorOptions.processorName}'. Click to discard the changes`">
+          :title="t('Modified: the processor differs from the saved \'{name}\'. Click to discard the changes', { name: processorOptions.processorName })">
         ✱ ↶
         </button>
         <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProcessor"
           id="remove-processor-button"
-          title="Remove processor configuration from list (and local storage)">
+          :title="t('Remove processor configuration from list (and local storage)')">
         🧹
         </button>
         <template v-if="currentConfig.port">
           <span class="iters-label highlight-static" :title="currentConfig.title">{{ currentConfig.label }}</span>
-          <select v-model="opToInsert" id="port-insert-op" title="Operation type to insert in this port">
-            <option value="">insert type…</option>
+          <select v-model="opToInsert" id="port-insert-op" :title="t('Operation type to insert in this port')">
+            <option value="">{{ t('insert type…') }}</option>
             <option v-for="op in insertableOps" :key="op" :value="op">{{ op }}</option>
           </select>
           <button class="blue-button small-btn" id="port-insert-button" :disabled="!opToInsert" @click="insertOperation"
-                  title="Insert the selected operation type in this port">＋</button>
+                  :title="t('Insert the selected operation type in this port')">＋</button>
           <button class="blue-button small-btn" id="port-remove-button" :disabled="portIds.length <= 1" @click="removePort"
-                  title="Remove this port">✕ port</button>
+                  :title="t('Remove this port')">✕ port</button>
         </template>
         <template v-else>
         <div class="iters-group rob-group">
@@ -863,7 +869,7 @@
           @mouseleave="stopHold"
           @touchstart.prevent="startHold(increaseParameter)"
           @touchend="stopHold"
-          title="Increase parameter (press and hold for faster incrementing)"
+          :title="t('Increase parameter (press and hold for faster incrementing)')"
         >
           ▲
         </button>
@@ -874,23 +880,23 @@
           @mouseleave="stopHold"
           @touchstart.prevent="startHold(decreaseParameter)"
           @touchend="stopHold"
-          title="Decrease parameter (press and hold for faster decrementing)"
+          :title="t('Decrease parameter (press and hold for faster decrementing)')"
         >
           ▼
         </button>
         <template v-if="activeField === 'op' && selectedOp && !locked('processor.ports')">
           <select v-if="sizesOf(selectedOp.label).length" v-model="selectedSize" id="op-size-select"
-                  :title="`Edit the latency of ${selectedOp.label} for every data size, or for one size only`">
-            <option value="">all sizes</option>
+                  :title="t('Edit the latency of {op} for every data size, or for one size only', { op: selectedOp.label })">
+            <option value="">{{ t('all sizes') }}</option>
             <option v-for="s in sizesOf(selectedOp.label)" :key="s" :value="s">{{ s }}</option>
           </select>
           <select v-model="moveTarget" @change="moveOperation" id="op-move-select"
-                  :title="`Move ${selectedOp.label} from P${selectedOp.port} to another port`">
-            <option value="">move to…</option>
+                  :title="t('Move {op} from P{p} to another port', { op: selectedOp.label, p: selectedOp.port })">
+            <option value="">{{ t('move to…') }}</option>
             <option v-for="p in portIds.filter(p => p !== selectedOp.port)" :key="p" :value="p">P{{ p }}</option>
           </select>
           <button class="blue-button small-btn" id="op-remove-button" @click="removeOperation"
-                  :title="`Remove ${selectedOp.label} from port P${selectedOp.port}`">✕</button>
+                  :title="t('Remove {op} from port P{p}', { op: selectedOp.label, p: selectedOp.port })">✕</button>
         </template>
         </template>
       </div>
@@ -904,70 +910,25 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="<p>The table describes the <strong>processor microarchitecture</strong> (pipeline). Click a cell to edit it:
-        its controls appear in the header of the panel. A <strong>second click</strong> on the same cell pins its explanation;
-        hover the cells to see what each parameter means.</p>
-        <details><summary>Dispatch, ROB and Retire</summary>
-        <p><strong>Dispatch</strong> and <strong>Retire</strong> widths: maximum number of instructions per clock cycle
-          dispatched into or retired from the <strong>Execution Engine</strong>. They may impose a throughput-bound performance limit.</p>
-        <p>The <strong>ROB</strong> (ReOrder Buffer) size is the maximum number of instructions in the Execution Engine.
-          It limits the instruction-level parallelism that the processor can exploit, and may impose latency-bound performance limits.
-          The instruction scheduler (greedy or optimal) is an option of the simulation (Simulation panel).</p>
-        </details>
-        <details><summary>Execution ports and operation types</summary>
-        <p>Each operation type has a fixed execution latency and a set of eligible execution ports (only one is used for each instruction).
-          A port, named <em>Px</em>, can start executing one instruction every clock cycle.</p>
-        <p>The row above the ports <strong>hides or shows the operation types</strong> (hidden when a processor is loaded),
-          and <strong>＋ port</strong> adds a port (at most 10). Click a <strong>port header</strong> (Px) to insert an operation type
-          in it or to remove the port. When a port is removed, the operation types that only that port executed move to the first
-          remaining port, and the ports are renumbered P0, P1, ...</p>
-        <p>Click an <strong>operation type</strong> to edit its latency (the same in every port), or to move it to another port or remove it.
-          For one operation (for example FLOAT.ADD) the latency can be set for every data size or for one size only (single, double, ...).</p>
-        <p>A warning row lists the operation types that no port executes: programs that use them cannot be simulated.
-          CVT, SHUFFLE, PERMUTE and CMP without a port of their own use the ports of FLOAT.ADD / VFLOAT.ADD or VINT.LOGIC.</p>
-        </details>
-        <details><summary>Cache</summary>
-        <p>Click repeatedly on the <strong>Cache</strong> row to cycle through its parameters. A Number of Blocks = 0 means that all data accesses
-          hit in the cache, so the latency of loads and stores is constant. The block size is a power of two (8 to 128 bytes),
-          large enough for the largest memory access of the program.</p>
-        <p>The <strong>miss penalty</strong> is the extra time of a load or store that misses in the cache, and must be at least the issue time.
-          The <strong>issue time</strong> (<em>m</em>) is the minimum time between consecutive block requests to Main Memory:
-          it sets the Main Memory bandwidth (one block every <em>m</em> cycles).</p>
-        <details><summary>Fill buffers, write buffers and return throughput</summary>
-        <p><strong>Fill Buffers</strong> limit the number of distinct cache blocks being fetched; misses to the same block share one fill.
-          <strong>Write Buffers</strong> hold dirty blocks evicted while a fill waits for their writeback. A fill waits when either buffer is full.</p>
-        <p><strong>Return Throughput</strong> is the number of loads and stores waiting on completed fills that receive their data per cycle,
-          served in program order by an independent queue, without paying their execution latency again (1 by default).</p>
-        </details>
-        </details>
-        <details><summary>Branch penalty</summary>
-        <p>Cycles lost to refill the front-end after a mispredicted conditional branch is resolved.</p>
-        </details>
-        <details><summary>Processor configurations: select, save, revert, remove</summary>
-        <p>Select a processor from the list (stored in the local storage of the browser), or <em>Add new</em> to load one from a JSON file.</p>
-        <p>Changes made in the panel apply to the current processor at once; the <strong>✱ ↶</strong> button appears while it differs from
-          the saved version, and discards the changes. <strong>💾</strong> saves the processor with a name: it is added to the list and,
-          optionally, downloaded as a JSON file. <strong>🧹</strong> removes the current processor from the list.</p>
-        </details>
-        "
-    title="Processor MicroArchitecture Description"
+    :text="t('help.processor')"
+    :title="t('Processor MicroArchitecture Description')"
     @close="closeHelp" />
   </Teleport>
 
   <div v-if="showSave" class="modal-overlay" @click.self="showSave = false">
     <div class="modal">
-      <h4>Save processor as</h4>
-      <label for="save-processor-name">Name:</label>
+      <h4>{{ t('Save processor as') }}</h4>
+      <label for="save-processor-name">{{ t('Name:') }}</label>
       <input v-model="saveName" type="text" id="save-processor-name" @keyup.enter="confirmSave(true)"
-             title="Name of the processor in the list, and of the downloaded JSON file"/>
+             :title="t('Name of the processor in the list, and of the downloaded JSON file')"/>
       <div v-if="saveNameError" class="error">{{ saveNameError }}</div>
-      <div v-else-if="overwrites" class="warning">A processor named "{{ saveName.trim() }}" already exists: it will be replaced.</div>
+      <div v-else-if="overwrites" class="warning">{{ t('A processor named "{name}" already exists: it will be replaced.', { name: saveName.trim() }) }}</div>
       <div class="modal-actions">
         <button class="blue-button" id="save-processor-download" :disabled="!!saveNameError" @click="confirmSave(true)"
-                title="Add the processor to the list and download it as a JSON file">Save and download</button>
+                :title="t('Add the processor to the list and download it as a JSON file')">{{ t('Save and download') }}</button>
         <button class="blue-button" id="save-processor-only" :disabled="!!saveNameError" @click="confirmSave(false)"
-                title="Add the processor to the list (local storage of this browser)">Save</button>
-        <button class="blue-button" @click="showSave = false" title="Cancel">Cancel</button>
+                :title="t('Add the processor to the list (local storage of this browser)')">{{ t('Save') }}</button>
+        <button class="blue-button" @click="showSave = false" :title="t('Cancel')">{{ t('Cancel') }}</button>
       </div>
     </div>
   </div>

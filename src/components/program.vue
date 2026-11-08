@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch, computed } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
@@ -224,7 +225,7 @@
     else {
       programOptions.currentProgram = ''
       programOptions.availablePrograms = []
-      alert("Removing all programs forces to load the original programs provided in the distribution")
+      alert(t('Removing all programs forces to load the original programs provided in the distribution'))
       initProgram()
     }
   }
@@ -251,8 +252,8 @@
       if (data) {
 
         const exists = programOptions.availablePrograms.includes(data.name)
-        if (exists && !confirm(`A program with the name "${data.name}" is already loaded. Do you want to overwrite it?`)) {
-          alert('Upload cancelled.')
+        if (exists && !confirm(t('A program with the name "{name}" is already loaded. Do you want to overwrite it?', { name: data.name }))) {
+          alert(t('Upload cancelled.'))
           programOptions.currentProgram = oldProgram
           return
         }
@@ -262,7 +263,7 @@
         applyProgramN(data)
         const incoherent = checkDeclarations(data)
         if (incoherent.length)
-          alert(`The declarations of program "${data.name}" are not coherent with its instructions:\n` +
+          alert(t('The declarations of program "{name}" are not coherent with its instructions:', { name: data.name }) + '\n' +
                 incoherent.map(m => `• ${m}`).join('\n'))
         let instrCount = simState.simulatedProcess.instruction_list.length
         programOptions.stride = simState.simulatedProcess.instruction_list[instrCount - 1].stride
@@ -387,11 +388,11 @@
     if (numValue < min) {
       numValue = min;
       inputValue.value = numValue;
-      showTemporaryError(`Minimum is ${min}`);
+      showTemporaryError(t('The minimum value is {min}', { min }));
     } else if (numValue > max) {
       numValue = max;
       inputValue.value = numValue;
-      showTemporaryError(`Maximum is ${max}`);
+      showTemporaryError(t('The maximum value is {max}', { max }));
     }
 
     if (programOptions.N !== numValue) {
@@ -484,31 +485,31 @@
   <div>
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
-        <span class="header-title">Program</span>
+        <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')"><img src="/img/info.png" class="info-img"></span>
+        <span class="header-title">{{ t('Program') }}</span>
       </div>
 
       <div class="program-header">
         <select v-model="programOptions.currentProgram" class="form-select"
-            id="programs-list" title="Select Program">
-          <option value="" disabled>Select</option>
+            id="programs-list" :title="t('Select Program')">
+          <option value="" disabled>{{ t('Select') }}</option>
           <option v-for="program in visiblePrograms" :key="program" :value="program">
             {{ program }}
           </option>
-           <option v-if="!locked('upload')" value="_add_new_">Add new</option>
+           <option v-if="!locked('upload')" value="_add_new_">{{ t('Add new') }}</option>
         </select>
         <button v-if="!locked('programEditor')" class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
-            title="Edit current program">
+            :title="t('Edit current program')">
           📝
         </button>
         <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
-            title="Remove program from list (and local storage)">
+            :title="t('Remove program from list (and local storage)')">
           🧹
         </button>
         <button class="blue-button"
-            title="Toggle between: type (type, operation, size) | perf (latency, ports). The tooltip of each instruction describes it"
+            :title="t('Toggle between: type (type, operation, size) | perf (latency, ports). The tooltip of each instruction describes it')"
             id="show-instr-operands"
           @click="toggleLatency">
           <span v-if="programOptions.show === 0">type</span>
@@ -516,9 +517,9 @@
         </button>
         <div class="iters-group">
           <span class="iters-label"
-                :title="`N = algorithmic operations (iterations of the original loop), 1 - ${MAX_N}.` +
+                :title="t('N = algorithmic operations (iterations of the original loop), 1 - {max}.', { max: MAX_N }) +
                         (programOptions.stride > 1
-                          ? ` Loop stride ${programOptions.stride}: the loop runs N/${programOptions.stride} iterations.`
+                          ? ' ' + t('Loop stride {s}: the loop runs N/{s} iterations.', { s: programOptions.stride })
                           : '')">
             N:
           </span>
@@ -543,7 +544,7 @@
             @mouseleave="stopHold"
             @touchstart.prevent="startHold(increaseN)"
             @touchend="stopHold"
-            title="Increase N (press and hold for faster incrementing)"
+            :title="t('Increase N (press and hold for faster incrementing)')"
           >
             ▲
           </button>
@@ -555,16 +556,15 @@
             @mouseleave="stopHold"
             @touchstart.prevent="startHold(decreaseN)"
             @touchend="stopHold"
-            title="Decrease N (press and hold for faster decrementing)"
+            :title="t('Decrease N (press and hold for faster decrementing)')"
           >
             ▼
           </button>
           <span class="stride-label" id="program-loop-stride"
                 :class="{ unrolled: programOptions.stride > 1 }"
-                :title="`S = loop stride = algorithmic operations per loop iteration (set in the program editor).` +
-                        ` The loop runs N/S = ${(programOptions.N / programOptions.stride).toLocaleString('en-US')} iterations.` +
-                        (programOptions.stride > 1 ? ' Each iteration does the work of ' + programOptions.stride +
-                         ' iterations of the original loop (unrolled or vectorized).' : '')">
+                :title="t('S = loop stride = algorithmic operations per loop iteration (set in the program editor).') +
+                        ' ' + t('The loop runs N/S = {n} iterations.', { n: (programOptions.N / programOptions.stride).toLocaleString('en-US') }) +
+                        (programOptions.stride > 1 ? ' ' + t('Each iteration does the work of {s} iterations of the original loop (unrolled or vectorized).', { s: programOptions.stride }) : '')">
             S={{ programOptions.stride }}
           </span>
         </div>
@@ -580,15 +580,15 @@
               <th style="width: 600px;" class="program-source-header" id="program-source-header" data-pin-code
                   :title="simState.simulatedProcess?.description
                           ? simState.simulatedProcess.description
-                          : 'No source code for this program: write it in the Program Editor (Source code)'">
-                {{ programOptions.currentProgram || 'Program' }}: Program Instructions
+                          : t('No source code for this program: write it in the Program Editor (Source code)')">
+                {{ programOptions.currentProgram || t('Program') }}: {{ t('Program Instructions') }}
                 <span v-if="simState.simulatedProcess?.description" class="source-mark">{ }</span>
               </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> Type </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> Oper </th>
-              <th v-if="programOptions.show === 0"  style="width: 100px;"> Size </th>
-              <th v-if="programOptions.show === 1"  style="width: 100px;"> Latency </th>
-              <th v-if="programOptions.show === 1"  style="width: 200px;"> Ports </th>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
+              <th v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Size') }} </th>
+              <th v-if="programOptions.show === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
+              <th v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
           </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
@@ -601,32 +601,32 @@
             >
               <td v-if="getCriticalPercentage(index) != null" class="critical-cell"
                   :title="activeView === 'timelineComponent'
-                    ? 'Percentage of visible critical-path cycles attributed to this instruction'
-                    : 'Percentage of time aggregated to in critical path'">
+                    ? t('Percentage of visible critical-path cycles attributed to this instruction')
+                    : t('Percentage of time aggregated to in critical path')">
                 {{ getCriticalPercentage(index).toFixed(0) }}%
               </td>
-              <td v-else title="Instruction Number">
+              <td v-else :title="t('Instruction Number')">
                 {{ index }}
               </td>
               <td :title="instructionSummary(simState.simulatedProcess.instruction_list, index) +
-                          (blockDepth[index] ? ' Conditional: skipped when the branch above is taken.' : '')"
+                          (blockDepth[index] ? ' ' + t('Conditional: skipped when the branch above is taken.') : '')"
                   :class="{ 'conditional-instr': blockDepth[index] > 0 }"
                   :style="blockDepth[index] ? { paddingLeft: `${1.4 * blockDepth[index]}em` } : null">
                 {{ inst.text }}
               </td>
-              <td v-if="programOptions.show === 0" title="Instruction type">
+              <td v-if="programOptions.show === 0" :title="t('Instruction type')">
                 {{ inst.type }}
               </td>
-              <td v-if="programOptions.show === 0" title="Operation type">
+              <td v-if="programOptions.show === 0" :title="t('Operation type')">
                 {{ inst.oper }}
               </td>
-              <td v-if="programOptions.show === 0" title="Operation size">
+              <td v-if="programOptions.show === 0" :title="t('Operation size')">
                 {{ inst.size}}
               </td>
-              <td v-if="programOptions.show === 1" title="Instruction Latency">
+              <td v-if="programOptions.show === 1" :title="t('Instruction Latency')">
                 {{ inst.latency }}
               </td>
-              <td v-if="programOptions.show === 1" title="Available execution ports">
+              <td v-if="programOptions.show === 1" :title="t('Available execution ports')">
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>
@@ -638,25 +638,8 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="<p>The simulated program is a <em>fixed-iteration</em> loop of <strong>machine instructions</strong>, described in
-      high-level informal language. N is the number of algorithmic operations (user-configurable); with a <strong>loop stride</strong> S
-      (default 1), the loop runs N/S iterations.</p>
-        <details><summary>Instruction columns and tooltips</summary>
-      <p>The button of the table switches between the <em>type</em>, operation and <em>size</em> of each instruction, and its
-      <em>latency</em> and eligible <em>execution ports</em>. The tooltip of each instruction describes it briefly: the memory access
-      (array, offset, stride, lanes) or the operation and its operands. Instructions inside a conditional block (<em>if c skip k</em>)
-      are indented. The header shows the source code of the loop (C), when the program has it.</p>
-        </details>
-        <details><summary>What the simulation models</summary>
-      <p>The simulation models <strong>data dependencies</strong> but <strong>does not</strong> model processor registers, memory states or
-      memory dependencies (e.g., store-load orderings). Conditional branches are taken and mispredicted with the probabilities given in the program.</p>
-        </details>
-        <details><summary>Selecting, editing and removing programs</summary>
-      <p>A <em>program</em> can be selected from the list (stored in the local storage of the browser). Click on the corresponding button to
-      <strong>edit</strong> the program (Program editor) or to <strong>remove</strong> it from local storage.</p>
-        </details>
-      "
-      title="Program Description"
+    :text="t('help.program')"
+      :title="t('Program Description')"
     @close="closeHelp"  />
   </Teleport>
 </template>

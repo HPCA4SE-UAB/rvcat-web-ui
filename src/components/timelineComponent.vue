@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   import { ref, toRaw, onMounted, nextTick, onUnmounted, onBeforeUnmount,
            watch, inject, reactive, computed}                         from 'vue'
   import HelpComponent                    from '@/components/helpComponent.vue'
@@ -1345,7 +1346,7 @@
   <div class="main">
     <div class="header">
       <div class="section-title-and-info">
-        <span ref="helpIcon1" class="info-icon" @click="openHelp1" title="Show help">
+        <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
         <span class="header-title">Execution Timeline - {{ simState.simulatedProcess.name }} on {{ simState.processorName }}</span>
@@ -1355,12 +1356,12 @@
         <div class="iters-group">
           <span class="iters-label">Cycles:</span>
           <input type="number" min="1" v-model.lazy.number="timelineOptions.cycles"
-            title="Number of cycles shown (press Enter to apply)"
+            :title="t('Number of cycles shown (press Enter to apply)')"
             @change="onCyclesTyped"
             id="timeline-cycles" style="width: 4.5em">
           <button class="blue-button fit-cycles" @click="fitCyclesButton"
             id="timeline-fit-cycles"
-            title="Show as many cycles as fit in the panel width (and keep fitting when the window is resized)">
+            :title="t('Show as many cycles as fit in the panel width (and keep fitting when the window is resized)')">
             Fit
           </button>
         </div>
@@ -1368,7 +1369,7 @@
         <div class="iters-group">
           <span class="show-label">Show:</span>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
-            title="Show the critical path ending at the last instruction retired in the visible cycles"
+            :title="t('Show the critical path ending at the last instruction retired in the visible cycles')"
             id="timeline-critical"
             @click="toggleCritical">
             <span v-if="timelineOptions.critical">✔ </span>
@@ -1376,7 +1377,7 @@
           </button>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.showPorts }"
             :aria-pressed="timelineOptions.showPorts"
-            title="Show or hide execution-port usage rows"
+            :title="t('Show or hide execution-port usage rows')"
             id="timeline-ports"
             @click="togglePorts">
             <span v-if="timelineOptions.showPorts">✔ </span>
@@ -1413,38 +1414,8 @@
   </div>
 
   <Teleport to="body">
-    <HelpComponent v-if="showHelp1" :position="helpPosition" title="Timeline"
-       text= "<p>The <strong>Timeline</strong> shows, cycle by cycle, how instructions are dispatched, executed
-                and retired. Drag to move, use the mouse wheel to zoom, and hover any cell for details.</p>
-              <details><summary>Navigation and limits</summary>
-                <p>Hover a row's first cell to inspect that instruction and highlight it in the Program panel;
-                  hover a column's first cell for that cycle. Increase the displayed <em>cycles</em> to follow the
-                  execution step by step.</p>
-                <p>The timeline simulates at most 200 retired instructions, so the last loop iteration may be partial.
-                  The program's <strong>N</strong> still determines the memory addresses.</p>
-              </details>
-              <details><summary>Critical path and ports</summary>
-                <p><strong>Show Critical</strong> highlights the critical path ending at the last instruction retired
-                  within the displayed cycles; changing the cycle limit recalculates it.
-                  <strong>Show Ports</strong> adds one row per execution port.</p>
-              </details>
-              <details><summary>Cache, MM and buffers</summary>
-                <p><strong>Cache</strong> adds rows for Main Memory, cache lines, fill buffers (F) and write buffers (W).
-                  C/D = clean/dirty and ready; r/w = fill in progress. Each block keeps its color in all rows.
-                  Hover the MM label for reads, writes and % busy; hover a buffer cell for its block, state,
-                  completion cycle and waiting instructions. These rows are unavailable without a cache.</p>
-                <p>Misses are admitted by age when a fill buffer and a cache line are free; misses to the same block
-                  share one fill. A fill buffer stays busy until every waiting instruction gets its data, even if its
-                  cache line is replaced meanwhile. An evicted dirty block waits in a write buffer until written to MM,
-                  before the new block is fetched. Buffer sizes and return throughput are set in the Cache row of the Processor panel.
-                  The model has no LSQ dependencies or load/store bypass.</p>
-              </details>
-              <details><summary>Symbols in instruction rows (! 2 : @)</summary>
-                <p><strong>!</strong> cache miss · <strong>2</strong> miss to a block already loading ·
-                  <strong>:</strong> waiting for a fill · <strong>@</strong> waiting in the cache return queue.
-                  Return throughput limits how many LOAD/STORE instructions receive data per cycle; they are served
-                  in age order, without using execution ports or paying their latency again.</p>
-              </details>"
+    <HelpComponent v-if="showHelp1" :position="helpPosition" :title="t('Timeline')"
+       :text="t('help.timeline')"
        @close="closeHelp1" />
   </Teleport>
 </template>

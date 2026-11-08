@@ -2,20 +2,20 @@
  <div class="main">
     <div class="header fullscreen-header">
       <div class="section-title-and-info">
-        <span ref="helpIcon" class="info-icon" @click="openHelp" title="Show help"><img src="/img/info.png" class="info-img"></span>
+        <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')"><img src="/img/info.png" class="info-img"></span>
         <span class="header-title">Tutorial  Editor</span>
       </div>
 
       <div class="settings-container fullscreen-settings">
         <div class="buttons">
-          <button class="blue-button" title="Save current tutorial on your local file system"
+          <button class="blue-button" :title="t('Save current tutorial on your local file system')"
                 @click="downloadTutorial">   Download </button>
-          <button class="blue-button" title="Load new tutorial from your local file system"
+          <button class="blue-button" :title="t('Load new tutorial from your local file system')"
                 @click="uploadTutorial"> Upload   </button>
         </div>
 
         <div class="buttons">
-          <button class="blue-button" title="Clear current tutorial draft and start fresh"
+          <button class="blue-button" :title="t('Clear current tutorial draft and start fresh')"
                 @click="clearDraft">  Clear Draft  </button>
         </div>
       </div>
@@ -29,18 +29,18 @@
           <div class="form-group left-column">
             <div class="label-input-row">
               <label>Name <span class="required">*</span></label>
-              <input v-model="tutorial.name" type="text" placeholder="Enter tutorial name, used to identify tutorial" title="Tutorial name, used to identify tutorial" class="name-input">
+              <input v-model="tutorial.name" type="text" :placeholder="t('Enter tutorial name, used to identify tutorial')" :title="t('Tutorial name, used to identify tutorial')" class="name-input">
             </div>
             <label>Description</label>
-            <textarea v-model="tutorial.description" placeholder="Brief description of the tutorial" title="Description of the tutorial"></textarea>
+            <textarea v-model="tutorial.description" :placeholder="t('Brief description of the tutorial')" :title="t('Description of the tutorial')"></textarea>
             <div class="buttons">
-              <button class="blue-button" title="Add new step to the tutorial (after selected step)"
+              <button class="blue-button" :title="t('Add new step to the tutorial (after selected step)')"
                 :disabled="stepNumber >= maxSteps"
                 @click="addStep('step', stepNumber)">Add new Step</button>
-              <button class="blue-button" title="Add new question to the tutorial (after selected step)"
+              <button class="blue-button" :title="t('Add new question to the tutorial (after selected step)')"
                 :disabled="stepNumber >= maxSteps"
                 @click="addStep('question', stepNumber)">Add new Question</button>
-              <button class="blue-button" title="Duplicate selected step (after the selected one)"
+              <button class="blue-button" :title="t('Duplicate selected step (after the selected one)')"
                 :disabled="stepNumber < 0 || stepNumber >= maxSteps"
                 @click="addStep(null, stepNumber)">Duplicate</button>
             </div>
@@ -102,17 +102,17 @@
           <div class="step-card" :class="{ 'question-card': currentStep.type === 'question' }">
             <div class="form-group left-column">
               <div class="form-row">
-                <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" title="Remove selected step">
+                <span class="step-number" :class="{ 'question-number': currentStep.type === 'question' }" :title="t('Remove selected step')">
                   {{ stepNumber }}
                 </span>
                 <div class="step-controls">
                   <button type="button" class="blue-button preview-btn" @click="previewFromCard"
                     id="tutorial-preview-button"
-                    title="Run this tutorial from this card, as students will see it (closing it returns to the editor)">
+                    :title="t('Run this tutorial from this card, as students will see it (closing it returns to the editor)')">
                     ▶ Preview from this card
                   </button>
                   <button type="button" @click="removeStep(stepNumber)" class="remove-btn"
-                    title="Remove selected step" aria-label="Remove selected step">×</button>
+                    :title="t('Remove selected step')" aria-label="Remove selected step">×</button>
                 </div>
               </div>
               <label>First successor</label>
@@ -128,7 +128,7 @@
                 :value="currentStep.nextLabels?.[0] || ''"
                 @input="setSuccessorLabel(currentStep, 0, $event.target.value)"
                 :placeholder="`Button text (default: ${successorTitle(currentStep, 0)})`"
-                title="Text of the button that goes to this successor; empty = title of the target card">
+                :title="t('Text of the button that goes to this successor; empty = title of the target card')">
               <label>Second successor (optional)</label>
               <select :value="currentStep.next?.[1] || ''" @change="setSuccessor(currentStep, 1, $event.target.value)">
                 <option value="">No second successor</option>
@@ -142,11 +142,11 @@
                 :value="currentStep.nextLabels?.[1] || ''"
                 @input="setSuccessorLabel(currentStep, 1, $event.target.value)"
                 :placeholder="`Button text (default: ${successorTitle(currentStep, 1)})`"
-                title="Text of the button that goes to this successor; empty = title of the target card">
+                :title="t('Text of the button that goes to this successor; empty = title of the target card')">
               <label>{{currentStep.type === 'question' ? 'Question title' : 'Step title'}}<span class="required">*</span></label>
               <input v-model="currentStep.title" type="text" :placeholder="currentStep.type === 'question' ? 'Question title' : 'Step title'">
               <label>Description</label>
-              <RichTextArea v-model="currentStep.description" placeholder="What the student should learn: start with the key idea in bold" />
+              <RichTextArea v-model="currentStep.description" :placeholder="t('What the student should learn: start with the key idea in bold')" />
               <template v-if="currentStep.type === 'step'">
                 <label>Position</label>
                 <select v-model="currentStep.position">
@@ -161,7 +161,7 @@
                     {{ opt.label }}
                   </option>
                 </select>
-                <input v-model="currentStep.selector" type="text" placeholder="CSS selector (e.g., #my-button, .my-class)" class="selector-input">
+                <input v-model="currentStep.selector" type="text" :placeholder="t('CSS selector (e.g., #my-button, .my-class)')" class="selector-input">
               </template>
               <template v-if="currentStep.type === 'question'">
                 <label>Answer Mode <span class="required">*</span></label>
@@ -174,7 +174,7 @@
                     <input type="radio" v-model="currentStep.answerMode" value="multiple" @change="onAnswerModeChange(step)">
                     <span>Multiple-choice</span>
                   </label>
-                  <label class="mode-radio" title="The student writes a number; it is correct within the tolerance">
+                  <label class="mode-radio" :title="t('The student writes a number; it is correct within the tolerance')">
                     <input type="radio" v-model="currentStep.answerMode" value="number">
                     <span>Number</span>
                   </label>
@@ -196,10 +196,10 @@
                 </select>
 
               <div class="form-group">
-                <label title="One action per line, run when the card is shown (e.g. selectProgram:Base)">Actions when the card is shown (opt.)</label>
+                <label :title="t('One action per line, run when the card is shown (e.g. selectProgram:Base)')">Actions when the card is shown (opt.)</label>
                 <textarea v-model="currentStep.actionsText" rows="3" class="actions-input"
                           placeholder="selectProgram:Base&#10;selectProcessor:B4&#10;setN:1000"></textarea>
-                <label title="One action per line, run by the ▶ Show me button of the card">Show me actions (opt.)</label>
+                <label :title="t('One action per line, run by the ▶ Show me button of the card')">Show me actions (opt.)</label>
                 <textarea v-model="currentStep.showMeText" rows="3" class="actions-input"
                           placeholder="runSimulation"></textarea>
                 <details class="actions-help"><summary>Available actions and live values</summary>
@@ -240,7 +240,7 @@
                 <div v-if="currentStep.validationType" class="validation-details">
                   <div v-if="currentStep.validationType === 'program_selected'" class="form-group">
                     <label>Program name</label>
-                    <input v-model="currentStep.validationValue" type="text" placeholder="rec, fact, sum, etc.">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="Base, f0, V1...">
                   </div>
 
                   <div v-if="currentStep.validationType === 'chain_selected'" class="form-group">
@@ -254,7 +254,7 @@
 
                   <div v-if="currentStep.validationType === 'architecture_selected'" class="form-group">
                     <label>Architecture name</label>
-                    <input v-model="currentStep.validationValue" type="text" placeholder="baseline, base2, ooo, etc.">
+                    <input v-model="currentStep.validationValue" type="text" placeholder="B1, B4, GC...">
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value'" class="form-group">
@@ -269,7 +269,7 @@
                         {{ opt.label }}
                       </option>
                     </select>
-                    <input v-model="currentStep.validationSelector" type="text" placeholder="CSS selector for input field" class="selector-input">
+                    <input v-model="currentStep.validationSelector" type="text" :placeholder="t('CSS selector for input field')" class="selector-input">
                   </div>
 
                   <div v-if="currentStep.validationType === 'input_value_min'" class="form-group">
@@ -284,12 +284,12 @@
                         {{ opt.label }}
                       </option>
                     </select>
-                    <input v-model="currentStep.validationSelector" type="text" placeholder="CSS selector for button (e.g., #run-btn)" class="selector-input">
+                    <input v-model="currentStep.validationSelector" type="text" :placeholder="t('CSS selector for button (e.g., #run-btn)')" class="selector-input">
                   </div>
 
                   <div class="form-group">
                     <label>Error message</label>
-                    <input v-model="currentStep.validationMessage" type="text" placeholder="Complete this action to continue">
+                    <input v-model="currentStep.validationMessage" type="text" :placeholder="t('Complete this action to continue')">
                   </div>
                 </div>
               </div>
@@ -314,7 +314,7 @@
             <template v-else-if="currentStep.type === 'question'">
               <div class="form-group left-column">
                 <label>Question text <span class="required">*</span></label>
-                <RichTextArea v-model="currentStep.questionText" placeholder="Enter your question here..." title="Question text" />
+                <RichTextArea v-model="currentStep.questionText" :placeholder="t('Enter your question here...')" :title="t('Question text')" />
 
                 <label>Question Image (optional)</label>
                 <div class="image-upload-section">
@@ -339,7 +339,7 @@
                   <input v-model="currentStep.numericCorrect" type="text">
                   <label>Hint when wrong</label>
                   <input v-model="currentStep.numericWrong" type="text">
-                  <label title="One action per line, run when the question is shown">Actions when the question is shown (opt.)</label>
+                  <label :title="t('One action per line, run when the question is shown')">Actions when the question is shown (opt.)</label>
                   <textarea v-model="currentStep.actionsText" rows="2" class="actions-input"></textarea>
                 </div>
               </div>
@@ -361,7 +361,7 @@
                   </div>
 
                   <div class="form-group">
-                    <input v-model="answer.text" type="text" placeholder="Answer option...">
+                    <input v-model="answer.text" type="text" :placeholder="t('Answer option...')">
                   </div>
 
                   <div class="feedback-group">
@@ -385,39 +385,8 @@
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"
-    text="<p>Tutorials are made of <strong>step cards</strong> and <strong>question cards</strong>. They can be edited,
-      uploaded from or downloaded to the file system (JSON), and added to or removed from the local menu (stored in the
-      local storage of the browser).</p>
-        <details><summary>Step and question cards</summary>
-      <p>Step cards define an element of the simulator that is highlighted, and may define an action (simulate a click on the
-      main header buttons). You can specify the position of the tutorial message relative to the highlighted element, and a
-      requirement to continue, such as clicking a button or selecting a value in an input box.</p>
-        </details>
-        <details><summary>Successors and levels of detail</summary>
-      <p>Each card can have up to two successors, including cards earlier in the graph or the terminal destination End Tutorial.
-      Step cards offer those destinations as buttons. Questions keep their correctness check and offer destinations after a
-      correct answer. Older JSON tutorials are migrated to a linear flow when loaded.</p>
-      <p>Use the second successor for optional cards (e.g. <em>In depth</em>) that return to the main path: the graph shows them
-      in yellow. Each successor can have its own <strong>button text</strong>; when empty, the button shows the title of the target card.</p>
-        </details>
-        <details><summary>Actions on the simulator, live values and numeric questions</summary>
-      <p>A card can act on the simulator: <em>actions when the card is shown</em> prepare it (select a program or a processor,
-      set N, show a panel), and <em>Show me actions</em> are run by its <strong>▶ Show me</strong> button (run the simulation,
-      select a latency chain, open the dependence graph...), which the student can also do by hand. One action per line;
-      the list of actions is under the action fields. A tutorial with actions restores, when it ends, the program, processor,
-      N and options of before it (closing it with × only pauses it).</p>
-      <p>Texts can include <strong>live values</strong> such as {{cyclesPerIter}} or {{chain.sum}}: they show the current
-      value of the simulator. A question can ask for a <strong>number</strong>: its correct value can be a live value, and it is
-      accepted within the tolerance. Validations can also wait for a simulation, a selected latency chain, the open
-      dependence graph, or a timeline option.</p>
-        </details>
-        <details><summary>Text toolbar, preview and the tutorial menu</summary>
-      <p>The text toolbar inserts bold, italic, red highlight, bullet points and line breaks, and <em>Preview</em> shows how the
-      text will look. <strong>▶ Preview from this card</strong> runs the tutorial from the selected card; closing it returns to the editor.</p>
-      <p>To change a tutorial of the menu, click its ✎ button: it is loaded here.</p>
-        </details>
-      "
-    title="Tutorial edition, download and upload"
+    :text="t('help.tutorialEditor')"
+    :title="t('Tutorial edition, download and upload')"
     @close="closeHelp"  />
   </Teleport>
 
@@ -425,6 +394,7 @@
 </template>
 
 <script setup>
+  import { t } from '@/i18n'
 import { ref, computed, inject, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import HelpComponent                                     from '@/components/helpComponent.vue'
 import RichTextArea                                      from '@/components/RichTextArea.vue'

@@ -1,4 +1,5 @@
 <script setup>
+  import { t } from '@/i18n'
   // Source code of the loop (usually C) from which the program was generated. It is saved in the
   // program JSON ("description") and shown in the header of the Program panel.
   import { reactive, watch } from 'vue'
@@ -17,7 +18,7 @@
   <div class="program-description" id="program-description">
     <div class="desc-header">
       <button class="desc-toggle" id="program-description-toggle" @click="options.open = !options.open"
-              title="Show/hide the source code (e.g. C) of the loop from which the program was generated. It is saved with the program and shown in the header of the Program panel">
+              :title="t('Show/hide the source code (e.g. C) of the loop from which the program was generated. It is saved with the program and shown in the header of the Program panel')">
         {{ options.open ? '▾' : '▸' }} Source code
       </button>
       <span v-if="!options.open" class="desc-summary">
@@ -26,7 +27,7 @@
     </div>
     <textarea v-if="options.open" v-model="model" id="program-description-text" spellcheck="false"
               rows="7" placeholder="for (int i = 0; i < N; i++)&#10;  sum += V[i] + W[i];"
-              title="Source code of the loop (e.g. C), saved with the program"></textarea>
+              :title="t('Source code of the loop (e.g. C), saved with the program')"></textarea>
   </div>
 </template>
 
