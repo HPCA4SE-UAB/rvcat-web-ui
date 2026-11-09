@@ -21,7 +21,8 @@ const SimulationState = reactive({
   instrHighlightedIdx: -1,
   highlightedPort:     -1,
   timelineCriticalPathEnabled: false,
-  timelineFit:         null,      // { width, nonce }: zoom of the timeline asked by a tutorial card
+  timelineFit:         null,
+  dependenceHighlight: null,      // { producers, vars }: instructions and variables a waiting instruction needs (timeline)      // { width, nonce }: zoom of the timeline asked by a tutorial card
   timelineCriticalPathPercentages: null,
   simulatedProcess:    {},
   executionResults:    {},

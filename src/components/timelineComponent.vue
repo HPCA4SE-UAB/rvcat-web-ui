@@ -1108,7 +1108,7 @@
     }
     if (!hitCell) {
       hoverInfo.value = null
-      simState.instrHighlightedIdx = -1
+      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
       simState.highlightedPort = -1
 
       if (hoverRow != null || hoverCol != null) {
@@ -1125,7 +1125,7 @@
 
     if (hitCell.cellType === 'resource-label') {
       simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1
+      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
       hoverInfo.value = {
         x: e.clientX + 10,
         y: e.clientY + 10,
@@ -1142,7 +1142,7 @@
     if (hitCell.cellType === 'resource-cycle') {
       const resourceHoverRow = `resource-${hitCell.resourceIndex}`
       simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1
+      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
       hoverInfo.value = hitCell.tooltip
         ? {
             x: e.clientX + 10,
@@ -1172,7 +1172,7 @@
 
     if (row === -1) {
       simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1
+      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
       hoverInfo.value = {
         x:        e.clientX + 10,
         y:        e.clientY + 10,
@@ -1218,7 +1218,38 @@
         initCol,
         lengthCol
       )
+      showDataDependences(rowHeader ? null : hitCell)
     }
+  }
+
+  // A cell where an instruction waits for data ('.'): the last execution cycle (E/L) of the
+  // instructions it waits for is marked in the timeline (it executes in the next cycle, thanks to
+  // the bypass), and the Program panel marks them and the variables (simState.dependenceHighlight)
+  function showDataDependences(cell) {
+    const detail = cell?.waitDetail
+    if (!cell || cell.char !== '.' || detail?.reason !== 'data') { simState.dependenceHighlight = null; return }
+    const rows = [...new Set(detail.dependencies ?? [])]
+    const marks = [], producers = new Set()
+    for (const r of rows) {
+      const header = interactiveCells.find(c => c.rowIdx === r && c.colIdx === -1)
+      if (header) producers.add(header.instrIdx)
+      const exec = interactiveCells.filter(c => c.rowIdx === r && c.colIdx >= 0 && ['E', 'L', 'S'].includes(c.char))
+      if (exec.length) marks.push(exec.reduce((a, b) => (b.colIdx > a.colIdx ? b : a)))
+    }
+    const list = simState.simulatedProcess?.instruction_list ?? []
+    const vars = [...producers].map(i => list[i]?.destin).filter(Boolean)
+    simState.dependenceHighlight = { producers: [...producers], vars }
+    const ctx = overlayCanvas.value?.getContext('2d')
+    if (!ctx) return
+    ctx.save()
+    ctx.fillStyle   = 'rgba(21, 101, 192, 0.22)'
+    ctx.strokeStyle = '#1565c0'
+    ctx.lineWidth   = 2
+    for (const c of marks) {
+      ctx.fillRect(c.x, c.y, cellW, cellH)
+      ctx.strokeRect(c.x + 1, c.y + 1, cellW - 2, cellH - 2)
+    }
+    ctx.restore()
   }
 
   function formatProcessingTooltip(cell) {

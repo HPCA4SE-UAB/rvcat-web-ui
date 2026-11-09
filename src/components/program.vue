@@ -206,6 +206,34 @@
   // instructions inside conditional blocks ("if c skip k"): indented
   const blockDepth = computed(() => conditionalDepth(simState.simulatedProcess?.instruction_list ?? []))
 
+  // Text of an instruction in parts, to mark the variables of a data dependence shown in the
+  // timeline (simState.dependenceHighlight): in the waiting instruction, the variables it reads
+  // (right of "="); in an instruction it waits for, the variable it writes (left of "=")
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  function textParts(text, index) {
+    const dep = simState.dependenceHighlight
+    const waiting  = dep && index === simState.instrHighlightedIdx
+    const producer = dep?.producers?.includes(index)
+    if (!dep || (!waiting && !producer) || !text) return [{ text }]
+    const eq = text.indexOf('=')
+    const [left, right] = eq >= 0 && text[eq + 1] !== '=' ? [text.slice(0, eq + 1), text.slice(eq + 1)] : ['', text]
+    const split = (s, names) => {
+      if (!names.length) return [{ text: s }]
+      const re = new RegExp(`\\b(${names.map(escapeRe).join('|')})\\b`, 'g')
+      const parts = []
+      let last = 0
+      for (const m of s.matchAll(re)) {
+        if (m.index > last) parts.push({ text: s.slice(last, m.index) })
+        parts.push({ text: m[0], mark: true })
+        last = m.index + m[0].length
+      }
+      if (last < s.length) parts.push({ text: s.slice(last) })
+      return parts
+    }
+    const own = simState.simulatedProcess?.instruction_list?.[index]?.destin
+    return [...split(left, producer && own ? [own] : []), ...split(right, waiting ? dep.vars : [])]
+  }
+
   const emit = defineEmits(['requestSwitchFull'])
 
   function editProgram () { // switch to full-screen program editor, sending current program data for edition
@@ -596,7 +624,8 @@
               v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
               :style="rowStyle(index)"
-              :class="{ highlighted: index === simState.instrHighlightedIdx }"
+              :class="{ highlighted: index === simState.instrHighlightedIdx,
+                        'dep-producer': simState.dependenceHighlight?.producers?.includes(index) }"
               :data-instr="index"
             >
               <td v-if="getCriticalPercentage(index) != null" class="critical-cell"
@@ -612,7 +641,8 @@
                           (blockDepth[index] ? ' ' + t('Conditional: skipped when the branch above is taken.') : '')"
                   :class="{ 'conditional-instr': blockDepth[index] > 0 }"
                   :style="blockDepth[index] ? { paddingLeft: `${1.4 * blockDepth[index]}em` } : null">
-                {{ inst.text }}
+                <span v-for="(part, k) in textParts(inst.text, index)" :key="k"
+                      :class="{ 'dep-var': part.mark }">{{ part.text }}</span>
               </td>
               <td class="type-col" v-if="programOptions.show === 0" :title="t('Instruction type')">
                 {{ inst.type }}
@@ -646,6 +676,9 @@
 
 <style scoped>
   .program-source-header { cursor: help; }
+  /* the instructions a waiting instruction depends on (hovering a '.' cell of the timeline) */
+  tr.dep-producer td { background: #e7f0fb; }
+  .dep-var { background: #cfe0f7; color: #0d47a1; border-radius: 3px; padding: 0 2px; font-weight: 600; }
   .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
   .program-source-header .source-mark {
     margin-left: 0.4em;
