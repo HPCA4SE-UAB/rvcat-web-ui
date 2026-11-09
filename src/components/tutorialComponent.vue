@@ -6,7 +6,7 @@
         <div v-if="exploreHint" class="explore-hint">
           <button class="explore-hint-close" @click="exploreHint = false" :title="t('Close')">✕</button>
           <div v-if="currentStep?.exploreHint" class="explore-hint-text" v-html="rt(currentStep.exploreHint)"></div>
-          <div>{{ t('Explore the simulator freely. When you are done, click here to continue the lesson.') }}</div>
+          <div v-else>{{ t('Explore the simulator freely. When you are done, click here to continue the lesson.') }}</div>
         </div>
         <button class="explore-done-btn" id="tutorial-explore-done" @click="endExplore"
                 :title="t('Show the tutorial card again')">✔ {{ t('Continue') }}</button>
