@@ -185,7 +185,7 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>The loop takes <b>{{cyclesPerIter}} cycles per iteration</b> (29 with one instruction at a time).</p><p><b>Explore the timeline</b>: hover over the instructions (rows) and over the cells. Two new symbols appear: <b>.</b> and <b>-</b>. Then answer some questions about what you see.</p>",
+        "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>The loop takes <b>{{cyclesPerIter}} cycles per iteration</b> (29 with simple sequential execution).</p><p><b>Explore the timeline</b>: hover over the instructions (rows) and over the cells. Two new symbols appear: <b>.</b> and <b>-</b>. Next, you will have to answer some questions about the timeline.</p>",
         "actions": ["sidePanel:hide", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
         "next": ["q-dot"]
       },
