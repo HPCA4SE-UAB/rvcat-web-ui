@@ -414,7 +414,8 @@ const props = defineProps({
         step.x_pos = x.value
         step.y_pos = y.value
       }
-    }
+    },
+    onEnd() { rememberLayout() }
   })
 
   useResizeObserver(contentRef, (entries) => {
@@ -689,9 +690,13 @@ const positionCurrentTooltip = async () => {
   const size = authoredSize.get(toRaw(step)) ?? {}
   step.wWidth  = size.w
   step.wHeight = size.h
+  // the size and place given by the student to this card (kept with its state), or else
   // forget a manual resize of the previous card (set by the browser on the element)
-  contentRef.value.style.width  = size.w ? `${size.w}px` : ''
-  contentRef.value.style.height = size.h ? `${size.h}px` : ''
+  const layout = taskStates.value[step.id]?.layout ?? {}
+  if (Number.isFinite(layout.x) && Number.isFinite(layout.y)) { step.x_pos = layout.x; step.y_pos = layout.y }
+  const w = layout.w ?? size.w, h = layout.h ?? size.h
+  contentRef.value.style.width  = w ? `${w}px` : ''
+  contentRef.value.style.height = h ? `${h}px` : ''
   // the card is measured out of sight: it appears only at its final place
   measuring.value = true
   const savedX = x.value, savedY = y.value
@@ -784,11 +789,27 @@ const tooltipStyle = computed(() => {
   return style
 })
 watch(currentStep, (step) => {
+  const layout = step ? taskStates.value[step.id]?.layout ?? {} : {}
+  if (step && Number.isFinite(layout.x) && Number.isFinite(layout.y)) { step.x_pos = layout.x; step.y_pos = layout.y }
   if (step && Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
     x.value = step.x_pos
     y.value = step.y_pos
   }
 }, { flush: 'sync' })
+
+// The place and size that the student gives to a card are kept with its state (layout): the
+// card is shown the same way when the student comes back to it
+function rememberLayout() {
+  const step = currentStep.value, el = contentRef.value
+  if (!step || !el || measuring.value) return
+  const layout = { ...(taskStates.value[step.id]?.layout ?? {}) }
+  if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) { layout.x = step.x_pos; layout.y = step.y_pos }
+  const authored = authoredSize.get(toRaw(step)) ?? {}
+  const w = parseFloat(el.style.width), h = parseFloat(el.style.height)
+  if (Number.isFinite(w) && w !== authored.w) layout.w = Math.round(w)
+  if (Number.isFinite(h) && h !== authored.h) layout.h = Math.round(h)
+  if (Object.keys(layout).length) setTask(step.id, { layout })
+}
 
 // ============================================================================
 // ACTIONS ON THE SIMULATOR (card fields actions / showMe) and state restored at the end
@@ -1340,6 +1361,7 @@ const startTutorial = async (tutorialId) => {
 
 const goToStep = async (newIndex, { recordHistory = true } = {}) => {
   if (newIndex < 0 || newIndex >= currentTutorial.value.steps.length) return
+  rememberLayout()
   if (recordHistory && currentStep.value)
     tutorialOptions.progressHistory.push(currentStep.value.id)
   // the parts of the simulator hidden by a lesson follow the cards: going on, the card keeps
@@ -1472,6 +1494,7 @@ const editTutorial = (tutorialId) => {
 
 const endTutorial = async (fullReset = false) => {
   if (previewMode.value) { endPreview(); return }
+  rememberLayout()
   cleanup()
   isActive.value = false
   if (fullReset) {

@@ -149,7 +149,7 @@
       },
       {
         "id": "sequential", "type": "question", "title": "One instruction at a time",
-        "questionText": "Imagine a processor that handles <b>one instruction at a time</b>: <b>D</b>ispatch (1 cycle), <b>E</b>xecute (its latency) and <b>W</b>rite the result (1 cycle), and only then the next instruction. How many cycles does one iteration of Base take (2 loads, 2 float additions, 3 integer/branch)?",
+        "questionText": "Imagine the <b>execution engine</b> handles one instruction at a time: <b>D</b>ispatch (1 cycle), <b>E</b>xecute (its latency) and <b>W</b>rite the result (1 cycle), and only then dispatches the next instruction. How many cycles does one iteration of program Base take (2 loads, 2 float additions, 3 integer/branch)?",
         "answerMode": "number", "answers": [], "numericValue": 29, "tolerance": 0.01, "numericUnit": "cycles",
         "numericCorrect": "Right: 2 × (1+4+1) + 2 × (1+2+1) + 3 × (1+1+1) = 12 + 8 + 9 = 29 cycles. Seven times more than the 4 measured!",
         "numericWrong": "Each instruction takes 1 + latency + 1 cycles, and they do not overlap: add the 7 instructions.",
@@ -163,7 +163,7 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>The <b>Timeline</b> of the <b>sequential execution</b> of the program (not the real execution) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br><b>D</b> dispatch · <b>E</b> execute (<b>L</b> for a load) · <b>W</b> write the result · <b>R</b> retire (leaves the processor).</p><p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter in the simulation.</p>",
+        "description": "<p>The <b><span style=\"color:#c62828\">Timeline</span></b> of the <b>sequential execution</b> of the program (not the real execution) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>D</b> dispatch<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>E</b> execute (<b>L</b> for a load)<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>W</b> write the result<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>R</b> retire (leaves the processor while a new instruction is dispatched)</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter.</p><p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p>",
         "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29"],
         "next": ["pipeline"]
       },
