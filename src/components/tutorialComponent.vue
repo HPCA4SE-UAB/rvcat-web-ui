@@ -2,6 +2,7 @@
   <div class="tutorial-system">
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
+      <div v-if="placing" class="tutorial-acting">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
       <!-- Tooltip -->
       <div class="tutorial-tooltip" ref="contentRef"
         :style="tooltipStyle">
@@ -104,7 +105,7 @@
         </div>
 
         <div class="question-body">
-          <p class="question-text" v-html="rt(currentStep?.questionText)"></p>
+          <div class="question-text" v-html="rt(currentStep?.questionText)"></div>
 
           <div v-if="currentStep?.image" class="question-image" @click="openLightbox(currentStep.image)">
             <img :src="currentStep.image" alt="Question image">
@@ -119,7 +120,7 @@
 
           <div v-if="isNumericQuestion" class="numeric-answer">
             <input v-model="numericAnswer" type="text" inputmode="decimal" id="tutorial-numeric-answer"
-                   :disabled="questionAnswered && isQuestionCorrect" @keyup.enter="submitAnswer"
+                   :disabled="questionAnswered" @keyup.enter="submitAnswer"
                    :placeholder="t('your answer')" />
             <span v-if="currentStep?.numericUnit" class="numeric-unit">{{ currentStep.numericUnit }}</span>
             <div v-if="questionAnswered"
@@ -521,6 +522,7 @@ const rt = (text) => renderTutorialText(localized(text), simState)
 // Numeric questions (answerMode "number"): numericValue (a number or a live value such as
 // "{{minTime}}"), tolerance (absolute, 0.01 by default), numericCorrect / numericWrong texts
 const numericAnswer     = ref('')
+const submittedNumeric  = ref('')        // the answer submitted (what is checked, not the input)
 const isNumericQuestion = computed(() => currentStep.value?.type === 'question' && currentStep.value.answerMode === 'number')
 const canSubmit = computed(() => isNumericQuestion.value
   ? numericAnswer.value.trim() !== '' && Number.isFinite(Number(numericAnswer.value.replace(',', '.')))
@@ -530,7 +532,7 @@ const isQuestionCorrect = computed(() => {
   if (!currentStep.value || currentStep.value.type !== 'question') return false
   if (isNumericQuestion.value) {
     const target = tutorialNumber(currentStep.value.numericValue, simState)
-    const given  = Number(numericAnswer.value.replace(',', '.'))
+    const given  = Number((questionAnswered.value ? submittedNumeric.value : numericAnswer.value).replace(',', '.'))
     const tol    = Number(currentStep.value.tolerance ?? 0.01)
     return target !== null && Number.isFinite(given) && Math.abs(given - target) <= tol + 1e-9
   }
@@ -783,7 +785,7 @@ const measuring = ref(false)
 // would be cleared by Vue at every redraw (e.g. while the card is moved), undoing a manual resize
 const tooltipStyle = computed(() => {
   const style = { left: x.value + 'px', top: y.value + 'px' }
-  if (measuring.value) style.visibility = 'hidden'
+  if (measuring.value || placing.value) style.visibility = 'hidden'
   if (currentStep.value?.wWidth)  style.width  = `${currentStep.value.wWidth}px`
   if (currentStep.value?.wHeight) style.height = `${currentStep.value.wHeight}px`
   return style
@@ -1013,12 +1015,17 @@ function restoreAnswer() {
   const answer = taskState.value.answer
   if (answer === undefined || !taskState.value.solved) return
   if (Array.isArray(answer)) selectedAnswers.value = [...answer]
-  else numericAnswer.value = String(answer)
+  else { numericAnswer.value = String(answer); submittedNumeric.value = String(answer) }
   questionAnswered.value = true
 }
 
+// While the actions of a card run, the card is not shown (a small notice is): it appears at its
+// final place when the simulator is ready, instead of moving
+const placing = ref(false)
+
 const showCurrentStep = async () => {
   if (currentStep.value?.type === 'question') {
+    placing.value = false
     restoreAnswer()
     clearHighlights()
     highlightElement.value = null
@@ -1041,12 +1048,14 @@ const showCurrentStep = async () => {
     }
   }
   const step = currentStep.value
-  // placed at once if its target is already shown, so it does not appear first somewhere else
-  if (actionList(step.actions).length && !Number.isFinite(step.x_pos) && targetShown(step.selector)) await highlightCurrent()
-  await runCardActions(step.actions)
-  if (currentStep.value !== step) return       // the student moved on meanwhile
-
-  await highlightCurrent()
+  placing.value = actionList(step.actions).length > 0
+  try {
+    await runCardActions(step.actions)
+    if (currentStep.value !== step) return       // the student moved on meanwhile
+    await highlightCurrent()
+  } finally {
+    if (currentStep.value === step) placing.value = false
+  }
   setupValidationListeners()
   setupButtonClickTracking()
   recordView()
@@ -1066,11 +1075,6 @@ watch(canProceed, (ok) => {
   if (ok && step && isActive.value && step.type !== 'question' && !taskStates.value[step.id]?.solved)
     setTask(step.id, { solved: true })
 })
-
-function targetShown(sel) {
-  if (!sel || sel.includes(':contains(')) return false
-  try { return [...document.querySelectorAll(sel)].some(el => el.getClientRects().length > 0) } catch { return false }
-}
 
 // Highlight the element(s) of the selector of the card (a list of selectors may match several
 // elements, e.g. two rows of the program) and place the card next to the first one
@@ -1282,6 +1286,7 @@ const selectAnswer = (index) => {
 
 const submitAnswer = () => {
   if (!canSubmit.value) return
+  submittedNumeric.value = numericAnswer.value
   questionAnswered.value = true
   if (isQuestionCorrect.value) setTask(currentStep.value.id, { solved: true, answer: isNumericQuestion.value
     ? Number(numericAnswer.value.replace(',', '.')) : [...selectedAnswers.value] })
@@ -1293,6 +1298,7 @@ const submitAnswer = () => {
 const resetQuestionState = () => {
   selectedAnswers.value  = []
   numericAnswer.value    = ''
+  submittedNumeric.value = ''
   questionAnswered.value = false
 }
 
@@ -1762,6 +1768,15 @@ onUnmounted(() => {
   .step-description pre     { margin: 0.3em 0 0.6em; padding: 6px 10px; background: #f6f8fa; border-radius: 4px; color: #333; font-size: 0.9em; line-height: 1.35; }
   .step-description p       { margin: 0 0 0.5em; }
   .step-description p:last-child { margin-bottom: 0; }
+  .tutorial-acting {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10002;
+    background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); color: #555; pointer-events: none;
+  }
+  /* letters of the stages of an instruction (D, E, L, W, R) in the texts of the cards */
+  .stage { font-weight: bold; color: #000; }
+  .question-text p { margin: 0 0 0.5em; }
+  .question-text p:last-child { margin-bottom: 0; }
   .step-done-description    { margin-top: 0.6em; padding-top: 0.6em; border-top: 1px solid #e5e7eb; }
   #tutorial-predict .task-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4em 1em; }
   #tutorial-predict #tutorial-prediction { width: 6em; }
