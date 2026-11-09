@@ -144,3 +144,15 @@ by the students: write the lesson id and the secret, and the list of identifiers
 **Security.** The code proves that the lesson was completed with that identifier, and a code copied
 from a classmate does not fit another identifier. But the secret is inside the lesson file: a student
 who reads it can compute a valid code without doing the lesson. Use it for low-stakes activities.
+
+## Other fields of the cards
+
+- `anchor`: selector used only to place the card (e.g. `#right-panel`); the card goes to an empty zone near it.
+- `position`: `bottom`, `top`, `left`, `right`, or `inside-bottom`, `inside-top`, `inside-left`, `inside-right` (within the anchor).
+  In a question, `"position": "right"` shows it as a panel at the right that does not cover the simulator.
+- `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
+- `doneDescription`: second part of the text, shown when the validation of the card is met.
+- `predictGood`, `predictFar`: comments shown after a good or a far prediction.
+- `explore`: `true` or `"required"`: an **Explore** button hides the card so that the student can explore the
+  simulator; an orange button at the bottom right brings it back. With `"required"` the card cannot be left before.
+  `exploreActions` run when the exploration starts (e.g. `timeline:width=0.97`), `exploreEndActions` when it ends.

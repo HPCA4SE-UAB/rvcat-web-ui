@@ -64,5 +64,9 @@ export default {
   "Cannot preview this tutorial: {1}": { es: "No se puede previsualizar este tutorial: {1}", ca: "No es pot previsualitzar aquest tutorial: {1}" },
   "A tutorial with name: \"{1}\" has been already loaded.": { es: "Ya hay un tutorial cargado con el nombre «{1}».", ca: "Ja hi ha un tutorial carregat amb el nom «{1}»." },
   "Removing all tutorial configurations forces to load the original tutorials provided in the distribution": { es: "Al quitar todos los tutoriales se cargan los tutoriales originales de la distribución", ca: "En treure tots els tutorials es carreguen els tutorials originals de la distribució" },
+  "Explore": { es: "Explorar", ca: "Explora" },
+  "Hide this card to explore the simulator; a button at the bottom right brings it back": { es: "Oculta esta tarjeta para explorar el simulador; un botón abajo a la derecha la vuelve a mostrar", ca: "Amaga aquesta targeta per explorar el simulador; un botó a baix a la dreta la torna a mostrar" },
+  "Explore the simulator freely. When you are done, click here to continue the lesson.": { es: "Explora el simulador libremente. Cuando acabes, haz clic aquí para continuar la lección.", ca: "Explora el simulador lliurement. Quan acabis, fes clic aquí per continuar la lliçó." },
+  "Show the tutorial card again": { es: "Volver a mostrar la tarjeta del tutorial", ca: "Torna a mostrar la targeta del tutorial" },
   "First save your prediction (tutorial card)": { es: "Primero guarda tu predicción (tarjeta del tutorial)", ca: "Primer desa la teva predicció (targeta del tutorial)" },
 }

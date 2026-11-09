@@ -2,9 +2,14 @@
   <div class="tutorial-system">
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
+      <div v-if="exploring" class="explore-done">
+        <div v-if="exploreHint" class="explore-hint">{{ t('Explore the simulator freely. When you are done, click here to continue the lesson.') }}</div>
+        <button class="explore-done-btn" id="tutorial-explore-done" @click="endExplore"
+                :title="t('Show the tutorial card again')">✔ {{ t('Continue') }}</button>
+      </div>
       <div v-if="placing" class="tutorial-acting">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
       <!-- Tooltip -->
-      <div class="tutorial-tooltip" ref="contentRef" :class="{ 'tooltip-hidden': measuring || placing }"
+      <div class="tutorial-tooltip" ref="contentRef" :class="{ 'tooltip-hidden': measuring || placing || exploring }"
         :style="tooltipStyle">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="rt(currentStep?.title)"></h3>
@@ -73,6 +78,11 @@
                     id="tutorial-show-me" class="tutorial-btn tutorial-btn-showme"
                     :title="t('Let the tutorial do it on the simulator (you can also do it yourself)')">
               ▶ {{ t('Show me') }}
+            </button>
+            <button v-if="currentStep?.explore" @click="startExplore" id="tutorial-explore"
+                    :class="['tutorial-btn', 'tutorial-btn-explore', { 'explore-needed': exploreNeeded }]"
+                    :title="t('Hide this card to explore the simulator; a button at the bottom right brings it back')">
+              🔍 {{ t('Explore') }}
             </button>
             <button v-for="target in successorSteps" :key="target.id"
                     @click="nextStep(target.id)"
@@ -569,6 +579,7 @@ const canProceed = computed(() => {
   const type = currentStep.value?.type
   if (type === 'predict' && !taskState.value.result) return false
   if (type === 'goal'    && !taskState.value.done)   return false
+  if (exploreNeeded.value) return false
   return validationMet.value || !!taskState.value.solved
 })
 
@@ -1060,6 +1071,34 @@ function restoreAnswer() {
   questionAnswered.value = true
 }
 
+// EXPLORATION MODE: a card with "explore" (true, or "required" to continue) has an Explore button
+// that hides the card so that the student can explore the simulator; a button at the bottom right
+// (with a message at first) shows the card again. exploreActions run when the exploration starts
+// (e.g. a larger timeline) and exploreEndActions when it ends.
+const exploring   = ref(false)
+const exploreHint = ref(false)
+let exploreHintTimer = null
+const exploreNeeded = computed(() => currentStep.value?.explore === 'required' && !taskState.value.explored)
+async function startExplore() {
+  const step = currentStep.value
+  if (!step) return
+  rememberLayout()
+  exploring.value = true
+  exploreHint.value = true
+  clearTimeout(exploreHintTimer)
+  exploreHintTimer = setTimeout(() => { exploreHint.value = false }, 10000)
+  await runCardActions(step.exploreActions)
+}
+async function endExplore() {
+  const step = currentStep.value
+  exploring.value = false
+  exploreHint.value = false
+  if (!step) return
+  setTask(step.id, { explored: true })
+  await runCardActions(step.exploreEndActions)
+}
+watch(currentStep, () => { exploring.value = false; exploreHint.value = false })
+
 // While the actions of a card run, the card is not shown (a small notice is): it appears at its
 // final place when the simulator is ready, instead of moving
 const placing = ref(false)
@@ -1289,6 +1328,7 @@ const cleanupButtonClickTracking = () => {
 }
 
 const cleanup = () => {
+  exploring.value = false
   clearHighlights()
   cleanupValidationListeners()
   cleanupButtonClickTracking()
@@ -1822,6 +1862,27 @@ onUnmounted(() => {
     pointer-events: auto; max-width: 440px; max-height: calc(100vh - 112px);
   }
   .tutorial-tooltip.tooltip-hidden * { visibility: hidden !important; transition: none !important; }
+  /* exploration mode: the button that brings the card back, at the bottom right */
+  .explore-done {
+    position: fixed; right: 24px; bottom: 24px; z-index: 10003;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  }
+  .explore-hint {
+    max-width: 260px; background: #fff8e1; border: 2px solid #f57c00; border-radius: 10px;
+    padding: 10px 14px; color: #333; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-size: 15px;
+  }
+  .explore-done-btn {
+    background: #f57c00; color: #fff; border: none; border-radius: 30px; padding: 14px 26px;
+    font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    animation: explore-pulse 1.6s ease-in-out infinite;
+  }
+  .explore-done-btn:hover { background: #ef6c00; }
+  @keyframes explore-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 124, 0, 0.6); }
+    50%      { box-shadow: 0 0 0 14px rgba(245, 124, 0, 0); }
+  }
+  .tutorial-btn-explore { background: #fff3e0; border-color: #f57c00; color: #e65100; font-weight: bold; }
+  .tutorial-btn-explore.explore-needed { animation: explore-pulse 1.6s ease-in-out infinite; }
   .tutorial-acting {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10002;
     background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px 14px;
