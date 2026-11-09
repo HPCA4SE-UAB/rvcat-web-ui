@@ -164,39 +164,96 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>The <b><span style=\"color:#c62828\">Timeline</span></b> of the <b>sequential execution</b> of the program (not the real execution) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">D</b> dispatch<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">E</b> execute (<b class=\"stage\">L</b> for a load)<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">W</b> write the result<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">R</b> retire (leaves the processor while a new instruction is dispatched)</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter.</p><p>This processor has been reduced to <b>one instruction in flight</b> (ROB = 1, dispatch 1).</p>",
+        "description": "<p>The <b><span style=\"color:#c62828\">Timeline</span></b> of the <b>sequential execution</b> of the program (simplified model) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">D</b> dispatch<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">E</b> execute (<b class=\"stage\">L</b> for a load)<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">W</b> write the result<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">R</b> retire (leaves the processor while a new instruction is dispatched)</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter.</p><p>This processor has been reduced to <b>one instruction in flight</b>.</p>",
         "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29", "timeline:width=0.67"],
+        "next": ["pipelining"]
+      },
+      {
+        "id": "pipelining",
+        "type": "step",
+        "title": "6. Pipelining",
+        "anchor": "#right-panel",
+        "position": "inside-right",
+        "wWidth": 460,
+        "description": "<p>&bull; <b><span style=\"color:#c62828\">Pipelining</span></b> divides the processing of an instruction in stages that work at the same time, each one on a different instruction (an assembly line):</p><svg viewBox=\"0 0 420 168\" width=\"420\" style=\"max-width:100%;display:block;margin:4px auto 8px\" font-family=\"sans-serif\" font-size=\"13\" role=\"img\" aria-label=\"Pipeline with a bypass\"><defs><marker id=\"l0-bypass-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#c62828\"/></marker></defs><text x=\"8\" y=\"20\" fill=\"#777\" font-size=\"12\">cycle</text><text x=\"87.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">1</text><text x=\"133.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">2</text><text x=\"179.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">3</text><text x=\"225.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">4</text><text x=\"271.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">5</text><text x=\"317.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">6</text><text x=\"8\" y=\"47\" fill=\"#333\">I1</text><rect x=\"66\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"87.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"112\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"133.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"158\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><text x=\"8\" y=\"89\" fill=\"#333\">I2</text><rect x=\"112\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"133.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"158\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"204\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"225.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><text x=\"8\" y=\"131\" fill=\"#333\">I3</text><rect x=\"158\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"204\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"225.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"250\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"271.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><path d=\"M133.0,55 C133.0,65 179.0,59 179.0,71\" fill=\"none\" stroke=\"#c62828\" stroke-width=\"1.8\" marker-end=\"url(#l0-bypass-arrow)\"/><text x=\"254\" y=\"67.0\" fill=\"#c62828\" font-size=\"12\">bypass</text><text x=\"8\" y=\"158\" fill=\"#777\" font-size=\"12\">I2 needs the result of I1: it gets it by the bypass, not after W</text></svg><p>&bull; A <b><span style=\"color:#c62828\">bypass</span></b> gives the result of an instruction directly to the next one that needs it.</p><p>&bull; An instruction can start executing only when its <b>input data</b> are ready: a <b><span style=\"color:#c62828\">data dependence</span></b>.</p>",
         "next": ["pipeline"]
       },
       {
         "id": "pipeline",
         "type": "step",
-        "title": "6. Overlap: two instructions at once",
+        "title": "7. Many instructions in flight",
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<b>Now 2 instructions can be in flight</b> (ROB = 2): while one executes, the next one is dispatched,<br>like a car wash with several stages. Time drops to <b>{{cyclesPerIter}} cycles</b> per iteration.<br>The dots <b>.</b> mean that an instruction <b>waits</b> for the result of a previous one.",
-        "actions": ["sidePanel:hide", "setProcessor:ROBsize=2", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
-        "next": ["ooo", "pipeline-more"],
-        "nextLabels": ["Continue", "In depth: pipelining"]
+        "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>The loop takes <b>{{cyclesPerIter}} cycles per iteration</b> (29 with one instruction at a time).</p><p><b>Explore the timeline</b>: hover over the instructions (rows) and over the cells. Two new symbols appear: <b>.</b> and <b>-</b>. Then answer some questions about what you see.</p>",
+        "actions": ["sidePanel:hide", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "next": ["q-dot"]
       },
       {
-        "id": "pipeline-more",
+        "id": "q-dot",
+        "type": "question",
+        "title": "The dot .",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "In the timeline, what does a dot <b>.</b> mean?",
+        "answerMode": "single",
+        "answers": [{"text": "The instruction is in the execution engine, waiting for its input data (the result of a previous instruction)", "isCorrect": true, "explanation": "Yes: it waits because of a data dependence. When the result it needs is ready, it executes."}, {"text": "The instruction is waiting to be dispatched", "isCorrect": false, "explanation": "No: before its D, the row of the instruction is empty."}, {"text": "The instruction is executing", "isCorrect": false, "explanation": "No: execution is <b class=\"stage\">E</b> (<b class=\"stage\">L</b> for a load)."}, {"text": "The instruction has finished and waits to retire", "isCorrect": false, "explanation": "No: that is the dash -."}],
+        "next": ["q-dash"]
+      },
+      {
+        "id": "q-dash",
+        "type": "question",
+        "title": "The dash -",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "And what does a dash <b>-</b> mean?",
+        "answerMode": "single",
+        "answers": [{"text": "The instruction has executed and written its result, and waits to retire: older instructions have not retired yet", "isCorrect": true, "explanation": "Yes: instructions retire in program order, one per cycle here."}, {"text": "The instruction waits for its input data", "isCorrect": false, "explanation": "No: that is the dot."}, {"text": "The instruction was cancelled", "isCorrect": false, "explanation": "No: all the instructions of this loop are useful; they wait to retire."}, {"text": "The instruction executes for several cycles", "isCorrect": false, "explanation": "No: execution is shown with <b class=\"stage\">E</b> or <b class=\"stage\">L</b>, one per cycle."}],
+        "next": ["q-ooo"]
+      },
+      {
+        "id": "q-ooo",
+        "type": "question",
+        "title": "Out-of-order execution",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "Look at the order of the <b class=\"stage\">E</b> and <b class=\"stage\">L</b> cells. What is <b>out-of-order execution</b>?",
+        "answerMode": "single",
+        "answers": [{"text": "An instruction executes as soon as its input data are ready, even before older instructions that are still waiting", "isCorrect": true, "explanation": "Yes: for example, i = i + 1 and the comparison execute before the second addition of the same iteration, which waits for its data."}, {"text": "Instructions are dispatched in any order", "isCorrect": false, "explanation": "No: the <b class=\"stage\">D</b> cells appear in program order, one per cycle."}, {"text": "Instructions retire in any order", "isCorrect": false, "explanation": "No: the <b class=\"stage\">R</b> cells appear in program order."}, {"text": "The compiler changes the order of the instructions", "isCorrect": false, "explanation": "No: the program is the same; the processor decides when each instruction executes."}],
+        "next": ["q-dep"]
+      },
+      {
+        "id": "q-dep",
+        "type": "question",
+        "title": "Dependences and bypass",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "Which <b>data dependences</b> do you see in Base, and how does each instruction get its input data?",
+        "answerMode": "single",
+        "answers": [{"text": "Each addition waits for a load (tmp) and for the previous addition (sum); c waits for i, and the branch for c. Each one executes right after the last <b class=\"stage\">E</b>/<b class=\"stage\">L</b> of the instruction it depends on: the bypass", "isCorrect": true, "explanation": "Yes: no instruction waits for the W of the one it depends on."}, {"text": "Each instruction waits until the <b class=\"stage\">W</b> of the instruction it depends on", "isCorrect": false, "explanation": "No: look at the timeline: it executes in the cycle after the last <b class=\"stage\">E</b>/<b class=\"stage\">L</b> of its producer."}, {"text": "Only instructions of the same iteration depend on each other", "isCorrect": false, "explanation": "No: sum = sum + tmp needs the sum of the previous iteration, and i = i + 1 the i of the previous iteration."}, {"text": "There are no dependences: all the instructions wait for the same reason", "isCorrect": false, "explanation": "No: the dots show which instructions wait, and the timeline shows for which result."}],
+        "next": ["in-order"]
+      },
+      {
+        "id": "in-order",
         "type": "step",
-        "title": "In depth: pipelining",
+        "title": "Why dispatch and retire in order?",
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 460,
-        "description": "<p>&bull; <b>Pipelining</b> divides the processing of an instruction in stages that work at the same time, each one on a different instruction (an assembly line):</p><svg viewBox=\"0 0 420 168\" width=\"420\" style=\"max-width:100%;display:block;margin:4px 0 8px\" font-family=\"sans-serif\" font-size=\"13\" role=\"img\" aria-label=\"Pipeline with a bypass\"><defs><marker id=\"l0-bypass-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#c62828\"/></marker></defs><text x=\"8\" y=\"20\" fill=\"#777\" font-size=\"12\">cycle</text><text x=\"87.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">1</text><text x=\"133.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">2</text><text x=\"179.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">3</text><text x=\"225.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">4</text><text x=\"271.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">5</text><text x=\"317.0\" y=\"20\" text-anchor=\"middle\" fill=\"#777\" font-size=\"12\">6</text><text x=\"8\" y=\"47\" fill=\"#333\">I1</text><rect x=\"66\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"87.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"112\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"133.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"158\" y=\"30\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"47\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><text x=\"8\" y=\"89\" fill=\"#333\">I2</text><rect x=\"112\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"133.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"158\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"204\" y=\"72\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"225.0\" y=\"89\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><text x=\"8\" y=\"131\" fill=\"#333\">I3</text><rect x=\"158\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e3f2fd\" stroke=\"#5b8fd1\" stroke-width=\"1.3\"/><text x=\"179.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">D</text><rect x=\"204\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#fdecec\" stroke=\"#c62828\" stroke-width=\"1.3\"/><text x=\"225.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">E</text><rect x=\"250\" y=\"114\" width=\"42\" height=\"24\" rx=\"4\" fill=\"#e8f5e9\" stroke=\"#4c9a5b\" stroke-width=\"1.3\"/><text x=\"271.0\" y=\"131\" text-anchor=\"middle\" font-weight=\"bold\" fill=\"#000\">W</text><path d=\"M133.0,55 C133.0,65 179.0,59 179.0,71\" fill=\"none\" stroke=\"#c62828\" stroke-width=\"1.8\" marker-end=\"url(#l0-bypass-arrow)\"/><text x=\"254\" y=\"67.0\" fill=\"#c62828\" font-size=\"12\">bypass</text><text x=\"8\" y=\"158\" fill=\"#777\" font-size=\"12\">I2 needs the result of I1: it gets it by the bypass, not after W</text></svg><p>&bull; A <b>bypass</b> gives the result of an instruction directly to the next one that needs it.</p><p>&bull; An instruction can start executing only when its <b>input data</b> are ready: a <b>data dependence</b>.</p>",
-        "next": ["ooo"],
-        "nextLabels": ["Continue"]
+        "description": "<p><b>Dispatch in order.</b> The processor takes the instructions in program order and, when it dispatches each one, connects it with the instructions that produce its input data (<b><span style=\"color:#c62828\">register renaming</span></b>): inside, it builds a graph of the dependences. Then each instruction can execute as soon as its inputs are ready, out of order.</p><p><b>Retire in order.</b> An instruction executed early may have to be <b>undone</b> (for instance after a mispredicted branch, or an exception). Its result becomes final only when it retires, in program order: if something goes wrong, the instructions after it are discarded, and the program behaves as if it were executed sequentially.</p>",
+        "next": ["ooo"]
       },
       {
-        "id": "ooo", "type": "step", "title": "A real processor: many instructions at once",
-        "selector": "#canvas-container", "position": "left",
+        "id": "ooo",
+        "type": "step",
+        "title": "A real processor: many instructions at once",
+        "anchor": "#right-panel",
+        "position": "inside-right",
+        "wWidth": 400,
         "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>{{cyclesPerIter}} cycles per iteration</b>.",
-        "actions": ["reveal:processor,programPorts", "revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40"],
-        "next": ["critical", "ooo-more"], "nextLabels": ["Continue", "In depth: out-of-order execution"]
+        "actions": ["sidePanel:hide", "reveal:processor,programPorts", "revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "next": ["critical", "ooo-more"],
+        "nextLabels": ["Continue", "In depth: out-of-order execution"]
       },
       {
         "id": "ooo-more", "type": "step", "title": "In depth: out-of-order execution", "actions": ["sidePanel:show"],
@@ -205,7 +262,7 @@
         "next": ["critical"], "nextLabels": ["Continue"]
       },
       {
-        "id": "critical", "type": "step", "title": "7. The critical path",
+        "id": "critical", "type": "step", "title": "8. The critical path",
         "selector": "#canvas-container", "position": "left",
         "description": "<b>Critical</b> marks in red the chain of instructions that determines the time.<br>Each addition to <b>sum</b> needs the result of the previous one, also across iterations:<br>sum → sum → sum… Two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>.<br>Every other instruction executes <b>for free</b>, overlapped with this chain.",
         "actions": ["reveal:timelineCritical", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=40"],
@@ -232,7 +289,7 @@
         "next": ["bounds"]
       },
       {
-        "id": "bounds", "type": "step", "title": "8. Two bounds on performance",
+        "id": "bounds", "type": "step", "title": "9. Two bounds on performance",
         "selector": ".bounds-summary", "position": "bottom",
         "description": "<b>Static Analysis</b> computes, without simulating, two lower bounds of the time per iteration:<br>&bull; <b>latency bound</b>: the longest cyclic chain of dependences (sum: <b>{{latencyBound}}</b> cycles);<br>&bull; <b>throughput bound</b>: the busiest resource (here port P2, with the 2 loads: <b>{{throughputBound}}</b>).<br><b>Minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration.",
         "actions": ["revertProcessor", "selectProgram:Base", "reveal:analysis", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
@@ -256,7 +313,7 @@
         "next": ["summary"]
       },
       {
-        "id": "summary", "type": "step", "title": "9. Summary",
+        "id": "summary", "type": "step", "title": "10. Summary",
         "selector": "#lesson-bar", "position": "bottom",
         "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
         "actions": ["reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern,timelineCycles", "selectProgram:Base", "switchTo:simulationComponent"],

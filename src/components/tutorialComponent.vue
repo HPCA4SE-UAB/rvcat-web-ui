@@ -94,8 +94,11 @@
     </div>
 
     <!-- Question Overlay (centered like tutorial editor) -->
-    <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay">
-      <div class="question-panel">
+    <!-- a question with "position": "right" is a panel at the right that does not cover the simulator
+         (e.g. to answer it looking at the timeline); otherwise it is a dialog over a dark background -->
+    <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay"
+         :class="{ 'question-side': currentStep?.position === 'right' }">
+      <div class="question-panel" :style="currentStep?.position === 'right' && currentStep?.wWidth ? { maxWidth: `${currentStep.wWidth}px` } : undefined">
         <button @click="closeTutorial" class="question-close">&times;</button>
 
         <div class="question-header">
@@ -1811,6 +1814,13 @@ onUnmounted(() => {
   /* a card being placed (or waiting for its actions): hidden with all its content at once
      (the buttons have transitions, which would keep them visible for a moment) */
   .tutorial-tooltip.tooltip-hidden { opacity: 0 !important; pointer-events: none !important; }
+  .tutorial-system .question-overlay.question-side {
+    background: transparent; pointer-events: none; justify-content: flex-end;
+    padding: 96px 16px 0 0; box-sizing: border-box;
+  }
+  .tutorial-system .question-overlay.question-side .question-panel {
+    pointer-events: auto; max-width: 440px; max-height: calc(100vh - 112px);
+  }
   .tutorial-tooltip.tooltip-hidden * { visibility: hidden !important; transition: none !important; }
   .tutorial-acting {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10002;
