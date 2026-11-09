@@ -153,6 +153,7 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 - `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
 - `doneDescription`: second part of the text, shown when the validation of the card is met.
 - `predictGood`, `predictFar`: comments shown after a good or a far prediction.
-- `explore`: `true` or `"required"`: an **Explore** button hides the card so that the student can explore the
+- `explore`: `true`, `"required"` or `"auto"` (required, and started by itself when the card is shown): an **Explore** button hides the card so that the student can explore the
   simulator; an orange button at the bottom right brings it back. With `"required"` the card cannot be left before.
+  `exploreHint` (HTML) is shown next to the orange button until it is closed.
   `exploreActions` run when the exploration starts (e.g. `timeline:width=0.97`), `exploreEndActions` when it ends.

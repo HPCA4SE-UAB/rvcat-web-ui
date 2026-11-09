@@ -3,7 +3,11 @@
     <!-- Tutorial Overlay for Steps -->
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <div v-if="exploring" class="explore-done">
-        <div v-if="exploreHint" class="explore-hint">{{ t('Explore the simulator freely. When you are done, click here to continue the lesson.') }}</div>
+        <div v-if="exploreHint" class="explore-hint">
+          <button class="explore-hint-close" @click="exploreHint = false" :title="t('Close')">✕</button>
+          <div v-if="currentStep?.exploreHint" class="explore-hint-text" v-html="rt(currentStep.exploreHint)"></div>
+          <div>{{ t('Explore the simulator freely. When you are done, click here to continue the lesson.') }}</div>
+        </div>
         <button class="explore-done-btn" id="tutorial-explore-done" @click="endExplore"
                 :title="t('Show the tutorial card again')">✔ {{ t('Continue') }}</button>
       </div>
@@ -1078,7 +1082,7 @@ function restoreAnswer() {
 const exploring   = ref(false)
 const exploreHint = ref(false)
 let exploreHintTimer = null
-const exploreNeeded = computed(() => currentStep.value?.explore === 'required' && !taskState.value.explored)
+const exploreNeeded = computed(() => ['required', 'auto'].includes(currentStep.value?.explore) && !taskState.value.explored)
 async function startExplore() {
   const step = currentStep.value
   if (!step) return
@@ -1086,7 +1090,8 @@ async function startExplore() {
   exploring.value = true
   exploreHint.value = true
   clearTimeout(exploreHintTimer)
-  exploreHintTimer = setTimeout(() => { exploreHint.value = false }, 10000)
+  // a hint written by the card (how to explore) stays until it is closed; the general one, 10 s
+  if (!step.exploreHint) exploreHintTimer = setTimeout(() => { exploreHint.value = false }, 10000)
   await runCardActions(step.exploreActions)
 }
 async function endExplore() {
@@ -1139,6 +1144,8 @@ const showCurrentStep = async () => {
   setupValidationListeners()
   setupButtonClickTracking()
   recordView()
+  // "explore": "auto": the exploration starts by itself (the first time)
+  if (step.explore === 'auto' && !taskStates.value[step.id]?.explored) startExplore()
 }
 
 // The panel shown with each card (after its actions, or chosen by the student): going back to
@@ -1867,8 +1874,13 @@ onUnmounted(() => {
     position: fixed; right: 24px; bottom: 24px; z-index: 10003;
     display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
   }
+  .explore-hint-close {
+    float: right; border: none; background: none; cursor: pointer; color: #999; font-size: 14px; margin: -4px -6px 0 6px;
+  }
+  .explore-hint-text { margin-bottom: 8px; }
+  .explore-hint-text p { margin: 0 0 6px; }
   .explore-hint {
-    max-width: 260px; background: #fff8e1; border: 2px solid #f57c00; border-radius: 10px;
+    max-width: 340px; background: #fff8e1; border: 2px solid #f57c00; border-radius: 10px;
     padding: 10px 14px; color: #333; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-size: 15px;
   }
   .explore-done-btn {
