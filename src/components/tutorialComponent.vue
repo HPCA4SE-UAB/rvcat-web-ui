@@ -569,6 +569,8 @@ const canProceed = computed(() => {
 const validationMet = computed(() => {
   const validation = currentStep.value?.validation
   if (validation && taskState.value.solved && validation.type !== 'simulation_done') return true
+  // a prediction with its result: its validation (e.g. look at the code) was met before predicting
+  if (validation && currentStep.value?.type === 'predict' && taskState.value.result) return true
   if (!validation) return true
 
   // Force reactivity
@@ -1001,6 +1003,7 @@ const showCurrentStep = async () => {
     highlightElement.value = null
     stepSimulationStart = simulationCount.value
     await runCardActions(currentStep.value.actions)
+    recordView()
     return
   }
 
@@ -1025,7 +1028,23 @@ const showCurrentStep = async () => {
   await highlightCurrent()
   setupValidationListeners()
   setupButtonClickTracking()
+  recordView()
 }
+
+// The panel shown with each card (after its actions, or chosen by the student): going back to
+// the card, that panel is shown again
+function recordView() {
+  const step = currentStep.value
+  if (step && isActive.value) setTask(step.id, { view: props.activeView })
+}
+watch(() => props.activeView, () => { if (!actionsRunning.value) recordView() })
+
+// A card is solved as soon as it can be left (its validation, prediction or goal is met)
+watch(canProceed, (ok) => {
+  const step = currentStep.value
+  if (ok && step && isActive.value && step.type !== 'question' && !taskStates.value[step.id]?.solved)
+    setTask(step.id, { solved: true })
+})
 
 function targetShown(sel) {
   if (!sel || sel.includes(':contains(')) return false
@@ -1243,7 +1262,7 @@ const selectAnswer = (index) => {
 const submitAnswer = () => {
   if (!canSubmit.value) return
   questionAnswered.value = true
-  if (isQuestionCorrect.value) setTask(currentStep.value.id, { answer: isNumericQuestion.value
+  if (isQuestionCorrect.value) setTask(currentStep.value.id, { solved: true, answer: isNumericQuestion.value
     ? Number(numericAnswer.value.replace(',', '.')) : [...selectedAnswers.value] })
   if (isQuestionCorrect.value)
     markTask(currentStep.value.id, isNumericQuestion.value ? { answer: Number(numericAnswer.value.replace(',', '.')) }
@@ -1330,6 +1349,7 @@ const goToStep = async (newIndex, { recordHistory = true } = {}) => {
     if (recordHistory) setTask(targetId, { hiddenBefore: [...(simState.lesson.hidden ?? [])] })
     else if (taskStates.value[targetId]?.hiddenBefore) simState.lesson.hidden = [...taskStates.value[targetId].hiddenBefore]
   }
+  if (!recordHistory && taskStates.value[targetId]?.view) emit('requestSwitchPanel', taskStates.value[targetId].view)
 
   isActive.value = false
   stepIndex.value = newIndex
