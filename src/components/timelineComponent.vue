@@ -1252,13 +1252,14 @@
   }
 
   // Tooltip of an instruction (row):
-  //   [iter,instr] Port: Px; Lat: L c. - text
+  //   [iter,instr] text
+  //   Port: Px; Lat: L c.
   //   LOAD/STORE MEMORY address: a        (only memory instructions)
   function formatInstructionTooltip(cell) {
     const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'
     const lat  = Number.isFinite(cell.latency) ? cell.latency : '–'
-    const lines = [`[${cell.iter},${cell.instrIdx}] Port: ${port}; Lat: ${lat} c. - ` +
-                   (cell.instructionText || t('Instruction description unavailable'))]
+    const lines = [`[${cell.iter},${cell.instrIdx}] ` + (cell.instructionText || t('Instruction description unavailable')),
+                   `Port: ${port}; Lat: ${lat} c.`]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
       lines.push(`${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`)
     if (cell.wrongPath || cell.mispredicted)
