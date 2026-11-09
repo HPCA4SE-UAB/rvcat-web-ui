@@ -1190,7 +1190,7 @@
         state:    rowHeader
           ? formatInstructionTooltip(hitCell)
           : stateTooltip,
-        critical: rowHeader ? critical : critical && timelineOptions.critical
+        critical: rowHeader ? false : critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
 
@@ -1251,27 +1251,19 @@
     )
   }
 
+  // Tooltip of an instruction (row):
+  //   [iter,instr] Port: Px; Lat: L c. - text
+  //   LOAD/STORE MEMORY address: a        (only memory instructions)
   function formatInstructionTooltip(cell) {
-    const details = [
-      `Iter ${cell.iter}, instr ${cell.instrIdx}` +
-        (cell.wrongPath ? ' — ' + t('wrong path (squashed)') : cell.mispredicted ? ' — ' + t('mispredicted branch') : ''),
-      cell.instructionText || t('Instruction description unavailable')
-    ]
-
-    const executionInfo = []
-    if (cell.port !== null && cell.port !== undefined)
-      executionInfo.push(`P${cell.port}`)
-    if (Number.isFinite(cell.latency))
-      executionInfo.push(`${cell.latency} ${cell.latency === 1 ? t('cycle') : t('cycles')}`)
-    if (executionInfo.length)
-      details.push(executionInfo.join(' + '))
-
+    const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'
+    const lat  = Number.isFinite(cell.latency) ? cell.latency : '–'
+    const lines = [`[${cell.iter},${cell.instrIdx}] Port: ${port}; Lat: ${lat} c. - ` +
+                   (cell.instructionText || t('Instruction description unavailable'))]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
-      details.push(`${t(cell.memoryOperation)} ${t('MEM address')} ${cell.addr}`)
-
-    if (cell.criticalCycles > 0)
-      details.push(t(cell.criticalCycles === 1 ? '1 critical cycle' : '{n} critical cycles', { n: cell.criticalCycles }))
-    return details.join('\n')
+      lines.push(`${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`)
+    if (cell.wrongPath || cell.mispredicted)
+      lines.push(cell.wrongPath ? t('wrong path (squashed)') : t('mispredicted branch'))
+    return lines.join('\n')
   }
 
   function onClick(e) {
@@ -1498,7 +1490,7 @@
     font-size:  medium;
     display:    inline-block;
     width:      max-content;
-    max-width:  250px;       /* avoids tooltips too wide */
+    max-width:  560px;       /* avoids tooltips too wide */
     text-align: center;
     white-space: pre-line;   /* interpret character \n */
     background:     #f9f9f9;

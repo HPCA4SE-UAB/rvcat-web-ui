@@ -4,9 +4,7 @@
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <!-- Tooltip -->
       <div class="tutorial-tooltip" ref="contentRef"
-        :style="{ left: x + 'px', top: y + 'px', visibility: measuring ? 'hidden' : undefined,
-                  width: currentStep?.wWidth ? `${currentStep.wWidth}px` : undefined,
-                  height: currentStep?.wHeight ? `${currentStep.wHeight}px` : undefined }">
+        :style="tooltipStyle">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="rt(currentStep?.title)"></h3>
           <span v-if="previewMode" class="preview-badge" :title="t('Preview from the tutorial editor: closing it returns to the editor')">PREVIEW</span>
@@ -774,6 +772,15 @@ function observeContent() {
 
 // A card moved by the student (or placed in the tutorial file) appears directly at its place
 const measuring = ref(false)
+// Style of the card: width and height only when the card fixes them. A key given as undefined
+// would be cleared by Vue at every redraw (e.g. while the card is moved), undoing a manual resize
+const tooltipStyle = computed(() => {
+  const style = { left: x.value + 'px', top: y.value + 'px' }
+  if (measuring.value) style.visibility = 'hidden'
+  if (currentStep.value?.wWidth)  style.width  = `${currentStep.value.wWidth}px`
+  if (currentStep.value?.wHeight) style.height = `${currentStep.value.wHeight}px`
+  return style
+})
 watch(currentStep, (step) => {
   if (step && Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) {
     x.value = step.x_pos
