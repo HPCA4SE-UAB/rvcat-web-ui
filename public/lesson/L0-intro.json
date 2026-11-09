@@ -185,8 +185,24 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>The loop takes <b>{{cyclesPerIter}} cycles per iteration</b> (29 with simple sequential execution).</p><p><b>Explore the timeline</b>: hover over the instructions (rows) and over the cells. Two new symbols appear: <b>.</b> and <b>-</b>. Next, you will have to answer some questions about the timeline.</p>",
-        "actions": ["sidePanel:hide", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>An <b><span style=\"color:#c62828\">execution port</span></b> is the entrance to a <b>pipelined</b> execution unit: it can start a new instruction every cycle, while the previous ones go on through the next stages of the unit. The column <b>Ports</b> of the Program panel gives, for each type of instruction, the ports that can execute it; the timeline shows the port actually used (hover over the instructions and the cells).</p><p><b>Explore the timeline</b>: hover over the instructions (rows) and over the cells. Two new symbols appear: <b>.</b> and <b>-</b>. Next, you will have to answer some questions about the timeline.</p>",
+        "actions": ["sidePanel:show", "reveal:programPorts", "programView:perf", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "next": ["q-cycles"]
+      },
+      {
+        "id": "q-cycles",
+        "type": "question",
+        "title": "Time per iteration",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "<p>Find it in the timeline: <b>how many cycles per iteration</b> does the loop take now?</p><p>(Hint: compare the cycle of the <b class=\"stage\">D</b> of instruction 0 in two consecutive iterations.)</p>",
+        "answerMode": "number",
+        "answers": [],
+        "numericValue": "{{cyclesPerIter}}",
+        "tolerance": 0.5,
+        "numericUnit": "cycles/iter",
+        "numericCorrect": "Right: one instruction is dispatched per cycle and each iteration has 7 instructions: {{cyclesPerIter}} cycles per iteration, instead of 29 with one instruction at a time.",
+        "numericWrong": "Look at the <b class=\"stage\">D</b> of instruction 0 in two consecutive iterations (one colour per iteration): the difference of their cycles is the time per iteration.",
         "next": ["q-dot"]
       },
       {
@@ -209,6 +225,17 @@
         "questionText": "And what does a dash <b>-</b> mean?",
         "answerMode": "single",
         "answers": [{"text": "The instruction has executed and written its result, and waits to retire: older instructions have not retired yet", "isCorrect": true, "explanation": "Yes: instructions retire in program order, one per cycle here."}, {"text": "The instruction waits for its input data", "isCorrect": false, "explanation": "No: that is the dot."}, {"text": "The instruction was cancelled", "isCorrect": false, "explanation": "No: all the instructions of this loop are useful; they wait to retire."}, {"text": "The instruction executes for several cycles", "isCorrect": false, "explanation": "No: execution is shown with <b class=\"stage\">E</b> or <b class=\"stage\">L</b>, one per cycle."}],
+        "next": ["q-port"]
+      },
+      {
+        "id": "q-port",
+        "type": "question",
+        "title": "Two instructions in the same port",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "Look at the two loads of an iteration (instructions 0 and 2): both use the same port, and their <b class=\"stage\">L</b> cells overlap. How can two instructions be executing at the same time in the same port?",
+        "answerMode": "single",
+        "answers": [{"text": "The port is pipelined: it starts one instruction per cycle, and each one goes on through the next stages of the execution unit while the following one starts", "isCorrect": true, "explanation": "Yes: the two loads are in different stages of the same unit, like two cars in a car wash."}, {"text": "The port can start two instructions in the same cycle", "isCorrect": false, "explanation": "No: look at the first <b class=\"stage\">L</b> of each load: they start in different cycles."}, {"text": "Each load uses half of the port", "isCorrect": false, "explanation": "No: each load uses the whole port, but only during one cycle in each stage."}, {"text": "It is an approximation of the timeline", "isCorrect": false, "explanation": "No: the processor really works like this."}],
         "next": ["q-ooo"]
       },
       {
@@ -252,14 +279,30 @@
         "wWidth": 400,
         "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>{{cyclesPerIter}} cycles per iteration</b>.",
         "actions": ["sidePanel:hide", "reveal:processor,programPorts", "revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
-        "next": ["critical", "ooo-more"],
+        "next": ["q-rename", "ooo-more"],
         "nextLabels": ["Continue", "In depth: out-of-order execution"]
       },
       {
-        "id": "ooo-more", "type": "step", "title": "In depth: out-of-order execution", "actions": ["sidePanel:show"],
-        "selector": "#process-panel .processor-container", "position": "right",
+        "id": "ooo-more",
+        "type": "step",
+        "title": "In depth: out-of-order execution",
+        "actions": ["sidePanel:show"],
+        "selector": "#process-panel .processor-container",
+        "position": "right",
         "description": "&bull; Instructions <b>wait</b> in a buffer until their input data are ready (<b>.</b>) and a port is free (<b>*</b>).<br>&bull; The <b>ROB</b> (reorder buffer) keeps them in program order: they <b>retire</b> in order (<b class=\"stage\">R</b>),<br>&nbsp;&nbsp;&nbsp;so the result is the same as a sequential execution. <b>-</b> means: executed, waiting to retire.<br>&bull; The ROB size limits how many instructions are in flight: the <b>execution window</b>.<br>&bull; <b>Dispatch / retire width</b> and the <b>ports</b> limit how many instructions are processed per cycle.",
-        "next": ["critical"], "nextLabels": ["Continue"]
+        "next": ["q-rename"],
+        "nextLabels": ["Continue"]
+      },
+      {
+        "id": "q-rename",
+        "type": "question",
+        "title": "A new value of i too early?",
+        "position": "right",
+        "wWidth": 440,
+        "questionText": "<p>With 4 instructions dispatched per cycle, look at an iteration: <b>i = i + 1</b> can execute <b>before</b> an older instruction of the same iteration that uses <b>i</b> (e.g. a load of V[i] or W[i]).</p><p>How is it possible that the older instruction still gets the previous value of i?</p>",
+        "answerMode": "single",
+        "answers": [{"text": "At dispatch, each instruction is connected with the producer of its inputs (<span style=\"color:#c62828\">register renaming</span>): the new value of i is another copy (another physical register), so the older instruction keeps the previous one", "isCorrect": true, "explanation": "Yes: renaming removes the false dependence on the name i; only the true data dependences remain."}, {"text": "i = i + 1 waits until all the older instructions that use i have executed", "isCorrect": false, "explanation": "No: look at the timeline: its <b class=\"stage\">E</b> can come before theirs."}, {"text": "The older instruction reads i again from memory", "isCorrect": false, "explanation": "No: i is a value of the processor (a register), not a memory variable."}, {"text": "The older instruction is executed again later, with the right value", "isCorrect": false, "explanation": "No: nothing is executed twice; each instruction gets the value it needs from the start."}],
+        "next": ["critical"]
       },
       {
         "id": "critical", "type": "step", "title": "8. The critical path",
