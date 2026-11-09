@@ -1203,7 +1203,7 @@
         state:    rowHeader
           ? formatInstructionTooltip(hitCell)
           : stateTooltip,
-        lines:    rowHeader ? instructionTooltipLines(hitCell) : null,
+        lines:    rowHeader ? instructionTooltipLines(hitCell) : portConflictLines(hitCell),
         critical: rowHeader ? false : critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
@@ -1227,6 +1227,7 @@
   // the bypass), and the Program panel marks them and the variables (simState.dependenceHighlight)
   function showDataDependences(cell) {
     const detail = cell?.waitDetail
+    if (cell?.char === '*' && detail?.reason === 'ports') { showPortConflict(cell); return }
     if (!cell || cell.char !== '.' || detail?.reason !== 'data') { simState.dependenceHighlight = null; return }
     const rows = [...new Set(detail.dependencies ?? [])]
     const marks = [], producers = new Set()
@@ -1300,6 +1301,86 @@
   //   [iter,instr] text
   //   Port: Px; Lat: L c.
   //   LOAD/STORE MEMORY address: a        (only memory instructions)
+  // ---- A cell where an instruction waits for a port ('*') ----
+  // The instructions that use, in that cycle, the ports it could use (the conflict), and how the
+  // issue slots of that cycle were given to the ready instructions: the ready instructions are the
+  // ones issued in the cycle and the ones waiting for a port; the most that could be issued is a
+  // maximum matching of instructions and ports (each port starts one instruction per cycle)
+  const rowHeaderCell = (row) => interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)
+  const portsOf = (instrIdx) => {
+    const mask = Number(simState.simulatedProcess?.instruction_list?.[instrIdx]?.ports ?? 0)
+    return [...Array(32).keys()].filter(p => (mask >> p) & 1)
+  }
+  function portConflict(cell) {
+    const c = cell.colIdx
+    const owners = (p) => timeline.value?.portUsageInstrByPort?.[String(p)]?.[c] ?? []
+    const conflicts = (cell.waitDetail?.ports ?? []).flatMap(p => owners(p).map(row => ({ port: p, row })))
+    const inCycle = interactiveCells.filter(x => x.colIdx === c && x.rowIdx >= 0)
+    const issued  = inCycle.filter(x => x.first_exec_stage)
+    const waiting = inCycle.filter(x => x.char === '*')
+    const ready   = [...issued, ...waiting]
+    // maximum matching (augmenting paths): the most ready instructions that could be issued
+    const portOwner = new Map()
+    const tryAssign = (x, seen) => {
+      for (const p of portsOf(x.instrIdx)) {
+        if (seen.has(p)) continue
+        seen.add(p)
+        if (!portOwner.has(p) || tryAssign(portOwner.get(p), seen)) { portOwner.set(p, x); return true }
+      }
+      return false
+    }
+    const best = ready.filter(x => tryAssign(x, new Set())).length
+    return { c, conflicts, issued, ready, best }
+  }
+  const label = (row) => { const h = rowHeaderCell(row); return h ? `[${h.iter},${h.instrIdx}]` : `#${row}` }
+  function portConflictLines(cell) {
+    if (cell?.char !== '*' || cell.waitDetail?.reason !== 'ports') return null
+    const { c, conflicts, issued, ready, best } = portConflict(cell)
+    const lines = []
+    const ports = (cell.waitDetail.ports ?? []).map(p => `P${p}`).join(', ')
+    lines.push([{ text: t('Waits for a free port') + ' (' + ports + ')', kind: 'perf' }])
+    for (const { port, row } of conflicts) {
+      const h = rowHeaderCell(row)
+      lines.push([{ text: `P${port} ← `, kind: 'perf' }, { text: label(row) + ' ', kind: 'id' },
+                  { text: h?.instructionText ?? '', kind: 'instr' }])
+    }
+    lines.push([{ text: t('Cycle {c}: {r} ready instructions, {i} issued', { c, r: ready.length, i: issued.length }), kind: 'note' }])
+    const sched = simState.simulationSettings?.sched
+    lines.push([{ text: sched === 'greedy'
+      ? (issued.length < best
+          ? t('Greedy scheduler: each ready instruction, in program order, takes its first free port; here it issued {i}, but {b} were possible (not optimal in this cycle)', { i: issued.length, b: best })
+          : t('Greedy scheduler: each ready instruction, in program order, takes its first free port; here it issued the most possible ({b})', { b: best }))
+      : t('Optimal scheduler: it issues the most instructions possible ({b} here), the oldest first', { b: best }),
+      kind: 'note' }])
+    return lines
+  }
+  // the instructions of the conflict are marked in the timeline (and their port, if its row is
+  // shown) and in the Program panel (simState.dependenceHighlight with kind 'port')
+  function showPortConflict(cell) {
+    const { c, conflicts } = portConflict(cell)
+    const instrs = new Set()
+    const ctx = overlayCanvas.value?.getContext('2d')
+    if (ctx) {
+      ctx.save()
+      ctx.fillStyle = 'rgba(245, 124, 0, 0.25)'
+      ctx.strokeStyle = '#e65100'
+      ctx.lineWidth = 2
+      for (const { port, row } of conflicts) {
+        const x = interactiveCells.find(k => k.rowIdx === row && k.colIdx === c)
+        if (x) { ctx.fillRect(x.x, x.y, cellW, cellH); ctx.strokeRect(x.x + 1, x.y + 1, cellW - 2, cellH - 2) }
+        const pr = timelineOptions.showPorts ? (timeline.value?.resourcePortIds ?? []).map(String).indexOf(String(port)) : -1
+        if (pr >= 0) {
+          const px = padX + labelW + c * cellW, py = padY + (pr + 1) * cellH
+          ctx.fillRect(px, py, cellW, cellH); ctx.strokeRect(px + 1, py + 1, cellW - 2, cellH - 2)
+        }
+        const h = rowHeaderCell(row)
+        if (h) instrs.add(h.instrIdx)
+      }
+      ctx.restore()
+    }
+    simState.dependenceHighlight = { producers: [...instrs], vars: [], kind: 'port' }
+  }
+
   // (as lines of parts { text, kind }: each kind has its own colour, see .tt-* below)
   function instructionTooltipLines(cell) {
     const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'

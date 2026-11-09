@@ -214,7 +214,7 @@
     const dep = simState.dependenceHighlight
     const waiting  = dep && index === simState.instrHighlightedIdx
     const producer = dep?.producers?.includes(index)
-    if (!dep || (!waiting && !producer) || !text) return [{ text }]
+    if (!dep || dep.kind === 'port' || (!waiting && !producer) || !text) return [{ text }]   // (a port conflict: no variables)
     const eq = text.indexOf('=')
     const [left, right] = eq >= 0 && text[eq + 1] !== '=' ? [text.slice(0, eq + 1), text.slice(eq + 1)] : ['', text]
     const split = (s, names) => {
@@ -625,7 +625,8 @@
               :key="index"
               :style="rowStyle(index)"
               :class="{ highlighted: index === simState.instrHighlightedIdx,
-                        'dep-producer': simState.dependenceHighlight?.producers?.includes(index) }"
+                        'dep-producer': simState.dependenceHighlight?.kind !== 'port' && simState.dependenceHighlight?.producers?.includes(index),
+                        'port-conflict': simState.dependenceHighlight?.kind === 'port' && simState.dependenceHighlight?.producers?.includes(index) }"
               :data-instr="index"
             >
               <td v-if="getCriticalPercentage(index) != null" class="critical-cell"
@@ -678,6 +679,7 @@
   .program-source-header { cursor: help; }
   /* the instructions a waiting instruction depends on (hovering a '.' cell of the timeline) */
   tr.dep-producer td { background: #e7f0fb; }
+  tr.port-conflict td { background: #fff0e0; }
   .dep-var { background: #cfe0f7; color: #0d47a1; border-radius: 3px; padding: 0 2px; font-weight: 600; }
   .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
   .program-source-header .source-mark {
