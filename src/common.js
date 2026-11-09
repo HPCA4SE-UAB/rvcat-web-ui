@@ -843,6 +843,38 @@ export async function addNewDistributionFiles(storagePrefix, distributionFiles, 
   return added
 }
 
+// The files of the distribution stored in the browser are updated when the distribution changes
+// (e.g. a program with its source code added), unless the user modified them. The last copy of
+// the distribution is kept (distribution.<prefix>.<name>) to know it; a copy stored before, with
+// no record, is taken as unmodified when it is the same program (same instructions).
+async function refreshDistributionFiles(prefix, files, keys) {
+  const updated = []
+  for (const name of files.filter(n => keys.includes(n))) {
+    try {
+      const response = await fetch(`./${prefix}/${name}.json`)
+      if (!response.ok) continue
+      const fresh  = JSON.stringify(await response.json())
+      const stored = localStorage.getItem(`${prefix}.${name}`)
+      const recKey = `distribution.${prefix}.${name}`
+      const record = localStorage.getItem(recKey)
+      if (stored === fresh) { if (record !== fresh) localStorage.setItem(recKey, fresh); continue }
+      let unmodified = record !== null && stored === record
+      if (record === null && prefix === 'program') {
+        try {
+          unmodified = JSON.stringify(JSON.parse(stored).instruction_list) === JSON.stringify(JSON.parse(fresh).instruction_list)
+        } catch { unmodified = false }
+      }
+      if (!unmodified) continue                     // changed by the user: kept
+      localStorage.setItem(`${prefix}.${name}`, fresh)
+      localStorage.setItem(recKey, fresh)
+      updated.push(name)
+    } catch (e) {
+      console.warn(`⚠️ Cannot check the distribution file ${prefix}/${name}:`, e)
+    }
+  }
+  return updated
+}
+
 export async function initResource (resourceType, optionsObj, currentKey, availableKey) {
   const config = resourceConfig[resourceType];
   if (!config) {
@@ -882,6 +914,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
           const filedata = await response.json()
           console.log(`${logPrefix}📥 loadJSONfile: ${name}`)
           localStorage.setItem(`${storagePrefix}.${fileName}`, JSON.stringify(filedata));
+          localStorage.setItem(`distribution.${storagePrefix}.${fileName}`, JSON.stringify(filedata));
         }
         keys = getResourceKeys(`${storagePrefix}.`);
         console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from distribution files`);
@@ -889,6 +922,10 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
       }
     } else {
       console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from localStorage`);
+      if (Array.isArray(distributionFiles)) {
+        const updated = await refreshDistributionFiles(storagePrefix, distributionFiles, keys)
+        if (updated.length) console.log(`${logPrefix}🔄 Updated from the distribution:`, updated)
+      }
       if (resourceType === 'tutorial' && Array.isArray(distributionFiles)) {
         // Tutorials added to the distribution later are offered once, even if the user
         // already has tutorials (a tutorial deleted by the user is not added again)
