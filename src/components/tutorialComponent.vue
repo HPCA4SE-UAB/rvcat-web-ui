@@ -779,6 +779,41 @@ function observeContent() {
   contentObserver.observe(main, { childList: true, subtree: true, characterData: true })
 }
 
+// A card grows with its content instead of showing scroll bars: when its text grows (e.g. the
+// second part of the card, a result) and the card has a fixed height (from the tutorial file or
+// resized by the student), the height grows; the card moves up if it does not fit, and is placed
+// again if it now covers the element it refers to (unless the student placed it)
+let fitTimer = null
+function fitToContent() {
+  const step = currentStep.value, el = contentRef.value
+  const content = el?.querySelector('.tutorial-content')
+  if (!step || !content || measuring.value || placing.value) return
+  const extra = content.scrollHeight - content.clientHeight
+  if (extra <= 1) return
+  const maxH = window.innerHeight - HEADER_HEIGHT - VIEWPORT_MARGIN
+  const height = Math.min(maxH, Math.ceil(el.getBoundingClientRect().height + extra + 2))
+  if (step.wHeight) step.wHeight = height
+  else if (el.style.height) el.style.height = `${height}px`
+  else return                                     // already as tall as the window allows
+  const layout = taskStates.value[step.id]?.layout
+  if (layout?.h) setTask(step.id, { layout: { ...layout, h: height } })
+  nextTick(() => {
+    y.value = clamp(y.value, HEADER_HEIGHT, window.innerHeight - height - VIEWPORT_MARGIN)
+    const place = cardReference(step)
+    const r = el.getBoundingClientRect(), t = place?.avoidRect
+    const covers = t && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top
+    if (covers && !Number.isFinite(layout?.x) && !Number.isFinite(step.x_pos)) {
+      const best = placeInEmptyZone(place.refRect, r.width, r.height, place.preferred, place.avoidRect)
+      x.value = best.left; y.value = best.top
+    }
+  })
+}
+const cardObserver = new MutationObserver(() => { clearTimeout(fitTimer); fitTimer = setTimeout(fitToContent, 100) })
+watch(contentRef, (el) => {
+  cardObserver.disconnect()
+  if (el) cardObserver.observe(el, { childList: true, subtree: true, characterData: true })
+})
+
 // A card moved by the student (or placed in the tutorial file) appears directly at its place
 const measuring = ref(false)
 // Style of the card: width and height only when the card fixes them. A key given as undefined
@@ -1759,6 +1794,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleWindowResize)
   contentObserver?.disconnect()
   clearTimeout(replaceTimer)
+  cardObserver.disconnect()
+  clearTimeout(fitTimer)
   simState.simulationBlocked = ''
   cleanup ()
 })
