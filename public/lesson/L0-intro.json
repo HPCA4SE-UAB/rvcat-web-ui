@@ -296,10 +296,10 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p><b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle, up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).</p><p>Instructions of <b>different iterations overlap</b> (one colour per iteration).</p><p>You can click <b>🔍 Explore</b> to analyse the timeline before the next question.</p>",
-        "actions": ["sidePanel:hide", "revertProcessor", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "description": "<p><b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle, up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).</p><p>Instructions of <b>different iterations overlap</b> (one colour per iteration).</p><p>A new symbol appears in the timeline: <b>*</b>. Hover over it to find out what it means.</p><p>You can click <b>🔍 Explore</b> to analyse the timeline before the next questions.</p>",
+        "actions": ["sidePanel:show", "programView:perf", "revertProcessor", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
         "explore": true,
-        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, a question on the time per iteration.</p>",
+        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, questions on the time per iteration and on the meaning of <b>*</b>.</p>",
         "exploreActions": ["timeline:width=0.97"],
         "exploreEndActions": ["timeline:width=0.67"],
         "next": ["q-ooo-time"]
@@ -318,20 +318,6 @@
         "numericUnit": "cycles/iter",
         "numericCorrect": "Right: once the pattern repeats, a new iteration starts every 4 cycles: on average 4 cycles per iteration (4.01 in a simulation of 1,000 iterations), like the real processor. Why not less? The next cards explain it.",
         "numericWrong": "Look for the pattern that repeats (one colour per iteration): how many cycles separate the start of two iterations, once the first ones have passed?",
-        "next": ["explore-star"]
-      },
-      {
-        "id": "explore-star",
-        "type": "step",
-        "title": "A new symbol: *",
-        "anchor": "#right-panel",
-        "position": "inside-right",
-        "wWidth": 420,
-        "description": "<p>With up to 4 instructions dispatched per cycle, a new symbol appears in the timeline: <b>*</b>.</p><p>Click <b>🔍 Explore</b> and find out what it means: hover over the <b>*</b> cells, and look at the instructions marked in orange in the timeline and in the Program panel.</p>",
-        "explore": "required",
-        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, a question on the meaning of *.</p>",
-        "exploreActions": ["sidePanel:show", "programView:perf", "timeline:width=0.97"],
-        "exploreEndActions": ["sidePanel:hide", "timeline:width=0.67"],
         "next": ["q-star"]
       },
       {
@@ -363,7 +349,7 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 460,
-        "description": "<p><b>Critical</b> marks in red the <b><span style=\"color:#c62828\">critical execution path</span></b>: going back from the last instruction retired in the visible cycles, the chain of events that decided when it happened. Each link is a reason to wait: a <b>data dependence</b> (the result of a previous instruction), a <b>port conflict</b> (a busy port), or another limit (dispatch or retire width, a full ROB…).</p><p>It is a path of the <b>timeline</b>: it depends on the cycles shown. Here, once the pattern repeats, it is the chain of additions to sum: sum → sum → sum…, two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>. Every other instruction executes <b>for free</b>, overlapped with this chain.</p><p><b>Experiment:</b> change the number of <b>Cycles</b> of the timeline (e.g. 10, 20, 60) and watch how the critical path changes. With only the first iterations it can show other causes (e.g. the first loads): to explain the performance of a loop with many iterations, look at the path once it repeats. You can click <b>🔍 Explore</b>.</p>",
+        "description": "<p>The <b>Critical</b> button marks in red the <b><span style=\"color:#c62828\">critical execution path</span></b>, a detailed explanation of the execution time: it provides a diagnosis that may help to devise ideas to improve performance. The critical path is the chain of events, going back from the last instruction retired in the visible cycles, that links the reasons for an instruction to wait: a data dependence, a port conflict, a full ROB, a dispatch or retire width limit…</p><p>In this example, most of the cycles of the critical path come from the chain of additions to sum: sum → sum → sum…, two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>. Every other instruction executes <b>for free</b>, overlapped with this chain.</p><p><b>Experiment:</b> change the number of <b>Cycles</b> of the timeline (e.g. 10, 20, 60) and watch how the critical path changes. A critical path of only the first few iterations can show causes (e.g. the first loads) that do not represent the performance of the loop with many iterations: look at the path once it repeats.</p>",
         "actions": ["sidePanel:hide", "reveal:timelineCritical,timelineCycles", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=40", "timeline:width=0.67"],
         "explore": true,
         "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, a question on the critical path of V1.</p>",
