@@ -1203,6 +1203,7 @@
         state:    rowHeader
           ? formatInstructionTooltip(hitCell)
           : stateTooltip,
+        lines:    rowHeader ? instructionTooltipLines(hitCell) : null,
         critical: rowHeader ? false : critical && timelineOptions.critical
       }
       adjustTooltipPosition(e)
@@ -1268,17 +1269,23 @@
   //   [iter,instr] text
   //   Port: Px; Lat: L c.
   //   LOAD/STORE MEMORY address: a        (only memory instructions)
-  function formatInstructionTooltip(cell) {
+  // (as lines of parts { text, kind }: each kind has its own colour, see .tt-* below)
+  function instructionTooltipLines(cell) {
     const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'
     const lat  = Number.isFinite(cell.latency) ? cell.latency : '–'
-    const lines = [`[${cell.iter},${cell.instrIdx}] ` + (cell.instructionText || t('Instruction description unavailable')),
-                   `Port: ${port}; Lat: ${lat} c.`]
+    const lines = [
+      [{ text: `[${cell.iter},${cell.instrIdx}] `, kind: 'id' },
+       { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' }],
+      [{ text: `Port: ${port}; Lat: ${lat} c.`, kind: 'perf' }],
+    ]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
-      lines.push(`${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`)
+      lines.push([{ text: `${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`, kind: 'mem' }])
     if (cell.wrongPath || cell.mispredicted)
-      lines.push(cell.wrongPath ? t('wrong path (squashed)') : t('mispredicted branch'))
-    return lines.join('\n')
+      lines.push([{ text: cell.wrongPath ? t('wrong path (squashed)') : t('mispredicted branch'), kind: 'note' }])
+    return lines
   }
+  const formatInstructionTooltip = (cell) =>
+    instructionTooltipLines(cell).map(line => line.map(part => part.text).join('')).join('\n')
 
   function onClick(e) {
     const rect = timelineCanvas.value.getBoundingClientRect()
@@ -1415,7 +1422,12 @@
       <canvas ref="overlayCanvas"></canvas>
       <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
            :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-        <div v-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
+        <div v-if="hoverInfo.lines" class="tt-lines">
+          <div v-for="(line, i) in hoverInfo.lines" :key="i">
+            <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
+          </div>
+        </div>
+        <div v-else-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
             {{ hoverInfo.state }}
         </div>
       </div>
@@ -1553,4 +1565,11 @@
   .critical {
     color: red;
   }
+  /* tooltip of an instruction: soft colours for its identifier, text, performance and memory access */
+  .tt-lines { text-align: left; }
+  .tt-id    { color: #6b7a99; }
+  .tt-instr { color: #222; font-weight: 600; }
+  .tt-perf  { color: #2f7d4a; }
+  .tt-mem   { color: #9a6a00; }
+  .tt-note  { color: #888; font-style: italic; }
 </style>
