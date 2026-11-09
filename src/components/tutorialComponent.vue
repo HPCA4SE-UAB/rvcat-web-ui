@@ -610,6 +610,8 @@ const validationMet = computed(() => {
         return parseInt(document.querySelector(selector)?.value) >= minValue
       case 'button_clicked':
         return selector && clickedButtons.value.has(clickKey(currentStep.value, selector))
+      case 'element_closed':          // e.g. the window with the C code: met once it is closed
+        return !!taskState.value.closed
       default:
         return extraValidation(validation)
     }
@@ -657,6 +659,11 @@ function contentObstacles(avoidRect) {
       if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) continue
       rects.push(inflate(r, CONTENT_GAP))
     }
+  }
+  // a pinned explanation (e.g. the C code of the program) is not covered either
+  for (const el of document.querySelectorAll('.pinned-detail')) {
+    const r = el.getBoundingClientRect()
+    if (r.width > 0) rects.push(inflate(r, TARGET_GAP))
   }
   if (avoidRect) rects.push(inflate(avoidRect, TARGET_GAP))
   return rects
@@ -1290,8 +1297,24 @@ const setupValidationListeners = () => {
 // a click is required by each card that asks for it (the same element in two cards: two clicks)
 const clickKey = (step, selector) => `${step?.id ?? ''}|${selector.trim()}`
 
+let closedObserver = null
 const setupButtonClickTracking = () => {
   cleanupButtonClickTracking()
+  closedObserver?.disconnect(); closedObserver = null
+  const cv = currentStep.value?.validation
+  if (cv?.type === 'element_closed' && cv.selector) {
+    const step = currentStep.value
+    const check = () => {
+      if (currentStep.value !== step) { closedObserver?.disconnect(); return }
+      if (!document.querySelector(cv.selector)) {
+        setTask(step.id, { closed: true })
+        closedObserver?.disconnect(); closedObserver = null
+      }
+    }
+    closedObserver = new MutationObserver(check)
+    closedObserver.observe(document.body, { childList: true, subtree: true })
+    check()
+  }
 
   const v = currentStep.value?.validation
   if (v?.type !== 'button_clicked' || !v.selector) return
@@ -1871,7 +1894,7 @@ onUnmounted(() => {
   .tutorial-tooltip.tooltip-hidden * { visibility: hidden !important; transition: none !important; }
   /* exploration mode: the button that brings the card back, at the bottom right */
   .explore-done {
-    position: fixed; right: 24px; bottom: 24px; z-index: 10003;
+    position: fixed; right: 24px; bottom: 24px; z-index: 10003; pointer-events: auto;
     display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
   }
   .explore-hint-close {
