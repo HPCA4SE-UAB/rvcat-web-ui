@@ -149,7 +149,7 @@
       },
       {
         "id": "sequential", "type": "question", "title": "One instruction at a time",
-        "questionText": "<p>Imagine the <b>execution engine</b> handles one instruction at a time:<br><b class=\"stage\">D</b>ispatch (1 cycle), <b class=\"stage\">E</b>xecute (its latency) and <b class=\"stage\">W</b>rite the result (1 cycle),<br>&nbsp;&nbsp;&nbsp;and only then dispatches the next instruction.</p><p>How many cycles does one iteration of program Base take (2 loads, 2 float additions, 3 integer/branch)?</p>",
+        "questionText": "<p><b>A starting point: the sequential execution model.</b> It is the simplest possible design, and real processors do not work like this: we use it only for a moment, to compare it next with the <b>multiple-issue, out-of-order</b> execution of current processors.</p><p>Imagine the <b>execution engine</b> handles one instruction at a time:<br><b class=\"stage\">D</b>ispatch (1 cycle), <b class=\"stage\">E</b>xecute (its latency) and <b class=\"stage\">W</b>rite the result (1 cycle),<br>&nbsp;&nbsp;&nbsp;and only then dispatches the next instruction.</p><p>How many cycles does one iteration of program Base take (2 loads, 2 float additions, 3 integer/branch)?</p>",
         "answerMode": "number", "answers": [], "numericValue": 29, "tolerance": 0.01, "numericUnit": "cycles",
         "numericCorrect": "Right: 2 × (1+4+1) + 2 × (1+2+1) + 3 × (1+1+1) = 12 + 8 + 9 = 29 cycles. Seven times more than the 4 measured!",
         "numericWrong": "Each instruction takes 1 + latency + 1 cycles, and they do not overlap: add the 7 instructions.",

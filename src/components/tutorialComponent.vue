@@ -875,17 +875,21 @@ async function runShowMe() {
 // while those results are shown (a change of program, processor... clears them)
 const simulationCount = ref(0)
 let   stepSimulationStart = 0
-const resultsOfCard = new Map()        // card id -> results that validated it
 watch(() => simState.executionResults, (r) => {
   if (!r || !Object.keys(r).length) return
   simulationCount.value++
   const step = currentStep.value
-  if (step?.validation?.type === 'simulation_done') resultsOfCard.set(step.id, toRaw(r))
+  if (step?.validation?.type === 'simulation_done') setTask(step.id, { results: resultsKey(r) })
   checkTaskAfterSimulation()
 })
+// the results are identified by their content (the same results may be loaded again as another object)
+function resultsKey(r) {
+  return [simState.simulatedProcess?.name, simState.processorName, r?.total_cycles, r?.total_instructions, r?.total_iterations].join('|')
+}
 function resultsStillShown() {
   const r = simState.executionResults
-  return !!r && resultsOfCard.get(currentStep.value?.id) === toRaw(r)
+  const key = taskStates.value[currentStep.value?.id]?.results
+  return !!r && !!key && key === resultsKey(r)
 }
 
 // ============================================================================
