@@ -14,7 +14,7 @@ export const TUTORIAL_ACTIONS = [
   ['clickChain:VAR',           'select the latency bound of variable VAR (opens the dependence graph)'],
   ['openGraph',                'open the dependence graph window'],
   ['closeGraph',               'close the dependence graph window'],
-  ['timeline:critical=on|off', 'timeline option: critical, ports, cache (on/off), or cycles=NUMBER'],
+  ['timeline:critical=on|off', 'timeline option: critical, ports, cache (on/off), cycles=NUMBER, or width=FRACTION (zoom: the timeline ends at that fraction of the window width)'],
   ['expandPorts',              'show the operation types of the processor ports'],
   ['collapsePorts',            'hide the operation types of the processor ports'],
   ['setLatency:TYPE.OPER=N',   'change a latency of the current processor (all ports)'],
@@ -157,6 +157,11 @@ export function createActionRunner(ctx) {
       if (a.key === 'cycles') {
         await waitUntil(() => $('#timeline-cycles'))
         await setInput('#timeline-cycles', a.value)
+      } else if (a.key === 'width') {
+        await waitUntil(() => $('#canvas-container'))
+        await sleep(300)                      // after the side panel is hidden or shown
+        simState.timelineFit = { width: a.value, nonce: Date.now() }
+        await sleep(300)
       } else {
         await setTimelineToggle(a.key, a.value !== 'off')
       }

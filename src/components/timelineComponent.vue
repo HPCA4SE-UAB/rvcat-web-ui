@@ -55,6 +55,19 @@
     fitCycles()
   }
   function onCyclesTyped() { timelineOptions.autoFitCycles = false }
+  // Zoom requested by a tutorial (action timeline:width=F): the timeline ends at the fraction F
+  // of the visible width of the window
+  watch(() => simState.timelineFit?.nonce, () => {
+    const f = Number(simState.timelineFit?.width)
+    const wrapper = document.getElementById('canvas-container')
+    if (!(f > 0 && f <= 1) || !wrapper) return
+    const target = window.innerWidth * f - wrapper.getBoundingClientRect().left
+    const world  = 2 * 10 + 40 + 14 * (Number(timelineOptions.cycles) || 1)
+    timelineOptions.autoFitCycles = false
+    timelineOptions.canvasOffsetX = 0
+    timelineOptions.canvasOffsetY = 0
+    timelineOptions.canvasScale   = Math.max(0.5, target / world)
+  })
   function onResizeFit()   { if (timelineOptions.autoFitCycles) fitCycles() }
 
   const loadOptions = () => {

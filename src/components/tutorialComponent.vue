@@ -4,7 +4,7 @@
     <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
       <div v-if="placing" class="tutorial-acting">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
       <!-- Tooltip -->
-      <div class="tutorial-tooltip" ref="contentRef"
+      <div class="tutorial-tooltip" ref="contentRef" :class="{ 'tooltip-hidden': measuring || placing }"
         :style="tooltipStyle">
         <div class="tutorial-header" ref="headerRef">
           <h3 v-html="rt(currentStep?.title)"></h3>
@@ -785,7 +785,6 @@ const measuring = ref(false)
 // would be cleared by Vue at every redraw (e.g. while the card is moved), undoing a manual resize
 const tooltipStyle = computed(() => {
   const style = { left: x.value + 'px', top: y.value + 'px' }
-  if (measuring.value || placing.value) style.visibility = 'hidden'
   if (currentStep.value?.wWidth)  style.width  = `${currentStep.value.wWidth}px`
   if (currentStep.value?.wHeight) style.height = `${currentStep.value.wHeight}px`
   return style
@@ -1768,6 +1767,10 @@ onUnmounted(() => {
   .step-description pre     { margin: 0.3em 0 0.6em; padding: 6px 10px; background: #f6f8fa; border-radius: 4px; color: #333; font-size: 0.9em; line-height: 1.35; }
   .step-description p       { margin: 0 0 0.5em; }
   .step-description p:last-child { margin-bottom: 0; }
+  /* a card being placed (or waiting for its actions): hidden with all its content at once
+     (the buttons have transitions, which would keep them visible for a moment) */
+  .tutorial-tooltip.tooltip-hidden { opacity: 0 !important; pointer-events: none !important; }
+  .tutorial-tooltip.tooltip-hidden * { visibility: hidden !important; transition: none !important; }
   .tutorial-acting {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10002;
     background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px 14px;
