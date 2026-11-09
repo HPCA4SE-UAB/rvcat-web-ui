@@ -109,7 +109,7 @@ export function createActionRunner(ctx) {
     el.dispatchEvent(new Event('input', { bubbles: true }))
     el.dispatchEvent(new Event('change', { bubbles: true }))
     el.dispatchEvent(new Event('blur'))
-    await sleep(200)
+    await sleep(60)
   }
 
   const handlers = {
@@ -159,9 +159,9 @@ export function createActionRunner(ctx) {
         await setInput('#timeline-cycles', a.value)
       } else if (a.key === 'width') {
         await waitUntil(() => $('#canvas-container'))
-        await sleep(300)                      // after the side panel is hidden or shown
+        await sleep(80)                       // after the side panel is hidden or shown (layout)
         simState.timelineFit = { width: a.value, nonce: Date.now() }
-        await sleep(300)
+        await sleep(80)
       } else {
         await setTimelineToggle(a.key, a.value !== 'off')
       }
@@ -170,7 +170,7 @@ export function createActionRunner(ctx) {
       const collapsed = !!$('#side-panel-expand')
       if ((a.arg === 'hide') !== collapsed) {
         const button = collapsed ? $('#side-panel-expand') : $('#side-panel-toggle')
-        if (button) { clickElement(button); await sleep(400) }
+        if (button) { clickElement(button); await sleep(150) }
       }
     },
     async programView(a) {
@@ -191,7 +191,7 @@ export function createActionRunner(ctx) {
     },
     async revertProcessor() {
       clickElement($('#revert-processor-button'))
-      await sleep(800)
+      await sleep(250)
     },
     async click(a)   { await waitUntil(() => $(a.arg)); clickElement($(a.arg)); await sleep(300) },
     async waitFor(a) { await waitUntil(() => { const el = $(a.arg); return el && el.getClientRects().length > 0 }, 10000) },
@@ -200,9 +200,12 @@ export function createActionRunner(ctx) {
     async reveal(a) { setHidden(a.arg, false) },
     async hide(a)   { setHidden(a.arg, true) },
     async setProcessor(a) {
+      // a synchronous change of the state: nothing to wait for (and nothing to do if it has that value)
       const value = Number(a.value)
-      if (a.key && Number.isFinite(value) && simState.simulatedProcess) simState.simulatedProcess[a.key] = value
-      await sleep(300)
+      if (a.key && Number.isFinite(value) && simState.simulatedProcess && simState.simulatedProcess[a.key] !== value) {
+        simState.simulatedProcess[a.key] = value
+        await sleep(30)
+      }
     },
   }
 

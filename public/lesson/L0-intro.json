@@ -166,8 +166,8 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<p>The <b><span style=\"color:#c62828\">Timeline</span></b> of the <b>sequential execution</b> of the program (simplified model) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">D</b> dispatch<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">E</b> execute (<b class=\"stage\">L</b> for a load)<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">W</b> write the result<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">R</b> retire (leaves the processor while a new instruction is dispatched)</p><p>One iteration takes 29 cycles: <b>{{cyclesPerIter}}</b> cycles/iter.</p>",
-        "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29", "timeline:width=0.67"],
+        "description": "<p>The <b><span style=\"color:#c62828\">Timeline</span></b> of the <b>sequential execution</b> of the program (simplified model) shows each instruction (rows) cycle by cycle (columns), as it passes through the different instruction processing stages:<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">D</b> dispatch<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">E</b> execute (<b class=\"stage\">L</b> for a load)<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">W</b> write the result<br>&nbsp;&nbsp;&nbsp;&nbsp;<b class=\"stage\">R</b> retire (leaves the processor while a new instruction is dispatched)</p><p>One iteration takes <b>29 cycles</b>.</p>",
+        "actions": ["setProcessor:ROBsize=1", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "reveal:timeline", "sidePanel:hide", "switchTo:timelineComponent", "timeline:ports=off", "timeline:cycles=29", "timeline:width=0.67"],
         "next": ["pipelining"]
       },
       {
@@ -188,7 +188,7 @@
         "position": "inside-right",
         "wWidth": 400,
         "description": "<p>The processor still <b>dispatches and retires one instruction per cycle</b>, but now it can keep <b>many instructions in flight</b> in the execution engine at the same time.</p><p>An <b><span style=\"color:#c62828\">execution port</span></b> is the entrance to a <b>pipelined</b> execution unit: it can start a new instruction every cycle, while the previous ones go on through the next stages of the unit. Each type of instruction can be executed by some ports, and the timeline shows the port actually used by each instruction.</p>",
-        "actions": ["sidePanel:hide", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=30", "timeline:width=0.67"],
+        "actions": ["sidePanel:hide", "setProcessor:ROBsize=100", "setProcessor:dispatch=1", "setProcessor:retire=1", "selectProgram:Base", "switchTo:timelineComponent", "timeline:cycles=30", "timeline:width=0.67"],
         "next": ["explore-timeline"]
       },
       {
@@ -215,11 +215,12 @@
         "questionText": "<p>Find it in the timeline: <b>how many cycles per iteration</b> does the loop take now?</p><p>(Hint: look for a pattern that repeats in the timeline, and from it infer the average time per iteration of a loop with many iterations.)</p>",
         "answerMode": "number",
         "answers": [],
-        "numericValue": "{{cyclesPerIter}}",
+        "numericValue": 7.01,
         "tolerance": 0.5,
         "numericUnit": "cycles/iter",
-        "numericCorrect": "Right: after the first cycles, the timeline repeats the same pattern every 7 cycles, one iteration each time (here, one instruction dispatched per cycle and 7 instructions per iteration): on average {{cyclesPerIter}} cycles per iteration, instead of 29.",
+        "numericCorrect": "Right: after the first cycles, the timeline repeats the same pattern every 7 cycles, one iteration each time (here, one instruction dispatched per cycle and 7 instructions per iteration): on average 7 cycles per iteration (7.01 in a simulation of 1,000 iterations), instead of 29.",
         "numericWrong": "Look for the pattern that repeats in the timeline (the cells of one iteration, shifted to the right): how many cycles separate two repetitions? In a loop with many iterations, that is the average time per iteration (the first iterations may differ).",
+        "actions": ["sidePanel:hide", "timeline:width=0.68"],
         "next": ["q-dot"]
       },
       {
@@ -275,6 +276,7 @@
         "questionText": "<p>Which of these statements about the <b>data dependences</b> of Base are true? Select <b>all</b> the true ones.</p>",
         "answerMode": "multiple",
         "answers": [{"text": "sum = sum + tmp needs the result of a load (tmp)", "isCorrect": true, "explanation": "Yes: each addition waits for the load of V[i] or W[i]."}, {"text": "sum = sum + tmp needs the result of the previous addition, also from the previous iteration", "isCorrect": true, "explanation": "Yes: the chain of sum goes across iterations."}, {"text": "c = i != N needs the result of i = i + 1", "isCorrect": true, "explanation": "Yes: the comparison uses the new value of i."}, {"text": "An instruction executes in the cycle after the last <b class=\"stage\">E</b>/<b class=\"stage\">L</b> of the instruction it depends on (bypass)", "isCorrect": true, "explanation": "Yes: the bypass gives it the result without waiting for W."}, {"text": "An instruction waits for the <b class=\"stage\">W</b> of the instruction it depends on", "isCorrect": false, "explanation": "No: look at the timeline: it executes right after the last <b class=\"stage\">E</b>/<b class=\"stage\">L</b> of its producer."}, {"text": "The loads need the results of the additions", "isCorrect": false, "explanation": "No: the additions need the loads, not the other way round."}],
+        "actions": ["sidePanel:show", "timeline:width=0.68"],
         "next": ["in-order"]
       },
       {
@@ -294,8 +296,8 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 400,
-        "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>{{cyclesPerIter}} cycles per iteration</b>.",
-        "actions": ["sidePanel:hide", "reveal:processor,programPorts", "revertProcessor", "runSimulation", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
+        "description": "<b>Back to the real configuration:</b> up to {{dispatch}} instructions dispatched per cycle,<br>up to {{rob}} in flight, executed <b>out of order</b> as soon as their data are ready (and retired in order).<br>Instructions of <b>different iterations overlap</b> (one colour per iteration):<br>the loop runs at <b>4 cycles per iteration</b> (4.01 in the simulation of 1,000 iterations).",
+        "actions": ["sidePanel:hide", "reveal:processor,programPorts", "revertProcessor", "switchTo:timelineComponent", "timeline:cycles=40", "timeline:width=0.67"],
         "next": ["q-rename", "ooo-more"],
         "nextLabels": ["Continue", "In depth: out-of-order execution"]
       },
