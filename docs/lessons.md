@@ -158,3 +158,14 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
   simulator; an orange button at the bottom right brings it back. With `"required"` the card cannot be left before.
   `exploreHint` (HTML) is shown next to the orange button until it is closed.
   `exploreActions` run when the exploration starts (e.g. `timeline:width=0.97`), `exploreEndActions` when it ends.
+
+## State of the simulator at each card
+
+The state of the simulator at a card is computed from the tutorial file, not stored: the parts hidden by the
+lesson are its initial `hidden` list with the `reveal`/`hide` actions of the cards before it (in the order of
+the file), and, when the tutorial is resumed (e.g. after closing the browser) or the student goes back, the
+processor (`selectProcessor`, `setProcessor`, `revertProcessor`), the program, the side panel, the program view
+and the timeline settings of those cards are applied again (only what differs). What is stored is only the
+position (card), the history (Previous) and the state of each card (answers, predictions, explorations,
+place and size). If a new version of the lesson no longer has the card, the lesson goes on at the closest
+card visited before.

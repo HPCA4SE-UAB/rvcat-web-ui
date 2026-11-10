@@ -125,6 +125,7 @@
       locks:      normalizeLocks(lesson.locks),
       tasks:      lessonTasks(res.tutorial.data),
       hidden:     [...(lesson.hidden ?? [])],
+      initialHidden: [...(lesson.hidden ?? [])],
       done:       read(progressKey(id, student)) ?? {},
       extraPrograms: [],
       hasCompletion: !!lesson.completion,
@@ -184,6 +185,19 @@
 // the simulator is used, and after every new version (the local storage is cleared then)
   const INTRO_KEY = 'introLessonOffered'
   const introOffer = ref(null)          // { id, title, description }
+  // A new version of the lesson in progress: its tutorial is updated (the student goes on at the
+  // same card if it still exists; the state of the simulator is computed from the new file)
+  function refreshLessonTutorial(lesson) {
+    try {
+      const res = lessonResources(lesson, storage)
+      if (!res.tutorial?.embedded) return
+      const data = JSON.stringify({ ...res.tutorial.data, name: res.tutorial.data.name })
+      const key = `tutorial.${res.tutorial.name}`
+      if (localStorage.getItem(key) !== data) localStorage.setItem(key, data)
+      simState.lesson.initialHidden = [...(lesson.hidden ?? [])]
+    } catch (e) { console.warn('📘⚠️ Cannot update the tutorial of the lesson', e) }
+  }
+
   async function loadDistributionLessons() {
     let names = []
     try { names = (await (await fetch('./index.json')).json()).lesson ?? [] } catch { return }
@@ -192,6 +206,7 @@
         const lesson = await (await fetch(`./lesson/${name}.json`)).json()
         if (validateLesson(lesson).length) { console.warn('📘⚠️ Invalid lesson', name, validateLesson(lesson)); continue }
         write(lessonKey(lesson.lesson), lesson)
+        if (simState.lesson?.id === lesson.lesson) refreshLessonTutorial(lesson)
         const entry = { id: lesson.lesson, title: lesson.title, description: lesson.description ?? '' }
         lessons.value = [...lessons.value.filter(l => l.id !== lesson.lesson), entry]
         if (lesson.intro && !localStorage.getItem(INTRO_KEY) && !simState.lesson) introOffer.value = entry

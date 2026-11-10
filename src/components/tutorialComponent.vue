@@ -331,7 +331,8 @@ import { renderTutorialText, tutorialNumber }                                   
 import { t, localized }                                                          from '@/i18n'
 import { createActionRunner, actionList, takeSnapshot, savedSnapshot, clearSnapshot } from '@/tutorialActions'
 import { processorDraftFrom, processorSignature }                               from '@/editDrafts'
-import { isLocked, evaluateCondition }                                          from '@/lessons'
+import { isLocked, evaluateCondition, LESSON_PARTS }                            from '@/lessons'
+import { cardState, restoreActions, timelineActions }                            from '@/lessonState'
 import { tutorialValue }                                                        from '@/tutorialValues'
 const simState = inject('simulationState');
 
@@ -956,7 +957,7 @@ function resultsStillShown() {
 // TASKS (cards predict and goal; questions): state per card, recorded in the lesson
 // ============================================================================
 // taskStates: { cardId: { prediction, predictedAt, result, last, done, best, answer, solved,
-// hiddenBefore } }, kept with the progress of the tutorial (tutorialOptions.cardStates): a card
+// layout, view } }, kept with the progress of the tutorial (tutorialOptions.cardStates): a card
 // already solved is shown solved when the tutorial is resumed or the student goes back to it.
 // In a lesson, the completed tasks are also kept in simState.lesson.done
 const taskStates = ref({})
@@ -1115,7 +1116,39 @@ watch(currentStep, () => { exploring.value = false; exploreHint.value = false })
 // final place when the simulator is ready, instead of moving
 const placing = ref(false)
 
+// ---- State of the simulator at the card, computed from the tutorial file (lessonState.js) ----
+// The parts hidden by a lesson are always those of the card (the reveal/hide of the cards before
+// it, in the file); resuming the tutorial or going back, also the processor, program, side panel,
+// program view, panel and timeline settings (only what differs is changed)
+let restoring = false
+async function applyCardState() {
+  const step = currentStep.value
+  const steps = currentTutorial.value?.steps
+  if (!step || !steps) return
+  const lesson = simState.lesson
+  let initial = lesson?.initialHidden
+  if (lesson && !initial) {
+    try { initial = JSON.parse(localStorage.getItem(`lesson.${lesson.id}`))?.hidden } catch { initial = null }
+  }
+  const state = cardState(steps, stepIndex.value, initial ?? [])
+  if (lesson && lesson.tutorial === currentTutorial.value.id)
+    lesson.hidden = state.hidden.filter(part => part in LESSON_PARTS)
+  if (!restoring) return
+  restoring = false
+  let stored = null
+  try { stored = JSON.parse(localStorage.getItem(`processor.${state.processor ?? simState.processorName}`)) } catch { stored = null }
+  const acts = restoreActions(state, simState, stored)
+  const view = taskStates.value[step.id]?.view
+  if (view === 'timelineComponent') acts.push(...timelineActions(state))
+  else if (view) emit('requestSwitchPanel', view)
+  if (acts.length) {
+    if (step.type !== 'question') placing.value = true
+    await runCardActions(acts)
+  }
+}
+
 const showCurrentStep = async () => {
+  await applyCardState()
   if (currentStep.value?.type === 'question') {
     placing.value = false
     restoreAnswer()
@@ -1481,14 +1514,6 @@ const goToStep = async (newIndex, { recordHistory = true } = {}) => {
   rememberLayout()
   if (recordHistory && currentStep.value)
     tutorialOptions.progressHistory.push(currentStep.value.id)
-  // the parts of the simulator hidden by a lesson follow the cards: going on, the card keeps
-  // those hidden when it was entered; going back, they are hidden again
-  const targetId = currentTutorial.value.steps[newIndex].id
-  if (simState.lesson) {
-    if (recordHistory) setTask(targetId, { hiddenBefore: [...(simState.lesson.hidden ?? [])] })
-    else if (taskStates.value[targetId]?.hiddenBefore) simState.lesson.hidden = [...taskStates.value[targetId].hiddenBefore]
-  }
-  if (!recordHistory && taskStates.value[targetId]?.view) emit('requestSwitchPanel', taskStates.value[targetId].view)
 
   isActive.value = false
   stepIndex.value = newIndex
@@ -1520,6 +1545,7 @@ const nextStep = async (targetId) => {
 }
 
 const previousStep = async () => {
+  restoring = true
   while (tutorialOptions.progressHistory.length) {
     const previousId = tutorialOptions.progressHistory.pop()
     const previousIndex = currentTutorial.value.steps.findIndex(step => step.id === previousId)
@@ -1641,6 +1667,7 @@ const stopTutorial  = () => endTutorial(true)
 
 const resumeTutorial = () => {
   if (!currentTutorial.value) return
+  restoring = true
   isActive.value         = true
   showTutorialMenu.value = false
   nextTick(showCurrentStep)
@@ -1729,9 +1756,16 @@ const loadCurrentTutorial = async (ID) => {
     tutorialOptions.progressHistory = []
   tutorialOptions.progressHistory = tutorialOptions.progressHistory
     .filter(stepId => fullTutorial.steps.some(step => step.id === stepId))
-  const savedIndex      = isResuming && tutorialOptions.progressStepId
+  let savedIndex        = isResuming && tutorialOptions.progressStepId
     ? fullTutorial.steps.findIndex(step => step.id === tutorialOptions.progressStepId)
     : -1
+  // a new version of the tutorial without that card: the closest card visited before that exists
+  if (isResuming && savedIndex < 0 && Array.isArray(tutorialOptions.progressHistory)) {
+    for (const id of [...tutorialOptions.progressHistory].reverse()) {
+      const i = fullTutorial.steps.findIndex(step => step.id === id)
+      if (i >= 0) { savedIndex = i; break }
+    }
+  }
   stepIndex.value       = isResuming
     ? (savedIndex >= 0 ? savedIndex : Math.min(tutorialOptions.progressStep, fullTutorial.steps.length - 1))
     : 0
