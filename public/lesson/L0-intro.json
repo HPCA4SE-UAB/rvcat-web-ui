@@ -13,10 +13,10 @@
       "latencies": { "INT": 1, "BRANCH": 1, "FLOAT": 2, "MEM": 4, "MEM.LOAD": 4, "MEM.STORE": 1,
                      "VINT": 1, "VFLOAT": 2, "VMEM": 4, "VMEM.LOAD": 4, "VMEM.STORE": 1 },
       "ports": {
-        "1": ["INT", "BRANCH"],
-        "2": ["MEM", "VMEM"],
-        "3": ["INT", "VINT"],
-        "4": ["FLOAT", "INT", "VFLOAT"]
+        "0": ["INT", "BRANCH"],
+        "1": ["MEM", "VMEM"],
+        "2": ["INT", "VINT"],
+        "3": ["FLOAT", "INT", "VFLOAT"]
       }
     }
   ],
@@ -385,7 +385,7 @@
       {
         "id": "bounds", "type": "step", "title": "9. Two bounds on performance",
         "selector": ".bounds-summary", "position": "bottom",
-        "description": "<b>Static Analysis</b> computes, without simulating, two lower bounds of the time per iteration:<br>&bull; <b>latency bound</b>: the longest cyclic chain of dependences (sum: <b>{{latencyBound}}</b> cycles);<br>&bull; <b>throughput bound</b>: the busiest resource (here port P2, with the 2 loads: <b>{{throughputBound}}</b>).<br><b>Minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration.",
+        "description": "<b>Static Analysis</b> computes, without simulating, two lower bounds of the time per iteration:<br>&bull; <b>latency bound</b>: the longest cyclic chain of dependences (sum: <b>{{latencyBound}}</b> cycles);<br>&bull; <b>throughput bound</b>: the busiest resource (here port P1, with the 2 loads: <b>{{throughputBound}}</b>).<br><b>Minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration.",
         "actions": ["revertProcessor", "selectProgram:Base", "reveal:analysis", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
         "showMe": ["clickChain:sum"],
         "next": ["bound-v2", "bounds-more"], "nextLabels": ["Continue", "In depth: the dependence graph"]
