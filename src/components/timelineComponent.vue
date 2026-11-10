@@ -311,13 +311,9 @@
     timeline.portUsageInstrByPort = recordedPortOwners
 
     for (const [rowIdx, [, , startCycle, port, states, , , flags]] of timeline.instructions.entries()) {
-      const eIndex = states.indexOf("E");
-      const lIndex = states.indexOf("L");
-      const sIndex = states.indexOf("S");
-
-      const Index = eIndex >= 0 ? eIndex : (lIndex >= 0 ? lIndex : sIndex);
+      const Index = states.indexOf("E");             // execution (loads and stores too)
       if (Index < 0 && flags?.wrong) continue      // wrong-path instruction squashed before executing
-      if (Index < 0) alert(t('Timeline problem: all instructions must traverse an E/L/S state'));
+      if (Index < 0) alert(t('Timeline problem: all instructions must traverse an E state'));
       const cycle = startCycle + Index;
 
       // Verificar que cycle esté dentro del rango
@@ -914,9 +910,11 @@
       const wrongPath = !!flags?.wrong
       const rowBg = wrongPath ? "#e4e4e4" : iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
       const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
-      const memoryOperation = states.includes('L')
-        ? 'Load from'
-        : states.includes('S') ? 'Store to' : null
+      // a memory access, from the type of the instruction (its execution is shown with E)
+      const instr = simState.simulatedProcess.instruction_list[instrIdx]
+      const memoryOperation = /MEM/.test(instr?.type ?? '')
+        ? (instr.oper === 'STORE' ? 'Store to' : instr.oper === 'LOAD' ? 'Load from' : null)
+        : null
 
       //  Draw line starting on (x,y)
       let   x = padX;
@@ -965,9 +963,7 @@
           ch  = states[i-startCycle];
           const previousState = states[i-startCycle-1]
           const first_exec_stage =
-            (ch === 'E' && previousState !== 'E') ||
-            (ch === 'L' && previousState !== 'L') ||
-            (ch === 'S' && previousState !== 'S')
+            ch === 'E' && previousState !== 'E'
           let critical = criticalCycles.includes(i - startCycle)
           if (critical && timelineOptions.critical) currColor = "red"
 
@@ -1190,7 +1186,7 @@
 
       if (simState.instrHighlightedIdx !== instrIdx)
         simState.instrHighlightedIdx = instrIdx
-      if (char !== 'E' && char !== 'L' && char !== 'S')
+      if (char !== 'E')
         simState.highlightedPort = -1
       else if (simState.highlightedPort !== port)
         simState.highlightedPort = port
@@ -1234,7 +1230,7 @@
     for (const r of rows) {
       const header = interactiveCells.find(c => c.rowIdx === r && c.colIdx === -1)
       if (header) producers.add(header.instrIdx)
-      const exec = interactiveCells.filter(c => c.rowIdx === r && c.colIdx >= 0 && ['E', 'L', 'S'].includes(c.char))
+      const exec = interactiveCells.filter(c => c.rowIdx === r && c.colIdx >= 0 && c.char === 'E')
       if (exec.length) marks.push(exec.reduce((a, b) => (b.colIdx > a.colIdx ? b : a)))
     }
     const list = simState.simulatedProcess?.instruction_list ?? []

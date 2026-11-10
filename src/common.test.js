@@ -81,7 +81,11 @@ describe('timeline state tooltips', () => {
     expect(charToProcessingState('@', null, null)).toBe('Wait for cache return: block data ready')
     expect(charToProcessingState('W', null, null, 'Load from')).toBe('Write result to ROB')
     expect(charToProcessingState('W', null, null, 'Store to')).toBe('Write result to cache')
-    expect(charToProcessingState('L', 2, 40)).toBe('Load addr 40 on P2')
+    expect(charToProcessingState('E', 2, 40, 'Load from')).toBe('Load addr 40 on P2')
+    expect(charToProcessingState('E', 1, 8, 'Store to')).toBe('Store addr 8 on P1')
+    expect(charToProcessingState('E', 3, null)).toBe('Issued to P3')
+    expect(charToProcessingState('E', null, null, 'Load from')).toBe('Load running')
+    expect(charToProcessingState('E', null, null)).toBe('Executing')
   })
 
   it('assigns a stable distinct color to each valid memory address', () => {

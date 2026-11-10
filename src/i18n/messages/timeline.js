@@ -1,9 +1,9 @@
 // Translations: timeline (generated from the review texts; English text = key)
 export default {
+  "Timeline problem: all instructions must traverse an E state": { es: "Problema del timeline: todas las instrucciones deben pasar por un estado E", ca: "Problema del timeline: totes les instruccions han de passar per un estat E" },
   "Waits for a free port": { es: "Espera un puerto libre", ca: "Espera un port lliure" },
   "Cannot generate timeline for invalid program: {errors}": { es: "No se puede generar el timeline de un programa no válido: {errors}", ca: "No es pot generar el timeline d'un programa no vàlid: {errors}" },
   "Cannot generate timeline: the active processor has no execution port for {list}.": { es: "No se puede generar el timeline: el procesador activo no tiene puerto de ejecución para {list}.", ca: "No es pot generar el timeline: el processador actiu no té port d'execució per a {list}." },
-  "Timeline problem: all instructions must traverse an E/L/S state": { es: "Problema en el timeline: todas las instrucciones deben pasar por un estado E/L/S", ca: "Problema al timeline: totes les instruccions han de passar per un estat E/L/S" },
   "Cache line {i}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer": { es: "Línea de cache {i}: C limpio, D modificado, r/w cargando; los bloques que se cargan también aparecen en un fill buffer", ca: "Línia de cache {i}: C net, D modificat, r/w carregant; els blocs que es carreguen també apareixen en un fill buffer" },
   "Fill buffer {i}: holds one distinct block fill; misses to the same block share the entry": { es: "Fill buffer {i}: contiene el llenado de un bloque; los fallos al mismo bloque comparten la entrada", ca: "Fill buffer {i}: conté l'emplenat d'un bloc; les fallades al mateix bloc comparteixen l'entrada" },
   "Write buffer {i}: holds an evicted dirty block until its MM write completes": { es: "Write buffer {i}: contiene un bloque modificado expulsado hasta que termina su escritura en MM", ca: "Write buffer {i}: conté un bloc modificat expulsat fins que acaba la seva escriptura a MM" },

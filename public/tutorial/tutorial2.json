@@ -331,7 +331,7 @@
       "title": "The timeline",
       "selector": "#canvas-container",
       "position": "left",
-      "description": "<b>Cycle by cycle: what each instruction is doing</b> (rows: instructions, columns: cycles).<br><b>D</b> dispatch · <b>L</b> load · <b>E</b> execute · <b>W</b> write result · <b>R</b> retire.<br>The <span style=\"color:#e53935\"><b>critical path</b></span> is in red: the first load (L L L L), then the E E of each addition.<br>Addition 3 waits (<b>.</b>) for addition 1, and addition 1 of the next iteration waits for addition 3.",
+      "description": "<b>Cycle by cycle: what each instruction is doing</b> (rows: instructions, columns: cycles).<br><b>D</b> dispatch · <b>E</b> execute (loads too) · <b>W</b> write result · <b>R</b> retire.<br>The <span style=\"color:#e53935\"><b>critical path</b></span> is in red: the first load (L L L L), then the E E of each addition.<br>Addition 3 waits (<b>.</b>) for addition 1, and addition 1 of the next iteration waits for addition 3.",
       "next": [
         "timeline-rob",
         "timeline-more"

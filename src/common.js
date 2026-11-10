@@ -428,19 +428,20 @@ export function getLogicalElementCount(instructionList, loopIterations) {
   return loopIterations * loopStride
 }
 
+// The execution of every instruction is E (loads and stores too): memoryOperation ('Load from',
+// 'Store to' or null, from the type of the instruction) tells a memory access
 export function charToProcessingState(ch, port, addr, memoryOperation = null) {
   if (port != null) {
-    if (ch === "L")
+    if (memoryOperation === 'Load from')
       return t('Load addr {1} on P{2}', { 1: addr, 2: port })
-    else if (ch === "S")
+    else if (memoryOperation === 'Store to')
       return t('Store addr {1} on P{2}', { 1: addr, 2: port })
     else
       return t('Issued to P{1}', { 1: port })
   }
   switch (ch) {
-    case "E": return t('Executing');
-    case "L": return t('Load running');
-    case "S": return t('Store running');
+    case "E": return memoryOperation === 'Load from' ? t('Load running')
+                   : memoryOperation === 'Store to' ? t('Store running') : t('Executing');
     case "R": return t('Retire (write register)');
     case "D": return t('Dispatch');
     case "-": return t('Wait for older instr. to retire');
