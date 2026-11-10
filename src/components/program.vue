@@ -496,6 +496,8 @@
   }
 
   function getCriticalPercentage(index) {
+    if (simState.lesson?.hidden?.includes('programCritical'))    // not explained yet by the lesson
+      return null
     if (props.activeView === 'timelineComponent') {
       if (!simState.timelineCriticalPathEnabled)
         return null

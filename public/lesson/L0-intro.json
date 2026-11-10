@@ -2,7 +2,7 @@
   "lesson": "L0-intro",
   "title": "Lesson 0: how a processor runs a loop",
   "description": "<p>A short guided tour of RVCAT with one example, the loop <b>VectSum</b>:<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 20 minutes; optional cards go deeper.</p>",
-  "version": 1,
+  "version": 2,
   "intro": true,
   "programs": ["Base", "V1", "V2"],
   "processors": [
@@ -22,7 +22,8 @@
   ],
   "start": { "program": "Base", "processor": "L0-CPU", "N": 1000 },
   "hidden": ["processor", "programColumns", "timeline", "timelineCritical", "timelineResources", "analysis",
-             "usage", "cacheStats", "simOptions", "storedResults", "criticalPattern", "programPorts", "timelineCycles"],
+             "usage", "cacheStats", "simOptions", "storedResults", "criticalPattern", "programPorts", "timelineCycles",
+             "programCritical"],
   "locks": {
     "programEditor": true, "tutorialEditor": true, "loopTransforms": true, "upload": true, "remove": true,
     "processor": "all",
@@ -446,9 +447,21 @@
         "description": "<p>The <b>Critical</b> button marks in red the <b><span style=\"color:#c62828\">critical execution path</span></b>, a detailed explanation of the execution time: it provides a diagnosis that may help to devise ideas to improve performance. The critical path is the chain of events, going back from the last instruction retired in the visible cycles, that links the reasons for an instruction to wait: a data dependence, a port conflict, a full ROB, a dispatch or retire width limit…</p><p>In this example, most of the cycles of the critical path come from the chain of additions to sum: sum → sum → sum…, two additions of 2 cycles per iteration: <b>2 + 2 = 4 cycles</b>. Every other instruction executes <b>for free</b>, overlapped with this chain.</p><p><b>Experiment:</b> change the number of <b>Cycles</b> of the timeline (e.g. 10, 20, 60) and watch how the critical path changes. A critical path of only the first few iterations can show causes (e.g. the first loads) that do not represent the performance of the loop with many iterations: look at the path once it repeats.</p>",
         "actions": ["sidePanel:hide", "reveal:timelineCritical,timelineCycles", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=40", "timeline:width=0.67"],
         "explore": true,
-        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, a question on the critical path of V1.</p>",
+        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, where the time goes in the whole simulation.</p>",
         "exploreActions": ["timeline:width=0.97"],
         "exploreEndActions": ["timeline:width=0.67"],
+        "next": ["crit-share"]
+      },
+      {
+        "id": "crit-share",
+        "type": "question",
+        "title": "Where does the time go?",
+        "position": "right",
+        "wWidth": 460,
+        "questionText": "<p>The Simulation panel also computes the critical path of the <b>whole simulation</b> (1,000 iterations), and the Program table now shows, for each instruction, the <b><span style=\"color:#c62828\">percentage of the critical-path cycles</span></b> attributed to it; the color of its row goes from blue (0%, executed for free), through yellow (50%), to red (100%).</p><p>(With the <b>Critical</b> button of the timeline, the percentages refer only to the visible cycles.)</p><p><b>Question:</b> in Base, which instructions should be faster to reduce the time per iteration?</p>",
+        "answerMode": "single",
+        "answers": [{"text": "The two float additions (sum = sum + tmp)", "isCorrect": true, "explanation": "Yes: they take 50% of the critical path each, and together all of it: the chain sum → sum → sum… sets the time. The loads and the loop control execute for free, overlapped with it."}, {"text": "The two loads, which have the longest latency (4 cycles)", "isCorrect": false, "explanation": "No: their percentage is 0%. They do not depend on the previous iteration, so they execute in advance, overlapped with the chain of additions."}, {"text": "All the instructions equally", "isCorrect": false, "explanation": "No: look at the percentages. Only the instructions on the critical path set the time; making the others faster changes nothing."}, {"text": "The loop control (i = i + 1, compare, branch)", "isCorrect": false, "explanation": "No: their percentage is 0%; they execute for free, overlapped with the chain of additions."}],
+        "actions": ["reveal:programCritical", "sidePanel:show", "selectProgram:Base", "switchTo:simulationComponent", "runSimulation"],
         "next": ["why-v1"]
       },
       {

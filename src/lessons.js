@@ -48,6 +48,7 @@ export const LESSON_PARTS = {
   criticalPattern:   'repeated critical-path pattern of the Simulation panel',
   programPorts:      'column of execution ports of the Program panel',
   timelineCycles:    'number of cycles of the Timeline (fixed) and its Fit button',
+  programCritical:   'percentage of critical-path time and colors of the rows of the Program panel',
 }
 
 const ID_RE = /^[A-Za-z0-9-]{1,40}$/
