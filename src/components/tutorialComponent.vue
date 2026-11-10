@@ -638,8 +638,8 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, 
 // The visible content of the simulator (text, tables, diagrams, controls) is collected as
 // obstacles, with a small gap around them; the card goes to the position that covers the least
 // content and, among those, the closest to the preferred side of the target (bottom, top,
-// right, left; inside-bottom and inside-top place it within the target, e.g. a panel used as
-// an anchor). The highlighted target keeps a wider gap.
+// right, left; inside-bottom, inside-top, inside-left and inside-top-left place it within the
+// target, e.g. a panel used as an anchor). The highlighted target keeps a wider gap.
 const CONTENT_TAGS = new Set(['TABLE', 'svg', 'IMG', 'BUTTON', 'SELECT', 'INPUT', 'TEXTAREA', 'PRE', 'H1', 'H2', 'H3', 'H4', 'LABEL'])
 const CONTENT_GAP = 10
 const TARGET_GAP  = 18
@@ -685,7 +685,8 @@ function placeInEmptyZone(refRect, width, height, preferred, avoidRect, obstacle
   const margin = VIEWPORT_MARGIN
   const cx = refRect.left + refRect.width / 2, cy = refRect.top + refRect.height / 2
   const side = (preferred || 'bottom').replace('inside-', '')
-  const point = { bottom: [cx, refRect.bottom], top: [cx, refRect.top], right: [refRect.right, cy], left: [refRect.left, cy] }[side] ?? [cx, refRect.bottom]
+  const point = { bottom: [cx, refRect.bottom], top: [cx, refRect.top], right: [refRect.right, cy], left: [refRect.left, cy],
+                  'top-left': [refRect.left, refRect.top] }[side] ?? [cx, refRect.bottom]
   let xMin = margin, yMin = HEADER_HEIGHT
   let xMax = window.innerWidth - width - margin, yMax = window.innerHeight - height - margin
   if ((preferred || '').startsWith('inside-')) {       // within the anchor, when the card fits in it

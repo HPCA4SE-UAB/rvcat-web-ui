@@ -148,7 +148,7 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 ## Other fields of the cards
 
 - `anchor`: selector used only to place the card (e.g. `#right-panel`); the card goes to an empty zone near it.
-- `position`: `bottom`, `top`, `left`, `right`, or `inside-bottom`, `inside-top`, `inside-left`, `inside-right` (within the anchor).
+- `position`: `bottom`, `top`, `left`, `right`, or `inside-bottom`, `inside-top`, `inside-left`, `inside-right`, `inside-top-left` (within the anchor; `inside-top-left` near its top-left corner).
   In a question, `"position": "right"` shows it as a panel at the right that does not cover the simulator.
 - `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
 - `doneDescription`: second part of the text, shown when the validation of the card is met.
