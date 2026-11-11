@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { migrateTutorialFlow, addNewDistributionFiles } from './common'
+import { migrateTutorialFlow, addNewDistributionFiles, removeDroppedDistributionFiles } from './common'
 
 describe('migrateTutorialFlow: button labels', () => {
   it('keeps each label with its successor when empty successors are removed', () => {
@@ -51,5 +51,19 @@ describe('addNewDistributionFiles', () => {
     const added = await addNewDistributionFiles('tutorial', ['tutorial2'], [])
     expect(added).toEqual([])
     expect(localStorage.getItem('tutorial.tutorial2')).toBeNull()
+  })
+
+  it('removes the unmodified copies of files dropped from the distribution, and keeps the others', () => {
+    localStorage.setItem('program.f0', 'A');   localStorage.setItem('distribution.program.f0', 'A')   // unmodified
+    localStorage.setItem('program.f1', 'B2');  localStorage.setItem('distribution.program.f1', 'B')   // modified by the user
+    localStorage.setItem('program.mine', 'C')                                                       // the user's own
+    localStorage.setItem('program.Base', 'D'); localStorage.setItem('distribution.program.Base', 'D') // still distributed
+    const removed = removeDroppedDistributionFiles('program', ['Base'], ['Base', 'f0', 'f1', 'mine'])
+    expect(removed).toEqual(['f0'])
+    expect(localStorage.getItem('program.f0')).toBeNull()
+    expect(localStorage.getItem('program.f1')).toBe('B2')
+    expect(localStorage.getItem('distribution.program.f1')).toBeNull()      // now a file of the user
+    expect(localStorage.getItem('program.mine')).toBe('C')
+    expect(localStorage.getItem('program.Base')).toBe('D')
   })
 })

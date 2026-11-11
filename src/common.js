@@ -834,7 +834,9 @@ export async function addNewDistributionFiles(storagePrefix, distributionFiles, 
     try {
       const response = await fetch(`./${storagePrefix}/${fileName}.json`)
       if (!response.ok) continue
-      localStorage.setItem(`${storagePrefix}.${fileName}`, JSON.stringify(await response.json()))
+      const data = JSON.stringify(await response.json())
+      localStorage.setItem(`${storagePrefix}.${fileName}`, data)
+      localStorage.setItem(`distribution.${storagePrefix}.${fileName}`, data)   // a distribution copy
       added.push(fileName)
     } catch (error) {
       console.warn(`⚠️ Could not load distribution file ${fileName}:`, error)
@@ -876,6 +878,24 @@ async function refreshDistributionFiles(prefix, files, keys) {
   return updated
 }
 
+// The files that a previous distribution stored in the browser and that the current one does not
+// have any more are removed, unless the user modified them (their record of the distribution,
+// distribution.<prefix>.<name>, is the same as the stored file). Returns their names.
+export function removeDroppedDistributionFiles(prefix, files, keys) {
+  const removed = []
+  for (const name of keys.filter(n => !files.includes(n))) {
+    const recKey = `distribution.${prefix}.${name}`
+    const record = localStorage.getItem(recKey)
+    if (record === null) continue                   // not from the distribution (or unknown): kept
+    if (localStorage.getItem(`${prefix}.${name}`) === record) {
+      localStorage.removeItem(`${prefix}.${name}`)
+      removed.push(name)
+    }
+    localStorage.removeItem(recKey)                 // modified copies stay as the user's own files
+  }
+  return removed
+}
+
 export async function initResource (resourceType, optionsObj, currentKey, availableKey) {
   const config = resourceConfig[resourceType];
   if (!config) {
@@ -889,6 +909,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
   try {
     let keys = getResourceKeys(`${storagePrefix}.`);
     let distributionFiles = null;
+    let defaultName = null;          // the one selected at first ("defaults" of index.json)
     if (keys.length === 0 || resourceType === 'processor' || resourceType === 'program' ||
         resourceType === 'tutorial') {
       try {
@@ -898,6 +919,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
         }
         const data = await response.json();
         distributionFiles = data[storagePrefix];
+        defaultName = data.defaults?.[storagePrefix] ?? null;
       } catch (error) {
         if (keys.length === 0) throw error;
         console.warn(`${logPrefix}⚠️ Failed to load index.json; keeping local ${resourceType} order:`, error);
@@ -924,6 +946,11 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
     } else {
       console.log(`${logPrefix}✅ Loaded ${keys.length} ${resourceType}s from localStorage`);
       if (Array.isArray(distributionFiles)) {
+        const removed = removeDroppedDistributionFiles(storagePrefix, distributionFiles, keys)
+        if (removed.length) {
+          keys = getResourceKeys(`${storagePrefix}.`);
+          console.log(`${logPrefix}🧹 Removed, no longer in the distribution:`, removed)
+        }
         const updated = await refreshDistributionFiles(storagePrefix, distributionFiles, keys)
         if (updated.length) console.log(`${logPrefix}🔄 Updated from the distribution:`, updated)
       }
@@ -948,7 +975,7 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
 
     optionsObj[availableKey] = keys;
     if (currentKey && !keys.includes(optionsObj[currentKey])) {
-      optionsObj[currentKey] = keys[0] ?? '';
+      optionsObj[currentKey] = keys.includes(defaultName) ? defaultName : (keys[0] ?? '');
     }
   } catch (error) {
     console.error(`${logPrefix}❌ Failed to load ${resourceType}s:`, error);

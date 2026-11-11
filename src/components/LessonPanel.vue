@@ -8,7 +8,7 @@
   import { createActionRunner }                         from '@/tutorialActions'
   import { clearSnapshot }                              from '@/tutorialActions'
   import { processorDraftFrom, processorSignature }     from '@/editDrafts'
-  import { downloadJSON }                               from '@/common'
+  import { downloadJSON, RVCAT_VERSION }                from '@/common'
 
   const simState = inject('simulationState')
   const props = defineProps({ activeView: { type: String, default: 'simulationComponent' } })
@@ -183,7 +183,7 @@
 // ---- Lessons of the distribution (public/lesson, listed in index.json "lesson") ----
 // They are always in the menu; the introductory one ("intro": true) is offered the first time
 // the simulator is used, and after every new version (the local storage is cleared then)
-  const INTRO_KEY = 'introLessonOffered'
+  const INTRO_KEY = 'introLessonOffered'      // the version in which it was offered: offered again in a new one
   const introOffer = ref(null)          // { id, title, description }
   // A new version of the lesson in progress: its tutorial is updated (the student goes on at the
   // same card if it still exists; the state of the simulator is computed from the new file)
@@ -209,7 +209,7 @@
         if (simState.lesson?.id === lesson.lesson) refreshLessonTutorial(lesson)
         const entry = { id: lesson.lesson, title: lesson.title, description: lesson.description ?? '' }
         lessons.value = [...lessons.value.filter(l => l.id !== lesson.lesson), entry]
-        if (lesson.intro && !localStorage.getItem(INTRO_KEY) && !simState.lesson) introOffer.value = entry
+        if (lesson.intro && localStorage.getItem(INTRO_KEY) !== RVCAT_VERSION && !simState.lesson) introOffer.value = entry
       } catch (e) { console.warn('📘⚠️ Cannot load lesson', name, e) }
     }
     write(INDEX_KEY, lessons.value)
@@ -217,7 +217,7 @@
   // offered when the simulator is ready (program and processor loaded)
   const showIntro = computed(() => !!introOffer.value && simState.state >= 3 && !simState.lesson)
   function answerIntro(start) {
-    localStorage.setItem(INTRO_KEY, 'yes')
+    localStorage.setItem(INTRO_KEY, RVCAT_VERSION)
     const offer = introOffer.value
     introOffer.value = null
     if (start && offer) askStart(offer.id)

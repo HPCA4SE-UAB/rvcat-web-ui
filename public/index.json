@@ -1,36 +1,20 @@
 {
   "processor": [
-    "B4",
-    "B2",
     "B1",
-    "GC"
+    "B2",
+    "B4"
   ],
   "program": [
     "Base",
-    "BaseSIMD",
-    "example",
     "V1",
-    "V2",
-    "f2",
-    "f2-SIMD",
-    "f3",
-    "f3-SIMD",
-    "f4",
-    "f0",
-    "f0-SIMD",
-    "f0-AVX",
-    "f2-AVX",
-    "f3-AVX",
-    "f4-AVX",
-    "f1",
-    "f1B",
-    "f1-AVX"
+    "V2"
   ],
-  "tutorial": [
-    "navigation-tour",
-    "tutorial2"
-  ],
+  "tutorial": [],
   "lesson": [
     "L0-intro"
-  ]
+  ],
+  "defaults": {
+    "processor": "B4",
+    "program": "Base"
+  }
 }
