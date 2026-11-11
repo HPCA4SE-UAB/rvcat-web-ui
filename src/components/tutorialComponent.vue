@@ -1019,10 +1019,10 @@ function checkTaskAfterSimulation() {
   }
 }
 
-// While a goal card is shown, the lesson allows what the goal lists (e.g. "processor.rob")
+// While a card is shown, the lesson allows what the card lists (e.g. "processor.rob")
 watch(() => [isActive.value, currentStep.value], () => {
   const step = currentStep.value
-  simState.lessonAllow = isActive.value && step?.type === 'goal' ? [...(step.allow ?? [])] : []
+  simState.lessonAllow = isActive.value && step ? [...(step.allow ?? [])] : []
   predictionInput.value = step ? String(taskStates.value[step.id]?.prediction ?? '') : ''
 })
 

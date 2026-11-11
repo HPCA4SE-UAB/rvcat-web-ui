@@ -110,6 +110,8 @@ Done after that simulation (any prediction). With `tolerance`, the card says whe
 Done when it is true once; with `best`, the best value obtained is recorded (`bestMode`: `min` or `max`).
 `allow` lifts locks while the card is shown: `processor.rob`, `processor` (all its fields), `N`,
 `programEditor`, `simulation.sched`... `program` requires that the simulated program is that one.
+Any other card (a step or a question) can also have `allow`, e.g. a question that lets the student
+change a latency to check the answer.
 
 ```json
 { "id": "g1", "type": "goal", "title": "...", "selector": "#process-panel .processor-container", "position": "right",

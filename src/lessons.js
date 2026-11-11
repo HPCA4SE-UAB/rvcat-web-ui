@@ -39,7 +39,7 @@ export const LESSON_PARTS = {
   programColumns:    'columns of type and latency of the Program panel',
   timeline:          'Timeline panel',
   timelineCritical:  'Critical button of the Timeline',
-  timelineResources: 'Ports and Cache buttons of the Timeline',
+  timelineResources: 'Ports button of the Timeline (and Cache, unless timelineCache is hidden)',
   analysis:          'Static Analysis panel',
   usage:             'diagram of resource usage of the Simulation panel',
   cacheStats:        'cache misses and MM transfers of the Simulation panel',
@@ -48,6 +48,8 @@ export const LESSON_PARTS = {
   criticalPattern:   'repeated critical-path pattern of the Simulation panel',
   programPorts:      'column of execution ports of the Program panel',
   timelineCycles:    'number of cycles of the Timeline (fixed) and its Fit button',
+  simulation:        'Simulation panel (its button)',
+  timelineCache:     'Cache button of the Timeline',
   programCritical:   'percentage of critical-path time and colors of the rows of the Program panel',
 }
 

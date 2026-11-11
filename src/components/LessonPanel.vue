@@ -403,6 +403,8 @@
   .lesson-hide-timelineCycles #timeline-cycles { pointer-events: none; background: #eee; color: #555; }
   /* Parts of the simulator hidden by the lesson in progress (lesson "hidden", actions reveal/hide) */
   .lesson-hide-timeline #timeline-button,
+  .lesson-hide-simulation #simulation-button,
+  .lesson-hide-timelineCache #timeline-cache,
   .lesson-hide-analysis #analysis-button,
   .lesson-hide-processor .processor-part,
   .lesson-hide-programColumns .type-col,
