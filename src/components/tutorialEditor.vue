@@ -834,6 +834,9 @@ const convertStepTexts = (step) => {
       for (const key of ['numericUnit', 'numericCorrect', 'numericWrong'])
         if (step[key]) q[key] = step[key]
     }
+    // fields edited only in the JSON file (several numbers, a prediction, placement, allowed changes)
+    for (const key of ['numericFields', 'predictOnly', 'savedText', 'position', 'wWidth', 'allow'])
+      if (step[key] !== undefined) q[key] = step[key]
     return q
   }
 

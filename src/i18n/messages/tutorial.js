@@ -31,6 +31,8 @@ export default {
   "Question {n}": { es: "Pregunta {n}", ca: "Pregunta {n}" },
   "Select ONE correct answer": { es: "Elige UNA respuesta correcta", ca: "Tria UNA resposta correcta" },
   "Write a number": { es: "Escribe un número", ca: "Escriu un nombre" },
+  "Write the numbers": { es: "Escribe los números", ca: "Escriu els nombres" },
+  "Change": { es: "Cambiar", ca: "Canviar" },
   "Select ALL correct answers": { es: "Elige TODAS las respuestas correctas", ca: "Tria TOTES les respostes correctes" },
   "your answer": { es: "tu respuesta", ca: "la teva resposta" },
   "✓ Correct!": { es: "✓ ¡Correcto!", ca: "✓ Correcte!" },

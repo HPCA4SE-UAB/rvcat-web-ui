@@ -96,6 +96,19 @@ The cards can use everything of the tutorials: `actions` (run when the card is s
   "numericUnit": "cycles/iter", "numericCorrect": "...", "numericWrong": "...", "next": ["..."] }
 ```
 
+Several numbers in one question: `"answerMode": "numbers"` with `numericFields`, one input each, checked
+one by one (each field has its own `correct` / `wrong` text). With `"predictOnly": true` the numbers are
+only saved, as a prediction (no answer is right or wrong): `savedText` is shown, and a **Change** button lets
+the student correct them later. The texts of any card can show the K-th number answered in a question with
+`{{answer.ID.K}}` (e.g. the predictions, next to the right answers).
+
+```json
+{ "id": "q-fast", "type": "question", "title": "...", "questionText": "...", "answerMode": "numbers", "answers": [],
+  "numericFields": [{ "label": "Base", "value": 2, "tolerance": 0.3, "unit": "cycles/iter", "correct": "...", "wrong": "..." },
+                    { "label": "V1",   "value": 2, "tolerance": 0.3, "unit": "cycles/iter" }],
+  "predictOnly": true, "savedText": "Prediction saved...", "next": ["..."] }
+```
+
 **Predict**: the student writes a number before simulating; the next simulation gives the real value.
 Done after that simulation (any prediction). With `tolerance`, the card says whether the prediction was good.
 

@@ -135,6 +135,7 @@
           <div class="question-mode-info">
             <span v-if="currentStep?.answerMode === 'single'">{{ t('Select ONE correct answer') }}</span>
             <span v-else-if="isNumericQuestion">{{ t('Write a number') }}</span>
+            <span v-else-if="isMultiNumeric">{{ t('Write the numbers') }}</span>
             <span v-else>{{ t('Select ALL correct answers') }}</span>
           </div>
 
@@ -147,6 +148,25 @@
                  :class="['answer-feedback', isQuestionCorrect ? 'feedback-correct' : 'feedback-wrong']"
                  v-html="rt(isQuestionCorrect ? currentStep.numericCorrect : currentStep.numericWrong)">
             </div>
+          </div>
+
+          <!-- several numbers (answerMode "numbers"): one input per field, each one checked -->
+          <div v-else-if="isMultiNumeric" class="numeric-answer numeric-fields">
+            <div v-for="(field, k) in currentStep.numericFields" :key="k" class="numeric-field">
+              <div class="numeric-field-row">
+                <label :for="`tutorial-numeric-answer-${k}`" class="numeric-label" v-html="rt(field.label)"></label>
+                <input v-model="numericAnswers[k]" type="text" inputmode="decimal" :id="`tutorial-numeric-answer-${k}`"
+                       :disabled="questionAnswered" @keyup.enter="submitAnswer" :placeholder="t('your answer')" />
+                <span v-if="field.unit" class="numeric-unit">{{ field.unit }}</span>
+                <span v-if="questionAnswered && !currentStep.predictOnly" class="answer-indicator"
+                      :class="fieldCorrect(k) ? 'correct' : 'wrong'">{{ fieldCorrect(k) ? '✓' : '✗' }}</span>
+              </div>
+              <div v-if="questionAnswered && !currentStep.predictOnly && (fieldCorrect(k) ? field.correct : field.wrong)"
+                   :class="['answer-feedback', fieldCorrect(k) ? 'feedback-correct' : 'feedback-wrong']"
+                   v-html="rt(fieldCorrect(k) ? field.correct : field.wrong)"></div>
+            </div>
+            <div v-if="questionAnswered && currentStep.predictOnly && currentStep.savedText"
+                 class="answer-feedback feedback-saved" v-html="rt(currentStep.savedText)"></div>
           </div>
 
           <div v-else class="answers-list">
@@ -177,7 +197,7 @@
           </div>
 
           <!-- Summary message section -->
-          <div v-if="questionAnswered" class="feedback-section">
+          <div v-if="questionAnswered && !currentStep?.predictOnly" class="feedback-section">
             <div v-if="isQuestionCorrect" class="feedback-box feedback-correct">
               <h4>{{ t('✓ Correct!') }}</h4>
             </div>
@@ -192,6 +212,13 @@
                :title="t('Go to previous step on the tutorial')"
                class="tutorial-btn">
             {{ t('Previous') }}
+          </button>
+
+          <!-- a prediction (predictOnly) can be changed after saving it -->
+          <button v-if="questionAnswered && isQuestionCorrect && currentStep?.predictOnly"
+                  @click="retryQuestion" id="tutorial-change-answer"
+                  class="tutorial-btn tutorial-btn-retry">
+            {{ t('Change') }}
           </button>
 
           <button v-if="!questionAnswered"
@@ -538,19 +565,46 @@ const isBranchingTutorial = computed(() =>
 
 // Text of the cards with the live values of the simulator ({{name}})
 // Texts of the tutorials can be given in several languages: { en, es, ca } (localized)
-const rt = (text) => renderTutorialText(localized(text), simState)
+// {{answer.ID.K}}: the K-th number answered by the student in the question ID (e.g. a prediction)
+const answerValues = (text) => typeof text !== 'string' ? text : text.replace(/\{\{answer\.([\w-]+)\.(\d+)\}\}/g, (_, id, k) => {
+  const v = taskStates.value[id]?.answer
+  return Array.isArray(v) && v[k] !== undefined && v[k] !== null ? String(v[k]) : '…'
+})
+const rt = (text) => renderTutorialText(answerValues(localized(text)), simState)
 
 // Numeric questions (answerMode "number"): numericValue (a number or a live value such as
 // "{{minTime}}"), tolerance (absolute, 0.01 by default), numericCorrect / numericWrong texts
 const numericAnswer     = ref('')
 const submittedNumeric  = ref('')        // the answer submitted (what is checked, not the input)
 const isNumericQuestion = computed(() => currentStep.value?.type === 'question' && currentStep.value.answerMode === 'number')
-const canSubmit = computed(() => isNumericQuestion.value
+// Several numbers (answerMode "numbers"): numericFields [{ label, value, tolerance, unit, correct, wrong }];
+// with predictOnly the numbers are only saved (a prediction): no answer is right or wrong
+const numericAnswers    = ref([])
+const submittedNumerics = ref([])
+const isMultiNumeric = computed(() => currentStep.value?.type === 'question' && currentStep.value.answerMode === 'numbers')
+const toNumber = (s) => Number(String(s ?? '').trim().replace(',', '.'))
+const validNumber = (s) => String(s ?? '').trim() !== '' && Number.isFinite(toNumber(s))
+function fieldCorrect(k) {
+  const field = currentStep.value?.numericFields?.[k]
+  if (!field) return false
+  const target = tutorialNumber(field.value, simState)
+  const given  = toNumber((questionAnswered.value ? submittedNumerics.value : numericAnswers.value)[k])
+  return target !== null && Number.isFinite(given) && Math.abs(given - target) <= Number(field.tolerance ?? 0.01) + 1e-9
+}
+const canSubmit = computed(() => isMultiNumeric.value
+  ? (currentStep.value.numericFields ?? []).every((_, k) => validNumber(numericAnswers.value[k]))
+  : isNumericQuestion.value
   ? numericAnswer.value.trim() !== '' && Number.isFinite(Number(numericAnswer.value.replace(',', '.')))
   : selectedAnswers.value.length > 0)
 
 const isQuestionCorrect = computed(() => {
   if (!currentStep.value || currentStep.value.type !== 'question') return false
+  if (isMultiNumeric.value) {
+    const fields = currentStep.value.numericFields ?? []
+    const given  = questionAnswered.value ? submittedNumerics.value : numericAnswers.value
+    if (currentStep.value.predictOnly) return fields.every((_, k) => validNumber(given[k]))
+    return fields.every((_, k) => fieldCorrect(k))
+  }
   if (isNumericQuestion.value) {
     const target = tutorialNumber(currentStep.value.numericValue, simState)
     const given  = Number((questionAnswered.value ? submittedNumeric.value : numericAnswer.value).replace(',', '.'))
@@ -1082,7 +1136,11 @@ const clearHighlights = () => {
 function restoreAnswer() {
   const answer = taskState.value.answer
   if (answer === undefined || !taskState.value.solved) return
-  if (Array.isArray(answer)) selectedAnswers.value = [...answer]
+  if (isMultiNumeric.value) {
+    numericAnswers.value = (Array.isArray(answer) ? answer : []).map(String)
+    submittedNumerics.value = [...numericAnswers.value]
+  }
+  else if (Array.isArray(answer)) selectedAnswers.value = [...answer]
   else { numericAnswer.value = String(answer); submittedNumeric.value = String(answer) }
   questionAnswered.value = true
 }
@@ -1434,6 +1492,16 @@ const selectAnswer = (index) => {
 
 const submitAnswer = () => {
   if (!canSubmit.value) return
+  if (isMultiNumeric.value) {
+    submittedNumerics.value = [...numericAnswers.value]
+    questionAnswered.value = true
+    const values = numericAnswers.value.map(toNumber)
+    if (isQuestionCorrect.value) {
+      setTask(currentStep.value.id, { solved: true, answer: values })
+      markTask(currentStep.value.id, { answer: values })
+    }
+    return
+  }
   submittedNumeric.value = numericAnswer.value
   questionAnswered.value = true
   if (isQuestionCorrect.value) setTask(currentStep.value.id, { solved: true, answer: isNumericQuestion.value
@@ -1447,10 +1515,16 @@ const resetQuestionState = () => {
   selectedAnswers.value  = []
   numericAnswer.value    = ''
   submittedNumeric.value = ''
+  numericAnswers.value   = []
+  submittedNumerics.value = []
   questionAnswered.value = false
 }
 
-const retryQuestion = () => resetQuestionState()
+// Try again (or change a prediction): the numbers written are kept, to be corrected
+const retryQuestion = () => {
+  if (isMultiNumeric.value) { questionAnswered.value = false; return }
+  resetQuestionState()
+}
 
 const getAnswerClass = (index) => {
   const classes = ['answer-option']
@@ -1475,7 +1549,7 @@ const getErrorMessage = () => {
   const selectedCorrect = selectedAnswers.value.filter(i => correctIndices.includes(i))
   const selectedWrong   = selectedAnswers.value.filter(i => !correctIndices.includes(i))
 
-  if (isNumericQuestion.value)                         return t('Not quite. Try again!')
+  if (isNumericQuestion.value || isMultiNumeric.value) return t('Not quite. Try again!')
   if (currentStep.value.answerMode === 'single')       return t('Incorrect answer. Try again!')
   if (selectedWrong.length && !selectedCorrect.length) return t('Wrong answer selected. Try again!')
   if (selectedWrong.length)                            return t('You selected some correct answers, but also wrong ones. Try again!')
@@ -2884,5 +2958,14 @@ onUnmounted(() => {
   }
   .numeric-unit { margin-left: 0.5em; color: #555; }
   .numeric-answer .answer-feedback { margin-top: 0.6em; }
+  .numeric-field { margin-bottom: 0.6em; }
+  .numeric-field-row { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+  .numeric-label { min-width: 7em; font-weight: 600; color: #333; }
+  .numeric-field-row .numeric-unit { margin-left: 0; }
+  .numeric-field-row input { width: 6em; }
+  .numeric-field-row .answer-indicator { position: static; font-weight: bold; }
+  .numeric-field-row .answer-indicator.correct { color: #2e7d32; }
+  .numeric-field-row .answer-indicator.wrong { color: #c62828; }
+  .feedback-saved { background: #eef3fb; border-left: 3px solid #3b6fb6; color: #333; }
 
 </style>
