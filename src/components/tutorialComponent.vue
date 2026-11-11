@@ -45,6 +45,9 @@
                 taskState.result.good === null ? '' : taskState.result.good ? ' · ' + t('good prediction') : ' · ' + t('far from the result') }}
             </div>
             <div v-if="taskState.result && predictComment" class="task-comment" v-html="predictComment"></div>
+            <!-- explanation of the result, whatever the prediction was -->
+            <div v-if="taskState.result && currentStep.resultDescription" class="step-description step-result-description"
+                 v-html="rt(currentStep.resultDescription)"></div>
           </div>
 
           <!-- Goal: a condition on the results, checked after every simulation -->
@@ -1968,6 +1971,7 @@ onUnmounted(() => {
   #tutorial-predict { margin-bottom: 0.8em; }
   #tutorial-predict .task-status { margin-top: 0.5em; }
   #tutorial-predict .task-comment { margin-top: 0.4em; color: #555; }
+  #tutorial-predict .step-result-description { margin-top: 0.5em; }
   .task-status.task-ok  { color: #2e7d32; }
   .task-status.task-far { color: #c62828; }
 
