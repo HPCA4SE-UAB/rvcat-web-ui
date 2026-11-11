@@ -143,7 +143,7 @@
   }
 
   const displayText = computed(() => {
-    return `Simulate Execution of ${simState.simulatedProcess.name} on ${simState.processorName}`
+    return t('Simulate Execution of {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName })
   })
 
 /* ------------------------------------------------------------------

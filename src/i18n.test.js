@@ -20,7 +20,6 @@ describe('translations', () => {
   })
   it('have Spanish and Catalan for every key, with the same parameters', () => {
     for (const [key, entry] of Object.entries(MESSAGES)) {
-      if (key.startsWith('help.') && !entry.es && !entry.ca) continue   // pending (todo below): shown in English
       const en = entry.en ?? key
       const params = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join()
       for (const lang of ['es', 'ca']) {
@@ -30,7 +29,6 @@ describe('translations', () => {
       }
     }
   })
-  it.todo('Spanish and Catalan texts of the help windows (help.*): shown in English meanwhile')
 })
 
 describe('multilingual contents', () => {

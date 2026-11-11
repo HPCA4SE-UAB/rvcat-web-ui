@@ -36,6 +36,7 @@ export default {
   "AutoRun:": { es: "AutoRun:", ca: "AutoRun:" },
   "Set to run the simulation every time the processor/program/#iterations is modified": { es: "Activar para simular cada vez que cambien el procesador, el programa o el número de iteraciones", ca: "Activa per simular cada vegada que canviïn el processador, el programa o el nombre d'iteracions" },
   "Iterations:": { es: "Iteraciones:", ca: "Iteracions:" },
+  "Simulate Execution of {program} on {processor}": { es: "Simulación de {program} en {processor}", ca: "Simulació de {program} a {processor}" },
   "Total loop iterations": { es: "Iteraciones totales del bucle", ca: "Iteracions totals del bucle" },
   "Instructions:": { es: "Instrucciones:", ca: "Instruccions:" },
   "Total executed instructions": { es: "Instrucciones ejecutadas en total", ca: "Instruccions executades en total" },

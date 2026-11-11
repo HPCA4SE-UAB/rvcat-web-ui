@@ -447,7 +447,9 @@
 
   function drawTimeline(newCycles, oldCycles) {
 
-    const wrapper = timelineCanvas.value.parentElement
+    // a drawing requested just before the panel was closed: there is nothing to draw on
+    const wrapper = timelineCanvas.value?.parentElement
+    if (!wrapper) return
     const viewportWidth = wrapper.clientWidth
     const viewportHeight = wrapper.clientHeight
 

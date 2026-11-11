@@ -540,7 +540,7 @@ export function migrateTutorialFlow(tutorial) {
       const keep = step.next.map(targetId => targetId != null && targetId !== '')
       step.next = step.next.filter((_, i) => keep[i])
       if (Array.isArray(step.nextLabels))
-        step.nextLabels = step.nextLabels.filter((_, i) => keep[i]).map(l => String(l ?? ''))
+        step.nextLabels = step.nextLabels.filter((_, i) => keep[i]).map(l => (l && typeof l === 'object' ? l : String(l ?? '')))   // a label can be { en, es, ca }
       const seenTargets = new Set()
       step.next.forEach(targetId => {
         if (targetId === 'end') {

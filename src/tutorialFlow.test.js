@@ -13,6 +13,13 @@ describe('migrateTutorialFlow: button labels', () => {
     expect(t.steps[0].next).toEqual(['b'])
     expect(t.steps[0].nextLabels).toEqual(['More detail'])
   })
+  it('keeps the labels written in several languages', () => {
+    const t = migrateTutorialFlow({
+      flowVersion: 2,
+      steps: [{ id: 'a', next: ['end'], nextLabels: [{ en: 'Start', es: 'Empezar', ca: 'Comença' }] }],
+    })
+    expect(t.steps[0].nextLabels).toEqual([{ en: 'Start', es: 'Empezar', ca: 'Comença' }])
+  })
 })
 
 describe('addNewDistributionFiles', () => {
