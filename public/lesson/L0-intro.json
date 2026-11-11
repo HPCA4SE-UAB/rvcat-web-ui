@@ -2,7 +2,7 @@
   "lesson": "L0-intro",
   "title": "Lesson 0: how a processor runs a loop",
   "description": "<p>A short guided tour of RVCAT with one example, a loop that adds all the elements of two vectors (<b>vector summation</b>):<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 20 minutes; optional cards go deeper.</p>",
-  "version": 3,
+  "version": 4,
   "intro": true,
   "programs": ["Base", "V1", "V2"],
   "processors": [
@@ -436,7 +436,7 @@
         "title": "A new value of i too early?",
         "position": "right",
         "wWidth": 440,
-        "questionText": "<p>With 4 instructions dispatched per cycle, look at an iteration: <b>i = i + 1</b> can execute <b>before</b> an older instruction of the same iteration that uses <b>i</b> (e.g. a load of V[i] or W[i]).</p><p>How is it possible that the older instruction still gets the previous value of i?</p>",
+        "questionText": "<p><b>Out-of-order execution</b> allows instruction [1,4] <b>i = i + 1</b> to execute before an older instruction that uses i, [1,2] <b>tmp = W[i]</b>. Check it in the timeline.</p><p>How is it possible that the older instruction still gets the previous value of i?</p>",
         "answerMode": "single",
         "answers": [{"text": "At dispatch, each instruction is connected with the producer of its inputs (<span style=\"color:#c62828\">register renaming</span>): the new value of i is another copy (another physical register), so the older instruction keeps the previous one", "isCorrect": true, "explanation": "Yes: renaming removes the false dependence on the name i; only the true data dependences remain."}, {"text": "i = i + 1 waits until all the older instructions that use i have executed", "isCorrect": false, "explanation": "No: look at the timeline: its <b class=\"stage\">E</b> can come before theirs."}, {"text": "The older instruction reads i again from memory", "isCorrect": false, "explanation": "No: i is a value of the processor (a register), not a memory variable."}, {"text": "The older instruction is executed again later, with the right value", "isCorrect": false, "explanation": "No: nothing is executed twice; each instruction gets the value it needs from the start."}],
         "next": ["critical"]
@@ -448,12 +448,10 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 460,
-        "description": "<p>The <b>Critical</b> button marks in red the <b><span style=\"color:#c62828\">critical execution path</span></b>, a detailed explanation of the execution time: it provides a diagnosis that may help to devise ideas to improve performance. The critical path is the chain of events, going back from the last instruction retired in the visible cycles, that links the reasons for an instruction to wait: a data dependence, a port conflict, a full ROB, a dispatch or retire width limit…</p><p>In this example, the critical path of the first 11 cycles goes through <b>only 3 instructions</b> (and the retire of the last one).</p><p><b>Experiment:</b> increase the number of <b>Cycles</b> of the timeline (e.g. 14, 20, 30) and watch how the critical path changes. The critical path of the first iteration starts with a load, which does not represent the performance of the loop with many iterations: look at the path once it repeats.</p>",
-        "actions": ["sidePanel:hide", "reveal:timelineCritical,timelineCycles", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=11", "timeline:width=0.67"],
+        "description": "<p>The <b>Critical</b> button marks in red the <b><span style=\"color:#c62828\">critical execution path</span></b>, a detailed explanation of the execution time. The critical path is the chain of events, going back from the last instruction retired in the visible cycles, that links the reasons for an instruction to wait: a data dependence, a port conflict, a full ROB, a dispatch or retire width limit… Identifying the critical path shows you where to start improving performance.</p>",
+        "actions": ["sidePanel:hide", "reveal:timelineCritical,timelineCycles", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=50", "timeline:width=0.97"],
         "explore": true,
         "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, where the time goes in the whole simulation.</p>",
-        "exploreActions": ["timeline:width=0.97"],
-        "exploreEndActions": ["timeline:width=0.67"],
         "next": ["crit-share"]
       },
       {
@@ -484,12 +482,10 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 420,
-        "description": "<p>The timeline of <b>V1</b>, with its critical path. The Program table gives the percentage of the visible critical-path cycles attributed to each instruction.</p><p><b>Explore:</b> increase and decrease the number of <b>Cycles</b> of the timeline (e.g. 11, 20, 40) and find which instructions are critical and which ones execute for free. Compare it with Base: which addition is on the critical path now?</p>",
-        "actions": ["sidePanel:show", "programView:perf", "selectProgram:V1", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=20", "timeline:width=0.67"],
+        "description": "<p>The timeline of <b>V1</b>, with its critical path. The Program table gives the percentage of the visible critical-path cycles attributed to each instruction: instructions 1, 2 and 3 account for most of them. But the first two iterations do not represent the performance of the loop with many iterations.</p><p><b>Explore:</b> increase the number of <b>Cycles</b> of the timeline until you find a pattern that repeats on the critical path. Compare it with Base: which instructions are on the critical path now?</p>",
+        "actions": ["sidePanel:show", "programView:perf", "selectProgram:V1", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=15"],
         "explore": true,
         "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, the timeline of V2.</p>",
-        "exploreActions": ["timeline:width=0.97"],
-        "exploreEndActions": ["timeline:width=0.67"],
         "next": ["v2-timeline"]
       },
       {
@@ -499,12 +495,10 @@
         "anchor": "#right-panel",
         "position": "inside-right",
         "wWidth": 420,
-        "description": "<p>The timeline of <b>V2</b>, which adds two elements of each vector per iteration (11 instructions).</p><p><b>Explore</b> it as before: change the number of <b>Cycles</b>, look for the pattern that repeats, and find the instructions on the critical path.</p>",
-        "actions": ["sidePanel:show", "programView:perf", "selectProgram:V2", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=30", "timeline:width=0.67"],
+        "description": "<p><b>V2</b> is the loop <b>unrolled by hand</b>: each iteration does the work of <b>2 iterations</b> of the original loop (it adds V[i], W[i], V[i+1] and W[i+1]), and i advances by 2. This is the <b>loop stride</b>, <b>S = 2</b>, shown in the header of the Program panel. N is still the number of elements: with N = 1,000, V2 runs only N/S = <b>500 iterations</b>.</p><p>So the cycles per iteration of loops with a different S cannot be compared. An <b>algorithmic operation</b> is one iteration of the original loop, before unrolling or vectorization (an O(N) algorithm performs N of them): here, one element of each vector. The Simulation panel also gives <b>Cycles/Alg Oper</b> = cycles per iteration ÷ S, which compares all the versions of a loop.</p><p><b>Explore</b> the timeline as before: look for the pattern that repeats and the instructions on the critical path.</p>",
+        "actions": ["sidePanel:show", "programView:perf", "selectProgram:V2", "switchTo:timelineComponent", "timeline:critical=on", "timeline:cycles=15"],
         "explore": true,
         "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, a question on the time of V2.</p>",
-        "exploreActions": ["timeline:width=0.97"],
-        "exploreEndActions": ["timeline:width=0.67"],
         "next": ["q-v2-time"]
       },
       {
@@ -513,7 +507,7 @@
         "title": "Time per iteration of V2",
         "position": "right",
         "wWidth": 440,
-        "questionText": "<p>With N = 1,000, approximately how many <b>cycles per iteration</b> will V2 take on average?</p><p>(Hint: look for the pattern that repeats in the timeline.)</p>",
+        "questionText": "<p>With N = 1,000, approximately how many <b>cycles per iteration</b> will V2 take on average?</p>",
         "answerMode": "number",
         "answers": [],
         "numericValue": 8,
@@ -521,7 +515,6 @@
         "numericUnit": "cycles/iter",
         "numericCorrect": "Right: once the pattern repeats, a new iteration starts every 8 cycles. The chain of sum has 4 additions of 2 cycles per iteration: 8 cycles for 2 elements, 4 cycles per element, like Base. V2 executes fewer instructions, but its chain of additions is as long as in Base.",
         "numericWrong": "Look for the pattern that repeats in the timeline: how many cycles separate the start of two iterations, once the first ones have passed? Follow the chain of additions to sum on the critical path.",
-        "actions": ["sidePanel:hide", "timeline:width=0.68"],
         "next": ["bounds"]
       },
       {
@@ -531,9 +524,10 @@
         "anchor": "#right-panel",
         "position": "inside-bottom",
         "wWidth": 720,
-        "description": "<p>The <b>Static Analysis</b> panel computes, <b>without simulating</b>, two <b>lower bounds</b> of the time per iteration of a loop with many iterations:</p><p>&bull; <b>Latency bound</b> (table <i>Latency bounds</i>): each row is a <b>cyclic chain of dependences</b>, which goes from one iteration to the next one, with its instructions and the sum of their latencies: an iteration cannot start its part of the chain until the previous one has finished it. In Base, sum → sum (instructions 1 → 3): 2 + 2 = <b>{{latencyBound}}</b> cycles.</p><p>&bull; <b>Throughput bound</b> (table <i>Throughput bounds</i>): each row is a <b>resource</b> (dispatch, retire, a port or a group of ports), with the instructions that must use it and the cycles per iteration that it needs. In Base, port P1 executes the 2 loads, and port P3 the 2 additions: <b>{{throughputBound}}</b> cycles each.</p><p>The label <b>max</b> marks the largest bound of each table. The line at the top sums it up: <b>minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration, and what limits the loop (here, LATENCY-bound).</p>",
+        "description": "<p>The <b>Static Analysis</b> panel computes, <b>without simulating</b>, two <b>lower bounds</b> of the time per iteration of a loop with many iterations:</p><p>&bull; <b>Latency bound</b>: each row of the table is a <b>cyclic chain of dependences</b>, which goes from one iteration to the next one, with its instructions and the sum of their latencies: an iteration cannot start its part of the chain until the previous one has finished it. In Base, sum → sum (instructions 1 → 3): 2 + 2 = <b>{{latencyBound}}</b> cycles.</p><p>&bull; <b>Throughput bound</b>: each row is a <b>resource</b> (dispatch, retire, a port or a group of ports), with the instructions that must use it and the cycles per iteration that it needs. In Base, port P1 executes the 2 loads, and port P3 the 2 additions: <b>{{throughputBound}}</b> cycles each.</p><p>The label <b>max</b> marks the largest bound of each table. The line at the top sums it up: <b>minimum time = max(latency bound, throughput bound) = {{minTime}}</b> cycles per iteration, and what limits the loop (here, LATENCY-bound).</p>",
         "actions": ["revertProcessor", "selectProgram:Base", "reveal:analysis", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain]"],
-        "showMe": ["clickChain:sum"],
+        "explore": true,
+        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson: next, there are questions on the bounds.</p>",
         "next": ["q-fast-base", "bounds-more"],
         "nextLabels": ["Continue", "In depth: the dependence graph"]
       },
