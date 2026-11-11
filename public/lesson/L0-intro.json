@@ -2,7 +2,7 @@
   "lesson": "L0-intro",
   "title": "Lesson 0: how a processor runs a loop",
   "description": "<p>A short guided tour of RVCAT with one example, a loop that adds all the elements of two vectors (<b>vector summation</b>):<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 20 minutes; optional cards go deeper.</p>",
-  "version": 5,
+  "version": 6,
   "intro": true,
   "programs": ["Base", "V1", "V2"],
   "processors": [
@@ -218,8 +218,8 @@
         "id": "paradox",
         "type": "question",
         "title": "A paradox?",
-        "questionText": "Per algorithmic operation (one element of each vector): Base runs 7 instructions in 4 cycles, V1 runs 7 instructions in 2 cycles, and V2 runs 5.5 instructions in 4 cycles (the same on the real processor). Which statement is true?",
-        "answerMode": "single",
+        "questionText": "Per algorithmic operation (one element of each vector): Base runs 7 instructions in 4 cycles, V1 runs 7 instructions in 2 cycles, and V2 runs 5.5 instructions in 4 cycles (the same on the real processor). Which of these statements are true? Select <b>all</b> the true ones.",
+        "answerMode": "multiple",
         "answers": [{"text": "The number of instructions alone does not determine the time", "isCorrect": true, "explanation": "Right: V1 is twice as fast with the same instructions, and V2 is not faster with fewer. We need a model of how the processor executes them."}, {"text": "Fewer instructions always run faster", "isCorrect": false, "explanation": "V2 executes fewer instructions per element than Base, and takes the same time."}, {"text": "Changing the order of the additions cannot change the time", "isCorrect": false, "explanation": "V1 only changes that order, and runs twice as fast."}, {"text": "Half the iterations means half the time", "isCorrect": false, "explanation": "V2 does half the iterations, but each one does twice the work: same time per element."}],
         "next": ["latency"]
       },
