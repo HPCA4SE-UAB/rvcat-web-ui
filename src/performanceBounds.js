@@ -30,12 +30,15 @@ export function instrPorts(instr) {
   return ports.join(', ')
 }
 
-// Tooltip of an instruction in the throughput table: text, Type.Oper and usable ports
-function instrPortsTitle(list, i) {
-  const instr = list[i]
-  const typeOper = instrTypeOper(instr)
-  const ports = instrPorts(instr)
-  return `${instrText(list, i)}\n${typeOper || t('type ?')} → ${ports ? t('can use {ports}', { ports }) : t('no ports')}`
+// Tooltip (HTML) of an instruction in the throughput table: its Type.Oper and the ports it can use
+// (the instruction itself is marked in the Program table while the mouse is over its number).
+// exclusive: the instruction can only use the ports of the resource
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+function instrPortsTip(list, i, exclusive) {
+  const typeOper = esc(instrTypeOper(list[i]) || t('type ?'))
+  const ports = instrPorts(list[i])
+  if (!ports) return `${typeOper} → ${t('no ports')}`
+  return `${typeOper} → ${exclusive ? t('can <b>only</b> use {ports}', { ports }) : t('can use {ports}', { ports })}`
 }
 
 // Keep the `max` rows with the highest cycles, in their original order
@@ -59,7 +62,7 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
   if (!Array.isArray(bounds)) return { rows: [], hidden: 0 }
   const probOf = (i) => (Array.isArray(execProb) && execProb[i] !== undefined ? Number(execProb[i]) : 1)
   const isConditional = (i) => probOf(i) < 1 - 1e-9
-  const conditionalNote = (i) => '\n' + t('Conditional: executed with probability {p}, so it counts {p}', { p: probText(probOf(i)) })
+  const conditionalNote = (i) => '<br>' + t('Conditional: executed with probability {p}, so it counts {p}', { p: probText(probOf(i)) })
   const rows = bounds.map(b => {
     const instrs  = b.instructions ?? []
     const isPorts = b.resource === 'Ports'
@@ -68,9 +71,14 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
     const conditional = instrs.filter(isConditional)
     const expected = Number.isFinite(b.expected) ? b.expected : instrs.reduce((s, i) => s + probOf(i), 0)
 
-    const resourceTitle = isPorts
-      ? t(b.ports.length > 1 ? 'Ports {r}: {n} per cycle' : 'Port {r}: {n} per cycle', { r: resource, n: plural(b.throughput, 'instruction') })
-      : t('{r} width: {n} per cycle', { r: b.resource, n: plural(b.throughput, 'instruction') })
+    // tooltip (HTML) of the resource: its throughput and the types of instructions exclusive to it
+    const exclusiveTypes = [...new Set(instrs.map(i => instrTypeOper(instructionList[i]) || t('type ?')))]
+    const resourceTip = isPorts
+      ? t(b.ports.length > 1 ? 'Ports {r}: {n} per cycle' : 'Port {r}: {n} per cycle', { r: resource, n: plural(b.throughput, 'instruction') }) +
+        '<br>' + (exclusiveTypes.length
+          ? t('Exclusive types: {types}', { types: exclusiveTypes.map(x => `<b>${esc(x)}</b>`).join(', ') })
+          : t('No exclusive types'))
+      : t('{r} width: {n} per cycle', { r: b.resource, n: plural(b.throughput, 'instruction') }) + '<br>' + t('All the instructions use it')
 
     // instructions per iteration: with conditional ones, the expected number
     const count = conditional.length
@@ -80,17 +88,17 @@ export function throughputBoundRows(bounds, instructionList = [], max = MAX_BOUN
       ? `${count} / (${plural(b.throughput, 'port')} × ${t('1 instruction/cycle')}) = ${cycles.toFixed(2)} cycles/iter`
       : `${count} / ${b.throughput} ${t('instructions/cycle')} (${t(b.resource === 'Dispatch' ? 'dispatch width' : 'retire width')}) = ${cycles.toFixed(2)} cycles/iter`
 
-    const item = (i) => ({ index: i, title: instrPortsTitle(instructionList, i) + (isConditional(i) ? conditionalNote(i) : ''),
+    const item = (i) => ({ index: i, tip: instrPortsTip(instructionList, i, isPorts) + (isConditional(i) ? conditionalNote(i) : ''),
                            prob: isConditional(i) ? probText(probOf(i)) : '' })
     return {
-      resource, resourceTitle, formula,
+      resource, resourceTip, formula,
       // Dispatch/retire process every instruction: shown as a range, and its conditional instructions
       allRange:   isPorts ? '' : (instrs.length ? `${t('All')} (${instrs[0]}–${instrs.at(-1)})` : t('All')),
       conditional: isPorts ? [] : conditional.map(item),
       included:   isPorts ? instrs.map(item) : [],
       excluded:   (b.excluded ?? []).map(e => ({
         index: e.index,
-        title: `${instrPortsTitle(instructionList, e.index)}\n${t('Not counted: it can also use {ports}', { ports: e.other_ports.map(portName).join(', ') })}`,
+        tip:   `${instrPortsTip(instructionList, e.index, false)}<br>${t('Not counted: it can also use {ports}', { ports: e.other_ports.map(portName).join(', ') })}`,
       })),
       cycles:      cycles.toFixed(2),
       cyclesValue: cycles,

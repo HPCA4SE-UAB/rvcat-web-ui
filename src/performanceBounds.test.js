@@ -28,9 +28,11 @@ describe('throughputBoundRows', () => {
     expect(rows[0].formula).toBe('9 instructions / 4 instructions/cycle (dispatch width) = 2.25 cycles/iter')
 
     const p0 = rows[1]
-    expect(p0.included).toEqual([{ index: 8, title: '8: if c go back\nBRANCH → can use P0', prob: '' }])
+    expect(p0.included).toEqual([{ index: 8, tip: 'BRANCH → can <b>only</b> use P0', prob: '' }])
     expect(p0.excluded[0]).toEqual({ index: 5,
-      title: '5: i = i + 1\nINT.ARITH → can use P0, P2\nNot counted: it can also use P2' })
+      tip: 'INT.ARITH → can use P0, P2<br>Not counted: it can also use P2' })
+    expect(p0.resourceTip).toBe('Port P0: 1 instruction per cycle<br>Exclusive types: <b>BRANCH</b>')
+    expect(rows[0].resourceTip).toBe('Dispatch width: 4 instructions per cycle<br>All the instructions use it')
 
     const p023 = rows[2]
     expect(p023).toMatchObject({ resource: 'P0+P2+P3', cycles: '2.33', bottleneck: true })
@@ -47,7 +49,7 @@ describe('throughputBoundRows', () => {
     expect(rows[0].formula).toBe('8.5 instructions (expected: 9 − 0.5 skipped) / 4 instructions/cycle (dispatch width) = 2.13 cycles/iter')
     expect(rows[0].conditional.map(c => [c.index, c.prob])).toEqual([[3, '0.5']])
     expect(rows[1].included.map(c => c.prob)).toEqual(['0.5', ''])
-    expect(rows[1].included[0].title).toMatch(/Conditional: executed with probability 0.5, so it counts 0.5$/)
+    expect(rows[1].included[0].tip).toMatch(/Conditional: executed with probability 0.5, so it counts 0.5$/)
     expect(rows[1].formula).toBe('1.5 instructions (expected: 2 − 0.5 skipped) / (1 port × 1 instruction/cycle) = 1.50 cycles/iter')
   })
 

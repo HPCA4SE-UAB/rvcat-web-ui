@@ -98,6 +98,17 @@
   // Hovering an instruction number highlights it in the program panel and in the graph
   function hoverInstruction(index) { simState.instrHighlightedIdx = index }
 
+  // Tooltip with HTML (bold words) of the throughput table, below the element under the mouse
+  const tip = ref(null)
+  function showTip(event, html) {
+    if (!html) return
+    const r = event.currentTarget.getBoundingClientRect()
+    tip.value = { html, left: Math.min(r.left, window.innerWidth - 340), top: r.bottom + 6 }
+  }
+  function hideTip() { tip.value = null }
+  function enterInstr(event, instr) { hoverInstruction(instr.index); showTip(event, instr.tip) }
+  function leaveInstr() { hoverInstruction(-1); hideTip() }
+
   const boundLabel = computed(() => ({
     LATENCY:              t('LATENCY-bound'),
     THROUGHPUT:           t('THROUGHPUT-bound'),
@@ -392,7 +403,7 @@
         <thead>
           <tr>
             <th :title="t('Dispatch or retire width, an execution port, or a combination of ports that share instructions')">{{ t('Resource') }}</th>
-            <th :title="t('Instructions that can only use this resource (hover a number to see the instruction). In grey, instructions that can also use other ports.')">{{ t('Instructions') }}</th>
+            <th :title="t('Instructions that can only use this resource (hover a number to see the instruction). In grey, instructions that can also use other ports.')">{{ t('Instructions (exclusive)') }}</th>
             <th :title="t('Cycles per loop iteration determined by this resource (hover a value to see how it is computed)')">Cycles/iter</th>
             <th v-if="showAlgOps" :title="algOpHeaderTitle">Cycles/Alg Oper</th>
           </tr>
@@ -400,26 +411,26 @@
         <tbody>
           <tr v-for="(row, index) in throughputTable.rows" :key="index" :class="{ bottleneck: row.bottleneck }"
               :data-resource="row.resource">
-            <td class="bound-resource" :title="row.resourceTitle">{{ row.resource }}</td>
+            <td class="bound-resource" @mouseenter="showTip($event, row.resourceTip)" @mouseleave="hideTip">{{ row.resource }}</td>
             <td>
               <span v-if="row.allRange">{{ row.allRange }}</span>
               <span v-if="row.conditional?.length" class="bound-conditional"
                     :title="t('Conditional instructions: each one counts with its probability of being executed')">
                 · {{ t('conditional:') }}
-                <template v-for="(instr, k) in row.conditional" :key="'c' + k"><span v-if="k > 0">, </span><span class="bound-instr" :title="instr.title"
-                      @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span> <em>(p={{ instr.prob }})</em></template>
+                <template v-for="(instr, k) in row.conditional" :key="'c' + k"><span v-if="k > 0">, </span><span class="bound-instr"
+                      @mouseenter="enterInstr($event, instr)" @mouseleave="leaveInstr">{{ instr.index }}</span> <em>(p={{ instr.prob }})</em></template>
               </span>
               <template v-else>
-                <span v-if="row.included.length === 0" class="bound-none">{{ t('none') }}</span>
+                <span v-if="row.included.length === 0 && !row.allRange" class="bound-none">{{ t('none') }}</span>
                 <template v-for="(instr, k) in row.included" :key="'i' + k">
                   <span v-if="k > 0">, </span>
-                  <span class="bound-instr" :title="instr.title"
-                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span><em
+                  <span class="bound-instr"
+                        @mouseenter="enterInstr($event, instr)" @mouseleave="leaveInstr">{{ instr.index }}</span><em
                         v-if="instr.prob" class="bound-conditional"> (p={{ instr.prob }})</em>
                 </template>
                 <span v-if="row.excluded.length" class="bound-excluded">
-                  (<template v-for="(instr, k) in row.excluded" :key="'e' + k"><span v-if="k > 0">, </span><span class="bound-instr" :title="instr.title"
-                        @mouseenter="hoverInstruction(instr.index)" @mouseleave="hoverInstruction(-1)">{{ instr.index }}</span></template>)
+                  (<template v-for="(instr, k) in row.excluded" :key="'e' + k"><span v-if="k > 0">, </span><span class="bound-instr"
+                        @mouseenter="enterInstr($event, instr)" @mouseleave="leaveInstr">{{ instr.index }}</span></template>)
                 </span>
               </template>
             </td>
@@ -477,6 +488,11 @@
     :title="t('Dependence graph')"
     @close="closeHelp3"/>
     </Teleport>
+
+  <!-- tooltip of the throughput table (with bold words) -->
+  <Teleport to="body">
+    <div v-if="tip" class="bound-tip" :style="{ left: `${tip.left}px`, top: `${tip.top}px` }" v-html="tip.html"></div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -622,6 +638,11 @@
     font-weight: normal;
   }
 
+  .bound-tip {
+    position: fixed; z-index: 3000; max-width: 330px; pointer-events: none;
+    background: #fffde7; color: #222; border: 1px solid #c9b458; border-radius: 4px;
+    padding: 4px 8px; font-size: 13px; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
   .bound-none {
     color: #6b7280;
   }
