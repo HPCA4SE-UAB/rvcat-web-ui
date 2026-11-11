@@ -1,7 +1,7 @@
 
 import { t } from '@/i18n'
 
-export const RVCAT_VERSION = '1.15';
+export const RVCAT_VERSION = '1.16';
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
