@@ -3,7 +3,7 @@
   // Floating, movable and resizable window with the data dependence graph.
   // Graph options are owned by the parent (they regenerate the graph in RVCAT);
   // the window geometry and zoom are stored here.
-  import { ref, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
+  import { ref, reactive, watch, nextTick, onMounted, onUnmounted, inject } from 'vue'
   import { useDraggable, useResizeObserver }                     from '@vueuse/core'
   import { parseNode, parseEdge, chainSteps, isChainEdge }      from '@/graphHighlight'
 
@@ -40,6 +40,19 @@
     geometry.y = Math.min(Math.max(geometry.y, MARGIN), window.innerHeight - geometry.h - MARGIN)
   }
   keepInWindow()
+
+  // A tutorial card can ask for the window in a corner, so that the card does not cover it
+  // ("graphWindow": "top-right"): the window goes there when it opens while that card is shown
+  const simState = inject('simulationState', null)
+  const TOP_FREE = 90             // the header of the page and the bar of the lesson
+  function placeForTutorial() {
+    if (simState?.graphWindowPlace !== 'top-right') return
+    geometry.x = window.innerWidth - geometry.w - 2 * MARGIN
+    geometry.y = TOP_FREE
+    keepInWindow()
+  }
+  placeForTutorial()
+  watch(() => simState?.graphWindowPlace, placeForTutorial)
 
   // ---- Move (drag the title bar) and resize (bottom-right corner) ----
   const windowRef = ref(null)

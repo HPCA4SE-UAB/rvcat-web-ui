@@ -28,10 +28,12 @@ const SimulationState = reactive({
   executionResults:    {},
   performanceAnalysis: null,                               // last static analysis (tutorial live values)
   analysisView:        { graphOpen: false, chain: null },  // dependence graph window and selected chain
+  graphWindowPlace:    '',        // corner where the tutorial card shown wants the graph window ('top-right')
   lesson:              null,      // lesson in progress (LessonPanel): resources, locks, tasks, progress
   simulationBlocked:   '',        // reason why a tutorial card does not allow simulating now
   lessonAllow:         [],        // locks lifted by the goal card shown (e.g. "processor.rob")
   lessonTutorial:      null,      // { id, action: start|stop, nonce }: the lesson drives its tutorial
+  lessonExitAsk:       0,         // changed when the tutorial of the lesson is finished: the lesson asks to exit
   reloadNonce:         0,         // changed to reload the current program and processor from storage
   programSaved:        null,      // { name, nonce }: program saved in the program editor
   simulationSettings:  loadSimulationSettings()

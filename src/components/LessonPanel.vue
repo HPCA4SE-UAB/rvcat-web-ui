@@ -225,6 +225,8 @@
 
 // ---- Exit: confirmation, then everything returns to its state before the lesson ----
   const askExit = ref(false)
+  // the last card of the lesson's tutorial was finished: exit the lesson (after the confirmation)
+  watch(() => simState.lessonExitAsk, (nonce) => { if (nonce && simState.lesson) askExit.value = true })
   // a description (HTML) as a tooltip
   const plainText = (html) => String(html ?? '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 

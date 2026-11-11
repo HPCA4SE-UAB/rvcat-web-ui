@@ -100,7 +100,8 @@ Several numbers in one question: `"answerMode": "numbers"` with `numericFields`,
 one by one (each field has its own `correct` / `wrong` text). With `"predictOnly": true` the numbers are
 only saved, as a prediction (no answer is right or wrong): `savedText` is shown, and a **Change** button lets
 the student correct them later. The texts of any card can show the K-th number answered in a question with
-`{{answer.ID.K}}` (e.g. the predictions, next to the right answers).
+`{{answer.ID.K}}`, and with `{{answerCheck.ID.K}}` the number and the label of its field, e.g. "2 (Base)", in bold,
+green when it is right and red when it is wrong (e.g. the predictions, next to the right answers).
 
 ```json
 { "id": "q-fast", "type": "question", "title": "...", "questionText": "...", "answerMode": "numbers", "answers": [],
@@ -164,6 +165,7 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 
 - `anchor`: selector used only to place the card (e.g. `#right-panel`); the card goes to an empty zone near it.
 - `position`: `bottom`, `top`, `left`, `right`, or `inside-bottom`, `inside-top`, `inside-left`, `inside-right`, `inside-top-left` (within the anchor; `inside-top-left` near its top-left corner).
+- `graphWindow`: `top-right` opens the dependence graph window at the top right while the card is shown (so that the card does not cover it).
   In a question, `"position": "right"` shows it as a panel at the right that does not cover the simulator.
 - `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
 - `doneDescription`: second part of the text, shown when the validation of the card is met.

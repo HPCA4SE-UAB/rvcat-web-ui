@@ -566,14 +566,15 @@ const isBranchingTutorial = computed(() =>
 // Text of the cards with the live values of the simulator ({{name}})
 // Texts of the tutorials can be given in several languages: { en, es, ca } (localized)
 // {{answer.ID.K}}: the K-th number answered by the student in the question ID (e.g. a prediction);
-// {{answerCheck.ID.K}}: the same in bold, green if it is right (the value of that field of the
-// question, with its tolerance) and red if it is wrong
+// {{answerCheck.ID.K}}: the same with the label of its field, e.g. "2 (Base)", in bold, green if it
+// is right (the value of that field of the question, with its tolerance) and red if it is wrong
 function answerCheck(id, k, v) {
   const field = (currentTutorial.value?.steps ?? []).find(s => s.id === id)?.numericFields?.[k]
+  const label = field?.label ? ` (${rt(field.label)})` : ''
   const target = field ? tutorialNumber(field.value, simState) : null
-  if (target === null) return `<b>${v}</b>`
+  if (target === null) return `<b>${v}${label}</b>`
   const ok = Math.abs(Number(v) - target) <= Number(field.tolerance ?? 0.01) + 1e-9
-  return `<b style="color:${ok ? '#2e7d32' : '#c62828'}">${v}</b>`
+  return `<b style="color:${ok ? '#2e7d32' : '#c62828'}">${v}${label}</b>`
 }
 const answerValues = (text) => typeof text !== 'string' ? text : text.replace(/\{\{(answer|answerCheck)\.([\w-]+)\.(\d+)\}\}/g, (_, kind, id, k) => {
   const answer = taskStates.value[id]?.answer
@@ -1087,9 +1088,11 @@ function checkTaskAfterSimulation() {
   }
 }
 
-// While a card is shown, the lesson allows what the card lists (e.g. "processor.rob")
+// While a card is shown, the lesson allows what the card lists (e.g. "processor.rob"), and the
+// dependence graph window opens where the card says ("graphWindow": "top-right")
 watch(() => [isActive.value, currentStep.value], () => {
   const step = currentStep.value
+  simState.graphWindowPlace = isActive.value ? (step?.graphWindow ?? '') : ''
   simState.lessonAllow = isActive.value && step ? [...(step.allow ?? [])] : []
   predictionInput.value = step ? String(taskStates.value[step.id]?.prediction ?? '') : ''
 })
@@ -1748,6 +1751,12 @@ const endTutorial = async (fullReset = false) => {
 
 const completeTutorial = async () => {
   if (currentStep.value.validation && !await validateCurrentStep()) return
+  // the tutorial of a lesson: finishing it is finishing the lesson, which asks for confirmation
+  // (exiting stops the tutorial; staying keeps its last card)
+  if (simState.lesson && simState.lesson.tutorial === currentTutorial.value?.id) {
+    simState.lessonExitAsk = Date.now()
+    return
+  }
   endTutorial(true)
 }
 
