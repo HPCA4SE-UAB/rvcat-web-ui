@@ -1,8 +1,8 @@
 {
   "lesson": "L0-intro",
   "title": "Lesson 0: how a processor runs a loop",
-  "description": "<p>A short guided tour of RVCAT with one example, a loop that adds all the elements of two vectors (<b>vector summation</b>):<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 20 minutes; optional cards go deeper.</p>",
-  "version": 7,
+  "description": "<p>A short guided tour of RVCAT with one example, a loop that adds all the elements of two vectors (<b>vector summation</b>):<br>from the C code to machine instructions, latency, overlapped execution, dependences and performance bounds.</p><p>About 30 to 60 minutes; optional cards go deeper.</p>",
+  "version": 8,
   "intro": true,
   "programs": ["Base", "V1", "V2"],
   "processors": [
@@ -576,7 +576,7 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 580,
-        "description": "<p>The <b>Processor</b> panel, at the top of the left panel, describes the processor that RVCAT simulates: the <b>dispatch</b> and <b>retire</b> widths, the size of the <b>ROB</b>, the <b>execution ports</b> (P0–P3) with the types of instructions that each one executes, and the <b>latency</b> of each type of instruction.</p><p><b><span style=\"color:#c62828\">Open the help of the Processor panel</span></b> (its <b>ⓘ</b> icon, highlighted; needed to continue) and learn how to change the <b>latency of a type of instruction</b>: next, you will change the latency of FLOAT.ADD.</p>",
+        "description": "<p>The <b>Processor</b> panel, at the top of the left panel, describes the processor that RVCAT simulates: the <b>dispatch</b> and <b>retire</b> widths, the size of the <b>ROB</b>, the <b>execution ports</b> (P0–P3) with the types of instructions that each one executes, and the <b>latency</b> of each type of instruction.</p><p><b><span style=\"color:#c62828\">Open the help of the Processor panel</span></b> (its <b>ⓘ</b> icon, highlighted; needed to continue) and learn how to change the <b>latency of a type of instruction</b>: next, you will change the latency of FLOAT.ADD.</p><p style=\"font-size:0.9em\"><i>Note: for now, ignore the Cache and the Branch penalty (cache memory and branch prediction): this lesson does not use them.</i></p>",
         "validation": {"type": "button_clicked", "selector": ".processor-part .info-icon", "message": "Open the help of the Processor panel"},
         "actions": ["reveal:processor", "sidePanel:show", "switchTo:staticAnalysisComponent"],
         "next": ["fast-explore"]
@@ -604,7 +604,7 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 640,
-        "description": "<p>With FLOAT.ADD of 1 cycle (your predictions: Base {{answer.q-fast.0}}, V1 {{answer.q-fast.1}}, V2 {{answer.q-fast.2}} cycles/iter):</p><p>&bull; <b>Base: 2 cycles/iter</b> (before, 4). The chain of sum has 2 additions of 1 cycle: latency bound 2. But port P1 executes the 2 loads: throughput bound 2. Now both bounds limit the loop.</p><p>&bull; <b>V1: 2 cycles/iter</b> (before, 2): <b>no improvement</b>. Its latency bound goes down to 1 (one addition in the chain of sum), but port P1 still needs 2 cycles per iteration for the 2 loads: now V1 is only throughput-bound.</p><p>&bull; <b>V2: 4 cycles/iter</b>, 2 cycles/alg oper (before, 8 and 4). Its chain has 4 additions of 1 cycle, and port P1 executes 4 loads: 4 cycles per iteration for both bounds.</p><p>A faster unit only helps the instructions on the critical path, and only until another bound (here, the ports) takes over.</p>",
+        "description": "<p>Latency of FLOAT.ADD: 1 cycle. Your predictions: {{answerCheck.q-fast.0}} (Base), {{answerCheck.q-fast.1}} (V1), {{answerCheck.q-fast.2}} (V2) cycles/iter.</p><p>&bull; <b>Base: 2 cycles/iter</b> (2× faster). The chain of sum has 2 additions of 1 cycle: the latency bound is 2. But port P1 executes the 2 loads: the throughput bound is also 2. Now both bounds limit the loop.</p><p>&bull; <b>V1: 2 cycles/iter</b> (<b>no improvement</b>). Its latency bound goes down to 1 (one addition in the chain of sum), but port P1 still needs 2 cycles per iteration for the 2 loads: now V1 is only throughput-bound.</p><p>&bull; <b>V2: 4 cycles/iter</b>, 2 cycles/alg oper (2× faster). Its chain has 4 additions of 1 cycle, and port P1 executes 4 loads: 4 cycles per iteration for both bounds.</p><p>A faster unit only helps the instructions on the critical path, and only until another bound (here, the ports) takes over.</p>",
         "next": ["summary"]
       },
       {
@@ -613,7 +613,7 @@
         "title": "11. Summary",
         "selector": "#lesson-bar",
         "position": "bottom",
-        "description": "&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).<br>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>:<br>&nbsp;&nbsp;&nbsp;a modern processor overlaps them, and the <b>dependences</b> set the pace.<br>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.<br>All the panels of the simulator are now visible. <b>Exit lesson</b> returns it to its previous state.",
+        "description": "<p>&bull; The <b>compiler</b> turns C into machine instructions; you can help it (options, rewriting the code).</p><p>&bull; Time does not follow the <b>number of instructions</b> nor the sum of their <b>latencies</b>: a modern processor overlaps them, and the <b>dependences</b>, the <b>processing capacities</b> (ports, dispatch and retire widths) and the <b>instruction mix</b> set the pace.</p><p>&bull; <b>Minimum time = max(latency bound, throughput bound)</b>: find what limits your loop first.</p><p>All the panels of the simulator are now visible.</p>",
         "actions": ["revertProcessor", "reveal:usage,cacheStats,simOptions,storedResults,timelineResources,criticalPattern,timelineCycles,timeline,simulation,timelineCache", "selectProgram:Base", "switchTo:simulationComponent"],
         "next": []
       }

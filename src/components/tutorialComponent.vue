@@ -565,10 +565,21 @@ const isBranchingTutorial = computed(() =>
 
 // Text of the cards with the live values of the simulator ({{name}})
 // Texts of the tutorials can be given in several languages: { en, es, ca } (localized)
-// {{answer.ID.K}}: the K-th number answered by the student in the question ID (e.g. a prediction)
-const answerValues = (text) => typeof text !== 'string' ? text : text.replace(/\{\{answer\.([\w-]+)\.(\d+)\}\}/g, (_, id, k) => {
-  const v = taskStates.value[id]?.answer
-  return Array.isArray(v) && v[k] !== undefined && v[k] !== null ? String(v[k]) : '…'
+// {{answer.ID.K}}: the K-th number answered by the student in the question ID (e.g. a prediction);
+// {{answerCheck.ID.K}}: the same in bold, green if it is right (the value of that field of the
+// question, with its tolerance) and red if it is wrong
+function answerCheck(id, k, v) {
+  const field = (currentTutorial.value?.steps ?? []).find(s => s.id === id)?.numericFields?.[k]
+  const target = field ? tutorialNumber(field.value, simState) : null
+  if (target === null) return `<b>${v}</b>`
+  const ok = Math.abs(Number(v) - target) <= Number(field.tolerance ?? 0.01) + 1e-9
+  return `<b style="color:${ok ? '#2e7d32' : '#c62828'}">${v}</b>`
+}
+const answerValues = (text) => typeof text !== 'string' ? text : text.replace(/\{\{(answer|answerCheck)\.([\w-]+)\.(\d+)\}\}/g, (_, kind, id, k) => {
+  const answer = taskStates.value[id]?.answer
+  const v = Array.isArray(answer) ? answer[k] : undefined
+  if (v === undefined || v === null) return '…'
+  return kind === 'answerCheck' ? answerCheck(id, Number(k), v) : String(v)
 })
 const rt = (text) => renderTutorialText(answerValues(localized(text)), simState)
 
@@ -1991,7 +2002,7 @@ onUnmounted(() => {
   /* description of a card (HTML): paragraphs <p> are separated by a small space */
   .step-description         { margin: 0.2em 0 1em; color: #666; line-height: 1.5; }
   .step-description pre     { margin: 0.3em 0 0.6em; padding: 6px 10px; background: #f6f8fa; border-radius: 4px; color: #333; font-size: 0.9em; line-height: 1.35; }
-  .step-description p       { margin: 0 0 0.5em; }
+  .step-description p       { margin: 0 0 7.5px; }
   .step-description p:last-child { margin-bottom: 0; }
   /* a card being placed (or waiting for its actions): hidden with all its content at once
      (the buttons have transitions, which would keep them visible for a moment) */
@@ -2037,7 +2048,7 @@ onUnmounted(() => {
   }
   /* letters of the stages of an instruction (D, E, L, W, R) in the texts of the cards */
   .stage { font-weight: bold; color: #000; }
-  .question-text p { margin: 0 0 0.5em; }
+  .question-text p { margin: 0 0 6px; }
   .question-text p:last-child { margin-bottom: 0; }
   .step-done-description    { margin-top: 0.6em; padding-top: 0.6em; border-top: 1px solid #e5e7eb; }
   #tutorial-predict .task-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4em 1em; }
@@ -2173,7 +2184,7 @@ onUnmounted(() => {
   }
 
   .tutorial-content p {
-    margin:      0 0 10px 0;
+    margin:      0 0 7.5px 0;
     color:       #666;
     line-height: 1.5;
     font-size:   medium;
@@ -2817,7 +2828,7 @@ onUnmounted(() => {
 
   .answer-text {
     flex: 1;
-    font-size: 14px;
+    font-size: 16px;
     color: #374151;
     line-height: 1.4;
   }
@@ -2851,7 +2862,7 @@ onUnmounted(() => {
     margin-left: 40px;
     padding: 0px 12px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.4;
     animation: fadeIn 0.3s ease-out;
   }

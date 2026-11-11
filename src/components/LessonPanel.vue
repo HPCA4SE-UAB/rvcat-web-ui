@@ -395,6 +395,10 @@
   .lesson-note { color: #666; font-size: 0.85em; }
   .lesson-description { margin: 0.8em 0; }
   .lesson-description :deep(p) { margin: 0 0 0.5em; }
+  /* the offer of the introductory lesson, the first window that a student sees: larger */
+  #intro-lesson-offer .lesson-dialog { font-size: 17px; width: min(560px, 92vw); }
+  #intro-lesson-offer .lesson-dialog h4 { font-size: 1.2em; }
+  #intro-lesson-offer .blue-button { font-size: 17px; padding: 6px 16px; }
   .lesson-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 </style>
 
