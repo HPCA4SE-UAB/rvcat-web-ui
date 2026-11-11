@@ -209,7 +209,7 @@
         "tolerance": 0.5,
         "predictGood": "Was it intuition, or could you explain it? We will show you shortly.",
         "predictFar": "The reasons for this unexpected performance will be explained shortly.",
-        "resultDescription": "<p>For V2, the Simulation panel adds a new metric, <b>Cycles/Alg Oper</b> = cycles per iteration ÷ S = {{cyclesPerIter}} ÷ 2 = <b>{{cyclesPerAlgOp}}</b> cycles per algorithmic operation, which compares directly with the 4 cycles per iteration (one algorithmic operation) of Base.</p>",
+        "resultDescription": "<p>For V2, the Simulation panel adds a new metric, <b>Cycles/Alg Oper</b> = cycles per iteration ÷ S = {{cyclesPerIter}} ÷ 2 = <b>{{cyclesPerAlgOp}}</b> cycles per algorithmic operation, which compares directly with the 4 cycles per iteration (one algorithmic operation) of Base.</p><p>It also adds <b>Instr/Alg Oper</b>: V2 executes {{instrPerAlgOp}} instructions per algorithmic operation, fewer than the 7 of Base.</p>",
         "actions": ["selectProgram:V2", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],
         "next": ["paradox"]

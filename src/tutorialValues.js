@@ -9,7 +9,7 @@
 //   Static analysis:  latencyBound, throughputBound, minTime, boundType,
 //                     chain.VAR (cycles/iter of the cyclic chain of variable VAR),
 //                     resource.NAME (cycles/iter of Dispatch, Retire, P0, P1+P3, ...)
-//   Simulation:       cycles, instructions, simIterations, cyclesPerIter, ipc,
+//   Simulation:       cycles, instructions, simIterations, cyclesPerIter, cyclesPerAlgOp, instrPerAlgOp, ipc,
 //                     dispatchUsage, retireUsage, port.P (usage % of port P),
 //                     critical.K (% of the critical path of instruction K),
 //                     patternFrom, patternTo, patternCycles, mispredPerIter
@@ -17,7 +17,7 @@
 export const TUTORIAL_VALUE_NAMES = [
   'program', 'processor', 'N', 'iterations', 'dispatch', 'retire', 'rob', 'bPenalty', 'latency.TYPE.OPER', 'instr.K',
   'latencyBound', 'throughputBound', 'minTime', 'boundType', 'chain.VAR', 'resource.NAME',
-  'cycles', 'instructions', 'simIterations', 'cyclesPerIter', 'cyclesPerAlgOp', 'stride', 'ipc', 'dispatchUsage', 'retireUsage',
+  'cycles', 'instructions', 'simIterations', 'cyclesPerIter', 'cyclesPerAlgOp', 'instrPerAlgOp', 'stride', 'ipc', 'dispatchUsage', 'retireUsage',
   'port.P', 'critical.K', 'patternFrom', 'patternTo', 'patternCycles', 'mispredPerIter',
 ]
 
@@ -69,6 +69,8 @@ export function tutorialValue(name, simState, extra = {}) {
     case 'cyclesPerIter':  return val(num(r?.cycles_per_iteration), 2)
     case 'cyclesPerAlgOp': return val(num(r?.cycles_per_iteration) === null ? null
       : r.cycles_per_iteration / (Number(p.instruction_list?.at(-1)?.stride) || 1), 2)
+    case 'instrPerAlgOp':  return val(num(r?.total_instructions) === null || !num(r?.total_iterations) ? null
+      : r.total_instructions / (r.total_iterations * (Number(p.instruction_list?.at(-1)?.stride) || 1)), 2)
     case 'stride':         return val(Number(p.instruction_list?.at(-1)?.stride) || 1)
     case 'ipc':            return val(num(r?.ipc), 3)
     case 'dispatchUsage':  return val(r && p.dispatch ? 100 * r.ipc / p.dispatch : null, 1)

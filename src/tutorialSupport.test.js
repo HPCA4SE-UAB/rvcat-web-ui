@@ -36,6 +36,12 @@ describe('live values of the tutorial texts', () => {
     expect(renderTutorialText('{{minTime|1}} and {{instr.1}}', simState)).toBe('4.0 and sum = sum + tmp')
   })
 
+  it('give the values per algorithmic operation of an unrolled loop', () => {
+    const unrolled = { simulatedProcess: { instruction_list: [{ text: 'if c go back', stride: 2 }] },
+                       executionResults: { total_instructions: 5500, total_iterations: 500, cycles_per_iteration: 8.014 } }
+    expect(renderTutorialText('{{cyclesPerAlgOp}} cycles, {{instrPerAlgOp}} instr', unrolled)).toBe('4.01 cycles, 5.50 instr')
+  })
+
   it('show … when a value is not available yet', () => {
     expect(renderTutorialText('{{cyclesPerIter}}', { simulatedProcess: {} })).toBe('…')
     expect(renderTutorialText('{{chain.x}} {{unknown}}', simState)).toBe('… …')
