@@ -1,0 +1,133 @@
+{
+  "name": "SUM-scalar",
+  "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator S\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+  "N": 1024,
+  "declarations": [
+    {
+      "name": "S",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "t0",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "t1",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "V",
+      "role": "array",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "i",
+      "role": "index",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "c",
+      "role": "condition",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "N",
+      "role": "read-only",
+      "type": "INT",
+      "size": "word"
+    }
+  ],
+  "instruction_list": [
+    {
+      "text": "t0 = V[i]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t0",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "",
+      "stride": 2,
+      "lanes": 1
+    },
+    {
+      "text": "S = S + t0",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S",
+      "source1": "S",
+      "source2": "t0",
+      "source3": "",
+      "constant": ""
+    },
+    {
+      "text": "t1 = V[i+1]",
+      "type": "MEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t1",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "1",
+      "stride": 2,
+      "lanes": 1
+    },
+    {
+      "text": "S = S + t1",
+      "type": "FLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S",
+      "source1": "S",
+      "source2": "t1",
+      "source3": "",
+      "constant": ""
+    },
+    {
+      "text": "i = i + 2",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "i",
+      "source1": "i",
+      "source2": "",
+      "source3": "",
+      "constant": "2"
+    },
+    {
+      "text": "c = i != N",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "i",
+      "source2": "N",
+      "source3": "",
+      "constant": ""
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 2
+    }
+  ]
+}

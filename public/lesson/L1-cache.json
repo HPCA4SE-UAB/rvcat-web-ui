@@ -1,0 +1,1025 @@
+{
+  "lesson": "L1-cache",
+  "title": "Lesson 1: the cache and a sum of a vector",
+  "description": "<p>Four versions of a loop that adds the elements of a vector (scalar, SIMD, and unrolled with several accumulators) on a Golden Cove core with a small cache.</p>",
+  "version": 1,
+  "programs": [
+    {
+      "name": "SUM-scalar",
+      "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator S\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+      "N": 1024,
+      "declarations": [
+        {
+          "name": "S",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t1",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "V",
+          "role": "array",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "i",
+          "role": "index",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "c",
+          "role": "condition",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "N",
+          "role": "read-only",
+          "type": "INT",
+          "size": "word"
+        }
+      ],
+      "instruction_list": [
+        {
+          "text": "t0 = V[i]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t0",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "",
+          "stride": 2,
+          "lanes": 1
+        },
+        {
+          "text": "S = S + t0",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S",
+          "source1": "S",
+          "source2": "t0",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "t1 = V[i+1]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t1",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "1",
+          "stride": 2,
+          "lanes": 1
+        },
+        {
+          "text": "S = S + t1",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S",
+          "source1": "S",
+          "source2": "t1",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "i = i + 2",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "i",
+          "source1": "i",
+          "source2": "",
+          "source3": "",
+          "constant": "2"
+        },
+        {
+          "text": "c = i != N",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "c",
+          "source1": "i",
+          "source2": "N",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "if c go back",
+          "type": "BRANCH",
+          "oper": "",
+          "size": "",
+          "destin": "",
+          "source1": "c",
+          "source2": "",
+          "source3": "",
+          "constant": "",
+          "stride": 2
+        }
+      ]
+    },
+    {
+      "name": "SUM-simd",
+      "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+      "N": 1024,
+      "vlen": 32,
+      "declarations": [
+        {
+          "name": "S",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "t0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "V",
+          "role": "array",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "i",
+          "role": "index",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "c",
+          "role": "condition",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "N",
+          "role": "read-only",
+          "type": "INT",
+          "size": "word"
+        }
+      ],
+      "instruction_list": [
+        {
+          "text": "t0[0:3] = V[i:i+3]",
+          "type": "VMEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t0",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "",
+          "stride": 1,
+          "lanes": 4
+        },
+        {
+          "text": "S[0:3] = S[0:3] + t0[0:3]",
+          "type": "VFLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S",
+          "source1": "S",
+          "source2": "t0",
+          "source3": "",
+          "constant": "",
+          "lanes": 4
+        },
+        {
+          "text": "i = i + 4",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "i",
+          "source1": "i",
+          "source2": "",
+          "source3": "",
+          "constant": "4"
+        },
+        {
+          "text": "c = i != N",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "c",
+          "source1": "i",
+          "source2": "N",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "if c go back",
+          "type": "BRANCH",
+          "oper": "",
+          "size": "",
+          "destin": "",
+          "source1": "c",
+          "source2": "",
+          "source3": "",
+          "constant": "",
+          "stride": 4
+        }
+      ]
+    },
+    {
+      "name": "SUM-scalar4",
+      "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+      "N": 1024,
+      "declarations": [
+        {
+          "name": "S0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "S1",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "S2",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "S3",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t1",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t2",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "t3",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "V",
+          "role": "array",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "i",
+          "role": "index",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "c",
+          "role": "condition",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "N",
+          "role": "read-only",
+          "type": "INT",
+          "size": "word"
+        }
+      ],
+      "instruction_list": [
+        {
+          "text": "t0 = V[i]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t0",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "",
+          "stride": 4,
+          "lanes": 1
+        },
+        {
+          "text": "S0 = S0 + t0",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S0",
+          "source1": "S0",
+          "source2": "t0",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "t1 = V[i+1]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t1",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "1",
+          "stride": 4,
+          "lanes": 1
+        },
+        {
+          "text": "S1 = S1 + t1",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S1",
+          "source1": "S1",
+          "source2": "t1",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "t2 = V[i+2]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t2",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "2",
+          "stride": 4,
+          "lanes": 1
+        },
+        {
+          "text": "S2 = S2 + t2",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S2",
+          "source1": "S2",
+          "source2": "t2",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "t3 = V[i+3]",
+          "type": "MEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t3",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "3",
+          "stride": 4,
+          "lanes": 1
+        },
+        {
+          "text": "S3 = S3 + t3",
+          "type": "FLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S3",
+          "source1": "S3",
+          "source2": "t3",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "i = i + 4",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "i",
+          "source1": "i",
+          "source2": "",
+          "source3": "",
+          "constant": "4"
+        },
+        {
+          "text": "c = i != N",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "c",
+          "source1": "i",
+          "source2": "N",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "if c go back",
+          "type": "BRANCH",
+          "oper": "",
+          "size": "",
+          "destin": "",
+          "source1": "c",
+          "source2": "",
+          "source3": "",
+          "constant": "",
+          "stride": 4
+        }
+      ]
+    },
+    {
+      "name": "SUM-simd4",
+      "description": "// vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+      "N": 1024,
+      "vlen": 32,
+      "declarations": [
+        {
+          "name": "S0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "S1",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "S2",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "S3",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "t0",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "t1",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "t2",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "t3",
+          "role": "data",
+          "type": "FLOAT",
+          "size": "double",
+          "lanes": 4
+        },
+        {
+          "name": "V",
+          "role": "array",
+          "type": "FLOAT",
+          "size": "double"
+        },
+        {
+          "name": "i",
+          "role": "index",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "c",
+          "role": "condition",
+          "type": "INT",
+          "size": "word"
+        },
+        {
+          "name": "N",
+          "role": "read-only",
+          "type": "INT",
+          "size": "word"
+        }
+      ],
+      "instruction_list": [
+        {
+          "text": "t0[0:3] = V[i:i+3]",
+          "type": "VMEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t0",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "",
+          "stride": 4,
+          "lanes": 4
+        },
+        {
+          "text": "S0[0:3] = S0[0:3] + t0[0:3]",
+          "type": "VFLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S0",
+          "source1": "S0",
+          "source2": "t0",
+          "source3": "",
+          "constant": "",
+          "lanes": 4
+        },
+        {
+          "text": "t1[0:3] = V[i+4:i+7]",
+          "type": "VMEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t1",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "4",
+          "stride": 4,
+          "lanes": 4
+        },
+        {
+          "text": "S1[0:3] = S1[0:3] + t1[0:3]",
+          "type": "VFLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S1",
+          "source1": "S1",
+          "source2": "t1",
+          "source3": "",
+          "constant": "",
+          "lanes": 4
+        },
+        {
+          "text": "t2[0:3] = V[i+8:i+11]",
+          "type": "VMEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t2",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "8",
+          "stride": 4,
+          "lanes": 4
+        },
+        {
+          "text": "S2[0:3] = S2[0:3] + t2[0:3]",
+          "type": "VFLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S2",
+          "source1": "S2",
+          "source2": "t2",
+          "source3": "",
+          "constant": "",
+          "lanes": 4
+        },
+        {
+          "text": "t3[0:3] = V[i+12:i+15]",
+          "type": "VMEM",
+          "oper": "LOAD",
+          "size": "long",
+          "destin": "t3",
+          "source1": "i",
+          "source2": "V",
+          "source3": "",
+          "constant": "12",
+          "stride": 4,
+          "lanes": 4
+        },
+        {
+          "text": "S3[0:3] = S3[0:3] + t3[0:3]",
+          "type": "VFLOAT",
+          "oper": "ADD",
+          "size": "double",
+          "destin": "S3",
+          "source1": "S3",
+          "source2": "t3",
+          "source3": "",
+          "constant": "",
+          "lanes": 4
+        },
+        {
+          "text": "i = i + 16",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "i",
+          "source1": "i",
+          "source2": "",
+          "source3": "",
+          "constant": "16"
+        },
+        {
+          "text": "c = i != N",
+          "type": "INT",
+          "oper": "ARITH",
+          "size": "word",
+          "destin": "c",
+          "source1": "i",
+          "source2": "N",
+          "source3": "",
+          "constant": ""
+        },
+        {
+          "text": "if c go back",
+          "type": "BRANCH",
+          "oper": "",
+          "size": "",
+          "destin": "",
+          "source1": "c",
+          "source2": "",
+          "source3": "",
+          "constant": "",
+          "stride": 16
+        }
+      ]
+    }
+  ],
+  "processors": [
+    {
+      "name": "GC-16",
+      "dispatch": 6,
+      "retire": 8,
+      "ROBsize": 200,
+      "bPenalty": 17,
+      "nBlocks": 16,
+      "blkSize": 64,
+      "mPenalty": 12,
+      "mIssueTime": 1,
+      "nFillBuffers": 16,
+      "nWriteBuffers": 16,
+      "rThru": 2,
+      "latencies": {
+        "INT": 1,
+        "INT.ARITH": 1,
+        "INT.LOGIC": 1,
+        "INT.SHIFT": 1,
+        "INT.CVT": 6,
+        "VINT": 1,
+        "VINT.ARITH": 1,
+        "VINT.LOGIC": 1,
+        "VINT.SHIFT": 1,
+        "VINT.CVT": 4,
+        "VINT.SHUFFLE": 1,
+        "VINT.PERMUTE": 3,
+        "MEM.STORE": 1,
+        "MEM.LOAD": 5,
+        "VMEM.STORE": 1,
+        "VMEM.LOAD": 6,
+        "FLOAT.ADD": 2,
+        "FLOAT.MUL": 4,
+        "FLOAT.FMA": 4,
+        "FLOAT.DIV": 11,
+        "FLOAT.DIV.double": 14,
+        "FLOAT.SQRT": 12,
+        "FLOAT.SQRT.double": 16,
+        "FLOAT.CVT": 4,
+        "FLOAT.CVT.single": 5,
+        "VFLOAT.ADD": 2,
+        "VFLOAT.MUL": 4,
+        "VFLOAT.FMA": 4,
+        "VFLOAT.DIV": 11,
+        "VFLOAT.DIV.double": 14,
+        "VFLOAT.SQRT": 12,
+        "VFLOAT.SQRT.double": 16,
+        "VFLOAT.CVT": 4,
+        "VFLOAT.CVT.single": 5,
+        "VFLOAT.SHUFFLE": 1,
+        "VFLOAT.PERMUTE": 3,
+        "BRANCH": 1
+      },
+      "ports": {
+        "0": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.SHIFT",
+          "INT.CVT",
+          "FLOAT.MUL",
+          "FLOAT.FMA",
+          "FLOAT.DIV",
+          "FLOAT.SQRT",
+          "FLOAT.CVT",
+          "VFLOAT.MUL",
+          "VFLOAT.FMA",
+          "VFLOAT.DIV",
+          "VFLOAT.SQRT",
+          "VFLOAT.CVT",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHIFT",
+          "VINT.CVT"
+        ],
+        "1": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.CVT",
+          "FLOAT.ADD",
+          "FLOAT.MUL",
+          "FLOAT.FMA",
+          "FLOAT.CVT",
+          "VFLOAT.ADD",
+          "VFLOAT.MUL",
+          "VFLOAT.FMA",
+          "VFLOAT.CVT",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHIFT",
+          "VINT.CVT",
+          "VINT.SHUFFLE",
+          "VFLOAT.SHUFFLE"
+        ],
+        "2": [
+          "MEM.LOAD",
+          "VMEM.LOAD"
+        ],
+        "3": [
+          "MEM.LOAD",
+          "VMEM.LOAD"
+        ],
+        "5": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "FLOAT.ADD",
+          "VFLOAT.ADD",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHUFFLE",
+          "VINT.PERMUTE",
+          "VFLOAT.SHUFFLE",
+          "VFLOAT.PERMUTE"
+        ],
+        "6": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.SHIFT",
+          "BRANCH"
+        ],
+        "7": [
+          "MEM.STORE",
+          "VMEM.STORE"
+        ],
+        "8": [
+          "MEM.STORE",
+          "VMEM.STORE"
+        ],
+        "10": [
+          "INT.ARITH",
+          "INT.LOGIC"
+        ],
+        "11": [
+          "MEM.LOAD",
+          "VMEM.LOAD"
+        ]
+      }
+    }
+  ],
+  "start": {
+    "program": "SUM-scalar",
+    "processor": "GC-16",
+    "N": 1024
+  },
+  "hidden": [],
+  "locks": {
+    "programEditor": true,
+    "tutorialEditor": true,
+    "loopTransforms": true,
+    "upload": true,
+    "remove": true,
+    "processor": "all",
+    "simulation": {
+      "sched": "optimal",
+      "speculation": "stall"
+    }
+  },
+  "tutorial": {
+    "id": "L1-cache-tutorial",
+    "name": "Lesson 1: the cache and a sum of a vector",
+    "description": "Cache performance",
+    "flowVersion": 2,
+    "steps": [
+      {
+        "id": "welcome",
+        "type": "step",
+        "title": "Lesson 1: the cache and a sum of a vector",
+        "selector": "#program-source-header",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "validation": {
+          "type": "button_clicked",
+          "selector": "#program-source-header",
+          "message": "Click the header of the table to see the C code"
+        },
+        "description": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles.</p><p>The same C code, compiled with <b>gcc 13.3</b> with four sets of options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson.</p><p><b>Click the table header to see the C code</b> (needed to continue).</p>",
+        "actions": [
+          "sidePanel:show",
+          "selectProgram:SUM-scalar",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "compile"
+        ]
+      },
+      {
+        "id": "compile",
+        "type": "step",
+        "title": "Four compilations of the same loop",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>The four versions differ in two transformations that the compiler can do:</p><p>&bull; <b>Vectorization</b> (SIMD): one instruction processes 4 doubles at once, in a 256-bit register (AVX2, enabled by <i>-march=native</i>). <i>-fno-tree-vectorize</i> disables it.<br>&bull; <b>Unrolling with several accumulators</b>: <i>-funroll-loops</i> (at most 4 times) and <i>-fvariable-expansion-in-unroller</i> split the sum S into 4 partial sums, which are added after the loop.</p><p><i>-Ofast</i> lets the compiler change the order of the floating-point additions: both transformations need it.</p><table style=\"border-collapse:collapse;margin:4px 0\"><tr><th style=\"text-align:left;padding:2px 10px\">Program</th><th style=\"padding:2px 10px\">SIMD</th><th style=\"padding:2px 10px\">Accumulators</th><th style=\"padding:2px 10px\">Elements per iteration (S)</th></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar</b></td><td style=\"text-align:center\">no</td><td style=\"text-align:center\">1</td><td style=\"text-align:center\">2</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd</b></td><td style=\"text-align:center\">4 doubles</td><td style=\"text-align:center\">1 (vector)</td><td style=\"text-align:center\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar4</b></td><td style=\"text-align:center\">no</td><td style=\"text-align:center\">4</td><td style=\"text-align:center\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd4</b></td><td style=\"text-align:center\">4 doubles</td><td style=\"text-align:center\">4 (vectors)</td><td style=\"text-align:center\">16</td></tr></table><p>The next cards show the machine code (x86-64) of each loop and its RVCAT program.</p>",
+        "next": [
+          "p-scalar"
+        ]
+      },
+      {
+        "id": "p-scalar",
+        "type": "step",
+        "title": "SUM-scalar",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p><i>gcc -Ofast -fno-tree-vectorize -march=native</i>: no vectorization, but gcc unrolls the loop 2 times by itself.</p><pre>f0: vaddsd  (%rax),%xmm0,%xmm0      # S = S + V[i]     (load + add)\n    add     $0x10,%rax              # i = i + 2        (16 bytes)\n    vaddsd  -0x8(%rax),%xmm0,%xmm0  # S = S + V[i-1]   (load + add)\n    cmp     %rax,%rcx               # c = i != N\n    jne     f0                      # if c go back</pre><p>x86-64 adds an operand read from memory: each <i>vaddsd</i> is a <b>load</b> and an <b>addition</b>, two rows of RVCAT. The loop has <b>7 instructions</b> and adds <b>2 elements</b> per iteration (S = 2), with a single accumulator S: <b>2 dependent additions</b> per iteration.</p>",
+        "actions": [
+          "selectProgram:SUM-scalar",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "p-simd"
+        ]
+      },
+      {
+        "id": "p-simd",
+        "type": "step",
+        "title": "SUM-simd",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p><i>gcc -Ofast -march=native</i>: the loop is <b>vectorized</b>. <i>vaddpd</i> on a 256-bit register (ymm) adds <b>4 doubles</b> at once.</p><pre>110: vaddpd (%rax),%ymm0,%ymm0       # S[0:3] = S[0:3] + V[i:i+3]  (load + add)\n     add    $0x20,%rax               # i = i + 4        (32 bytes)\n     cmp    %rax,%rdx                # c = i != N\n     jne    110                      # if c go back</pre><p>RVCAT program: a vector load of 4 doubles, a vector addition, and the loop control: <b>5 instructions</b>, <b>4 elements</b> per iteration (S = 4). The accumulator S[0:3] keeps 4 partial sums (one per lane), which are added after the loop.</p>",
+        "actions": [
+          "selectProgram:SUM-simd",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "p-scalar4"
+        ]
+      },
+      {
+        "id": "p-scalar4",
+        "type": "step",
+        "title": "SUM-scalar4",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>Unrolled 4 times, with <b>4 accumulators</b> (S0 to S3, variable expansion), and not vectorized.</p><pre>1b3: vaddsd (%r8),%xmm1,%xmm1        # S0 = S0 + V[i]\n     vaddsd 0x8(%r8),%xmm4,%xmm4     # S1 = S1 + V[i+1]\n     add    $0x20,%r8                # i = i + 4        (32 bytes)\n     vaddsd -0x10(%r8),%xmm2,%xmm2   # S2 = S2 + V[i+2]\n     vaddsd -0x8(%r8),%xmm3,%xmm3    # S3 = S3 + V[i+3]\n     cmp    %r12,%r8                 # c = i != N\n     jne    1b3                      # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>4 elements</b> per iteration (S = 4), and <b>4 independent chains of additions</b> instead of one.</p>",
+        "actions": [
+          "selectProgram:SUM-scalar4",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "p-simd4"
+        ]
+      },
+      {
+        "id": "p-simd4",
+        "type": "step",
+        "title": "SUM-simd4",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>Vectorized and unrolled 4 times, with <b>4 vector accumulators</b> of 4 doubles each.</p><pre>1ec: vaddpd (%r11),%ymm1,%ymm1           # S0[0:3] += V[i:i+3]\n     vaddpd 0x20(%r11),%ymm4,%ymm4       # S1[0:3] += V[i+4:i+7]\n     sub    $0xffffffffffffff80,%r11     # i = i + 16       (+128 bytes)\n     vaddpd -0x40(%r11),%ymm2,%ymm2      # S2[0:3] += V[i+8:i+11]\n     vaddpd -0x20(%r11),%ymm3,%ymm3      # S3[0:3] += V[i+12:i+15]\n     cmp    %r11,%rsi                    # c = i != N\n     jne    1ec                          # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>16 elements</b> per iteration (S = 16): each iteration reads 16 × 8 = <b>128 bytes</b> of V.</p>",
+        "actions": [
+          "selectProgram:SUM-simd4",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "cache"
+        ]
+      },
+      {
+        "id": "cache",
+        "type": "step",
+        "title": "The processor and its cache",
+        "selector": "#process-panel .processor-container",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>The processor <b>GC-16</b> is configured like an Intel <b>Golden Cove</b> core: up to 6 instructions dispatched and 8 retired per cycle, a ROB of 200 entries, and 10 execution ports (3 of them for loads and 2 for stores).</p><p>Its <b><span style=\"color:#c62828\">cache</span></b> is very small, so that its effect is easy to see: <b>16 blocks of 64 bytes</b> (1 KB). A block holds 64 / 8 = <b>8 doubles</b>. The data that are not in the cache come from the <b>main memory</b>, block by block (a <b>cache miss</b>).</p><p>With N = 1,024, the vector V takes 8 KB: <b>128 blocks</b>, much more than the cache. Each block of V is read once, so each one is a miss.</p>",
+        "actions": [
+          "reveal:processor",
+          "sidePanel:show"
+        ],
+        "next": [
+          "q-blocks"
+        ]
+      },
+      {
+        "id": "q-blocks",
+        "type": "question",
+        "title": "Iterations per cache block",
+        "position": "right",
+        "wWidth": 460,
+        "questionText": "<p>A cache block holds 8 doubles. How many <b>iterations</b> of each loop read the elements of one block of V?</p>",
+        "answerMode": "numbers",
+        "answers": [],
+        "numericFields": [
+          {
+            "label": "SUM-scalar",
+            "value": 4,
+            "tolerance": 0.01,
+            "unit": "iterations",
+            "correct": "Right: 2 elements per iteration, 8 / 2 = 4 iterations per block.",
+            "wrong": "SUM-scalar adds 2 elements per iteration."
+          },
+          {
+            "label": "SUM-simd",
+            "value": 2,
+            "tolerance": 0.01,
+            "unit": "iterations",
+            "correct": "Right: 4 elements per iteration, 8 / 4 = 2 iterations per block.",
+            "wrong": "SUM-simd adds 4 elements per iteration."
+          },
+          {
+            "label": "SUM-scalar4",
+            "value": 2,
+            "tolerance": 0.01,
+            "unit": "iterations",
+            "correct": "Right: 4 elements per iteration, 8 / 4 = 2 iterations per block.",
+            "wrong": "SUM-scalar4 adds 4 elements per iteration."
+          },
+          {
+            "label": "SUM-simd4",
+            "value": 0.5,
+            "tolerance": 0.01,
+            "unit": "iterations",
+            "correct": "Right: 16 elements per iteration, 8 / 16 = 0.5: each iteration reads 2 blocks.",
+            "wrong": "SUM-simd4 adds 16 elements per iteration: more than a block."
+          }
+        ],
+        "next": [
+          "next-steps"
+        ]
+      },
+      {
+        "id": "next-steps",
+        "type": "step",
+        "title": "Next",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>The four loops do the same work with very different instructions: fewer instructions per element (SIMD) and more independent additions (several accumulators).</p><p>The next part of the lesson will simulate them and analyse when the <b>cache misses</b> limit their performance.</p>",
+        "next": []
+      }
+    ]
+  }
+}

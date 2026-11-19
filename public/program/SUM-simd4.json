@@ -1,0 +1,224 @@
+{
+  "name": "SUM-simd4",
+  "description": "// vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+  "N": 1024,
+  "vlen": 32,
+  "declarations": [
+    {
+      "name": "S0",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "S1",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "S2",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "S3",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "t0",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "t1",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "t2",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "t3",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "V",
+      "role": "array",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "i",
+      "role": "index",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "c",
+      "role": "condition",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "N",
+      "role": "read-only",
+      "type": "INT",
+      "size": "word"
+    }
+  ],
+  "instruction_list": [
+    {
+      "text": "t0[0:3] = V[i:i+3]",
+      "type": "VMEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t0",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "",
+      "stride": 4,
+      "lanes": 4
+    },
+    {
+      "text": "S0[0:3] = S0[0:3] + t0[0:3]",
+      "type": "VFLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S0",
+      "source1": "S0",
+      "source2": "t0",
+      "source3": "",
+      "constant": "",
+      "lanes": 4
+    },
+    {
+      "text": "t1[0:3] = V[i+4:i+7]",
+      "type": "VMEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t1",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "4",
+      "stride": 4,
+      "lanes": 4
+    },
+    {
+      "text": "S1[0:3] = S1[0:3] + t1[0:3]",
+      "type": "VFLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S1",
+      "source1": "S1",
+      "source2": "t1",
+      "source3": "",
+      "constant": "",
+      "lanes": 4
+    },
+    {
+      "text": "t2[0:3] = V[i+8:i+11]",
+      "type": "VMEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t2",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "8",
+      "stride": 4,
+      "lanes": 4
+    },
+    {
+      "text": "S2[0:3] = S2[0:3] + t2[0:3]",
+      "type": "VFLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S2",
+      "source1": "S2",
+      "source2": "t2",
+      "source3": "",
+      "constant": "",
+      "lanes": 4
+    },
+    {
+      "text": "t3[0:3] = V[i+12:i+15]",
+      "type": "VMEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t3",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "12",
+      "stride": 4,
+      "lanes": 4
+    },
+    {
+      "text": "S3[0:3] = S3[0:3] + t3[0:3]",
+      "type": "VFLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S3",
+      "source1": "S3",
+      "source2": "t3",
+      "source3": "",
+      "constant": "",
+      "lanes": 4
+    },
+    {
+      "text": "i = i + 16",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "i",
+      "source1": "i",
+      "source2": "",
+      "source3": "",
+      "constant": "16"
+    },
+    {
+      "text": "c = i != N",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "i",
+      "source2": "N",
+      "source3": "",
+      "constant": ""
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 16
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "name": "SUM-simd",
+  "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
+  "N": 1024,
+  "vlen": 32,
+  "declarations": [
+    {
+      "name": "S",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "t0",
+      "role": "data",
+      "type": "FLOAT",
+      "size": "double",
+      "lanes": 4
+    },
+    {
+      "name": "V",
+      "role": "array",
+      "type": "FLOAT",
+      "size": "double"
+    },
+    {
+      "name": "i",
+      "role": "index",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "c",
+      "role": "condition",
+      "type": "INT",
+      "size": "word"
+    },
+    {
+      "name": "N",
+      "role": "read-only",
+      "type": "INT",
+      "size": "word"
+    }
+  ],
+  "instruction_list": [
+    {
+      "text": "t0[0:3] = V[i:i+3]",
+      "type": "VMEM",
+      "oper": "LOAD",
+      "size": "long",
+      "destin": "t0",
+      "source1": "i",
+      "source2": "V",
+      "source3": "",
+      "constant": "",
+      "stride": 1,
+      "lanes": 4
+    },
+    {
+      "text": "S[0:3] = S[0:3] + t0[0:3]",
+      "type": "VFLOAT",
+      "oper": "ADD",
+      "size": "double",
+      "destin": "S",
+      "source1": "S",
+      "source2": "t0",
+      "source3": "",
+      "constant": "",
+      "lanes": 4
+    },
+    {
+      "text": "i = i + 4",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "i",
+      "source1": "i",
+      "source2": "",
+      "source3": "",
+      "constant": "4"
+    },
+    {
+      "text": "c = i != N",
+      "type": "INT",
+      "oper": "ARITH",
+      "size": "word",
+      "destin": "c",
+      "source1": "i",
+      "source2": "N",
+      "source3": "",
+      "constant": ""
+    },
+    {
+      "text": "if c go back",
+      "type": "BRANCH",
+      "oper": "",
+      "size": "",
+      "destin": "",
+      "source1": "c",
+      "source2": "",
+      "source3": "",
+      "constant": "",
+      "stride": 4
+    }
+  ]
+}
