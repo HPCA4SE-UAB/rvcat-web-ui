@@ -1,9 +1,11 @@
 // Pure JavaScript, no Vue dependencies
 export class WorkerManager {
   constructor(workerPath = './worker.js') {
+    this.workerPath       = workerPath;
     this.worker           = new Worker(workerPath);
     this.messageCallbacks = new Map(); // Store callbacks by message ID
     this.globalHandlers   = {}; // Will be set by Vue components
+    this.progressHandlers = {}; // Progress of long tasks (simulations), by message ID
 
     this.isReady      = false; // Track initialization state
     this.readyPromise = null; // Promise for waiting
@@ -23,6 +25,10 @@ export class WorkerManager {
           this.readyResolve = null;
         }
         console.log('📦🎯 Worker initialized and ready');
+      }
+
+      if (action === 'progress' && id && this.progressHandlers[id]) {
+        this.progressHandlers[id](message.data.fraction);
       }
 
       if (action === 'executed' && id) {
@@ -48,6 +54,29 @@ export class WorkerManager {
   // Unregister handler
   unregisterHandler(id) {
     delete this.globalHandlers[id];
+  }
+
+  // Progress of a long task (a simulation): handler(fraction done)
+  registerProgressHandler(id, handler) {
+    this.progressHandlers[id] = handler;
+  }
+  unregisterProgressHandler(id) {
+    delete this.progressHandlers[id];
+  }
+
+  // Abort what the worker is running: Python cannot be interrupted while it simulates, so the
+  // worker is terminated and a new one is started (it loads Pyodide and RVCAT again; the files
+  // are in the cache of the browser). The pending requests are forgotten.
+  restart() {
+    this.worker.terminate();
+    this.messageCallbacks.clear();
+    this.isReady      = false;
+    this.readyPromise = null;
+    this.readyResolve = null;
+    this.worker       = new Worker(this.workerPath);
+    this.setupMessageHandler();
+    this.initialize();
+    return this.waitForReady();
   }
 
   // Execute code with callback

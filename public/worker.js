@@ -21,8 +21,15 @@ async function initialize() {
         self.pyodide = await loadPyodide();              // Load Pyodide runtime
         await loadPackage('numpy')                       // Preload numpy
         await loadPackage('rvcat-0.1-py3-none-any.whl')  // Custom package
+        // (a new worker, after a simulation was aborted, is ready to simulate)
+        await self.pyodide.runPythonAsync('import rvcat')
     }
 }
+
+/* Progress of a simulation: RVCAT calls rvcatProgress(fraction) about every 0.2 s while it
+   simulates; the page shows the percentage done and the time left */
+let currentId = undefined
+self.rvcatProgress = (fraction) => self.postMessage({ action: 'progress', fraction, id: currentId })
 
 /********
   Message Handling - The Core.
@@ -51,6 +58,7 @@ self.onmessage = async function(message) {
         // catch python errors
         try {
             console.log('🐍➡️ execute: ', message.data.code)
+            currentId = message.data.id
             let res = await self.pyodide.runPythonAsync(message.data.code);
             if (res !== undefined) {
               console.log('🐍✅ results:', res);

@@ -114,4 +114,12 @@ export default {
   "execute": { es: "ejecución", ca: "execució" },
   "retire": { es: "retire", ca: "retire" },
   "Algorithmic operation = one iteration of the original loop (before unrolling or SIMD). An O(N) algorithm performs N algorithmic operations. When each iteration does the work of S original iterations (loop stride S), cycles/alg oper = cycles/iter ÷ S, which allows comparing the baseline loop with its unrolled or vectorized versions.": { es: "Operación algorítmica = una iteración del bucle original (antes de desenrollar o de SIMD). Un algoritmo O(N) hace N operaciones algorítmicas. Si cada iteración hace el trabajo de S iteraciones originales (paso del bucle S), cycles/alg oper = cycles/iter ÷ S, lo que permite comparar el bucle base con sus versiones desenrolladas o vectorizadas.", ca: "Operació algorísmica = una iteració del bucle original (abans de desenrotllar o de SIMD). Un algorisme O(N) fa N operacions algorísmiques. Si cada iteració fa la feina de S iteracions originals (pas del bucle S), cycles/alg oper = cycles/iter ÷ S, cosa que permet comparar el bucle base amb les seves versions desenrotllades o vectoritzades." },
+  "{p}% done · about {s} s left": { es: "{p}% hecho · faltan unos {s} s", ca: "{p}% fet · falten uns {s} s" },
+  "Estimated time: about {s} s": { es: "Tiempo estimado: unos {s} s", ca: "Temps estimat: uns {s} s" },
+  "Simulating {n} instructions…": { es: "Simulando {n} instrucciones…", ca: "Simulant {n} instruccions…" },
+  "Simulation aborted. The simulator is being restarted…": { es: "Simulación interrumpida. El simulador se está reiniciando…", ca: "Simulació interrompuda. El simulador s'està reiniciant…" },
+  "Simulation aborted.": { es: "Simulación interrumpida.", ca: "Simulació interrompuda." },
+  "The simulation failed: {reason}": { es: "La simulación ha fallado: {reason}", ca: "La simulació ha fallat: {reason}" },
+  "Stop the simulation (the simulator is restarted: a few seconds)": { es: "Detener la simulación (el simulador se reinicia: unos segundos)", ca: "Aturar la simulació (el simulador es reinicia: uns segons)" },
+  "Abort": { es: "Interrumpir", ca: "Interromp" },
 }

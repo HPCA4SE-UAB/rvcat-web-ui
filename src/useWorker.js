@@ -52,6 +52,15 @@ export function useWorker() {
     };
   };
 
+  // Progress of a long task (a simulation); returns the cleanup function
+  const registerProgressHandler = (id, handler) => {
+    workerManager.registerProgressHandler(id, handler);
+    return () => workerManager?.unregisterProgressHandler(id);
+  };
+
+  // Abort the running task: a new worker (see WorkerManager.restart)
+  const restartWorker = () => workerManager.restart();
+
   // Cleanup
   onUnmounted(() => {
     if (workerManager) {
@@ -70,6 +79,8 @@ export function useWorker() {
     executePython,
     loadPackage,
     registerHandler,
+    registerProgressHandler,
+    restartWorker,
     waitForReady: () => workerManager.waitForReady()
   };
 }

@@ -14,7 +14,58 @@
            ALG_OP_HELP, ALG_OP_UNIT, algOpFormula } from '@/algOps'
 
   const { getExecutionResults } = useRVCAT_Api();
-  const { registerHandler }     = inject('worker');
+  const { registerHandler, registerProgressHandler, restartWorker } = inject('worker');
+
+  // ---- Progress of a simulation: an estimate before it starts (from the speed of the previous
+  // simulations), the percentage done and the time left while it runs, and the option to abort ----
+  const SPEED_KEY = 'simulationSpeed'          // milliseconds per simulated instruction
+  const simProgress = ref(null)                 // { fraction, start, estimate (ms) }
+  const progressNow = ref(0)
+  let progressTimer = null
+  let cleanupProgress = null
+  function expectedInstructions(process) {
+    const n = process?.instruction_list?.length ?? 0, rep = Math.max(1, Number(process?.rep) || 1)
+    return (Number(process?.iters) || 0) * n * rep + rep * (process?.epilogue?.length ?? 0)
+  }
+  function startProgress(process) {
+    let msPerInstr = null
+    try { msPerInstr = Number(localStorage.getItem(SPEED_KEY)) || null } catch { msPerInstr = null }
+    const instructions = expectedInstructions(process)
+    simProgress.value = { fraction: 0, start: performance.now(), instructions,
+                          estimate: msPerInstr ? msPerInstr * instructions : null }
+    progressNow.value = performance.now()
+    clearInterval(progressTimer)
+    progressTimer = setInterval(() => { progressNow.value = performance.now() }, 250)
+  }
+  function endProgress(results) {
+    const p = simProgress.value
+    if (p && results?.total_instructions > 0) {
+      const elapsed = performance.now() - p.start
+      // the speed of this simulation, for the next estimate (only long enough simulations)
+      if (elapsed > 300) try { localStorage.setItem(SPEED_KEY, String(elapsed / results.total_instructions)) } catch { /* ignore */ }
+    }
+    clearInterval(progressTimer)
+    simProgress.value = null
+  }
+  // percentage done, and seconds left (from the progress so far, or from the estimate)
+  const progressText = computed(() => {
+    const p = simProgress.value
+    if (!p) return ''
+    const elapsed = (progressNow.value - p.start) / 1000
+    if (p.fraction > 0.02) {
+      const left = elapsed * (1 - p.fraction) / p.fraction
+      return t('{p}% done · about {s} s left', { p: Math.round(100 * p.fraction), s: Math.max(0, Math.round(left)) })
+    }
+    if (p.estimate) return t('Estimated time: about {s} s', { s: Math.max(1, Math.round(p.estimate / 1000)) })
+    return t('Simulating {n} instructions…', { n: p.instructions.toLocaleString('en-US') })
+  })
+  async function abortSimulation() {
+    endProgress(null)
+    showRunning(false)
+    executionError.value = t('Simulation aborted. The simulator is being restarted…')
+    await restartWorker()
+    executionError.value = t('Simulation aborted.')
+  }
   const simState                = inject('simulationState');
 
  /* ------------------------------------------------------------------
@@ -350,6 +401,9 @@
 
   onMounted(() => {
     cleanupHandleResults  = registerHandler('get_execution_results', handleResults)
+    cleanupProgress = registerProgressHandler('get_execution_results', (fraction) => {
+      if (simProgress.value) simProgress.value.fraction = fraction
+    })
     document.getElementById('simulation-running').style.display = 'none'
     loadOptions()
     loadResults()
@@ -384,6 +438,8 @@
         cleanupHandleResults();
         cleanupHandleResults = null
      }
+    cleanupProgress?.()
+    clearInterval(progressTimer)
     console.log('🕐👋 SimulationComponent unMounted')
   })
 
@@ -406,12 +462,17 @@
   const handleResults = async (data, dataType) => {
     if (dataType === 'error') {
       console.error('🕐❌Failed to get execution results:', data);
+      endProgress(null)
+      showRunning(false)
+      const reason = String(data).split('\n').filter(Boolean).pop() ?? ''
+      executionError.value = t('The simulation failed: {reason}', { reason: reason.replace(/^\w*Error: /, '') })
       return;
     }
     try {
       console.log('🕐✅ Execution Results received')
       // Results + snapshot of the simulated program/processor (shown when stored results are hovered)
       simResults = { ...JSON.parse(data), context: pendingContext }
+      endProgress(simResults)
       patternKey.value++
       saveResults()
       if (resultsTimeout) clearTimeout(resultsTimeout)
@@ -611,6 +672,7 @@
                 nFillBuffers, nWriteBuffers, rThru } = process
         const { sched, speculation } = settings
         pendingContext = buildResultContext(toRaw(process), simState.processorName, settings)
+        startProgress(process)
         getExecutionResults(JSON.stringify( { Nloop, ROBsize, dispatch, retire, sched, speculation,
                                               bPenalty: process.bPenalty ?? 5, blkSize, nBlocks, mPenalty, mIssueTime,
                                               nFillBuffers: nFillBuffers ?? 2,
@@ -1032,7 +1094,15 @@
     <div class="sim-running-msg">
       <div class="running-group">
         <div id="run-simulation-spinner" class="spinner" style="display: none;"></div>
-        <div id="simulation-running"><p>{{ t('Simulation on course...') }}</p></div>
+        <div id="simulation-running">
+          <p>{{ t('Simulation on course...') }}</p>
+          <div v-if="simProgress" class="sim-progress" id="simulation-progress">
+            <progress :value="Math.round(100 * simProgress.fraction)" max="100"></progress>
+            <span id="simulation-progress-text">{{ progressText }}</span>
+            <button class="blue-button" id="abort-simulation" @click="abortSimulation"
+                    :title="t('Stop the simulation (the simulator is restarted: a few seconds)')">{{ t('Abort') }}</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="graph-section sim-usage-part">
@@ -1383,6 +1453,8 @@
     display: flex;
     gap:     10px;
   }
+  .sim-progress { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .sim-progress progress { width: 220px; height: 14px; }
   .spinner {
     width:  15px;
     height: 15px;
