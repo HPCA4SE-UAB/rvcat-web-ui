@@ -2,7 +2,8 @@
   import { t } from '@/i18n'
   // Memory trace of the edited program: elements and byte addresses accessed by each memory
   // instruction in the first and last K iterations. The addresses come from RVCAT
-  // (get_memory_trace), so they are the ones the simulator uses.
+  // (get_memory_trace), so they are the ones the simulator uses. When the loop is repeated, the
+  // 1st and the 2nd calls are shown, each one followed by the accesses of the block after it.
   import { ref, reactive, computed, watch, inject, onMounted, onUnmounted } from 'vue'
   import { useRVCAT_Api } from '@/rvcatAPI'
   import { buildTraceView, effectiveN, elementRange, byteRange, formatAddress,
@@ -11,6 +12,9 @@
   const props = defineProps({
     program:   { type: Array,   required: true },   // edited instruction list
     N:         { type: Number,  required: true },   // algorithmic operations
+    rep:       { type: Number,  default: 1 },       // calls of the loop
+    repStrides:{ type: Object,  default: () => ({}) },  // elements advanced by each array in each call
+    epilogue:  { type: Array,   default: () => [] },    // block after each call
     blocked:   { type: String,  default: '' },      // reason why the trace cannot be computed
     rowIssues: { type: Object,  default: () => ({}) },
   })
@@ -44,9 +48,13 @@
       if (!isReady.value) return       // retried when the worker is ready
       const K = Math.min(TRACE_MAX_K, Math.max(1, Math.round(options.K) || 1))
       // Empty number inputs count as 1, as in the coherence checks
-      const list = props.program.map(i => ({ ...i, stride: numberOr1(i.stride), lanes: numberOr1(i.lanes),
-                                             constant: String(i.constant ?? '').trim() }))
-      getMemoryTrace(JSON.stringify({ instruction_list: list }), effectiveN(props.N, S.value), K)
+      const clean = (i) => ({ ...i, stride: numberOr1(i.stride), lanes: numberOr1(i.lanes),
+                              constant: String(i.constant ?? '').trim() })
+      const rep = Math.max(1, Math.round(Number(props.rep)) || 1)
+      const programJSON = { instruction_list: props.program.map(clean),
+                            ...(rep > 1 ? { rep, repStrides: props.repStrides } : {}),
+                            ...(rep > 1 && props.epilogue.length ? { epilogue: props.epilogue.map(clean) } : {}) }
+      getMemoryTrace(JSON.stringify(programJSON), effectiveN(props.N, S.value), K)
         .catch(e => { error.value = String(e?.message ?? e) })
     }, 200)
   }
@@ -64,7 +72,8 @@
     }
   }
 
-  watch(() => [JSON.stringify(props.program), props.N, options.K, options.open, props.blocked, isReady.value],
+  watch(() => [JSON.stringify(props.program), props.N, props.rep, JSON.stringify(props.repStrides),
+                JSON.stringify(props.epilogue), options.K, options.open, props.blocked, isReady.value],
         request, { immediate: true })
 
   let cleanup = null
@@ -77,9 +86,16 @@
     t('{oper} of array {array}, {size}-byte elements, lanes {lanes}, stride {stride}, offset {c}',
       { oper: col.oper, array: col.array, size: col.size, lanes: col.lanes, stride: col.stride, c: col.constant }) + '\n' +
     t('Advances {n} elements = {b} bytes per iteration', { n: col.lanes * Math.abs(col.stride), b: col.lanes * Math.abs(col.stride) * col.size }) +
+    (view.value?.rep > 1 ? '\n' + t('Advances {n} elements in each call of the loop', { n: col.repStride }) : '') +
     (props.rowIssues[col.index] ? `\n\n${props.rowIssues[col.index].text.join('\n')}` : '')
 
-  const cellTitle = (col, cell, k) =>
+  const callText = (rep) => t('Call {r} of {n}', { r: rep + 1, n: view.value?.rep ?? 1 })
+  const blockTitle = (b) =>
+    t('Instruction {i}: {text}', { i: b.index, text: props.epilogue[b.index - props.program.length]?.text ?? '' }) + '\n' +
+    t('Accessed once after each call: {elements}, bytes {bytes}', { elements: elementRange(b.array, b.cell), bytes: byteRange(b.cell, false) })
+
+  const cellTitle = (col, cell, k, rep) =>
+    (view.value?.rep > 1 ? callText(rep) + ', ' : '') +
     t('Iteration {k}: {elements}, bytes {bytes}', { k, elements: elementRange(col.array, cell), bytes: byteRange(cell, false) }) +
     ` (${byteRange(cell, true)})` +
     (cell.outside ? '\n' + t('Outside the {n} elements swept by this access over the loop ({it} iterations × {step})',
@@ -118,7 +134,8 @@
           <input type="checkbox" v-model="options.hex" id="memory-trace-hex" /> hex
         </label>
         <span v-if="view && !blocked" class="trace-summary">
-          N = {{ view.N }} alg opers · S = {{ view.S }} · {{ view.iterations }} {{ t('iterations') }}
+          N = {{ view.N }} alg opers · S = {{ view.S }} · {{ view.iterations }} {{ t('iterations') }}<template v-if="view.rep > 1">
+          × {{ view.rep }} {{ t('calls') }} ({{ t('1st and 2nd shown') }})</template>
         </span>
         <button v-if="view && !blocked" class="trace-copy" id="memory-trace-copy" @click="copyTrace"
                 :title="t('Copy the trace as tab-separated text')">
@@ -156,17 +173,29 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="row in view.rows" :key="row.k">
+              <template v-for="row in view.rows" :key="row.rep + ':' + row.k">
+                <tr v-if="row.callStart && view.rep > 1" class="trace-call">
+                  <td :colspan="view.columns.length + 1">{{ callText(row.rep) }}</td>
+                </tr>
                 <tr v-if="row.skipped > 0" class="trace-gap">
                   <td :colspan="view.columns.length + 1">⋮ {{ row.skipped }} iteration{{ row.skipped > 1 ? 's' : '' }}</td>
                 </tr>
                 <tr>
                   <td class="trace-k">{{ row.k }}</td>
                   <td v-for="(cell, c) in row.cells" :key="c" :class="{ outside: cell.outside }"
-                      :title="cellTitle(view.columns[c], cell, row.k)"
+                      :title="cellTitle(view.columns[c], cell, row.k, row.rep)"
                       @mouseenter="emit('highlight', view.columns[c].index)" @mouseleave="emit('highlight', -1)">
                     <span class="trace-elem">{{ elementRange(view.columns[c].array, cell) }}</span>
                     <span class="trace-bytes">{{ byteRange(cell, options.hex) }}</span>
+                  </td>
+                </tr>
+                <tr v-if="row.callEnd && view.blocks[row.rep]?.length" class="trace-block">
+                  <td :colspan="view.columns.length + 1">
+                    {{ t('After the call:') }}
+                    <span v-for="b in view.blocks[row.rep]" :key="b.index" class="trace-block-access" :title="blockTitle(b)">
+                      #{{ b.index }} {{ b.oper }} <span class="trace-elem">{{ elementRange(b.array, b.cell) }}</span>
+                      <span class="trace-bytes">{{ byteRange(b.cell, options.hex) }}</span>
+                    </span>
                   </td>
                 </tr>
               </template>
@@ -254,6 +283,9 @@
   .trace-elem     { font-weight: 600; }
   .trace-bytes    { margin-left: 0.8em; color: #555; }
   .trace-gap td   { color: #888; background: #fafafa; font-style: italic; }
+  .trace-call td  { text-align: left; font-weight: 600; color: #0b2e5c; background: #eef3f9; font-family: sans-serif; }
+  .trace-block td { text-align: left; background: #f6f2fb; }
+  .trace-block-access { margin-left: 1.2em; }
   .trace-table td.outside { background: #fde2e2; }
   .trace-table td.outside .trace-elem { color: #b00020; }
   .trace-table tbody tr:hover { background: #e8f4fd; }

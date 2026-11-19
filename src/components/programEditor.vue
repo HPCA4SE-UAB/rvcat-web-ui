@@ -1056,7 +1056,7 @@ function snapshotProgram() {
       <ProgramDescription v-model="editedDescription" />
       <DeclarationsTable :variables="textAnalysis.variables" @declare="onDeclare"
                          @highlight="tracedRows = $event" />
-      <MemoryTrace :program="editedProgram" :N="editedN" :rowIssues="rowIssues"
+      <MemoryTrace :program="editedProgram" :N="editedN" :rep="editedRep" :repStrides="editedRepStrides" :epilogue="editedEpilogue" :rowIssues="rowIssues"
                    :blocked="checks.errors.length ? 'Fix the errors (✖) to see the memory trace.' : ''"
                    @highlight="tracedRows = $event >= 0 ? [$event] : []" />
     </div>

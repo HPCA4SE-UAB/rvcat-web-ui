@@ -44,6 +44,26 @@ describe('memory trace view', () => {
     expect(lines[4]).toBe('8\tV[8] 32–35\tV[9] 36–39\tB[2] 56–63')
   })
 
+  it('shows the 1st and the 2nd calls of a repeated loop, and the block after each call', () => {
+    const rep = buildTraceView({
+      N: 10, S: 1, iterations: 10, shown: [0, 9], rep: 3, calls: [0, 1],
+      rows: [{ rep: 0, k: 0 }, { rep: 0, k: 9 }, { rep: 1, k: 0 }, { rep: 1, k: 9 }],
+      arrays: [{ name: 'V', base: 0, elem_size: 4, bytes: 120 }, { name: 'Y', base: 120, elem_size: 4, bytes: 8 }],
+      accesses: [{ index: 0, array: 'V', oper: 'LOAD', size: 4, lanes: 1, stride: 1, constant: '', rep_stride: 10,
+                   addr: [0, 36, 40, 76], elem: [0, 9, 10, 19] }],
+      epilogue: [{ index: 2, array: 'Y', oper: 'STORE', size: 4, lanes: 1, constant: '1', rep_stride: 1,
+                   addr: [124, 128], elem: [1, 2] }],
+    })
+    expect(rep.rows.map(r => [r.rep, r.k, r.skipped, r.callStart, r.callEnd])).toEqual(
+      [[0, 0, 0, true, false], [0, 9, 8, false, true], [1, 0, 0, true, false], [1, 9, 8, false, true]])
+    expect(rep.rows.map(r => r.cells[0].outside)).toEqual([false, false, false, false])  // V[10..19] in call 2
+    expect(rep.blocks[1][0].cell.first).toBe(2)
+    const lines = traceToText(rep, false).split('\n')
+    expect(lines[1]).toBe('call 1 of 3')
+    expect(lines[5]).toBe('block\t#2 STORE Y[1] 124–127')
+    expect(lines[6]).toBe('call 2 of 3')
+  })
+
   it('rounds N down to a multiple of S, as the simulator', () => {
     expect(effectiveN(35, 8)).toBe(32)
     expect(effectiveN(3, 4)).toBe(4)
