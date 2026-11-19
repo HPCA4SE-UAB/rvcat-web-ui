@@ -8,7 +8,7 @@
   import { isLocked }                                      from '@/lessons'
   import { downloadJSON, uploadJSON, createGraphVizGraph, saveToLocalStorage,
            instructionTypes, typeOperations, typeSizes,
-           normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT }  from '@/common'
+           normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_ITERATIONS }  from '@/common'
   import MemoryTrace                                         from '@/components/MemoryTrace.vue'
   import DeclarationsTable                                   from '@/components/DeclarationsTable.vue'
   import ProgramDescription                                  from '@/components/ProgramDescription.vue'
@@ -159,6 +159,27 @@ const declarations = ref([])
 const editedVlen = ref(null)
 // Source code (e.g. C) of the loop, saved with the program
 const editedDescription = ref('')
+// Repetitions of the loop (calls of the function): how many, whether they are independent (they can
+// overlap), the elements that each array advances in each call, and the block of instructions
+// executed after each call (e.g. y[j] = sum)
+const editedRep            = ref(1)
+const editedRepIndependent = ref(true)
+const editedRepStrides     = ref({})
+const editedEpilogue       = ref([])
+const programArrays = computed(() => [...new Set([...editedProgram.value, ...editedEpilogue.value]
+  .filter(inst => isMemoryType(inst) && inst.source2).map(inst => inst.source2))])
+const emptyRow = () => ({ text: '', type: '', oper: '', size: '', destin: '', source1: '', source2: '',
+                          source3: '', constant: '', stride: 1, lanes: 1, mask: '' })
+function addEpilogue(j) { editedEpilogue.value.splice(j, 0, emptyRow()) }
+function removeEpilogue(j) { editedEpilogue.value.splice(j, 1) }
+function setRepStride(array, value) {
+  const n = Math.max(0, Math.round(Number(value) || 0))
+  editedRepStrides.value = { ...editedRepStrides.value, [array]: n }
+}
+const repStridesToSave = () => Object.fromEntries(Object.entries(editedRepStrides.value)
+  .filter(([a, n]) => programArrays.value.includes(a) && n > 0))
+const epilogueIssues = computed(() => editedEpilogue.value
+  .map((inst, j) => (!inst.type ? t('Instruction {j} of the block has no type', { j }) : null)).filter(Boolean))
 const autoVlen   = computed(() => vectorWidth(editedProgram.value, null))
 // Text of the instructions vs their fields, and data types (src/instructionText.js)
 const textAnalysis = computed(() => analyzeProgramText(editedProgram.value, declarations.value))
@@ -181,6 +202,10 @@ function loadEditedProgram() {
     editedN.value = validN(data.N) ?? panelN()
     editedVlen.value = VECTOR_WIDTHS.includes(data.vlen) ? data.vlen : null
     editedDescription.value = typeof data.description === 'string' ? data.description : ''
+    editedRep.value = Math.max(1, Math.round(Number(data.rep) || 1))
+    editedRepIndependent.value = data.repIndependent !== false
+    editedRepStrides.value = { ...(data.repStrides ?? {}) }
+    editedEpilogue.value = (data.epilogue ?? []).map(inst => ({ ...emptyRow(), ...inst, mask: inst.mask ?? '' }))
     declarations.value = Array.isArray(data.declarations) ? data.declarations : []
     editedProgram.value = (data.instruction_list || []).map(inst => {
       return {
@@ -365,6 +390,14 @@ const pendingFields = new WeakMap()
 const pendingOf = (inst) => pendingFields.get(toRaw(inst))
 function keepField(inst, field) { pendingOf(inst)?.delete(field) }
 
+// The text of an instruction of the block after each call changed (autofill, like the loop)
+function applyEpilogueText(j) {
+  const inst = editedEpilogue.value[j]
+  if (!inst) return
+  fillFromText(inst, deriveRowFields(editedEpilogue.value, j, declarations.value))
+  sanitizeInstruction(inst)
+}
+
 // The text of an instruction changed: every field deduced from it is overwritten
 function applyText(index) {
   const inst = editedProgram.value[index]
@@ -505,6 +538,10 @@ function snapshotProgram() {
     N:                editedN.value,
     ...(editedVlen.value ? { vlen: editedVlen.value } : {}),
     declarations:     declarationsFromAnalysis(textAnalysis.value),
+    ...(editedRep.value > 1 ? { rep: editedRep.value } : {}),
+    ...(editedRepIndependent.value === false ? { repIndependent: false } : {}),
+    ...(Object.keys(repStridesToSave()).length ? { repStrides: repStridesToSave() } : {}),
+    ...(editedEpilogue.value.length ? { epilogue: editedEpilogue.value.map(inst => normalizeInstruction(inst)) } : {}),
     instruction_list: editedProgram.value.map(inst => normalizeInstruction(inst))
   };
 }
@@ -600,6 +637,10 @@ function snapshotProgram() {
     declarations.value = []
     editedVlen.value = null
     editedDescription.value = ''
+    editedRep.value = 1
+    editedRepIndependent.value = true
+    editedRepStrides.value = {}
+    editedEpilogue.value = []
     addInstruction(0);
   }
 
@@ -937,6 +978,81 @@ function snapshotProgram() {
           ℹ <strong>{{ item.code }}</strong> · instr {{ item.index }}: {{ item.message }}
         </div>
       </div>
+      <details class="repetitions-section" id="editor-repetitions" :open="editedRep > 1 || editedEpilogue.length > 0">
+        <summary :title="t('Run the whole loop several times (calls of the function), and a block of instructions after each call. help: Repetitions')">
+          {{ t('Repetitions of the loop and block after each call') }}
+        </summary>
+        <div class="rep-fields">
+          <label :title="t('Calls of the loop: the simulator runs Rep × N/S iterations (at most {limit}). The Program panel can change it for a session.', { limit: MAX_REP_ITERATIONS.toLocaleString('en-US') })">
+            {{ t('Calls (Rep):') }}
+            <input type="number" min="1" step="1" v-model.number="editedRep" id="editor-rep" class="rep-number" />
+          </label>
+          <label :title="t('Independent: a call does not use the results of the previous one (every recurrence starts again), so the processor can overlap them. Not independent: the chains of dependences go on from one call to the next.')">
+            <input type="checkbox" v-model="editedRepIndependent" id="editor-rep-independent" />
+            {{ t('Independent calls (they can overlap)') }}
+          </label>
+        </div>
+        <div v-if="programArrays.length" class="rep-fields"
+             :title="t('Elements that the accesses to each array advance in each call: 0 = the same data in every call (they can be found in the cache); the size of a row = the next row of a matrix.')">
+          <span>{{ t('Elements that each array advances per call:') }}</span>
+          <label v-for="array in programArrays" :key="array">
+            {{ array }}
+            <input type="number" min="0" step="1" :value="editedRepStrides[array] ?? 0" class="rep-number"
+                   :id="`editor-rep-stride-${array}`" @change="setRepStride(array, $event.target.value)" />
+          </label>
+        </div>
+        <table v-if="editedEpilogue.length" class="instructions-table epilogue-table" id="editor-epilogue">
+          <thead>
+            <tr>
+              <th style="width: 20px;"> # </th>
+              <th style="width: 400px;"> {{ t('After each call') }} </th>
+              <th> {{ t('Type') }} </th> <th> {{ t('Oper') }} </th> <th> {{ t('Size') }} </th>
+              <th> Destin </th> <th> Source1 </th> <th> Source2 </th> <th> Source3 </th> <th> Constant </th>
+              <th> {{ t('Actions') }} </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(inst, j) in editedEpilogue" :key="j">
+              <td>{{ editedProgram.length + j }}</td>
+              <td><input type="text" v-model="inst.text" class="table-input" @change="applyEpilogueText(j)"
+                         :id="`epilogue-text-${j}`"
+                         :title="t('Text of the instruction, e.g. Y[j] = sum: its fields are filled in from it')" /></td>
+              <td>
+                <select v-model="inst.type" class="table-select" @change="onTypeChange(inst)">
+                  <option value="">{{ t('Select...') }}</option>
+                  <option v-for="type in instructionTypes" :key="type" :value="type">{{ type }}</option>
+                </select>
+              </td>
+              <td>
+                <select v-model="inst.oper" class="table-select" :disabled="!inst.type || typeOperations[inst.type].length === 0">
+                  <option value="">{{ t('Select...') }}</option>
+                  <option v-for="operation in typeOperations[inst.type]" :key="operation" :value="operation">{{ operation }}</option>
+                </select>
+              </td>
+              <td>
+                <select v-model="inst.size" class="table-select" :disabled="!inst.type || !inst.oper || typeSizes[inst.type].length === 0">
+                  <option value="">{{ t('Select...') }}</option>
+                  <option v-for="size in typeSizes[inst.type]" :key="size" :value="size">{{ size }}</option>
+                </select>
+              </td>
+              <td><input type="text" v-model="inst.destin" class="table-input" /></td>
+              <td><input type="text" v-model="inst.source1" class="table-input" /></td>
+              <td><input type="text" v-model="inst.source2" class="table-input" /></td>
+              <td><input type="text" v-model="inst.source3" class="table-input" /></td>
+              <td><input type="text" v-model="inst.constant" class="table-input" /></td>
+              <td class="actions-cell">
+                <button class="action-btn delete" :title="t('Delete')" @click="removeEpilogue(j)">✕</button>
+                <button class="action-btn" :title="t('Insert new instruction before this one')" @click="addEpilogue(j)">▶️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="blue-button add-margin" id="editor-add-epilogue" @click="addEpilogue(editedEpilogue.length)"
+                :title="t('Add an instruction to the block executed once after each call of the loop')">
+          {{ t('+ instruction after each call') }}
+        </button>
+        <div v-for="(issue, k) in epilogueIssues" :key="'ep' + k" class="coherence-error">✖ {{ issue }}</div>
+      </details>
       <ProgramDescription v-model="editedDescription" />
       <DeclarationsTable :variables="textAnalysis.variables" @declare="onDeclare"
                          @highlight="tracedRows = $event" />
@@ -1462,4 +1578,10 @@ function snapshotProgram() {
     background-color: rgba(0,0,0,0.05);
   }
 
+  /* repetitions of the loop and the block after each call */
+  .repetitions-section { margin: 8px 0; padding: 6px 10px; border: 1px solid #c9d6ea; border-radius: 6px; background: #f7f9fd; }
+  .repetitions-section summary { cursor: pointer; font-weight: 600; color: #3b6fb6; }
+  .rep-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin: 6px 0; }
+  .rep-number { width: 5em; margin-left: 4px; }
+  .epilogue-table { margin: 6px 0; }
 </style>

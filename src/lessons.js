@@ -50,6 +50,7 @@ export const LESSON_PARTS = {
   timelineCycles:    'number of cycles of the Timeline (fixed) and its Fit button',
   simulation:        'Simulation panel (its button)',
   timelineCache:     'Cache button of the Timeline',
+  programRep:        'Rep field (repetitions of the loop) of the Program panel',
   programCritical:   'percentage of critical-path time and colors of the rows of the Program panel',
 }
 

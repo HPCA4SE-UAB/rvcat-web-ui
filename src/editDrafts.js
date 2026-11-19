@@ -42,6 +42,10 @@ export function programDraftFrom(process) {
     ...(process.vlen ? { vlen: process.vlen } : {}),
     ...(typeof process.description === 'string' ? { description: process.description } : {}),
     ...(Array.isArray(process.declarations) ? { declarations: JSON.parse(JSON.stringify(process.declarations)) } : {}),
+    ...(process.rep > 1 ? { rep: process.rep } : {}),
+    ...(process.repIndependent === false ? { repIndependent: false } : {}),
+    ...(process.repStrides && Object.keys(process.repStrides).length ? { repStrides: { ...process.repStrides } } : {}),
+    ...(process.epilogue?.length ? { epilogue: JSON.parse(JSON.stringify(process.epilogue)) } : {}),
     instruction_list: JSON.parse(JSON.stringify(process.instruction_list ?? [])),
   }
 }

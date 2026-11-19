@@ -3,7 +3,7 @@
   import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch, computed } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
-           updateProcess, MAX_LOGICAL_ELEMENT_COUNT,
+           updateProcess, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_ITERATIONS,
            normalizeProgramDefaults }                                     from '@/common'
   import { checkDeclarations }                                      from '@/instructionText'
   import { conditionalDepth }                                     from '@/branches'
@@ -40,6 +40,7 @@
     currentProgram:    '',
     availablePrograms: [],
     N:                 100,
+    rep:               1,   // repetitions of the loop (calls of the function), from the program
     stride:            1,
     show:              0  // 0: type/operation/size, 1: latency/ports
  }
@@ -169,7 +170,30 @@
   function applyProgramN(data) {
     const n = Math.round(Number(data?.N))
     if (Number.isFinite(n) && n >= 1) programOptions.N = Math.min(n, MAX_N)
+    programOptions.rep = Math.max(1, Math.round(Number(data?.rep) || 1))
   }
+
+  // Repetitions of the loop: at most MAX_REP_ITERATIONS iterations in all
+  // the block of instructions after each call of the loop (rows after the loop body)
+  const epilogue  = computed(() => simState.simulatedProcess?.epilogue ?? [])
+  const bodyCount = computed(() => simState.simulatedProcess?.instruction_list?.length ?? 0)
+  const maxRep = computed(() => {
+    const iters = programOptions.N / (programOptions.stride || 1)
+    return Math.max(1, Math.floor(MAX_REP_ITERATIONS / Math.max(1, iters)))
+  })
+  const repModel = computed({
+    get: () => programOptions.rep ?? 1,
+    set: (value) => {
+      const r = Math.round(Number(value))
+      programOptions.rep = Number.isFinite(r) ? Math.min(Math.max(r, 1), maxRep.value) : 1
+    },
+  })
+  function syncRep() {
+    if (programOptions.rep > maxRep.value) programOptions.rep = maxRep.value
+    simState.simulatedProcess.rep = programOptions.rep ?? 1
+  }
+  watch(() => programOptions.rep, () => { syncRep(); saveOptions() })
+  watch(maxRep, syncRep)
 
   // Program fields copied to the simulated process ('N' and 'declarations' are removed so that a
   // program without them does not keep the ones of the previous program)
@@ -178,6 +202,7 @@
     delete simState.simulatedProcess.declarations
     delete simState.simulatedProcess.vlen
     delete simState.simulatedProcess.description
+    for (const key of ['rep', 'repIndependent', 'repStrides', 'epilogue']) delete simState.simulatedProcess[key]
     Object.assign(simState.simulatedProcess, normalizeProgramDefaults(data))
   }
 
@@ -194,6 +219,7 @@
       programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
       if (!programOptions.N) programOptions.N = programOptions.stride;
       simState.simulatedProcess.iters = programOptions.N / programOptions.stride
+      syncRep()
       if (simState.state == 2) {  // This is an initialization step
         simState.state = 3;       // Change to next initialization step
         console.log('📄✅ Initialization step (3): program loaded')
@@ -299,6 +325,7 @@
         programOptions.N = programOptions.N - (programOptions.N % programOptions.stride);
         if (!programOptions.N) programOptions.N = programOptions.stride;
         simState.simulatedProcess.iters = programOptions.N / programOptions.stride
+        syncRep()
         return
       }
     } catch (error) {
@@ -597,6 +624,14 @@
                         (programOptions.stride > 1 ? ' ' + t('Each iteration does the work of {s} iterations of the original loop (unrolled or vectorized).', { s: programOptions.stride }) : '')">
             S={{ programOptions.stride }}
           </span>
+          <span class="iters-label rep-part" id="program-rep-label"
+                :title="t('Rep = calls of the loop (the whole function), 1 - {max}: the simulator runs Rep × N/S iterations, at most {limit}.', { max: maxRep, limit: MAX_REP_ITERATIONS.toLocaleString('en-US') }) +
+                        (simState.simulatedProcess?.epilogue?.length ? ' ' + t('After each call, the block of instructions below the loop.') : '')">
+            Rep:
+          </span>
+          <input type="number" min="1" :max="maxRep" step="1" v-model.lazy.number="repModel"
+                 class="rep-input rep-part" id="program-rep"
+                 :title="t('Calls of the loop (set in the program editor; here, for this session)')" />
         </div>
       </div>
     </div>
@@ -663,6 +698,30 @@
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>
+            <!-- the block of instructions executed after each call of the loop -->
+            <template v-if="epilogue.length">
+              <tr class="epilogue-separator">
+                <td :colspan="programOptions.show === 0 ? 5 : 4"
+                    :title="t('These instructions run once after each call of the loop (Rep calls)')">
+                  {{ t('After each call') }}{{ (programOptions.rep ?? 1) > 1 ? ` (×${programOptions.rep})` : '' }}
+                </td>
+              </tr>
+              <tr v-for="(inst, j) in epilogue" :key="'e' + j" class="epilogue-row"
+                  :style="rowStyle(bodyCount + j)"
+                  :class="{ highlighted: bodyCount + j === simState.instrHighlightedIdx }"
+                  :data-instr="bodyCount + j">
+                <td v-if="getCriticalPercentage(bodyCount + j) != null" class="critical-cell">
+                  {{ getCriticalPercentage(bodyCount + j).toFixed(0) }}%
+                </td>
+                <td v-else :title="t('Instruction Number')">{{ bodyCount + j }}</td>
+                <td :title="instructionSummary(epilogue, j)">{{ inst.text }}</td>
+                <td class="type-col" v-if="programOptions.show === 0">{{ inst.type }}</td>
+                <td class="type-col" v-if="programOptions.show === 0">{{ inst.oper }}</td>
+                <td class="type-col" v-if="programOptions.show === 0">{{ inst.size }}</td>
+                <td class="type-col" v-if="programOptions.show === 1">{{ inst.latency }}</td>
+                <td class="type-col ports-col" v-if="programOptions.show === 1">{{ portsMaskToString(inst.ports) }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -815,6 +874,10 @@
     white-space: nowrap;
   }
 
+  .rep-input { width: 3.6em; margin-left: 2px; }
+  .iters-label.rep-part { margin-left: 8px; }
+  .epilogue-separator td { background: #eef3fb; color: #3b6fb6; font-style: italic; font-size: 0.9em; text-align: left; }
+  .epilogue-row td { border-top-style: dashed; }
   .stride-label {
     margin-left: 0.4em;
     white-space: nowrap;

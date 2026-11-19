@@ -425,6 +425,7 @@
   .lesson-hide-simOptions #automatic-simulation-check,
   .lesson-hide-criticalPattern #critical-path-pattern,
   .lesson-hide-programPorts .ports-col,
+  .lesson-hide-programRep .rep-part,
   .lesson-hide-timelineCycles #timeline-fit-cycles,
   .lesson-hide-timelineResources .show-label,
   .lesson-hide-storedResults .stored-results-part { display: none !important; }

@@ -8,7 +8,8 @@
     createMemoryAddressColorMap,
     getLogicalElementCount,
     getUnsupportedInstructions,
-    validateProgram
+    validateProgram,
+    repetitionFields
   } from '@/common'
   import {
     computeCriticalCycles,
@@ -189,6 +190,7 @@
                                     nFillBuffers: nFillBuffers ?? 2,
                                     nWriteBuffers: nWriteBuffers ?? 2,
                                     rThru: rThru ?? 1,
+                                    ...repetitionFields(toRaw(process)),
                                     instruction_list: toRaw(instruction_list)}, null, 2),
                   TIMELINE_RETIRE_LIMIT)
         .catch(error => {
@@ -607,7 +609,7 @@
           visibleCriticalCycles,
           totalCycles,
           totalInstr,
-          simState.simulatedProcess.instruction_list.length
+          simState.simulatedProcess.instruction_list.length + (simState.simulatedProcess.epilogue?.length ?? 0)
         )
       : null
     simState.timelineCriticalPathPercentages = criticalPercentages
@@ -913,7 +915,7 @@
       const rowBg = wrongPath ? "#e4e4e4" : iter >= 0 ? `hsl(${(iter * 80) % 360}, 50%, 90%)` : "#ffffff";
       const criticalCycles = visibleCriticalCycles?.[rowIdx] ?? pythonCriticalCycles
       // a memory access, from the type of the instruction (its execution is shown with E)
-      const instr = simState.simulatedProcess.instruction_list[instrIdx]
+      const instr = instrAt(instrIdx)
       const memoryOperation = /MEM/.test(instr?.type ?? '')
         ? (instr.oper === 'STORE' ? 'Store to' : instr.oper === 'LOAD' ? 'Load from' : null)
         : null
@@ -945,14 +947,27 @@
         iter,
         port,
         addr,
-        latency: simState.simulatedProcess.instruction_list[instrIdx]?.latency,
-        instructionText: simState.simulatedProcess.instruction_list[instrIdx]?.text,
+        latency: instr?.latency,
+        instructionText: instr?.text,
+        rep: flags?.rep,
         memoryOperation,
         wrongPath,
         mispredicted: !!flags?.mispredicted,
         critical: criticalCycles.length > 0,
         criticalCycles: criticalCycles.length
       })
+
+      // a new call of the loop (repetitions): a line above its first row
+      if (rowIdx > 0 && Number.isFinite(flags?.rep) && flags.rep !== instructions[rowIdx - 1]?.[7]?.rep) {
+        ctx.save()
+        ctx.strokeStyle = '#3b6fb6'
+        ctx.lineWidth   = 3
+        ctx.beginPath()
+        ctx.moveTo(padX, y - 1.5)   // above the cells of this row, which are drawn next
+        ctx.lineTo(padX + labelW + totalCycles * cellW, y - 1.5)
+        ctx.stroke()
+        ctx.restore()
+      }
 
       x += labelW
 
@@ -1235,8 +1250,7 @@
       const exec = interactiveCells.filter(c => c.rowIdx === r && c.colIdx >= 0 && c.char === 'E')
       if (exec.length) marks.push(exec.reduce((a, b) => (b.colIdx > a.colIdx ? b : a)))
     }
-    const list = simState.simulatedProcess?.instruction_list ?? []
-    const vars = [...producers].map(i => list[i]?.destin).filter(Boolean)
+    const vars = [...producers].map(i => instrAt(i)?.destin).filter(Boolean)
     simState.dependenceHighlight = { producers: [...producers], vars }
     const ctx = overlayCanvas.value?.getContext('2d')
     if (!ctx) return
@@ -1349,12 +1363,21 @@
   }
 
   // (as lines of parts { text, kind }: each kind has its own colour, see .tt-* below)
+  // The instruction of a row: of the loop body, or (index >= its length) of the block after each call
+  function instrAt(i) {
+    const p = simState.simulatedProcess
+    const n = p?.instruction_list?.length ?? 0
+    return i < n ? p?.instruction_list?.[i] : p?.epilogue?.[i - n]
+  }
+
   function instructionTooltipLines(cell) {
     const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'
     const lat  = Number.isFinite(cell.latency) ? cell.latency : '–'
     const lines = [
       [{ text: `[${cell.iter},${cell.instrIdx}] `, kind: 'id' },
-       { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' }],
+       { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' },
+       ...(Number.isFinite(cell.rep) && (simState.simulatedProcess?.rep ?? 1) > 1
+         ? [{ text: ` · ${t('call {k}', { k: cell.rep + 1 })}`, kind: 'id' }] : [])],
       [{ text: `Port: ${port}; Lat: ${lat} c.`, kind: 'perf' }],
     ]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)

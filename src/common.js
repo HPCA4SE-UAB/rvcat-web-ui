@@ -564,6 +564,22 @@ export function migrateTutorialFlow(tutorial) {
   return { ...tutorial, flowVersion: TUTORIAL_FLOW_VERSION, steps }
 }
 
+// Repetitions of the loop (calls of the function): at most this number of iterations in all
+// (the same limit as RVCAT: the simulation takes about 0.6 ms per iteration natively)
+export const MAX_REP_ITERATIONS = 10000
+
+// Fields of the repetitions sent to RVCAT with a program: the calls of the loop, whether they are
+// independent (they can overlap), the elements that each array advances in each call, and the
+// block of instructions after each call (with their latency and ports)
+export function repetitionFields(process) {
+  return {
+    rep:            Math.max(1, Math.round(Number(process?.rep) || 1)),
+    repIndependent: process?.repIndependent !== false,
+    repStrides:     { ...(process?.repStrides ?? {}) },
+    epilogue:       JSON.parse(JSON.stringify(process?.epilogue ?? [])),
+  }
+}
+
 export function updateProcess(process) {
 
   const { latencies, ports, instruction_list } = process
@@ -571,8 +587,8 @@ export function updateProcess(process) {
   const opToMask = createOperationPortMasks(ports)
   const unsupportedInstructions = []
 
-  // 🔹 Recalcular cada instrucción
-  instruction_list.forEach((instr, index) => {
+  // 🔹 Recalcular cada instrucción (también las del bloque tras cada llamada)
+  ;[...instruction_list, ...(process.epilogue ?? [])].forEach((instr, index) => {
 
     // Latency (TYPE.OPER.size, TYPE.OPER, TYPE) and ports (TYPE.OPER, TYPE)
     const timing  = instructionTiming(instr, latencies ?? {}, opToMask)

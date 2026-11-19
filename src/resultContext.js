@@ -19,8 +19,10 @@ export function buildResultContext(process, processorName, settings = {}) {
   for (const field of PROCESSOR_FIELDS) processor[field] = process?.[field]
   processor.latencies = structuredClone(process?.latencies ?? {})
   processor.ports     = structuredClone(process?.ports ?? {})
+  const rep = Math.max(1, Math.round(Number(process?.rep) || 1))
   return {
-    program: { name: process?.name || '', N: (process?.iters ?? 0) * stride, stride },
+    program: { name: process?.name || '', N: (process?.iters ?? 0) * stride, stride,
+               ...(rep > 1 ? { rep, repIndependent: process?.repIndependent !== false } : {}) },
     processor,
     simulation: { sched: settings.sched ?? 'optimal', speculation: settings.speculation ?? 'stall' }
   }
@@ -29,7 +31,8 @@ export function buildResultContext(process, processorName, settings = {}) {
 // Default name of a stored result: Program-Processor-N<N>, made unique with " (k)"
 export function defaultResultName(context, existingNames = []) {
   const base = context
-    ? [context.program?.name, context.processor?.name, `N${context.program?.N}`]
+    ? [context.program?.name, context.processor?.name, `N${context.program?.N}`,
+       context.program?.rep > 1 ? `R${context.program.rep}` : '']
         .filter(Boolean).join('-')
     : 'current'
   let name = base
@@ -38,6 +41,23 @@ export function defaultResultName(context, existingNames = []) {
 }
 
 const sum = (a, b) => (Number.isFinite(a) && Number.isFinite(b) ? a + b : null)
+
+// Calls of the loop of a result (repetitions), and the primary misses of the first call and the
+// mean of the others (null without repetitions)
+export function resultRepetitions(r) {
+  const reps = Number(r?.repetitions)
+  if (!(reps > 1)) return null
+  const misses = Array.isArray(r?.rep_misses) ? r.rep_misses.map(m => m.primary) : []
+  const others = misses.slice(1)
+  const mean = others.length ? others.reduce((a, b) => a + b, 0) / others.length : null
+  return {
+    reps,
+    itersPerRep: Number(r?.iterations_per_repetition) || null,
+    firstMisses: misses.length ? misses[0] : null,
+    nextMisses:  mean,
+    missesList:  misses,
+  }
+}
 const fmt = (n) => n.toLocaleString('en-US')
 
 // Values shown in the stored-results table (null when the result has no such data)

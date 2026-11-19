@@ -7,9 +7,9 @@
   import { createGraphVizGraph, downloadJSON, uploadJSON,
            saveToLocalStorage, removeFromLocalStorage, initResource,
            getLogicalElementCount, getUnsupportedInstructions,
-           validateProgram } from '@/common'
+           validateProgram, repetitionFields } from '@/common'
   import { buildResultContext, defaultResultName,
-           resultMemoryColumns, resultContextLines } from '@/resultContext'
+           resultMemoryColumns, resultContextLines, resultRepetitions } from '@/resultContext'
   import { resultStride, resultCyclesPerAlgOp, resultInstrPerAlgOp, speedupOver,
            ALG_OP_HELP, ALG_OP_UNIT, algOpFormula } from '@/algOps'
 
@@ -338,6 +338,16 @@
     }
   }
 
+  // The spinner and the "running" message while RVCAT simulates (the elements may not exist: the
+  // panel can be closed before a delayed update)
+  function showRunning(on) {
+    const set = (id, display) => { const el = document.getElementById(id); if (el) el.style.display = display }
+    set('run-simulation-spinner', on ? 'block' : 'none')
+    set('simulation-running', on ? 'block' : 'none')
+    const button = document.getElementById('run-simulation-button')
+    if (button) button.disabled = on
+  }
+
   onMounted(() => {
     cleanupHandleResults  = registerHandler('get_execution_results', handleResults)
     document.getElementById('simulation-running').style.display = 'none'
@@ -407,9 +417,7 @@
       if (resultsTimeout) clearTimeout(resultsTimeout)
       resultsTimeout = setTimeout(() => {
         drawProcessorResults()
-        document.getElementById('run-simulation-spinner').style.display = 'none';
-        document.getElementById('simulation-running').style.display     = 'none';
-        document.getElementById('run-simulation-button').disabled       = false;
+        showRunning(false)   // (the panel may have been closed meanwhile)
       }, 500)
       simState.executionResults = simResults
     } catch (error) {
@@ -421,6 +429,9 @@
   * Simulation options: UI actions
   * ------------------------------------------------------------------ */
   function toggleAutorun()  { simulationOptions.autorun = !simulationOptions.autorun }
+
+  // calls of the loop (repetitions) of the current result
+  const repetitions = computed(() => resultRepetitions(simState.executionResults))
 
   const formattedResults = computed(() => {
     const results = simState.executionResults || {};
@@ -593,9 +604,7 @@
     clearTimeout(resultsTimeout)
     try {
       resultsTimeout = setTimeout(() => {
-        document.getElementById('run-simulation-spinner').style.display = 'block';
-        document.getElementById('simulation-running').style.display     = 'block';
-        document.getElementById('run-simulation-button').disabled       = true;
+        showRunning(true)
         resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
         const { iters, ROBsize, dispatch, retire, blkSize, nBlocks, mPenalty, mIssueTime,
@@ -607,6 +616,7 @@
                                               nFillBuffers: nFillBuffers ?? 2,
                                               nWriteBuffers: nWriteBuffers ?? 2,
                                               rThru: rThru ?? 1,
+                                              ...repetitionFields(toRaw(process)),
                                               instruction_list: toRaw(instructionList)}, null, 2),
                             iters) // Call Python RVCAT
         console.log('🕐✅ Reloading execution results')
@@ -921,6 +931,13 @@
           <label for="instructions">{{ t('Iterations:') }}</label>
           <span id="iterations-output" :title="t('Total loop iterations')">{{ formattedResults.iters }}</span>
         </div>
+        <div v-if="repetitions" class="simulation-inline-item" id="calls-item">
+          <label>{{ t('Calls:') }}</label>
+          <span id="calls-output"
+                :title="t('The loop runs {r} times (calls of the function), {i} iterations each; {kind}', { r: repetitions.reps, i: (repetitions.itersPerRep ?? 0).toLocaleString('en-US'), kind: simState.simulatedProcess?.repIndependent === false ? t('each call uses the results of the previous one') : t('independent calls: they can overlap') })">
+            {{ repetitions.reps }} × {{ (repetitions.itersPerRep ?? 0).toLocaleString('en-US') }}
+          </span>
+        </div>
         <div class="simulation-inline-item">
           <label for="instructions">{{ t('Instructions:') }}</label>
           <span id="instructions-output" :title="t('Total executed instructions')">{{ formattedResults.instructions }}</span>
@@ -957,7 +974,8 @@
         <div v-if="simState.executionResults?.branch" class="simulation-inline-item stat-branch">
           <label>{{ t('Mispredictions/iter:') }}</label>
           <span id="mispredictions-output"
-                :title="t('{m} mispredicted of {n} conditional branches. Branch penalty {p} cycles; after a misprediction: {s}', { m: simState.executionResults.branch.mispredictions.toLocaleString('en-US'), n: simState.executionResults.branch.branches.toLocaleString('en-US'), p: simState.executionResults.branch.penalty, s: simState.executionResults.branch.speculation })">
+                :title="t('{m} mispredicted of {n} conditional branches. Branch penalty {p} cycles; after a misprediction: {s}', { m: (simState.executionResults.branch.mispredictions - (simState.executionResults.branch.exit_mispredictions ?? 0)).toLocaleString('en-US'), n: simState.executionResults.branch.branches.toLocaleString('en-US'), p: simState.executionResults.branch.penalty, s: simState.executionResults.branch.speculation }) +
+                        (simState.executionResults.branch.exit_mispredictions ? ' ' + t('Also {x} mispredicted exits of the loop, one at the end of each call.', { x: simState.executionResults.branch.exit_mispredictions }) : '')">
             {{ simState.executionResults.branch.mispredictions_per_iteration.toFixed(3) }}
           </span>
         </div>
@@ -979,6 +997,14 @@
           <label for="SecondaryMiss">{{ t('Secondary Misses:') }}</label>
           <span id="SecondaryMiss-output"
                 :title="(formattedResults.secondaryTitle ? formattedResults.secondaryTitle + '. ' : '') + t('Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.')">{{ formattedResults.secondary }}</span>
+        </div>
+        <div v-if="repetitions && repetitions.firstMisses !== null" class="simulation-inline-item stat-cache" id="misses-per-call-item">
+          <label>{{ t('Misses per call:') }}</label>
+          <span id="misses-per-call-output"
+                :title="t('Primary misses of each call: {list}', { list: repetitions.missesList.slice(0, 40).map(m => m.toLocaleString('en-US')).join(', ') + (repetitions.missesList.length > 40 ? ', …' : '') })">
+            {{ t('1st') }} {{ repetitions.firstMisses.toLocaleString('en-US') }} ·
+            {{ t('next') }} {{ repetitions.nextMisses === null ? '—' : Number(repetitions.nextMisses.toFixed(1)).toLocaleString('en-US') }}
+          </span>
         </div>
         <div class="simulation-inline-item stat-cache">
           <label for="MM">{{ t('MM Transfers:') }}</label>
