@@ -1,16 +1,16 @@
 {
   "lesson": "L1-cache",
   "title": "Lesson 1: the cache and a sum of a vector",
-  "description": "<p>Four versions of a loop that adds the elements of a vector (scalar, SIMD, and unrolled with several accumulators) on a Golden Cove core with a small cache.</p>",
-  "version": 1,
+  "description": "<p>Four versions of a loop that adds the elements of a vector (scalar, SIMD, and unrolled with several accumulators) on a Golden Cove core with a small cache: latency, throughput and memory bandwidth.</p>",
+  "version": 2,
   "programs": [
     {
       "name": "SUM-scalar",
-      "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator S\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-      "N": 1024,
+      "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator sum\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "N": 1000,
       "declarations": [
         {
-          "name": "S",
+          "name": "sum",
           "role": "data",
           "type": "FLOAT",
           "size": "double"
@@ -67,12 +67,12 @@
           "lanes": 1
         },
         {
-          "text": "S = S + t0",
+          "text": "sum = sum + t0",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S",
-          "source1": "S",
+          "destin": "sum",
+          "source1": "sum",
           "source2": "t0",
           "source3": "",
           "constant": ""
@@ -91,12 +91,12 @@
           "lanes": 1
         },
         {
-          "text": "S = S + t1",
+          "text": "sum = sum + t1",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S",
-          "source1": "S",
+          "destin": "sum",
+          "source1": "sum",
           "source2": "t1",
           "source3": "",
           "constant": ""
@@ -139,12 +139,12 @@
     },
     {
       "name": "SUM-simd",
-      "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-      "N": 1024,
+      "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "N": 1000,
       "vlen": 32,
       "declarations": [
         {
-          "name": "S",
+          "name": "sum",
           "role": "data",
           "type": "FLOAT",
           "size": "double",
@@ -197,12 +197,12 @@
           "lanes": 4
         },
         {
-          "text": "S[0:3] = S[0:3] + t0[0:3]",
+          "text": "sum[0:3] = sum[0:3] + t0[0:3]",
           "type": "VFLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S",
-          "source1": "S",
+          "destin": "sum",
+          "source1": "sum",
           "source2": "t0",
           "source3": "",
           "constant": "",
@@ -246,29 +246,29 @@
     },
     {
       "name": "SUM-scalar4",
-      "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-      "N": 1024,
+      "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "N": 1000,
       "declarations": [
         {
-          "name": "S0",
+          "name": "sum0",
           "role": "data",
           "type": "FLOAT",
           "size": "double"
         },
         {
-          "name": "S1",
+          "name": "sum1",
           "role": "data",
           "type": "FLOAT",
           "size": "double"
         },
         {
-          "name": "S2",
+          "name": "sum2",
           "role": "data",
           "type": "FLOAT",
           "size": "double"
         },
         {
-          "name": "S3",
+          "name": "sum3",
           "role": "data",
           "type": "FLOAT",
           "size": "double"
@@ -337,12 +337,12 @@
           "lanes": 1
         },
         {
-          "text": "S0 = S0 + t0",
+          "text": "sum0 = sum0 + t0",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S0",
-          "source1": "S0",
+          "destin": "sum0",
+          "source1": "sum0",
           "source2": "t0",
           "source3": "",
           "constant": ""
@@ -361,12 +361,12 @@
           "lanes": 1
         },
         {
-          "text": "S1 = S1 + t1",
+          "text": "sum1 = sum1 + t1",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S1",
-          "source1": "S1",
+          "destin": "sum1",
+          "source1": "sum1",
           "source2": "t1",
           "source3": "",
           "constant": ""
@@ -385,12 +385,12 @@
           "lanes": 1
         },
         {
-          "text": "S2 = S2 + t2",
+          "text": "sum2 = sum2 + t2",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S2",
-          "source1": "S2",
+          "destin": "sum2",
+          "source1": "sum2",
           "source2": "t2",
           "source3": "",
           "constant": ""
@@ -409,12 +409,12 @@
           "lanes": 1
         },
         {
-          "text": "S3 = S3 + t3",
+          "text": "sum3 = sum3 + t3",
           "type": "FLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S3",
-          "source1": "S3",
+          "destin": "sum3",
+          "source1": "sum3",
           "source2": "t3",
           "source3": "",
           "constant": ""
@@ -457,33 +457,33 @@
     },
     {
       "name": "SUM-simd4",
-      "description": "// vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-      "N": 1024,
+      "description": "// vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "N": 1000,
       "vlen": 32,
       "declarations": [
         {
-          "name": "S0",
+          "name": "sum0",
           "role": "data",
           "type": "FLOAT",
           "size": "double",
           "lanes": 4
         },
         {
-          "name": "S1",
+          "name": "sum1",
           "role": "data",
           "type": "FLOAT",
           "size": "double",
           "lanes": 4
         },
         {
-          "name": "S2",
+          "name": "sum2",
           "role": "data",
           "type": "FLOAT",
           "size": "double",
           "lanes": 4
         },
         {
-          "name": "S3",
+          "name": "sum3",
           "role": "data",
           "type": "FLOAT",
           "size": "double",
@@ -557,12 +557,12 @@
           "lanes": 4
         },
         {
-          "text": "S0[0:3] = S0[0:3] + t0[0:3]",
+          "text": "sum0[0:3] = sum0[0:3] + t0[0:3]",
           "type": "VFLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S0",
-          "source1": "S0",
+          "destin": "sum0",
+          "source1": "sum0",
           "source2": "t0",
           "source3": "",
           "constant": "",
@@ -582,12 +582,12 @@
           "lanes": 4
         },
         {
-          "text": "S1[0:3] = S1[0:3] + t1[0:3]",
+          "text": "sum1[0:3] = sum1[0:3] + t1[0:3]",
           "type": "VFLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S1",
-          "source1": "S1",
+          "destin": "sum1",
+          "source1": "sum1",
           "source2": "t1",
           "source3": "",
           "constant": "",
@@ -607,12 +607,12 @@
           "lanes": 4
         },
         {
-          "text": "S2[0:3] = S2[0:3] + t2[0:3]",
+          "text": "sum2[0:3] = sum2[0:3] + t2[0:3]",
           "type": "VFLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S2",
-          "source1": "S2",
+          "destin": "sum2",
+          "source1": "sum2",
           "source2": "t2",
           "source3": "",
           "constant": "",
@@ -632,12 +632,12 @@
           "lanes": 4
         },
         {
-          "text": "S3[0:3] = S3[0:3] + t3[0:3]",
+          "text": "sum3[0:3] = sum3[0:3] + t3[0:3]",
           "type": "VFLOAT",
           "oper": "ADD",
           "size": "double",
-          "destin": "S3",
-          "source1": "S3",
+          "destin": "sum3",
+          "source1": "sum3",
           "source2": "t3",
           "source3": "",
           "constant": "",
@@ -821,7 +821,7 @@
   "start": {
     "program": "SUM-scalar",
     "processor": "GC-16",
-    "N": 1024
+    "N": 1000
   },
   "hidden": [],
   "locks": {
@@ -855,10 +855,10 @@
           "selector": "#program-source-header",
           "message": "Click the header of the table to see the C code"
         },
-        "description": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles.</p><p>The same C code, compiled with <b>gcc 13.3</b> with four sets of options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson.</p><p><b>Click the table header to see the C code</b> (needed to continue).</p>",
+        "description": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles. It complements the practical <i>Rendimiento de la Memoria Cache</i>, where the same programs run on a real Intel i5-12400 (Golden Cove).</p><p>The same C code, compiled with <b>gcc 13</b> with four sets of options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson.</p><p><b>Click the table header to see the C code</b> (needed to continue).</p>",
         "actions": [
-          "sidePanel:show",
           "selectProgram:SUM-scalar",
+          "sidePanel:show",
           "switchTo:simulationComponent",
           "programView:type"
         ],
@@ -873,7 +873,7 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p>The four versions differ in two transformations that the compiler can do:</p><p>&bull; <b>Vectorization</b> (SIMD): one instruction processes 4 doubles at once, in a 256-bit register (AVX2, enabled by <i>-march=native</i>). <i>-fno-tree-vectorize</i> disables it.<br>&bull; <b>Unrolling with several accumulators</b>: <i>-funroll-loops</i> (at most 4 times) and <i>-fvariable-expansion-in-unroller</i> split the sum S into 4 partial sums, which are added after the loop.</p><p><i>-Ofast</i> lets the compiler change the order of the floating-point additions: both transformations need it.</p><table style=\"border-collapse:collapse;margin:4px 0\"><tr><th style=\"text-align:left;padding:2px 10px\">Program</th><th style=\"padding:2px 10px\">SIMD</th><th style=\"padding:2px 10px\">Accumulators</th><th style=\"padding:2px 10px\">Elements per iteration (S)</th></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar</b></td><td style=\"text-align:center\">no</td><td style=\"text-align:center\">1</td><td style=\"text-align:center\">2</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd</b></td><td style=\"text-align:center\">4 doubles</td><td style=\"text-align:center\">1 (vector)</td><td style=\"text-align:center\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar4</b></td><td style=\"text-align:center\">no</td><td style=\"text-align:center\">4</td><td style=\"text-align:center\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd4</b></td><td style=\"text-align:center\">4 doubles</td><td style=\"text-align:center\">4 (vectors)</td><td style=\"text-align:center\">16</td></tr></table><p>The next cards show the machine code (x86-64) of each loop and its RVCAT program.</p>",
+        "description": "<p>The four versions differ in two transformations that the compiler can do:</p><p>&bull; <b>Vectorization</b> (SIMD): one instruction processes 4 doubles at once, in a 256-bit register (AVX2, enabled by <i>-march=native</i>). <i>-fno-tree-vectorize</i> disables it.<br>&bull; <b>Unrolling with several accumulators</b>: <i>-funroll-loops</i> (at most 4 times) and <i>-fvariable-expansion-in-unroller</i> split sum into 4 partial sums (sum0 to sum3), which are added after the loop.</p><p><i>-Ofast</i> lets the compiler change the order of the floating-point additions: both transformations need it.</p><table style=\"border-collapse:collapse;margin:4px 0\"><tr><th style=\"padding:2px 10px\">Program</th><th style=\"padding:2px 10px\">SIMD</th><th style=\"padding:2px 10px\">Accumulators</th><th style=\"padding:2px 10px\">Elements per iteration (S)</th></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar</b></td><td style=\"text-align:center;padding:2px 10px\">no</td><td style=\"text-align:center;padding:2px 10px\">1</td><td style=\"text-align:center;padding:2px 10px\">2</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd</b></td><td style=\"text-align:center;padding:2px 10px\">4 doubles</td><td style=\"text-align:center;padding:2px 10px\">1 (vector)</td><td style=\"text-align:center;padding:2px 10px\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-scalar4</b></td><td style=\"text-align:center;padding:2px 10px\">no</td><td style=\"text-align:center;padding:2px 10px\">4</td><td style=\"text-align:center;padding:2px 10px\">4</td></tr><tr><td style=\"padding:2px 10px\"><b>SUM-simd4</b></td><td style=\"text-align:center;padding:2px 10px\">4 doubles</td><td style=\"text-align:center;padding:2px 10px\">4 (vectors)</td><td style=\"text-align:center;padding:2px 10px\">16</td></tr></table><p>The next cards show the machine code (x86-64) of each loop and its RVCAT program.</p>",
         "next": [
           "p-scalar"
         ]
@@ -885,9 +885,10 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p><i>gcc -Ofast -fno-tree-vectorize -march=native</i>: no vectorization, but gcc unrolls the loop 2 times by itself.</p><pre>f0: vaddsd  (%rax),%xmm0,%xmm0      # S = S + V[i]     (load + add)\n    add     $0x10,%rax              # i = i + 2        (16 bytes)\n    vaddsd  -0x8(%rax),%xmm0,%xmm0  # S = S + V[i-1]   (load + add)\n    cmp     %rax,%rcx               # c = i != N\n    jne     f0                      # if c go back</pre><p>x86-64 adds an operand read from memory: each <i>vaddsd</i> is a <b>load</b> and an <b>addition</b>, two rows of RVCAT. The loop has <b>7 instructions</b> and adds <b>2 elements</b> per iteration (S = 2), with a single accumulator S: <b>2 dependent additions</b> per iteration.</p>",
+        "description": "<p><i>gcc -Ofast -fno-tree-vectorize -march=native</i>: no vectorization, but gcc unrolls the loop 2 times by itself.</p><pre>f0: vaddsd  (%rax),%xmm0,%xmm0      # sum = sum + V[i]     (load + add)\n    add     $0x10,%rax              # i = i + 2            (16 bytes)\n    vaddsd  -0x8(%rax),%xmm0,%xmm0  # sum = sum + V[i-1]   (load + add)\n    cmp     %rax,%rcx               # c = i != N\n    jne     f0                      # if c go back</pre><p>x86-64 adds an operand read from memory: each <i>vaddsd</i> is a <b>load</b> and an <b>addition</b>, two rows of RVCAT. The loop has <b>7 instructions</b> and adds <b>2 elements</b> per iteration (S = 2), with a single accumulator sum: <b>2 dependent additions</b> per iteration.</p>",
         "actions": [
           "selectProgram:SUM-scalar",
+          "sidePanel:show",
           "switchTo:simulationComponent",
           "programView:type"
         ],
@@ -902,9 +903,10 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p><i>gcc -Ofast -march=native</i>: the loop is <b>vectorized</b>. <i>vaddpd</i> on a 256-bit register (ymm) adds <b>4 doubles</b> at once.</p><pre>110: vaddpd (%rax),%ymm0,%ymm0       # S[0:3] = S[0:3] + V[i:i+3]  (load + add)\n     add    $0x20,%rax               # i = i + 4        (32 bytes)\n     cmp    %rax,%rdx                # c = i != N\n     jne    110                      # if c go back</pre><p>RVCAT program: a vector load of 4 doubles, a vector addition, and the loop control: <b>5 instructions</b>, <b>4 elements</b> per iteration (S = 4). The accumulator S[0:3] keeps 4 partial sums (one per lane), which are added after the loop.</p>",
+        "description": "<p><i>gcc -Ofast -march=native</i>: the loop is <b>vectorized</b>. <i>vaddpd</i> on a 256-bit register (ymm) adds <b>4 doubles</b> at once.</p><pre>110: vaddpd (%rax),%ymm0,%ymm0       # sum[0:3] = sum[0:3] + V[i:i+3]  (load + add)\n     add    $0x20,%rax               # i = i + 4        (32 bytes)\n     cmp    %rax,%rdx                # c = i != N\n     jne    110                      # if c go back</pre><p>RVCAT program: a vector load of 4 doubles, a vector addition, and the loop control: <b>5 instructions</b>, <b>4 elements</b> per iteration (S = 4). The accumulator sum[0:3] keeps 4 partial sums (one per lane), which are added after the loop.</p>",
         "actions": [
           "selectProgram:SUM-simd",
+          "sidePanel:show",
           "switchTo:simulationComponent",
           "programView:type"
         ],
@@ -919,9 +921,10 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p>Unrolled 4 times, with <b>4 accumulators</b> (S0 to S3, variable expansion), and not vectorized.</p><pre>1b3: vaddsd (%r8),%xmm1,%xmm1        # S0 = S0 + V[i]\n     vaddsd 0x8(%r8),%xmm4,%xmm4     # S1 = S1 + V[i+1]\n     add    $0x20,%r8                # i = i + 4        (32 bytes)\n     vaddsd -0x10(%r8),%xmm2,%xmm2   # S2 = S2 + V[i+2]\n     vaddsd -0x8(%r8),%xmm3,%xmm3    # S3 = S3 + V[i+3]\n     cmp    %r12,%r8                 # c = i != N\n     jne    1b3                      # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>4 elements</b> per iteration (S = 4), and <b>4 independent chains of additions</b> instead of one.</p>",
+        "description": "<p>Unrolled 4 times, with <b>4 accumulators</b> (sum0 to sum3, variable expansion), and not vectorized.</p><pre>1b3: vaddsd (%r8),%xmm1,%xmm1        # sum0 = sum0 + V[i]\n     vaddsd 0x8(%r8),%xmm4,%xmm4     # sum1 = sum1 + V[i+1]\n     add    $0x20,%r8                # i = i + 4        (32 bytes)\n     vaddsd -0x10(%r8),%xmm2,%xmm2   # sum2 = sum2 + V[i+2]\n     vaddsd -0x8(%r8),%xmm3,%xmm3    # sum3 = sum3 + V[i+3]\n     cmp    %r12,%r8                 # c = i != N\n     jne    1b3                      # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>4 elements</b> per iteration (S = 4), and <b>4 independent chains of additions</b> instead of one.</p>",
         "actions": [
           "selectProgram:SUM-scalar4",
+          "sidePanel:show",
           "switchTo:simulationComponent",
           "programView:type"
         ],
@@ -936,11 +939,157 @@
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p>Vectorized and unrolled 4 times, with <b>4 vector accumulators</b> of 4 doubles each.</p><pre>1ec: vaddpd (%r11),%ymm1,%ymm1           # S0[0:3] += V[i:i+3]\n     vaddpd 0x20(%r11),%ymm4,%ymm4       # S1[0:3] += V[i+4:i+7]\n     sub    $0xffffffffffffff80,%r11     # i = i + 16       (+128 bytes)\n     vaddpd -0x40(%r11),%ymm2,%ymm2      # S2[0:3] += V[i+8:i+11]\n     vaddpd -0x20(%r11),%ymm3,%ymm3      # S3[0:3] += V[i+12:i+15]\n     cmp    %r11,%rsi                    # c = i != N\n     jne    1ec                          # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>16 elements</b> per iteration (S = 16): each iteration reads 16 × 8 = <b>128 bytes</b> of V.</p>",
+        "description": "<p>Vectorized and unrolled 4 times, with <b>4 vector accumulators</b> of 4 doubles each.</p><pre>1ec: vaddpd (%r11),%ymm1,%ymm1           # sum0[0:3] += V[i:i+3]\n     vaddpd 0x20(%r11),%ymm4,%ymm4       # sum1[0:3] += V[i+4:i+7]\n     sub    $0xffffffffffffff80,%r11     # i = i + 16       (+128 bytes)\n     vaddpd -0x40(%r11),%ymm2,%ymm2      # sum2[0:3] += V[i+8:i+11]\n     vaddpd -0x20(%r11),%ymm3,%ymm3      # sum3[0:3] += V[i+12:i+15]\n     cmp    %r11,%rsi                    # c = i != N\n     jne    1ec                          # if c go back</pre><p>RVCAT program: <b>11 instructions</b>, <b>16 elements</b> per iteration (S = 16): each iteration reads 16 × 8 = <b>128 bytes</b> of V. N = 1,000 is not a multiple of 16: RVCAT rounds it down to 992 (62 iterations); the real program adds the last 8 elements after the loop.</p>",
         "actions": [
           "selectProgram:SUM-simd4",
+          "sidePanel:show",
           "switchTo:simulationComponent",
           "programView:type"
+        ],
+        "next": [
+          "metrics"
+        ]
+      },
+      {
+        "id": "metrics",
+        "type": "step",
+        "title": "The metrics of the practical",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>The practical measures the performance <b>per sum</b> (one element of V, one algorithmic operation). RVCAT gives the same metrics for the loops with S &gt; 1:</p><table style=\"border-collapse:collapse;margin:4px 0\"><tr><th style=\"padding:2px 10px\">Practical</th><th style=\"padding:2px 10px\">RVCAT (Simulation panel)</th></tr><tr><td style=\"padding:2px 10px\"><b>Cycles/suma</b></td><td style=\"text-align:center;padding:2px 10px\">Cycles/Alg Oper</td></tr><tr><td style=\"padding:2px 10px\"><b>Instr./suma</b></td><td style=\"text-align:center;padding:2px 10px\">Instr/Alg Oper</td></tr><tr><td style=\"padding:2px 10px\"><b>IPC</b></td><td style=\"text-align:center;padding:2px 10px\">IPC</td></tr><tr><td style=\"padding:2px 10px\"><b>Mem BW</b></td><td style=\"text-align:center;padding:2px 10px\">8 bytes / (cycles per sum), in bytes per cycle</td></tr></table><p>The memory bandwidth used is the bytes of V read per cycle: 8 bytes per sum. On the real processor (about 4.35 GHz), 1 byte per cycle is 4.35 GB/s: for instance, 2 cycles per sum is 4 B/cycle, 17.4 GB/s, as measured for SUM-scalar.</p><p>Unlike the practical, RVCAT simulates <b>one call</b> of my_sum (not Rep calls), starting with an <b>empty cache</b>.</p>",
+        "next": [
+          "q-bounds"
+        ]
+      },
+      {
+        "id": "q-bounds",
+        "type": "question",
+        "title": "The bounds of each version",
+        "position": "right",
+        "wWidth": 360,
+        "questionText": "<p>Use the <b>Static Analysis</b> panel (choose each program with the selector of the Program panel): what is the <b>minimum time per sum</b> (cycles per algorithmic operation) of each version?</p>",
+        "answerMode": "numbers",
+        "answers": [],
+        "numericFields": [
+          {
+            "label": "SUM-scalar",
+            "value": 2,
+            "tolerance": 0.02,
+            "unit": "cycles/sum",
+            "correct": "Right: the chain sum → sum has 2 additions of 2 cycles per iteration of 2 elements: latency-bound.",
+            "wrong": "Look at the line at the top of the panel: the minimum time per iteration divided by S = 2."
+          },
+          {
+            "label": "SUM-simd",
+            "value": 0.5,
+            "tolerance": 0.02,
+            "unit": "cycles/sum",
+            "correct": "Right: one vector addition of 2 cycles per iteration, which adds 4 elements: 2 / 4 = 0.5. Latency-bound.",
+            "wrong": "The minimum time per iteration divided by S = 4."
+          },
+          {
+            "label": "SUM-scalar4",
+            "value": 0.5,
+            "tolerance": 0.02,
+            "unit": "cycles/sum",
+            "correct": "Right: 4 chains of 2 cycles, and 4 additions per iteration in 2 ports (P1, P5): 2 cycles per 4 elements.",
+            "wrong": "The minimum time per iteration divided by S = 4."
+          },
+          {
+            "label": "SUM-simd4",
+            "value": 0.125,
+            "tolerance": 0.01,
+            "unit": "cycles/sum",
+            "correct": "Right: 4 vector additions in 2 ports: 2 cycles per 16 elements = 0.125.",
+            "wrong": "The minimum time per iteration divided by S = 16."
+          }
+        ],
+        "actions": [
+          "reveal:analysis",
+          "sidePanel:show",
+          "selectProgram:SUM-scalar",
+          "switchTo:staticAnalysisComponent",
+          "waitFor:#latency-bounds [data-chain]"
+        ],
+        "next": [
+          "diagnosis"
+        ]
+      },
+      {
+        "id": "diagnosis",
+        "type": "step",
+        "title": "Latency-bound or throughput-bound",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>Golden Cove adds doubles in <b>2 ports</b> (P1 and P5), with a <b>latency of 2 cycles</b>: up to 2 additions start per cycle, and each one takes 2 cycles.</p><p>&bull; <b>SUM-scalar</b> and <b>SUM-simd</b> have <b>one chain</b> of additions (one accumulator): each addition waits for the previous one. They are <b><span style=\"color:#c62828\">latency-bound</span></b>: 2 cycles per addition, and the ports are idle most of the time (their throughput bound is 4 times lower).</p><p>&bull; <b>SUM-scalar4</b> and <b>SUM-simd4</b> have <b>4 independent chains</b>: 4 additions in flight, just what 2 ports × 2 cycles of latency admit (Little's law). They reach the <b><span style=\"color:#c62828\">throughput bound</span></b> of the ports: 4 times faster than one chain.</p><p>So the bounds predict: SUM-simd and SUM-scalar4 4 times faster than SUM-scalar, and SUM-simd4 <b>16 times</b> faster (4 for the vector × 4 for the chains).</p>",
+        "next": [
+          "simulate-all"
+        ]
+      },
+      {
+        "id": "simulate-all",
+        "type": "step",
+        "title": "Simulate the four versions",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "explore": "required",
+        "exploreHint": "<p>Simulate the four programs and store each result (<b>Store Results</b>). When you are done, click <b>Continue</b>.</p>",
+        "description": "<p><b>Explore:</b> simulate the four programs with N = 1,000 (choose each one with the selector of the Program panel, then <b>Run Simulation</b>). Click <b>Store Results</b> after each simulation to compare them in the table of results.</p><p>Compare the Cycles/Alg Oper of each one with its bound, and look at the cache misses and the use of the main memory (MM Transfers, with the % of the cycles that the memory is busy).</p>",
+        "actions": [
+          "selectProgram:SUM-scalar",
+          "sidePanel:show",
+          "switchTo:simulationComponent",
+          "programView:type"
+        ],
+        "next": [
+          "q-sim"
+        ]
+      },
+      {
+        "id": "q-sim",
+        "type": "question",
+        "title": "Simulated time per sum",
+        "position": "right",
+        "wWidth": 480,
+        "questionText": "<p>What <b>Cycles/Alg Oper</b> (cycles per sum) did you obtain for each version?</p>",
+        "answerMode": "numbers",
+        "answers": [],
+        "numericFields": [
+          {
+            "label": "SUM-scalar",
+            "value": 2.02,
+            "tolerance": 0.05,
+            "unit": "cycles/sum",
+            "correct": "Right: at its latency bound (2).",
+            "wrong": "Simulate SUM-scalar and read Cycles/Alg Oper."
+          },
+          {
+            "label": "SUM-simd",
+            "value": 0.52,
+            "tolerance": 0.03,
+            "unit": "cycles/sum",
+            "correct": "Right: at its latency bound (0.5).",
+            "wrong": "Simulate SUM-simd and read Cycles/Alg Oper."
+          },
+          {
+            "label": "SUM-scalar4",
+            "value": 0.52,
+            "tolerance": 0.03,
+            "unit": "cycles/sum",
+            "correct": "Right: at its throughput bound (0.5).",
+            "wrong": "Simulate SUM-scalar4 and read Cycles/Alg Oper."
+          },
+          {
+            "label": "SUM-simd4",
+            "value": 0.15,
+            "tolerance": 0.02,
+            "unit": "cycles/sum",
+            "correct": "Right: 20% above its bound (0.125), and the main memory is busy 85% of the time: the cache is next.",
+            "wrong": "Simulate SUM-simd4 and read Cycles/Alg Oper."
+          }
         ],
         "next": [
           "cache"
@@ -949,15 +1098,17 @@
       {
         "id": "cache",
         "type": "step",
-        "title": "The processor and its cache",
+        "title": "The cache and the trace of blocks",
         "selector": "#process-panel .processor-container",
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p>The processor <b>GC-16</b> is configured like an Intel <b>Golden Cove</b> core: up to 6 instructions dispatched and 8 retired per cycle, a ROB of 200 entries, and 10 execution ports (3 of them for loads and 2 for stores).</p><p>Its <b><span style=\"color:#c62828\">cache</span></b> is very small, so that its effect is easy to see: <b>16 blocks of 64 bytes</b> (1 KB). A block holds 64 / 8 = <b>8 doubles</b>. The data that are not in the cache come from the <b>main memory</b>, block by block (a <b>cache miss</b>).</p><p>With N = 1,024, the vector V takes 8 KB: <b>128 blocks</b>, much more than the cache. Each block of V is read once, so each one is a miss.</p>",
+        "description": "<p>The processor <b>GC-16</b> is configured like a Golden Cove core (6 instructions dispatched and 8 retired per cycle, a ROB of 200 entries, 10 execution ports: 3 for loads and 2 for stores), but its <b><span style=\"color:#c62828\">cache</span></b> is very small, so that its effect is easy to see: <b>16 blocks of 64 bytes</b> (1 KB), instead of the 768 blocks (48 KB) of the L1 cache of the practical.</p><p>As in the practical, V[0] is at address 0: <b>block 0</b> = addresses 0 to 63, <b>block 1</b> = 64 to 127… A block holds <b>8 doubles</b>, so the trace of blocks is: 8 × read 0, 8 × read 1, 8 × read 2…</p><p>With N = 1,000, V takes <b>125 blocks</b>. The cache starts empty: the first access to each block is a <b><span style=\"color:#c62828\">cache miss</span></b> (the block comes from the main memory), and the other 7 accesses find it in the cache. One call has <b>125 misses</b>: 1 every 8 elements. With 16 blocks, a second call would miss again in every block, like N = 10,000 with the 768 blocks of the practical.</p>",
         "actions": [
           "reveal:processor",
-          "sidePanel:show"
+          "sidePanel:show",
+          "switchTo:simulationComponent",
+          "programView:type"
         ],
         "next": [
           "q-blocks"
@@ -968,7 +1119,7 @@
         "type": "question",
         "title": "Iterations per cache block",
         "position": "right",
-        "wWidth": 460,
+        "wWidth": 480,
         "questionText": "<p>A cache block holds 8 doubles. How many <b>iterations</b> of each loop read the elements of one block of V?</p>",
         "answerMode": "numbers",
         "answers": [],
@@ -1007,17 +1158,187 @@
           }
         ],
         "next": [
-          "next-steps"
+          "misses"
         ]
       },
       {
-        "id": "next-steps",
+        "id": "misses",
         "type": "step",
-        "title": "Next",
+        "title": "Primary and secondary misses",
+        "anchor": "#right-panel",
+        "position": "inside-right",
+        "wWidth": 460,
+        "explore": true,
+        "exploreActions": [
+          "timeline:width=0.97"
+        ],
+        "exploreEndActions": [
+          "timeline:width=0.67"
+        ],
+        "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson.</p>",
+        "description": "<p>The Simulation panel separates two kinds of misses:</p><p>&bull; <b>Primary misses</b>: the first access to a block, which asks the main memory for it. 125 in every version (124 in SUM-simd4, which reads 992 elements).<br>&bull; <b>Secondary misses</b>: accesses to a block that is <b>still coming</b> from the main memory. The out-of-order engine executes the loads of the next iterations early, so they find the block on its way and wait for it, instead of finding it in the cache.</p><p>The timeline shows it: its <b>Cache</b> rows give the main memory (<b>MM</b>, R: a block read) and the 16 blocks of the cache (<b>r</b>: the block is arriving, <b>C</b>: it is in the cache). Scroll down to the rows of the instructions: <b>!</b> is a miss, <b>2</b> a secondary miss and <b>:</b> a load that waits for its block. <b>Explore</b> it (optional).</p>",
+        "actions": [
+          "selectProgram:SUM-scalar",
+          "reveal:timeline,timelineResources,timelineCache",
+          "sidePanel:show",
+          "switchTo:timelineComponent",
+          "timeline:cache=on",
+          "timeline:cycles=40",
+          "timeline:width=0.67"
+        ],
+        "next": [
+          "q-misses"
+        ]
+      },
+      {
+        "id": "q-misses",
+        "type": "question",
+        "title": "Loads and misses",
+        "position": "right",
+        "wWidth": 480,
+        "questionText": "<p>For N = 1,000 (one call): how many <b>loads</b> does each version execute, and how many of them are <b>primary misses</b>?</p>",
+        "answerMode": "numbers",
+        "answers": [],
+        "numericFields": [
+          {
+            "label": "Loads, SUM-scalar",
+            "value": 1000,
+            "tolerance": 0.5,
+            "unit": "loads",
+            "correct": "Right: one load per element.",
+            "wrong": "One load per element of V."
+          },
+          {
+            "label": "Loads, SUM-simd",
+            "value": 250,
+            "tolerance": 0.5,
+            "unit": "loads",
+            "correct": "Right: one vector load per 4 elements.",
+            "wrong": "A vector load reads 4 elements."
+          },
+          {
+            "label": "Primary misses",
+            "value": 125,
+            "tolerance": 0.5,
+            "unit": "misses",
+            "correct": "Right: one per block of V, in every version (124 in SUM-simd4).",
+            "wrong": "1,000 elements in blocks of 8 elements."
+          }
+        ],
+        "actions": [
+          "switchTo:simulationComponent"
+        ],
+        "next": [
+          "bandwidth"
+        ]
+      },
+      {
+        "id": "bandwidth",
+        "type": "step",
+        "title": "The bandwidth of the main memory",
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
-        "description": "<p>The four loops do the same work with very different instructions: fewer instructions per element (SIMD) and more independent additions (several accumulators).</p><p>The next part of the lesson will simulate them and analyse when the <b>cache misses</b> limit their performance.</p>",
+        "description": "<p>In RVCAT, the main memory delivers <b>one block every Issue Time</b> (m) cycles: at most 64 / m bytes per cycle. GC-16 has m = 1: 64 bytes per cycle.</p><p>At its bound (0.125 cycles per sum), SUM-simd4 would need 8 bytes every 0.125 cycles: <b>64 bytes per cycle</b>, all the bandwidth. That is why the memory is busy 85% of the time and SUM-simd4 stays above its bound: it starts to be <b><span style=\"color:#c62828\">bandwidth-bound</span></b>. The other versions need 4 (SUM-scalar) or 16 bytes per cycle.</p><p>The real main memory (DRAM) is much slower: about 31 GB/s for one core, some <b>7 bytes per cycle</b>; and the L3 cache gives about 15 bytes per cycle. With m = 8 (8 bytes per cycle), GC-16 behaves like the DRAM of the practical, and with m = 4 (16 bytes per cycle), like its L3.</p>",
+        "actions": [
+          "switchTo:simulationComponent"
+        ],
+        "next": [
+          "q-bw"
+        ]
+      },
+      {
+        "id": "q-bw",
+        "type": "question",
+        "title": "Predict: a slower memory",
+        "position": "right",
+        "wWidth": 480,
+        "questionText": "<p>If the main memory gave only <b>8 bytes per cycle</b> (Issue Time m = 8), how many <b>cycles per sum</b> would each version take?</p>",
+        "answerMode": "numbers",
+        "answers": [],
+        "numericFields": [
+          {
+            "label": "SUM-scalar",
+            "value": 2,
+            "tolerance": 0.15,
+            "unit": "cycles/sum"
+          },
+          {
+            "label": "SUM-simd",
+            "value": 1,
+            "tolerance": 0.15,
+            "unit": "cycles/sum"
+          },
+          {
+            "label": "SUM-scalar4",
+            "value": 1,
+            "tolerance": 0.15,
+            "unit": "cycles/sum"
+          },
+          {
+            "label": "SUM-simd4",
+            "value": 1,
+            "tolerance": 0.15,
+            "unit": "cycles/sum"
+          }
+        ],
+        "predictOnly": true,
+        "savedText": "<p>Prediction saved. Next, you will check it with the simulator.</p>",
+        "next": [
+          "bw-explore"
+        ]
+      },
+      {
+        "id": "bw-explore",
+        "type": "step",
+        "title": "Experiment: a slower memory",
+        "selector": ".processor-part",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "allow": [
+          "processor.cache"
+        ],
+        "explore": "auto",
+        "exploreHint": "<p>Change the <b>IssueTime</b> of the Cache row of the Processor panel to <b>8</b>, and simulate the four versions. When you are done, click <b>Continue</b>.</p>",
+        "nextLabels": [
+          "1. Change my predictions",
+          "2. Check my predictions"
+        ],
+        "description": "<p>In the Processor panel, click the <b>Cache</b> row until its <b>IssueTime</b> is selected, and change it to <b>8</b>. Then simulate the four versions (Store Results to compare them). You can also try m = 4.</p><p>You can explore again, or choose: <b>1.</b> change your predictions, or <b>2.</b> check them.</p>",
+        "actions": [
+          "sidePanel:show",
+          "switchTo:simulationComponent"
+        ],
+        "next": [
+          "q-bw",
+          "bw-check"
+        ]
+      },
+      {
+        "id": "bw-check",
+        "type": "step",
+        "title": "A slower memory: the answers",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>Issue Time 8 (8 bytes per cycle). Your predictions: {{answerCheck.q-bw.0}}, {{answerCheck.q-bw.1}}, {{answerCheck.q-bw.2}}, {{answerCheck.q-bw.3}} cycles/sum.</p><p>&bull; <b>SUM-scalar: 2 cycles/sum</b>, unchanged. It needs only 4 bytes per cycle: it is still latency-bound (in the practical, 2.11 with the data in DRAM).</p><p>&bull; <b>SUM-simd, SUM-scalar4 and SUM-simd4: 1 cycle/sum</b>. Each sum needs 8 bytes, and the memory gives 8 bytes per cycle: all of them are <b>bandwidth-bound</b>, and SIMD or more chains no longer help (in the practical, 1.12 to 1.38 in DRAM).</p><p>With m = 4 (16 bytes per cycle) the limit is 0.5 cycles/sum: SUM-simd4 falls to the time of SUM-simd and SUM-scalar4, as in the L3 of the practical (0.52).</p>",
+        "actions": [
+          "revertProcessor",
+          "switchTo:simulationComponent"
+        ],
+        "next": [
+          "summary"
+        ]
+      },
+      {
+        "id": "summary",
+        "type": "step",
+        "title": "Summary: three limits",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 700,
+        "description": "<p>The same loop shows the three limits of performance:</p><p>&bull; <b>Latency</b>: one chain of additions (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> of the execution ports: several chains (SUM-scalar4, SUM-simd4).<br>&bull; <b>Bandwidth</b> of the memory: when the data come from a level that cannot feed the computation.</p><p>Breaking the dependence (×4) and vectorizing (×4) multiply: up to ×16. But that product only appears while the memory can feed the computation: the faster the code, the sooner it hits the memory hierarchy.</p>",
         "next": []
       }
     ]

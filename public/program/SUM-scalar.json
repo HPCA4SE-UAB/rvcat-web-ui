@@ -1,10 +1,10 @@
 {
   "name": "SUM-scalar",
-  "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator S\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-  "N": 1024,
+  "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator sum\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+  "N": 1000,
   "declarations": [
     {
-      "name": "S",
+      "name": "sum",
       "role": "data",
       "type": "FLOAT",
       "size": "double"
@@ -61,12 +61,12 @@
       "lanes": 1
     },
     {
-      "text": "S = S + t0",
+      "text": "sum = sum + t0",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S",
-      "source1": "S",
+      "destin": "sum",
+      "source1": "sum",
       "source2": "t0",
       "source3": "",
       "constant": ""
@@ -85,12 +85,12 @@
       "lanes": 1
     },
     {
-      "text": "S = S + t1",
+      "text": "sum = sum + t1",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S",
-      "source1": "S",
+      "destin": "sum",
+      "source1": "sum",
       "source2": "t1",
       "source3": "",
       "constant": ""

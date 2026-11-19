@@ -1,28 +1,28 @@
 {
   "name": "SUM-scalar4",
-  "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-  "N": 1024,
+  "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+  "N": 1000,
   "declarations": [
     {
-      "name": "S0",
+      "name": "sum0",
       "role": "data",
       "type": "FLOAT",
       "size": "double"
     },
     {
-      "name": "S1",
+      "name": "sum1",
       "role": "data",
       "type": "FLOAT",
       "size": "double"
     },
     {
-      "name": "S2",
+      "name": "sum2",
       "role": "data",
       "type": "FLOAT",
       "size": "double"
     },
     {
-      "name": "S3",
+      "name": "sum3",
       "role": "data",
       "type": "FLOAT",
       "size": "double"
@@ -91,12 +91,12 @@
       "lanes": 1
     },
     {
-      "text": "S0 = S0 + t0",
+      "text": "sum0 = sum0 + t0",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S0",
-      "source1": "S0",
+      "destin": "sum0",
+      "source1": "sum0",
       "source2": "t0",
       "source3": "",
       "constant": ""
@@ -115,12 +115,12 @@
       "lanes": 1
     },
     {
-      "text": "S1 = S1 + t1",
+      "text": "sum1 = sum1 + t1",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S1",
-      "source1": "S1",
+      "destin": "sum1",
+      "source1": "sum1",
       "source2": "t1",
       "source3": "",
       "constant": ""
@@ -139,12 +139,12 @@
       "lanes": 1
     },
     {
-      "text": "S2 = S2 + t2",
+      "text": "sum2 = sum2 + t2",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S2",
-      "source1": "S2",
+      "destin": "sum2",
+      "source1": "sum2",
       "source2": "t2",
       "source3": "",
       "constant": ""
@@ -163,12 +163,12 @@
       "lanes": 1
     },
     {
-      "text": "S3 = S3 + t3",
+      "text": "sum3 = sum3 + t3",
       "type": "FLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S3",
-      "source1": "S3",
+      "destin": "sum3",
+      "source1": "sum3",
       "source2": "t3",
       "source3": "",
       "constant": ""

@@ -1,11 +1,11 @@
 {
   "name": "SUM-simd",
-  "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double S=0;\n  for ( int i=0; i<N; i++ )\n     S = S + V[i];\n  return S;\n}",
-  "N": 1024,
+  "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+  "N": 1000,
   "vlen": 32,
   "declarations": [
     {
-      "name": "S",
+      "name": "sum",
       "role": "data",
       "type": "FLOAT",
       "size": "double",
@@ -58,12 +58,12 @@
       "lanes": 4
     },
     {
-      "text": "S[0:3] = S[0:3] + t0[0:3]",
+      "text": "sum[0:3] = sum[0:3] + t0[0:3]",
       "type": "VFLOAT",
       "oper": "ADD",
       "size": "double",
-      "destin": "S",
-      "source1": "S",
+      "destin": "sum",
+      "source1": "sum",
       "source2": "t0",
       "source3": "",
       "constant": "",
