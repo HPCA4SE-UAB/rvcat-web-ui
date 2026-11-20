@@ -1083,7 +1083,7 @@ export function resourceUsage(process, results) {
 
 // Color of a usage percentage: grey (idle) → green → ochre → dark red (saturated)
 const USAGE_COLORS = [
-  "#9e9e9e", "#7cb342", "#66bb6a", "#4caf50", "#43a047", "#388e3c", "#2e7d32", "#2e7d32",
+  "#616161", "#558b2f", "#43a047", "#4caf50", "#43a047", "#388e3c", "#2e7d32", "#2e7d32",
   "#558b2f", "#689f38", "#827717", "#9e9d24", "#a08800", "#b07a00", "#b36a00", "#a35a00",
   "#933f00", "#832600", "#731200", "#630000", "#4a0000", "#4a0000"]
 export const usageColor = (pct) => USAGE_COLORS[Math.min(USAGE_COLORS.length - 1, Math.max(0, Math.floor(pct / 5)))]

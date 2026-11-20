@@ -415,6 +415,10 @@
 
   const inputValue   = ref('');
   const isInvalid    = ref(false);
+  // the field shows the current N (not only after N changes: otherwise the grey placeholder is shown)
+  watch(() => programOptions.N, (n) => {
+    if (document.activeElement?.id !== 'program-iterations') inputValue.value = n ?? ''
+  }, { immediate: true })
   let   errorTimeout = null;
 
   const validateField = () => {
@@ -642,7 +646,13 @@
         <table class="instructions-table">
           <thead>
             <tr>
-              <th style="width: 100px;">  #    </th>
+              <th v-if="getCriticalPercentage(0) != null" style="width: 100px;" id="critical-header"
+                  :title="activeView === 'timelineComponent'
+                    ? t('Percentage of visible critical-path cycles attributed to each instruction')
+                    : t('Percentage of the time of the critical path attributed to each instruction (last simulation)')">
+                {{ t('% crit.') }}
+              </th>
+              <th v-else style="width: 100px;" :title="t('Instruction Number')">  #    </th>
               <th style="width: 600px;" class="program-source-header" id="program-source-header" data-pin-code
                   :title="simState.simulatedProcess?.description
                           ? simState.simulatedProcess.description
@@ -903,8 +913,8 @@
   .stride-label {
     margin-left: 0.4em;
     white-space: nowrap;
-    color:       #777;
-    font-size:   0.9em;
+    color:       #555;
+    font-size:   0.875rem;
   }
   .stride-label.unrolled {
     color:       #1a4fb3;

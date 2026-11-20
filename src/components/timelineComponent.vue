@@ -35,6 +35,7 @@
     critical:      false,
     showPorts:     true,
     showCache:     true,
+    showText:      true,   // the text of each instruction in the first column
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -42,12 +43,37 @@
 
   const timelineOptions = reactive(defaultOptions)
 
-  // Number of cycles that fit in the visible width of the timeline (cells are 14 px)
+  // Sizes of the cells (px): 14 × 20 at the base size of the text (16 px), scaled with the text of
+  // the page (A−/A+). The first column shows the number of the instruction and, with Text, its text.
+  const TEXT_CHARS = 16          // longest instruction text shown (longer ones are cut with …)
+  function timelineGeometry() {
+    const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
+    const font = Math.round(14 * k)
+    let chars = 1
+    if (timelineOptions.showText) {
+      const list = [...(simState.simulatedProcess?.instruction_list ?? []), ...(simState.simulatedProcess?.epilogue ?? [])]
+      chars = 2 + Math.min(TEXT_CHARS, Math.max(0, ...list.map(i => String(i?.text ?? '').length)))
+    }
+    return {
+      k, font,
+      cellW:  Math.round(14 * k),
+      cellH:  Math.round(20 * k),
+      labelW: Math.max(Math.round(40 * k), Math.round(font * 0.62 * chars) + Math.round(8 * k)),
+    }
+  }
+  const labelText = (instrIdx, text) => {
+    if (!timelineOptions.showText) return String(instrIdx % 10)
+    const s = String(text ?? '')
+    return `${instrIdx % 10} ${s.length > TEXT_CHARS ? s.slice(0, TEXT_CHARS - 1) + '…' : s}`
+  }
+
+  // Number of cycles that fit in the visible width of the timeline
   function fitCycles() {
     const wrapper = document.getElementById('canvas-container')
     if (!wrapper || !wrapper.clientWidth) return
     const scale = timelineOptions.canvasScale || 1
-    const fitting = Math.floor((wrapper.clientWidth / scale - 2 * 10 - 40) / 14)
+    const g = timelineGeometry()
+    const fitting = Math.floor((wrapper.clientWidth / scale - 2 * 10 - g.labelW) / g.cellW)
     timelineOptions.canvasOffsetX = 0
     timelineOptions.cycles = Math.max(10, fitting)
   }
@@ -63,7 +89,8 @@
     const wrapper = document.getElementById('canvas-container')
     if (!(f > 0 && f <= 1) || !wrapper) return
     const target = window.innerWidth * f - wrapper.getBoundingClientRect().left
-    const world  = 2 * 10 + 40 + 14 * (Number(timelineOptions.cycles) || 1)
+    const g      = timelineGeometry()
+    const world  = 2 * 10 + g.labelW + g.cellW * (Number(timelineOptions.cycles) || 1)
     timelineOptions.autoFitCycles = false
     timelineOptions.canvasOffsetX = 0
     timelineOptions.canvasOffsetY = 0
@@ -269,7 +296,7 @@
       if (timelineOptions.autoFitCycles) fitCycles()
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
-               timelineOptions.showPorts, timelineOptions.showCache,
+               timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showText,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -305,6 +332,10 @@
   function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
   function togglePorts()     { timelineOptions.showPorts = !timelineOptions.showPorts }
   function toggleCache()     { timelineOptions.showCache = !timelineOptions.showCache }
+  function toggleText()      {
+    timelineOptions.showText = !timelineOptions.showText
+    if (timelineOptions.autoFitCycles) nextTick(fitCycles)     // the first column changed its width
+  }
 
   function getPortUsage(timeline) {
     const inferredUsagePorts = {};
@@ -615,15 +646,14 @@
     simState.timelineCriticalPathPercentages = criticalPercentages
     simState.timelineCriticalPathEnabled = criticalPercentages !== null
 
-    // sizes in pixels at the base size of the text (16 px), scaled with the text of the page
-    // (the A−/A+ control of the header)
-    const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
-    cellW = Math.round(14 * k)
-    labelW = Math.round(40 * k)
-    cellH = Math.round(20 * k)
+    // sizes in pixels, scaled with the text of the page (the A−/A+ control of the header)
+    const g = timelineGeometry(), k = g.k
+    cellW = g.cellW
+    labelW = g.labelW
+    cellH = g.cellH
     padX  = 10
     padY  = 10
-    fontSize   = Math.round(14 * k)
+    fontSize   = g.font
     fontXOffset = Math.round(2 * k)
     fontYOffset = Math.round(3 * k)
     hoverRow = null
@@ -937,7 +967,7 @@
       ctx.fillRect    (x, y, labelW, cellH);
       ctx.strokeRect  (x, y, labelW, cellH);
       ctx.fillStyle = wrongPath ? "#777" : "#000"
-      ctx.fillText    (String(instrIdx % 10), x + fontXOffset, y + fontYOffset)
+      ctx.fillText    (labelText(instrIdx, instr?.text), x + fontXOffset, y + fontYOffset)
 
       interactiveCells.push({
         x, y,
@@ -1470,7 +1500,7 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">{{ t('Execution Timeline - {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName }) }}</span>
+        <span class="header-title">{{ t('Timeline: {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName }) }}</span>
       </div>
 
       <div class="timeline-controls">
@@ -1489,6 +1519,13 @@
 
         <div class="iters-group">
           <span class="show-label">{{ t('Show:') }}</span>
+          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showText }" :aria-pressed="timelineOptions.showText"
+            :title="t('Show the text of each instruction in the first column (otherwise, only its number)')"
+            id="timeline-text"
+            @click="toggleText">
+            <span v-if="timelineOptions.showText">✔ </span>
+            {{ t('Text') }}
+          </button>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
             :title="t('Show the critical path ending at the last instruction retired in the visible cycles')"
             id="timeline-critical"
@@ -1519,6 +1556,20 @@
       </div>
     </div>
 
+    <!-- What the letters of the cells mean (the tooltip of a cell gives more detail) -->
+    <div class="timeline-legend" id="timeline-legend">
+      <span><b>D</b> {{ t('dispatch') }}</span>
+      <span><b>E</b> {{ t('execute') }}</span>
+      <span><b>W</b> {{ t('write the result') }}</span>
+      <span><b>R</b> {{ t('retire') }}</span>
+      <span class="legend-wait">{{ t('waits:') }}</span>
+      <span><b>.</b> {{ t('for data') }}</span>
+      <span><b>*</b> {{ t('for a port') }}</span>
+      <span><b>-</b> {{ t('to retire in order') }}</span>
+      <span v-if="cacheEnabled" :title="t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue')">
+        <b>! 2 : @</b> {{ t('cache') }}
+      </span>
+    </div>
     <div v-if="timelineError" class="execution-validation-error" role="alert">
       {{ timelineError }}
     </div>
@@ -1547,6 +1598,16 @@
 </template>
 
 <style scoped>
+  .timeline-legend {
+    display:     flex;
+    flex-wrap:   wrap;
+    gap:         2px 14px;
+    padding:     2px 8px 4px;
+    font-size:   0.875rem;
+    color:       #333;
+  }
+  .timeline-legend b { font-family: monospace; font-size: 1rem; color: #000; }
+  .timeline-legend .legend-wait { color: #666; margin-left: 6px; }
   .main {
     display: flex;
     flex-direction: column;

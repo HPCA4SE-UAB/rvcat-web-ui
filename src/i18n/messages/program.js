@@ -83,4 +83,7 @@ export default {
   "Add an instruction to the block executed once after each call of the loop": { es: "Añadir una instrucción al bloque que se ejecuta una vez después de cada llamada del bucle", ca: "Afegir una instrucció al bloc que s'executa un cop després de cada crida del bucle" },
   "+ instruction after each call": { es: "+ instrucción después de cada llamada", ca: "+ instrucció després de cada crida" },
   "Columns of the table: type (type, operation, size) or perf (latency, ports). The tooltip of each instruction describes it": { es: "Columnas de la tabla: type (tipo, operación, tamaño) o perf (latencia, puertos). El tooltip de cada instrucción la describe", ca: "Columnes de la taula: type (tipus, operació, mida) o perf (latència, ports). El tooltip de cada instrucció la descriu" },
+  "Percentage of visible critical-path cycles attributed to each instruction": { es: "Porcentaje de los ciclos visibles del camino crítico atribuidos a cada instrucción", ca: "Percentatge dels cicles visibles del camí crític atribuïts a cada instrucció" },
+  "Percentage of the time of the critical path attributed to each instruction (last simulation)": { es: "Porcentaje del tiempo del camino crítico atribuido a cada instrucción (última simulación)", ca: "Percentatge del temps del camí crític atribuït a cada instrucció (última simulació)" },
+  "% crit.": { es: "% crít.", ca: "% crít." },
 }

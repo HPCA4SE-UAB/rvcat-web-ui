@@ -59,6 +59,10 @@ provide('worker', useWorker())
     box-shadow:    0 1px 0 rgba(0,0,0,0.08);
   }
 
+  /* while the gutter between the panels is dragged */
+  body.dragging-gutter { cursor: col-resize; user-select: none; }
+  body.dragging-gutter canvas, body.dragging-gutter svg { pointer-events: none; }
+
   .header {
     display:     flex;
     align-items: center;

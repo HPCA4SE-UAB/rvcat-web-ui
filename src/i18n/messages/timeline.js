@@ -60,4 +60,13 @@ export default {
   "{n} critical cycles": { es: "{n} ciclos críticos", ca: "{n} cicles crítics" },
   "Load from": { es: "Load desde", ca: "Load des de" },
   "Store to": { es: "Store en", ca: "Store a" },
+  "Timeline: {program} on {processor}": { es: "Timeline: {program} en {processor}", ca: "Timeline: {program} a {processor}" },
+  "Show the text of each instruction in the first column (otherwise, only its number)": { es: "Mostrar el texto de cada instrucción en la primera columna (si no, solo su número)", ca: "Mostrar el text de cada instrucció a la primera columna (si no, només el seu número)" },
+  "write the result": { es: "escribe el resultado", ca: "escriu el resultat" },
+  "waits:": { es: "espera:", ca: "espera:" },
+  "for data": { es: "datos", ca: "dades" },
+  "for a port": { es: "un puerto", ca: "un port" },
+  "to retire in order": { es: "retirarse en orden", ca: "retirar-se en ordre" },
+  "! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue": { es: "! fallo de cache · 2 fallo a un bloque que ya se está cargando · : espera un llenado · @ espera en la cola de retorno de la cache", ca: "! error de cache · 2 error a un bloc que ja s'està carregant · : espera un ompliment · @ espera a la cua de retorn de la cache" },
+  "cache": { es: "cache", ca: "cache" },
 }

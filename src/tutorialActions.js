@@ -174,10 +174,11 @@ export function createActionRunner(ctx) {
       }
     },
     async programView(a) {
-      const button = $('#show-instr-operands')
-      if (!button) return
-      const shown = button.textContent.trim()           // "type" or "perf"
-      if (shown !== a.arg) { clickElement(button); await sleep(200) }
+      // two options, "type" and "perf": the one of the action is clicked unless it is selected
+      const group = $('#show-instr-operands')
+      if (!group) return
+      const option = [...group.querySelectorAll('button')].find(b => b.textContent.trim() === a.arg)
+      if (option && !option.classList.contains('on')) { clickElement(option); await sleep(200) }
     },
     async expandPorts()   { await togglePorts(true) },
     async collapsePorts() { await togglePorts(false) },

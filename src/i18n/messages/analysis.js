@@ -88,4 +88,6 @@ export default {
   "1 iteration": { es: "1 iteración", ca: "1 iteració" },
   "{n} iterations": { es: "{n} iteraciones", ca: "{n} iteracions" },
   "1 port": { es: "1 puerto", ca: "1 port" },
+  "Static analysis": { es: "Análisis estático", ca: "Anàlisi estàtica" },
+  "Instructions: the numbers are the instructions that can only use this resource; in grey and in parentheses, those that can also use other ports. Hover a number to see the instruction.": { es: "Instrucciones: los números son las instrucciones que solo pueden usar este recurso; en gris y entre paréntesis, las que también pueden usar otros puertos. Pasa el ratón por un número para ver la instrucción.", ca: "Instruccions: els números són les instruccions que només poden fer servir aquest recurs; en gris i entre parèntesis, les que també poden fer servir altres ports. Passa el ratolí per un número per veure la instrucció." },
 }

@@ -78,6 +78,60 @@ const { importRVCAT }               = useRVCAT_Api();
     nextTick(() => window.dispatchEvent(new Event('resize')))
   })
 
+  // Width of the side panel (% of the window), changed by dragging the gutter between the panels
+  const WIDTH_KEY = 'sidePanelWidth'
+  const MIN_SIDE_PX = 260, MAX_SIDE_PCT = 60
+  const sideWidth = ref(33)
+  try { const w = Number(localStorage.getItem(WIDTH_KEY)); if (w >= 15 && w <= MAX_SIDE_PCT) sideWidth.value = w } catch { /* default */ }
+  const containerStyle = computed(() => ({ '--side-width': `${sideWidth.value}%` }))
+  let resizeFrame = 0
+  const notifyResize = () => {
+    if (resizeFrame) return
+    resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; window.dispatchEvent(new Event('resize')) })
+  }
+  function startDrag(event) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    const container = event.currentTarget.parentElement
+    const rect = container.getBoundingClientRect()
+    document.body.classList.add('dragging-gutter')
+    const move = (e) => {
+      const minPct = 100 * MIN_SIDE_PX / rect.width
+      const pct = 100 * (e.clientX - rect.left) / rect.width
+      sideWidth.value = Math.round(10 * Math.min(MAX_SIDE_PCT, Math.max(minPct, pct))) / 10
+      notifyResize()
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      document.body.classList.remove('dragging-gutter')
+      try { localStorage.setItem(WIDTH_KEY, String(sideWidth.value)) } catch { /* ignore */ }
+      notifyResize()
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+  // keyboard: arrows on the gutter change the width
+  function gutterKey(e) {
+    const step = e.key === 'ArrowLeft' ? -2 : e.key === 'ArrowRight' ? 2 : 0
+    if (!step) return
+    sideWidth.value = Math.min(MAX_SIDE_PCT, Math.max(18, sideWidth.value + step))
+    try { localStorage.setItem(WIDTH_KEY, String(sideWidth.value)) } catch { /* ignore */ }
+    notifyResize()
+  }
+
+  // Narrow windows (laptops with a large zoom, projectors): the side panel folds by itself when
+  // the window becomes narrower than NARROW_PX (it can still be opened with its strip)
+  const NARROW_PX = 1100
+  let wasNarrow = window.innerWidth < NARROW_PX
+  if (wasNarrow) sideCollapsed.value = true
+  function onWindowResize() {
+    const narrow = window.innerWidth < NARROW_PX
+    if (narrow && !wasNarrow) sideCollapsed.value = true
+    wasNarrow = narrow
+  }
+  window.addEventListener('resize', onWindowResize)
+
 // ============================================================================
 // Main Simulator Panel UI
 // ============================================================================
@@ -182,6 +236,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', onWindowResize)
   if (cleanupRVCAT) {
      cleanupRVCAT()
      cleanupRVCAT = null
@@ -199,15 +254,6 @@ onUnmounted(() => {
           <div class="app-name" :title="`RVCAT version ${RVCAT_VERSION}`">RVCAT</div>
           <nav>
             <ul>
-              <li>
-                <button class="blue-button side-toggle" :disabled="!isNotFullscreen"
-                  id="side-panel-toggle"
-                  :title="sideCollapsed ? t('Show the processor and program panels') : t('Hide the processor and program panels to give more room to the right panel')"
-                  @click="sideCollapsed = !sideCollapsed">
-                    {{ sideCollapsed ? '▶' : '◀' }} {{ t('Side panel') }}
-                </button>
-              </li>
-              <li class="separator"></li>
               <!-- The three views of the right panel: one tab group (the active one is marked
                    only while no editor covers the panels) -->
               <li class="view-tabs" role="tablist" :aria-label="t('Views')">
@@ -300,11 +346,21 @@ onUnmounted(() => {
       <p>{{ t('Please wait. Loading can take several seconds') }}</p>
     </div>
 
-    <main class="container" :class="containerClasses">
+    <main class="container" :class="containerClasses" :style="containerStyle">
 
       <div class="components-wrapper" v-if="checkOK" v-show="isNotFullscreen && !sideCollapsed" id="process-panel">
         <processor/>
         <program :active-view="currentKey" @requestSwitchFull="toggleFullScreen"/>
+      </div>
+      <!-- Gutter between the panels: drag it to change their widths; « hides the side panel -->
+      <div v-if="checkOK && isNotFullscreen && !sideCollapsed" class="gutter" id="panels-gutter"
+           role="separator" aria-orientation="vertical" tabindex="0"
+           :aria-label="t('Drag to change the width of the panels')"
+           :title="t('Drag to change the width of the panels')"
+           @pointerdown="startDrag" @keydown="gutterKey">
+        <button class="gutter-button" id="side-panel-toggle" @pointerdown.stop @click="sideCollapsed = true"
+                :title="t('Hide the processor and program panels to give more room to the right panel')"
+                :aria-label="t('Hide the processor and program panels to give more room to the right panel')">«</button>
       </div>
       <!-- Collapsed side panel: a narrow strip that brings it back -->
       <button v-if="checkOK && isNotFullscreen && sideCollapsed" class="side-expand"
@@ -483,9 +539,9 @@ nav ul li {
 .container {
   position:              relative;
   display:               grid;
-  grid-template-columns: 33% calc(67% - 0.3vh);
+  grid-template-columns: var(--side-width, 33%) 12px minmax(0, 1fr);
   grid-template-rows:    minmax(0, 1fr) auto;   /* panels row fills the height; tutorial row is empty */
-  gap:          0.3vh;
+  gap:          0;
   flex:         1 1 auto;
   min-height:   0;
   width:        100%;
@@ -493,12 +549,43 @@ nav ul li {
   background:   #e3e3e3;
   overflow:     hidden;
   box-sizing:   border-box;
-  transition:   all 0.3s ease;
 }
+
+/* Gutter between the side panel and the right panel */
+.gutter {
+  grid-column:     2;
+  grid-row:        1;
+  position:        relative;
+  cursor:          col-resize;
+  background:      #d6dbe3;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  touch-action:    none;
+}
+.gutter:hover, .gutter:focus-visible { background: #9fb4d6; outline: none; }
+.gutter-button {
+  position:      absolute;
+  top:           50%;
+  transform:     translateY(-50%);
+  width:         12px;
+  height:        44px;
+  font-size:     0.875rem;
+  padding:       0;
+  border:        1px solid #9fb4d6;
+  border-radius: 6px;
+  background:    white;
+  color:         #1a4fb3;
+  font-weight:   700;
+  cursor:        pointer;
+  z-index:       2;
+}
+.gutter-button:hover { background: #e6f0ff; }
+#process-panel { grid-column: 1; grid-row: 1; }
 
 /* Side panel collapsed: narrow strip + right panel */
 .container.side-collapsed {
-  grid-template-columns: 28px calc(100% - 28px - 0.3vh);
+  grid-template-columns: 28px 0 minmax(0, 1fr);
   grid-template-rows:    minmax(0, 1fr) auto;
 }
 .side-expand {
@@ -524,9 +611,8 @@ nav ul li {
 
 .version-notice {
   position:      fixed;
-  top:           56px;
-  left:          50%;
-  transform:     translateX(-50%);
+  bottom:        16px;
+  left:          16px;
   z-index:       2000;
   display:       flex;
   align-items:   center;
@@ -549,7 +635,7 @@ nav ul li {
 .processor { grid-column: 1; grid-row: 1; }
 .program   { grid-column: 1; grid-row: 1; }
 .tutorial  { grid-column: 1; grid-row: 1; }
-.results   { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.results   { grid-column: 3; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .process   { grid-column: 1; grid-row: 1; min-width: 0;}
 
 .container.program-fullscreen,

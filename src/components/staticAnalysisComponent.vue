@@ -285,7 +285,7 @@
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show Help')" >
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">{{ t('Static Performance Analysis') }}: <strong>{{simState.simulatedProcess.name}}</strong></span>
+        <span class="header-title">{{ t('Static analysis') }}: <strong>{{simState.simulatedProcess.name}}</strong></span>
       </div>
     </div>
 
@@ -442,6 +442,9 @@
           </tr>
         </tbody>
       </table>
+      <div class="bounds-note" id="throughput-legend">
+        {{ t('Instructions: the numbers are the instructions that can only use this resource; in grey and in parentheses, those that can also use other ports. Hover a number to see the instruction.') }}
+      </div>
       <div v-if="throughputTable.hidden" class="bounds-note">
         {{ t('Showing the {n} highest bounds ({h} lower bounds hidden).', { n: throughputTable.rows.length, h: throughputTable.hidden }) }}
       </div>
@@ -658,7 +661,7 @@
   .bound-badge {
     margin-right:  0.5em;
     padding:       0 5px;
-    font-size:     0.75em;
+    font-size:     0.875rem;
     font-weight:   700;
     color:         #fff;
     background:    #8a5a00;
@@ -672,7 +675,7 @@
   }
 
   .bounds-note {
-    font-size: 0.8em;
+    font-size: 0.875rem;
     color: #666;
     margin-top: 2px;
   }

@@ -40,4 +40,5 @@ export default {
   "Size of the text": { es: "Tamaño del texto", ca: "Mida del text" },
   "Smaller text": { es: "Texto más pequeño", ca: "Text més petit" },
   "Larger text": { es: "Texto más grande", ca: "Text més gran" },
+  "Drag to change the width of the panels": { es: "Arrastra para cambiar el ancho de los paneles", ca: "Arrossega per canviar l'amplada dels panells" },
 }
