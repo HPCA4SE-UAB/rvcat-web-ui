@@ -4,7 +4,7 @@
            nextTick, inject, watch, reactive }                       from "vue"
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
-  import { createGraphVizGraph, downloadJSON, uploadJSON,
+  import { downloadJSON, uploadJSON,
            saveToLocalStorage, removeFromLocalStorage, initResource,
            getLogicalElementCount, getUnsupportedInstructions,
            validateProgram, repetitionFields } from '@/common'

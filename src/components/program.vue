@@ -284,7 +284,6 @@
     }
   }
 
-  function toggleLatency() { programOptions.show = (programOptions.show + 1) % 2 }
 
   function portsMaskToString(mask) {
     const ports = []
