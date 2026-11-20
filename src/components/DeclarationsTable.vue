@@ -107,7 +107,7 @@
     margin-top:    4px;
     border:        1px solid #ddd;
     border-radius: 5px;
-    font-size:     small;
+    font-size:     0.875rem;
   }
   .decl-header {
     display:     flex;
@@ -121,7 +121,7 @@
     border:      none;
     padding:     2px 0;
     font-weight: 600;
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #0b2e5c;
     cursor:      pointer;
   }
@@ -138,7 +138,7 @@
     white-space: nowrap;
     text-align:  center;
   }
-  .decl-table select { font-size: small; }
+  .decl-table select { font-size: 0.875rem; }
   .decl-name   { font-family: monospace; font-weight: 600; }
   .decl-same   { font-family: monospace; color: #555; text-align: left; white-space: normal; max-width: 18em; }
   .decl-status { min-width: 4em; }

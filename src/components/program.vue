@@ -10,14 +10,14 @@
   import { instructionSummary }                                   from '@/instructionSummary'
   import { programDraftFrom }                                         from '@/editDrafts'
   import { getCriticalityStyle } from '@/criticalityColors'
-  import { isLocked }             from '@/lessons'
+  import { uiLocked }             from '@/authorMode'
   const simState = inject('simulationState');
 
   // ---- Lessons: only the programs of the lesson (and those saved during it), and its locks ----
   const visiblePrograms = computed(() => simState.lesson
     ? [...simState.lesson.programs, ...(simState.lesson.extraPrograms ?? [])]
     : programOptions.availablePrograms)
-  const locked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  const locked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
   const nLimits = computed(() => {
     const n = simState.lesson?.locks?.N
     if (!n || (simState.lessonAllow ?? []).includes('N')) return null
@@ -558,20 +558,21 @@
         <button v-if="!locked('programEditor')" class="blue-button small-btn" @click="editProgram"
             id="edit-program-button"
             :title="t('Edit current program')">
-          📝
+          ✎
         </button>
         <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProgram"
             id="remove-program-button"
             :title="t('Remove program from list (and local storage)')">
-          🧹
+          🗑
         </button>
-        <button class="blue-button"
-            :title="t('Toggle between: type (type, operation, size) | perf (latency, ports). The tooltip of each instruction describes it')"
-            id="show-instr-operands"
-          @click="toggleLatency">
-          <span v-if="programOptions.show === 0">type</span>
-          <span v-if="programOptions.show === 1">perf</span>
-        </button>
+        <!-- Columns of the table: type, operation and size | latency and ports -->
+        <span class="column-switch" id="show-instr-operands" role="radiogroup"
+              :title="t('Columns of the table: type (type, operation, size) or perf (latency, ports). The tooltip of each instruction describes it')">
+          <button :class="{ on: programOptions.show === 0 }" role="radio" :aria-checked="programOptions.show === 0"
+                  @click="programOptions.show = 0">type</button>
+          <button :class="{ on: programOptions.show === 1 }" role="radio" :aria-checked="programOptions.show === 1"
+                  @click="programOptions.show = 1">perf</button>
+        </span>
         <div class="iters-group">
           <span class="iters-label"
                 :title="t('N = algorithmic operations (iterations of the original loop), 1 - {max}.', { max: MAX_N }) +
@@ -647,7 +648,7 @@
                           ? simState.simulatedProcess.description
                           : t('No source code for this program: write it in the Program Editor (Source code)')">
                 {{ t('Program') }}
-                <span v-if="simState.simulatedProcess?.description" class="source-mark">{ }</span>
+                <span v-if="simState.simulatedProcess?.description" class="source-mark">{ } C</span>
               </th>
               <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>
               <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
@@ -749,15 +750,35 @@
     border-radius: 3px;
     background:  rgba(255, 255, 255, 0.25);
     font-family: monospace;
-    font-size:   0.85em;
+    font-size:   0.875rem;
   }
+
+  /* type | perf: two options, the selected one filled */
+  .column-switch {
+    display:       inline-flex;
+    border:        1px solid #7aa2e3;
+    border-radius: 6px;
+    overflow:      hidden;
+    flex-shrink:   0;
+  }
+  .column-switch button {
+    border:      none;
+    background:  white;
+    color:       #1a4fb3;
+    font-weight: 600;
+    font-size:   0.875rem;
+    padding:     2px 7px;
+    cursor:      pointer;
+  }
+  .column-switch button.on { background: #1a4fb3; color: white; }
+  #programs-list { width: auto; min-width: 7rem; flex: 1 1 7rem; margin-bottom: 0; }
   .program-container {
     overflow:      auto;
     scroll-behavior: smooth;
     margin-top:    0px;
     background:    #f0f0f0;
     padding:       0px;
-    font-size:     2.0vh;
+    font-size:     1rem;
     border-radius: 10px;
   }
 
@@ -768,9 +789,10 @@
   .program-header {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 3px 6px;
     flex: 1;
-    justify-content: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .table-container {
@@ -787,7 +809,7 @@
   .instructions-table {
     width:           100%;
     border-collapse: collapse;
-    font-size:       small;
+    font-size:       0.875rem;
     padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
   }
   .instructions-table thead {
@@ -808,7 +830,7 @@
     border:         1px solid #ddd;
     vertical-align: middle;
     text-align:     center;
-    font-size:      medium;
+    font-size:      1rem;
   }
   .instructions-table tbody tr:nth-child(even) {
     background: #f9f9f9;
@@ -824,7 +846,7 @@
     background:    white;
     border-radius: 8px;
     cursor:        pointer;
-    font-size:     medium;
+    font-size:     1rem;
   }
   .action-btn:hover:not(:disabled) {
     background:   #e8f4fd;
@@ -847,7 +869,7 @@
     margin-bottom:    2px;
     border:           2px solid #ddd;
     border-radius:    6px;
-    font-size:        medium;
+    font-size:        1rem;
     background-color: white;
     transition:       border-color 0.3s;
   }

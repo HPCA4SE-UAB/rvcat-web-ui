@@ -213,7 +213,7 @@
     margin-top:    4px;
     border:        1px solid #ddd;
     border-radius: 5px;
-    font-size:     small;
+    font-size:     0.875rem;
   }
   .trace-header {
     display:     flex;
@@ -233,7 +233,7 @@
     border:      none;
     padding:     2px 0;
     font-weight: 600;
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #0b2e5c;
     cursor:      pointer;
   }
@@ -263,7 +263,7 @@
   .trace-table {
     border-collapse: collapse;
     font-family:     monospace;
-    font-size:       small;
+    font-size:       0.875rem;
   }
   .trace-table thead {
     position:   sticky;

@@ -5,7 +5,7 @@
   import { useDraggable, useResizeObserver}                 from '@vueuse/core'
   import HelpComponent                    from '@/components/helpComponent.vue'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
-  import { isLocked }                                      from '@/lessons'
+  import { uiLocked }                                      from '@/authorMode'
   import { downloadJSON, uploadJSON, createGraphVizGraph, saveToLocalStorage,
            instructionTypes, typeOperations, typeSizes,
            normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_INSTRUCTIONS }  from '@/common'
@@ -67,6 +67,7 @@ const STORAGE_KEY = 'programEditOptions'
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         Object.assign(programEditOptions, JSON.parse(saved))
+        programEditOptions.showActions = true
         console.log('📄load program edit options')
       }
       else {
@@ -546,9 +547,13 @@ function snapshotProgram() {
   };
 }
 
-  function toggleInOut  ()     { programEditOptions.showInOut   = !programEditOptions.showInOut }
-  function toggleStrideLanes() { programEditOptions.showStrideLanes = !programEditOptions.showStrideLanes }
-  function toggleActions()     { programEditOptions.showActions = !programEditOptions.showActions }
+  // Simple view: text, type, operation and size; detailed view: also operands, stride and lanes
+  const detailedView = computed(() => programEditOptions.showInOut && programEditOptions.showStrideLanes)
+  function setDetailedView(on) {
+    programEditOptions.showInOut       = on
+    programEditOptions.showStrideLanes = on
+    programEditOptions.showActions     = true    // the only way to add, move and remove rows
+  }
 
   // Handler for 'get_prog_graph' message (fired by RVCAT getProgGraph function)
   const handleGraph = async (data, dataType) => {
@@ -666,32 +671,13 @@ function snapshotProgram() {
         <span class="header-title">{{ t('Program Editor') }}</span>
       </div>
 
-      <button class="blue-button toggle-button add-prev-margin"
-              :class="{ active: programEditOptions.showInOut }"
-          :title="t('Show/Hide instruction Input/Output operands')"
-          id="show-inout-operands"
-        @click="toggleInOut">
-        <span v-if="programEditOptions.showInOut">✔ </span>
-        {{ t('InOut') }}
-      </button>
-
-      <button class="blue-button toggle-button add-margin"
-              :class="{ active: programEditOptions.showStrideLanes }"
-          :title="t('Show/Hide instruction Stride & vector lanes')"
-          id="show-mem-operands"
-        @click="toggleStrideLanes">
-        <span v-if="programEditOptions.showStrideLanes">✔ </span>
-        {{ t('Stride/Lanes') }}
-      </button>
-
-      <button class="blue-button toggle-button add-margin"
-              :class="{ active: programEditOptions.showActions }"
-          :title="t('Show/Hide column with buttons for moving/adding/removing instructions')"
-          id="show-instruction-actions"
-          @click="toggleActions">
-        <span v-if="programEditOptions.showActions">✔ </span>
-        {{ t('Actions') }}
-      </button>
+      <span class="view-switch" id="editor-view-switch" role="radiogroup"
+            :title="t('Simple view: the text of each instruction and its type (the other fields are deduced from the text). Detailed view: also the operands, the constant, the stride and the lanes.')">
+        <button :class="{ on: !detailedView }" role="radio" :aria-checked="!detailedView" id="editor-view-simple"
+                @click="setDetailedView(false)">{{ t('Simple') }}</button>
+        <button :class="{ on: detailedView }" role="radio" :aria-checked="detailedView" id="editor-view-detailed"
+                @click="setDetailedView(true)">{{ t('Detailed') }}</button>
+      </span>
 
       <label class="loop-stride-field" id="editor-loop-stride"
              :title="t('Loop stride S = algorithmic operations (iterations of the original loop) done by each iteration: 1 for the original loop, U for a loop unrolled U times, L×U for a loop vectorized with L lanes and unrolled U times. The loop runs N/S iterations.')">
@@ -711,7 +697,7 @@ function snapshotProgram() {
           <option v-for="w in VECTOR_WIDTHS" :key="w" :value="w">{{ w }} B</option>
         </select>
       </label>
-      <button v-if="!isLocked(simState.lesson, 'loopTransforms', simState.lessonAllow ?? [])"
+      <button v-if="!uiLocked(simState.lesson, 'loopTransforms', simState.lessonAllow ?? [])"
               class="blue-button add-margin" id="open-loop-transform" @click="openTransform"
               :title="t('Assistant: unroll and/or vectorize this loop, with a coherent loop stride, lanes, memory strides and offsets')">
         {{ t('Unroll / Vectorize…') }}
@@ -730,26 +716,21 @@ function snapshotProgram() {
       </button>
 
       <div class="settings-container">
-        <div class="buttons">
-          <button class="blue-button" @click="requestDownload"
-               :title="t('Save current edited program (after checking its coherence)')"
-               id="program-download-button">
-            {{ t('Download') }}
-          </button>
-          <button class="blue-button" @click="uploadForEdition"
-               :title="t('Load new program from file system for edition')"
-               id="program-upload-button">
-            {{ t('Upload') }}
-          </button>
-        </div>
-        <div class="buttons">
-          <button class="blue-button  add-margin" @click="showModalClear = true"
-                :title="t('Clear edition and start new program from scratch')"
-                id="clear-program-button">
-            {{ t('Clear') }}
-          </button>
-
-        </div>
+        <button class="save-button" @click="requestDownload"
+             :title="t('Save the edited program (after checking its coherence): it is added to the list of the Program panel and selected; it can also be downloaded as a file')"
+             id="program-download-button">
+          💾 {{ t('Save…') }}
+        </button>
+        <button class="blue-button" @click="uploadForEdition"
+             :title="t('Open a program file (JSON) to edit it')"
+             id="program-upload-button">
+          📂 {{ t('Open file…') }}
+        </button>
+        <button class="danger-button" @click="showModalClear = true"
+              :title="t('Discard the edited program and start a new one from scratch (asks for confirmation)')"
+              id="clear-program-button">
+          {{ t('New program') }}
+        </button>
       </div>
     </div>
 
@@ -903,7 +884,7 @@ function snapshotProgram() {
                     class="action-btn"
                     :title="t('Insert new instruction before this one')"
                   >
-                    ▶️
+                    ＋
                   </button>
 
                 </td>
@@ -1042,7 +1023,7 @@ function snapshotProgram() {
               <td><input type="text" v-model="inst.constant" class="table-input" /></td>
               <td class="actions-cell">
                 <button class="action-btn delete" :title="t('Delete')" @click="removeEpilogue(j)">✕</button>
-                <button class="action-btn" :title="t('Insert new instruction before this one')" @click="addEpilogue(j)">▶️</button>
+                <button class="action-btn" :title="t('Insert new instruction before this one')" @click="addEpilogue(j)">＋</button>
               </td>
             </tr>
           </tbody>
@@ -1227,15 +1208,60 @@ function snapshotProgram() {
     align-items: center;
     gap: 10px;
     flex: 1;
-    justify-content: center;
+    justify-content: flex-end;
   }
+  /* The toolbar of the editor wraps on narrow screens */
+  .header { flex-wrap: wrap; gap: 6px 12px; }
+
+  /* simple | detailed: two options, the selected one filled */
+  .view-switch {
+    display:       inline-flex;
+    border:        1px solid #7aa2e3;
+    border-radius: 6px;
+    overflow:      hidden;
+  }
+  .view-switch button {
+    border:      none;
+    background:  white;
+    color:       #1a4fb3;
+    font-weight: 600;
+    font-size:   0.875rem;
+    padding:     3px 10px;
+    cursor:      pointer;
+  }
+  .view-switch button.on { background: #1a4fb3; color: white; }
+
+  .save-button {
+    padding:       4px 14px;
+    border:        none;
+    border-radius: 6px;
+    background:    #1a4fb3;
+    color:         white;
+    font-weight:   700;
+    font-size:     0.9375rem;
+    cursor:        pointer;
+  }
+  .save-button:hover { background: #123b88; }
+  /* discards the edited program: apart, and in red */
+  .danger-button {
+    margin-left:   18px;
+    padding:       3px 10px;
+    border:        1px solid #c62828;
+    border-radius: 6px;
+    background:    white;
+    color:         #b3261e;
+    font-weight:   600;
+    font-size:     0.875rem;
+    cursor:        pointer;
+  }
+  .danger-button:hover { background: #fde2e2; }
 
   .loop-stride-field {
     display:     inline-flex;
     align-items: center;
     gap:         0.3em;
     margin-left: 0.6em;
-    font-size:   small;
+    font-size:   0.875rem;
     font-weight: 600;
     white-space: nowrap;
   }
@@ -1263,7 +1289,7 @@ function snapshotProgram() {
     overflow-y:    auto;
     margin-top:    4px;
     padding:       3px 6px;
-    font-size:     small;
+    font-size:     0.875rem;
     border:        1px solid #ddd;
     border-radius: 5px;
   }
@@ -1272,7 +1298,7 @@ function snapshotProgram() {
     max-height: 90vh;
     overflow-y: auto;
     box-sizing: border-box;
-    font-size:  small;
+    font-size:  0.875rem;
   }
   .transform-modal h4 { margin: 0 0 0.4em; }
   .transform-intro    { margin: 0 0 0.6em; }
@@ -1307,7 +1333,7 @@ function snapshotProgram() {
     margin-top: 0.5em;
     border:     1px solid #ddd;
   }
-  .transform-preview td { font-size: small; padding: 1px 6px; }
+  .transform-preview td { font-size: 0.875rem; padding: 1px 6px; }
   .transform-preview .preview-text { text-align: left; white-space: nowrap; }
 
   .coherence-ok      { color: #2e7d32; }
@@ -1329,7 +1355,7 @@ function snapshotProgram() {
   .instructions-table {
     width:           100%;
     border-collapse: collapse;
-    font-size:       small;
+    font-size:       0.875rem;
     padding-bottom: 30px; /* permite mover el contenedor y verlo completo */
   }
   .instructions-table thead {
@@ -1350,7 +1376,7 @@ function snapshotProgram() {
     border:         1px solid #ddd;
     vertical-align: middle;
     text-align:     center;
-    font-size:      medium;
+    font-size:      1rem;
   }
   .instructions-table tbody tr:nth-child(even) {
     background: #f9f9f9;
@@ -1364,7 +1390,7 @@ function snapshotProgram() {
     width:      100%;
     padding:    2px 4px;
     border:     1px solid #ccc;
-    font-size:  medium;
+    font-size:  1rem;
     box-sizing: border-box;
     text-align: center;
     border-radius: 3px;
@@ -1386,7 +1412,7 @@ function snapshotProgram() {
     background:    white;
     border-radius: 8px;
     cursor:        pointer;
-    font-size:     medium;
+    font-size:     1rem;
   }
   .action-btn:hover:not(:disabled) {
     background:   #e8f4fd;
@@ -1428,10 +1454,10 @@ function snapshotProgram() {
   }
 
   .add-margin {
-    margin-right: 24px;
+    margin-right: 8px;
   }
   .add-prev-margin {
-    margin-left: 40px;
+    margin-left: 8px;
   }
 
   .modal-overlay {
@@ -1460,7 +1486,7 @@ function snapshotProgram() {
     border:        1px solid #ccc;
     border-radius: 4px;
     box-sizing:    border-box;
-    font-size:     14px;
+    font-size:     0.875rem;
   }
   .modal-actions {
     display:         flex;
@@ -1492,7 +1518,7 @@ function snapshotProgram() {
 
   .error {
     color:         #d32f2f;
-    font-size:     13px;
+    font-size:     0.875rem;
     margin-bottom: 10px;
     padding:       8px;
     background:    #ffebee;
@@ -1541,7 +1567,7 @@ function snapshotProgram() {
     background: none;
     border: none;
     color: white;
-    font-size: 24px;
+    font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;
     padding: 0 8px;

@@ -361,7 +361,8 @@ import { renderTutorialText, tutorialNumber }                                   
 import { t, localized }                                                          from '@/i18n'
 import { createActionRunner, actionList, takeSnapshot, savedSnapshot, clearSnapshot } from '@/tutorialActions'
 import { processorDraftFrom, processorSignature }                               from '@/editDrafts'
-import { isLocked, evaluateCondition, LESSON_PARTS }                            from '@/lessons'
+import { evaluateCondition, LESSON_PARTS }                                      from '@/lessons'
+import { uiLocked }                                                             from '@/authorMode'
 import { cardState, restoreActions, timelineActions }                            from '@/lessonState'
 import { tutorialValue }                                                        from '@/tutorialValues'
 const simState = inject('simulationState');
@@ -419,7 +420,7 @@ const isActive        = ref(false)
   const visibleTutorials = computed(() => simState.lesson
     ? tutorialOptions.available.filter(t => t.id === simState.lesson.tutorial)
     : tutorialOptions.available)
-  const lessonLocked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  const lessonLocked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
 
 // ============================================================================
 // PROPS & EMITS
@@ -1351,7 +1352,7 @@ const showValidationMessage = (message) => {
   div.style.cssText = `
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: #ff6b6b; color: white; padding: 15px 25px; border-radius: 8px;
-    font-size: 14px; z-index: 10002; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-size: 0.875rem; z-index: 10002; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   `
   document.body.appendChild(div)
   setTimeout(() => div.remove(), 3000)
@@ -2030,17 +2031,17 @@ onUnmounted(() => {
     display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
   }
   .explore-hint-close {
-    float: right; border: none; background: none; cursor: pointer; color: #999; font-size: 14px; margin: -4px -6px 0 6px;
+    float: right; border: none; background: none; cursor: pointer; color: #999; font-size: 0.875rem; margin: -4px -6px 0 6px;
   }
   .explore-hint-text { margin-bottom: 8px; }
   .explore-hint-text p { margin: 0 0 6px; }
   .explore-hint {
     max-width: 340px; background: #fff8e1; border: 2px solid #f57c00; border-radius: 10px;
-    padding: 10px 14px; color: #333; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-size: 15px;
+    padding: 10px 14px; color: #333; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-size: 0.9375rem;
   }
   .explore-done-btn {
     background: #f57c00; color: #fff; border: none; border-radius: 30px; padding: 14px 26px;
-    font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    font-size: 1.125rem; font-weight: bold; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     animation: explore-pulse 1.6s ease-in-out infinite;
   }
   .explore-done-btn:hover { background: #ef6c00; }
@@ -2174,7 +2175,7 @@ onUnmounted(() => {
   .tutorial-header h3 {
     margin:    0 0 1px 0;
     color:     #333;
-    font-size: large;
+    font-size: 1.125rem;
   }
 
   .tutorial-header:active {
@@ -2189,14 +2190,14 @@ onUnmounted(() => {
   .tutorial-content h3 {
     margin:    0 0 1px 0;
     color:     #333;
-    font-size: large;
+    font-size: 1.125rem;
   }
 
   .tutorial-content p {
     margin:      0 0 7.5px 0;
     color:       #666;
     line-height: 1.5;
-    font-size:   medium;
+    font-size:   1rem;
   }
 
   .tutorial-content :deep(code) {
@@ -2204,7 +2205,7 @@ onUnmounted(() => {
     padding:       2px 4px;
     border-radius: 3px;
     font-family:   monospace;
-    font-size:     small;
+    font-size:     0.875rem;
   }
 
   .tutorial-actions {
@@ -2220,7 +2221,7 @@ onUnmounted(() => {
     border-radius: 4px;
     background:    white;
     cursor:        pointer;
-    font-size:     medium;
+    font-size:     1rem;
     transition:    all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform:     translateY(0);
   }
@@ -2263,7 +2264,7 @@ onUnmounted(() => {
   }
 
   .tutorial-progress {
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #666;
     white-space: nowrap;
   }
@@ -2274,7 +2275,7 @@ onUnmounted(() => {
     right:       0px;
     background:  none;
     border:      none;
-    font-size:   large;
+    font-size:   1.125rem;
     cursor:      pointer;
     color:       #999;
     line-height: 0.8;
@@ -2312,7 +2313,7 @@ onUnmounted(() => {
   }
 
   .tutorial-icon {
-    font-size:   xx-large;
+    font-size:   2rem;
     font-weight: bolder;
   }
 
@@ -2332,7 +2333,7 @@ onUnmounted(() => {
   .tutorial-menu h4 {
     margin:    0 0 10px 0;
     color:     #333;
-    font-size: medium;
+    font-size: 1rem;
   }
 
   .tutorial-list {
@@ -2360,13 +2361,13 @@ onUnmounted(() => {
     display:       block;
     color:         #333;
     margin-bottom: 2px;
-    font-size:     medium;
+    font-size:     1rem;
   }
 
   .tutorial-item-content p {
     margin:     0;
     color:      #666;
-    font-size:  small;
+    font-size:  0.875rem;
     line-height: 1.4;
   }
 
@@ -2400,7 +2401,7 @@ onUnmounted(() => {
     border-radius: 4px;
     background:    #fff3c4;
     color:         #7a5a00;
-    font-size:     11px;
+    font-size:     0.875rem;
     font-weight:   700;
     letter-spacing: 0.05em;
   }
@@ -2412,7 +2413,7 @@ onUnmounted(() => {
     border-radius: 50%;
     width: 30px;
     height: 30px;
-    font-size: 16px;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2448,14 +2449,14 @@ onUnmounted(() => {
   .tutorial-paused-header h5 {
     margin:      0 0 2px 0;
     color:       #333;
-    font-size:   large;
+    font-size:   1.125rem;
     font-weight: 600;
   }
 
   .tutorial-paused-info {
     margin:     0;
     color:      #666;
-    font-size:  medium;
+    font-size:  1rem;
     font-style: italic;
   }
 
@@ -2480,7 +2481,7 @@ onUnmounted(() => {
   }
 
   .tutorial-action-icon {
-    font-size:   large;
+    font-size:   1.125rem;
     line-height: 1;
   }
 
@@ -2491,13 +2492,13 @@ onUnmounted(() => {
   }
 
   .tutorial-action-content strong {
-    font-size:   medium;
+    font-size:   1rem;
     font-weight: bold;
     line-height: 1.2;
   }
 
   .tutorial-action-content span {
-    font-size:   small;
+    font-size:   0.875rem;
     opacity:     0.8;
     line-height: 1.2;
   }
@@ -2574,7 +2575,7 @@ onUnmounted(() => {
   right:    0px;
   background:  none;
   border:      none;
-  font-size:   24px;
+  font-size:   1.5rem;
   cursor:      pointer;
   color:       #999;
   line-height: 1;
@@ -2602,7 +2603,7 @@ onUnmounted(() => {
   background:    rgba(255, 255, 255, 0.2);
   padding:       3px 3px;
   border-radius: 16px;
-  font-size:     small;
+  font-size:     0.875rem;
   font-weight:   bold;
   margin-bottom: 0px;
   background:    #007bff;
@@ -2613,7 +2614,7 @@ onUnmounted(() => {
 .question-header h2 {
   margin:      0;
   margin-right: 30px;
-  font-size:   medium;
+  font-size:   1rem;
   font-weight: 600;
   flex:        1;
   min-width:   0; /* Importante para que funcione text-overflow */
@@ -2629,7 +2630,7 @@ onUnmounted(() => {
 }
 
 .question-text {
-  font-size: medium;
+  font-size: 1rem;
   line-height: 1.6;
   color: #333;
   margin: 0 0 3px 0;
@@ -2675,7 +2676,7 @@ onUnmounted(() => {
 .question-image .image-hint,
 .step-image .image-hint {
   display:    block;
-  font-size:  small;
+  font-size:  0.875rem;
   color:      #6b7280;
   margin-top: 2px;
   opacity:    0.7;
@@ -2729,7 +2730,7 @@ onUnmounted(() => {
   background: none;
   border: none;
   color: white;
-  font-size: 32px;
+  font-size: 2rem;
   cursor: pointer;
   padding: 8px;
   line-height: 1;
@@ -2745,7 +2746,7 @@ onUnmounted(() => {
     background: #f5f3ff;
     padding: 6px 14px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 0.875rem;
     color: #6b7280;
     margin-bottom: 8px;
   }
@@ -2814,7 +2815,7 @@ onUnmounted(() => {
     background: #e5e7eb;
     color: #374151;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 0.875rem;
     border-radius: 6px;
     flex-shrink: 0;
   }
@@ -2837,7 +2838,7 @@ onUnmounted(() => {
 
   .answer-text {
     flex: 1;
-    font-size: 16px;
+    font-size: 1rem;
     color: #374151;
     line-height: 1.4;
   }
@@ -2850,7 +2851,7 @@ onUnmounted(() => {
   }
 
   .answer-indicator {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: bold;
   }
 
@@ -2871,7 +2872,7 @@ onUnmounted(() => {
     margin-left: 40px;
     padding: 0px 12px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.4;
     animation: fadeIn 0.3s ease-out;
   }
@@ -2907,7 +2908,7 @@ onUnmounted(() => {
 
   .feedback-box h4 {
     margin: 0 0 0px 0;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
   }
 

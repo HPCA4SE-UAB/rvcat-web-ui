@@ -615,14 +615,17 @@
     simState.timelineCriticalPathPercentages = criticalPercentages
     simState.timelineCriticalPathEnabled = criticalPercentages !== null
 
-    cellW = 14
-    labelW = 40
-    cellH = 20
+    // sizes in pixels at the base size of the text (16 px), scaled with the text of the page
+    // (the A−/A+ control of the header)
+    const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
+    cellW = Math.round(14 * k)
+    labelW = Math.round(40 * k)
+    cellH = Math.round(20 * k)
     padX  = 10
     padY  = 10
-    fontSize   = 14
-    fontXOffset = 2
-    fontYOffset = 3
+    fontSize   = Math.round(14 * k)
+    fontXOffset = Math.round(2 * k)
+    fontYOffset = Math.round(3 * k)
     hoverRow = null
     hoverCol = null
     hoverInfo.value = null
@@ -1615,7 +1618,7 @@
     position:   fixed;
     padding:    4px 8px;
     z-index:    10;
-    font-size:  medium;
+    font-size:  1rem;
     display:    inline-block;
     width:      max-content;
     max-width:  560px;       /* avoids tooltips too wide */
@@ -1655,7 +1658,7 @@
     background: none;
     border:     none;
     color:    white;
-    font-size:  24px;
+    font-size:  1.5rem;
     line-height: 1;
     cursor:      pointer;
     padding:     0 8px;

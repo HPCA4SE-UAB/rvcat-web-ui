@@ -614,7 +614,7 @@
   .branch-analysis {
     margin:        4px 0;
     padding:       4px 8px;
-    font-size:     small;
+    font-size:     0.875rem;
     border:        1px solid #c9a227;
     border-radius: 5px;
     background:    #fffbe6;
@@ -627,7 +627,7 @@
     max-width:     44rem;   /* as wide as the summary */
     margin:        0 0 0.3rem;
     padding:       4px 8px;
-    font-size:     0.85rem;
+    font-size:     0.875rem;
     background:    #fff7e0;
     border:        1px solid #e0b84a;
     border-radius: 6px;
@@ -641,7 +641,7 @@
   .bound-tip {
     position: fixed; z-index: 3000; max-width: 330px; pointer-events: none;
     background: #fffde7; color: #222; border: 1px solid #c9b458; border-radius: 4px;
-    padding: 4px 8px; font-size: 13px; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    padding: 4px 8px; font-size: 0.875rem; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,.2);
   }
   .bound-none {
     color: #6b7280;

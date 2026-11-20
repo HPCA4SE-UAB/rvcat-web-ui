@@ -93,7 +93,7 @@
     border:        1px solid #c9a227;
     border-radius: 6px;
     box-shadow:    0 4px 14px rgba(0, 0, 0, 0.2);
-    font-size:     13px;
+    font-size:     0.875rem;
     line-height:   1.4;
   }
   .pinned-detail-text { white-space: pre-line; }

@@ -3,17 +3,17 @@
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import { uploadJSON, downloadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-           createGraphVizGraph, get_processor_dot, CACHE_BLOCK_SIZES,
+           createGraphVizGraph, get_processor_dot, resourceUsage, CACHE_BLOCK_SIZES,
            getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations, typeSizes,
            allOperationNames, removePortFrom, MAX_PORTS }                                 from '@/common'
   import { processorDraftFrom, processorSignature }                                     from '@/editDrafts'
-  import { isLocked }                                                                   from '@/lessons'
+  import { uiLocked, authorMode }                                                       from '@/authorMode'
 
   const simState = inject('simulationState');
 
   // ---- Lessons: only the processors of the lesson, and its locks ----
   const visibleProcessors = computed(() => simState.lesson ? simState.lesson.processors : processorOptions.availableProcessors)
-  const locked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  const locked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
   // field of the processor edited by each cell of the diagram
   const CELL_FIELD = { dispatch: 'dispatch', retire: 'retire', rob: 'rob', cache: 'cache', bpenalty: 'bPenalty', addport: 'ports' }
   const editLocked = computed(() => ['dispatch', 'retire', 'rob', 'cache', 'bPenalty', 'ports', 'latencies']
@@ -597,7 +597,8 @@
   const drawProcessor = async () => {
     try {
       const dotCode      = get_processor_dot (simState.simulatedProcess, true, simState.highlightedPort,
-                                              { collapsed: processorOptions.opsCollapsed })
+                                              { collapsed: processorOptions.opsCollapsed, ports: !locked('processor.ports'),
+                                                usage: shownUsage() })
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -687,8 +688,20 @@
   }
 
   function lockedMessage() {
-    showTemporaryError(t('This parameter cannot be changed in this lesson'))
+    showTemporaryError(simState.lesson ? t('This parameter cannot be changed in this lesson')
+                                       : t('The structure of the processor (ports and latencies) is edited in author mode'))
   }
+
+  // Usage of the resources in the last simulation (valid for the current processor and program:
+  // the results are cleared when something changes), unless the lesson hides it
+  const shownUsage = () => simState.lesson?.hidden?.includes('usage') ? null
+    : resourceUsage(simState.simulatedProcess, simState.executionResults)
+  watch(() => [simState.executionResults, simState.lesson?.hidden?.includes('usage')], () => {
+    if (simState.state > 1) drawProcessor()
+  })
+
+  // Author mode on/off: the diagram shows or hides the editing of the ports
+  watch(authorMode, () => { if (simState.state > 1) drawProcessor() })
 
   // The diagram has texts: redrawn in the new language
   watch(locale, () => { if (simState.state > 1) drawProcessor() })
@@ -818,7 +831,7 @@
           </option>
           <option v-if="!locked('upload')" value="_add_new_">{{ t('Add new') }}</option>
         </select>
-        <button v-if="!editLocked" class="blue-button small-btn" @click="openSave"
+        <button v-if="!editLocked && !locked('processorSave')" class="blue-button small-btn" @click="openSave"
           id="save-processor-button"
           :title="t('Save the processor with a name: it is added to the list (local storage) and can be downloaded as a JSON file')">
         💾
@@ -831,7 +844,7 @@
         <button v-if="!locked('remove')" class="blue-button small-btn" @click="removeProcessor"
           id="remove-processor-button"
           :title="t('Remove processor configuration from list (and local storage)')">
-        🧹
+        🗑
         </button>
         <template v-if="currentConfig.port">
           <span class="iters-label highlight-static" :title="currentConfig.title">{{ currentConfig.label }}</span>
@@ -951,7 +964,7 @@
   .modal label { display: block; margin-bottom: 5px; font-weight: bold; }
   .modal input {
     width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc;
-    border-radius: 4px; box-sizing: border-box; font-size: 14px;
+    border-radius: 4px; box-sizing: border-box; font-size: 0.875rem;
   }
   .modal .error   { color: #c62828; font-size: 0.9em; }
   .modal .warning { color: #8a5a00; font-size: 0.9em; }
@@ -1012,7 +1025,7 @@
     margin-bottom:    2px;
     border:           2px solid #ddd;
     border-radius:    6px;
-    font-size:        medium;
+    font-size:        1rem;
     background-color: white;
     transition:       border-color 0.3s;
   }
@@ -1042,7 +1055,7 @@
     transform-box: fill-box;
   }
   .simProcessor-img svg text {
-    font-size:   12px;
+    font-size:   0.875rem;
     font-family: Arial, sans-serif;
   }
   .simProcessor-img svg polygon,

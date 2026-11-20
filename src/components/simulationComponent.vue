@@ -1,5 +1,5 @@
 <script setup>
-  import { t, locale } from '@/i18n'
+  import { t } from '@/i18n'
   import { ref, toRaw, computed, onMounted, onUnmounted, onBeforeUnmount,
            nextTick, inject, watch, reactive }                       from "vue"
   import HelpComponent                    from '@/components/helpComponent.vue'
@@ -8,6 +8,8 @@
            saveToLocalStorage, removeFromLocalStorage, initResource,
            getLogicalElementCount, getUnsupportedInstructions,
            validateProgram, repetitionFields } from '@/common'
+  import { resultsToCsv, hasAlgOps }      from '@/resultsCsv'
+  import { authorMode }                   from '@/authorMode'
   import { buildResultContext, defaultResultName,
            resultMemoryColumns, resultContextLines, resultRepetitions } from '@/resultContext'
   import { resultStride, resultCyclesPerAlgOp, resultInstrPerAlgOp, speedupOver,
@@ -77,12 +79,12 @@
     autorun:          false,
     availableResults: [],
     resultName:       '',
-    referenceResult:  ''    // stored result used as baseline for the speedup column
+    referenceResult:  '',   // stored result used as baseline for the speedup column
+    allColumns:       false // every column of the stored results (otherwise, the main ones)
   }
 
   const simulationOptions = reactive(defaultOptions)
 
-  const resultsSvg            = ref('')
   const executionError        = ref('')
   let   cleanupHandleResults  = null
   let   resultsTimeout        = null
@@ -194,7 +196,7 @@
   }
 
   const displayText = computed(() => {
-    return t('Simulate Execution of {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName })
+    return t('Simulation: {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName })
   })
 
 /* ------------------------------------------------------------------
@@ -208,8 +210,6 @@
   // Options of the simulation, stored with the simulated copy so that changing them invalidates results
   const settings = simState.simulationSettings
 
-  // The diagram of the results has texts: redrawn in the new language
-  watch(locale, () => { if (simState.state > 2) drawProcessorResults() })
 
   // Options fixed by a lesson (locks.simulation: { sched, speculation })
   const fixedOption = (key) => (simState.lessonAllow ?? []).includes(`simulation.${key}`)
@@ -312,13 +312,11 @@
       if (equalProcs) {
         if (simState.executionResults == null) simState.executionResults = simResults
         console.log('🕐✅ Same simulated proces: execution results are valid');
-        drawProcessorResults();
       } else if (simulationOptions?.autorun) {
         console.log('🕐🔄 Something changed: re-running simulation', equalProcs)
         reloadExecutionResults()
       } else {
         simState.executionResults = null; // Clear results to avoid showing outdated data
-        resultsSvg.value = ''; // Clear graph
         console.log('🕐🧹 Process changed but autorun is disabled: clear simulation results')
       }
     }
@@ -358,35 +356,15 @@
     updateResults()
   };
 
-  const CONFIRM_KEY = 'confirmDeleteResults';
-
-  function removeResult () {
-    if (simulationOptions.availableResults.length === 0) return;
-
-    const askConfirmation = localStorage.getItem(CONFIRM_KEY) !== 'false';
-
-    if (askConfirmation) {
-      const confirmed = confirm(
-        t('Results named "{name}" will disappear. Are you sure?', { name: simulationOptions.resultName }) + '\n\n' +
-        t('Press OK to confirm, Cancel to abort.')
-      );
-
-      if (!confirmed) {
-        alert(t('Removal cancelled.'));
-        return;
-      }
-
-      const dontAskAgain = confirm(t('Do you want to skip this confirmation next time?'));
-      if (dontAskAgain) {
-        localStorage.setItem(CONFIRM_KEY, 'false');
-      }
-    }
-
-    removeFromLocalStorage('result', simulationOptions.resultName, simulationOptions.availableResults );
-
-    if (simulationOptions.availableResults.length > 0) {
-      simulationOptions.resultName = simulationOptions.availableResults[0];
-    }
+  function removeResult (index) {
+    const name = simulationOptions.availableResults[index]
+    if (name === undefined) return
+    if (!confirm(t('Remove the stored result "{name}"?', { name }))) return
+    if (simulationOptions.referenceResult === name) simulationOptions.referenceResult = ''
+    removeFromLocalStorage('result', name, simulationOptions.availableResults)
+    simulationOptions.resultName = simulationOptions.availableResults[0] ?? ''
+    updateShowResults()
+    saveOptions()
   }
 
   // The spinner and the "running" message while RVCAT simulates (the elements may not exist: the
@@ -473,11 +451,9 @@
       // Results + snapshot of the simulated program/processor (shown when stored results are hovered)
       simResults = { ...JSON.parse(data), context: pendingContext }
       endProgress(simResults)
-      patternKey.value++
       saveResults()
       if (resultsTimeout) clearTimeout(resultsTimeout)
       resultsTimeout = setTimeout(() => {
-        drawProcessorResults()
         showRunning(false)   // (the panel may have been closed meanwhile)
       }, 500)
       simState.executionResults = simResults
@@ -562,28 +538,18 @@
     const ratio = ipc / dw;
 
     // close to maximum (>= 80% of dispatch width) -> Green
-    if (ratio >= 0.8) return '#00cc44';
+    if (ratio >= 0.8) return '#1b7f3a';
 
     // Very low (<= 10% of dispatch width) -> Red
-    if (ratio <= 0.1) return '#ff3333';
+    if (ratio <= 0.1) return '#c62828';
 
     // Intermediate: gradient from red to green
     const t     = (ratio - 0.1) / 0.7; // Normalize 0.1-0.8 to 0-1
-    const red   = Math.floor(255 * (1 - t));
-    const green = Math.floor(255 * t);
+    const red   = Math.floor(190 * (1 - t));
+    const green = Math.floor(127 * t);
 
     return `rgb(${red}, ${green}, 0)`;
   });
-
-  const ipcStyle = computed(() => ({
-    color:      ipcColor.value,
-    fontWeight: 'bold',
-    fontSize:   '1.2em',
-    backgroundColor: `${ipcColor.value}10`,
-    padding:    '2px 6px',
-    borderRadius: '4px',
-    transition: 'all 0.3s ease'
-  }));
 
   const ipcTooltip = computed(() => {
     const ipc = simState.executionResults?.["ipc"] ?? 0;
@@ -592,24 +558,20 @@
     return `IPC: ${ipc.toFixed(3)} | Dispatch Width: ${dw}\nEfficiency: ${efficiency}% of maximum possible IPC`;
   });
 
-  const repeatingCriticalPath = computed(() =>
-    simState.executionResults?.critical_path?.repeating_pattern ?? null
-  )
+  // there are results of the current program and processor
+  const hasResults = computed(() => Number.isFinite(simState.executionResults?.total_iterations))
+  const hasCache   = computed(() => (simState.simulatedProcess?.nBlocks ?? 0) > 0)
 
-  // The pattern is useful when it repeats in more than half of the iterations; the details are
-  // collapsed again after each new simulation (patternKey changes)
-  const patternKey = ref(0)
-  const patternUseful = computed(() => {
-    const p = repeatingCriticalPath.value, n = simState.executionResults?.total_iterations
-    return !!p && Number.isFinite(n) && n > 0 && p.repetitions / n > 0.5
-  })
-
-  const repeatingCriticalPathText = computed(() => {
-    const nodes = repeatingCriticalPath.value?.nodes
-    if (!nodes?.length) return ''
-    return nodes.map(node =>
-      `#${node.instruction_index + 1} ${node.instruction} [${t(node.stage)}, ${node.cycles} ${t('cycles')}]`
-    ).join(' → ')
+  // Columns of the stored results: the main ones, and those that matter for these results
+  const columns = computed(() => {
+    const results = simulationOptions.availableResults.map((_, i) => showResultsInfo.value[i]).filter(Boolean)
+    const all = !!simulationOptions.allColumns
+    return {
+      all,
+      algOps: all || hasAlgOps(results),
+      branch: all || results.some(r => r.branch),
+      cache:  all || results.some(r => (r.context?.processor?.nBlocks ?? 0) > 0),
+    }
   })
 
   const reloadExecutionResults = async () => {
@@ -627,7 +589,6 @@
       executionError.value = t('Cannot simulate invalid program: {errors}', { errors: validationErrors.join(' ') })
       console.error('🕐❌ Cannot simulate invalid program:', validationErrors)
       simState.executionResults = null
-      resultsSvg.value = ''
       return
     }
 
@@ -640,7 +601,6 @@
         t('Cannot simulate: the active processor has no execution port for {list}.', { list: instructionList })
       console.error('🕐❌ Cannot simulate unsupported instructions:', unsupportedInstructions)
       simState.executionResults = null
-      resultsSvg.value = ''
       return
     }
 
@@ -666,7 +626,6 @@
     try {
       resultsTimeout = setTimeout(() => {
         showRunning(true)
-        resultsSvg.value = `<div class="error">Waiting to generate simulation results graph</div>`;
 
         const { iters, ROBsize, dispatch, retire, blkSize, nBlocks, mPenalty, mIssueTime,
                 nFillBuffers, nWriteBuffers, rThru } = process
@@ -688,133 +647,6 @@
     }
   }
 
-  const drawProcessorResults = async () => {
-    try {
-      const dotCode      = get_proc_results_dot (simState.simulatedProcess, simResults)
-      const svg          = await createGraphVizGraph(dotCode);
-      resultsSvg.value = svg.outerHTML;
-    } catch (error) {
-      console.error('🕐❌ Failed to draw results+processor:', error)
-      resultsSvg.value = `<div class="error">Failed to render graph</div>`;
-    }
-  }
-
-  function get_proc_results_dot (process, results) {
-
-    const ports    = process.ports
-    const port_ids = Object.keys(ports)
-    const ROBsize  = process.ROBsize || 20
-    const dispatch = process.dispatch
-    const retire   = process.retire
-    const nblocks   = process.nBlocks
-    const blkSize   = process.blkSize
-    const mIssueTime = process.mIssueTime
-    const mPenalty   = process.mPenalty
-    const MM_reads   = results["MM_Reads"]
-    const MM_writes  = results["MM_Writes"]
-    const totalCycles = results["total_cycles"]
-
-    const percentage = (100 * (MM_reads + MM_writes) * mIssueTime / totalCycles)
-
-    // Colorscale from grey to red
-    const color = [
-      "#e0e0e0",  "#c8e6c9",  "#a5d6a7",  "#81c784",  "#66bb6a",  "#4caf50",  "#43a047",  "#388e3c",
-      "#2e7d32",  "#558b2f",  "#7cb342",  "#9e9d24",  "#c0ca33",  "#d4b000",  "#c49000",  "#b37400",
-      "#a35a00",  "#933f00",  "#832600",  "#731200",  "#630000",  "#4a0000"    ];
-
-    let usage = 0
-    if (results !== null)
-      usage = (results.ipc / dispatch) * 100
-    let dispatch_color = color[Math.floor(usage/5)]
-
-    let message =  usage !== 0
-      ? `&nbsp;&nbsp;&nbsp;${t('Usage')}:<B><FONT COLOR="${dispatch_color}">${usage.toFixed(1)}%</FONT></B>`
-      : ""
-
-    // ---- Decode ----
-    let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${t('Usage of dispatch capacity')}"><FONT POINT-SIZE="20"><B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}${message}</FONT></TD>
-      <TD ROWSPAN="${results?.branch ? 5 : 4}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${t('Pending: usage of ROB capacity')}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20"><B>ROB</B><BR/>${ROBsize}</FONT><BR/><FONT POINT-SIZE="16">${t('entries')}</FONT></TD>
-    </TR>`
-
-    // ---- Port headers ----
-    let port_header = "<TR>"
-
-    for (let p of port_ids) {
-      const style = ` BGCOLOR="#f5f5f5" HREF="#" TITLE="${t('Usage of port {p}', { p })}"`
-      usage = 0
-      if (results?.ports?.[p] != null)
-        usage = results.ports[p]
-      let port_color = color[Math.floor(usage/5)]
-      let message = usage !== 0
-        ? `<FONT COLOR="${port_color}">${usage.toFixed(0)}%</FONT>`
-        : ""
-      port_header += `<TD${style}><FONT POINT-SIZE="20"><B>P${p} ${message}</B></FONT></TD>`
-    }
-
-    port_header += "</TR>"
-
-    // ---- Cache & Retire ----
-    usage = 0
-    if (results !== null)
-      usage = percentage
-    let cache_color = color[Math.floor(usage/5)]
-
-    message =  usage !== 0
-      ? `&nbsp;&nbsp;${t('Usage')}:<B><FONT COLOR="${cache_color}">${usage.toFixed(1)}%</FONT></B>`
-      : ""
-
-    let cache_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${t('Usage of cache capacity')}"><FONT POINT-SIZE="20"><B>Cache:&nbsp;</B>(${nblocks}, ${blkSize}, ${mIssueTime}, ${mPenalty})${message}</FONT></TD>
-    </TR>`
-
-    if (nblocks === 0) {
-      cache_row = `<TR>
-        <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${t('Cache always hits')}"><FONT POINT-SIZE="20"><B>Cache:&nbsp;</B>${t('No cache')}</FONT></TD>
-      </TR>`
-    }
-
-    // ---- Branch prediction (programs with conditional branches) ----
-    let branch_row = ''
-    const branch = results?.branch
-    if (branch) {
-      const rate = branch.branches > 0 ? 100 * branch.mispredictions / branch.branches : 0
-      branch_row = `<TR>
-        <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="branch" TITLE="${t('Mispredicted: {m} of the {n} conditional branches (if c skip k) executed', { m: branch.mispredictions.toLocaleString('en-US'), n: branch.branches.toLocaleString('en-US') })}"><FONT POINT-SIZE="20"><B>${t('Branch prediction')}:&nbsp;</B>&nbsp;&nbsp;&nbsp;Mispred:<B><FONT COLOR="${rate < 10 ? '#2e7d32' : color[Math.min(color.length - 1, Math.floor(rate / 5))]}">${rate.toFixed(1)}%</FONT></B></FONT></TD>
-      </TR>`
-    }
-
-    usage = 0
-    if (results !== null)
-      usage = (results.ipc / retire) * 100
-    let retire_color = color[Math.floor(usage/5)]
-
-    message =  usage !== 0
-      ? `&nbsp;&nbsp;&nbsp;${t('Usage')}:<B><FONT COLOR="${retire_color}">${usage.toFixed(1)}%</FONT></B>`
-      : ""
-
-    let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${t('Usage of retire capacity')}"><FONT POINT-SIZE="20"><B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}${message}</FONT></TD>
-    </TR>`
-
-    const dot = `
-      digraph CPU {
-        node [shape=plain fontname="Arial" width=0 height=0 margin=0]
-        pipeline [
-          label=<
-            <TABLE WIDTH="600" BORDER="2" CELLBORDER="1" CELLSPACING="2" CELLPADDING="1">
-              ${decode_row}
-              ${port_header}
-              ${cache_row}
-              ${branch_row}
-              ${reg_row}
-            </TABLE>
-          >
-        ]
-      }  `
-    return dot
-  }
-
 // ============================================================================
 // confirmDownload, uploadResults
 // ============================================================================
@@ -830,19 +662,26 @@
     }
   })
 
-  const showModalDownload = ref(false)
-  const modalName         = ref("")
-  const nameError         = ref("")
-
-  async function confirmDownload() {
-    const name   = modalName.value.trim();
-    const stored = localStorage.getItem(`results.${simulationOptions.resultName}`)
+  async function downloadResult(index) {
+    const name   = simulationOptions.availableResults[index]
+    const stored = localStorage.getItem(`results.${name}`)
     if (stored) {
       const data = JSON.parse(stored)
       data.name = name
       await downloadJSON(data, name, 'result')
     }
-    showModalDownload.value = false;
+  }
+
+  // The stored results as a CSV file (a spreadsheet opens it)
+  function exportCsv() {
+    const rows = simulationOptions.availableResults.map((name, i) => ({ name, result: showResultsInfo.value[i] }))
+    const csv  = resultsToCsv(rows, simulationOptions.referenceResult)
+    const url  = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'rvcat-results.csv'
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const uploadResults = async (oldResult) => {
@@ -915,24 +754,13 @@
     }
   }
 
-  function moveResultsUp() {
-    if (simulationOptions.resultName !== simulationOptions.availableResults[0]) {
-      const index = simulationOptions.availableResults.indexOf(simulationOptions.resultName);
-      const temp = simulationOptions.availableResults[index];
-      simulationOptions.availableResults[index] = simulationOptions.availableResults[index - 1];
-      simulationOptions.availableResults[index - 1] = temp;
-      updateShowResults();
-    }
-  }
-
-  function moveResultsDown() {
-    if (simulationOptions.resultName !== simulationOptions.availableResults[simulationOptions.availableResults.length - 1]) {
-      const index = simulationOptions.availableResults.indexOf(simulationOptions.resultName);
-      const temp = simulationOptions.availableResults[index];
-      simulationOptions.availableResults[index] = simulationOptions.availableResults[index + 1];
-      simulationOptions.availableResults[index + 1] = temp;
-      updateShowResults();
-    }
+  function moveResult(index, delta) {
+    const list = simulationOptions.availableResults
+    const other = index + delta
+    if (other < 0 || other >= list.length) return
+    ;[list[index], list[other]] = [list[other], list[index]]
+    updateShowResults()
+    saveOptions()
   }
 
 /* ------------------------------------------------------------------
@@ -951,7 +779,7 @@
 
 <template>
   <div class="main">
-    <div class="header">
+    <div class="header sim-header">
       <div class="section-title-and-info">
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show help')">
            <img src="/img/info.png" class="info-img">
@@ -959,137 +787,139 @@
         <span class="header-title">{{displayText}}</span>
       </div>
       <div class="iters-run">
-        <button class="blue-button" @click="reloadExecutionResults" :disabled="!!simState.simulationBlocked"
-          :title="simState.simulationBlocked || t('Run Simulation')" id="run-simulation-button" >
-          {{ t('Run Simulation') }}
+        <button class="run-button" @click="reloadExecutionResults" :disabled="!!simState.simulationBlocked"
+          :title="simState.simulationBlocked || t('Simulate the program on the processor')" id="run-simulation-button" >
+          ▶ {{ t('Run Simulation') }}
         </button>
-        <label class="sim-setting" :title="t('Instruction scheduler (an option of the simulation): optimal issues in each cycle the largest set of ready instructions, the oldest first; greedy issues each ready instruction, in program order, to its first free port')">
-          Scheduler:
-          <select v-model="settings.sched" id="simulation-sched" :disabled="!!fixedOption('sched')">
-            <option value="optimal">optimal</option>
-            <option value="greedy">greedy</option>
-          </select>
-        </label>
-        <label class="sim-setting" :title="t('What the processor does after a mispredicted conditional branch (programs with \'if c skip k\'): stall = dispatch stops until the branch resolves, plus the branch penalty of the processor; wrong path = it keeps dispatching and executing the wrong path until the branch resolves (or the ROB is full), then squashes it: its cache accesses act as prefetches or pollute the cache')">
-          Mispredictions:
-          <select v-model="settings.speculation" id="simulation-speculation" :disabled="!!fixedOption('speculation')">
-            <option value="stall">stall</option>
-            <option value="wrong-path">wrong path</option>
-          </select>
-        </label>
-        <span id="autorun-label">{{ t('AutoRun:') }}</span>
-        <input type="checkbox"
-              :title="t('Set to run the simulation every time the processor/program/#iterations is modified')"
-              id="automatic-simulation-check"
-              :checked="simulationOptions.autorun"
-              @change="toggleAutorun"
-          />
+        <!-- Options that are rarely changed: folded -->
+        <details class="sim-options" id="simulation-options">
+          <summary :title="t('Options of the simulation: instruction scheduler, behavior after a mispredicted branch, automatic simulation')">
+            ⚙ {{ t('Options') }}
+          </summary>
+          <div class="sim-options-body">
+            <label class="sim-setting" :title="t('Instruction scheduler (an option of the simulation): optimal issues in each cycle the largest set of ready instructions, the oldest first; greedy issues each ready instruction, in program order, to its first free port')">
+              Scheduler:
+              <select v-model="settings.sched" id="simulation-sched" :disabled="!!fixedOption('sched')">
+                <option value="optimal">optimal</option>
+                <option value="greedy">greedy</option>
+              </select>
+            </label>
+            <label class="sim-setting" :title="t('What the processor does after a mispredicted conditional branch (programs with \'if c skip k\'): stall = dispatch stops until the branch resolves, plus the branch penalty of the processor; wrong path = it keeps dispatching and executing the wrong path until the branch resolves (or the ROB is full), then squashes it: its cache accesses act as prefetches or pollute the cache')">
+              Mispredictions:
+              <select v-model="settings.speculation" id="simulation-speculation" :disabled="!!fixedOption('speculation')">
+                <option value="stall">stall</option>
+                <option value="wrong-path">wrong path</option>
+              </select>
+            </label>
+            <label class="sim-setting" id="autorun-label"
+                   :title="t('Set to run the simulation every time the processor/program/#iterations is modified')">
+              <input type="checkbox" id="automatic-simulation-check"
+                     :checked="simulationOptions.autorun" @change="toggleAutorun" />
+              {{ t('Simulate automatically after every change') }}
+            </label>
+          </div>
+        </details>
       </div>
     </div>
 
     <div id="simulation-results-info" class="results-info">
-      <div class="row">
-        <div class="simulation-inline-item">
-          <label for="instructions">{{ t('Iterations:') }}</label>
-          <span id="iterations-output" :title="t('Total loop iterations')">{{ formattedResults.iters }}</span>
-        </div>
-        <div v-if="repetitions" class="simulation-inline-item" id="calls-item">
-          <label>{{ t('Calls:') }}</label>
-          <span id="calls-output"
-                :title="t('The loop runs {r} times (calls of the function), {i} iterations each; {kind}', { r: repetitions.reps, i: (repetitions.itersPerRep ?? 0).toLocaleString('en-US'), kind: simState.simulatedProcess?.repIndependent === false ? t('each call uses the results of the previous one') : t('independent calls: they can overlap') })">
-            {{ repetitions.reps }} × {{ (repetitions.itersPerRep ?? 0).toLocaleString('en-US') }}
-          </span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="instructions">{{ t('Instructions:') }}</label>
-          <span id="instructions-output" :title="t('Total executed instructions')">{{ formattedResults.instructions }}</span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="cycles">{{ t('Clock Cycles:') }}</label>
-          <span id="cycles-output" :title="t('Total clock cycles')">{{ formattedResults.cycles }}</span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="cycles-per-iteration">Cycles/iter:</label>
-          <span id="cycles-per-iteration-output" :title="t('Clock cycles per loop iteration')">{{ formattedResults.cpi }}</span>
-        </div>
-        <div v-if="formattedResults.stride > 1" class="simulation-inline-item">
-          <label for="instr-per-alg-op">Instr/Alg Oper:</label>
-          <span id="instr-per-alg-op-output" :title="formattedResults.instrAlgOpTitle">{{ formattedResults.instrAlgOp }}</span>
-        </div>
-        <div v-if="formattedResults.stride > 1" class="simulation-inline-item">
-          <label for="cycles-per-alg-op">Cycles/Alg Oper:</label>
-          <span id="cycles-per-alg-op-output" :title="formattedResults.algOpTitle">{{ formattedResults.algOp }}</span>
-        </div>
-        <div class="simulation-inline-item">
-          <label for="IPC">IPC:</label>
-          <span
-            id="IPC-output"
-            :style="ipcStyle"
-            :data-tooltip="ipcTooltip"
-          >
-            {{ formattedResults.ipc }}
-          </span>
-        </div>
+      <div v-if="!hasResults" class="no-results" id="no-results">
+        {{ t('No results yet: press ▶ Run Simulation to simulate {program} on {processor}.', { program: simState.simulatedProcess?.name ?? '', processor: simState.processorName ?? '' }) }}
       </div>
-      <div class="row">
-        <!-- branch statistics (green, left) -->
-        <div v-if="simState.executionResults?.branch" class="simulation-inline-item stat-branch">
-          <label>{{ t('Mispredictions/iter:') }}</label>
-          <span id="mispredictions-output"
-                :title="t('{m} mispredicted of {n} conditional branches. Branch penalty {p} cycles; after a misprediction: {s}', { m: (simState.executionResults.branch.mispredictions - (simState.executionResults.branch.exit_mispredictions ?? 0)).toLocaleString('en-US'), n: simState.executionResults.branch.branches.toLocaleString('en-US'), p: simState.executionResults.branch.penalty, s: simState.executionResults.branch.speculation }) +
-                        (simState.executionResults.branch.exit_mispredictions ? ' ' + t('Also {x} mispredicted exits of the loop, one at the end of each call.', { x: simState.executionResults.branch.exit_mispredictions }) : '')">
-            {{ simState.executionResults.branch.mispredictions_per_iteration.toFixed(3) }}
-          </span>
+      <template v-else>
+        <!-- The main metrics, large -->
+        <div class="key-metrics">
+          <div class="key-metric" :title="t('Clock cycles per loop iteration')">
+            <span class="key-label">Cycles/iter</span>
+            <span class="key-value" id="cycles-per-iteration-output">{{ formattedResults.cpi }}</span>
+          </div>
+          <div v-if="formattedResults.stride > 1" class="key-metric" :title="formattedResults.algOpTitle">
+            <span class="key-label">Cycles/Alg Oper</span>
+            <span class="key-value" id="cycles-per-alg-op-output">{{ formattedResults.algOp }}</span>
+          </div>
+          <div class="key-metric" :title="ipcTooltip">
+            <span class="key-label">IPC</span>
+            <span class="key-value" id="IPC-output" :style="{ color: ipcColor }">{{ formattedResults.ipc }}</span>
+          </div>
         </div>
-        <div v-if="simState.executionResults?.branch?.speculation === 'wrong-path'" class="simulation-inline-item stat-branch">
-          <label>{{ t('Wrong path:') }}</label>
-          <span id="wrong-path-output"
-                :title="t('Wrong-path instructions: {d} dispatched, {e} started executing. Loads: {r} ({rm} misses); stores (RFO): {w} ({wm} misses)', { d: simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US'), e: simState.executionResults.branch.wrong_path_executed.toLocaleString('en-US'), r: simState.executionResults.branch.wrong_path_reads.toLocaleString('en-US'), rm: simState.executionResults.branch.wrong_path_read_misses.toLocaleString('en-US'), w: simState.executionResults.branch.wrong_path_writes.toLocaleString('en-US'), wm: simState.executionResults.branch.wrong_path_write_misses.toLocaleString('en-US') })">
-            {{ simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US') }} instr ·
-            {{ (simState.executionResults.branch.wrong_path_read_misses + simState.executionResults.branch.wrong_path_write_misses).toLocaleString('en-US') }} {{ t('misses') }}
-          </span>
+        <div class="row">
+          <div class="simulation-inline-item">
+            <label>{{ t('Iterations:') }}</label>
+            <span id="iterations-output" :title="t('Total loop iterations')">{{ formattedResults.iters }}</span>
+          </div>
+          <div v-if="repetitions" class="simulation-inline-item" id="calls-item">
+            <label>{{ t('Calls:') }}</label>
+            <span id="calls-output"
+                  :title="t('The loop runs {r} times (calls of the function), {i} iterations each; {kind}', { r: repetitions.reps, i: (repetitions.itersPerRep ?? 0).toLocaleString('en-US'), kind: simState.simulatedProcess?.repIndependent === false ? t('each call uses the results of the previous one') : t('independent calls: they can overlap') })">
+              {{ repetitions.reps }} × {{ (repetitions.itersPerRep ?? 0).toLocaleString('en-US') }}
+            </span>
+          </div>
+          <div class="simulation-inline-item">
+            <label>{{ t('Instructions:') }}</label>
+            <span id="instructions-output" :title="t('Total executed instructions')">{{ formattedResults.instructions }}</span>
+          </div>
+          <div class="simulation-inline-item">
+            <label>{{ t('Clock Cycles:') }}</label>
+            <span id="cycles-output" :title="t('Total clock cycles')">{{ formattedResults.cycles }}</span>
+          </div>
+          <div v-if="formattedResults.stride > 1" class="simulation-inline-item">
+            <label>Instr/Alg Oper:</label>
+            <span id="instr-per-alg-op-output" :title="formattedResults.instrAlgOpTitle">{{ formattedResults.instrAlgOp }}</span>
+          </div>
         </div>
-        <!-- cache statistics (blue, right) -->
-        <div class="simulation-inline-item stat-cache stat-cache-first">
-          <label for="PrimaryMiss">{{ t('Primary Misses:') }}</label>
-          <span id="PrimaryMiss-output"
-                :title="(formattedResults.primaryTitle ? formattedResults.primaryTitle + '. ' : '') + t('Primary misses start a new fill: LD = caused by a LOAD, ST = caused by a STORE.')">{{ formattedResults.primary }}</span>
+        <!-- branch statistics (programs with conditional branches) -->
+        <div v-if="simState.executionResults?.branch" class="row">
+          <div class="simulation-inline-item stat-branch">
+            <label>{{ t('Mispredictions/iter:') }}</label>
+            <span id="mispredictions-output"
+                  :title="t('{m} mispredicted of {n} conditional branches. Branch penalty {p} cycles; after a misprediction: {s}', { m: (simState.executionResults.branch.mispredictions - (simState.executionResults.branch.exit_mispredictions ?? 0)).toLocaleString('en-US'), n: simState.executionResults.branch.branches.toLocaleString('en-US'), p: simState.executionResults.branch.penalty, s: simState.executionResults.branch.speculation }) +
+                          (simState.executionResults.branch.exit_mispredictions ? ' ' + t('Also {x} mispredicted exits of the loop, one at the end of each call.', { x: simState.executionResults.branch.exit_mispredictions }) : '')">
+              {{ simState.executionResults.branch.mispredictions_per_iteration.toFixed(3) }}
+            </span>
+          </div>
+          <div v-if="simState.executionResults?.branch?.speculation === 'wrong-path'" class="simulation-inline-item stat-branch">
+            <label>{{ t('Wrong path:') }}</label>
+            <span id="wrong-path-output"
+                  :title="t('Wrong-path instructions: {d} dispatched, {e} started executing. Loads: {r} ({rm} misses); stores (RFO): {w} ({wm} misses)', { d: simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US'), e: simState.executionResults.branch.wrong_path_executed.toLocaleString('en-US'), r: simState.executionResults.branch.wrong_path_reads.toLocaleString('en-US'), rm: simState.executionResults.branch.wrong_path_read_misses.toLocaleString('en-US'), w: simState.executionResults.branch.wrong_path_writes.toLocaleString('en-US'), wm: simState.executionResults.branch.wrong_path_write_misses.toLocaleString('en-US') })">
+              {{ simState.executionResults.branch.wrong_path_dispatched.toLocaleString('en-US') }} instr ·
+              {{ (simState.executionResults.branch.wrong_path_read_misses + simState.executionResults.branch.wrong_path_write_misses).toLocaleString('en-US') }} {{ t('misses') }}
+            </span>
+          </div>
         </div>
-        <div class="simulation-inline-item stat-cache">
-          <label for="SecondaryMiss">{{ t('Secondary Misses:') }}</label>
-          <span id="SecondaryMiss-output"
-                :title="(formattedResults.secondaryTitle ? formattedResults.secondaryTitle + '. ' : '') + t('Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.')">{{ formattedResults.secondary }}</span>
+        <!-- cache statistics (processors with a cache) -->
+        <div v-if="hasCache" class="row">
+          <div class="simulation-inline-item stat-cache">
+            <label>{{ t('Primary Misses:') }}</label>
+            <span id="PrimaryMiss-output"
+                  :title="(formattedResults.primaryTitle ? formattedResults.primaryTitle + '. ' : '') + t('Primary misses start a new fill: LD = caused by a LOAD, ST = caused by a STORE.')">{{ formattedResults.primary }}</span>
+          </div>
+          <div class="simulation-inline-item stat-cache">
+            <label>{{ t('Secondary Misses:') }}</label>
+            <span id="SecondaryMiss-output"
+                  :title="(formattedResults.secondaryTitle ? formattedResults.secondaryTitle + '. ' : '') + t('Secondary misses join an existing or queued fill of the same block: LD = caused by a LOAD, ST = caused by a STORE.')">{{ formattedResults.secondary }}</span>
+          </div>
+          <div v-if="repetitions && repetitions.firstMisses !== null" class="simulation-inline-item stat-cache" id="misses-per-call-item">
+            <label>{{ t('Misses per call:') }}</label>
+            <span id="misses-per-call-output"
+                  :title="t('Primary misses of each call: {list}', { list: repetitions.missesList.slice(0, 40).map(m => m.toLocaleString('en-US')).join(', ') + (repetitions.missesList.length > 40 ? ', …' : '') })">
+              {{ t('1st') }} {{ repetitions.firstMisses.toLocaleString('en-US') }} ·
+              {{ t('next') }} {{ repetitions.nextMisses === null ? '—' : Number(repetitions.nextMisses.toFixed(1)).toLocaleString('en-US') }}
+            </span>
+          </div>
+          <div class="simulation-inline-item stat-cache">
+            <label>{{ t('MM Transfers:') }}</label>
+            <span id="MM-output"
+                  :title="(formattedResults.MMTitle ? formattedResults.MMTitle + '. ' : '') + t('Rd = Main Memory reads caused by cache misses (including STORE read-for-write); Wr = writes of dirty blocks evicted from the cache.')">{{ formattedResults.MM }}</span>
+          </div>
         </div>
-        <div v-if="repetitions && repetitions.firstMisses !== null" class="simulation-inline-item stat-cache" id="misses-per-call-item">
-          <label>{{ t('Misses per call:') }}</label>
-          <span id="misses-per-call-output"
-                :title="t('Primary misses of each call: {list}', { list: repetitions.missesList.slice(0, 40).map(m => m.toLocaleString('en-US')).join(', ') + (repetitions.missesList.length > 40 ? ', …' : '') })">
-            {{ t('1st') }} {{ repetitions.firstMisses.toLocaleString('en-US') }} ·
-            {{ t('next') }} {{ repetitions.nextMisses === null ? '—' : Number(repetitions.nextMisses.toFixed(1)).toLocaleString('en-US') }}
-          </span>
+        <div class="usage-note sim-usage-part">
+          {{ t('The usage of each resource (%) is shown on the diagram of the processor, in the left panel.') }}
         </div>
-        <div class="simulation-inline-item stat-cache">
-          <label for="MM">{{ t('MM Transfers:') }}</label>
-          <span id="MM-output"
-                :title="(formattedResults.MMTitle ? formattedResults.MMTitle + '. ' : '') + t('Rd = Main Memory reads caused by cache misses (including STORE read-for-write); Wr = writes of dirty blocks evicted from the cache.')">{{ formattedResults.MM }}</span>
-        </div>
-      </div>
+      </template>
     </div>
     <div v-if="executionError" class="execution-validation-error" role="alert">
       {{ executionError }}
     </div>
-    <details v-if="repeatingCriticalPath" :key="patternKey" id="critical-path-pattern" class="critical-path-pattern"
-             :class="{ minor: !patternUseful }">
-      <summary v-if="patternUseful"
-               :title="t('The same critical path repeats in {r} of the {n} iterations: it explains the performance of the loop', { r: repeatingCriticalPath.repetitions.toLocaleString('en-US'), n: simState.executionResults.total_iterations.toLocaleString('en-US') })">
-        <strong>{{ t('Repeated critical-path pattern: iterations {a} to {b} ({c} critical cycles per repetition)', { a: repeatingCriticalPath.start_iteration.toLocaleString('en-US'), b: repeatingCriticalPath.end_iteration.toLocaleString('en-US'), c: repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }) }}</strong>
-      </summary>
-      <summary v-else :title="t('The critical path repeats only in a few iterations: it says little about the performance of the loop')">
-        {{ t('Critical-path pattern') }}
-      </summary>
-      <p>{{ t('Iterations {a} to {b} ({r} repetitions, {c} critical cycles each):', { a: repeatingCriticalPath.start_iteration.toLocaleString('en-US'), b: repeatingCriticalPath.end_iteration.toLocaleString('en-US'), r: repeatingCriticalPath.repetitions.toLocaleString('en-US'), c: repeatingCriticalPath.cycles_per_iteration.toLocaleString('en-US') }) }}
-        {{ repeatingCriticalPathText }}</p>
-    </details>
 
     <div class="sim-running-msg">
       <div class="running-group">
@@ -1105,106 +935,88 @@
         </div>
       </div>
     </div>
-    <div class="graph-section sim-usage-part">
-      <div class="processor-container">
-        <div class="processor-img" v-html="resultsSvg" v-if="resultsSvg"></div>
-      </div>
-    </div>
+
+    <!-- Stored results: to compare versions of the program or of the processor -->
     <div class="header stored-results-part">
       <div class="section-title-and-info">
         <span ref="helpIcon2" class="info-icon" @click="openHelp2" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
-        <span class="header-title">{{ t('Previous simulation results') }}</span>
+        <span class="header-title">{{ t('Stored results') }}</span>
       </div>
       <div class="iters-run">
-        <button class="blue-button" @click="copyResults"
-            :title="t('Store current simulation results')"
+        <button class="blue-button" @click="copyResults" :disabled="!hasResults"
+            :title="hasResults ? t('Store the current results in the table, to compare them with other versions') : t('Run a simulation first')"
             id="store-results-button">
-          {{ t('Store Results') }}
+          ＋ {{ t('Store Results') }}
         </button>
-        <select v-model="simulationOptions.resultName" class="form-select"
-            id="results-list" :title="t('Visualize previously obtained results')">
-          <option value="" disabled>{{ t('Select') }}</option>
-          <option v-for="result in simulationOptions.availableResults" :key="result" :value="result" >
-            {{ result }}
-          </option>
-          <option value="_add_new_">{{ t('Add new') }}</option>
-        </select>
-        <button
-          class="blue-button small-btn"
-          @click="moveResultsUp()"
-          :title="t('Move results up')"
-        >
-          ▲
+        <button class="blue-button" @click="exportCsv" :disabled="!simulationOptions.availableResults.length"
+            :title="t('Download the stored results as a CSV file (for a spreadsheet or a report)')"
+            id="export-results-csv">
+          ⬇ CSV
         </button>
-
-        <button
-          class="blue-button small-btn"
-          @click="moveResultsDown()"
-          :title="t('Move results down')"
-        >
-          ▼
-        </button>
-        <button class="blue-button small-btn" @click="removeResult"
-          id="remove-results-button"
-          :title="t('Remove simulation results from list (and local storage)')">
-        🧹
-        </button>
-        <button class="blue-button small-btn" @click="showModalDownload = true"
-          id="save-results-button"
-          :title="t('Save current simulation results')">
-        💾
+        <label class="all-columns" :title="t('Show every column of the stored results (iterations, instructions, cycles, all the misses…)')">
+          <input type="checkbox" v-model="simulationOptions.allColumns" @change="saveOptions" id="results-all-columns" />
+          {{ t('All columns') }}
+        </label>
+        <button v-if="authorMode" class="blue-button" @click="uploadResults(simulationOptions.resultName)"
+            :title="t('Load a result file (JSON)')" id="upload-results-button">
+          {{ t('Load…') }}
         </button>
       </div>
     </div>
     <div class="table-container stored-results-part">
-        <table class="results-table">
+        <div v-if="!simulationOptions.availableResults.length" class="no-results" id="no-stored-results">
+          {{ t('No stored results. Run a simulation and press Store Results to compare versions of the program or of the processor.') }}
+        </div>
+        <table v-else class="results-table">
           <thead>
             <tr>
-              <th style="width: 100px;"> {{ t('Name') }}  </th>
-              <th style="width: 100px;"> {{ t('Iters') }}  </th>
-              <th style="width: 100px;"> {{ t('Instr') }}  </th>
-              <th style="width: 100px;"> {{ t('Cycles') }} </th>
-              <th style="width: 100px;"> Cycles/iter </th>
-              <th style="width: 100px;" :title="instrAlgOpHeaderTitle"> Instr/Alg Oper </th>
-              <th style="width: 100px;" :title="algOpHeaderTitle"> Cycles/Alg Oper </th>
-              <th style="width: 100px;" :title="speedupHeaderTitle"> Speedup </th>
-              <th style="width: 100px;"> IPC    </th>
-              <th style="width: 90px;" :title="t('Mispredicted conditional branches per loop iteration (programs with if c skip k)')"> Mispred/iter </th>
-              <th style="width: 100px;" :title="t('Primary cache misses (LOAD + STORE)')"> {{ t('Primary') }} </th>
-              <th style="width: 100px;" :title="t('Secondary cache misses (LOAD + STORE)')"> {{ t('Secondary') }} </th>
-              <th style="width: 100px;" :title="t('Main Memory transfers (reads + writes); the detail is in the tooltip')"> MM </th>
+              <th> {{ t('Name') }}  </th>
+              <th v-if="columns.all"> {{ t('Iters') }}  </th>
+              <th v-if="columns.all"> {{ t('Instr') }}  </th>
+              <th v-if="columns.all"> {{ t('Cycles') }} </th>
+              <th> Cycles/iter </th>
+              <th v-if="columns.all" :title="instrAlgOpHeaderTitle"> Instr/Alg Oper </th>
+              <th v-if="columns.algOps" :title="algOpHeaderTitle"> Cycles/Alg Oper </th>
+              <th :title="speedupHeaderTitle"> Speedup </th>
+              <th> IPC    </th>
+              <th v-if="columns.branch" :title="t('Mispredicted conditional branches per loop iteration (programs with if c skip k)')"> Mispred/iter </th>
+              <th v-if="columns.cache" :title="t('Primary cache misses (LOAD + STORE)')"> {{ t('Primary') }} </th>
+              <th v-if="columns.all" :title="t('Secondary cache misses (LOAD + STORE)')"> {{ t('Secondary') }} </th>
+              <th v-if="columns.all" :title="t('Main Memory transfers (reads + writes); the detail is in the tooltip')"> MM </th>
+              <th class="actions-col"></th>
             </tr>
           </thead>
-          <tbody v-if="simulationOptions.resultName">
-            <tr v-for="(name, index) in simulationOptions.availableResults" :key="index">
+          <tbody>
+            <tr v-for="(name, index) in simulationOptions.availableResults" :key="name + index">
               <td @mouseenter="showResultContext($event, index)" @mouseleave="hideResultContext"
                   @focusin="showResultContext($event, index)" @focusout="hideResultContext">
                 <input type="text"
                   v-model="simulationOptions.availableResults[index]"
-                  class="iters-group"
+                  class="iters-group result-name"
+                  :title="t('Name of the result (click to change it)')"
                   @focus="captureOldValue(index)"
                   @blur="renameResult(index)"
                 />
               </td>
-              <td :title="t('Total loop iterations executed')">
-                {{ showResultsInfo[index]?.total_iterations?.toLocaleString('en-US') ?? 'X' }}
+              <td v-if="columns.all" :title="t('Total loop iterations executed')">
+                {{ showResultsInfo[index]?.total_iterations?.toLocaleString('en-US') ?? '—' }}
               </td>
-              <td :title="t('Total machine instructions executed')">
-                {{ showResultsInfo[index]?.total_instructions?.toLocaleString('en-US') ?? 'X' }}
+              <td v-if="columns.all" :title="t('Total machine instructions executed')">
+                {{ showResultsInfo[index]?.total_instructions?.toLocaleString('en-US') ?? '—' }}
               </td>
-              <td :title="t('Total clock cycles taken')">
-                {{ showResultsInfo[index]?.total_cycles?.toLocaleString('en-US') ?? 'X' }}
+              <td v-if="columns.all" :title="t('Total clock cycles taken')">
+                {{ showResultsInfo[index]?.total_cycles?.toLocaleString('en-US') ?? '—' }}
               </td>
               <td :title="t('Cycles per loop iteration')">
-                {{ showResultsInfo[index]?.cycles_per_iteration?.toFixed(2) ?? 'X' }}
+                {{ showResultsInfo[index]?.cycles_per_iteration?.toFixed(2) ?? '—' }}
               </td>
-              <td :title="storedInstrAlgOps[index]?.title">
-                {{ storedInstrAlgOps[index]?.value ?? 'X' }}
+              <td v-if="columns.all" :title="storedInstrAlgOps[index]?.title">
+                {{ storedInstrAlgOps[index]?.value ?? '—' }}
               </td>
-              <td :title="storedAlgOps[index]?.title">
-                {{ storedAlgOps[index]?.value ?? 'X' }}
+              <td v-if="columns.algOps" :title="storedAlgOps[index]?.title">
+                {{ storedAlgOps[index]?.value ?? '—' }}
               </td>
               <td class="speedup-cell" :class="{ reference: storedSpeedups[index]?.isRef }">
                 <button class="ref-button" :class="{ active: storedSpeedups[index]?.isRef }"
@@ -1213,19 +1025,29 @@
                 <span :title="storedSpeedups[index]?.title">{{ storedSpeedups[index]?.value }}{{ storedSpeedups[index]?.value && storedSpeedups[index]?.value !== 'X' ? '×' : '' }}</span>
               </td>
               <td :title="t('Instructions Per cycle (IPC)')">
-                {{ showResultsInfo[index]?.ipc?.toFixed(3) ?? 'X' }}
+                {{ showResultsInfo[index]?.ipc?.toFixed(3) ?? '—' }}
               </td>
-              <td :title="showResultsInfo[index]?.branch ? t('{m} mispredicted of {n} conditional branches; after a misprediction: {s}', { m: showResultsInfo[index].branch.mispredictions.toLocaleString('en-US'), n: showResultsInfo[index].branch.branches.toLocaleString('en-US'), s: showResultsInfo[index].branch.speculation }) : t('No conditional branches')">
+              <td v-if="columns.branch" :title="showResultsInfo[index]?.branch ? t('{m} mispredicted of {n} conditional branches; after a misprediction: {s}', { m: showResultsInfo[index].branch.mispredictions.toLocaleString('en-US'), n: showResultsInfo[index].branch.branches.toLocaleString('en-US'), s: showResultsInfo[index].branch.speculation }) : t('No conditional branches')">
                 {{ showResultsInfo[index]?.branch ? showResultsInfo[index].branch.mispredictions_per_iteration.toFixed(3) : '—' }}
               </td>
-              <td :title="storedMemoryColumns[index]?.primaryDetail || t('Primary cache misses')">
-                {{ storedMemoryColumns[index]?.primary ?? 'X' }}
+              <td v-if="columns.cache" :title="storedMemoryColumns[index]?.primaryDetail || t('Primary cache misses')">
+                {{ storedMemoryColumns[index]?.primary ?? '—' }}
               </td>
-              <td :title="storedMemoryColumns[index]?.secondaryDetail || t('Secondary cache misses')">
-                {{ storedMemoryColumns[index]?.secondary ?? 'X' }}
+              <td v-if="columns.all" :title="storedMemoryColumns[index]?.secondaryDetail || t('Secondary cache misses')">
+                {{ storedMemoryColumns[index]?.secondary ?? '—' }}
               </td>
-              <td :title="storedMemoryColumns[index]?.MMDetail || t('Main Memory transfers')">
-                {{ storedMemoryColumns[index]?.MM ?? 'X' }}
+              <td v-if="columns.all" :title="storedMemoryColumns[index]?.MMDetail || t('Main Memory transfers')">
+                {{ storedMemoryColumns[index]?.MM ?? '—' }}
+              </td>
+              <td class="row-actions">
+                <button class="row-button" :disabled="index === 0" @click="moveResult(index, -1)"
+                        :title="t('Move up')" :aria-label="t('Move up')">▲</button>
+                <button class="row-button" :disabled="index === simulationOptions.availableResults.length - 1" @click="moveResult(index, 1)"
+                        :title="t('Move down')" :aria-label="t('Move down')">▼</button>
+                <button v-if="authorMode" class="row-button" @click="downloadResult(index)"
+                        :title="t('Download this result as a JSON file')">⬇</button>
+                <button class="row-button delete" @click="removeResult(index)"
+                        :title="t('Remove this result')" :aria-label="t('Remove this result')">🗑</button>
               </td>
             </tr>
           </tbody>
@@ -1236,21 +1058,6 @@
         <div v-for="(line, i) in contextHover.lines" :key="i">{{ line }}</div>
       </div>
     </Teleport>
-  </div>
-
-  <div v-if="showModalDownload" class="modal-overlay">
-    <div class="modal">
-      <h4>{{ t('Save Results As') }}</h4>
-      <label for="results-name">{{ t('Name:') }}</label>
-      <input v-model="modalName" type="text" id="save-results-name"
-           :title="t('file name of new simulation results')" :placeholder="t('Enter name for results')"
-        />
-      <div v-if="nameError" class="error">{{ nameError }}</div>
-      <div class="modal-actions">
-        <button class="blue-button" :title="t('Accept Download')" @click="confirmDownload"> {{ t('Yes') }} </button>
-        <button class="blue-button" :title="t('Cancel Download')" @click="showModalDownload=false">  {{ t('Cancel') }} </button>
-      </div>
-    </div>
   </div>
 
   <Teleport to="body">
@@ -1282,9 +1089,9 @@
     align-items: center;
     gap:         0.3em;
     white-space: nowrap;
-    font-size:   small;
+    font-size:   0.875rem;
   }
-  .sim-setting select { font-size: small; }
+  .sim-setting select { font-size: 0.875rem; }
 
   .execution-validation-error {
     margin: 8px 0;
@@ -1331,7 +1138,7 @@
     margin-bottom:    2px;
     border:           2px solid #ddd;
     border-radius:    6px;
-    font-size:        medium;
+    font-size:        1rem;
     background-color: white;
     transition:       border-color 0.3s;
   }
@@ -1359,33 +1166,7 @@
     margin-bottom:   6px;
     flex-wrap:       wrap;
     justify-content: space-between;
-    font-size:       clamp(9px, 1.6cqi, 16px);
-  }
-
-  .critical-path-pattern {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 4px 0 10px;
-    padding: 8px 10px;
-    border-left: 4px solid #d99000;
-    background: #fff8e6;
-    color: #242424;
-    overflow-wrap: anywhere;
-  }
-  .critical-path-pattern p {
-    margin: 4px 0 0;
-  }
-  .critical-path-pattern summary { cursor: pointer; }
-  .critical-path-pattern.minor {
-    padding:      2px 10px;
-    border-left:  4px solid #ccc;
-    background:   transparent;
-    color:        #888;
-    font-size:    small;
-  }
-  .critical-path-pattern small {
-    color: #555;
+    font-size:       clamp(0.875rem, 1.6cqi, 1.125rem);
   }
 
   .simulation-inline-item {
@@ -1412,36 +1193,37 @@
     transition:  color 0.3s ease;
   }
 
-  #IPC-output {
-    font-weight: bold;
-    padding: 0.1em 0.4em;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-    display: inline-block;
-    min-width: 3.5em;
-    text-align: center;
+  /* The main metrics, large */
+  .key-metrics {
+    display:       flex;
+    gap:           10px;
+    margin:        6px 0 8px;
+    flex-wrap:     wrap;
   }
+  .key-metric {
+    flex:           1;
+    min-width:      9rem;
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    padding:        4px 8px;
+    background:     #eef4fb;
+    border:         1px solid #cfdcec;
+    border-radius:  8px;
+    cursor:         help;
+  }
+  .key-label { font-size: 0.9375rem; font-weight: 600; color: #333; }
+  .key-value { font-size: 1.75rem; font-weight: 700; color: #0b2e5c; line-height: 1.2; }
 
-  #IPC-output {
-    cursor: help;
-    position: relative;
+  .no-results {
+    margin:     10px 4px;
+    padding:    10px 12px;
+    color:      #444;
+    background: #f6f8fb;
+    border:     1px dashed #b9c6d8;
+    border-radius: 6px;
   }
-
-  #IPC-output:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-  }
+  .usage-note { color: #555; font-size: 0.875rem; margin: 2px 2px 6px; }
 
   .sim-running-msg {
     display:         flex;
@@ -1475,36 +1257,6 @@
       }
   }
 
-  .graph-section {
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
-  }
-
-  /* The SVG scales with its container: cap the width so the text keeps a normal size */
-  .processor-img {
-    width:        100%;
-    max-width:    40rem;
-    margin:       0 auto;
-  }
-
-  .processor-img svg text {
-    font-size:   12px !important;
-    font-family: Arial, sans-serif !important;
-  }
-
-  .processor-img svg polygon,
-  .processor-img svg path {
-    stroke-width: 2px !important;
-  }
-
-  .processor-container {
-    width:     100%;
-    height:    100%;
-    display:   flex;
-    margin-top: 2px;
-  }
-
   .table-container {
      width:          auto;
      max-width:      100%;
@@ -1525,7 +1277,7 @@
     border-radius: 6px;
     box-shadow:    0 4px 12px rgba(0, 0, 0, 0.2);
     font-family:   ui-monospace, Consolas, monospace;
-    font-size:     12px;
+    font-size:     0.875rem;
     line-height:   1.4;
     white-space:   pre-wrap;
     overflow-wrap: anywhere;
@@ -1550,7 +1302,7 @@
   .results-table {
     width:           100%;
     border-collapse: collapse;
-    font-size:       small;
+    font-size:       0.875rem;
     padding-bottom:  30px;
   }
   .results-table thead {
@@ -1571,7 +1323,7 @@
     border:         1px solid #ddd;
     vertical-align: middle;
     text-align:     center;
-    font-size:      medium;
+    font-size:      1rem;
   }
   .results-table tbody tr:nth-child(even) {
     background: #f9f9f9;
@@ -1579,5 +1331,65 @@
   .results-table tbody tr:hover {
     background: #e8f4fd;
   }
+  .results-table .result-name { width: 100%; min-width: 10rem; box-sizing: border-box; }
+  .row-actions { white-space: nowrap; padding: 0 4px !important; }
+  .row-button {
+    border:        1px solid #c9d6ea;
+    background:    white;
+    border-radius: 4px;
+    padding:       0 5px;
+    margin:        1px;
+    cursor:        pointer;
+    font-size:     0.875rem;
+  }
+  .row-button:hover:not([disabled]) { background: #e6f0ff; }
+  .row-button[disabled] { opacity: 0.35; cursor: default; }
+  .row-button.delete:hover { background: #fde2e2; }
+
+  /* Run Simulation: the main action of the panel */
+  .run-button {
+    padding:       6px 16px;
+    border:        none;
+    border-radius: 8px;
+    background:    #1a4fb3;
+    color:         white;
+    font-size:     1.0625rem;
+    font-weight:   700;
+    cursor:        pointer;
+    white-space:   nowrap;
+    box-shadow:    0 1px 3px rgba(0, 0, 0, 0.25);
+  }
+  .run-button:hover:not([disabled]) { background: #123b88; }
+  .run-button[disabled] { opacity: 0.5; cursor: default; }
+
+  /* Options of the simulation, folded */
+  .sim-options { position: relative; }
+  .sim-options summary {
+    cursor:        pointer;
+    list-style:    none;
+    padding:       3px 10px;
+    border:        1px solid #c9d6ea;
+    border-radius: 6px;
+    color:         #1a4fb3;
+    font-weight:   600;
+    white-space:   nowrap;
+  }
+  .sim-options summary::-webkit-details-marker { display: none; }
+  .sim-options[open] summary { background: #e6f0ff; }
+  .sim-options-body {
+    position:       absolute;
+    right:          0;
+    top:            calc(100% + 4px);
+    z-index:        20;
+    display:        flex;
+    flex-direction: column;
+    gap:            8px;
+    padding:        10px 12px;
+    background:     white;
+    border:         1px solid #c9d6ea;
+    border-radius:  8px;
+    box-shadow:     0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  .all-columns { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; }
 
 </style>

@@ -82,4 +82,5 @@ export default {
   "Text of the instruction, e.g. Y[j] = sum: its fields are filled in from it": { es: "Texto de la instrucción, p. ej. Y[j] = sum: sus campos se rellenan a partir de él", ca: "Text de la instrucció, p. ex. Y[j] = sum: els seus camps s'emplenen a partir d'ell" },
   "Add an instruction to the block executed once after each call of the loop": { es: "Añadir una instrucción al bloque que se ejecuta una vez después de cada llamada del bucle", ca: "Afegir una instrucció al bloc que s'executa un cop després de cada crida del bucle" },
   "+ instruction after each call": { es: "+ instrucción después de cada llamada", ca: "+ instrucció després de cada crida" },
+  "Columns of the table: type (type, operation, size) or perf (latency, ports). The tooltip of each instruction describes it": { es: "Columnas de la tabla: type (tipo, operación, tamaño) o perf (latencia, puertos). El tooltip de cada instrucción la describe", ca: "Columnes de la taula: type (tipus, operació, mida) o perf (latència, ports). El tooltip de cada instrucció la descriu" },
 }

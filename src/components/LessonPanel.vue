@@ -9,6 +9,7 @@
   import { clearSnapshot }                              from '@/tutorialActions'
   import { processorDraftFrom, processorSignature }     from '@/editDrafts'
   import { downloadJSON, RVCAT_VERSION }                from '@/common'
+  import { authorMode }                                 from '@/authorMode'
 
   const simState = inject('simulationState')
   const props = defineProps({ activeView: { type: String, default: 'simulationComponent' } })
@@ -279,9 +280,11 @@
         <button class="lesson-start" :title="plainText(localized(l.description)) || 'Start this lesson'" @click="askStart(l.id)">
           <strong>{{ localized(l.title) }}</strong><span>{{ l.id }}</span>
         </button>
-        <button class="lesson-small" :title="t('Download a self-contained copy (programs, processors and tutorial included)')"
-                @click="exportSelfContained(l.id)">⬇</button>
-        <button class="lesson-small" :title="t('Remove this lesson from the list')" @click="removeLesson(l.id)">🧹</button>
+        <template v-if="authorMode">
+          <button class="lesson-small" :title="t('Download a self-contained copy (programs, processors and tutorial included)')"
+                  @click="exportSelfContained(l.id)">⬇</button>
+          <button class="lesson-small" :title="t('Remove this lesson from the list')" @click="removeLesson(l.id)">🗑</button>
+        </template>
       </div>
       <button class="blue-button lesson-load" id="lesson-load-button" @click="pickFile">{{ t('Load lesson file…') }}</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="loadFile" />
@@ -355,7 +358,7 @@
   .lesson-menu {
     position: absolute; top: 120%; right: 0; z-index: 2000; width: 340px;
     background: white; color: #222; border-radius: 8px; padding: 10px 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 0.875rem;
   }
   .lesson-menu h4 { margin: 0 0 8px; color: #1a4fb3; }
   .lesson-empty, .lesson-message { color: #555; font-size: 0.9em; margin: 6px 0; }
@@ -367,19 +370,19 @@
   }
   .lesson-start span { color: #666; font-size: 0.85em; }
   .lesson-start:hover { background: #e3ebf8; }
-  .lesson-small { background: none; border: 1px solid #c9d6ea; border-radius: 4px; cursor: pointer; padding: 0 6px; }
+  .lesson-small { background: none; border: 1px solid #c9d6ea; border-radius: 4px; cursor: pointer; padding: 0 6px; font-size: 0.875rem; }
   .lesson-load { margin-top: 8px; width: 100%; }
 
   .lesson-bar {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 4px 12px; background: #fff7e0; border-bottom: 1px solid #e0c56e; font-size: 14px; color: #333;
+    padding: 4px 12px; background: #fff7e0; border-bottom: 1px solid #e0c56e; font-size: 0.875rem; color: #333;
   }
   .lesson-title { font-weight: 600; }
   .lesson-progress { color: #555; }
   .lesson-code { color: #1b5e20; }
   .lesson-exit {
     margin-left: auto; background: #fbe9e7; border: 1px solid #e57373; color: #b71c1c;
-    border-radius: 4px; padding: 2px 10px; cursor: pointer;
+    border-radius: 4px; padding: 2px 10px; cursor: pointer; font-size: 0.875rem;
   }
 
   .lesson-overlay {
@@ -388,19 +391,19 @@
   }
   .lesson-dialog {
     background: white; border-radius: 8px; padding: 20px 24px; width: min(460px, 92vw);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-size: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-size: 0.875rem;
   }
   .lesson-dialog h4 { margin: 0 0 10px; color: #1a4fb3; }
   .lesson-dialog label { display: block; font-weight: 600; margin: 8px 0 4px; }
-  .lesson-dialog input { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 15px; }
+  .lesson-dialog input { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 0.9375rem; }
   .lesson-error { color: #c62828; font-size: 0.9em; margin-top: 4px; }
   .lesson-note { color: #666; font-size: 0.85em; }
   .lesson-description { margin: 0.8em 0; }
   .lesson-description :deep(p) { margin: 0 0 0.5em; }
   /* the offer of the introductory lesson, the first window that a student sees: larger */
-  #intro-lesson-offer .lesson-dialog { font-size: 17px; width: min(560px, 92vw); }
+  #intro-lesson-offer .lesson-dialog { font-size: 1.0625rem; width: min(560px, 92vw); }
   #intro-lesson-offer .lesson-dialog h4 { font-size: 1.2em; }
-  #intro-lesson-offer .blue-button { font-size: 17px; padding: 6px 16px; }
+  #intro-lesson-offer .blue-button { font-size: 1.0625rem; padding: 6px 16px; }
   .lesson-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 </style>
 
@@ -421,6 +424,7 @@
   .lesson-hide-usage .sim-usage-part,
   .lesson-hide-cacheStats .stat-cache,
   .lesson-hide-simOptions .sim-setting,
+  .lesson-hide-simOptions #simulation-options,
   .lesson-hide-simOptions #autorun-label,
   .lesson-hide-simOptions #automatic-simulation-check,
   .lesson-hide-criticalPattern #critical-path-pattern,

@@ -11,7 +11,8 @@ import timelineComponent       from '@/components/timelineComponent.vue';
 import aboutComponent          from '@/components/aboutComponent.vue';
 import staticAnalysisComponent from '@/components/staticAnalysisComponent.vue';
 import LessonPanel             from '@/components/LessonPanel.vue';
-import { isLocked }            from '@/lessons';
+import { uiLocked, authorMode } from '@/authorMode';
+import { changeTextScale, canGrow, canShrink } from '@/textScale';
 import simulationComponent     from '@/components/simulationComponent.vue';
 
 import { useRVCAT_Api }        from '@/rvcatAPI';
@@ -19,7 +20,7 @@ import { RVCAT_VERSION }       from '@/common';
 
 const simState                      = inject('simulationState');
 // Locks of the lesson in progress (editors in the header)
-const lessonLocked = (what) => isLocked(simState.lesson, what, simState.lessonAllow ?? [])
+const lessonLocked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
 // a locked editor that is open is closed
 watch(() => [simState.lesson, simState.lessonAllow], () => {
   if ((currentFullKey.value === 'program' && lessonLocked('programEditor')) ||
@@ -52,9 +53,11 @@ const { importRVCAT }               = useRVCAT_Api();
         console.error('Error when parsing localStorage:', error)
       }
     }
-    const language = localStorage.getItem('language')     // the language is kept
+    // the language, the author mode and the size of the text are kept
+    const kept = Object.fromEntries(['language', 'authorMode', 'textScale']
+      .map(k => [k, localStorage.getItem(k)]).filter(([, v]) => v !== null))
     localStorage.clear()
-    if (language) localStorage.setItem('language', language)
+    for (const [k, v] of Object.entries(kept)) localStorage.setItem(k, v)
     // Non-blocking notice (an alert() would stop the page while it loads)
     versionNotice.value = t('New version of RVCAT released (V{version}). Saved settings and results have been reset.',
                             { version: rvcatOptions.version })
@@ -97,15 +100,6 @@ const isNotFullscreen       = computed(() => currentFullKey.value === 'none');
 const isProgramFullscreen   = computed(() => currentFullKey.value === 'program');
 const isTutorialFullscreen  = computed(() => currentFullKey.value === 'tutorial');
 
-const getButtonText = (key, baseText) => {
-  return computed(() =>
-    currentFullKey.value === key ? `📍${t(baseText)}` : `📌${t(baseText)}`
-  );
-};
-
-// Button texts using helper
-const fullProgramButtonText   = getButtonText('program',   'Edit Program');
-const fullTutorialButtonText  = getButtonText('tutorial',  'Edit Tutorial');
 
 // Container classes
 const containerClasses = computed(() => ({
@@ -198,11 +192,11 @@ onUnmounted(() => {
 
 <template>
   <div class="app-root">
-    <header :title="`RVCAT version ${RVCAT_VERSION}`">
+    <header>
       <div id="top">
         <div class="header-title">
           <img src="/img/favicon.png" class="title-img" alt="RVCAT" :title="`RVCAT version ${RVCAT_VERSION}`">
-          <div :style="{ fontSize: 'large', padding: '0 40px' }">RVCAT-WEB</div>
+          <div class="app-name" :title="`RVCAT version ${RVCAT_VERSION}`">RVCAT</div>
           <nav>
             <ul>
               <li>
@@ -214,69 +208,81 @@ onUnmounted(() => {
                 </button>
               </li>
               <li class="separator"></li>
-              <li>
-                <button class="blue-button" :class="{ active: currentKey === 'simulationComponent' }"
+              <!-- The three views of the right panel: one tab group (the active one is marked
+                   only while no editor covers the panels) -->
+              <li class="view-tabs" role="tablist" :aria-label="t('Views')">
+                <button class="view-tab" role="tab" :class="{ active: isNotFullscreen && currentKey === 'simulationComponent' }"
+                  :aria-selected="isNotFullscreen && currentKey === 'simulationComponent'"
                   id="simulation-button"
                   :title="t('Simulate Program\'s execution and collect performance metrics')"
                   @click="onRequestSwitch('simulationComponent')" >
                     {{ t('Simulation') }}
                 </button>
-              </li>
-              <li>
-                <button class="blue-button" :class="{ active: currentKey === 'timelineComponent' }"
+                <button class="view-tab" role="tab" :class="{ active: isNotFullscreen && currentKey === 'timelineComponent' }"
+                  :aria-selected="isNotFullscreen && currentKey === 'timelineComponent'"
                   id="timeline-button"
                   :title="t('Detailed Timeline of Program\'s execution')"
                   @click="onRequestSwitch('timelineComponent')" >
                     {{ t('Timeline') }}
                 </button>
-              </li>
-              <li>
-                <button class="blue-button" :class="{ active: currentKey === 'staticAnalysisComponent' }"
+                <button class="view-tab" role="tab" :class="{ active: isNotFullscreen && currentKey === 'staticAnalysisComponent' }"
+                  :aria-selected="isNotFullscreen && currentKey === 'staticAnalysisComponent'"
                   id="analysis-button"
                   :title="t('Static Performance Analysis: identify potential bottleneck (throughput or latency/dependencies)')"
                   @click="onRequestSwitch('staticAnalysisComponent')" >
                     {{ t('Static Analysis') }}
                 </button>
               </li>
-              <li>
-                <button class="blue-button" :class="{ active: currentKey === 'aboutComponent' }"
-                  id="about-button"
-                  :title="t('Credits on the design and development for this tool')"
-                  @click="onRequestSwitch('aboutComponent')" >
-                    {{ t('About') }}
-                </button>
-              </li>
-
-              <li class="separator"></li>
-              <li v-if="!lessonLocked('programEditor')">
-                <button class="blue-button" :class="{ 'active': isProgramFullscreen }"
-                  id="program-button"
-                  :title="t('Open/Close program edition panel')"
-                  @click="toggleFullScreen('program')" >
-                    {{ fullProgramButtonText }}
-                </button>
-              </li>
-              <li v-if="!lessonLocked('tutorialEditor')">
-                <button class="blue-button" :class="{ 'active': isTutorialFullscreen }"
-                  id="tutorial-button"
-                  :title="t('Open/Close tutorial edition panel')"
-                  @click="toggleFullScreen('tutorial')" >
-                    {{ fullTutorialButtonText }}
-                </button>
-              </li>
               <li class="separator"></li>
               <li>
                 <LessonPanel :active-view="currentKey" @requestSwitchPanel="onRequestSwitch" />
               </li>
+              <!-- Editors (author mode): the button of an open editor closes it -->
+              <template v-if="!lessonLocked('programEditor') || !lessonLocked('tutorialEditor')">
+                <li class="separator"></li>
+                <li v-if="!lessonLocked('programEditor')">
+                  <button class="blue-button editor-button" :class="{ 'active': isProgramFullscreen }"
+                    id="program-button"
+                    :title="isProgramFullscreen ? t('Close the program editor and go back to the simulator') : t('Open the program editor')"
+                    @click="toggleFullScreen('program')" >
+                      {{ isProgramFullscreen ? '✕ ' + t('Close the editor') : '✎ ' + t('Edit Program') }}
+                  </button>
+                </li>
+                <li v-if="!lessonLocked('tutorialEditor')">
+                  <button class="blue-button editor-button" :class="{ 'active': isTutorialFullscreen }"
+                    id="tutorial-button"
+                    :title="isTutorialFullscreen ? t('Close the tutorial editor and go back to the simulator') : t('Open the tutorial editor')"
+                    @click="toggleFullScreen('tutorial')" >
+                      {{ isTutorialFullscreen ? '✕ ' + t('Close the editor') : '✎ ' + t('Edit Tutorial') }}
+                  </button>
+                </li>
+              </template>
             </ul>
           </nav>
         </div>
-        <!-- Language of the interface -->
-        <div class="lang-select">
-          <select :value="locale" @change="setLocale($event.target.value)" id="language-select"
-                  :title="t('Language of the interface')">
-            <option v-for="l in LANGUAGES" :key="l.code" :value="l.code" :title="l.name">{{ l.label }}</option>
-          </select>
+        <div class="header-tools">
+          <span v-if="authorMode" class="author-badge" id="author-badge"
+                :title="t('Author mode: the editors and the structure of the processor are shown. Click to leave it (open the page with ?author to enter it again).')"
+                @click="authorMode = false">✎ {{ t('Author') }} ✕</span>
+          <span class="text-size" :title="t('Size of the text')">
+            <button class="text-size-button" id="text-smaller" :disabled="!canShrink()" @click="changeTextScale(-1)"
+                    :title="t('Smaller text')" :aria-label="t('Smaller text')">A−</button>
+            <button class="text-size-button" id="text-larger" :disabled="!canGrow()" @click="changeTextScale(1)"
+                    :title="t('Larger text')" :aria-label="t('Larger text')">A+</button>
+          </span>
+          <button class="header-link" :class="{ active: isNotFullscreen && currentKey === 'aboutComponent' }"
+            id="about-button"
+            :title="t('Credits on the design and development for this tool')"
+            @click="onRequestSwitch('aboutComponent')" >
+              {{ t('About') }}
+          </button>
+          <!-- Language of the interface -->
+          <div class="lang-select">
+            <select :value="locale" @change="setLocale($event.target.value)" id="language-select"
+                    :title="t('Language of the interface')">
+              <option v-for="l in LANGUAGES" :key="l.code" :value="l.code" :title="l.name">{{ l.label }}</option>
+            </select>
+          </div>
         </div>
       </div>
     </header>
@@ -351,12 +357,12 @@ onUnmounted(() => {
 header { flex: none; }
 
 #top {
-  max-height:      5vh;
+  min-height:      2.6rem;
   width:           100%;   /* 100vw would include the scrollbar width */
-  padding:         0.6%;
   display:         flex;
+  gap:             12px;
   color:           white;
-  padding:         20px 10px;
+  padding:         4px 10px;
   box-shadow:      0 4px 8px rgba(0, 0, 0, 0.05);
   box-sizing:      border-box;
   align-items:     center;
@@ -371,7 +377,82 @@ nav ul {
   display:    flex;
 }
 nav ul li {
-  margin: 0 5px;
+  margin: 0 3px;
+  display: flex;
+  align-items: center;
+}
+.app-name {
+  font-size:   1.25rem;
+  font-weight: 700;
+  padding:     0 10px 0 4px;
+  align-self:  center;
+}
+
+/* The views of the right panel: a group of tabs, the active one in white */
+.view-tabs {
+  display:       flex;
+  gap:           0;
+  background:    rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding:       3px;
+}
+.view-tab {
+  border:        none;
+  background:    transparent;
+  color:         white;
+  font-size:     1rem;
+  font-weight:   600;
+  padding:       4px 14px;
+  border-radius: 6px;
+  cursor:        pointer;
+  white-space:   nowrap;
+}
+.view-tab:hover  { background: rgba(255, 255, 255, 0.2); }
+.view-tab.active { background: white; color: #0b6b3a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+
+.editor-button.active { background: #b3261e; border-color: #b3261e; color: white; }
+
+.header-tools {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex-shrink: 0;
+}
+.header-link {
+  background:  none;
+  border:      none;
+  color:       white;
+  font-size:   0.9375rem;
+  cursor:      pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.header-link.active { font-weight: 700; }
+/* narrow screens: the logo is enough */
+@media (max-width: 1400px) { .app-name { display: none; } }
+.text-size { display: inline-flex; gap: 2px; }
+.text-size-button {
+  min-width:     2.2em;
+  padding:       2px 6px;
+  border:        1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  background:    rgba(255, 255, 255, 0.15);
+  color:         white;
+  font-weight:   700;
+  font-size:     0.9375rem;
+  cursor:        pointer;
+}
+.text-size-button:hover:not([disabled]) { background: rgba(255, 255, 255, 0.3); }
+.text-size-button[disabled] { opacity: 0.45; cursor: default; }
+.author-badge {
+  padding:       2px 8px;
+  border-radius: 999px;
+  background:    #fff3cd;
+  color:         #6b4e00;
+  white-space:   nowrap;
+  font-weight:   700;
+  font-size:     0.875rem;
+  cursor:        pointer;
 }
 
 .lang-select select {
@@ -385,12 +466,12 @@ nav ul li {
   display: flex;
   align-items: center;
   border-right: 1px solid rgba(0, 0, 0, 0.1);
-  margin: 0 20px;
+  margin: 0 8px;
   height: 60%; /* Porcentaje de la altura del contenedor */
 }
 
 .title-img {
-  height:     4vh;
+  height:     2rem;
   margin-top: 0.0vh;
 }
 

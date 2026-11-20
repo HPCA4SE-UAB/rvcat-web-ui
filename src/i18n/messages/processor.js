@@ -162,4 +162,9 @@ export default {
   "Cache return throughput (1 to 32 instructions per cycle)": { es: "Return throughput de la cache (1 a 32 instrucciones por ciclo)", ca: "Return throughput de la cache (1 a 32 instruccions per cicle)" },
   "Branch penalty: cycles to refill the front-end after a mispredicted conditional branch resolves (0 to 99)": { es: "Penalización por salto: ciclos para volver a llenar el front-end cuando se resuelve un salto condicional mal predicho (0 a 99)", ca: "Penalització per salt: cicles per tornar a omplir el front-end quan es resol un salt condicional mal predit (0 a 99)" },
   "Retire width (1 to 9)": { es: "Ancho de retire (1 a 9)", ca: "Amplada de retire (1 a 9)" },
+  "The structure of the processor (ports and latencies) is edited in author mode": { es: "La estructura del procesador (puertos y latencias) se edita en modo autor", ca: "L'estructura del processador (ports i latències) s'edita en mode autor" },
+  "Colored percentages: usage of each resource in the last simulation.": { es: "Porcentajes en color: uso de cada recurso en la última simulación.", ca: "Percentatges en color: ús de cada recurs en l'última simulació." },
+  "Percentage: main memory busy in the last simulation.": { es: "Porcentaje: memoria principal ocupada en la última simulación.", ca: "Percentatge: memòria principal ocupada en l'última simulació." },
+  "Percentage: mispredicted conditional branches in the last simulation.": { es: "Porcentaje: saltos condicionales mal predichos en la última simulación.", ca: "Percentatge: salts condicionals mal predits en l'última simulació." },
+  "Mispred": { es: "Fallos pred.", ca: "Errors pred." },
 }

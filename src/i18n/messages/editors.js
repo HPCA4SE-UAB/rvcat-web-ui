@@ -284,4 +284,13 @@ export default {
   "wait until an element is shown": { es: "esperar a que se muestre un elemento", ca: "espera que es mostri un element" },
   "wait some milliseconds": { es: "esperar unos milisegundos", ca: "espera uns mil·lisegons" },
   "restore the program, processor, N and options of before the tutorial": { es: "recuperar el programa, el procesador, N y las opciones de antes del tutorial", ca: "recupera el programa, el processador, N i les opcions d'abans del tutorial" },
+  "Simple view: the text of each instruction and its type (the other fields are deduced from the text). Detailed view: also the operands, the constant, the stride and the lanes.": { es: "Vista simple: el texto de cada instrucción y su tipo (los otros campos se deducen del texto). Vista detallada: también los operandos, la constante, el stride y los lanes.", ca: "Vista simple: el text de cada instrucció i el seu tipus (els altres camps es dedueixen del text). Vista detallada: també els operands, la constant, l'stride i els lanes." },
+  "Simple": { es: "Simple", ca: "Simple" },
+  "Detailed": { es: "Detallada", ca: "Detallada" },
+  "Save the edited program (after checking its coherence): it is added to the list of the Program panel and selected; it can also be downloaded as a file": { es: "Guardar el programa editado (después de comprobar su coherencia): se añade a la lista del panel Programa y se selecciona; también se puede descargar como fichero", ca: "Desar el programa editat (després de comprovar-ne la coherència): s'afegeix a la llista del panell Programa i se selecciona; també es pot descarregar com a fitxer" },
+  "Save…": { es: "Guardar…", ca: "Desar…" },
+  "Open a program file (JSON) to edit it": { es: "Abrir un fichero de programa (JSON) para editarlo", ca: "Obrir un fitxer de programa (JSON) per editar-lo" },
+  "Open file…": { es: "Abrir fichero…", ca: "Obrir fitxer…" },
+  "Discard the edited program and start a new one from scratch (asks for confirmation)": { es: "Descartar el programa editado y empezar uno nuevo desde cero (pide confirmación)", ca: "Descartar el programa editat i començar-ne un de nou des de zero (demana confirmació)" },
+  "New program": { es: "Programa nuevo", ca: "Programa nou" },
 }

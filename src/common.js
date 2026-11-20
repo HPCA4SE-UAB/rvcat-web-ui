@@ -1062,6 +1062,32 @@ export function fitSvgToContainer(svg, container) {
 }
 
 // options.collapsed: hide the operation types of the ports (only their headers are shown)
+// Usage of the resources of the processor in a simulation (percentages), shown on the diagram of
+// the processor: dispatch and retire (IPC / width), each port, the main memory (transfers ×
+// issue time / cycles) and the rate of mispredicted conditional branches. null without results.
+export function resourceUsage(process, results) {
+  if (!process || !results || !(results.total_cycles > 0)) return null
+  const pct = (v) => (Number.isFinite(v) ? Math.max(0, v) : null)
+  const memory = Number.isFinite(results.MM_usage_percent)
+    ? results.MM_usage_percent
+    : 100 * ((results.MM_Reads ?? 0) + (results.MM_Writes ?? 0)) * (process.mIssueTime || 1) / results.total_cycles
+  const branch = results.branch?.branches > 0 ? 100 * results.branch.mispredictions / results.branch.branches : null
+  return {
+    dispatch: pct(100 * results.ipc / (process.dispatch || 1)),
+    retire:   pct(100 * results.ipc / (process.retire || 1)),
+    ports:    Object.fromEntries(Object.keys(process.ports ?? {}).map(p => [p, pct(results.ports?.[p] ?? 0)])),
+    memory:   (process.nBlocks || 0) > 0 ? pct(memory) : null,
+    branch:   pct(branch),
+  }
+}
+
+// Color of a usage percentage: grey (idle) → green → ochre → dark red (saturated)
+const USAGE_COLORS = [
+  "#9e9e9e", "#7cb342", "#66bb6a", "#4caf50", "#43a047", "#388e3c", "#2e7d32", "#2e7d32",
+  "#558b2f", "#689f38", "#827717", "#9e9d24", "#a08800", "#b07a00", "#b36a00", "#a35a00",
+  "#933f00", "#832600", "#731200", "#630000", "#4a0000", "#4a0000"]
+export const usageColor = (pct) => USAGE_COLORS[Math.min(USAGE_COLORS.length - 1, Math.max(0, Math.floor(pct / 5)))]
+
 export function get_processor_dot(process, allowEdit, highlightPort = -1, options = {}) {
 
     const ports    = process.ports
@@ -1168,33 +1194,41 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
     const unassigned = allowEdit ? unassignedOperations(ports) : []   // warning row below
 
+    // Usage of each resource in the last simulation (options.usage, see resourceUsage)
+    const usage = options.usage ?? null
+    const usageText = (v, prefix = '&nbsp;&nbsp;') => (v === null || v === undefined) ? ''
+      : `${prefix}<B><FONT COLOR="${usageColor(v)}">${v.toFixed(v < 10 ? 1 : 0)}%</FONT></B>`
+    const usageTitle = usage ? '\n' + t('Colored percentages: usage of each resource in the last simulation.') : ''
+    // editable cells are marked with a pencil
+    const EDIT = allowEdit ? '✎&nbsp;' : ''
+
     // ---- Dispatch + ROB ----
     const click = allowEdit ? ' ' + t('Click to edit it.') : ''
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}</FONT></TD>
-      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${t('ROB (reorder buffer): up to {n} instructions in flight, from dispatch to retire; when it is full, dispatch stops.', { n: ROBsize })}${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="20">🔄<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="16">${t('entries')}</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}${usageTitle}"><FONT POINT-SIZE="22">${EDIT}<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}${usageText(usage?.dispatch)}</FONT></TD>
+      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${t('ROB (reorder buffer): up to {n} instructions in flight, from dispatch to retire; when it is full, dispatch stops.', { n: ROBsize })}${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="22">${EDIT}<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="22">${t('entries')}</FONT></TD>
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
     // (the editable panel shows controls: hide/show the operation types, add a port)
     // (and warns about operations that no port executes: their instructions cannot be simulated)
     const toggleText = options.collapsed ? `▼&nbsp;${t('show operation types ({n} rows)', { n: max_rows })}` : `▲&nbsp;${t('hide operation types')}`
-    const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? t('Show the operation types that each port executes') : t('Hide the operation types that each port executes')}"><FONT POINT-SIZE="16">${toggleText}</FONT></TD>`
+    const toggleCell = (span) => `<TD COLSPAN="${span}" BGCOLOR="#e8eef6" HREF="#" ID="toggleops" TITLE="${options.collapsed ? t('Show the operation types that each port executes') : t('Hide the operation types that each port executes')}"><FONT POINT-SIZE="22">${toggleText}</FONT></TD>`
     const warnRow = unassigned.length
       ? `<TR><TD COLSPAN="${port_ids.length}" BGCOLOR="#fff3cd" HREF="#" ID="unassigned" TITLE="${unassigned.length > 1
         ? t('No port executes {ops}: programs that use them cannot be simulated. Click a port header to insert them.', { ops: unassigned.join(', ') })
-        : t('No port executes {ops}: programs that use it cannot be simulated. Click a port header to insert it.', { ops: unassigned.join(', ') })}"><FONT POINT-SIZE="16" COLOR="#8a5a00">⚠&nbsp;${unassigned.length > 1
+        : t('No port executes {ops}: programs that use it cannot be simulated. Click a port header to insert it.', { ops: unassigned.join(', ') })}"><FONT POINT-SIZE="22" COLOR="#8a5a00">⚠&nbsp;${unassigned.length > 1
         ? t('{n} operation types without port', { n: unassigned.length }) : t('1 operation type without port')}</FONT></TD></TR>`
       : ''
     const addCell = port_ids.length < MAX_PORTS
-      ? `<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="${t('Add a new execution port (then click its header to insert operation types)')}"><FONT POINT-SIZE="16">＋&nbsp;${t('port')}</FONT></TD>`
-      : `<TD BGCOLOR="#eeeeee" HREF="#" ID="maxports" TITLE="${t('At most {n} execution ports', { n: MAX_PORTS })}"><FONT POINT-SIZE="16" COLOR="#888888">${t('{n} ports', { n: MAX_PORTS })}</FONT></TD>`
+      ? `<TD BGCOLOR="#e8eef6" HREF="#" ID="addport" TITLE="${t('Add a new execution port (then click its header to insert operation types)')}"><FONT POINT-SIZE="22">＋&nbsp;${t('port')}</FONT></TD>`
+      : `<TD BGCOLOR="#eeeeee" HREF="#" ID="maxports" TITLE="${t('At most {n} execution ports', { n: MAX_PORTS })}"><FONT POINT-SIZE="22" COLOR="#888888">${t('{n} ports', { n: MAX_PORTS })}</FONT></TD>`
     let wb_row = allowEdit
-      ? (port_ids.length >= 2
+      ? (port_ids.length >= 2 && options.ports !== false
           ? `<TR>${toggleCell(port_ids.length - 1)}${addCell}</TR>`
           : `<TR>${toggleCell(port_ids.length)}</TR>`) + warnRow
       : `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="${t('Instructions wait here for their operands and a free port')}"><FONT POINT-SIZE="20"><B>${t('Waiting Buffer')}</B></FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" ID="sched" TITLE="${t('Instructions wait here for their operands and a free port')}"><FONT POINT-SIZE="22"><B>${t('Waiting Buffer')}</B></FONT></TD>
     </TR>`
 
     // ---- Port headers ----
@@ -1208,7 +1242,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
       const safePort = escapeHtml(p)
       const nOps = (ports[p] ?? []).length
-      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="${t('Port P{p}: executes {n} operation type(s), one instruction per cycle.', { p: safePort, n: nOps })}${allowEdit ? ' ' + t('Click to insert an operation type or remove the port.') : ''}"><FONT POINT-SIZE="20"><B>P${safePort}</B></FONT></TD>`
+      port_header += `<TD ${style} HREF="#" ID="port:${safePort}" TITLE="${t('Port P{p}: executes {n} operation type(s), one instruction per cycle.', { p: safePort, n: nOps })}${allowEdit ? ' ' + t('Click to insert an operation type or remove the port.') : ''}"><FONT POINT-SIZE="22"><B>P${safePort}</B>${usageText(usage?.ports?.[p], '&nbsp;')}</FONT></TD>`
     }
 
     port_header += "</TR>"
@@ -1240,7 +1274,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
         const safeTooltip = escapeHtml(tooltip)
 
         op_rows += `
-          <TD BGCOLOR="${color}" TITLE="${safeTooltip}" HREF="#" ID="op:${escapeHtml(p)}:${i}:${safeLabel}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 18 : 16}">${op.big ? `<B>${safeLabel}</B>` : safeLabel}</FONT></TD>`
+          <TD BGCOLOR="${color}" TITLE="${safeTooltip}" HREF="#" ID="op:${escapeHtml(p)}:${i}:${safeLabel}" ${highlightAttr}><FONT POINT-SIZE="${op.big ? 21 : 20}">${op.big ? `<B>${safeLabel}</B>` : safeLabel}</FONT></TD>`
       }
 
       op_rows += "</TR>"
@@ -1257,22 +1291,22 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     // ---- Cache configuration ----
     if (CacheBlocks > 0) {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${CacheBlocks} ${t('blocks')}&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;${t('Penalty')}: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}${usage?.memory != null ? '\n' + t('Percentage: main memory busy in the last simulation.') : ''}"><FONT POINT-SIZE="22">${EDIT}<B>Cache:</B>&nbsp;${CacheBlocks} ${t('blocks')}&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;${t('Penalty')}: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}${usage?.memory != null ? '&nbsp;&nbsp;MM:' + usageText(usage.memory, '&nbsp;') : ''}</FONT></TD>
       </TR>`
     } else {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Cache:</B>&nbsp;${t('No cache')}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}"><FONT POINT-SIZE="22">${EDIT}<B>Cache:</B>&nbsp;${t('No cache')}</FONT></TD>
       </TR>`
     }
 
     // ---- Branch misprediction penalty ----
     let penalty_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${t('Branch penalty: {n} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.', { n: bPenalty })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>${t('Branch penalty')}:&nbsp;</B>&nbsp;&nbsp;${bPenalty} ${t('cycles')}</FONT></TD>
+      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${t('Branch penalty: {n} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.', { n: bPenalty })}${click}${usage?.branch != null ? '\n' + t('Percentage: mispredicted conditional branches in the last simulation.') : ''}"><FONT POINT-SIZE="22">${EDIT}<B>${t('Branch penalty')}:&nbsp;</B>&nbsp;&nbsp;${bPenalty} ${t('cycles')}${usage?.branch != null ? '&nbsp;&nbsp;' + t('Mispred') + ':' + usageText(usage.branch, '&nbsp;') : ''}</FONT></TD>
     </TR>`
 
     // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}"><FONT POINT-SIZE="20">🔄&nbsp;<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}</FONT></TD>
+      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}${usageTitle}"><FONT POINT-SIZE="22">${EDIT}<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}${usageText(usage?.retire)}</FONT></TD>
     </TR>`
 
     const dot = `

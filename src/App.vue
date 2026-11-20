@@ -70,11 +70,13 @@ provide('worker', useWorker())
     display:     flex;
     align-items: center;
     gap:         3px;
-    flex-wrap:   wrap;
+    flex-wrap:   nowrap;
+    white-space: nowrap;
+    margin-right: 6px;
   }
 
   .header-title {
-    font-size:    large;
+    font-size:    1.125rem;
     font-weight:  600;
     margin-right: 5px;
   }
@@ -123,7 +125,7 @@ provide('worker', useWorker())
   }
 
   .iters-label {
-    font-size:  medium;
+    font-size:  1rem;
     font-weight: normal;
     color: black;
     text-align: center;
@@ -150,7 +152,7 @@ provide('worker', useWorker())
     color:      #1a4fb3;
     border:     1px solid #7aa2e3;
     padding:    3px 6px;
-    font-size:  small;
+    font-size:  0.875rem;
     line-height:   1.2;
     border-radius: 6px;
     cursor:        pointer;
@@ -213,7 +215,7 @@ provide('worker', useWorker())
   }
 
   input {
-    font-size: medium;
+    font-size: 1rem;
   }
 
   .modal-overlay {

@@ -275,8 +275,8 @@
       "id": "usage",
       "type": "step",
       "title": "Usage of the resources",
-      "selector": "#right-panel .processor-container",
-      "position": "left",
+      "selector": "#process-panel .processor-container",
+      "position": "right",
       "description": "<b>The diagram shows how busy each resource was.</b><br>Dispatch used {{dispatchUsage}}% of its capacity, and retire {{retireUsage}}%.<br>Ports: P0 {{port.P0}}%, P1 {{port.P1}}%, P2 {{port.P2}}%, P3 {{port.P3}}%, P4 {{port.P4}}%.<br>No resource is saturated: the processor is mostly <b>waiting</b> for the additions.",
       "next": [
         "check-usage"

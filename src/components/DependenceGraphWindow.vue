@@ -257,7 +257,7 @@
     flex-shrink: 0;
   }
   .toolbar-spacer { flex: 1; }
-  .iters { font-size: small; margin-right: 4px; white-space: nowrap; }
+  .iters { font-size: 0.875rem; margin-right: 4px; white-space: nowrap; }
   .iters input { width: 3em; margin-left: 4px; }
 
   .graph-window-body {

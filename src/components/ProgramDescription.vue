@@ -37,7 +37,7 @@
     margin-top:    4px;
     border:        1px solid #ddd;
     border-radius: 5px;
-    font-size:     small;
+    font-size:     0.875rem;
   }
   .desc-header {
     display:     flex;
@@ -51,7 +51,7 @@
     border:      none;
     padding:     2px 0;
     font-weight: 600;
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #0b2e5c;
     cursor:      pointer;
     flex-shrink: 0;
@@ -69,7 +69,7 @@
     margin:      0 6px 6px;
     box-sizing:  border-box;
     font-family: monospace;
-    font-size:   13px;
+    font-size:   0.875rem;
     tab-size:    4;
     resize:      vertical;
   }

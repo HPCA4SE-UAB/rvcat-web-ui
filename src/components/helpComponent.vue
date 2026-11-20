@@ -186,7 +186,7 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     border-radius: 8px;
     /* Text size adapts to the window: smaller on short or narrow screens */
-    font-size:  clamp(13px, min(2.3vh, 3.2vw), 18px);
+    font-size:  1rem;
     font-family: system-ui, -apple-system, BlinkMacSystemFont,
                "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }

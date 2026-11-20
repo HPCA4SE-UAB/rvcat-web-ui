@@ -1425,7 +1425,7 @@ onUnmounted(() => {
   }
 
   #tutorials-list {
-    font-size: larger;
+    font-size: 1.125rem;
   }
 
   .editor-content {
@@ -1510,7 +1510,7 @@ onUnmounted(() => {
 
   .step-order-heading span {
     color: #6b7280;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 
   .step-order-list {
@@ -1567,13 +1567,13 @@ onUnmounted(() => {
 
   .step-order-number {
     color: #6b7280;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     text-align: right;
   }
 
   .step-order-type {
     color: #6b7280;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
   }
 
@@ -1681,7 +1681,7 @@ onUnmounted(() => {
   }
 
   .tutorial-img svg text {
-    font-size:   small;
+    font-size:   0.875rem;
     font-family: Arial, sans-serif;
   }
   .tutorial-img svg polygon,
@@ -1719,7 +1719,7 @@ onUnmounted(() => {
   .form-group label {
     display:       block;
     margin-bottom: 2px;
-    font-size:     medium;
+    font-size:     1rem;
     font-weight:   500;
     color:         #374151;
   }
@@ -1736,7 +1736,7 @@ onUnmounted(() => {
     padding:       1px 6px;
     border:        1px solid #d1d5db;
     border-radius: 8px;
-    font-size:     medium;
+    font-size:     1rem;
     color:         #111827;
     transition:    border-color 0.2s;
     font-family:   inherit;
@@ -1788,7 +1788,7 @@ onUnmounted(() => {
 
   .selector-input {
     font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-    font-size:   small;
+    font-size:   0.875rem;
   }
 
   .step-card {
@@ -1811,7 +1811,7 @@ onUnmounted(() => {
   .step-number {
     background:  #3b82f6;
     color:       white;
-    font-size:   small;
+    font-size:   0.875rem;
     font-weight: 600;
     padding:     4px 8px;
     border-radius: 12px;
@@ -1833,7 +1833,7 @@ onUnmounted(() => {
     border-radius: 4px;
     width:     24px;
     height:    24px;
-    font-size: medium;
+    font-size: 1rem;
     cursor:    pointer;
     display:   flex;
     align-items:     center;
@@ -1855,7 +1855,7 @@ onUnmounted(() => {
 
   .validation-card h4 {
     margin:       0 0 16px 0;
-    font-size:   small;
+    font-size:   0.875rem;
     font-weight: 600;
     color:       #92400e;
     text-align:  center;
@@ -1875,7 +1875,7 @@ onUnmounted(() => {
     align-items: center;
     gap:         6px;
     cursor:      pointer;
-    font-size:   medium;
+    font-size:   1rem;
     color:       #374151;
   }
 
@@ -1908,7 +1908,7 @@ onUnmounted(() => {
     align-items: center;
     gap:         4px;
     cursor:      pointer;
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #374151;
   }
 
@@ -1958,7 +1958,7 @@ onUnmounted(() => {
     border:     none;
     border-radius: 4px;
     padding:       4px 6px;
-    font-size:  small;
+    font-size:  0.875rem;
     cursor:     pointer;
     transition: background 0.2s;
   }
@@ -1977,7 +1977,7 @@ onUnmounted(() => {
 
   .answers-section h4 {
     margin:      0 0 2px 0;
-    font-size:   small;
+    font-size:   0.875rem;
     font-weight: 600;
     color:       #374151;
   }
@@ -2006,7 +2006,7 @@ onUnmounted(() => {
   .answer-letter {
     background:    #6b7280;
     color:         white;
-    font-size:     small;
+    font-size:     0.875rem;
     font-weight:   600;
     padding:       2px 4px;
     border-radius: 4px;
@@ -2021,7 +2021,7 @@ onUnmounted(() => {
     align-items: center;
     gap:         4px;
     cursor:      pointer;
-    font-size:   small;
+    font-size:   0.875rem;
     color:       #374151;
     margin-left: auto;
   }
@@ -2039,7 +2039,7 @@ onUnmounted(() => {
     border-radius: 4px;
     width:    16px;
     height:   16px;
-    font-size: small;
+    font-size: 0.875rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2068,7 +2068,7 @@ onUnmounted(() => {
   }
 
   .feedback-group label {
-    font-size: small;
+    font-size: 0.875rem;
     color: #6b7280;
   }
 
@@ -2078,7 +2078,7 @@ onUnmounted(() => {
     border:        none;
     padding:       2px 10px;
     border-radius: 6px;
-    font-size:     medium;
+    font-size:     1rem;
     font-weight:   500;
     cursor:        pointer;
     transition:    background-color 0.2s;
