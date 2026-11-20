@@ -73,6 +73,27 @@
   // The field of the header (to type a value) is shown after a click on the text of a cell of
   // the diagram; the − / + buttons of the diagram do not need it
   const fieldVisible = ref(false)
+  const fieldInput   = ref(null)
+  // shown: ready to type the value
+  watch(fieldVisible, (on) => { if (on) nextTick(() => { fieldInput.value?.focus(); fieldInput.value?.select() }) })
+  let hideTimer = null
+  // the value is checked and applied, and the field leaves the header (after showing for 2 s the
+  // message of a value that had to be corrected); the latency of an operation keeps its controls
+  function onFieldBlur() {
+    validateField()
+    if (activeField.value === 'op') return
+    clearTimeout(hideTimer)
+    if (isInvalid.value) hideTimer = setTimeout(() => { if (document.activeElement !== fieldInput.value) fieldVisible.value = false }, 2000)
+    else fieldVisible.value = false
+  }
+  // Esc: the value is not changed
+  function cancelField() {
+    inputValue.value = fieldValue()
+    isInvalid.value = false
+    validationMessage.value = ''
+    if (activeField.value !== 'op') { fieldVisible.value = false; return }
+    fieldInput.value?.blur()
+  }
 
   const FIELD_CONFIG = {
     rob: {
@@ -654,6 +675,8 @@
               case 'retire':
               case 'bpenalty':
                 activeField.value = action
+                clearTimeout(hideTimer)
+                if (fieldVisible.value) nextTick(() => { fieldInput.value?.focus(); fieldInput.value?.select() })
                 fieldVisible.value = true
                 break
 
@@ -900,7 +923,9 @@
             pattern="[0-9]*"
             :placeholder="currentMinimum.toString()"
             v-model="inputValue"
-            @blur="validateField"
+            ref="fieldInput"
+            @blur="onFieldBlur"
+            @keydown.esc.prevent="cancelField"
             @keypress="handleKeyPress"
             @input="handleInput"
             :class="{ 'invalid': isInvalid }"
@@ -908,7 +933,7 @@
             :aria-invalid="isInvalid"
           />
         </div>
-        <button
+        <button v-if="activeField === 'op'"
           class="blue-button small-btn"
           @mousedown="startHold(increaseParameter)"
           @mouseup="stopHold"
@@ -919,7 +944,7 @@
         >
           ▲
         </button>
-        <button
+        <button v-if="activeField === 'op'"
           class="blue-button small-btn"
           @mousedown="startHold(decreaseParameter)"
           @mouseup="stopHold"
