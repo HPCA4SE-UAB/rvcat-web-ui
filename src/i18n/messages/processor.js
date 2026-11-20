@@ -216,4 +216,5 @@ export default {
   "dirty block replaced": { es: "bloque modificado reemplazado", ca: "bloc modificat reemplaçat" },
   "write": { es: "escribe", ca: "escriu" },
   "STORE: RFO when it executes": { es: "STORE: RFO al ejecutarse", ca: "STORE: RFO en executar-se" },
+  "It cannot be greater than the miss penalty ({n})": { es: "No puede ser mayor que la penalización de fallo ({n})", ca: "No pot ser més gran que la penalització d'error ({n})" },
 }

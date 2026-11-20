@@ -14,7 +14,9 @@
   const emit = defineEmits(['apply', 'cancel'])
 
   const values = reactive(Object.fromEntries(CACHE_FIELDS.map(f => [f.key, props.config[f.key]])))
-  const errors = computed(() => validateCacheConfig(values, props.instructionList))
+  // the field changed last of the pair penalty / issue time: it gets the error when they do not agree
+  const lastEdited = ref('mPenalty')
+  const errors = computed(() => validateCacheConfig(values, props.instructionList, lastEdited.value))
   const valid  = computed(() => Object.keys(errors.value).length === 0)
   const noCache = computed(() => Number(values.nBlocks) === 0)
   const allowedSizes = computed(() => getAllowedCacheBlockSizes(props.instructionList))
@@ -64,7 +66,9 @@
                 <option v-for="size in CACHE_BLOCK_SIZES" :key="size" :value="size" :disabled="!allowedSizes.includes(size)">{{ size }}</option>
               </select>
               <input v-else :id="`cache-${f.key}`" :ref="i === 0 ? 'firstField' : undefined" type="number" step="1"
-                     :min="f.key === 'mPenalty' ? Math.max(1, Number(values.mIssueTime) || 1) : f.min" :max="f.max"
+                     :min="f.key === 'mPenalty' ? Math.max(1, Number(values.mIssueTime) || 1) : f.min"
+                     :max="f.key === 'mIssueTime' ? Math.min(f.max, Number(values.mPenalty) || f.max) : f.max"
+                     @input="(f.key === 'mPenalty' || f.key === 'mIssueTime') && (lastEdited = f.key)"
                      v-model="values[f.key]" :disabled="f.key !== 'nBlocks' && noCache" @focus="activeKey = f.key"
                      :class="{ invalid: errors[f.key] }" :title="t(HELP[f.key])" />
             </td>

@@ -53,7 +53,9 @@ export const CACHE_FIELDS = [
 
 // Errors of a cache configuration, by field ({} when it is correct). With 0 blocks there is no
 // cache and the other parameters are not used. Messages are in English (translated by the caller).
-export function validateCacheConfig(cfg, instructionList = []) {
+// The miss penalty cannot be less than the memory issue time: the error goes to the field changed
+// last (edited: 'mIssueTime' or 'mPenalty').
+export function validateCacheConfig(cfg, instructionList = [], edited = 'mPenalty') {
   const errors = {}
   const int = (v) => Number.isInteger(Number(v)) && String(v).trim() !== '' ? Number(v) : null
   for (const f of CACHE_FIELDS) {
@@ -70,8 +72,12 @@ export function validateCacheConfig(cfg, instructionList = []) {
       errors.blkSize = { text: "No block size can hold this program's largest {size}-byte memory access", args: { size: getLargestMemoryAccessSize(instructionList) } }
     else if (!allowed.includes(size))
       errors.blkSize = { text: 'One of {sizes} bytes (at least the largest memory access of the program)', args: { sizes: allowed.join(', ') } }
-    if (!errors.mPenalty && !errors.mIssueTime && int(cfg.mPenalty) < int(cfg.mIssueTime))
-      errors.mPenalty = { text: 'It cannot be less than the memory issue time ({n})', args: { n: int(cfg.mIssueTime) } }
+    if (!errors.mPenalty && !errors.mIssueTime && int(cfg.mPenalty) < int(cfg.mIssueTime)) {
+      if (edited === 'mIssueTime')
+        errors.mIssueTime = { text: 'It cannot be greater than the miss penalty ({n})', args: { n: int(cfg.mPenalty) } }
+      else
+        errors.mPenalty = { text: 'It cannot be less than the memory issue time ({n})', args: { n: int(cfg.mIssueTime) } }
+    }
   }
   return errors
 }

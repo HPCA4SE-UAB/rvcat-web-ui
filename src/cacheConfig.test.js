@@ -19,6 +19,11 @@ describe('cache configuration', () => {
   it('requires a penalty not below the issue time', () => {
     expect(validateCacheConfig({ ...ok, mPenalty: 4, mIssueTime: 8 }).mPenalty.args.n).toBe(8)
   })
+  it('marks the issue time when it is raised above the penalty', () => {
+    const e = validateCacheConfig({ ...ok, mPenalty: 12, mIssueTime: 20 }, [], 'mIssueTime')
+    expect(e.mIssueTime.args.n).toBe(12)
+    expect(e.mPenalty).toBeUndefined()
+  })
   it('requires a block that holds the largest memory access', () => {
     expect(validateCacheConfig({ ...ok, blkSize: 16 }, vload).blkSize.args.sizes).toBe('32, 64, 128')
     expect(validateCacheConfig({ ...ok, blkSize: 32 }, vload)).toEqual({})
