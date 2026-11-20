@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateCacheConfig } from './common'
+import { validateCacheConfig, memoryPortCounts } from './common'
 
 const ok = { nBlocks: 16, blkSize: 64, mPenalty: 12, mIssueTime: 1, nFillBuffers: 16, nWriteBuffers: 16, rThru: 2, nStoreBuffers: 114 }
 const vload = [{ type: 'VMEM', oper: 'LOAD', size: 'long', lanes: 4 }]   // 32-byte accesses
@@ -30,5 +30,13 @@ describe('cache configuration', () => {
   })
   it('ignores the other parameters without a cache', () => {
     expect(validateCacheConfig({ ...ok, nBlocks: 0, mPenalty: 0, blkSize: 3 })).toEqual({})
+  })
+})
+
+describe('memory ports', () => {
+  it('counts the ports that execute LOADs and STOREs (a whole type executes both)', () => {
+    expect(memoryPortCounts({ 0: ['INT'], 1: ['MEM.LOAD', 'VMEM.LOAD'], 2: ['MEM'], 3: ['VMEM.STORE'] }))
+      .toEqual({ loads: 2, stores: 2 })
+    expect(memoryPortCounts({})).toEqual({ loads: 0, stores: 0 })
   })
 })

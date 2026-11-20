@@ -10,6 +10,7 @@
   const props = defineProps({
     config:          { type: Object, required: true },   // current values of the processor
     instructionList: { type: Array,  default: () => [] }, // program: the largest memory access
+    ports:           { type: Object, default: () => ({}) }, // ports of the processor (LOADs and STOREs per cycle)
   })
   const emit = defineEmits(['apply', 'cancel'])
 
@@ -54,7 +55,7 @@
     <div class="cache-overlay" id="cache-config-overlay">
       <div class="cache-window" role="dialog" aria-modal="true" aria-labelledby="cache-config-title" id="cache-config-window">
         <h3 id="cache-config-title">{{ t('Cache of the processor') }}</h3>
-        <CacheDiagram :values="values" :active="activeKey" />
+        <CacheDiagram :values="values" :active="activeKey" :ports="ports" />
         <table class="cache-fields">
           <tr v-for="(f, i) in CACHE_FIELDS" :key="f.key" :class="{ disabled: f.key !== 'nBlocks' && noCache, active: activeKey === f.key }"
               @mouseenter="activeKey = f.key">

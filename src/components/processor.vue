@@ -984,6 +984,7 @@
 
   <CacheConfigWindow v-if="showCacheWindow" :config="cacheConfig"
                      :instruction-list="simState.simulatedProcess?.instruction_list ?? []"
+                     :ports="simState.simulatedProcess?.ports ?? {}"
                      @apply="applyCache" @cancel="showCacheWindow = false" />
 
   <Teleport to="body">

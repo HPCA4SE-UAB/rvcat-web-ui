@@ -149,6 +149,17 @@ export function unassignedOperations(ports = {}) {
   })
 }
 
+// Ports that execute memory instructions: LOADs (scalar or vector) and STOREs. As many LOADs can
+// access the cache per cycle, and as many STOREs enter the store buffer per cycle (and are written
+// into the cache per cycle when they go to the same block)
+export function memoryPortCounts(ports = {}) {
+  const ops = Object.values(ports).map(list => new Set((list ?? []).flatMap(expandPortEntry)))
+  return {
+    loads:  ops.filter(set => set.has('MEM.LOAD') || set.has('VMEM.LOAD')).length,
+    stores: ops.filter(set => set.has('MEM.STORE') || set.has('VMEM.STORE')).length,
+  }
+}
+
 // Ports after removing port `id`: the remaining ports are renumbered P0, P1, ... and the
 // operations that only the removed port executed are assigned to P0.
 export function removePortFrom(ports, id) {

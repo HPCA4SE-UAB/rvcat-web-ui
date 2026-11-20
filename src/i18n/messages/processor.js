@@ -207,8 +207,6 @@ export default {
   "latency": { es: "latencia", ca: "latència" },
   "1 transfer": { es: "1 transferencia", ca: "1 transferència" },
   "every {n} cycles": { es: "cada {n} ciclos", ca: "cada {n} cicles" },
-  "LOAD: hit, through its port": { es: "LOAD: acierto, por su puerto", ca: "LOAD: encert, pel seu port" },
-  "written after retiring, in order, 1 per cycle": { es: "se escriben tras retirarse, en orden, 1 por ciclo", ca: "s'escriuen després de retirar-se, en ordre, 1 per cicle" },
   "miss": { es: "fallo", ca: "error" },
   "block": { es: "bloque", ca: "bloc" },
   "read": { es: "lee", ca: "llegeix" },
@@ -217,4 +215,8 @@ export default {
   "write": { es: "escribe", ca: "escriu" },
   "STORE: RFO when it executes": { es: "STORE: RFO al ejecutarse", ca: "STORE: RFO en executar-se" },
   "It cannot be greater than the miss penalty ({n})": { es: "No puede ser mayor que la penalización de fallo ({n})", ca: "No pot ser més gran que la penalització d'error ({n})" },
+  "{n} ports execute LOADs: up to {n} LOADs per cycle": { es: "{n} puertos ejecutan LOADs: hasta {n} LOADs por ciclo", ca: "{n} ports executen LOADs: fins a {n} LOADs per cicle" },
+  "{n} ports execute STOREs: up to {n} STOREs per cycle enter the store buffer": { es: "{n} puertos ejecutan STOREs: hasta {n} STOREs por ciclo entran en el store buffer", ca: "{n} ports executen STOREs: fins a {n} STOREs per cicle entren al store buffer" },
+  "{n} LOADs/cycle; a hit, through its port": { es: "{n} LOADs/ciclo; un acierto, por su puerto", ca: "{n} LOADs/cicle; un encert, pel seu port" },
+  "written after retiring, in order: up to {n}/cycle if same block": { es: "se escriben tras retirarse, en orden: hasta {n}/ciclo si es el mismo bloque", ca: "s'escriuen després de retirar-se, en ordre: fins a {n}/cicle si és el mateix bloc" },
 }

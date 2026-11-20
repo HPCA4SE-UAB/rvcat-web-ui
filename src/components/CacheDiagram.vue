@@ -5,11 +5,14 @@
   // being edited (active) is highlighted.
   import { computed } from 'vue'
   import { t } from '@/i18n'
+  import { memoryPortCounts } from '@/common'
 
   const props = defineProps({
     values: { type: Object, required: true },   // nBlocks, blkSize, mPenalty, mIssueTime, nFillBuffers, nWriteBuffers, rThru, nStoreBuffers
     active: { type: String, default: '' },      // key of the field being edited
+    ports:  { type: Object, default: () => ({}) },  // ports of the processor: the LOADs and STOREs per cycle
   })
+  const mem = computed(() => memoryPortCounts(props.ports))
   const v = (key) => props.values[key] === '' || props.values[key] === undefined ? '?' : props.values[key]
   const noCache = computed(() => Number(props.values.nBlocks) === 0)
   const PART = {
@@ -33,9 +36,11 @@
       <text x="68" y="62" class="cd-title">{{ t('Execution') }}</text>
       <text x="68" y="81" class="cd-title">{{ t('ports') }}</text>
       <rect x="22" y="92" width="92" height="30" rx="5" class="cd-unit" />
-      <text x="68" y="113" class="cd-label">LOAD</text>
+      <text x="68" y="113" class="cd-label">LOAD ×{{ mem.loads }}
+        <title>{{ t('{n} ports execute LOADs: up to {n} LOADs per cycle', { n: mem.loads }) }}</title></text>
       <rect x="22" y="172" width="92" height="30" rx="5" class="cd-unit" />
-      <text x="68" y="193" class="cd-label">STORE</text>
+      <text x="68" y="193" class="cd-label">STORE ×{{ mem.stores }}
+        <title>{{ t('{n} ports execute STOREs: up to {n} STOREs per cycle enter the store buffer', { n: mem.stores }) }}</title></text>
 
       <!-- store buffer -->
       <g :class="{ 'cd-hl': hl('sb') }">
@@ -81,12 +86,13 @@
 
       <!-- LOAD <-> cache: a hit gets its data through its port -->
       <line x1="114" y1="107" x2="398" y2="107" class="cd-path" marker-end="url(#cd-arrow)" marker-start="url(#cd-arrow)" />
-      <text x="258" y="100" class="cd-note">{{ t('LOAD: hit, through its port') }}</text>
+      <text x="266" y="100" class="cd-note">{{ t('{n} LOADs/cycle; a hit, through its port', { n: mem.loads }) }}</text>
 
       <!-- STORE -> store buffer -> cache -->
       <line x1="114" y1="188" x2="188" y2="188" class="cd-path" marker-end="url(#cd-arrow)" />
+      <text x="151" y="181" class="cd-note">{{ mem.stores }}/{{ t('cycle') }}</text>
       <line x1="340" y1="188" x2="398" y2="188" class="cd-path" marker-end="url(#cd-arrow)" />
-      <text x="265" y="238" class="cd-note">{{ t('written after retiring, in order, 1 per cycle') }}</text>
+      <text x="282" y="238" class="cd-note">{{ t('written after retiring, in order: up to {n}/cycle if same block', { n: mem.stores }) }}</text>
 
       <!-- cache -> fill buffers (miss, RFO); fill buffers -> cache (the block is installed) -->
       <line x1="560" y1="64" x2="638" y2="64" class="cd-path" marker-end="url(#cd-arrow)" />
