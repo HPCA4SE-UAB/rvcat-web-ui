@@ -8,7 +8,7 @@
   import { isLocked }                                      from '@/lessons'
   import { downloadJSON, uploadJSON, createGraphVizGraph, saveToLocalStorage,
            instructionTypes, typeOperations, typeSizes,
-           normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_ITERATIONS }  from '@/common'
+           normalizeProgramDefaults, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_INSTRUCTIONS }  from '@/common'
   import MemoryTrace                                         from '@/components/MemoryTrace.vue'
   import DeclarationsTable                                   from '@/components/DeclarationsTable.vue'
   import ProgramDescription                                  from '@/components/ProgramDescription.vue'
@@ -983,7 +983,7 @@ function snapshotProgram() {
           {{ t('Repetitions of the loop and block after each call') }}
         </summary>
         <div class="rep-fields">
-          <label :title="t('Calls of the loop: the simulator runs Rep × N/S iterations (at most {limit}). The Program panel can change it for a session.', { limit: MAX_REP_ITERATIONS.toLocaleString('en-US') })">
+          <label :title="t('Calls of the loop: the simulator runs Rep × N/S iterations (at most {limit} instructions in all). The Program panel can change it for a session.', { limit: MAX_REP_INSTRUCTIONS.toLocaleString('en-US') })">
             {{ t('Calls (Rep):') }}
             <input type="number" min="1" step="1" v-model.number="editedRep" id="editor-rep" class="rep-number" />
           </label>

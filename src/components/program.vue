@@ -3,7 +3,7 @@
   import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch, computed } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
-           updateProcess, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_ITERATIONS,
+           updateProcess, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_INSTRUCTIONS, maxRepetitions,
            normalizeProgramDefaults }                                     from '@/common'
   import { checkDeclarations }                                      from '@/instructionText'
   import { conditionalDepth }                                     from '@/branches'
@@ -173,13 +173,13 @@
     programOptions.rep = Math.max(1, Math.round(Number(data?.rep) || 1))
   }
 
-  // Repetitions of the loop: at most MAX_REP_ITERATIONS iterations in all
+  // Repetitions of the loop: at most MAX_REP_INSTRUCTIONS simulated instructions in all
   // the block of instructions after each call of the loop (rows after the loop body)
   const epilogue  = computed(() => simState.simulatedProcess?.epilogue ?? [])
   const bodyCount = computed(() => simState.simulatedProcess?.instruction_list?.length ?? 0)
   const maxRep = computed(() => {
     const iters = programOptions.N / (programOptions.stride || 1)
-    return Math.max(1, Math.floor(MAX_REP_ITERATIONS / Math.max(1, iters)))
+    return maxRepetitions(iters, bodyCount.value, epilogue.value.length)
   })
   const repModel = computed({
     get: () => programOptions.rep ?? 1,
@@ -625,7 +625,7 @@
             S={{ programOptions.stride }}
           </span>
           <span class="iters-label rep-part" id="program-rep-label"
-                :title="t('Rep = calls of the loop (the whole function), 1 - {max}: the simulator runs Rep × N/S iterations, at most {limit}.', { max: maxRep, limit: MAX_REP_ITERATIONS.toLocaleString('en-US') }) +
+                :title="t('Rep = calls of the loop (the whole function), 1 - {max}: the simulator runs Rep × N/S iterations, at most {limit} instructions in all.', { max: maxRep, limit: MAX_REP_INSTRUCTIONS.toLocaleString('en-US') }) +
                         (simState.simulatedProcess?.epilogue?.length ? ' ' + t('After each call, the block of instructions below the loop.') : '')">
             Rep:
           </span>

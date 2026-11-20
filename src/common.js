@@ -564,9 +564,16 @@ export function migrateTutorialFlow(tutorial) {
   return { ...tutorial, flowVersion: TUTORIAL_FLOW_VERSION, steps }
 }
 
-// Repetitions of the loop (calls of the function): at most this number of iterations in all
-// (the same limit as RVCAT: the simulation takes about 0.6 ms per iteration natively)
-export const MAX_REP_ITERATIONS = 10000
+// Repetitions of the loop (calls of the function): at most this number of simulated instructions
+// in all, Rep × (N/S × instructions of the loop + instructions of the block after each call). The
+// same limit as RVCAT: the time of a simulation grows with the simulated instructions.
+export const MAX_REP_INSTRUCTIONS = 200000
+
+// The largest Rep allowed: iterations of one call, instructions of the loop and of the block
+export function maxRepetitions(iterations, loopInstructions, blockInstructions = 0) {
+  const perCall = Math.max(1, iterations) * Math.max(1, loopInstructions) + Math.max(0, blockInstructions)
+  return Math.max(1, Math.floor(MAX_REP_INSTRUCTIONS / perCall))
+}
 
 // Fields of the repetitions sent to RVCAT with a program: the calls of the loop, whether they are
 // independent (they can overlap), the elements that each array advances in each call, and the

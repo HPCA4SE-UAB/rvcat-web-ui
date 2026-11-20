@@ -389,3 +389,14 @@ describe('tutorial flow migration', () => {
     expect(createTutorialStepId()).not.toBe(createTutorialStepId())
   })
 })
+
+describe('maxRepetitions', () => {
+  it('limits Rep × (iterations × instructions of the loop + instructions of the block) to MAX_REP_INSTRUCTIONS', async () => {
+    const { maxRepetitions, MAX_REP_INSTRUCTIONS } = await import('./common')
+    expect(MAX_REP_INSTRUCTIONS).toBe(200000)
+    expect(maxRepetitions(500, 7)).toBe(57)          // 57 × 3,500 = 199,500
+    expect(maxRepetitions(500, 7, 10)).toBe(56)      // 57 × 3,510 > 200,000
+    expect(maxRepetitions(20000, 10)).toBe(1)
+    expect(maxRepetitions(100000, 10)).toBe(1)       // at least one call
+  })
+})
