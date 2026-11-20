@@ -28,7 +28,7 @@
     nFillBuffers:  'Misses that can be in progress at the same time (blocks being filled)',
     nWriteBuffers: 'Evicted dirty blocks that can wait to be written to main memory',
     rThru:         'Waiting LOAD instructions that can receive their data from fill buffers in each cycle',
-    nStoreBuffers: 'Stores from dispatch until they are written into the cache: a store retires without waiting for its block, and waits here; when it is full, dispatch stops',
+    nStoreBuffers: 'One entry per STORE (stores to the same block are not combined), from dispatch until it is written into the cache: a store retires without waiting for its block, and waits here; when it is full, dispatch stops',
   }
 
   function apply() {
@@ -52,7 +52,6 @@
     <div class="cache-overlay" id="cache-config-overlay">
       <div class="cache-window" role="dialog" aria-modal="true" aria-labelledby="cache-config-title" id="cache-config-window">
         <h3 id="cache-config-title">{{ t('Cache of the processor') }}</h3>
-        <p class="cache-intro">{{ t('Change the parameters and press Apply. The simulator is blocked until the window is closed.') }}</p>
         <CacheDiagram :values="values" :active="activeKey" />
         <table class="cache-fields">
           <tr v-for="(f, i) in CACHE_FIELDS" :key="f.key" :class="{ disabled: f.key !== 'nBlocks' && noCache, active: activeKey === f.key }"
@@ -105,7 +104,7 @@
     overflow:      auto;
     box-shadow:    0 8px 30px rgba(0, 0, 0, 0.3);
   }
-  h3 { margin: 0 0 4px; color: #0b2e5c; font-size: 1.25rem; }
+  h3 { margin: 0 0 6px; color: #0b2e5c; font-size: 1.25rem; }
   .cache-intro { margin: 0 0 12px; color: #444; }
   .cache-fields { border-collapse: collapse; width: 100%; }
   .cache-fields th { text-align: left; padding: 5px 12px 5px 0; white-space: nowrap; font-weight: 600; }
