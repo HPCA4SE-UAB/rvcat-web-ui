@@ -2,7 +2,7 @@
   "lesson": "L1-cache",
   "title": "Lesson 1: the cache and a sum of a vector",
   "description": "<p>Four versions of a loop that adds the elements of a vector (scalar, SIMD, and unrolled with several accumulators) on a Golden Cove core with a small cache: latency, throughput and memory bandwidth.</p>",
-  "version": 2,
+  "version": 3,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -693,6 +693,7 @@
       "mIssueTime": 1,
       "nFillBuffers": 16,
       "nWriteBuffers": 16,
+      "nStoreBuffers": 114,
       "rThru": 2,
       "latencies": {
         "INT": 1,

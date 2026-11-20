@@ -151,6 +151,7 @@
         process.nBlocks,
         process.nFillBuffers,
         process.nWriteBuffers,
+        process.nStoreBuffers,
         process.instruction_list
       ]
     },
@@ -164,6 +165,7 @@
       simState.simulatedProcess.mIssueTime,
       simState.simulatedProcess.nFillBuffers,
       simState.simulatedProcess.nWriteBuffers,
+      simState.simulatedProcess.nStoreBuffers,
       simState.simulatedProcess.rThru
     ],
     requestTimeline,
@@ -216,6 +218,7 @@
                                     blkSize, nBlocks, mPenalty, mIssueTime,
                                     nFillBuffers: nFillBuffers ?? 2,
                                     nWriteBuffers: nWriteBuffers ?? 2,
+                                    nStoreBuffers: process.nStoreBuffers ?? 16,
                                     rThru: rThru ?? 1,
                                     ...repetitionFields(toRaw(process)),
                                     instruction_list: toRaw(instruction_list)}, null, 2),
@@ -505,6 +508,10 @@
     const cacheState = timeline.value.resource_usage?.cache_state
     const fillBufferState = timeline.value.resource_usage?.fill_buffers
     const writeBufferState = timeline.value.resource_usage?.write_buffers
+    const storeBufferState = timeline.value.resource_usage?.store_buffer
+    const storeBufferByCycle = Array.from({ length: totalCycles }, () => null)
+    for (const snapshot of storeBufferState?.snapshots ?? [])
+      if (snapshot.cycle >= 0 && snapshot.cycle < totalCycles) storeBufferByCycle[snapshot.cycle] = snapshot
     const memoryRequests = timeline.value.resource_usage?.mm_requests ?? []
     const bufferSlotsByCycle = bufferState => {
       const byCycle = Array.from({ length: totalCycles }, () => [])
@@ -584,6 +591,15 @@
             cycles: writeBuffersByCycle.map(slots => Boolean(slots[bufferIndex]?.valid)),
             bufferStates: writeBuffersByCycle
           }))
+        : []),
+      ...(timelineOptions.showCache && cacheEnabled.value && storeBufferState
+        ? [{
+            label: 'SB',
+            storeBuffer: true,
+            capacity: storeBufferState.capacity,
+            cycles: storeBufferByCycle.map(snap => Boolean(snap && (snap.stores + snap.retired.length) > 0)),
+            snapshots: storeBufferByCycle,
+          }]
         : [])
     ]
     resourceRowCount = resourceRows.length
@@ -793,7 +809,9 @@
         rowIdx: -2,
         cellType: 'resource-label',
         resourceIndex: resourceRowIndex,
-        tooltip: resource.cacheLineIndex !== undefined
+        tooltip: resource.storeBuffer
+          ? t('SB: store buffer ({n} entries). Each store takes an entry when it is dispatched and frees it when it is written into the cache, after it retires. The bar shows how full it is; F: full (dispatch waits).', { n: resource.capacity })
+          : resource.cacheLineIndex !== undefined
           ? t('Cache line {i}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer', { i: resource.cacheLineIndex })
           : resource.bufferType === 'fill'
             ? t('Fill buffer {i}: holds one distinct block fill; misses to the same block share the entry', { i: resource.bufferIndex })
@@ -846,7 +864,16 @@
           })
         }
         let marker = ''
-        if (resource.bufferType === 'fill' && bufferEntry?.valid) {
+        const sbSnap = resource.storeBuffer ? resource.snapshots[cycle] : null
+        const sbUsed = sbSnap ? sbSnap.stores + sbSnap.retired.length : 0
+        if (sbUsed > 0) {           // occupancy of the store buffer: a bar from the bottom of the cell
+          const h = Math.max(2, Math.round((cellH - 2) * Math.min(1, sbUsed / resource.capacity)))
+          ctx.fillStyle = sbUsed >= resource.capacity ? '#e57373' : '#90b4e0'
+          ctx.fillRect(resourceX + 1, resourceY + cellH - 1 - h, cellW - 2, h)
+        }
+        if (resource.storeBuffer) {
+          if (sbUsed >= resource.capacity) marker = 'F'
+        } else if (resource.bufferType === 'fill' && bufferEntry?.valid) {
           marker = 'R'
         } else if (resource.bufferType === 'write' && bufferEntry?.valid) {
           marker = 'W'
@@ -904,7 +931,10 @@
           resourceIndex: resourceRowIndex,
           linkedInstructionRows,
           linkedResourceRows,
-          tooltip: resource.bufferType && !bufferEntry?.valid
+          tooltip: resource.storeBuffer
+            ? t('Store buffer: {u} of {n} entries ({s} stores in the ROB, {r} retired waiting to be written into the cache)',
+                { u: sbUsed, n: resource.capacity, s: sbSnap?.stores ?? 0, r: sbSnap?.retired.length ?? 0 })
+            : resource.bufferType && !bufferEntry?.valid
             ? t(resource.bufferType === 'fill' ? 'Fill buffer {i}: empty' : 'Write buffer {i}: empty', { i: resource.bufferIndex })
             : resource.bufferType === 'fill'
               ? t('Fill block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +

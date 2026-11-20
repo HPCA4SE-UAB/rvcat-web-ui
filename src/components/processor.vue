@@ -550,6 +550,8 @@
       data.nWriteBuffers = 2
     if (!Number.isInteger(data.rThru) || data.rThru < 1 || data.rThru > 32)
       data.rThru = 1
+    if (!Number.isInteger(data.nStoreBuffers) || data.nStoreBuffers < 1 || data.nStoreBuffers > 256)
+      data.nStoreBuffers = 16
     if (!Number.isInteger(data.bPenalty) || data.bPenalty < 0 || data.bPenalty > 99)
       data.bPenalty = 5
     if (Number(data.mPenalty) < Number(data.mIssueTime)) {
@@ -738,7 +740,8 @@
   const cacheConfig = computed(() => {
     const p = simState.simulatedProcess ?? {}
     return { nBlocks: p.nBlocks ?? 0, blkSize: p.blkSize ?? 64, mPenalty: p.mPenalty ?? 10, mIssueTime: p.mIssueTime ?? 1,
-             nFillBuffers: p.nFillBuffers ?? 2, nWriteBuffers: p.nWriteBuffers ?? 2, rThru: p.rThru ?? 1 }
+             nFillBuffers: p.nFillBuffers ?? 2, nWriteBuffers: p.nWriteBuffers ?? 2, rThru: p.rThru ?? 1,
+             nStoreBuffers: p.nStoreBuffers ?? 16 }
   })
   function applyCache(values) {
     Object.assign(simState.simulatedProcess, values)

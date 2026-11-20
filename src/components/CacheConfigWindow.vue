@@ -26,7 +26,8 @@
     mIssueTime:    'Minimum cycles between two transfers of main memory (its bandwidth)',
     nFillBuffers:  'Misses that can be in progress at the same time (blocks being filled)',
     nWriteBuffers: 'Evicted dirty blocks that can wait to be written to main memory',
-    rThru:         'Waiting instructions that can receive their data from the fill buffers in each cycle: LOADs, and STOREs that missed (a cache hit gets its data through its execution port and does not use it)',
+    rThru:         'Waiting LOAD instructions that can receive their data from fill buffers in each cycle',
+    nStoreBuffers: 'Stores from dispatch until they are written into the cache: a store retires without waiting for its block, and waits here; when it is full, dispatch stops',
   }
 
   function apply() {

@@ -47,6 +47,7 @@ export const CACHE_FIELDS = [
   { key: 'mIssueTime',    label: 'Memory issue time (cycles)', min: 1, max: 99 },
   { key: 'nFillBuffers',  label: 'Fill buffers',              min: 1, max: 32 },
   { key: 'nWriteBuffers', label: 'Write buffers',             min: 1, max: 32 },
+  { key: 'nStoreBuffers', label: 'Store buffer (entries)',    min: 1, max: 256 },
   { key: 'rThru',         label: 'Return throughput (per cycle)', min: 1, max: 32 },
 ]
 
@@ -1139,6 +1140,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     const CacheBlockSize = process.blkSize || 32
     const FillBuffers    = process.nFillBuffers || 2
     const WriteBuffers   = process.nWriteBuffers || 2
+    const StoreBuffers   = process.nStoreBuffers || 16
     const ReturnThroughput = process.rThru || 1
 
     function escapeHtml(value) {
@@ -1339,12 +1341,14 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
       : t('No cache: every memory access takes the latency of its instruction.')
     if (allowEdit)
       cacheEdit += ' ' + t('Click to configure the cache (all its parameters, in a window).')
+    if (CacheBlocks > 0)
+      cacheEdit += ' ' + t('Store buffer (SB): {n} entries; a store waits there, after it retires, until it is written into the cache.', { n: StoreBuffers })
 
     let cache_row = ""
     // ---- Cache configuration ----
     if (CacheBlocks > 0) {
       cache_row = `<TR>
-        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}${usage?.memory != null ? '\n' + t('Percentage: main memory busy in the last simulation.') : ''}"><FONT POINT-SIZE="22">${EDIT}<B>Cache:</B>&nbsp;${CacheBlocks} ${t('blocks')}&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;${t('Penalty')}: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}${usage?.memory != null ? '&nbsp;&nbsp;MM:' + usageText(usage.memory, '&nbsp;') : ''}</FONT></TD>
+        <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="cache" TITLE="${cacheEdit}${usage?.memory != null ? '\n' + t('Percentage: main memory busy in the last simulation.') : ''}"><FONT POINT-SIZE="22">${EDIT}<B>Cache:</B>&nbsp;${CacheBlocks} ${t('blocks')}&nbsp;x&nbsp;${CacheBlockSize} bytes&nbsp;&nbsp;${t('Penalty')}: ${CachePenalty}<BR ALIGN="LEFT"/>IssueTime: ${CacheIssueTime}&nbsp;FillBuff: ${FillBuffers}&nbsp;WrtBuff: ${WriteBuffers}&nbsp;RetThru: ${ReturnThroughput}&nbsp;SB: ${StoreBuffers}${usage?.memory != null ? '&nbsp;&nbsp;MM:' + usageText(usage.memory, '&nbsp;') : ''}</FONT></TD>
       </TR>`
     } else {
       cache_row = `<TR>

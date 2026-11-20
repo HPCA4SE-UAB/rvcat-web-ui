@@ -258,6 +258,7 @@
       if (proc1.mPenalty   !== proc2.mPenalty)   return false;
       if (proc1.nFillBuffers !== proc2.nFillBuffers) return false;
       if (proc1.nWriteBuffers !== proc2.nWriteBuffers) return false;
+      if ((proc1.nStoreBuffers ?? 16) !== (proc2.nStoreBuffers ?? 16)) return false;
       if (proc1.rThru !== proc2.rThru) return false;
     }
 
@@ -619,6 +620,7 @@
       mPenalty: process.mPenalty,
       nFillBuffers: process.nFillBuffers ?? 2,
       nWriteBuffers: process.nWriteBuffers ?? 2,
+      nStoreBuffers: process.nStoreBuffers ?? 16,
       rThru: process.rThru ?? 1,
       instruction_list: JSON.parse(JSON.stringify(instructionList))
     }
@@ -636,6 +638,7 @@
                                               bPenalty: process.bPenalty ?? 5, blkSize, nBlocks, mPenalty, mIssueTime,
                                               nFillBuffers: nFillBuffers ?? 2,
                                               nWriteBuffers: nWriteBuffers ?? 2,
+                                              nStoreBuffers: process.nStoreBuffers ?? 16,
                                               rThru: rThru ?? 1,
                                               ...repetitionFields(toRaw(process)),
                                               instruction_list: toRaw(instructionList)}, null, 2),
@@ -904,6 +907,13 @@
                   :title="t('Primary misses of each call: {list}', { list: repetitions.missesList.slice(0, 40).map(m => m.toLocaleString('en-US')).join(', ') + (repetitions.missesList.length > 40 ? ', …' : '') })">
               {{ t('1st') }} {{ repetitions.firstMisses.toLocaleString('en-US') }} ·
               {{ t('next') }} {{ repetitions.nextMisses === null ? '—' : Number(repetitions.nextMisses.toFixed(1)).toLocaleString('en-US') }}
+            </span>
+          </div>
+          <div v-if="simState.executionResults?.store_buffer_full_cycles > 0" class="simulation-inline-item stat-cache" id="sb-full-item">
+            <label>{{ t('SB full:') }}</label>
+            <span id="sb-full-output"
+                  :title="t('Cycles in which dispatch waited for a free entry of the store buffer ({n} entries)', { n: simState.simulatedProcess?.nStoreBuffers ?? 16 })">
+              {{ simState.executionResults.store_buffer_full_cycles.toLocaleString('en-US') }} {{ t('cycles') }}
             </span>
           </div>
           <div class="simulation-inline-item stat-cache">

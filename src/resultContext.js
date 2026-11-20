@@ -7,7 +7,7 @@ import { t }              from '@/i18n'
 const PROCESSOR_FIELDS = [
   'dispatch', 'retire', 'ROBsize', 'bPenalty',
   'nBlocks', 'blkSize', 'mPenalty', 'mIssueTime',
-  'nFillBuffers', 'nWriteBuffers', 'rThru'
+  'nFillBuffers', 'nWriteBuffers', 'rThru', 'nStoreBuffers'
 ]
 
 // Snapshot of what was simulated: program name, N, the complete processor configuration and
@@ -110,7 +110,8 @@ export function resultContextLines(context) {
       (sim.speculation ? ` · ${t('after a misprediction')}: ${sim.speculation === 'wrong-path' ? t('wrong path executed') : t('dispatch stalls')}` : ''))
   if (p.nBlocks > 0) {
     lines.push(`  Cache: ${p.nBlocks} ${t('blocks')} × ${p.blkSize} B · ${t('Miss penalty')} ${p.mPenalty} · ${t('Issue time')} ${p.mIssueTime}`)
-    lines.push(`         Fill buffers ${p.nFillBuffers} · Write buffers ${p.nWriteBuffers} · rThru ${p.rThru}`)
+    lines.push(`         Fill buffers ${p.nFillBuffers} · Write buffers ${p.nWriteBuffers} · rThru ${p.rThru}` +
+               (p.nStoreBuffers ? ` · SB ${p.nStoreBuffers}` : ''))
   } else {
     lines.push(`  Cache: ${t('none')}`)
   }

@@ -142,4 +142,6 @@ export default {
   "Name of the result (click to change it)": { es: "Nombre del resultado (haz clic para cambiarlo)", ca: "Nom del resultat (fes clic per canviar-lo)" },
   "Download this result as a JSON file": { es: "Descargar este resultado como un fichero JSON", ca: "Descarregar aquest resultat com un fitxer JSON" },
   "Remove this result": { es: "Eliminar este resultado", ca: "Eliminar aquest resultat" },
+  "SB full:": { es: "SB lleno:", ca: "SB ple:" },
+  "Cycles in which dispatch waited for a free entry of the store buffer ({n} entries)": { es: "Ciclos en los que el dispatch esperó una entrada libre del store buffer ({n} entradas)", ca: "Cicles en què el dispatch va esperar una entrada lliure del store buffer ({n} entrades)" },
 }

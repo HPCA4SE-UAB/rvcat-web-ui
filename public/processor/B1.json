@@ -9,6 +9,7 @@
   "mPenalty": 12,
   "mIssueTime": 8,
   "nFillBuffers": 2,
+  "nStoreBuffers": 16,
   "nWriteBuffers": 2,
   "rThru": 1,
   "latencies": {

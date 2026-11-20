@@ -9,7 +9,7 @@
     {
       "name": "L0-CPU",
       "dispatch": 4, "retire": 4, "ROBsize": 100, "bPenalty": 5,
-      "nBlocks": 0, "blkSize": 64, "mPenalty": 10, "mIssueTime": 1, "nFillBuffers": 2, "nWriteBuffers": 2, "rThru": 1,
+      "nBlocks": 0, "blkSize": 64, "mPenalty": 10, "mIssueTime": 1, "nFillBuffers": 2, "nWriteBuffers": 2, "rThru": 1, "nStoreBuffers": 16,
       "latencies": { "INT": 1, "BRANCH": 1, "FLOAT": 2, "MEM": 4, "MEM.LOAD": 4, "MEM.STORE": 1,
                      "VINT": 1, "VFLOAT": 2, "VMEM": 4, "VMEM.LOAD": 4, "VMEM.STORE": 1 },
       "ports": {
