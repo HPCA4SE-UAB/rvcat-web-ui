@@ -5,6 +5,7 @@
   import { reactive, computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
   import { t } from '@/i18n'
   import { CACHE_FIELDS, CACHE_BLOCK_SIZES, validateCacheConfig, getAllowedCacheBlockSizes } from '@/common'
+  import CacheDiagram from '@/components/CacheDiagram.vue'
 
   const props = defineProps({
     config:          { type: Object, required: true },   // current values of the processor
@@ -41,6 +42,7 @@
     if (e.key === 'Enter' && valid.value && e.target?.tagName !== 'SELECT') { e.preventDefault(); apply() }
   }
   const firstField = ref(null)
+  const activeKey  = ref('')      // field being edited: its element is highlighted in the figure
   onMounted(() => { window.addEventListener('keydown', onKey, true); nextTick(() => firstField.value?.[0]?.focus()) })
   onUnmounted(() => window.removeEventListener('keydown', onKey, true))
 </script>
@@ -51,17 +53,20 @@
       <div class="cache-window" role="dialog" aria-modal="true" aria-labelledby="cache-config-title" id="cache-config-window">
         <h3 id="cache-config-title">{{ t('Cache of the processor') }}</h3>
         <p class="cache-intro">{{ t('Change the parameters and press Apply. The simulator is blocked until the window is closed.') }}</p>
+        <CacheDiagram :values="values" :active="activeKey" />
         <table class="cache-fields">
-          <tr v-for="(f, i) in CACHE_FIELDS" :key="f.key" :class="{ disabled: f.key !== 'nBlocks' && noCache }">
+          <tr v-for="(f, i) in CACHE_FIELDS" :key="f.key" :class="{ disabled: f.key !== 'nBlocks' && noCache, active: activeKey === f.key }"
+              @mouseenter="activeKey = f.key">
             <th><label :for="`cache-${f.key}`" :title="t(HELP[f.key])">{{ t(f.label) }}</label></th>
             <td>
               <select v-if="f.key === 'blkSize'" :id="`cache-${f.key}`" v-model.number="values.blkSize" :disabled="noCache"
+                      @focus="activeKey = f.key"
                       :class="{ invalid: errors.blkSize }" :title="t(HELP[f.key])">
                 <option v-for="size in CACHE_BLOCK_SIZES" :key="size" :value="size" :disabled="!allowedSizes.includes(size)">{{ size }}</option>
               </select>
               <input v-else :id="`cache-${f.key}`" :ref="i === 0 ? 'firstField' : undefined" type="number" step="1"
                      :min="f.key === 'mPenalty' ? Math.max(1, Number(values.mIssueTime) || 1) : f.min" :max="f.max"
-                     v-model="values[f.key]" :disabled="f.key !== 'nBlocks' && noCache"
+                     v-model="values[f.key]" :disabled="f.key !== 'nBlocks' && noCache" @focus="activeKey = f.key"
                      :class="{ invalid: errors[f.key] }" :title="t(HELP[f.key])" />
             </td>
             <td class="cache-note">
@@ -95,7 +100,7 @@
     background:    white;
     border-radius: 10px;
     padding:       18px 22px;
-    max-width:     min(46rem, calc(100vw - 32px));
+    width:         min(54rem, calc(100vw - 32px));
     max-height:    calc(100vh - 32px);
     overflow:      auto;
     box-shadow:    0 8px 30px rgba(0, 0, 0, 0.3);
@@ -114,6 +119,8 @@
   }
   .cache-fields .invalid { border-color: #c62828; background: #fff0f0; }
   .cache-fields tr.disabled th { color: #888; }
+  .cache-fields tr.active th { color: #1a4fb3; }
+  .cache-fields th, .cache-fields td { padding-top: 3px !important; padding-bottom: 3px !important; }
   .cache-note { font-size: 0.875rem; }
   .cache-hint  { color: #555; }
   .cache-error { color: #b3261e; font-weight: 600; }
