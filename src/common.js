@@ -39,6 +39,42 @@ export function getAllowedCacheBlockSizes(instructionList = []) {
   return CACHE_BLOCK_SIZES.filter(size => size >= largestAccessSize)
 }
 
+// Parameters of the cache (the window of the Processor panel), with their limits
+export const CACHE_FIELDS = [
+  { key: 'nBlocks',       label: 'Blocks',                    min: 0, max: 32 },
+  { key: 'blkSize',       label: 'Block size (bytes)' },
+  { key: 'mPenalty',      label: 'Miss penalty (cycles)',     min: 1, max: 99 },
+  { key: 'mIssueTime',    label: 'Memory issue time (cycles)', min: 1, max: 99 },
+  { key: 'nFillBuffers',  label: 'Fill buffers',              min: 1, max: 32 },
+  { key: 'nWriteBuffers', label: 'Write buffers',             min: 1, max: 32 },
+  { key: 'rThru',         label: 'Return throughput (per cycle)', min: 1, max: 32 },
+]
+
+// Errors of a cache configuration, by field ({} when it is correct). With 0 blocks there is no
+// cache and the other parameters are not used. Messages are in English (translated by the caller).
+export function validateCacheConfig(cfg, instructionList = []) {
+  const errors = {}
+  const int = (v) => Number.isInteger(Number(v)) && String(v).trim() !== '' ? Number(v) : null
+  for (const f of CACHE_FIELDS) {
+    if (f.key === 'blkSize') continue
+    if (f.key !== 'nBlocks' && int(cfg.nBlocks) === 0) continue
+    const v = int(cfg[f.key])
+    if (v === null) errors[f.key] = { text: 'Write an integer number' }
+    else if (v < f.min || v > f.max) errors[f.key] = { text: 'From {min} to {max}', args: { min: f.min, max: f.max } }
+  }
+  if (int(cfg.nBlocks) > 0) {
+    const allowed = getAllowedCacheBlockSizes(instructionList)
+    const size = int(cfg.blkSize)
+    if (!allowed.length)
+      errors.blkSize = { text: "No block size can hold this program's largest {size}-byte memory access", args: { size: getLargestMemoryAccessSize(instructionList) } }
+    else if (!allowed.includes(size))
+      errors.blkSize = { text: 'One of {sizes} bytes (at least the largest memory access of the program)', args: { sizes: allowed.join(', ') } }
+    if (!errors.mPenalty && !errors.mIssueTime && int(cfg.mPenalty) < int(cfg.mIssueTime))
+      errors.mPenalty = { text: 'It cannot be less than the memory issue time ({n})', args: { n: int(cfg.mIssueTime) } }
+  }
+  return errors
+}
+
 // CVT converts to the type and size of the instruction (the destination): INT.CVT float -> int,
 // FLOAT.CVT int -> float or single <-> double
 export const typeOperations = {
@@ -1202,11 +1238,28 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     // editable cells are marked with a pencil
     const EDIT = allowEdit ? '✎&nbsp;' : ''
 
+    // − / + buttons in the cells of the parameters that can be changed (options.steppers: set of
+    // fields: dispatch, retire, rob, bpenalty). The text of the cell keeps its own action.
+    const steppers = options.steppers ?? new Set()
+    const stepButton = (kind, field) => `<TD BORDER="1" COLOR="#7aa2e3" BGCOLOR="#ffffff" WIDTH="40" HEIGHT="28" FIXEDSIZE="TRUE" HREF="#" ID="${kind}:${field}" TITLE="${kind === 'dec' ? t('Decrease (hold to repeat)') : t('Increase (hold to repeat)')}"><FONT POINT-SIZE="22" COLOR="#1a4fb3"><B>&nbsp;${kind === 'dec' ? '−' : '+'}&nbsp;</B></FONT></TD>`
+    // a row cell: [text | − | +] when the field has buttons, otherwise the text cell itself
+    const paramCell = (field, attrs, title, content) => steppers.has(field)
+      ? `<TD ${attrs} CELLPADDING="0"><TABLE BORDER="0" CELLSPACING="2" CELLPADDING="1"><TR><TD HREF="#" ID="${field}" TITLE="${title}" ALIGN="LEFT" WIDTH="360">${content}</TD>${stepButton('dec', field)}${stepButton('inc', field)}</TR></TABLE></TD>`
+      : `<TD ${attrs} HREF="#" ID="${field}" TITLE="${title}">${content}</TD>`
+
     // ---- Dispatch + ROB ----
     const click = allowEdit ? ' ' + t('Click to edit it.') : ''
+    const robTitle = `${t('ROB (reorder buffer): up to {n} instructions in flight, from dispatch to retire; when it is full, dispatch stops.', { n: ROBsize })}${click}`
+    const robContent = `<FONT POINT-SIZE="22">${steppers.has('rob') ? '' : EDIT + '<BR/><BR/>'}<B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="22">${t('entries')}</FONT>`
+    const robRowspan = total_rows + 6 + (unassigned.length ? 1 : 0)
+    const robCell = steppers.has('rob')
+      ? `<TD ROWSPAN="${robRowspan}" BGCOLOR="#f0f0f0" CELLPADDING="4" ALIGN="CENTER" VALIGN="MIDDLE"><TABLE BORDER="0" CELLSPACING="3" CELLPADDING="1"><TR><TD COLSPAN="2" HREF="#" ID="rob" TITLE="${robTitle}">${robContent}</TD></TR><TR>${stepButton('dec', 'rob')}${stepButton('inc', 'rob')}</TR></TABLE></TD>`
+      : `<TD ROWSPAN="${robRowspan}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${robTitle}" ALIGN="CENTER" VALIGN="MIDDLE">${robContent}</TD>`
     let decode_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="dispatch" TITLE="${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}${usageTitle}"><FONT POINT-SIZE="22">${EDIT}<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}${usageText(usage?.dispatch)}</FONT></TD>
-      <TD ROWSPAN="${total_rows + 6 + (unassigned.length ? 1 : 0)}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${t('ROB (reorder buffer): up to {n} instructions in flight, from dispatch to retire; when it is full, dispatch stops.', { n: ROBsize })}${click}" ALIGN="CENTER" VALIGN="MIDDLE"><FONT POINT-SIZE="22">${EDIT}<BR/><BR/><B>ROB</B><BR/><BR/><B>${ROBsize}</B></FONT><BR/><FONT POINT-SIZE="22">${t('entries')}</FONT></TD>
+      ${paramCell('dispatch', `COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"`,
+        `${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}${usageTitle}`,
+        `<FONT POINT-SIZE="22">${steppers.has('dispatch') ? '' : EDIT}<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}${usageText(usage?.dispatch)}</FONT>`)}
+      ${robCell}
     </TR>`
 
     // ---- Waiting Buffer (the scheduler policy is an option of the simulation) ----
@@ -1285,7 +1338,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
           { blocks: CacheBlocks, size: CacheBlockSize, penalty: CachePenalty, issue: CacheIssueTime, fill: FillBuffers, write: WriteBuffers, ret: ReturnThroughput })
       : t('No cache: every memory access takes the latency of its instruction.')
     if (allowEdit)
-      cacheEdit += ' ' + t('Click repeatedly to edit each parameter (0 blocks: no cache).')
+      cacheEdit += ' ' + t('Click to configure the cache (all its parameters, in a window).')
 
     let cache_row = ""
     // ---- Cache configuration ----
@@ -1301,12 +1354,16 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
     // ---- Branch misprediction penalty ----
     let penalty_row = `<TR>
-      <TD COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="bpenalty" TITLE="${t('Branch penalty: {n} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.', { n: bPenalty })}${click}${usage?.branch != null ? '\n' + t('Percentage: mispredicted conditional branches in the last simulation.') : ''}"><FONT POINT-SIZE="22">${EDIT}<B>${t('Branch penalty')}:&nbsp;</B>&nbsp;&nbsp;${bPenalty} ${t('cycles')}${usage?.branch != null ? '&nbsp;&nbsp;' + t('Mispred') + ':' + usageText(usage.branch, '&nbsp;') : ''}</FONT></TD>
+      ${paramCell('bpenalty', `COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"`,
+        `${t('Branch penalty: {n} cycles to refill the front-end after a mispredicted conditional branch (if c skip k) resolves.', { n: bPenalty })}${click}${usage?.branch != null ? '\n' + t('Percentage: mispredicted conditional branches in the last simulation.') : ''}`,
+        `<FONT POINT-SIZE="22">${steppers.has('bpenalty') ? '' : EDIT}<B>${t('Branch penalty')}:&nbsp;</B>&nbsp;&nbsp;${bPenalty} ${t('cycles')}${usage?.branch != null ? '&nbsp;&nbsp;' + t('Mispred') + ':' + usageText(usage.branch, '&nbsp;') : ''}</FONT>`)}
     </TR>`
 
     // ---- Retire ----
     let reg_row = `<TR>
-      <TD WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee" HREF="#" ID="retire" TITLE="${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}${usageTitle}"><FONT POINT-SIZE="22">${EDIT}<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}${usageText(usage?.retire)}</FONT></TD>
+      ${paramCell('retire', `WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"`,
+        `${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}${usageTitle}`,
+        `<FONT POINT-SIZE="22">${steppers.has('retire') ? '' : EDIT}<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}${usageText(usage?.retire)}</FONT>`)}
     </TR>`
 
     const dot = `

@@ -2,6 +2,7 @@
   import { t, locale } from '@/i18n'
   import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
+  import CacheConfigWindow                                              from '@/components/CacheConfigWindow.vue'
   import { uploadJSON, downloadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
            createGraphVizGraph, get_processor_dot, resourceUsage, CACHE_BLOCK_SIZES,
            getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations, typeSizes,
@@ -69,16 +70,9 @@
   }
 
   const activeField = ref("rob");
-  let cacheConfigOptions = [
-    "cache_nBlk",
-    "cache_BlkSz",
-    "cache_mPenalty",
-    "cache_mIssueTime",
-    "cache_nFillBuffers",
-    "cache_nWriteBuffers",
-    "cache_rThru"
-  ]
-  let currentCacheOption = 0
+  // The field of the header (to type a value) is shown after a click on the text of a cell of
+  // the diagram; the − / + buttons of the diagram do not need it
+  const fieldVisible = ref(false)
 
   const FIELD_CONFIG = {
     rob: {
@@ -502,6 +496,7 @@
   };
 
   const reloadProcessor = async () => {
+    fieldVisible.value = false
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
       const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
@@ -598,7 +593,7 @@
     try {
       const dotCode      = get_processor_dot (simState.simulatedProcess, true, simState.highlightedPort,
                                               { collapsed: processorOptions.opsCollapsed, ports: !locked('processor.ports'),
-                                                usage: shownUsage() })
+                                                usage: shownUsage(), steppers: stepperFields() })
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {
@@ -624,6 +619,7 @@
 
             const action = g.id.slice(2)
             console.log("Action:", action)
+            if (action.startsWith('dec:') || action.startsWith('inc:')) return   // on pointerdown
 
             // locked by the lesson: the cell only shows its explanation
             const field = action.startsWith('op:') ? null : action.startsWith('port:') ? 'ports' : CELL_FIELD[action]
@@ -658,6 +654,7 @@
               case 'retire':
               case 'bpenalty':
                 activeField.value = action
+                fieldVisible.value = true
                 break
 
               case 'port':
@@ -665,8 +662,7 @@
                 break
 
               case 'cache':
-                activeField.value  = cacheConfigOptions[currentCacheOption];
-                currentCacheOption = (currentCacheOption + 1) % cacheConfigOptions.length;
+                showCacheWindow.value = true
                 break
 
               case 'op':
@@ -682,6 +678,12 @@
           })
 
           g.addEventListener('click', clickHandler)
+          const step = g.id.slice(2).match(/^(dec|inc):(\w+)$/)
+          if (step) {
+            const down = (e) => { e.preventDefault(); startStep(step[1], step[2]) }
+            g.addEventListener('pointerdown', down)
+            clickListeners.push({ node: g, handler: down, type: 'pointerdown' })
+          }
         }
       })
     })
@@ -690,6 +692,34 @@
   function lockedMessage() {
     showTemporaryError(simState.lesson ? t('This parameter cannot be changed in this lesson')
                                        : t('The structure of the processor (ports and latencies) is edited in author mode'))
+  }
+
+  // Parameters with − / + buttons on the diagram (those that the lesson does not lock)
+  const STEPPER_FIELDS = ['dispatch', 'retire', 'rob', 'bpenalty']
+  const stepperFields = () => new Set(STEPPER_FIELDS.filter(f => !locked(`processor.${CELL_FIELD[f]}`)))
+
+  // A − / + button of the diagram: one step, repeated while it is held down (the diagram is drawn
+  // again after each step, so the end of the press is caught on the window)
+  function startStep(kind, field) {
+    if (locked(`processor.${CELL_FIELD[field]}`)) return lockedMessage()
+    activeField.value = field
+    stopHold()
+    startHold(kind === 'inc' ? increaseParameter : decreaseParameter)
+    const end = () => { stopHold(); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end) }
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+
+  // ---- Window of the cache: every parameter, checked; the simulator waits until it is closed ----
+  const showCacheWindow = ref(false)
+  const cacheConfig = computed(() => {
+    const p = simState.simulatedProcess ?? {}
+    return { nBlocks: p.nBlocks ?? 0, blkSize: p.blkSize ?? 64, mPenalty: p.mPenalty ?? 10, mIssueTime: p.mIssueTime ?? 1,
+             nFillBuffers: p.nFillBuffers ?? 2, nWriteBuffers: p.nWriteBuffers ?? 2, rThru: p.rThru ?? 1 }
+  })
+  function applyCache(values) {
+    Object.assign(simState.simulatedProcess, values)
+    showCacheWindow.value = false
   }
 
   // Usage of the resources in the last simulation (valid for the current processor and program:
@@ -713,8 +743,8 @@
   })
 
   const removeClickListeners = () => {
-    clickListeners.forEach(({ node, handler }) => {
-      node.removeEventListener('click', handler);
+    clickListeners.forEach(({ node, handler, type }) => {
+      node.removeEventListener(type ?? 'click', handler);
     })
     clickListeners = []
   }
@@ -857,7 +887,7 @@
           <button class="blue-button small-btn" id="port-remove-button" :disabled="portIds.length <= 1" @click="removePort"
                   :title="t('Remove this port')">✕ port</button>
         </template>
-        <template v-else>
+        <template v-else-if="fieldVisible || activeField === 'op'">
         <div class="iters-group rob-group">
           <span class="iters-label"
             :class="{ 'highlight': labelHighlighted }"
@@ -923,6 +953,10 @@
       <div class="simProcessor-img" data-pin-twice="a_toggleops a_addport" v-html="simulatedSvg" v-if="simulatedSvg"></div>
     </div>
   </div>
+
+  <CacheConfigWindow v-if="showCacheWindow" :config="cacheConfig"
+                     :instruction-list="simState.simulatedProcess?.instruction_list ?? []"
+                     @apply="applyCache" @cancel="showCacheWindow = false" />
 
   <Teleport to="body">
     <HelpComponent v-if="showHelp" :position="helpPosition"

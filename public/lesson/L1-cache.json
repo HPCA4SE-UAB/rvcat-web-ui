@@ -1305,7 +1305,7 @@
           "1. Change my predictions",
           "2. Check my predictions"
         ],
-        "description": "<p>In the Processor panel, click the <b>Cache</b> row until its <b>IssueTime</b> is selected, and change it to <b>8</b>. Then simulate the four versions (Store Results to compare them). You can also try m = 4.</p><p>You can explore again, or choose: <b>1.</b> change your predictions, or <b>2.</b> check them.</p>",
+        "description": "<p>In the Processor panel, click the <b>Cache</b> row: in its window, change the <b>Memory issue time</b> to <b>8</b> and press <b>Apply</b>. Then simulate the four versions (Store Results to compare them). You can also try m = 4.</p><p>You can explore again, or choose: <b>1.</b> change your predictions, or <b>2.</b> check them.</p>",
         "actions": [
           "sidePanel:show",
           "switchTo:simulationComponent"

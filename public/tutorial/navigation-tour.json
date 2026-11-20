@@ -65,7 +65,7 @@
     {
       "type": "step",
       "title": "Processor Settings",
-      "description": "Click the cells of the processor table to modify it (widths, ROB, ports, operation types, latencies, cache).<br>\nThe <b>💾</b> button saves the modified processor with a name.",
+      "description": "Use the − and + buttons of the processor diagram to change the widths, the ROB and the branch penalty, and click the Cache row to configure the cache (ports, operation types and latencies: author mode).<br>\nThe <b>💾</b> button saves the modified processor with a name.",
       "selector": ".processor-container",
       "position": "right",
       "action": "switchTo:aboutComponent"
