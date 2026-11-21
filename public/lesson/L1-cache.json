@@ -1301,7 +1301,7 @@
           "processor.cache"
         ],
         "explore": "auto",
-        "exploreHint": "<p>Change the <b>IssueTime</b> of the Cache row of the Processor panel to <b>8</b>, and simulate the four versions. When you are done, click <b>Continue</b>.</p>",
+        "exploreHint": "<p>Click the <b>Cache</b> row of the Processor panel, change the <b>Memory issue time</b> to <b>8</b> and press <b>Apply</b>; then simulate the four versions. When you are done, click <b>Continue</b>.</p>",
         "nextLabels": [
           "1. Change my predictions",
           "2. Check my predictions"

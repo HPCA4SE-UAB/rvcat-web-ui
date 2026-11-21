@@ -1048,6 +1048,11 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
         ...distributionFiles.filter(name => keys.includes(name)),
         ...keys.filter(name => !distributionNames.has(name))
       ];
+    } else if (Array.isArray(optionsObj[availableKey])) {
+      // (stored results) the order of the list is the one of the user (the order of the keys of
+      // the local storage is not); new keys go at the end
+      const previous = optionsObj[availableKey].filter(name => keys.includes(name));
+      keys = [...previous, ...keys.filter(name => !previous.includes(name))];
     }
 
     optionsObj[availableKey] = keys;

@@ -54,6 +54,16 @@ describe('default distributed resources', () => {
     expect(programOptions.currentProgram).toBe('Base')
   })
 
+  it('keeps the order of the stored results (not the order of the keys of the storage)', async () => {
+    for (const name of ['b', 'c', 'a']) localStorage.setItem(`results.${name}`, '{}')
+    const options = { resultName: 'a', availableResults: ['a', 'b', 'c'] }
+    await initResource('result', options, 'resultName', 'availableResults')
+    expect(options.availableResults).toEqual(['a', 'b', 'c'])
+    localStorage.setItem('results.d', '{}')                   // a new result goes at the end
+    await initResource('result', options, 'resultName', 'availableResults')
+    expect(options.availableResults).toEqual(['a', 'b', 'c', 'd'])
+  })
+
   it('orders installed defaults before user resources while preserving the selection', async () => {
     const index = { processor: ['B4', 'B2', 'B1'] }
     vi.stubGlobal('fetch', vi.fn(async () => ({
