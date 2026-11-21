@@ -20,6 +20,10 @@ const SimulationState = reactive({
   processorName:       '',
   instrHighlightedIdx: -1,
   highlightedPort:     -1,
+  highlightedPorts:    [],        // ports highlighted from the timeline (the ports an instruction can use)
+  highlightedStage:    null,      // 'dispatch' | 'retire': stage highlighted in the Processor panel (timeline)
+  programViewOverride: null,      // 'perf': the Program panel shows latency and ports while the timeline needs it
+  programHighlight:    null,      // { rows, field: 'ports' | 'latency' }: cells of the Program panel highlighted
   timelineCriticalPathEnabled: false,
   timelineFit:         null,
   dependenceHighlight: null,      // { producers, vars }: instructions and variables a waiting instruction needs (timeline)      // { width, nonce }: zoom of the timeline asked by a tutorial card

@@ -229,6 +229,10 @@
     }
   }
 
+  // View of the table: the one chosen (type | perf), or perf while the timeline highlights the
+  // latency or the ports of an instruction (simState.programViewOverride)
+  const shownView = computed(() => simState.programViewOverride === 'perf' ? 1 : programOptions.show)
+
   // instructions inside conditional blocks ("if c skip k"): indented
   const blockDepth = computed(() => conditionalDepth(simState.simulatedProcess?.instruction_list ?? []))
 
@@ -659,11 +663,11 @@
                 {{ t('Program') }}
                 <span v-if="simState.simulatedProcess?.description" class="source-mark">{ } C</span>
               </th>
-              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Type') }} </th>
-              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
-              <th class="type-col" v-if="programOptions.show === 0"  style="width: 100px;"> {{ t('Size') }} </th>
-              <th class="type-col" v-if="programOptions.show === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
-              <th class="type-col ports-col" v-if="programOptions.show === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
+              <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Type') }} </th>
+              <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
+              <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Size') }} </th>
+              <th class="type-col" v-if="shownView === 1"  style="width: 100px;"> {{ t('Latency') }} </th>
+              <th class="type-col ports-col" v-if="shownView === 1"  style="width: 200px;"> {{ t('Ports') }} </th>
           </tr>
           </thead>
           <tbody v-if="simState.simulatedProcess !== null">
@@ -692,26 +696,28 @@
                 <span v-for="(part, k) in textParts(inst.text, index)" :key="k"
                       :class="{ 'dep-var': part.mark }">{{ part.text }}</span>
               </td>
-              <td class="type-col" v-if="programOptions.show === 0" :title="t('Instruction type')">
+              <td class="type-col" v-if="shownView === 0" :title="t('Instruction type')">
                 {{ inst.type }}
               </td>
-              <td class="type-col" v-if="programOptions.show === 0" :title="t('Operation type')">
+              <td class="type-col" v-if="shownView === 0" :title="t('Operation type')">
                 {{ inst.oper }}
               </td>
-              <td class="type-col" v-if="programOptions.show === 0" :title="t('Operation size')">
+              <td class="type-col" v-if="shownView === 0" :title="t('Operation size')">
                 {{ inst.size}}
               </td>
-              <td class="type-col" v-if="programOptions.show === 1" :title="t('Instruction Latency')">
+              <td class="type-col" v-if="shownView === 1" :title="t('Instruction Latency')"
+                  :class="{ 'cell-focus': simState.programHighlight?.field === 'latency' && simState.programHighlight.rows.includes(index) }">
                 {{ inst.latency }}
               </td>
-              <td class="type-col ports-col" v-if="programOptions.show === 1" :title="t('Available execution ports')">
+              <td class="type-col ports-col" v-if="shownView === 1" :title="t('Available execution ports')"
+                  :class="{ 'cell-focus': simState.programHighlight?.field === 'ports' && simState.programHighlight.rows.includes(index) }">
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>
             <!-- the block of instructions executed after each call of the loop -->
             <template v-if="epilogue.length">
               <tr class="epilogue-separator">
-                <td :colspan="programOptions.show === 0 ? 5 : 4"
+                <td :colspan="shownView === 0 ? 5 : 4"
                     :title="t('These instructions run once after each call of the loop (Rep calls)')">
                   {{ t('After each call') }}{{ (programOptions.rep ?? 1) > 1 ? ` (×${programOptions.rep})` : '' }}
                 </td>
@@ -725,11 +731,11 @@
                 </td>
                 <td v-else :title="t('Instruction Number')">{{ bodyCount + j }}</td>
                 <td :title="instructionSummary(epilogue, j)">{{ inst.text }}</td>
-                <td class="type-col" v-if="programOptions.show === 0">{{ inst.type }}</td>
-                <td class="type-col" v-if="programOptions.show === 0">{{ inst.oper }}</td>
-                <td class="type-col" v-if="programOptions.show === 0">{{ inst.size }}</td>
-                <td class="type-col" v-if="programOptions.show === 1">{{ inst.latency }}</td>
-                <td class="type-col ports-col" v-if="programOptions.show === 1">{{ portsMaskToString(inst.ports) }}</td>
+                <td class="type-col" v-if="shownView === 0">{{ inst.type }}</td>
+                <td class="type-col" v-if="shownView === 0">{{ inst.oper }}</td>
+                <td class="type-col" v-if="shownView === 0">{{ inst.size }}</td>
+                <td class="type-col" v-if="shownView === 1">{{ inst.latency }}</td>
+                <td class="type-col ports-col" v-if="shownView === 1">{{ portsMaskToString(inst.ports) }}</td>
               </tr>
             </template>
           </tbody>
@@ -752,6 +758,7 @@
   tr.dep-producer td { background: #e7f0fb; }
   tr.port-conflict td { background: #fff0e0; }
   .dep-var { background: #cfe0f7; color: #0d47a1; border-radius: 3px; padding: 0 2px; font-weight: 600; }
+  .instructions-table td.cell-focus { outline: 3px solid #e65100; outline-offset: -3px; background: #ffe0b2 !important; font-weight: 700; }
   .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
   .program-source-header .source-mark {
     margin-left: 0.4em;

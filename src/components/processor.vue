@@ -454,6 +454,10 @@
         drawProcessor()
     }
   )
+  // ports and stage highlighted from the timeline
+  watch(() => [(simState.highlightedPorts ?? []).join(','), simState.highlightedStage], (now, before) => {
+    if (now[0] !== before[0] || now[1] !== before[1]) drawProcessor()
+  })
 
   watchEffect(() => { // Dependences: re-evaluated when they change
     const svg = simulatedSvg.value;
@@ -614,9 +618,11 @@
 
   const drawProcessor = async () => {
     try {
-      const dotCode      = get_processor_dot (simState.simulatedProcess, true, simState.highlightedPort,
+      const highlighted  = simState.highlightedPorts?.length ? simState.highlightedPorts : simState.highlightedPort
+      const dotCode      = get_processor_dot (simState.simulatedProcess, true, highlighted,
                                               { collapsed: processorOptions.opsCollapsed, ports: !locked('processor.ports'),
-                                                usage: shownUsage(), steppers: stepperFields() })
+                                                usage: shownUsage(), steppers: stepperFields(),
+                                                stage: simState.highlightedStage })
       const svg          = await createGraphVizGraph(dotCode);
       simulatedSvg.value = svg.outerHTML;
     } catch (error) {

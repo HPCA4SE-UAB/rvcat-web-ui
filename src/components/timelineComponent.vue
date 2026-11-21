@@ -42,6 +42,13 @@
   }
 
   const timelineOptions = reactive(defaultOptions)
+  const DETAILS_KEY = 'timelineDetailsOpen'
+  const detailsOpen = ref(true)
+  try { detailsOpen.value = localStorage.getItem(DETAILS_KEY) !== 'false' } catch { /* default */ }
+  watch(detailsOpen, (v) => {
+    try { localStorage.setItem(DETAILS_KEY, String(v)) } catch { /* ignore */ }
+    nextTick(() => window.dispatchEvent(new Event('resize')))      // the timeline changes its width
+  })
 
   // Sizes of the cells (px): 14 × 20 at the base size of the text (16 px), scaled with the text of
   // the page (A−/A+). The first column shows the number of the instruction and, with Text, its text.
@@ -295,6 +302,7 @@
     addCanvasWrapper()
     requestTimeline()  // generate timeline using RVCAT (if previous components are mounted)
     window.addEventListener('resize', onResizeFit)
+    window.addEventListener('keydown', onKeyDown)
     nextTick(() => {
       if (timelineOptions.autoFitCycles) fitCycles()
       unwatch = watch(
@@ -321,6 +329,8 @@
 
   onUnmounted(() => {
     window.removeEventListener('resize', onResizeFit)
+    window.removeEventListener('keydown', onKeyDown)
+    resetSharedHighlights()          // (the Program panel goes back to its own view)
     if (cleanupHandleTimeline) {
       cleanupHandleTimeline()
       cleanupHandleTimeline = null
@@ -408,7 +418,10 @@
       dragging = true
       startX   = e.clientX
       startY   = e.clientY
+      downX    = e.clientX
+      downY    = e.clientY
     })
+    wrapper.addEventListener("mouseleave", onMouseLeave)
 
     window.addEventListener("mouseup", () => {
       dragging = false
@@ -449,7 +462,6 @@
  * CANVAS: DRAW timeline
  * ------------------------------------------------------------------ */
   const hoverInfo        = ref(null)
-  const tooltipRef       = ref(null)
   const selectedCell     = ref(null)
   const interactiveCells = []
   let totalCycles = 0
@@ -464,8 +476,6 @@
   let fontXOffset = 2
   let fontYOffset = 3
   let rafPending  = false
-  let hoverRow    = null
-  let hoverCol    = null
   let visibleCriticalPath = null
 
   // Tooltips of the cells are built when drawing: redrawn in the new language
@@ -478,6 +488,7 @@
     requestAnimationFrame(() => {
       drawTimeline(cycles, oldCycles)
       rafPending = false
+      refocusPinned()
     })
   }
 
@@ -672,9 +683,8 @@
     fontSize   = g.font
     fontXOffset = Math.round(2 * k)
     fontYOffset = Math.round(3 * k)
-    hoverRow = null
-    hoverCol = null
     hoverInfo.value = null
+    focusedCell = null
 
     const canvasWidth = Math.max(
       viewportWidth,
@@ -1137,7 +1147,7 @@
       }
     }
 
-    // highlight column (cycle)
+    // highlight column (cycle): only when the header of a cycle is pointed
     if (col !== null) {
       let length = Math.min(lengthRow, totalInstr-initRow)
       ctx.strokeRect(
@@ -1160,142 +1170,329 @@
     }
   }
 
-  function onMouseMove(e) {
+  // ---- Hover and click (detailed mode) ----
+  // Hover: highlights in the timeline, the Program panel and the Processor panel, and a status line.
+  // Click: the cell is pinned (its highlights stay while the mouse moves) and explained in the
+  // panel of details. A second click on it, a click outside the cells or Esc release it.
+  const pinned  = ref(null)          // details of the pinned cell
+  let focusedCell = null
+  const COLORS = {
+    self:     ['rgba(255, 213, 79, 0.55)', '#c79100'],   // the instruction of the cell
+    producer: ['rgba(21, 101, 192, 0.22)', '#1565c0'],   // instructions it waits for (data)
+    port:     ['rgba(245, 124, 0, 0.25)', '#e65100'],    // ports, and the instructions that use them
+    blocker:  ['rgba(97, 97, 97, 0.25)', '#424242'],     // older instruction that has not finished
+  }
+
+  function cellAtEvent(e) {
     const rect = timelineCanvas.value.getBoundingClientRect()
+    const worldX = (e.clientX - rect.left - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
+    const worldY = (e.clientY - rect.top  - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+    return interactiveCells.find(cell =>
+      worldX >= cell.x && worldX <= cell.x + (cell.width ?? cellW) &&
+      worldY >= cell.y && worldY <= cell.y + cellH) ?? null
+  }
 
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+  function onMouseMove(e) {
+    if (pinned.value) return
+    const cell = cellAtEvent(e)
+    if (cell === focusedCell) return
+    focusedCell = cell
+    if (cell) focusCell(cell)
+    else clearFocus()
+  }
+  function onMouseLeave() {
+    if (pinned.value) return
+    focusedCell = null
+    clearFocus()
+  }
 
-    const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-    const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+  function resetSharedHighlights() {
+    simState.instrHighlightedIdx = -1
+    simState.dependenceHighlight = null
+    simState.highlightedPort     = -1
+    simState.highlightedPorts    = []
+    simState.highlightedStage    = null
+    simState.programViewOverride = null
+    simState.programHighlight    = null
+  }
+  function clearFocus() {
+    hoverInfo.value = null
+    resetSharedHighlights()
+    if (overlayCanvas.value) drawHoverOverlay(null, null, null, null, null, null)
+  }
 
-    let hitCell = null
+  // the cell of an instruction row (row, cycle), and the header cell of a row
+  const instrCell = (row, col) => interactiveCells.find(c => !c.cellType && c.rowIdx === row && c.colIdx === col)
+  // ports that an instruction can use (mask of the instruction)
+  const portsOf = (instrIdx) => {
+    const mask = Number(instrAt(instrIdx)?.ports) || 0
+    return [...Array(32).keys()].filter(p => (mask >> p) & 1)
+  }
 
-    for (const cell of interactiveCells) {
-      if (
-        worldX >= cell.x &&
-        worldX <= cell.x + (cell.width ?? cellW) &&
-        worldY >= cell.y &&
-        worldY <= cell.y + cellH
-      ) {
-        hitCell = cell
-        break
-      }
+  function overlayContext() {
+    const ctx = overlayCanvas.value?.getContext('2d')
+    if (ctx) {
+      ctx.font = `${fontSize}px monospace`
+      ctx.textBaseline = 'top'           // as the texts of the timeline
     }
-    if (!hitCell) {
-      hoverInfo.value = null
-      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
-      simState.highlightedPort = -1
-
-      if (hoverRow != null || hoverCol != null) {
-        hoverRow = null
-        hoverCol = null
-        drawHoverOverlay(null, null, null, null, null, null)
-      }
-      return
+    return ctx
+  }
+  function markRect(ctx, x, y, w, kind) {
+    const [fill, stroke] = COLORS[kind]
+    ctx.save()
+    ctx.fillStyle = fill
+    ctx.strokeStyle = stroke
+    ctx.lineWidth = 2
+    ctx.fillRect(x, y, w, cellH)
+    ctx.strokeRect(x + 1, y + 1, w - 2, cellH - 2)
+    ctx.restore()
+  }
+  // the first column (label) of an instruction row
+  function markRowLabel(ctx, row, kind) {
+    if (row < 0 || row >= totalInstr) return
+    markRect(ctx, padX, padY + (row + resourceRowCount + 1) * cellH, labelW, kind)
+  }
+  // a cell of an instruction row
+  function markCell(ctx, row, col, kind) {
+    if (row < 0 || row >= totalInstr || col < 0 || col >= totalCycles) return
+    markRect(ctx, padX + labelW + col * cellW, padY + (row + resourceRowCount + 1) * cellH, cellW, kind)
+  }
+  // the row of a port (Ports shown) in a cycle
+  function markPortRow(ctx, port, col, kind) {
+    if (!timelineOptions.showPorts) return
+    const pr = (timeline.value?.resourcePortIds ?? []).map(String).indexOf(String(port))
+    if (pr < 0 || col < 0 || col >= totalCycles) return
+    markRect(ctx, padX + labelW + col * cellW, padY + (pr + 1) * cellH, cellW, kind)
+  }
+  // variables inside the text of a row (option Text): underlined
+  function markLabelVariables(ctx, row, names, kind) {
+    const header = interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)
+    if (!header || !names?.length || !timelineOptions.showText) return
+    const text = labelText(header.instrIdx, header.instructionText)
+    const re = new RegExp(`\\b(${names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'g')
+    ctx.save()
+    ctx.fillStyle = COLORS[kind][1]
+    for (const m of text.matchAll(re)) {
+      if (m.index < 2) continue               // the number of the instruction
+      const x = padX + fontXOffset + ctx.measureText(text.slice(0, m.index)).width
+      const w = ctx.measureText(m[0]).width
+      ctx.fillRect(x, header.y + cellH - 4, w, 2.5)
     }
+    ctx.restore()
+  }
+  // the number of the cycle, complete, over the header of its column
+  function markCycle(ctx, col) {
+    if (col < 0 || col >= totalCycles) return
+    const label = String(col)
+    ctx.save()
+    ctx.font = `bold ${fontSize}px monospace`
+    const w = Math.max(cellW, ctx.measureText(label).width + 8)
+    const x = padX + labelW + col * cellW + cellW / 2 - w / 2
+    ctx.fillStyle = '#fff3c4'
+    ctx.strokeStyle = '#c79100'
+    ctx.lineWidth = 1.5
+    ctx.fillRect(x, padY, w, cellH)
+    ctx.strokeRect(x, padY, w, cellH)
+    ctx.fillStyle = '#000'
+    ctx.fillText(label, x + 4, padY + fontYOffset)
+    ctx.restore()
+  }
 
-    const { rowIdx: row, colIdx: col, initCol, lengthCol, initRow, lengthRow,
-            char, port, critical,
-            instrIdx } = hitCell
+  // The older instruction that a finished instruction ('-') waits for to retire: the oldest
+  // older one that has not finished in this cycle (none: they all have finished, and the retire
+  // width limits how many leave per cycle)
+  function retireBlocker(cell) {
+    const older = interactiveCells.filter(c => !c.cellType && c.colIdx === cell.colIdx && c.rowIdx < cell.rowIdx &&
+                                               !['-', 'R', 'x', ' '].includes(c.char))
+    return older.length ? older.reduce((a, b) => (a.rowIdx < b.rowIdx ? a : b)) : null
+  }
 
-    if (hitCell.cellType === 'resource-label') {
-      simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
-      hoverInfo.value = {
-        x: e.clientX + 10,
-        y: e.clientY + 10,
-        state: hitCell.tooltip,
-        critical: false
-      }
-      hoverRow = row
-      hoverCol = col
+  // Everything that a cell shows: highlights and texts (status line, details)
+  function focusCell(cell) {
+    resetSharedHighlights()
+    const col = cell.colIdx, row = cell.rowIdx
+    if (cell.cellType === 'resource-label') {
+      hoverInfo.value = { state: cell.tooltip }
       drawHoverOverlay(null, null, null, null, null, null)
-      adjustTooltipPosition(e)
+      return
+    }
+    if (cell.cellType === 'resource-cycle') {
+      hoverInfo.value = cell.tooltip ? { state: cell.tooltip, cycle: col } : null
+      drawHoverOverlay(null, null, null, null, null, null, cell.linkedInstructionRows, col, cell.linkedResourceRows)
+      const ctx = overlayContext()
+      if (ctx) markCycle(ctx, col)
+      return
+    }
+    if (row === -1) {                      // the header: a cycle, and the instructions in it
+      hoverInfo.value = { state: cell.tooltip, cycle: col }
+      drawHoverOverlay(null, col, cell.initRow, cell.lengthRow, cell.initCol, cell.lengthCol)
+      const ctx = overlayContext()
+      if (ctx) markCycle(ctx, col)
       return
     }
 
-    if (hitCell.cellType === 'resource-cycle') {
-      const resourceHoverRow = `resource-${hitCell.resourceIndex}`
-      simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
-      hoverInfo.value = hitCell.tooltip
-        ? {
-            x: e.clientX + 10,
-            y: e.clientY + 10,
-            state: hitCell.tooltip,
-            critical: false
-          }
-        : null
-      if (hoverInfo.value) adjustTooltipPosition(e)
-      if (hoverRow !== resourceHoverRow || hoverCol !== col) {
-        hoverRow = resourceHoverRow
-        hoverCol = col
-        drawHoverOverlay(
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          hitCell.linkedInstructionRows,
-          col,
-          hitCell.linkedResourceRows
-        )
-      }
-      return
+    const rowHeader = col === -1
+    simState.instrHighlightedIdx = cell.instrIdx
+    if (cell.char === 'E') simState.highlightedPort = cell.port
+    hoverInfo.value = {
+      cell,
+      cycle: rowHeader ? null : col,
+      state: rowHeader ? formatInstructionTooltip(cell) : cellStatus(cell),
     }
+    drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
+    showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
+    const ctx = overlayContext()
+    if (!ctx) return
+    markRowLabel(ctx, row, 'self')
+    if (rowHeader) return
+    markCycle(ctx, col)
 
-    if (row === -1) {
-      simState.highlightedPort = -1
-      simState.instrHighlightedIdx = -1; simState.dependenceHighlight = null
-      hoverInfo.value = {
-        x:        e.clientX + 10,
-        y:        e.clientY + 10,
-        state:    hitCell.tooltip,
-        critical: false
+    const detail = cell.waitDetail
+    if ((cell.char === '.' && detail?.reason === 'data') || (cell.char === '*' && detail?.reason === 'ports')) {
+      // the instructions it waits for, the variables, and the ports it needs
+      const dep = simState.dependenceHighlight
+      if (cell.char === '.') {
+        for (const r of new Set(detail.dependencies ?? [])) {
+          markRowLabel(ctx, r, 'producer')
+          const own = instrAt(interactiveCells.find(c => c.rowIdx === r && c.colIdx === -1)?.instrIdx)?.destin
+          if (own) markLabelVariables(ctx, r, [own], 'producer')
+        }
+        markLabelVariables(ctx, row, dep?.vars ?? [], 'producer')
+      } else {
+        for (const { row: r } of portConflict(cell).conflicts) markRowLabel(ctx, r, 'port')
       }
-      hoverRow = null
-      hoverCol = null
-      drawHoverOverlay(null, col, initRow, lengthRow, initCol, lengthCol)
-      adjustTooltipPosition(e)
-      return
-    }
-
-    if (hoverRow !== row || hoverCol !== col) {
-
-      if (simState.instrHighlightedIdx !== instrIdx)
-        simState.instrHighlightedIdx = instrIdx
-      if (char !== 'E')
-        simState.highlightedPort = -1
-      else if (simState.highlightedPort !== port)
-        simState.highlightedPort = port
-
-      const rowHeader = col === -1
-      const stateTooltip = formatProcessingTooltip(hitCell)
-      hoverInfo.value = {
-        x:        e.clientX + 10,
-        y:        e.clientY + 10,
-        state:    rowHeader
-          ? formatInstructionTooltip(hitCell)
-          : stateTooltip,
-        lines:    rowHeader ? instructionTooltipLines(hitCell) : portConflictLines(hitCell),
-        critical: rowHeader ? false : critical && timelineOptions.critical
+      const ports = cell.char === '*' ? (detail.ports ?? []) : portsOf(cell.instrIdx)
+      for (const p of ports) markPortRow(ctx, p, col, 'port')
+      simState.highlightedPorts    = ports.map(String)
+      simState.programViewOverride = 'perf'
+      simState.programHighlight    = { rows: [cell.instrIdx], field: 'ports' }
+    } else if (cell.char === 'D') {
+      simState.highlightedStage = 'dispatch'
+    } else if (cell.char === 'R') {
+      simState.highlightedStage = 'retire'
+    } else if (cell.char === '-') {
+      const blocker = retireBlocker(cell)
+      if (blocker) {
+        markRowLabel(ctx, blocker.rowIdx, 'blocker')
+        markCell(ctx, blocker.rowIdx, col, 'blocker')
       }
-      adjustTooltipPosition(e)
-
-      hoverRow = row
-      hoverCol = col
-      drawHoverOverlay(
-        row,
-        rowHeader ? null : col,
-        rowHeader ? row : initRow,
-        rowHeader ? 1 : lengthRow,
-        initCol,
-        lengthCol
-      )
-      showDataDependences(rowHeader ? null : hitCell)
+      simState.highlightedStage = 'retire'
     }
+  }
+
+  // ---- Texts: a line for the status bar, and the explanation of the panel of details ----
+  const rowName = (row) => {
+    const h = interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)
+    return h ? `[${h.iter},${h.instrIdx}] ${h.instructionText ?? ''}`.trim() : `#${row}`
+  }
+  function execCycleOf(cell) {
+    let k = 1
+    for (let c = cell.colIdx - 1; instrCell(cell.rowIdx, c)?.char === 'E'; c--) k++
+    return k
+  }
+  function cellStatus(cell) {
+    const p = simState.simulatedProcess ?? {}
+    switch (cell.char) {
+      case 'D': return t('Dispatch (up to {n} per cycle)', { n: p.dispatch })
+      case 'R': return t('Retire (up to {n} per cycle)', { n: p.retire })
+      case 'W': return t('Writes its result')
+      case 'E': {
+        const lat = Number(instrAt(cell.instrIdx)?.latency) || null
+        const k = execCycleOf(cell)
+        return k === 1
+          ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '')
+          : t('Executes: cycle {k} of {l}', { k, l: lat ?? '?' })
+      }
+      case '-': {
+        const b = retireBlocker(cell)
+        return b ? t('Waits to retire: {who} has not finished', { who: rowName(b.rowIdx) })
+                 : t('Waits to retire: the older instructions retire first (retire width {n})', { n: p.retire })
+      }
+      default: return formatProcessingTooltip(cell)
+    }
+  }
+  function cellExplanation(cell) {
+    const p = simState.simulatedProcess ?? {}
+    const d = cell.waitDetail
+    switch (cell.char) {
+      case 'D': return t('Dispatch: the instruction enters the ROB and the waiting buffer, in program order (up to {n} per cycle).', { n: p.dispatch })
+      case 'E': return execCycleOf(cell) === 1
+        ? t('It starts to execute in port P{p}: its operands are ready and the port is free. It takes {l} cycle(s) (latency).', { p: cell.port, l: instrAt(cell.instrIdx)?.latency ?? '?' })
+        : t('It is executing: cycle {k} of {l} of its latency.', { k: execCycleOf(cell), l: instrAt(cell.instrIdx)?.latency ?? '?' })
+      case 'W': return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.')
+      case 'R': return t('Retire: the instruction leaves the ROB, in program order, and its result updates the registers (up to {n} per cycle).', { n: p.retire })
+      case '-': return t('It has finished, but it waits to retire: the instructions retire in program order, so it waits for the older ones.')
+      case '.': return t('It waits for the data of an older instruction (in blue). It can start to execute in the cycle after the last cycle of that instruction (bypass).')
+      case '*': return d?.reason === 'issue-bandwidth'
+        ? t('Its operands are ready, but the issue width is full in this cycle.')
+        : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
+      default: return formatProcessingTooltip(cell)
+    }
+  }
+  function buildDetails(cell) {
+    if (cell.cellType || cell.rowIdx === -1) {
+      return { title: hoverInfo.value?.state ?? '', cycle: cell.colIdx >= 0 ? cell.colIdx : null, text: '', lines: [], info: [] }
+    }
+    const header = interactiveCells.find(c => c.rowIdx === cell.rowIdx && c.colIdx === -1) ?? cell
+    const lines = []
+    const d = cell.waitDetail
+    if (cell.char === '.' && d?.reason === 'data')
+      for (const r of new Set(d.dependencies ?? []))
+        lines.push([{ text: t('waits for') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
+    const conflict = portConflictLines(cell)
+    if (conflict) lines.push(...conflict)
+    if (cell.char === '-') {
+      const b = retireBlocker(cell)
+      lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf' }, { text: rowName(b.rowIdx), kind: 'instr' }]
+                   : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
+    }
+    if (cell.critical && timelineOptions.critical) lines.push([{ text: t('On the critical path'), kind: 'note' }])
+    return {
+      title: rowName(cell.rowIdx),
+      cycle: cell.colIdx >= 0 ? cell.colIdx : null,
+      state: cell.colIdx >= 0 ? cellStatus(cell) : '',
+      text: cell.colIdx >= 0 ? cellExplanation(cell) : '',
+      lines,
+      info: instructionTooltipLines(header),
+    }
+  }
+
+  // status line: what the pointer (or the pinned cell) shows
+  const statusText = computed(() => {
+    const h = hoverInfo.value
+    if (!h) return ''
+    const parts = []
+    if (h.cycle !== null && h.cycle !== undefined) parts.push(t('Cycle {c}', { c: h.cycle }))
+    if (h.cell && h.cell.colIdx >= 0) parts.push(rowName(h.cell.rowIdx))
+    if (h.state) parts.push(h.state)
+    return parts.join(' · ')
+  })
+
+  function pinCell(cell) {
+    selectedCell.value = cell
+    focusedCell = cell
+    focusCell(cell)
+    pinned.value = { cell, ...buildDetails(cell) }
+    drawSelectedCell()
+    if (!detailsOpen.value) detailsOpen.value = true
+  }
+  function releasePin() {
+    pinned.value = null
+    selectedCell.value = null
+    focusedCell = null
+    clearFocus()
+  }
+  // after the timeline is drawn again (other options, zoom): the pinned cell is found again
+  function refocusPinned() {
+    const old = pinned.value?.cell
+    if (!old) return
+    const cell = interactiveCells.find(c => c.rowIdx === old.rowIdx && c.colIdx === old.colIdx &&
+                                            c.cellType === old.cellType && (c.resourceIndex ?? null) === (old.resourceIndex ?? null))
+    if (cell) pinCell(cell)
+    else releasePin()
+  }
+  function onKeyDown(e) {
+    if (e.key === 'Escape' && pinned.value) releasePin()
   }
 
   // A cell where an instruction waits for data ('.'): the last execution cycle (E/L) of the
@@ -1338,9 +1535,8 @@
       return t('Wait for cache return: block addr {a}', { a: detail.block_address })
     if (cell.char === '.' && detail?.reason === 'data') {
       const dependencies = [...new Set(detail.dependencies ?? [])]
-        .map(index => timeline.value.instructions[index])
-        .filter(Boolean)
-        .map(([iteration, instruction]) => `instr ${instruction} (iter ${iteration})`)
+        .filter(index => timeline.value.instructions[index])
+        .map(index => rowName(index))
       if (dependencies.length)
         return t('Wait for data from {list}', { list: dependencies.join(', ') })
     }
@@ -1452,65 +1648,16 @@
   const formatInstructionTooltip = (cell) =>
     instructionTooltipLines(cell).map(line => line.map(part => part.text).join('')).join('\n')
 
+  let downX = 0, downY = 0
   function onClick(e) {
-    const rect = timelineCanvas.value.getBoundingClientRect()
-
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
-
-    const worldX = (mouseX - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-    const worldY = (mouseY - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
-
-    for (const cell of interactiveCells) {
-      if (
-        worldX >= cell.x &&
-        worldX <= cell.x + (cell.width ?? cellW) &&
-        worldY >= cell.y &&
-        worldY <= cell.y + cellH
-      ) {
-        handleCellClick(cell, e)
-        break
-      }
-    }
+    if (Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) return   // a drag
+    const cell = cellAtEvent(e)
+    if (!cell) return releasePin()
+    if (pinned.value && pinned.value.cell === cell) return releasePin()
+    pinCell(cell)
   }
 
-  function handleCellClick(cell, event) {
-    selectedCell.value = cell
-    drawHoverOverlay(null, null, null, null, null, null, null)
-    hoverInfo.value = {
-      x: event.clientX + 10,
-      y: event.clientY + 10,
-      state: 'ToDo',
-      critical: false
-    }
-    adjustTooltipPosition(event)
-  }
-
-  function adjustTooltipPosition(e) {
-    nextTick(() => {
-      const tt = tooltipRef.value
-      if (!tt) return
-
-      const tr = tt.getBoundingClientRect()
-      const vw = window.innerWidth
-      const vh = window.innerHeight
-
-      let x = e.clientX + 10
-      let y = e.clientY + 10
-
-      if (tr.right > vw) {
-        x = e.clientX - tr.width - 10
-      }
-
-      if (tr.bottom > vh) {
-        y = e.clientY - tr.height - 10
-      }
-
-      tt.style.left = `${x}px`
-      tt.style.top  = `${y}px`
-    })
-  }
-
+/* ------------------------------------------------------------------
 /* ------------------------------------------------------------------
  * Help support
  * ------------------------------------------------------------------ */
@@ -1549,6 +1696,13 @@
 
         <div class="iters-group">
           <span class="show-label">{{ t('Show:') }}</span>
+          <button class="blue-button toggle-button" :class="{ active: detailsOpen }" :aria-pressed="detailsOpen"
+            :title="t('Panel of details: click a cell of the timeline to see what it means and what it depends on')"
+            id="timeline-details-toggle"
+            @click="detailsOpen = !detailsOpen">
+            <span v-if="detailsOpen">✔ </span>
+            {{ t('Details') }}
+          </button>
           <button class="blue-button toggle-button" :class="{ active: timelineOptions.showText }" :aria-pressed="timelineOptions.showText"
             :title="t('Show the text of each instruction in the first column (otherwise, only its number)')"
             id="timeline-text"
@@ -1603,20 +1757,45 @@
     <div v-if="timelineError" class="execution-validation-error" role="alert">
       {{ timelineError }}
     </div>
-    <div class="output-block-wrapper" id="canvas-container">
-      <canvas ref="timelineCanvas"></canvas>
-      <canvas ref="overlayCanvas"></canvas>
-      <div v-if="hoverInfo" ref="tooltipRef" class="tooltip"
-           :style="{ top: hoverInfo.y + 'px', left: hoverInfo.x + 'px' }">
-        <div v-if="hoverInfo.lines" class="tt-lines">
-          <div v-for="(line, i) in hoverInfo.lines" :key="i">
-            <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
-          </div>
-        </div>
-        <div v-else-if="hoverInfo.state" :class="{ critical: hoverInfo.critical }">
-            {{ hoverInfo.state }}
-        </div>
+    <!-- What the pointer shows (or the pinned cell): one line -->
+    <div class="timeline-status" id="timeline-status" :class="{ pinned: !!pinned }">
+      <span v-if="statusText">{{ pinned ? '📌 ' : '' }}{{ statusText }}</span>
+      <span v-else class="status-hint">{{ t('Point at a cell to see its relations; click it to pin it and see its explanation.') }}</span>
+    </div>
+    <div class="timeline-body">
+      <div class="output-block-wrapper" id="canvas-container">
+        <canvas ref="timelineCanvas"></canvas>
+        <canvas ref="overlayCanvas"></canvas>
       </div>
+      <aside v-if="detailsOpen" class="timeline-details" id="timeline-details">
+        <div class="details-head">
+          <b>{{ t('Details') }}</b>
+          <button class="details-close" @click="detailsOpen = false" :title="t('Fold the panel of details')">«</button>
+        </div>
+        <template v-if="pinned">
+          <div class="details-title">{{ pinned.title }}</div>
+          <div v-if="pinned.cycle !== null" class="details-cycle">{{ t('Cycle {c}', { c: pinned.cycle }) }}<span v-if="pinned.state"> · {{ pinned.state }}</span></div>
+          <p v-if="pinned.text" class="details-text">{{ pinned.text }}</p>
+          <div v-if="pinned.lines.length" class="details-lines">
+            <div v-for="(line, i) in pinned.lines" :key="i">
+              <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
+            </div>
+          </div>
+          <div v-if="pinned.info.length" class="details-info">
+            <div v-for="(line, i) in pinned.info" :key="i">
+              <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
+            </div>
+          </div>
+          <button class="details-release" @click="releasePin" :title="t('Release the pinned cell (also with Esc)')">{{ t('Release') }}</button>
+        </template>
+        <p v-else class="details-hint">{{ t('Click a cell of the timeline to pin it: here you will see what it means and what it depends on. A second click on it, or Esc, releases it.') }}</p>
+        <div class="details-legend">
+          <div><span class="sw sw-self"></span>{{ t('the instruction') }}</div>
+          <div><span class="sw sw-producer"></span>{{ t('instructions it waits for (data)') }}</div>
+          <div><span class="sw sw-port"></span>{{ t('ports, and instructions that use them') }}</div>
+          <div><span class="sw sw-blocker"></span>{{ t('older instruction that has not finished') }}</div>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -1628,6 +1807,47 @@
 </template>
 
 <style scoped>
+  .timeline-status {
+    min-height:  1.6em;
+    padding:     2px 8px;
+    font-size:   0.9375rem;
+    color:       #1f2a3a;
+    background:  #f6f8fb;
+    border-top:  1px solid #e3e8ef;
+    border-bottom: 1px solid #e3e8ef;
+    white-space: nowrap;
+    overflow:    hidden;
+    text-overflow: ellipsis;
+  }
+  .timeline-status.pinned { background: #fff3c4; }
+  .status-hint { color: #777; }
+  .timeline-body { display: flex; flex: 1 1 auto; min-height: 0; }
+  .timeline-body > .output-block-wrapper { flex: 1 1 auto; min-width: 0; }
+  .timeline-details {
+    flex:        0 0 19rem;
+    overflow-y:  auto;
+    padding:     6px 10px;
+    border-left: 1px solid #d6dbe3;
+    background:  #fbfcfe;
+    font-size:   0.9375rem;
+  }
+  .details-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; color: #0b2e5c; }
+  .details-close, .details-release {
+    border: 1px solid #9db7e3; background: white; color: #1a4fb3; border-radius: 5px; cursor: pointer;
+    padding: 1px 8px; font-weight: 600;
+  }
+  .details-title { font-family: monospace; font-weight: 700; font-size: 1rem; }
+  .details-cycle { color: #333; margin: 2px 0 6px; }
+  .details-text  { margin: 4px 0 8px; line-height: 1.4; }
+  .details-lines, .details-info { margin: 6px 0; font-family: monospace; font-size: 0.875rem; }
+  .details-info { color: #444; border-top: 1px dashed #ccd; padding-top: 6px; }
+  .details-hint { color: #555; line-height: 1.4; }
+  .details-legend { margin-top: 12px; font-size: 0.875rem; color: #444; display: grid; gap: 3px; }
+  .sw { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; border: 2px solid; border-radius: 2px; }
+  .sw-self     { background: rgba(255, 213, 79, 0.55); border-color: #c79100; }
+  .sw-producer { background: rgba(21, 101, 192, 0.22); border-color: #1565c0; }
+  .sw-port     { background: rgba(245, 124, 0, 0.25); border-color: #e65100; }
+  .sw-blocker  { background: rgba(97, 97, 97, 0.25); border-color: #424242; }
   .timeline-legend {
     display:     flex;
     flex-wrap:   wrap;

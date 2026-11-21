@@ -1240,9 +1240,10 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
       return result
     }
 
-    const highlight = highlightPort !== null && highlightPort !== undefined
-      ? String(highlightPort)
-      : null
+    // highlighted ports: one port, or a list of ports (options.ports of the timeline)
+    const highlights = new Set((Array.isArray(highlightPort) ? highlightPort : [highlightPort])
+      .filter(p => p !== null && p !== undefined && p !== -1).map(String))
+    const stageBg = (stage) => options.stage === stage ? '#ffcccc' : '#eeeeee'
 
     const port_ops = {}
     for (let p of port_ids)
@@ -1280,7 +1281,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
       ? `<TD ROWSPAN="${robRowspan}" BGCOLOR="#f0f0f0" CELLPADDING="4" ALIGN="CENTER" VALIGN="MIDDLE"><TABLE BORDER="0" CELLSPACING="3" CELLPADDING="1"><TR><TD COLSPAN="2" HREF="#" ID="rob" TITLE="${robTitle}">${robContent}</TD></TR><TR>${stepButton('dec', 'rob')}${stepButton('inc', 'rob')}</TR></TABLE></TD>`
       : `<TD ROWSPAN="${robRowspan}" BGCOLOR="#f0f0f0" HREF="#" ID="rob" CELLPADDING="10" TITLE="${robTitle}" ALIGN="CENTER" VALIGN="MIDDLE">${robContent}</TD>`
     let decode_row = `<TR>
-      ${paramCell('dispatch', `COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"`,
+      ${paramCell('dispatch', `COLSPAN="${port_ids.length}" BGCOLOR="${stageBg('dispatch')}"`,
         `${t('Dispatch width: up to {n} instruction(s) per cycle enter the ROB and the waiting buffer, in program order.', { n: dispatch })}${click}${usageTitle}`,
         `<FONT POINT-SIZE="22">${steppers.has('dispatch') ? '' : EDIT}<B>Dispatch:&nbsp;</B>&nbsp;${dispatch}/${t('cycle')}${usageText(usage?.dispatch)}</FONT>`)}
       ${robCell}
@@ -1312,7 +1313,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
     let port_header = "<TR>"
 
     for (let p of port_ids) {
-      const isHighlighted = (p === highlight)
+      const isHighlighted = highlights.has(p)
       const style = isHighlighted
         ? ' BGCOLOR="#ffcccc" BORDER="1" COLOR="red"'
         : ' BGCOLOR="#f5f5f5"'
@@ -1332,7 +1333,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
       op_rows += "<TR>"
 
       for (let p of port_ids) {
-        const isHighlighted = (p === highlight)
+        const isHighlighted = highlights.has(p)
         const highlightAttr = isHighlighted
           ? ' BORDER="1" COLOR="red"'
           : ''
@@ -1387,7 +1388,7 @@ export function get_processor_dot(process, allowEdit, highlightPort = -1, option
 
     // ---- Retire ----
     let reg_row = `<TR>
-      ${paramCell('retire', `WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="#eeeeee"`,
+      ${paramCell('retire', `WIDTH="538" COLSPAN="${port_ids.length}" BGCOLOR="${stageBg('retire')}"`,
         `${t('Retire width: up to {n} completed instruction(s) per cycle leave the ROB in program order, updating the architected registers.', { n: retire })}${click}${usageTitle}`,
         `<FONT POINT-SIZE="22">${steppers.has('retire') ? '' : EDIT}<B>Retire:&nbsp;</B>&nbsp;${retire}/${t('cycle')}${usageText(usage?.retire)}</FONT>`)}
     </TR>`
