@@ -2,7 +2,7 @@
   "lesson": "L1-cache",
   "title": "Lesson 1: the cache and a sum of a vector",
   "description": "<p>Four versions of a loop that adds the elements of a vector (scalar, SIMD, and unrolled with several accumulators) on a Golden Cove core with a small cache: latency, throughput and memory bandwidth.</p>",
-  "version": 3,
+  "version": 4,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -1177,13 +1177,13 @@
           "timeline:width=0.67"
         ],
         "exploreHint": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson.</p>",
-        "description": "<p>The Simulation panel separates two kinds of misses:</p><p>&bull; <b>Primary misses</b>: the first access to a block, which asks the main memory for it. 125 in every version (124 in SUM-simd4, which reads 992 elements).<br>&bull; <b>Secondary misses</b>: accesses to a block that is <b>still coming</b> from the main memory. The out-of-order engine executes the loads of the next iterations early, so they find the block on its way and wait for it, instead of finding it in the cache.</p><p>The timeline shows it: its <b>Cache</b> rows give the main memory (<b>MM</b>, R: a block read) and the 16 blocks of the cache (<b>r</b>: the block is arriving, <b>C</b>: it is in the cache). Scroll down to the rows of the instructions: <b>!</b> is a miss, <b>2</b> a secondary miss and <b>:</b> a load that waits for its block. <b>Explore</b> it (optional).</p>",
+        "description": "<p>The Simulation panel separates two kinds of misses:</p><p>&bull; <b>Primary misses</b>: the first access to a block, which asks the main memory for it. 125 in every version (124 in SUM-simd4, which reads 992 elements).<br>&bull; <b>Secondary misses</b>: accesses to a block that is <b>still coming</b> from the main memory. The out-of-order engine executes the loads of the next iterations early, so they find the block on its way and wait for it, instead of finding it in the cache.</p><p>The timeline shows it: its row <b>MM</b> gives the main memory (R: a block read), and the row <b>▸ Cache</b>, unfolded here, the 16 blocks of the cache (<b>r</b>: the block is arriving, <b>C</b>: it is in the cache). In the rows of the instructions, <b>!</b> is a miss, <b>2</b> a secondary miss and <b>:</b> a load that waits for its block. <b>Explore</b> it (optional).</p>",
         "actions": [
           "selectProgram:SUM-scalar",
           "reveal:timeline,timelineResources,timelineCache",
           "sidePanel:show",
           "switchTo:timelineComponent",
-          "timeline:cache=on",
+          "timeline:cacheRows=on",
           "timeline:cycles=40",
           "timeline:width=0.67"
         ],

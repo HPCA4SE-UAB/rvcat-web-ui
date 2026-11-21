@@ -408,19 +408,13 @@
 </style>
 
 <style>
-  /* the number of cycles of the timeline cannot be changed */
-  .lesson-hide-timelineCycles #timeline-cycles { pointer-events: none; background: #eee; color: #555; }
   /* Parts of the simulator hidden by the lesson in progress (lesson "hidden", actions reveal/hide) */
   .lesson-hide-timeline #timeline-button,
   .lesson-hide-simulation #simulation-button,
-  .lesson-hide-timelineCache #timeline-cache,
   .lesson-hide-analysis #analysis-button,
   .lesson-hide-processor .processor-part,
   .lesson-hide-programColumns .type-col,
   .lesson-hide-programColumns #show-instr-operands,
-  .lesson-hide-timelineCritical #timeline-critical,
-  .lesson-hide-timelineResources #timeline-ports,
-  .lesson-hide-timelineResources #timeline-cache,
   .lesson-hide-usage .sim-usage-part,
   .lesson-hide-cacheStats .stat-cache,
   .lesson-hide-simOptions .sim-setting,
@@ -430,7 +424,5 @@
   .lesson-hide-criticalPattern #critical-path-pattern,
   .lesson-hide-programPorts .ports-col,
   .lesson-hide-programRep .rep-part,
-  .lesson-hide-timelineCycles #timeline-fit-cycles,
-  .lesson-hide-timelineResources .show-label,
   .lesson-hide-storedResults .stored-results-part { display: none !important; }
 </style>

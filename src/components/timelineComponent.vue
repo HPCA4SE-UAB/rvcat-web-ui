@@ -89,26 +89,26 @@
     // the whole timeline: the window moves along it (it follows the rows)
     timelineOptions.cycles = Math.max(10, fitting, timeline.value?.cycles ?? 0)
   }
-  function fitCyclesButton() {
-    timelineOptions.autoFitCycles = true
-    fitCycles()
-  }
-  function onCyclesTyped() { timelineOptions.autoFitCycles = false }
-  // Zoom requested by a tutorial (action timeline:width=F): the timeline ends at the fraction F
-  // of the visible width of the window
-  watch(() => simState.timelineFit?.nonce, () => {
-    const f = Number(simState.timelineFit?.width)
-    const wrapper = document.getElementById('canvas-container')
-    if (!(f > 0 && f <= 1) || !wrapper) return
-    const target = window.innerWidth * f - wrapper.getBoundingClientRect().left
-    const g      = timelineGeometry()
-    const world  = 2 * 10 + g.labelW + g.cellW * (Number(timelineOptions.cycles) || 1)
-    timelineOptions.autoFitCycles = false
-    timelineOptions.canvasOffsetX = 0
-    timelineOptions.canvasOffsetY = 0
-    timelineOptions.canvasScale   = Math.max(0.5, target / world)
-  })
   function onResizeFit()   { if (timelineOptions.autoFitCycles) fitCycles() }
+
+  // The timeline shows everything (the text, the critical path, the ports, the cache, all the
+  // cycles); a lesson can limit it: its hidden parts and its actions (simState.timelineLesson)
+  function applyShownParts() {
+    const lesson = simState.lesson ? (simState.timelineLesson ?? {}) : {}
+    const hidden = simState.lesson?.hidden ?? []
+    timelineOptions.showText  = true
+    timelineOptions.critical  = !hidden.includes('timelineCritical') && lesson.critical !== false
+    timelineOptions.showPorts = !hidden.includes('timelineResources') && lesson.ports !== false
+    timelineOptions.showCache = !hidden.includes('timelineResources') && !hidden.includes('timelineCache') && lesson.cache !== false
+    if (lesson.cacheRows) timelineOptions.expandCache = true     // a lesson unfolds the lines of the cache
+    const all = timeline.value?.cycles ?? timelineOptions.cycles
+    timelineOptions.autoFitCycles = !lesson.cycles
+    if (lesson.cycles) timelineOptions.cycles = Math.min(lesson.cycles, all || lesson.cycles)
+    else fitCycles()
+    nextTick(() => present())
+  }
+  watch(() => [simState.lesson ? 1 : 0, (simState.lesson?.hidden ?? []).join(','), JSON.stringify(simState.timelineLesson ?? {})],
+        () => applyShownParts())
 
   const loadOptions = () => {
     try {
@@ -266,7 +266,7 @@
         getPortUsage(timelineRVCAT);
         selectedCell.value = null
         timeline.value = timelineRVCAT
-        if (timelineOptions.autoFitCycles) fitCycles()      // the whole new timeline
+        applyShownParts()                                    // the whole new timeline (or the cycles of a lesson)
         timelineOptions.canvasOffsetX = 0
         timelineOptions.canvasOffsetY = 0
         timelineOptions.instructions = 1
@@ -350,12 +350,6 @@
 * ------------------------------------------------------------------ */
 
   function toggleCritical()  { timelineOptions.critical = !timelineOptions.critical }
-  function togglePorts()     { timelineOptions.showPorts = !timelineOptions.showPorts }
-  function toggleCache()     { timelineOptions.showCache = !timelineOptions.showCache }
-  function toggleText()      {
-    timelineOptions.showText = !timelineOptions.showText
-    if (timelineOptions.autoFitCycles) nextTick(fitCycles)     // the first column changed its width
-  }
 
   function getPortUsage(timeline) {
     const inferredUsagePorts = {};
@@ -479,7 +473,12 @@
     const canvas = timelineCanvas.value, overlay = overlayCanvas.value
     const wrapper = canvas?.parentElement
     if (!canvas || !overlay || !wrapper || !timeline.value) return
-    const w = Math.max(50, wrapper.clientWidth - MINIMAP_W), h = Math.max(50, wrapper.clientHeight)
+    let w = Math.max(50, wrapper.clientWidth - MINIMAP_W)
+    const h = Math.max(50, wrapper.clientHeight)
+    // a lesson can end the timeline at a fraction of the window (its cards are at the right)
+    const fraction = simState.lesson ? Number(simState.timelineLesson?.width) : 0
+    if (fraction > 0 && fraction <= 1)
+      w = Math.max(200, Math.min(w, window.innerWidth * fraction - wrapper.getBoundingClientRect().left))
     view.w = w
     view.h = h
     view.topH  = padY + (resourceRowCount + 1) * cellH
@@ -568,6 +567,8 @@
       canvas.style.width = `${w}px`
       canvas.style.height = `${h}px`
     }
+    canvas.style.left  = `${view.w + 2}px`
+    canvas.style.right = 'auto'
     const c = canvas.getContext('2d')
     c.clearRect(0, 0, w, h)
     c.fillStyle = '#f6f8fb'
@@ -1780,22 +1781,22 @@
     const d = cell.waitDetail
     if (cell.char === '.' && d?.reason === 'data')
       for (const r of new Set(d.dependencies ?? []))
-        lines.push([{ text: t('waits for') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
+        lines.push([{ text: t('waits for') + ' ', kind: 'perf', chip: 'producer' }, { text: rowName(r), kind: 'instr' }])
     const conflict = portConflictLines(cell)
     if (conflict) lines.push(...conflict)
     if ((cell.char === 'E' && execCycleOf(cell) === 1) || cell.colIdx < 0)
       for (const r of producersOf(cell.rowIdx))
-        lines.push([{ text: t('receives data from') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
+        lines.push([{ text: t('receives data from') + ' ', kind: 'perf', chip: 'producer' }, { text: rowName(r), kind: 'instr' }])
     if (cell.char === 'W' || cell.colIdx < 0)
       for (const r of consumersOf(cell.rowIdx))
-        lines.push([{ text: t('its result goes to') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
+        lines.push([{ text: t('its result goes to') + ' ', kind: 'perf', chip: 'consumer' }, { text: rowName(r), kind: 'instr' }])
     if (cell.char === '-') {
       const b = retireBlocker(cell)
-      lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf' }, { text: rowName(b.rowIdx), kind: 'instr' }]
+      lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf', chip: 'blocker' }, { text: rowName(b.rowIdx), kind: 'instr' }]
                    : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
     }
     const mem = memoryInfo(cell.rowIdx)
-    if (mem) lines.push([{ text: memoryText(mem), kind: 'mem' }])
+    if (mem) lines.push([{ text: memoryText(mem), kind: 'mem', chip: 'memory' }])
     if (cell.critical && timelineOptions.critical) lines.push([{ text: t('On the critical path'), kind: 'note' }])
     return {
       title: rowName(cell.rowIdx),
@@ -1845,10 +1846,6 @@
   function foldDetails() {
     if (pinned.value) releasePin()
     detailsOpen.value = false
-  }
-  function toggleDetails() {
-    if (detailsOpen.value) foldDetails()
-    else detailsOpen.value = true
   }
   function onKeyDown(e) {
     if (e.key === 'Escape' && pinned.value) return releasePin()
@@ -1954,7 +1951,7 @@
     const lines = [[{ text: t('Waits for a free port') + ' (' + ports + ')', kind: 'perf' }]]
     for (const { port, row } of conflicts) {
       const h = rowHeaderCell(row)
-      lines.push([{ text: `P${port} ← `, kind: 'perf' }, { text: label(row) + ' ', kind: 'id' },
+      lines.push([{ text: `P${port} ← `, kind: 'perf', chip: 'port' }, { text: label(row) + ' ', kind: 'id' },
                   { text: h?.instructionText ?? '', kind: 'instr' }])
     }
     return lines
@@ -2042,81 +2039,8 @@
         </span>
         <span class="header-title">{{ t('Timeline: {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName }) }}</span>
       </div>
-
-      <div class="timeline-controls">
-        <div class="iters-group">
-          <span class="iters-label">{{ t('Cycles:') }}</span>
-          <input type="number" min="1" v-model.lazy.number="timelineOptions.cycles"
-            :title="t('Number of cycles shown (press Enter to apply)')"
-            @change="onCyclesTyped"
-            id="timeline-cycles" style="width: 4.5em">
-          <button class="blue-button fit-cycles" @click="fitCyclesButton"
-            id="timeline-fit-cycles"
-            :title="t('Show the whole timeline: the window follows the rows (wheel: one row; Page Up / Page Down: one iteration; minimap)')">
-            {{ t('Fit') }}
-          </button>
-        </div>
-
-        <div class="iters-group">
-          <span class="show-label">{{ t('Show:') }}</span>
-          <button class="blue-button toggle-button" :class="{ active: detailsOpen }" :aria-pressed="detailsOpen"
-            :title="t('Panel of details: click a cell of the timeline to see what it means and what it depends on')"
-            id="timeline-details-toggle"
-            @click="toggleDetails">
-            <span v-if="detailsOpen">✔ </span>
-            {{ t('Details') }}
-          </button>
-          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showText }" :aria-pressed="timelineOptions.showText"
-            :title="t('Show the text of each instruction in the first column (otherwise, only its number)')"
-            id="timeline-text"
-            @click="toggleText">
-            <span v-if="timelineOptions.showText">✔ </span>
-            {{ t('Text') }}
-          </button>
-          <button class="blue-button toggle-button" :class="{ active: timelineOptions.critical }" :aria-pressed="timelineOptions.critical"
-            :title="t('Show the critical path ending at the last instruction retired in the visible cycles')"
-            id="timeline-critical"
-            @click="toggleCritical">
-            <span v-if="timelineOptions.critical">✔ </span>
-            {{ t('Critical') }}
-          </button>
-          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showPorts }"
-            :aria-pressed="timelineOptions.showPorts"
-            :title="t('Show or hide execution-port usage rows')"
-            id="timeline-ports"
-            @click="togglePorts">
-            <span v-if="timelineOptions.showPorts">✔ </span>
-            {{ t('Ports') }}
-          </button>
-          <button class="blue-button toggle-button" :class="{ active: timelineOptions.showCache && cacheEnabled }"
-            :aria-pressed="timelineOptions.showCache && cacheEnabled"
-            :disabled="!cacheEnabled"
-            :title="cacheEnabled
-              ? t('Show or hide Main Memory transfers, cache lines, fill buffers, and write buffers')
-              : t('Show Cache is unavailable because the selected processor has no cache')"
-            id="timeline-cache"
-            @click="toggleCache">
-            <span v-if="timelineOptions.showCache">✔ </span>
-            {{ t('Cache') }}
-          </button>
-        </div>
-      </div>
     </div>
 
-    <!-- What the letters of the cells mean (the tooltip of a cell gives more detail) -->
-    <div class="timeline-legend" id="timeline-legend">
-      <span><b>D</b> {{ t('dispatch') }}</span>
-      <span><b>E</b> {{ t('execute') }}</span>
-      <span><b>W</b> {{ t('write the result') }}</span>
-      <span><b>R</b> {{ t('retire') }}</span>
-      <span class="legend-wait">{{ t('waits:') }}</span>
-      <span><b>.</b> {{ t('for data') }}</span>
-      <span><b>*</b> {{ t('for a port') }}</span>
-      <span><b>-</b> {{ t('to retire in order') }}</span>
-      <span v-if="cacheEnabled" :title="t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue')">
-        <b>! 2 : @</b> {{ t('cache') }}
-      </span>
-    </div>
     <div v-if="timelineError" class="execution-validation-error" role="alert">
       {{ timelineError }}
     </div>
@@ -2133,6 +2057,8 @@
                 :title="t('The whole timeline: click or drag to move the window. Wheel: one row; Page Up / Page Down: one iteration')"
                 @mousedown.stop="onMinimapDown" @mousemove.stop="onMinimapMove"></canvas>
       </div>
+      <button v-if="!detailsOpen" class="details-strip" id="timeline-details-open" @click="detailsOpen = true"
+              :title="t('Open the panel of details')">» <span>{{ t('Details') }}</span></button>
       <aside v-if="detailsOpen" class="timeline-details" id="timeline-details">
         <div class="details-head">
           <b>{{ t('Details') }}</b>
@@ -2144,7 +2070,7 @@
           <p v-if="pinned.text" class="details-text">{{ pinned.text }}</p>
           <div v-if="pinned.lines.length" class="details-lines">
             <div v-for="(line, i) in pinned.lines" :key="i">
-              <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
+              <template v-for="(part, j) in line" :key="j"><span v-if="part.chip" :class="['sw', `sw-${part.chip}`]"></span><span :class="`tt-${part.kind}`">{{ part.text }}</span></template>
             </div>
           </div>
           <div v-if="pinned.info.length" class="details-info">
@@ -2154,14 +2080,23 @@
           </div>
           <button class="details-release" @click="releasePin" :title="t('Release the pinned cell (also with Esc)')">{{ t('Release') }}</button>
         </template>
-        <p v-else class="details-hint">{{ t('Click a cell of the timeline to pin it: here you will see what it means and what it depends on. A second click on it, or Esc, releases it.') }}</p>
-        <div class="details-legend">
-          <div><span class="sw sw-self"></span>{{ t('the instruction') }}</div>
-          <div><span class="sw sw-producer"></span>{{ t('instructions it waits for (data)') }}</div>
-          <div><span class="sw sw-port"></span>{{ t('ports, and instructions that use them') }}</div>
-          <div><span class="sw sw-blocker"></span>{{ t('older instruction that has not finished') }}</div>
-          <div><span class="sw sw-consumer"></span>{{ t('instructions that receive its result') }}</div>
-          <div v-if="cacheEnabled"><span class="sw sw-memory"></span>{{ t('memory: its block, fill buffer, MM transfer, store buffer') }}</div>
+        <div v-else class="details-general">
+          <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click, Esc or « release it.') }}</p>
+          <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
+          <div class="details-legend">
+            <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
+            <div>{{ t('waits:') }} <b class="lt">.</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
+            <div v-if="cacheEnabled"><b class="lt">! 2 : @</b> {{ t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
+            <div class="critical-note"><b class="lt crit">E</b> {{ t('red letters: the critical path') }}</div>
+          </div>
+          <div class="details-legend">
+            <div><span class="sw sw-self"></span>{{ t('the instruction') }}</div>
+            <div><span class="sw sw-producer"></span>{{ t('instructions it waits for (data)') }}</div>
+            <div><span class="sw sw-consumer"></span>{{ t('instructions that receive its result') }}</div>
+            <div><span class="sw sw-port"></span>{{ t('ports, and instructions that use them') }}</div>
+            <div><span class="sw sw-blocker"></span>{{ t('older instruction that has not finished') }}</div>
+            <div v-if="cacheEnabled"><span class="sw sw-memory"></span>{{ t('memory: its block, fill buffer, MM transfer, store buffer') }}</div>
+          </div>
         </div>
       </aside>
     </div>
@@ -2210,7 +2145,16 @@
   .details-lines, .details-info { margin: 6px 0; font-family: monospace; font-size: 0.875rem; }
   .details-info { color: #444; border-top: 1px dashed #ccd; padding-top: 6px; }
   .details-hint { color: #555; line-height: 1.4; }
-  .details-legend { margin-top: 12px; font-size: 0.875rem; color: #444; display: grid; gap: 3px; }
+  .details-legend { margin-top: 12px; font-size: 0.875rem; color: #444; display: grid; gap: 4px; }
+  .details-legend .lt { font-family: monospace; font-size: 1rem; color: #000; }
+  .details-legend .lt.crit { color: red; }
+  .details-lines .sw { width: 11px; height: 11px; margin-right: 5px; }
+  .details-strip {
+    flex: 0 0 26px; border: none; border-left: 1px solid #d6dbe3; background: #e8eef6; color: #1a4fb3;
+    font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 8px;
+  }
+  .details-strip span { writing-mode: vertical-rl; }
+  .details-strip:hover { background: #d4dff0; }
   .sw { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; border: 2px solid; border-radius: 2px; }
   .sw-self     { background: rgba(255, 213, 79, 0.55); border-color: #c79100; }
   .sw-producer { background: rgba(21, 101, 192, 0.22); border-color: #1565c0; }
@@ -2277,9 +2221,7 @@
   .timeline-minimap {
     position:   absolute !important;
     top:        0 !important;
-    left:       auto !important;
-    right:      2px;
-    width:      58px !important;
+    width:      58px !important;       /* (its left side: next to the window, see drawMinimap) */
     border-left: 1px solid #d6dbe3;
     cursor:     pointer;
   }

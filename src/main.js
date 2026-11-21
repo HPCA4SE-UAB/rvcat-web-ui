@@ -26,6 +26,7 @@ const SimulationState = reactive({
   programHighlight:    null,      // { rows, field: 'ports' | 'latency' }: cells of the Program panel highlighted
   timelineCriticalPathEnabled: false,
   timelineFit:         null,
+  timelineLesson:      {},        // a lesson limits the timeline: { cycles, critical, ports, cache, width } (actions timeline:...)
   dependenceHighlight: null,      // { producers, vars }: instructions and variables a waiting instruction needs (timeline)      // { width, nonce }: zoom of the timeline asked by a tutorial card
   timelineCriticalPathPercentages: null,
   simulatedProcess:    {},

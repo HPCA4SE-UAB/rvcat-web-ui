@@ -14,7 +14,7 @@ export const TUTORIAL_ACTIONS = [
   ['clickChain:VAR',           'select the latency bound of variable VAR (opens the dependence graph)'],
   ['openGraph',                'open the dependence graph window'],
   ['closeGraph',               'close the dependence graph window'],
-  ['timeline:critical=on|off', 'timeline option: critical, ports, cache (on/off), cycles=NUMBER, or width=FRACTION (zoom: the timeline ends at that fraction of the window width)'],
+  ['timeline:critical=on|off', 'what the timeline shows in the lesson: critical, ports, cache, cacheRows (unfold the cache lines) (on/off), cycles=NUMBER (only the first cycles; all: every cycle), or width=FRACTION (the timeline ends at that fraction of the window width)'],
   ['expandPorts',              'show the operation types of the processor ports'],
   ['collapsePorts',            'hide the operation types of the processor ports'],
   ['setLatency:TYPE.OPER=N',   'change a latency of the current processor (all ports)'],
@@ -95,13 +95,6 @@ export function createActionRunner(ctx) {
     await sleep(250)
   }
 
-  async function setTimelineToggle(id, on) {
-    if (!await waitUntil(() => $(`#timeline-${id}`))) return
-    const button = $(`#timeline-${id}`)
-    const active = button.textContent.includes('✔') || button.classList.contains('active')
-    if (active !== on) { clickElement(button); await sleep(300) }
-  }
-
   async function setInput(selector, value) {
     const el = $(selector)
     if (!el) return
@@ -153,18 +146,11 @@ export function createActionRunner(ctx) {
       await sleep(200)
     },
     async timeline(a) {
-      if (!$('#timeline-critical')) await switchPanel('timelineComponent')
-      if (a.key === 'cycles') {
-        await waitUntil(() => $('#timeline-cycles'))
-        await setInput('#timeline-cycles', a.value)
-      } else if (a.key === 'width') {
-        await waitUntil(() => $('#canvas-container'))
-        await sleep(80)                       // after the side panel is hidden or shown (layout)
-        simState.timelineFit = { width: a.value, nonce: Date.now() }
-        await sleep(80)
-      } else {
-        await setTimelineToggle(a.key, a.value !== 'off')
-      }
+      // the timeline has no buttons: the lesson sets what it shows (simState.timelineLesson)
+      if (!$('#canvas-container')) await switchPanel('timelineComponent')
+      const value = a.key === 'cycles' || a.key === 'width' ? Number(a.value) || null : a.value !== 'off'
+      simState.timelineLesson = { ...(simState.timelineLesson ?? {}), [a.key]: value }
+      await sleep(250)
     },
     async sidePanel(a) {
       const collapsed = !!$('#side-panel-expand')
