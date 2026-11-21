@@ -1841,6 +1841,15 @@
     if (cell) pinCell(cell)
     else releasePin()
   }
+  // folding the panel of details also releases the pinned cell or instruction
+  function foldDetails() {
+    if (pinned.value) releasePin()
+    detailsOpen.value = false
+  }
+  function toggleDetails() {
+    if (detailsOpen.value) foldDetails()
+    else detailsOpen.value = true
+  }
   function onKeyDown(e) {
     if (e.key === 'Escape' && pinned.value) return releasePin()
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return
@@ -2053,7 +2062,7 @@
           <button class="blue-button toggle-button" :class="{ active: detailsOpen }" :aria-pressed="detailsOpen"
             :title="t('Panel of details: click a cell of the timeline to see what it means and what it depends on')"
             id="timeline-details-toggle"
-            @click="pinned ? releasePin() : (detailsOpen = !detailsOpen)">
+            @click="toggleDetails">
             <span v-if="detailsOpen">✔ </span>
             {{ t('Details') }}
           </button>
@@ -2127,7 +2136,7 @@
       <aside v-if="detailsOpen" class="timeline-details" id="timeline-details">
         <div class="details-head">
           <b>{{ t('Details') }}</b>
-          <button class="details-close" @click="detailsOpen = false" :title="t('Fold the panel of details')">«</button>
+          <button class="details-close" @click="foldDetails" :title="t('Fold the panel of details')">«</button>
         </div>
         <template v-if="pinned">
           <div class="details-title">{{ pinned.title }}</div>
