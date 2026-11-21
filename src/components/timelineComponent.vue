@@ -1750,8 +1750,6 @@
       lines.push([{ text: cell.wrongPath ? t('wrong path (squashed)') : t('mispredicted branch'), kind: 'note' }])
     return lines
   }
-  const formatInstructionTooltip = (cell) =>
-    instructionTooltipLines(cell).map(line => line.map(part => part.text).join('')).join('\n')
 
   let downX = 0, downY = 0
   function onClick(e) {
