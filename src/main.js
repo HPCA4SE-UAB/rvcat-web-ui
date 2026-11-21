@@ -23,7 +23,7 @@ const SimulationState = reactive({
   highlightedPorts:    [],        // ports highlighted from the timeline (the ports an instruction can use)
   highlightedStage:    null,      // 'dispatch' | 'retire': stage highlighted in the Processor panel (timeline)
   programViewOverride: null,      // 'perf': the Program panel shows latency and ports while the timeline needs it
-  programHighlight:    null,      // { rows, field: 'ports' | 'latency' }: cells of the Program panel highlighted
+  programHighlight:    null,      // { rows, field: 'ports' | 'latency' | [both] }: cells of the Program panel highlighted
   timelineCriticalPathEnabled: false,
   timelineFit:         null,
   timelineLesson:      {},        // a lesson limits the timeline: { cycles, critical, ports, cache, width } (actions timeline:...)

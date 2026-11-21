@@ -506,7 +506,17 @@
     const first = timeline.value.instructions?.[scrollRow.value]
     const worldW = worldCanvas.width
     const startCycle = first ? Math.max(0, first[2] - 2) : 0
-    view.scrollX = Math.max(0, Math.min(startCycle * cellW, worldW - w))
+    let scrollX = startCycle * cellW
+    // a pinned cell stays in view (it is moved with the arrows)
+    const sel = selectedCell.value
+    if (sel && !sel.cellType && sel.colIdx >= 0 &&
+        sel.rowIdx >= scrollRow.value && sel.rowIdx < scrollRow.value + visibleRowCount()) {
+      const bodyW = w - (padX + labelW)
+      const x0 = sel.colIdx * cellW, x1 = x0 + cellW
+      if (x0 < scrollX) scrollX = Math.max(0, x0 - 2 * cellW)
+      else if (x1 > scrollX + bodyW) scrollX = x1 - bodyW + 2 * cellW
+    }
+    view.scrollX = Math.max(0, Math.min(scrollX, worldW - w))
     for (const [target, source] of [[canvas, worldCanvas], [overlay, worldOverlay]]) {
       if (target.width !== w || target.height !== h) {
         target.width = w
@@ -1721,10 +1731,14 @@
       simState.programViewOverride = 'perf'
       simState.programHighlight    = { rows: [cell.instrIdx], field: 'ports' }
     } else if (cell.char === 'E' && execCycleOf(cell) === 1) {
-      // starts to execute: its port, and the instructions that have just given it its operands
+      // starts to execute: its port, the instructions that have just given it its operands, and
+      // its latency and ports in the Program panel
       markPortRow(ctx, cell.port, col, 'port')
+      for (const c of rowCells(row)) if (c.char === 'E') markRect(ctx, c.x, c.y, cellW, 'self')
       const names = markProducers(ctx, row)
       simState.dependenceHighlight = { producers: instrIdxOfRows(producersOf(row)), vars: names }
+      simState.programViewOverride = 'perf'
+      simState.programHighlight    = { rows: [cell.instrIdx], field: ['latency', 'ports'] }
     } else if (cell.char === 'E') {
       // executing: its latency in the Program panel
       for (const c of rowCells(row)) if (c.char === 'E') markRect(ctx, c.x, c.y, cellW, 'self')
@@ -1874,10 +1888,51 @@
     if (pinned.value) releasePin()
     detailsOpen.value = false
   }
+  // The arrows move the pinned instruction or cell: ← → the previous / next cell of its row (from
+  // the instruction: → its first cell, ← its last one; ← from the first cell: the instruction);
+  // ↑ ↓ the row above / below (the same cycle, or the nearest cell of that row). The timeline
+  // moves to show it. Without anything pinned (or a cycle or a resource pinned): false
+  function moveSelection(key) {
+    const cur = pinned.value?.cell
+    if (!cur || cur.cellType || cur.rowIdx < 0) return false
+    const header = (r) => interactiveCells.find(c => !c.cellType && c.rowIdx === r && c.colIdx === -1)
+    const cellsOf = (r) => rowCells(r).filter(c => c.char && c.char !== ' ').sort((a, b) => a.colIdx - b.colIdx)
+    let next = null
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      const cells = cellsOf(cur.rowIdx)
+      if (!cells.length) return true
+      if (cur.colIdx < 0) next = key === 'ArrowRight' ? cells[0] : cells[cells.length - 1]
+      else {
+        const i = cells.findIndex(c => c.colIdx === cur.colIdx)
+        next = key === 'ArrowRight' ? cells[i + 1] : (i > 0 ? cells[i - 1] : header(cur.rowIdx))
+      }
+    } else {
+      const r = cur.rowIdx + (key === 'ArrowDown' ? 1 : -1)
+      if (r < 0 || r >= totalInstr) return true
+      if (cur.colIdx < 0) next = header(r)
+      else {
+        const cells = cellsOf(r)
+        next = cells.find(c => c.colIdx === cur.colIdx) ??
+               cells.reduce((a, b) => (!a || Math.abs(b.colIdx - cur.colIdx) < Math.abs(a.colIdx - cur.colIdx) ? b : a), null)
+      }
+    }
+    if (!next) return true
+    // the row in the window (the cycles follow the rows; present() keeps the cell in view)
+    const visible = Math.max(1, visibleRowCount() - 1)
+    if (next.rowIdx < scrollRow.value) scrollRow.value = next.rowIdx
+    else if (next.rowIdx >= scrollRow.value + visible) scrollRow.value = Math.min(maxScrollRow(), next.rowIdx - visible + 1)
+    pinCell(next)
+    present()
+    return true
+  }
   function onKeyDown(e) {
     if (e.key === 'Escape' && pinned.value) return releasePin()
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return
     if (!timeline.value || !timelineCanvas.value?.offsetParent) return
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && moveSelection(e.key)) {
+      e.preventDefault()
+      return
+    }
     const moves = { ArrowDown: () => scrollTo(scrollRow.value + 1), ArrowUp: () => scrollTo(scrollRow.value - 1),
                     PageDown: () => iterationStep(1), PageUp: () => iterationStep(-1),
                     Home: () => scrollTo(0), End: () => scrollTo(maxScrollRow()) }

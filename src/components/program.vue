@@ -711,11 +711,11 @@
                 {{ inst.size}}
               </td>
               <td class="type-col" v-if="shownView === 1" :title="t('Instruction Latency')"
-                  :class="{ 'cell-focus': simState.programHighlight?.field === 'latency' && simState.programHighlight.rows.includes(index) }">
+                  :class="{ 'cell-focus': [].concat(simState.programHighlight?.field).includes('latency') && simState.programHighlight.rows.includes(index) }">
                 {{ inst.latency }}
               </td>
               <td class="type-col ports-col" v-if="shownView === 1" :title="t('Available execution ports')"
-                  :class="{ 'cell-focus': simState.programHighlight?.field === 'ports' && simState.programHighlight.rows.includes(index) }">
+                  :class="{ 'cell-focus': [].concat(simState.programHighlight?.field).includes('ports') && simState.programHighlight.rows.includes(index) }">
                 {{ portsMaskToString(inst.ports) }}
               </td>
             </tr>
