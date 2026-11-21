@@ -40,6 +40,7 @@
     expandCache:   false,
     expandFill:    false,
     expandWrite:   false,
+    expandMemory:  false,  // the rows of the memory (MM, cache, buffers, SB): one row (the use of the MM bus), or all
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -60,7 +61,7 @@
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     const font = Math.round(14 * k)
-    let chars = 7                  // the names of the summary rows of the resources
+    let chars = 8                  // the names of the summary rows of the resources ("▸ Memory")
     if (timelineOptions.showText) {
       const list = [...(simState.simulatedProcess?.instruction_list ?? []), ...(simState.simulatedProcess?.epilogue ?? [])]
       chars = Math.max(chars, 2 + Math.min(TEXT_CHARS, Math.max(0, ...list.map(i => String(i?.text ?? '').length))))
@@ -87,9 +88,16 @@
     const fitting = Math.floor(((wrapper.clientWidth - MINIMAP_W) / scale - 2 * 10 - g.labelW) / g.cellW)
     timelineOptions.canvasOffsetX = 0
     // the whole timeline: the window moves along it (it follows the rows)
-    timelineOptions.cycles = Math.max(10, fitting, timeline.value?.cycles ?? 0)
+    timelineOptions.cycles = Math.min(maxCycles(), Math.max(10, fitting, timeline.value?.cycles ?? 0))
   }
   function onResizeFit()   { if (timelineOptions.autoFitCycles) fitCycles() }
+  // the canvases of the world cannot be wider than about 32,000 pixels: very long timelines
+  // (e.g. a tiny cache that misses all the time) show their first cycles
+  const MAX_WORLD_PX = 30000
+  function maxCycles() {
+    const g = timelineGeometry()
+    return Math.max(10, Math.floor((MAX_WORLD_PX - 2 * 10 - g.labelW) / g.cellW))
+  }
 
   // The timeline shows everything (the text, the critical path, the ports, the cache, all the
   // cycles); a lesson can limit it: its hidden parts and its actions (simState.timelineLesson)
@@ -100,10 +108,13 @@
     timelineOptions.critical  = !hidden.includes('timelineCritical') && lesson.critical !== false
     timelineOptions.showPorts = !hidden.includes('timelineResources') && lesson.ports !== false
     timelineOptions.showCache = !hidden.includes('timelineResources') && !hidden.includes('timelineCache') && lesson.cache !== false
-    if (lesson.cacheRows) timelineOptions.expandCache = true     // a lesson unfolds the lines of the cache
+    if (lesson.cacheRows) {                 // a lesson unfolds the memory and the lines of the cache
+      timelineOptions.expandMemory = true
+      timelineOptions.expandCache  = true
+    }
     const all = timeline.value?.cycles ?? timelineOptions.cycles
     timelineOptions.autoFitCycles = !lesson.cycles
-    if (lesson.cycles) timelineOptions.cycles = Math.min(lesson.cycles, all || lesson.cycles)
+    if (lesson.cycles) timelineOptions.cycles = Math.min(lesson.cycles, all || lesson.cycles, maxCycles())
     else fitCycles()
     nextTick(() => present())
   }
@@ -315,6 +326,7 @@
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
                timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showText,
                timelineOptions.expandPorts, timelineOptions.expandCache, timelineOptions.expandFill, timelineOptions.expandWrite,
+               timelineOptions.expandMemory,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -446,11 +458,16 @@
     rafPending = true
 
     requestAnimationFrame(() => {
-      drawTimeline(cycles, oldCycles)
       rafPending = false
-      drawSelectedCell()
-      present()
-      refocusPinned()
+      try {
+        drawTimeline(cycles, oldCycles)
+        drawSelectedCell()
+        present()
+        refocusPinned()
+      } catch (e) {
+        console.error('📈❌ Failed to draw the timeline:', e)
+        timelineError.value = t('The timeline could not be drawn: {e}', { e: e.message })
+      }
     })
   }
 
@@ -728,7 +745,15 @@
       { key: 'write', option: 'expandWrite', name: 'Write',    test: r => r.bufferType === 'write' },
     ]
     const detailedRows = resourceRows.splice(0)
+    const memoryOpen = !!timelineOptions.expandMemory
     for (const r of detailedRows) {
+      if (r.port === null && r.label === 'MM') {         // the memory: folded, only the use of the MM bus
+        Object.assign(r, memoryOpen ? { foldLabel: '▾ MM', foldOption: 'expandMemory', noLetters: false }
+                                    : { foldLabel: `▸ ${t('Memory')}`, foldOption: 'expandMemory', noLetters: true })
+        resourceRows.push(r)
+        continue
+      }
+      if (!memoryOpen && (r.cacheLineIndex !== undefined || r.bufferType || r.storeBuffer)) continue
       const g = GROUPS.find(group => group.test(r))
       if (!g) { resourceRows.push(r); continue }
       let summary = resourceRows.find(x => x.summary === g.key)
@@ -936,10 +961,6 @@
             const h = Math.max(2, Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
             ctx.fillStyle = SUMMARY_COLORS[resource.summary]
             ctx.fillRect(cx + 1, resourceY + cellH - 1 - h, cellW - 2, h)
-            if (n < 10) {
-              ctx.fillStyle = '#000'
-              ctx.fillText(String(n), cx + fontXOffset, resourceY + fontYOffset)
-            }
           }
           interactiveCells.push({
             x: cx, y: resourceY, colIdx: col, rowIdx: -2, cellType: 'resource-cycle', resourceIndex: resourceRowIndex,
@@ -967,7 +988,7 @@
       const usagePercent = visibleCycleCount > 0
         ? 100 * usedCycleCount / visibleCycleCount
         : 0
-      const displayedLabel = resource.port === null ? 'MM' : resource.label
+      const displayedLabel = resource.foldLabel ?? (resource.port === null ? 'MM' : resource.label)
       ctx.fillText(displayedLabel, padX + fontXOffset, resourceY + fontYOffset)
       const visibleMmRequests = resource.port === null
         ? resource.requests.filter(request =>
@@ -984,9 +1005,14 @@
         width: labelW,
         colIdx: -1,
         rowIdx: -2,
-        cellType: 'resource-label',
+        cellType: resource.foldOption ? 'resource-summary-label' : 'resource-label',
+        option: resource.foldOption,
         resourceIndex: resourceRowIndex,
-        tooltip: resource.storeBuffer
+        tooltip: resource.foldOption
+          ? (timelineOptions[resource.foldOption]
+              ? t('Main memory: R a block read, W a dirty block written. Click to fold all the rows of the memory')
+              : t('Use of the bus between the processor and the main memory (a colour per block). Click to show the rows of the memory'))
+          : resource.storeBuffer
           ? t('SB: store buffer ({n} entries). Each store takes an entry when it is dispatched and frees it when it is written into the cache, after it retires. The bar shows how full it is; F: full (dispatch waits).', { n: resource.capacity })
           : resource.cacheLineIndex !== undefined
           ? t('Cache line {i}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer', { i: resource.cacheLineIndex })
@@ -1066,6 +1092,7 @@
             ? [...transactionTypes].sort().join('/')
             : 'X'
         }
+        if (resource.noLetters) marker = ''         // the folded memory: only its colours
         if (marker) {
           ctx.fillStyle = '#000'
           ctx.fillText(marker, resourceX + fontXOffset, resourceY + fontYOffset)
@@ -1248,7 +1275,7 @@
         ctx.fillRect    (x, y, cellW, cellH);
         ctx.strokeRect  (x, y, cellW, cellH);
         ctx.fillStyle = currColor;
-        ctx.fillText    (ch, x + fontXOffset, y + fontYOffset);
+        ctx.fillText    (ch === '.' ? '·' : ch, x + fontXOffset, y + fontYOffset);
 
         i++;
         x += cellW;
@@ -2013,7 +2040,9 @@
       return
     }
     if (!cell) return releasePin()
-    if (pinned.value && pinned.value.cell === cell) return releasePin()
+    const same = (a, b) => a.rowIdx === b.rowIdx && a.colIdx === b.colIdx && a.cellType === b.cellType &&
+                           (a.resourceIndex ?? null) === (b.resourceIndex ?? null)
+    if (pinned.value && same(pinned.value.cell, cell)) return releasePin()
     pinCell(cell)
   }
 
@@ -2085,7 +2114,7 @@
           <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
           <div class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
-            <div>{{ t('waits:') }} <b class="lt">.</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
+            <div>{{ t('waits:') }} <b class="lt">·</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
             <div v-if="cacheEnabled"><b class="lt">! 2 : @</b> {{ t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
             <div class="critical-note"><b class="lt crit">E</b> {{ t('red letters: the critical path') }}</div>
           </div>

@@ -331,7 +331,7 @@
       "title": "The timeline",
       "selector": "#canvas-container",
       "position": "left",
-      "description": "<b>Cycle by cycle: what each instruction is doing</b> (rows: instructions, columns: cycles).<br><b>D</b> dispatch · <b>E</b> execute (loads too) · <b>W</b> write result · <b>R</b> retire.<br>The <span style=\"color:#e53935\"><b>critical path</b></span> is in red: the first load (L L L L), then the E E of each addition.<br>Addition 3 waits (<b>.</b>) for addition 1, and addition 1 of the next iteration waits for addition 3.",
+      "description": "<b>Cycle by cycle: what each instruction is doing</b> (rows: instructions, columns: cycles).<br><b>D</b> dispatch · <b>E</b> execute (loads too) · <b>W</b> write result · <b>R</b> retire.<br>The <span style=\"color:#e53935\"><b>critical path</b></span> is in red: the first load (L L L L), then the E E of each addition.<br>Addition 3 waits (<b>·</b>) for addition 1, and addition 1 of the next iteration waits for addition 3.",
       "next": [
         "timeline-rob",
         "timeline-more"
@@ -353,7 +353,7 @@
       "title": "In depth: waiting symbols",
       "selector": "#canvas-container",
       "position": "left",
-      "description": "&bull; <b>.</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>x</b>: wrong path of a mispredicted branch (squashed)<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
+      "description": "&bull; <b>·</b> waits for a source operand (data dependence)<br>&bull; <b>*</b> waits for a free port (port conflict)<br>&bull; <b>-</b> already executed, waits for older instructions to retire<br>&bull; With a cache: <b>!</b> cache/MM slot · <b>:</b> block fill · <b>2</b> fill in progress<br>&nbsp;&nbsp;&nbsp;· <b>@</b> cache return queue<br>&bull; <b>x</b>: wrong path of a mispredicted branch (squashed)<br>&bull; <b>Ports</b> and <b>Cache</b> add rows with resource usage; <b>Fit</b> fills the width.",
       "next": [
         "timeline-rob"
       ],
@@ -379,7 +379,7 @@
       "id": "check-timeline",
       "type": "question",
       "title": "Check: reading the timeline",
-      "questionText": "An instruction shows <b>D . . . E W R</b> in the timeline. Why does it wait after being dispatched?",
+      "questionText": "An instruction shows <b>D · · · E W R</b> in the timeline. Why does it wait after being dispatched?",
       "next": [
         "predict"
       ],
