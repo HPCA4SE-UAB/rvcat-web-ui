@@ -509,8 +509,8 @@
     let scrollX = startCycle * cellW
     // a pinned cell stays in view (it is moved with the arrows)
     const sel = selectedCell.value
-    if (sel && !sel.cellType && sel.colIdx >= 0 &&
-        sel.rowIdx >= scrollRow.value && sel.rowIdx < scrollRow.value + visibleRowCount()) {
+    if (keepSelectionInView && sel && sel.colIdx >= 0 && (sel.cellType === 'resource-cycle' || (!sel.cellType &&
+        sel.rowIdx >= scrollRow.value && sel.rowIdx < scrollRow.value + visibleRowCount()))) {
       const bodyW = w - (padX + labelW)
       const x0 = sel.colIdx * cellW, x1 = x0 + cellW
       if (x0 < scrollX) scrollX = Math.max(0, x0 - 2 * cellW)
@@ -556,7 +556,11 @@
              y: sy < view.topH  ? sy : sy + view.scrollY }
   }
 
+  // after a move with the arrows, the selected cell is kept in view; the wheel, the keys of the
+  // page and the minimap move the cycles with the rows again
+  let keepSelectionInView = false
   function scrollTo(row) {
+    keepSelectionInView = false
     const next = Math.min(Math.max(0, Math.round(row)), maxScrollRow())
     if (next === scrollRow.value) return
     scrollRow.value = next
@@ -974,6 +978,10 @@
           }
           interactiveCells.push({
             x: cx, y: resourceY, colIdx: col, rowIdx: -2, cellType: 'resource-cycle', resourceIndex: resourceRowIndex,
+            // the folded ports: the ports busy in this cycle
+            ports: resource.summary === 'ports'
+              ? [...new Set((portUsageInstr?.[col] ?? []).map(r => instructions[r]?.[3]).filter(p => p !== undefined && p !== null).map(String))]
+              : [],
             linkedInstructionRows: resource.summary === 'ports' ? (portUsageInstr?.[col] ?? [])
               : resource.summary === 'fill' ? [...new Set(resource.members.flatMap(m => m.bufferStates[col]?.[m.bufferIndex]?.instruction_indices ?? []))]
               : [],
@@ -1143,6 +1151,7 @@
           rowIdx: -2,
           cellType: 'resource-cycle',
           resourceIndex: resourceRowIndex,
+          ports: resource.port !== undefined && resource.port !== null ? [String(resource.port)] : [],
           linkedInstructionRows,
           linkedResourceRows,
           tooltip: resource.storeBuffer
@@ -1167,6 +1176,13 @@
                   : t('loading, ready at cycle {c}', { c: cacheLine.ready_cycle })
                 : t('ready')}; ` +
                 `${t('LRU rank {r}', { r: cacheLine.lru })})`
+            : resource.port !== null && resource.port !== undefined
+            ? linkedInstructionRows.length
+              ? t('P{p}: used by {list}', { p: resource.port,
+                  list: linkedInstructionRows.map(row => `[${instructions[row]?.[0]},${instructions[row]?.[1]}]`).join(', ') })
+              : t('P{p}: free', { p: resource.port })
+            : !memoryRequests.length
+            ? t('MM: no transfer')
             : memoryRequests
                 .map(({ operation, address }) => {
                   if (operation === 'read_for_write')
@@ -1672,6 +1688,7 @@
     }
     if (cell.cellType === 'resource-cycle') {
       hoverInfo.value = cell.tooltip ? { state: cell.tooltip, cycle: col } : null
+      if (cell.ports?.length) simState.highlightedPorts = cell.ports      // its port(s) in the Processor panel
       drawHoverOverlay(null, null, null, null, null, null, cell.linkedInstructionRows, col, cell.linkedResourceRows)
       const ctx = overlayContext()
       if (ctx) markCycle(ctx, col)
@@ -1866,7 +1883,6 @@
     focusCell(cell)
     pinned.value = { cell, ...buildDetails(cell) }
     drawSelectedCell()
-    if (!detailsOpen.value) detailsOpen.value = true
   }
   function releasePin() {
     pinned.value = null
@@ -1883,10 +1899,29 @@
     if (cell) pinCell(cell)
     else releasePin()
   }
-  // folding the panel of details also releases the pinned cell or instruction
+  // The panel of details is open until the user folds it (the pinned cell stays pinned); then it
+  // stays folded, also in later sessions, until the user opens it again (»)
   function foldDetails() {
-    if (pinned.value) releasePin()
     detailsOpen.value = false
+  }
+  // A cell of the rows of the resources: the arrows move inside these rows (the border with the
+  // rows of the instructions is not crossed). ← from the first cycle: its label (if it is not a
+  // folded group); → from the label: the first cycle
+  function moveResourceSelection(cur, key) {
+    const find = (ri, col) => interactiveCells.find(c => c.rowIdx === -2 && c.resourceIndex === ri &&
+      (col < 0 ? c.cellType === 'resource-label' : c.cellType === 'resource-cycle' && c.colIdx === col))
+    const lastCol = Math.max(...interactiveCells.filter(c => c.cellType === 'resource-cycle').map(c => c.colIdx))
+    let ri = cur.resourceIndex, col = cur.colIdx
+    if (key === 'ArrowLeft') col = col > 0 ? col - 1 : (find(ri, -1) ? -1 : col)
+    else if (key === 'ArrowRight') col = Math.min(lastCol, col + 1)
+    else {
+      ri += key === 'ArrowDown' ? 1 : -1
+      if (ri < 0 || ri >= resourceRowCount) return true
+      if (col < 0 && !find(ri, -1)) return true     // a folded group has no label to pin
+    }
+    const next = find(ri, col)
+    if (next && next !== cur) { keepSelectionInView = true; pinCell(next); present() }
+    return true
   }
   // The arrows move the pinned instruction or cell: ← → the previous / next cell of its row (from
   // the instruction: → its first cell, ← its last one; ← from the first cell: the instruction);
@@ -1894,6 +1929,7 @@
   // moves to show it. Without anything pinned (or a cycle or a resource pinned): false
   function moveSelection(key) {
     const cur = pinned.value?.cell
+    if (cur && (cur.cellType === 'resource-cycle' || cur.cellType === 'resource-label')) return moveResourceSelection(cur, key)
     if (!cur || cur.cellType || cur.rowIdx < 0) return false
     const header = (r) => interactiveCells.find(c => !c.cellType && c.rowIdx === r && c.colIdx === -1)
     const cellsOf = (r) => rowCells(r).filter(c => c.char && c.char !== ' ').sort((a, b) => a.colIdx - b.colIdx)
@@ -1921,6 +1957,7 @@
     const visible = Math.max(1, visibleRowCount() - 1)
     if (next.rowIdx < scrollRow.value) scrollRow.value = next.rowIdx
     else if (next.rowIdx >= scrollRow.value + visible) scrollRow.value = Math.min(maxScrollRow(), next.rowIdx - visible + 1)
+    keepSelectionInView = true
     pinCell(next)
     present()
     return true
@@ -2165,7 +2202,7 @@
           <button class="details-release" @click="releasePin" :title="t('Release the pinned cell (also with Esc)')">{{ t('Release') }}</button>
         </template>
         <div v-else class="details-general">
-          <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click, Esc or « release it.') }}</p>
+          <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click or Esc release it; the arrows select the neighbouring cell.') }}</p>
           <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
           <div class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
