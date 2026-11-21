@@ -107,4 +107,9 @@ export default {
   "receives data from": { es: "recibe datos de", ca: "rep dades de" },
   "its result goes to": { es: "su resultado va a", ca: "el seu resultat va a" },
   "instructions that receive its result": { es: "instrucciones que reciben su resultado", ca: "instruccions que reben el seu resultat" },
+  "addr {a}, block {b}": { es: "dirección {a}, bloque {b}", ca: "adreça {a}, bloc {b}" },
+  "hit": { es: "acierto", ca: "encert" },
+  "primary miss (it requests the block)": { es: "fallo primario (pide el bloque)", ca: "error primari (demana el bloc)" },
+  "secondary miss (the block is already coming)": { es: "fallo secundario (el bloque ya está llegando)", ca: "error secundari (el bloc ja està arribant)" },
+  "memory: its block, fill buffer, MM transfer, store buffer": { es: "memoria: su bloque, fill buffer, transferencia de MM, store buffer", ca: "memòria: el seu bloc, fill buffer, transferència de MM, store buffer" },
 }

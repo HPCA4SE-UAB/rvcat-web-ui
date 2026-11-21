@@ -614,6 +614,8 @@
         : [])
     ]
     resourceRowCount = resourceRows.length
+    resourceLayout   = resourceRows
+    cacheLinesByCycle = cacheStatesByCycle
 
     if (newCycles != oldCycles && newCycles != 0 ) {
       if (newCycles > cycles) newCycles = cycles
@@ -1175,6 +1177,8 @@
   // Click: the cell is pinned (its highlights stay while the mouse moves) and explained in the
   // panel of details. A second click on it, a click outside the cells or Esc release it.
   const pinned  = ref(null)          // details of the pinned cell
+  let resourceLayout    = []         // resource rows of the last drawing (ports, MM, cache lines, buffers, SB)
+  let cacheLinesByCycle = []         // lines of the cache in each cycle
   let focusedCell = null
   const COLORS = {
     self:     ['rgba(255, 213, 79, 0.55)', '#c79100'],   // the instruction of the cell
@@ -1182,6 +1186,60 @@
     port:     ['rgba(245, 124, 0, 0.25)', '#e65100'],    // ports, and the instructions that use them
     blocker:  ['rgba(97, 97, 97, 0.25)', '#424242'],     // older instruction that has not finished
     consumer: ['rgba(46, 125, 50, 0.22)', '#2e7d32'],    // instructions that receive its result
+    memory:   ['rgba(123, 31, 162, 0.22)', '#7b1fa2'],   // memory: block, fill buffer, MM, store buffer
+  }
+
+  // ---- Memory instructions: the block, hit or miss, and the resources it uses ----
+  function memoryInfo(row) {
+    const header = interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)
+    if (!header?.memoryOperation || !cacheEnabled.value || !(header.addr >= 0)) return null
+    const blk  = Number(simState.simulatedProcess?.blkSize) || 64
+    const block = Math.floor(header.addr / blk) * blk
+    const reads = (timeline.value?.resource_usage?.mm_requests ?? []).filter(q => q.operation !== 'write' && q.address === block)
+    let result = 'hit'
+    if (reads.some(q => q.instruction_index === row)) result = 'primary'
+    else if (reads.some(q => (q.instruction_indices ?? []).includes(row))) result = 'secondary'
+    else if (resourceLayout.some(res => res.bufferType === 'fill' &&
+             res.bufferStates.some(slots => (slots?.[res.bufferIndex]?.instruction_indices ?? []).includes(row) &&
+                                            slots[res.bufferIndex].address === block))) result = 'secondary'
+    return { store: header.memoryOperation === 'Store to', addr: header.addr, block, result }
+  }
+  const memoryText = (m) => (m.store ? 'STORE' : 'LOAD') + ' ' +
+    t('addr {a}, block {b}', { a: m.addr, b: m.block }) + ': ' +
+    (m.result === 'hit' ? t('hit') : m.result === 'primary' ? t('primary miss (it requests the block)') : t('secondary miss (the block is already coming)'))
+  // the resources of a memory instruction: the main memory transfers of its block, its fill
+  // buffer, the line of the cache while it is in flight, and (a STORE) the store buffer
+  function markMemory(ctx, row) {
+    const m = memoryInfo(row)
+    if (!m) return null
+    const cells = rowCells(row)
+    if (!cells.length) return m
+    const first = Math.min(...cells.map(c => c.colIdx)), last = Math.max(...cells.map(c => c.colIdx))
+    // a STORE uses its block until it is written from the store buffer
+    const sbRow = m.store ? resourceLayout.find(res => res.storeBuffer) : null
+    const sbLast = sbRow ? Math.max(last, ...sbRow.snapshots.map((snap, col) => (snap?.retired?.includes(row) ? col : -1))) : last
+    const requests = (timeline.value?.resource_usage?.mm_requests ?? []).filter(q => q.address === m.block &&
+      (q.operation === 'write' ? false : (q.instruction_indices ?? []).includes(row) || q.instruction_index === row))
+    for (const [ri, res] of resourceLayout.entries()) {
+      const y = padY + (ri + 1) * cellH
+      for (let col = 0; col < totalCycles; col++) {
+        let on = false
+        if (res.port === null && res.label === 'MM')
+          on = requests.some(q => col >= q.cycle && col < q.cycle + q.duration)
+        else if (res.cacheLineIndex !== undefined) {
+          const line = cacheLinesByCycle[col]?.[res.cacheLineIndex]
+          on = col >= first && col <= sbLast && !!line?.valid && line.address === m.block
+        } else if (res.bufferType === 'fill') {
+          const slot = res.bufferStates[col]?.[res.bufferIndex]
+          on = !!slot?.valid && slot.address === m.block && (slot.instruction_indices ?? []).includes(row)
+        } else if (res.storeBuffer && m.store) {
+          const snap = res.snapshots[col]
+          on = (col >= first && col <= last) || !!snap?.retired?.includes(row)
+        }
+        if (on) markRect(ctx, padX + labelW + col * cellW, y, cellW, 'memory')
+      }
+    }
+    return m
   }
 
   // ---- Data dependences between rows (RVCAT: producers of each row) ----
@@ -1422,6 +1480,7 @@
     if (!ctx) return
     markRowLabel(ctx, row, 'self')
     if (rowHeader) {                       // the instruction: where its data come from, and where its result goes
+      markMemory(ctx, row)
       const names = markProducers(ctx, row)
       markConsumers(ctx, row)
       const first = firstExec(row)
@@ -1433,6 +1492,7 @@
     markCycle(ctx, col)
 
     const detail = cell.waitDetail
+    if ((cell.char === 'E' && execCycleOf(cell) === 1) || ['!', '2', ':', '@', 'W'].includes(cell.char)) markMemory(ctx, row)
     if ((cell.char === '.' && detail?.reason === 'data') || (cell.char === '*' && detail?.reason === 'ports')) {
       // the instructions it waits for, the variables, and the ports it needs
       const dep = simState.dependenceHighlight
@@ -1498,8 +1558,10 @@
       case 'E': {
         const lat = Number(instrAt(cell.instrIdx)?.latency) || null
         const k = execCycleOf(cell)
+        const mem = k === 1 ? memoryInfo(cell.rowIdx) : null
         return k === 1
-          ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '')
+          ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '') +
+            (mem ? ` · ${memoryText(mem)}` : '')
           : t('Executes: cycle {k} of {l}', { k, l: lat ?? '?' })
       }
       case '-': {
@@ -1551,6 +1613,8 @@
       lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf' }, { text: rowName(b.rowIdx), kind: 'instr' }]
                    : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
     }
+    const mem = memoryInfo(cell.rowIdx)
+    if (mem) lines.push([{ text: memoryText(mem), kind: 'mem' }])
     if (cell.critical && timelineOptions.critical) lines.push([{ text: t('On the critical path'), kind: 'note' }])
     return {
       title: rowName(cell.rowIdx),
@@ -1802,7 +1866,7 @@
           <button class="blue-button toggle-button" :class="{ active: detailsOpen }" :aria-pressed="detailsOpen"
             :title="t('Panel of details: click a cell of the timeline to see what it means and what it depends on')"
             id="timeline-details-toggle"
-            @click="detailsOpen = !detailsOpen">
+            @click="pinned ? releasePin() : (detailsOpen = !detailsOpen)">
             <span v-if="detailsOpen">✔ </span>
             {{ t('Details') }}
           </button>
@@ -1898,6 +1962,7 @@
           <div><span class="sw sw-port"></span>{{ t('ports, and instructions that use them') }}</div>
           <div><span class="sw sw-blocker"></span>{{ t('older instruction that has not finished') }}</div>
           <div><span class="sw sw-consumer"></span>{{ t('instructions that receive its result') }}</div>
+          <div v-if="cacheEnabled"><span class="sw sw-memory"></span>{{ t('memory: its block, fill buffer, MM transfer, store buffer') }}</div>
         </div>
       </aside>
     </div>
@@ -1953,6 +2018,7 @@
   .sw-port     { background: rgba(245, 124, 0, 0.25); border-color: #e65100; }
   .sw-blocker  { background: rgba(97, 97, 97, 0.25); border-color: #424242; }
   .sw-consumer { background: rgba(46, 125, 50, 0.22); border-color: #2e7d32; }
+  .sw-memory   { background: rgba(123, 31, 162, 0.22); border-color: #7b1fa2; }
   .timeline-legend {
     display:     flex;
     flex-wrap:   wrap;
