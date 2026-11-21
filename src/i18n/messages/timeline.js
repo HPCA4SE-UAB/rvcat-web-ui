@@ -112,4 +112,8 @@ export default {
   "primary miss (it requests the block)": { es: "fallo primario (pide el bloque)", ca: "error primari (demana el bloc)" },
   "secondary miss (the block is already coming)": { es: "fallo secundario (el bloque ya está llegando)", ca: "error secundari (el bloc ja està arribant)" },
   "memory: its block, fill buffer, MM transfer, store buffer": { es: "memoria: su bloque, fill buffer, transferencia de MM, store buffer", ca: "memòria: el seu bloc, fill buffer, transferència de MM, store buffer" },
+  "Show the whole timeline: the window follows the rows (wheel: one row; Page Up / Page Down: one iteration; minimap)": { es: "Mostrar todo el timeline: la ventana sigue a las filas (rueda: una fila; Re Pág / Av Pág: una iteración; minimapa)", ca: "Mostrar tot el timeline: la finestra segueix les files (roda: una fila; Re Pàg / Av Pàg: una iteració; minimapa)" },
+  "The whole timeline: click or drag to move the window. Wheel: one row; Page Up / Page Down: one iteration": { es: "Todo el timeline: haz clic o arrastra para mover la ventana. Rueda: una fila; Re Pág / Av Pág: una iteración", ca: "Tot el timeline: fes clic o arrossega per moure la finestra. Roda: una fila; Re Pàg / Av Pàg: una iteració" },
+  "{name}: click to show or hide its rows": { es: "{name}: haz clic para mostrar u ocultar sus filas", ca: "{name}: fes clic per mostrar o amagar les seves files" },
+  "{name}: {n} of {m} busy in cycle {c}": { es: "{name}: {n} de {m} ocupados en el ciclo {c}", ca: "{name}: {n} de {m} ocupats al cicle {c}" },
 }

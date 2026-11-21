@@ -36,6 +36,10 @@
     showPorts:     true,
     showCache:     true,
     showText:      true,   // the text of each instruction in the first column
+    expandPorts:   false,  // the rows of the resources: a summary row, or the summary and its rows
+    expandCache:   false,
+    expandFill:    false,
+    expandWrite:   false,
     canvasScale:   1,
     canvasOffsetX: 0,
     canvasOffsetY: 0
@@ -56,10 +60,10 @@
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     const font = Math.round(14 * k)
-    let chars = 1
+    let chars = 7                  // the names of the summary rows of the resources
     if (timelineOptions.showText) {
       const list = [...(simState.simulatedProcess?.instruction_list ?? []), ...(simState.simulatedProcess?.epilogue ?? [])]
-      chars = 2 + Math.min(TEXT_CHARS, Math.max(0, ...list.map(i => String(i?.text ?? '').length)))
+      chars = Math.max(chars, 2 + Math.min(TEXT_CHARS, Math.max(0, ...list.map(i => String(i?.text ?? '').length))))
     }
     return {
       k, font,
@@ -80,9 +84,10 @@
     if (!wrapper || !wrapper.clientWidth) return
     const scale = timelineOptions.canvasScale || 1
     const g = timelineGeometry()
-    const fitting = Math.floor((wrapper.clientWidth / scale - 2 * 10 - g.labelW) / g.cellW)
+    const fitting = Math.floor(((wrapper.clientWidth - MINIMAP_W) / scale - 2 * 10 - g.labelW) / g.cellW)
     timelineOptions.canvasOffsetX = 0
-    timelineOptions.cycles = Math.max(10, fitting)
+    // the whole timeline: the window moves along it (it follows the rows)
+    timelineOptions.cycles = Math.max(10, fitting, timeline.value?.cycles ?? 0)
   }
   function fitCyclesButton() {
     timelineOptions.autoFitCycles = true
@@ -261,6 +266,7 @@
         getPortUsage(timelineRVCAT);
         selectedCell.value = null
         timeline.value = timelineRVCAT
+        if (timelineOptions.autoFitCycles) fitCycles()      // the whole new timeline
         timelineOptions.canvasOffsetX = 0
         timelineOptions.canvasOffsetY = 0
         timelineOptions.instructions = 1
@@ -308,6 +314,7 @@
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
                timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showText,
+               timelineOptions.expandPorts, timelineOptions.expandCache, timelineOptions.expandFill, timelineOptions.expandWrite,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
             ([, newCycles], [, oldCycles]) => {
               if (!timelineCanvas.value || !timeline.value) return
@@ -400,8 +407,6 @@
 
   function addCanvasWrapper () {
     const wrapper = document.getElementById("canvas-container")
-    let   dragging  = false
-    let   startX, startY
 
     const observer = new ResizeObserver(() => {
       toggleCritical()  // forces watcher to re-draw canvas
@@ -411,51 +416,12 @@
     observer.observe(wrapper)
 
     const canvas = timelineCanvas.value
-
     canvas.addEventListener("click", onClick)
-
-    wrapper.addEventListener("mousedown", (e) => {
-      dragging = true
-      startX   = e.clientX
-      startY   = e.clientY
-      downX    = e.clientX
-      downY    = e.clientY
-    })
+    wrapper.addEventListener("mousedown", (e) => { downX = e.clientX; downY = e.clientY })
+    wrapper.addEventListener("mousemove", onMouseMove)
     wrapper.addEventListener("mouseleave", onMouseLeave)
-
-    window.addEventListener("mouseup", () => {
-      dragging = false
-    })
-
-    wrapper.addEventListener("mousemove", (e) => {
-
-      if (!dragging) {
-        onMouseMove(e)
-        return
-      }
-
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      startX   = e.clientX
-      startY   = e.clientY
-
-      // fire drawTimeline reaction
-      timelineOptions.canvasOffsetX += dx
-      timelineOptions.canvasOffsetY += dy
-    })
-
-    wrapper.addEventListener("wheel", (e) => {
-
-      e.preventDefault()
-      const zoomFactor = 1.1
-
-      // fire drawTimeline reaction
-      if (e.deltaY < 0) {
-        timelineOptions.canvasScale *= zoomFactor
-      } else {
-        timelineOptions.canvasScale /= zoomFactor
-      }
-    }, { passive:false })
+    wrapper.addEventListener("wheel", onWheel, { passive: false })
+    window.addEventListener("mouseup", onMinimapUp)
   }
 
 /* ------------------------------------------------------------------
@@ -488,9 +454,149 @@
     requestAnimationFrame(() => {
       drawTimeline(cycles, oldCycles)
       rafPending = false
+      drawSelectedCell()
+      present()
       refocusPinned()
     })
   }
+
+  // ---- The window of the timeline: fixed rows (cycles and resources) at the top, fixed first
+  // column (the instructions) at the left. The rows of the instructions move up and down (wheel:
+  // one row; Page Up / Page Down: one iteration; arrows: one row), and the cycles follow them: the
+  // first visible row starts at the left. A minimap at the right shows the whole timeline. ----
+  const MINIMAP_W  = 64
+  const worldCanvas  = document.createElement('canvas')
+  const worldOverlay = document.createElement('canvas')
+  const minimapCanvas = ref(null)
+  const scrollRow = ref(0)            // first visible row of instructions
+  let view = { scrollX: 0, scrollY: 0, topH: 0, leftW: 0, w: 0, h: 0 }
+
+  const visibleRowCount = () => Math.max(1, Math.floor((view.h - view.topH) / cellH))
+  function maxScrollRow() {
+    return Math.max(0, totalInstr - visibleRowCount() + 1)
+  }
+  function present() {
+    const canvas = timelineCanvas.value, overlay = overlayCanvas.value
+    const wrapper = canvas?.parentElement
+    if (!canvas || !overlay || !wrapper || !timeline.value) return
+    const w = Math.max(50, wrapper.clientWidth - MINIMAP_W), h = Math.max(50, wrapper.clientHeight)
+    view.w = w
+    view.h = h
+    view.topH  = padY + (resourceRowCount + 1) * cellH
+    view.leftW = padX + labelW
+    scrollRow.value = Math.min(Math.max(0, scrollRow.value), maxScrollRow())
+    view.scrollY = scrollRow.value * cellH
+    // the cycles follow the rows: the first visible row is dispatched near the left border
+    const first = timeline.value.instructions?.[scrollRow.value]
+    const worldW = worldCanvas.width
+    const startCycle = first ? Math.max(0, first[2] - 2) : 0
+    view.scrollX = Math.max(0, Math.min(startCycle * cellW, worldW - w))
+    for (const [target, source] of [[canvas, worldCanvas], [overlay, worldOverlay]]) {
+      if (target.width !== w || target.height !== h) {
+        target.width = w
+        target.height = h
+        target.style.width = `${w}px`
+        target.style.height = `${h}px`
+      }
+      const c = target.getContext('2d')
+      c.setTransform(1, 0, 0, 1, 0, 0)
+      c.clearRect(0, 0, w, h)
+      if (!source.width || !source.height) continue
+      const { scrollX, scrollY, topH, leftW } = view
+      const blit = (sx, sy, sw, sh, dx, dy) => {
+        sw = Math.min(sw, source.width - sx)
+        sh = Math.min(sh, source.height - sy)
+        if (sw > 0 && sh > 0) c.drawImage(source, sx, sy, sw, sh, dx, dy, sw, sh)
+      }
+      blit(leftW + scrollX, topH + scrollY, w - leftW, h - topH, leftW, topH)   // instructions × cycles
+      blit(0, topH + scrollY, leftW, h - topH, 0, topH)                        // first column
+      blit(leftW + scrollX, 0, w - leftW, topH, leftW, 0)                     // cycles and resources
+      blit(0, 0, leftW, topH, 0, 0)                                            // corner
+      if (target === canvas) {         // the borders of the fixed parts
+        c.strokeStyle = '#7a8aa3'
+        c.lineWidth = 2
+        c.beginPath()
+        c.moveTo(0, topH); c.lineTo(w, topH)
+        c.moveTo(leftW, 0); c.lineTo(leftW, h)
+        c.stroke()
+      }
+    }
+    drawMinimap()
+  }
+
+  // screen point (in the visible canvas) -> point of the world
+  function toWorld(sx, sy) {
+    return { x: sx < view.leftW ? sx : sx + view.scrollX,
+             y: sy < view.topH  ? sy : sy + view.scrollY }
+  }
+
+  function scrollTo(row) {
+    const next = Math.min(Math.max(0, Math.round(row)), maxScrollRow())
+    if (next === scrollRow.value) return
+    scrollRow.value = next
+    present()
+  }
+  // the first row of the next / previous iteration
+  function iterationStep(direction) {
+    const rows = timeline.value?.instructions ?? []
+    let r = scrollRow.value
+    const iterOf = (i) => rows[i]?.[0]
+    if (direction > 0) {
+      const it = iterOf(r)
+      while (r < totalInstr - 1 && iterOf(r) === it) r++
+    } else {
+      if (r > 0) r--
+      const it = iterOf(r)
+      while (r > 0 && iterOf(r - 1) === it) r--
+    }
+    scrollTo(r)
+  }
+  function onWheel(e) {
+    e.preventDefault()
+    if (e.deltaY !== 0) scrollTo(scrollRow.value + Math.sign(e.deltaY))
+  }
+
+  // ---- Minimap: the whole timeline (a line per instruction, from dispatch to retire), and the
+  // visible window; a click (or a drag) moves the window there ----
+  function drawMinimap() {
+    const canvas = minimapCanvas.value
+    if (!canvas || !timeline.value) return
+    const h = view.h, w = MINIMAP_W - 6
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w
+      canvas.height = h
+      canvas.style.width = `${w}px`
+      canvas.style.height = `${h}px`
+    }
+    const c = canvas.getContext('2d')
+    c.clearRect(0, 0, w, h)
+    c.fillStyle = '#f6f8fb'
+    c.fillRect(0, 0, w, h)
+    const rows = (timeline.value.instructions ?? []).slice(0, totalInstr)
+    if (!rows.length || !totalCycles) return
+    const sy = h / rows.length, sx = w / totalCycles
+    const lineH = Math.max(1, Math.min(4, sy - 0.5))
+    for (const [i, [iter, , start, , states, , , flags]] of rows.entries()) {
+      c.fillStyle = flags?.wrong ? '#bdbdbd' : `hsl(${(iter * 80) % 360}, 55%, 55%)`
+      c.fillRect(start * sx, i * sy, Math.max(1, states.length * sx), lineH)
+    }
+    // the visible window
+    c.strokeStyle = '#1a4fb3'
+    c.lineWidth = 2
+    const x0 = (view.scrollX / cellW) * sx
+    const vw = ((view.w - view.leftW) / cellW) * sx
+    c.strokeRect(Math.max(1, x0), scrollRow.value * sy + 1, Math.max(4, Math.min(w - 2, vw)), Math.max(4, visibleRowCount() * sy) - 2)
+  }
+  let minimapDrag = false
+  function minimapJump(e) {
+    const canvas = minimapCanvas.value
+    if (!canvas || !totalInstr) return
+    const y = e.clientY - canvas.getBoundingClientRect().top
+    scrollTo((y / view.h) * totalInstr - visibleRowCount() / 2)
+  }
+  function onMinimapDown(e) { minimapDrag = true; minimapJump(e) }
+  function onMinimapMove(e) { if (minimapDrag) minimapJump(e) }
+  function onMinimapUp() { minimapDrag = false }
 
   function drawTimeline(newCycles, oldCycles) {
 
@@ -613,6 +719,35 @@
           }]
         : [])
     ]
+    // Groups of resource rows: a summary row (folded), or the summary and its rows (unfolded)
+    const GROUPS = [
+      { key: 'ports', option: 'expandPorts', name: t('Ports'), test: r => r.port !== undefined && r.port !== null },
+      { key: 'cache', option: 'expandCache', name: t('Cache'), test: r => r.cacheLineIndex !== undefined },
+      { key: 'fill',  option: 'expandFill',  name: 'Fill',     test: r => r.bufferType === 'fill' },
+      { key: 'write', option: 'expandWrite', name: 'Write',    test: r => r.bufferType === 'write' },
+    ]
+    const detailedRows = resourceRows.splice(0)
+    for (const r of detailedRows) {
+      const g = GROUPS.find(group => group.test(r))
+      if (!g) { resourceRows.push(r); continue }
+      let summary = resourceRows.find(x => x.summary === g.key)
+      if (!summary) {
+        summary = { summary: g.key, option: g.option, name: g.name, members: [], cycles: [], counts: [] }
+        resourceRows.push(summary)
+      }
+      summary.members.push(r)
+      if (timelineOptions[g.option]) resourceRows.push(r)
+    }
+    for (const summary of resourceRows.filter(r => r.summary)) {
+      summary.capacity = summary.members.length
+      for (let col = 0; col < totalCycles; col++) {
+        const n = summary.members.filter(m => m.cacheLineIndex !== undefined
+          ? !!cacheStatesByCycle[col]?.[m.cacheLineIndex]?.loading      // blocks arriving
+          : !!m.cycles[col]).length
+        summary.counts.push(n)
+        summary.cycles.push(n > 0)
+      }
+    }
     resourceRowCount = resourceRows.length
     resourceLayout   = resourceRows
     cacheLinesByCycle = cacheStatesByCycle
@@ -687,37 +822,25 @@
     fontYOffset = Math.round(3 * k)
     hoverInfo.value = null
     focusedCell = null
+    if (oldCycles === 0) scrollRow.value = 0
 
-    const canvasWidth = Math.max(
-      viewportWidth,
-      Math.ceil(padX*2 + labelW + totalCycles*cellW)
-    )
-    const canvasHeight = Math.max(
-      viewportHeight,
-      Math.ceil(padY*2 + (totalInstr+resourceRowCount+1)*cellH)
-    )
-    for (const canvas of [timelineCanvas.value, overlayCanvas.value]) {
-      canvas.width = canvasWidth
+    // The whole timeline is drawn on hidden canvases (the "world"); the visible canvases show a
+    // window of it (see present)
+    void viewportWidth; void viewportHeight
+    const canvasWidth  = Math.ceil(padX*2 + labelW + totalCycles*cellW)
+    const canvasHeight = Math.ceil(padY*2 + (totalInstr+resourceRowCount+1)*cellH)
+    for (const canvas of [worldCanvas, worldOverlay]) {
+      canvas.width  = canvasWidth
       canvas.height = canvasHeight
-      canvas.style.width = `${canvasWidth}px`
-      canvas.style.height = `${canvasHeight}px`
     }
 
-    const ctxOverlay = overlayCanvas.value.getContext('2d')
+    const ctxOverlay = worldOverlay.getContext('2d')
     ctxOverlay.setTransform(1,0,0,1,0,0)
-    ctxOverlay.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
-    ctxOverlay.setTransform(
-      timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
-      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
-    )
+    ctxOverlay.clearRect(0, 0, worldOverlay.width, worldOverlay.height)
 
-    const ctx = timelineCanvas.value.getContext('2d')
+    const ctx = worldCanvas.getContext('2d')
     ctx.setTransform(1,0,0,1,0,0)
-    ctx.clearRect(0,0,timelineCanvas.value.width,timelineCanvas.value.height)
-    ctx.setTransform(
-      timelineOptions.canvasScale, 0, 0, timelineOptions.canvasScale,
-      timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY
-    )
+    ctx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
 
     ctx.font                  = `${fontSize}px monospace`;
     ctx.textBaseline          = 'top';
@@ -785,8 +908,49 @@
       x += cellW
     }
 
+    const SUMMARY_COLORS = { ports: '#f0a35e', cache: '#9fb4d6', fill: '#c9a0dc', write: '#e79a9a' }
     for (const [resourceRowIndex, resource] of resourceRows.entries()) {
       const resourceY = padY + (resourceRowIndex + 1) * cellH
+      if (resource.summary) {          // folded group: how many are busy in each cycle
+        ctx.fillStyle = '#e3eaf4'
+        ctx.strokeStyle = '#bbb'
+        ctx.lineWidth = 1
+        ctx.fillRect(padX, resourceY, labelW, cellH)
+        ctx.strokeRect(padX, resourceY, labelW, cellH)
+        ctx.fillStyle = '#0b2e5c'
+        ctx.fillText(`${timelineOptions[resource.option] ? '▾' : '▸'} ${resource.name}`, padX + fontXOffset, resourceY + fontYOffset)
+        interactiveCells.push({
+          x: padX, y: resourceY, width: labelW, colIdx: -1, rowIdx: -2,
+          cellType: 'resource-summary-label', resourceIndex: resourceRowIndex, option: resource.option,
+          tooltip: t('{name}: click to show or hide its rows', { name: resource.name }),
+        })
+        for (let col = 0; col < totalCycles; col++) {
+          const cx = padX + labelW + col * cellW
+          ctx.fillStyle = '#fff'
+          ctx.strokeStyle = '#bbb'
+          ctx.fillRect(cx, resourceY, cellW, cellH)
+          ctx.strokeRect(cx, resourceY, cellW, cellH)
+          const n = resource.counts[col] ?? 0
+          if (n > 0) {
+            const h = Math.max(2, Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
+            ctx.fillStyle = SUMMARY_COLORS[resource.summary]
+            ctx.fillRect(cx + 1, resourceY + cellH - 1 - h, cellW - 2, h)
+            if (n < 10) {
+              ctx.fillStyle = '#000'
+              ctx.fillText(String(n), cx + fontXOffset, resourceY + fontYOffset)
+            }
+          }
+          interactiveCells.push({
+            x: cx, y: resourceY, colIdx: col, rowIdx: -2, cellType: 'resource-cycle', resourceIndex: resourceRowIndex,
+            linkedInstructionRows: resource.summary === 'ports' ? (portUsageInstr?.[col] ?? [])
+              : resource.summary === 'fill' ? [...new Set(resource.members.flatMap(m => m.bufferStates[col]?.[m.bufferIndex]?.instruction_indices ?? []))]
+              : [],
+            linkedResourceRows: [],
+            tooltip: t('{name}: {n} of {m} busy in cycle {c}', { name: resource.name, n, m: resource.capacity, c: col }),
+          })
+        }
+        continue
+      }
       ctx.fillStyle = '#f1f3f5'
       ctx.strokeStyle = '#bbb'
       ctx.lineWidth = 1
@@ -1095,7 +1259,7 @@
   function drawSelectedCell() {
     const cell = selectedCell.value
     if (!cell) return
-    const ctx = overlayCanvas.value?.getContext('2d')
+    const ctx = worldOverlay.getContext('2d')
     if (!ctx) return
     ctx.save()
     ctx.fillStyle = 'rgba(255, 165, 0, 0.35)'
@@ -1118,10 +1282,8 @@
     linkedCycle = null,
     linkedResourceRows = null
   ) {
-    const ctx = overlayCanvas.value.getContext('2d')
-    ctx.clearRect(0, 0,
-                  Math.max(overlayCanvas.value.width, 1+padX+labelW+totalCycles*cellW),
-                  Math.max(overlayCanvas.value.height, 1+padY+(totalInstr+resourceRowCount+1)*cellH))
+    const ctx = worldOverlay.getContext('2d')
+    ctx.clearRect(0, 0, worldOverlay.width, worldOverlay.height)
 
     drawSelectedCell()
 
@@ -1220,11 +1382,24 @@
     const sbLast = sbRow ? Math.max(last, ...sbRow.snapshots.map((snap, col) => (snap?.retired?.includes(row) ? col : -1))) : last
     const requests = (timeline.value?.resource_usage?.mm_requests ?? []).filter(q => q.address === m.block &&
       (q.operation === 'write' ? false : (q.instruction_indices ?? []).includes(row) || q.instruction_index === row))
+    const busy = (res, col) => {
+      if (res.cacheLineIndex !== undefined) {
+        const line = cacheLinesByCycle[col]?.[res.cacheLineIndex]
+        return col >= first && col <= sbLast && !!line?.valid && line.address === m.block
+      }
+      if (res.bufferType === 'fill') {
+        const slot = res.bufferStates[col]?.[res.bufferIndex]
+        return !!slot?.valid && slot.address === m.block && (slot.instruction_indices ?? []).includes(row)
+      }
+      return false
+    }
     for (const [ri, res] of resourceLayout.entries()) {
       const y = padY + (ri + 1) * cellH
       for (let col = 0; col < totalCycles; col++) {
         let on = false
-        if (res.port === null && res.label === 'MM')
+        if (res.summary === 'cache' || res.summary === 'fill')
+          on = res.members.some(member => busy(member, col))
+        else if (res.port === null && res.label === 'MM')
           on = requests.some(q => col >= q.cycle && col < q.cycle + q.duration)
         else if (res.cacheLineIndex !== undefined) {
           const line = cacheLinesByCycle[col]?.[res.cacheLineIndex]
@@ -1320,8 +1495,8 @@
 
   function cellAtEvent(e) {
     const rect = timelineCanvas.value.getBoundingClientRect()
-    const worldX = (e.clientX - rect.left - timelineOptions.canvasOffsetX) / timelineOptions.canvasScale
-    const worldY = (e.clientY - rect.top  - timelineOptions.canvasOffsetY) / timelineOptions.canvasScale
+    if (e.clientX - rect.left > view.w) return null             // the minimap
+    const { x: worldX, y: worldY } = toWorld(e.clientX - rect.left, e.clientY - rect.top)
     return interactiveCells.find(cell =>
       worldX >= cell.x && worldX <= cell.x + (cell.width ?? cellW) &&
       worldY >= cell.y && worldY <= cell.y + cellH) ?? null
@@ -1353,7 +1528,8 @@
   function clearFocus() {
     hoverInfo.value = null
     resetSharedHighlights()
-    if (overlayCanvas.value) drawHoverOverlay(null, null, null, null, null, null)
+    drawHoverOverlay(null, null, null, null, null, null)
+    present()
   }
 
   // the cell of an instruction row (row, cycle), and the header cell of a row
@@ -1365,7 +1541,7 @@
   }
 
   function overlayContext() {
-    const ctx = overlayCanvas.value?.getContext('2d')
+    const ctx = worldOverlay.getContext('2d')
     if (ctx) {
       ctx.font = `${fontSize}px monospace`
       ctx.textBaseline = 'top'           // as the texts of the timeline
@@ -1395,7 +1571,8 @@
   // the row of a port (Ports shown) in a cycle
   function markPortRow(ctx, port, col, kind) {
     if (!timelineOptions.showPorts) return
-    const pr = (timeline.value?.resourcePortIds ?? []).map(String).indexOf(String(port))
+    let pr = resourceLayout.findIndex(r => r.port !== undefined && r.port !== null && String(r.port) === String(port))
+    if (pr < 0) pr = resourceLayout.findIndex(r => r.summary === 'ports')
     if (pr < 0 || col < 0 || col >= totalCycles) return
     markRect(ctx, padX + labelW + col * cellW, padY + (pr + 1) * cellH, cellW, kind)
   }
@@ -1444,9 +1621,13 @@
 
   // Everything that a cell shows: highlights and texts (status line, details)
   function focusCell(cell) {
+    focusCellOn(cell)
+    present()
+  }
+  function focusCellOn(cell) {
     resetSharedHighlights()
     const col = cell.colIdx, row = cell.rowIdx
-    if (cell.cellType === 'resource-label') {
+    if (cell.cellType === 'resource-label' || cell.cellType === 'resource-summary-label') {
       hoverInfo.value = { state: cell.tooltip }
       drawHoverOverlay(null, null, null, null, null, null)
       return
@@ -1661,7 +1842,13 @@
     else releasePin()
   }
   function onKeyDown(e) {
-    if (e.key === 'Escape' && pinned.value) releasePin()
+    if (e.key === 'Escape' && pinned.value) return releasePin()
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return
+    if (!timeline.value || !timelineCanvas.value?.offsetParent) return
+    const moves = { ArrowDown: () => scrollTo(scrollRow.value + 1), ArrowUp: () => scrollTo(scrollRow.value - 1),
+                    PageDown: () => iterationStep(1), PageUp: () => iterationStep(-1),
+                    Home: () => scrollTo(0), End: () => scrollTo(maxScrollRow()) }
+    if (moves[e.key]) { e.preventDefault(); moves[e.key]() }
   }
 
   // A cell where an instruction waits for data ('.'): the last execution cycle (E/L) of the
@@ -1681,7 +1868,7 @@
     }
     const vars = [...producers].map(i => instrAt(i)?.destin).filter(Boolean)
     simState.dependenceHighlight = { producers: [...producers], vars }
-    const ctx = overlayCanvas.value?.getContext('2d')
+    const ctx = worldOverlay.getContext('2d')
     if (!ctx) return
     ctx.save()
     ctx.fillStyle   = 'rgba(21, 101, 192, 0.22)'
@@ -1768,7 +1955,7 @@
   function showPortConflict(cell) {
     const { c, conflicts } = portConflict(cell)
     const instrs = new Set()
-    const ctx = overlayCanvas.value?.getContext('2d')
+    const ctx = worldOverlay.getContext('2d')
     if (ctx) {
       ctx.save()
       ctx.fillStyle = 'rgba(245, 124, 0, 0.25)'
@@ -1777,11 +1964,7 @@
       for (const { port, row } of conflicts) {
         const x = interactiveCells.find(k => k.rowIdx === row && k.colIdx === c)
         if (x) { ctx.fillRect(x.x, x.y, cellW, cellH); ctx.strokeRect(x.x + 1, x.y + 1, cellW - 2, cellH - 2) }
-        const pr = timelineOptions.showPorts ? (timeline.value?.resourcePortIds ?? []).map(String).indexOf(String(port)) : -1
-        if (pr >= 0) {
-          const px = padX + labelW + c * cellW, py = padY + (pr + 1) * cellH
-          ctx.fillRect(px, py, cellW, cellH); ctx.strokeRect(px + 1, py + 1, cellW - 2, cellH - 2)
-        }
+        markPortRow(ctx, port, c, 'port')
         const h = rowHeaderCell(row)
         if (h) instrs.add(h.instrIdx)
       }
@@ -1819,6 +2002,10 @@
   function onClick(e) {
     if (Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) return   // a drag
     const cell = cellAtEvent(e)
+    if (cell?.cellType === 'resource-summary-label') {
+      timelineOptions[cell.option] = !timelineOptions[cell.option]
+      return
+    }
     if (!cell) return releasePin()
     if (pinned.value && pinned.value.cell === cell) return releasePin()
     pinCell(cell)
@@ -1856,7 +2043,7 @@
             id="timeline-cycles" style="width: 4.5em">
           <button class="blue-button fit-cycles" @click="fitCyclesButton"
             id="timeline-fit-cycles"
-            :title="t('Show as many cycles as fit in the panel width (and keep fitting when the window is resized)')">
+            :title="t('Show the whole timeline: the window follows the rows (wheel: one row; Page Up / Page Down: one iteration; minimap)')">
             {{ t('Fit') }}
           </button>
         </div>
@@ -1932,7 +2119,10 @@
     <div class="timeline-body">
       <div class="output-block-wrapper" id="canvas-container">
         <canvas ref="timelineCanvas"></canvas>
-        <canvas ref="overlayCanvas"></canvas>
+        <canvas ref="overlayCanvas" class="timeline-overlay"></canvas>
+        <canvas ref="minimapCanvas" class="timeline-minimap" id="timeline-minimap"
+                :title="t('The whole timeline: click or drag to move the window. Wheel: one row; Page Up / Page Down: one iteration')"
+                @mousedown.stop="onMinimapDown" @mousemove.stop="onMinimapMove"></canvas>
       </div>
       <aside v-if="detailsOpen" class="timeline-details" id="timeline-details">
         <div class="details-head">
@@ -2062,7 +2252,7 @@
 </style>
 <style scoped>
   .output-block-wrapper {
-    overflow:        auto;
+    overflow:        hidden;
     width:           100%;
     height:          auto;
     min-height:      0;
@@ -2075,8 +2265,14 @@
   .output-block-wrapper::-webkit-scrollbar {
     display: none;  /* Chrome / Safari */
   }
-  .output-block-wrapper:active {
-    cursor: grabbing;
+  .timeline-minimap {
+    position:   absolute !important;
+    top:        0 !important;
+    left:       auto !important;
+    right:      2px;
+    width:      58px !important;
+    border-left: 1px solid #d6dbe3;
+    cursor:     pointer;
   }
 
   #canvas-container {
@@ -2092,8 +2288,9 @@
     height:   100%;
     aspect-ratio: auto;
   }
-  #canvas-container canvas:last-child {
-    pointer-events: none; /* 👈 importante */
+  /* the overlay (highlights) lets the clicks go to the timeline below it */
+  #canvas-container canvas.timeline-overlay {
+    pointer-events: none;
   }
 
   .tooltip {
