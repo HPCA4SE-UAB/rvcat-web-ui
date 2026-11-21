@@ -1181,7 +1181,84 @@
     producer: ['rgba(21, 101, 192, 0.22)', '#1565c0'],   // instructions it waits for (data)
     port:     ['rgba(245, 124, 0, 0.25)', '#e65100'],    // ports, and the instructions that use them
     blocker:  ['rgba(97, 97, 97, 0.25)', '#424242'],     // older instruction that has not finished
+    consumer: ['rgba(46, 125, 50, 0.22)', '#2e7d32'],    // instructions that receive its result
   }
+
+  // ---- Data dependences between rows (RVCAT: producers of each row) ----
+  const producersOf = (row) => timeline.value?.producers?.[row] ?? []
+  const consumersByRow = computed(() => {
+    const map = new Map()
+    for (const [row, list] of (timeline.value?.producers ?? []).entries())
+      for (const p of list) map.set(p, [...(map.get(p) ?? []), row])
+    return map
+  })
+  const consumersOf = (row) => consumersByRow.value.get(row) ?? []
+  const rowCells = (row) => interactiveCells.filter(c => !c.cellType && c.rowIdx === row && c.colIdx >= 0)
+  // the first cycle of execution of a row, and the cycle in which its result is ready (the cell
+  // before W: the last cycle of execution, or the arrival of a block)
+  const firstExec = (row) => rowCells(row).find(c => c.char === 'E') ?? null
+  function resultCell(row) {
+    const cells = rowCells(row).sort((a, b) => a.colIdx - b.colIdx)
+    const w = cells.findIndex(c => c.char === 'W')
+    return w > 0 ? cells[w - 1] : null
+  }
+  // an arrow from the result of a producer to the first execution of a consumer
+  function drawArrow(ctx, from, to, kind) {
+    if (!from || !to) return
+    const color = COLORS[kind][1]
+    const x1 = from.x + cellW, y1 = from.y + cellH / 2
+    const x2 = to.x, y2 = to.y + cellH / 2
+    const bend = Math.max(12, Math.abs(x2 - x1) / 2)
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.bezierCurveTo(x1 + bend, y1, x2 - bend, y2, x2, y2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(x2 - 7, y2 - 4)
+    ctx.lineTo(x2 - 7, y2 + 4)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+  // the instructions whose results a row reads: their result cells, their first column, the
+  // variables, and arrows to its first execution
+  function markProducers(ctx, row) {
+    const target = firstExec(row)
+    const names = []
+    for (const p of producersOf(row)) {
+      const out = resultCell(p)
+      if (out) markRect(ctx, out.x, out.y, cellW, 'producer')
+      markRowLabel(ctx, p, 'producer')
+      const own = instrAt(interactiveCells.find(c => c.rowIdx === p && c.colIdx === -1)?.instrIdx)?.destin
+      if (own) { markLabelVariables(ctx, p, [own], 'producer'); names.push(own) }
+      drawArrow(ctx, out, target, 'producer')
+    }
+    markLabelVariables(ctx, row, names, 'producer')
+    return names
+  }
+  // the instructions that receive the result of a row
+  function markConsumers(ctx, row) {
+    const out = resultCell(row)
+    for (const c of consumersOf(row)) {
+      const target = firstExec(c)
+      if (target) markRect(ctx, target.x, target.y, cellW, 'consumer')
+      markRowLabel(ctx, c, 'consumer')
+      drawArrow(ctx, out, target, 'consumer')
+    }
+    const own = instrAt(interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)?.instrIdx)?.destin
+    if (own) {
+      markLabelVariables(ctx, row, [own], 'consumer')
+      for (const c of consumersOf(row)) markLabelVariables(ctx, c, [own], 'consumer')
+    }
+  }
+  // the instruction numbers (static) of some rows
+  const instrIdxOfRows = (rows) => [...new Set(rows.map(r => interactiveCells.find(c => c.rowIdx === r && c.colIdx === -1)?.instrIdx)
+                                                   .filter(i => i !== undefined))]
 
   function cellAtEvent(e) {
     const rect = timelineCanvas.value.getBoundingClientRect()
@@ -1337,14 +1414,22 @@
     hoverInfo.value = {
       cell,
       cycle: rowHeader ? null : col,
-      state: rowHeader ? formatInstructionTooltip(cell) : cellStatus(cell),
+      state: rowHeader ? instructionTooltipLines(cell).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
     }
     drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
     showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
     const ctx = overlayContext()
     if (!ctx) return
     markRowLabel(ctx, row, 'self')
-    if (rowHeader) return
+    if (rowHeader) {                       // the instruction: where its data come from, and where its result goes
+      const names = markProducers(ctx, row)
+      markConsumers(ctx, row)
+      const first = firstExec(row)
+      if (first) markPortRow(ctx, first.port, first.colIdx, 'port')
+      simState.dependenceHighlight = { producers: instrIdxOfRows(producersOf(row)), vars: names,
+                                       consumers: instrIdxOfRows(consumersOf(row)) }
+      return
+    }
     markCycle(ctx, col)
 
     const detail = cell.waitDetail
@@ -1366,6 +1451,20 @@
       simState.highlightedPorts    = ports.map(String)
       simState.programViewOverride = 'perf'
       simState.programHighlight    = { rows: [cell.instrIdx], field: 'ports' }
+    } else if (cell.char === 'E' && execCycleOf(cell) === 1) {
+      // starts to execute: its port, and the instructions that have just given it its operands
+      markPortRow(ctx, cell.port, col, 'port')
+      const names = markProducers(ctx, row)
+      simState.dependenceHighlight = { producers: instrIdxOfRows(producersOf(row)), vars: names }
+    } else if (cell.char === 'E') {
+      // executing: its latency in the Program panel
+      for (const c of rowCells(row)) if (c.char === 'E') markRect(ctx, c.x, c.y, cellW, 'self')
+      simState.programViewOverride = 'perf'
+      simState.programHighlight    = { rows: [cell.instrIdx], field: 'latency' }
+    } else if (cell.char === 'W') {
+      // its result: the instructions that receive it
+      markConsumers(ctx, row)
+      simState.dependenceHighlight = { producers: [], vars: [], consumers: instrIdxOfRows(consumersOf(row)) }
     } else if (cell.char === 'D') {
       simState.highlightedStage = 'dispatch'
     } else if (cell.char === 'R') {
@@ -1431,7 +1530,7 @@
   }
   function buildDetails(cell) {
     if (cell.cellType || cell.rowIdx === -1) {
-      return { title: hoverInfo.value?.state ?? '', cycle: cell.colIdx >= 0 ? cell.colIdx : null, text: '', lines: [], info: [] }
+      return { title: hoverInfo.value?.state ?? '', cycle: null, text: '', lines: [], info: [] }
     }
     const header = interactiveCells.find(c => c.rowIdx === cell.rowIdx && c.colIdx === -1) ?? cell
     const lines = []
@@ -1441,6 +1540,12 @@
         lines.push([{ text: t('waits for') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
     const conflict = portConflictLines(cell)
     if (conflict) lines.push(...conflict)
+    if ((cell.char === 'E' && execCycleOf(cell) === 1) || cell.colIdx < 0)
+      for (const r of producersOf(cell.rowIdx))
+        lines.push([{ text: t('receives data from') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
+    if (cell.char === 'W' || cell.colIdx < 0)
+      for (const r of consumersOf(cell.rowIdx))
+        lines.push([{ text: t('its result goes to') + ' ', kind: 'perf' }, { text: rowName(r), kind: 'instr' }])
     if (cell.char === '-') {
       const b = retireBlocker(cell)
       lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf' }, { text: rowName(b.rowIdx), kind: 'instr' }]
@@ -1794,6 +1899,7 @@
           <div><span class="sw sw-producer"></span>{{ t('instructions it waits for (data)') }}</div>
           <div><span class="sw sw-port"></span>{{ t('ports, and instructions that use them') }}</div>
           <div><span class="sw sw-blocker"></span>{{ t('older instruction that has not finished') }}</div>
+          <div><span class="sw sw-consumer"></span>{{ t('instructions that receive its result') }}</div>
         </div>
       </aside>
     </div>
@@ -1848,6 +1954,7 @@
   .sw-producer { background: rgba(21, 101, 192, 0.22); border-color: #1565c0; }
   .sw-port     { background: rgba(245, 124, 0, 0.25); border-color: #e65100; }
   .sw-blocker  { background: rgba(97, 97, 97, 0.25); border-color: #424242; }
+  .sw-consumer { background: rgba(46, 125, 50, 0.22); border-color: #2e7d32; }
   .timeline-legend {
     display:     flex;
     flex-wrap:   wrap;

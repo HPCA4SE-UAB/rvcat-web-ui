@@ -104,4 +104,7 @@ export default {
   "instructions it waits for (data)": { es: "instrucciones que espera (datos)", ca: "instruccions que espera (dades)" },
   "ports, and instructions that use them": { es: "puertos, e instrucciones que los usan", ca: "ports, i instruccions que els fan servir" },
   "older instruction that has not finished": { es: "instrucción más antigua que no ha terminado", ca: "instrucció més antiga que no ha acabat" },
+  "receives data from": { es: "recibe datos de", ca: "rep dades de" },
+  "its result goes to": { es: "su resultado va a", ca: "el seu resultat va a" },
+  "instructions that receive its result": { es: "instrucciones que reciben su resultado", ca: "instruccions que reben el seu resultat" },
 }

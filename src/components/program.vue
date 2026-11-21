@@ -244,7 +244,7 @@
     const dep = simState.dependenceHighlight
     const waiting  = dep && index === simState.instrHighlightedIdx
     const producer = dep?.producers?.includes(index)
-    if (!dep || dep.kind === 'port' || (!waiting && !producer) || !text) return [{ text }]   // (a port conflict: no variables)
+    if (!dep || dep.kind === 'port' || (!waiting && !producer && !dep.consumers?.includes(index)) || !text) return [{ text }]   // (a port conflict: no variables)
     const eq = text.indexOf('=')
     const [left, right] = eq >= 0 && text[eq + 1] !== '=' ? [text.slice(0, eq + 1), text.slice(eq + 1)] : ['', text]
     const split = (s, names) => {
@@ -261,7 +261,11 @@
       return parts
     }
     const own = simState.simulatedProcess?.instruction_list?.[index]?.destin
-    return [...split(left, producer && own ? [own] : []), ...split(right, waiting ? dep.vars : [])]
+    // the instruction pointed in the timeline gives its result (its own variable) to the consumers
+    const highlighted = simState.simulatedProcess?.instruction_list?.[simState.instrHighlightedIdx]?.destin
+    const consumer = dep.consumers?.includes(index) && highlighted
+    return [...split(left, (producer || (waiting && dep.consumers?.length)) && own ? [own] : []),
+            ...split(right, [...(waiting ? dep.vars : []), ...(consumer ? [highlighted] : [])])]
   }
 
   const emit = defineEmits(['requestSwitchFull'])
@@ -677,6 +681,7 @@
               :style="rowStyle(index)"
               :class="{ highlighted: index === simState.instrHighlightedIdx,
                         'dep-producer': simState.dependenceHighlight?.kind !== 'port' && simState.dependenceHighlight?.producers?.includes(index),
+                        'dep-consumer': simState.dependenceHighlight?.consumers?.includes(index),
                         'port-conflict': simState.dependenceHighlight?.kind === 'port' && simState.dependenceHighlight?.producers?.includes(index) }"
               :data-instr="index"
             >
@@ -757,6 +762,7 @@
   /* the instructions a waiting instruction depends on (hovering a '.' cell of the timeline) */
   tr.dep-producer td { background: #e7f0fb; }
   tr.port-conflict td { background: #fff0e0; }
+  tr.dep-consumer td { background: #e6f4e7; }
   .dep-var { background: #cfe0f7; color: #0d47a1; border-radius: 3px; padding: 0 2px; font-weight: 600; }
   .instructions-table td.cell-focus { outline: 3px solid #e65100; outline-offset: -3px; background: #ffe0b2 !important; font-weight: 700; }
   .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
