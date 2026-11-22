@@ -15,12 +15,27 @@ async function loadPackage(pkg) {
     await self.pyodide.loadPackage(pkg);
 }
 
+/* RVCAT: the wheel always has the same name, and the server lets the browser keep it some minutes
+   (GitHub Pages: 10 minutes): a new page could run with an old RVCAT. It is downloaded asking the
+   server whether it changed (a 304 answer costs almost nothing), and installed */
+const RVCAT_WHEEL = 'rvcat-0.1-py3-none-any.whl'
+async function loadRVCAT() {
+    try {
+        const response = await fetch(RVCAT_WHEEL, { cache: 'no-cache' })
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        self.pyodide.unpackArchive(await response.arrayBuffer(), 'wheel')
+    } catch (error) {
+        console.warn('🐍⚠️ RVCAT wheel not revalidated, loaded as a package:', error)
+        await loadPackage(RVCAT_WHEEL)
+    }
+}
+
 /* Sets up Pyodide only once (singleton pattern) & Preloads commonly used packages */
 async function initialize() {
     if (self.pyodide === undefined) {
         self.pyodide = await loadPyodide();              // Load Pyodide runtime
         await loadPackage('numpy')                       // Preload numpy
-        await loadPackage('rvcat-0.1-py3-none-any.whl')  // Custom package
+        await loadRVCAT()                                // Custom package
         // (a new worker, after a simulation was aborted, is ready to simulate)
         await self.pyodide.runPythonAsync('import rvcat')
     }

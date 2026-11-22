@@ -118,6 +118,7 @@ export default {
   "critical": { es: "crítica", ca: "crítica" },
   "double click: detailed view": { es: "doble clic: vista detallada", ca: "doble clic: vista detallada" },
   "memory waits": { es: "esperas a la memoria", ca: "esperes a la memòria" },
+  "The timeline could not be simulated: {e}": { es: "No se ha podido simular el timeline: {e}", ca: "No s'ha pogut simular el timeline: {e}" },
   "Fill buffer {i}: empty": { es: "Fill buffer {i}: vacío", ca: "Fill buffer {i}: buit" },
   "P{p}: used by {list}": { es: "P{p}: lo usa {list}", ca: "P{p}: l'utilitza {list}" },
   "P{p}: free": { es: "P{p}: libre", ca: "P{p}: lliure" },

@@ -49,8 +49,10 @@ export function useRVCAT_Api() {
         'get_execution_results', 'execution results');
 
   // cacheLines=false: without the snapshots of the lines of the cache (the compact view)
-  const getTimeline = (JSONprocessText, n_ret, cacheLines = true) =>
-    run(`rvcat._scheduler.get_timeline(${pyJSON(JSONprocessText)}, nret=${n_ret}, cache_lines=${cacheLines ? 'True' : 'False'})`,
+  // (null: the argument is not given, for an RVCAT that does not know it)
+  const getTimeline = (JSONprocessText, n_ret, cacheLines = null) =>
+    run(`rvcat._scheduler.get_timeline(${pyJSON(JSONprocessText)}, nret=${n_ret}` +
+        (cacheLines === null ? ')' : `, cache_lines=${cacheLines ? 'True' : 'False'})`),
         'get_timeline', 'timeline');
 
   // Memory addresses of the first and last K loop iterations (program editor)

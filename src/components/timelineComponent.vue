@@ -195,6 +195,7 @@
 // ============================================================================
 
   let timelinePending  = false
+  let rvcatKnowsCacheLines = true     // an older RVCAT (a wheel kept by the browser) does not know cache_lines
   let lastPending      = false
 
   watch(
@@ -303,7 +304,7 @@
                                     ...repetitionFields(toRaw(process)),
                                     instruction_list: toRaw(instruction_list)}, null, 2),
                   isCompact() ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT,
-                  !isCompact())       // the compact view does not show the lines of the cache: not asked
+                  rvcatKnowsCacheLines ? !isCompact() : null)   // the compact view does not show the lines of the cache: not asked
         .catch(error => {
           console.error('📈❌Failed to request timeline:', error)
           finishTimelineRequest()
@@ -315,6 +316,12 @@
     // Handler for 'get_timeline' message (fired by RVCAT getTimeline function)
     if (dataType === 'error') {
       console.error('📈❌Failed to get timeline:', data)
+      if (rvcatKnowsCacheLines && String(data).includes('cache_lines')) {
+        rvcatKnowsCacheLines = false               // asked again, without the argument
+        lastPending = true
+      } else {
+        timelineError.value = t('The timeline could not be simulated: {e}', { e: String(data).split('\n').filter(Boolean).pop() ?? '' })
+      }
     } else {
       try {
         let timelineRVCAT = JSON.parse(data)
@@ -971,9 +978,10 @@
     if (shownRows.length > maxRows)
       for (const r of shownRows.splice(Math.max(0, maxRows))) slotOfRow[r] = -1
     const canvasHeight = Math.ceil(padY*2 + (shownRows.length+resourceRowCount+1)*cellH)
+    // (a new size allocates new memory for the canvas: only when it changes; they are cleared below)
     for (const canvas of [worldCanvas, worldOverlay]) {
-      canvas.width  = canvasWidth
-      canvas.height = canvasHeight
+      if (canvas.width  !== canvasWidth)  canvas.width  = canvasWidth
+      if (canvas.height !== canvasHeight) canvas.height = canvasHeight
     }
 
     const ctxOverlay = worldOverlay.getContext('2d')
