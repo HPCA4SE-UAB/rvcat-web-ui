@@ -2012,7 +2012,7 @@
         ? t('Its operands are ready, but the issue width is full in this cycle.')
         : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
       case '!': return t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), by age; while it waits, its cells show !. Then it waits for the block (:).')
-      case '2': return t('Secondary miss: its block is not in the cache, but an older miss is already bringing it; it shares its fill buffer and waits for that block.')
+      case '2': return t('Secondary miss: its block is not in the cache, but an older miss to the same block has already been detected; it will share its fill buffer and waits for that block (! while that miss waits to be admitted, : while the block is coming).')
       case ':': return t('Its block is coming from the main memory (it has a fill buffer): it waits until the block arrives.')
       case '@': return t('Its block has arrived, but the return throughput of the cache limits how many waiting LOAD instructions receive their data per cycle: it waits its turn, by age.')
       default: return formatProcessingTooltip(cell)
