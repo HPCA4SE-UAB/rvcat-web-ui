@@ -63,11 +63,15 @@
   // The compact view: cells of 5 × 12, no letters; the first column gives only the number of the
   // instruction (and the names of the resources)
   const isCompact = () => simState.timelineView === 'compact'
+  // The width of the cells of the compact view (1 to 5 px) adapts to the timeline: the rows that
+  // fit in the height of the window fit also in its width (see compactCellWidth)
+  let compactCellW = null
+  const compactMaxCellW = (k) => Math.max(3, Math.round(5 * k))
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     if (isCompact()) {
       const font = Math.round(11 * k)
-      return { k, font, cellW: Math.max(3, Math.round(5 * k)), cellH: Math.round(12 * k),
+      return { k, font, cellW: compactCellW ?? compactMaxCellW(k), cellH: Math.round(12 * k),
                labelW: Math.round(font * 0.62 * 8) + Math.round(8 * k) }
     }
     const font = Math.round(14 * k)
@@ -102,6 +106,25 @@
     timelineOptions.cycles = Math.min(maxCycles(), Math.max(10, fitting, timeline.value?.cycles ?? 0))
   }
   function onResizeFit()   { if (timelineOptions.autoFitCycles) fitCycles() }
+  // Compact view: the width of a cell (1 to 5 px) such that the rows that fit in the height of the
+  // window fit also in its width: each row shown starts some cycles after the one above (the slope)
+  // and lasts some cycles (a long one: the 75th percentile)
+  function compactCellWidth(instructions) {
+    const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
+    const maxW = compactMaxCellW(k)
+    const wrapper = timelineCanvas.value?.parentElement
+    if (!wrapper || shownRows.length < 2) return maxW
+    const first = instructions[shownRows[0]], last = instructions[shownRows[shownRows.length - 1]]
+    const slope = Math.max(0, last[2] - first[2]) / (shownRows.length - 1)
+    const lengths = shownRows.map(r => instructions[r][4].length).sort((a, b) => a - b)
+    const rowLength = lengths[Math.floor(lengths.length * 0.75)] ?? 10
+    const cellHeight = Math.round(12 * k)
+    const visible = Math.max(5, Math.floor((wrapper.clientHeight - 20) / cellHeight) - resourceRowCount - 1)
+    const font = Math.round(11 * k)
+    const labelWidth = Math.round(font * 0.62 * 8) + Math.round(8 * k)
+    const available = Math.max(100, wrapper.clientWidth - MINIMAP_W - 20 - labelWidth)
+    return Math.max(1, Math.min(maxW, Math.floor(available / Math.max(1, slope * visible + rowLength))))
+  }
   // the canvases of the world cannot be wider than about 32,000 pixels: very long timelines
   // (e.g. a tiny cache that misses all the time) show their first cycles
   const MAX_WORLD_PX = 30000
@@ -910,6 +933,16 @@
     for (let r = 0; r < totalInstr; r++)
       if (!shownSet || shownSet.has(instructions[r][1])) { slotOfRow[r] = shownRows.length; shownRows.push(r) }
 
+    // Compact view: the width of the cells for these rows (a new width changes the cycles that fit)
+    if (isCompact()) {
+      const w = compactCellWidth(instructions)
+      if (w !== compactCellW) {
+        compactCellW = w
+        nextTick(() => { if (timelineOptions.autoFitCycles) fitCycles() })
+      }
+      totalCycles = Math.min(totalCycles, maxCycles())
+    }
+
     // sizes in pixels, scaled with the text of the page (the A−/A+ control of the header)
     const g = timelineGeometry(), k = g.k
     cellW = g.cellW
@@ -971,12 +1004,14 @@
 
     for (let i = 0; i < totalCycles; ) {
       if (isCompact()) {
-        // compact view: the cells are too narrow for a digit; the number of every 10th cycle
+        // compact view: the cells are too narrow for a digit; the number of some cycles (every 10,
+        // 20, 50… cycles: at least about 34 px apart)
+        const step = [10, 20, 50, 100, 200, 500, 1000, 2000].find(n => n * cellW >= 34) ?? 5000
         if (i === 0) {
           ctx.fillStyle = '#ffffff'
           ctx.fillRect(x, y, totalCycles * cellW, cellH)
         }
-        if (i % 10 === 0) {
+        if (i % step === 0) {
           ctx.fillStyle = '#b8c4d6'
           ctx.fillRect(x, y, 1, cellH)
           ctx.fillStyle = '#000'
@@ -1126,6 +1161,7 @@
       })
     }
 
+    const inset = isCompact() ? 0 : 1          // (the compact view: cells of 1 to 5 px, no margin)
     const SUMMARY_COLORS = { ports: '#f0a35e', cache: '#9fb4d6', fill: '#c9a0dc', write: '#e79a9a' }
     for (const [resourceRowIndex, resource] of resourceRows.entries()) {
       const resourceY = padY + (resourceRowIndex + 1) * cellH
@@ -1147,12 +1183,12 @@
           ctx.fillStyle = '#fff'
           ctx.strokeStyle = '#bbb'
           ctx.fillRect(cx, resourceY, cellW, cellH)
-          ctx.strokeRect(cx, resourceY, cellW, cellH)
+          if (!isCompact()) ctx.strokeRect(cx, resourceY, cellW, cellH)
           const n = resource.counts[col] ?? 0
           if (n > 0) {
             const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
             ctx.fillStyle = SUMMARY_COLORS[resource.summary]
-            ctx.fillRect(cx + 1, resourceY + cellH - 1 - h, cellW - 2, h)
+            ctx.fillRect(cx + inset, resourceY + cellH - 1 - h, cellW - 2 * inset, h)
           }
           interactiveCells.push({
             x: cx, y: resourceY, colIdx: col, rowIdx: -2, cellType: 'resource-cycle', resourceIndex: resourceRowIndex,
@@ -1191,7 +1227,7 @@
         ctx.fillStyle = '#fff'
         ctx.strokeStyle = '#bbb'
         ctx.fillRect(resourceX, resourceY, cellW, cellH)
-        ctx.strokeRect(resourceX, resourceY, cellW, cellH)
+        if (!isCompact()) ctx.strokeRect(resourceX, resourceY, cellW, cellH)
         const memoryRequests = resource.port === null
           ? resource.requests.filter(request =>
               cycle >= request.cycle && cycle < request.cycle + request.duration
@@ -1214,13 +1250,13 @@
               : []
         if (addressesInCell.length === 1) {
           ctx.fillStyle = memoryAddressColors.get(addressesInCell[0]) ?? '#fff'
-          ctx.fillRect(resourceX + 1, resourceY + 1, cellW - 2, cellH - 2)
+          ctx.fillRect(resourceX + inset, resourceY + 1, cellW - 2 * inset, cellH - 2)
         } else if (addressesInCell.length > 1) {
-          const stripWidth = (cellW - 2) / addressesInCell.length
+          const stripWidth = (cellW - 2 * inset) / addressesInCell.length
           addressesInCell.forEach((address, index) => {
             ctx.fillStyle = memoryAddressColors.get(address) ?? '#fff'
             ctx.fillRect(
-              resourceX + 1 + index * stripWidth,
+              resourceX + inset + index * stripWidth,
               resourceY + 1,
               stripWidth,
               cellH - 2
@@ -1233,7 +1269,7 @@
         if (sbUsed > 0) {           // occupancy of the store buffer: a bar from the bottom of the cell
           const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, sbUsed / resource.capacity)))
           ctx.fillStyle = sbUsed >= resource.capacity ? '#e57373' : '#90b4e0'
-          ctx.fillRect(resourceX + 1, resourceY + cellH - 1 - h, cellW - 2, h)
+          ctx.fillRect(resourceX + inset, resourceY + cellH - 1 - h, cellW - 2 * inset, h)
         }
         if (resource.storeBuffer) {
           if (sbUsed >= resource.capacity) marker = 'F'
@@ -1819,9 +1855,18 @@
     const rect = timelineCanvas.value.getBoundingClientRect()
     if (e.clientX - rect.left > view.w) return null             // the minimap
     const { x: worldX, y: worldY } = toWorld(e.clientX - rect.left, e.clientY - rect.top)
-    return interactiveCells.find(cell =>
+    const hit = interactiveCells.find(cell =>
       worldX >= cell.x && worldX <= cell.x + (cell.width ?? cellW) &&
-      worldY >= cell.y && worldY <= cell.y + cellH) ?? null
+      worldY >= cell.y && worldY <= cell.y + cellH)
+    if (hit || !isCompact()) return hit ?? null
+    // compact view (cells of 1 to 5 px): the nearest cell of the row, up to 4 px away
+    let best = null, bestD = 5
+    for (const cell of interactiveCells) {
+      if (worldY < cell.y || worldY > cell.y + cellH || cell.width) continue
+      const d = Math.abs(worldX - (cell.x + cellW / 2))
+      if (d < bestD) { best = cell; bestD = d }
+    }
+    return best
   }
 
   function onMouseMove(e) {
