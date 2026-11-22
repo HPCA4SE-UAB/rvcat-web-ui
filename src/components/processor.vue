@@ -616,7 +616,22 @@
     }
   }
 
+  // While a drawing is in progress, the requests wait: only the last one is drawn afterwards (the
+  // timeline asks for many while the pointer moves)
+  let drawing = false, drawAgain = false
   const drawProcessor = async () => {
+    if (drawing) { drawAgain = true; return }
+    drawing = true
+    try {
+      do {
+        drawAgain = false
+        await drawProcessorNow()
+      } while (drawAgain)
+    } finally {
+      drawing = false
+    }
+  }
+  const drawProcessorNow = async () => {
     try {
       const highlighted  = simState.highlightedPorts?.length ? simState.highlightedPorts : simState.highlightedPort
       const dotCode      = get_processor_dot (simState.simulatedProcess, true, highlighted,

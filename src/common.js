@@ -1067,11 +1067,35 @@ export async function initResource (resourceType, optionsObj, currentKey, availa
 /* ------------------------------------------------------------------
  * GraphViz conversion to SVG
  * ------------------------------------------------------------------ */
+// One instance of Graphviz for the whole page (each new instance loads its own WebAssembly module and
+// memory), and the last graphs drawn: the timeline highlights ports and stages of the processor while
+// the pointer moves, and the same graphs come back again and again
+let vizInstance = null
+const svgCache = new Map()           // dot code -> SVG text (the most recent at the end)
+const SVG_CACHE_SIZE = 40
+async function renderDot(dotCode) {
+  const cached = svgCache.get(dotCode)
+  if (cached !== undefined) {
+    svgCache.delete(dotCode)
+    svgCache.set(dotCode, cached)
+    return new DOMParser().parseFromString(cached, 'image/svg+xml').documentElement
+  }
+  vizInstance ??= new Viz()
+  let svg
+  try {
+    svg = await vizInstance.renderSVGElement(dotCode, { engine: "dot" })
+  } catch (error) {
+    vizInstance = null                // after an error, an instance of Viz cannot be used again
+    throw error
+  }
+  svgCache.set(dotCode, new XMLSerializer().serializeToString(svg))
+  if (svgCache.size > SVG_CACHE_SIZE) svgCache.delete(svgCache.keys().next().value)
+  return svg
+}
+
 export async function createGraphVizGraph(dotCode) {
   try {
-    const viz = new Viz();
-
-    const svg = await viz.renderSVGElement(dotCode, { engine: "dot" })
+    const svg = await renderDot(dotCode)
 
     // Make SVG responsive
     let width  = svg.getAttribute("width")
