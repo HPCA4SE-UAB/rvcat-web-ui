@@ -27,7 +27,7 @@
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
   const TIMELINE_RETIRE_LIMIT = 200          // detailed view
-  const COMPACT_RETIRE_LIMIT  = 1000         // compact view: many iterations
+  const COMPACT_RETIRE_LIMIT  = 600          // compact view: many iterations (memory grows with it)
   const COMPACT_CRITICAL_MIN  = 5            // compact view: instructions shown by default (% of the critical path)
 
   const defaultOptions = {
@@ -302,7 +302,8 @@
                                     rThru: rThru ?? 1,
                                     ...repetitionFields(toRaw(process)),
                                     instruction_list: toRaw(instruction_list)}, null, 2),
-                  isCompact() ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT)
+                  isCompact() ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT,
+                  !isCompact())       // the compact view does not show the lines of the cache: not asked
         .catch(error => {
           console.error('📈❌Failed to request timeline:', error)
           finishTimelineRequest()
