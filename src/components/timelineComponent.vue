@@ -652,8 +652,14 @@
         detail
       ])
     )
-    totalCycles = timelineOptions.cycles
-    totalInstr  = timelineOptions.instructions
+    // The cycles shown (never more than the timeline has) and the instructions dispatched in them.
+    // Always computed from this timeline: the previous one (other processor, cache…) may be longer
+    totalCycles = newCycles != oldCycles && newCycles != 0 ? newCycles : timelineOptions.cycles
+    totalCycles = Math.max(1, Math.min(totalCycles, cycles))
+    totalInstr = 0
+    while (totalInstr < instructions.length && instructions[totalInstr][2] < totalCycles) totalInstr++
+    timelineOptions.instructions = totalInstr
+    timelineOptions.cycles = totalCycles
     const cacheState = timeline.value.resource_usage?.cache_state
     const fillBufferState = timeline.value.resource_usage?.fill_buffers
     const writeBufferState = timeline.value.resource_usage?.write_buffers
@@ -792,14 +798,6 @@
     resourceLayout   = resourceRows
     cacheLinesByCycle = cacheStatesByCycle
 
-    // The cycles shown (never more than the timeline has) and the instructions dispatched in them.
-    // Always computed from this timeline: the previous one (other processor, cache…) may be longer
-    if (newCycles != oldCycles && newCycles != 0) totalCycles = newCycles
-    totalCycles = Math.max(1, Math.min(totalCycles, cycles))
-    totalInstr = 0
-    while (totalInstr < instructions.length && instructions[totalInstr][2] < totalCycles) totalInstr++
-    timelineOptions.instructions = totalInstr
-    timelineOptions.cycles = totalCycles
 
     const graph = timeline.value.critical_path_graph
     let visibleCriticalCycles = timeline.value.computedCriticalCycles
@@ -933,6 +931,101 @@
       x += cellW
     }
 
+    // The first column of the rows of the resources (and the corner): a summary of the whole row
+    // (title and brief statistics, for the status line) and what the row shows (panel of details)
+    const C = totalCycles
+    const pctOf = (n, d = C) => `${(d > 0 ? 100 * n / d : 0).toFixed(1)}%`
+    const countCycles = (f) => { let n = 0; for (let c = 0; c < C; c++) if (f(c)) n++; return n }
+    const blocksIn = (address) => {          // blocks that enter: a valid address that changes
+      let n = 0, prev = null
+      for (let c = 0; c < C; c++) { const a = address(c); if (a !== null && a !== prev) n++; prev = a }
+      return n
+    }
+    const GROUP_EXPLAIN = {
+      ports: t('The execution ports, folded: the bar of each cycle shows how many ports start to execute an instruction. Its name shows or hides one row per port.'),
+      cache: t('The lines of the cache, folded: the bar of each cycle shows how many lines are receiving a block from MM. Its name shows or hides one row per line.'),
+      fill:  t('The fill buffers, folded: the bar of each cycle shows how many are busy. Its name shows or hides one row per buffer.'),
+      write: t('The write buffers, folded: the bar of each cycle shows how many are busy. Its name shows or hides one row per buffer.'),
+    }
+    function rowSummary(resource) {
+      if (resource.summary) {
+        const busy = resource.counts.slice(0, C).reduce((a, b) => a + b, 0)
+        const all  = countCycles(c => resource.capacity > 0 && (resource.counts[c] ?? 0) >= resource.capacity)
+        return { title: resource.name, explain: GROUP_EXPLAIN[resource.summary],
+                 stats: [t('{a} of {m} busy on average ({p})', { a: (C ? busy / C : 0).toFixed(1), m: resource.capacity, p: pctOf(busy, C * resource.capacity) }),
+                         t('all busy in {p} of the cycles', { p: pctOf(all) })] }
+      }
+      if (resource.port === null) {          // the main memory: the use of its bus
+        const active = (c, write) => resource.requests.some(r => (r.operation === 'write') === write && c >= r.cycle && c < r.cycle + r.duration)
+        const n = (write) => resource.requests.filter(r => (r.operation === 'write') === write && r.cycle < C).length
+        const folded = !timelineOptions.expandMemory
+        return { title: folded ? t('Memory') : 'MM',
+                 explain: (folded ? t('All the rows of the memory, folded: only the use of the bus, a colour per block. Its name shows the rows of the memory (MM, cache lines, buffers and store buffer).') + ' ' : '') +
+                          t('MM: the bus between the processor and the main memory. R: a block read from MM (a fill, after a miss); W: a dirty block written into MM (an update, after it is evicted). Each transfer keeps the bus busy during the memory issue time.'),
+                 stats: [t('bus busy {p}', { p: pctOf(countCycles(c => !!resource.cycles[c])) }),
+                         t('reads (fills) {p}, {n} blocks', { p: pctOf(countCycles(c => active(c, false))), n: n(false) }),
+                         t('writes (dirty blocks) {p}, {n} blocks', { p: pctOf(countCycles(c => active(c, true))), n: n(true) })] }
+      }
+      if (resource.port !== undefined) {     // an execution port
+        const used = countCycles(c => !!resource.cycles[c])
+        return { title: resource.label,
+                 explain: t('Execution port {p}: X marks the cycles in which an instruction starts to execute in it.', { p: resource.label }),
+                 stats: [t('used in {u} of {n} cycles ({p})', { u: used, n: C, p: pctOf(used) })] }
+      }
+      if (resource.cacheLineIndex !== undefined) {
+        const line = (c) => cacheStatesByCycle[c]?.[resource.cacheLineIndex]
+        return { title: t('Cache line {i}', { i: resource.cacheLineIndex }),
+                 explain: t('A line of the cache. C: a clean block; D: a dirty block (written by a STORE); r / w: a block arriving from MM, for a LOAD / a STORE. Each block has the same colour in all the rows.'),
+                 stats: [t('holds a block {p}', { p: pctOf(countCycles(c => !!line(c)?.valid)) }),
+                         t('dirty {p}', { p: pctOf(countCycles(c => !!(line(c)?.valid && line(c)?.dirty))) }),
+                         t('{n} blocks', { n: blocksIn(c => (line(c)?.valid ? line(c).address : null)) })] }
+      }
+      if (resource.bufferType) {
+        const entry = (c) => resource.bufferStates[c]?.[resource.bufferIndex]
+        const fill = resource.bufferType === 'fill'
+        return { title: `${fill ? 'Fill buffer' : 'Write buffer'} ${resource.bufferIndex}`,
+                 explain: fill
+                   ? t('A fill buffer holds a missing block from its request to MM until every instruction waiting for it has received its data. The misses to the same block share it.')
+                   : t('A write buffer holds an evicted dirty block until it is written into MM.'),
+                 stats: [t('busy {p}', { p: pctOf(countCycles(c => !!entry(c)?.valid)) }),
+                         t(fill ? '{n} fills' : '{n} dirty blocks written', { n: blocksIn(c => (entry(c)?.valid ? entry(c).address : null)) })] }
+      }
+      if (resource.storeBuffer) {
+        const used = (c) => { const s = resource.snapshots[c]; return s ? s.stores + s.retired.length : 0 }
+        let sum = 0, max = 0
+        for (let c = 0; c < C; c++) { sum += used(c); max = Math.max(max, used(c)) }
+        return { title: 'SB',
+                 explain: t('The store buffer ({n} entries): each STORE takes an entry when it is dispatched and frees it when its data is written into the cache, after it retires (in program order). The bar shows how full it is; F: full, and the dispatch waits.', { n: resource.capacity }),
+                 stats: [t('{a} of {m} entries on average', { a: (C ? sum / C : 0).toFixed(1), m: resource.capacity }),
+                         t('at most {n}', { n: max }),
+                         t('full {p}', { p: pctOf(countCycles(c => used(c) >= resource.capacity)) })] }
+      }
+      return { title: resource.label ?? '', explain: '', stats: [] }
+    }
+    const summaryCell = (s) => ({ title: s.title, explain: s.explain, stats: s.stats,
+                                  tooltip: [s.title, ...s.stats].join(' · ') })
+
+    // The corner: statistics of the whole timeline
+    {
+      let retired = 0, lastRetire = -1
+      for (let r = 0; r < totalInstr; r++) {
+        const k = String(instructions[r][4] ?? '').indexOf('R')
+        if (k >= 0 && instructions[r][2] + k < C) { retired++; lastRetire = Math.max(lastRetire, instructions[r][2] + k) }
+      }
+      const stats = [t('{c} cycles', { c: C }), t('{n} instructions retired', { n: retired }),
+                     t('IPC {ipc}', { ipc: lastRetire >= 0 ? (retired / (lastRetire + 1)).toFixed(2) : '0.00' })]
+      if (criticalPercentages) {
+        const top = criticalPercentages.map((p, i) => ({ p, i })).filter(x => x.p > 0).sort((a, b) => b.p - a.p).slice(0, 3)
+        if (top.length)
+          stats.push(t('critical: {list}', { list: top.map(x => `${x.i} ${instrAt(x.i)?.text ?? ''} ${x.p.toFixed(1)}%`).join(', ') }))
+      }
+      interactiveCells.push({
+        x: padX, y: padY, width: labelW, colIdx: -1, rowIdx: -1, cellType: 'corner',
+        ...summaryCell({ title: t('Timeline'), stats,
+          explain: t('The whole timeline: the simulation of the first instructions of the program (at most 200 retired). IPC: instructions retired per cycle, up to the last one retired. The critical path ends at the last instruction retired; the percentages are the fraction of its cycles attributed to each instruction of the program (as in the Program panel).') }),
+      })
+    }
+
     const SUMMARY_COLORS = { ports: '#f0a35e', cache: '#9fb4d6', fill: '#c9a0dc', write: '#e79a9a' }
     for (const [resourceRowIndex, resource] of resourceRows.entries()) {
       const resourceY = padY + (resourceRowIndex + 1) * cellH
@@ -947,7 +1040,7 @@
         interactiveCells.push({
           x: padX, y: resourceY, width: labelW, colIdx: -1, rowIdx: -2,
           cellType: 'resource-summary-label', resourceIndex: resourceRowIndex, option: resource.option,
-          tooltip: t('{name}: click to show or hide its rows', { name: resource.name }),
+          ...summaryCell(rowSummary(resource)),
         })
         for (let col = 0; col < totalCycles; col++) {
           const cx = padX + labelW + col * cellW
@@ -983,49 +1076,14 @@
       ctx.strokeRect(padX, resourceY, labelW, cellH)
       ctx.fillStyle = '#000'
 
-      const visibleCycleCount = Math.min(totalCycles, resource.cycles.length)
-      const usedCycleCount = resource.cycles
-        .slice(0, visibleCycleCount)
-        .filter(Boolean)
-        .length
-      const usagePercent = visibleCycleCount > 0
-        ? 100 * usedCycleCount / visibleCycleCount
-        : 0
       const displayedLabel = resource.foldLabel ?? (resource.port === null ? 'MM' : resource.label)
       ctx.fillText(displayedLabel, padX + fontXOffset, resourceY + fontYOffset)
-      const visibleMmRequests = resource.port === null
-        ? resource.requests.filter(request =>
-            request.cycle >= 0 && request.cycle < visibleCycleCount
-          )
-        : []
-      const mmReadTransfers = visibleMmRequests.filter(
-        request => request.operation !== 'write'
-      ).length
-      const mmWriteTransfers = visibleMmRequests.length - mmReadTransfers
       interactiveCells.push({
-        x: padX,
-        y: resourceY,
-        width: labelW,
-        colIdx: -1,
-        rowIdx: -2,
+        x: padX, y: resourceY, width: labelW, colIdx: -1, rowIdx: -2,
         cellType: resource.foldOption ? 'resource-summary-label' : 'resource-label',
         option: resource.foldOption,
         resourceIndex: resourceRowIndex,
-        tooltip: resource.foldOption
-          ? (timelineOptions[resource.foldOption]
-              ? t('Main memory: R a block read, W a dirty block written. Click to fold all the rows of the memory')
-              : t('Use of the bus between the processor and the main memory (a colour per block). Click to show the rows of the memory'))
-          : resource.storeBuffer
-          ? t('SB: store buffer ({n} entries). Each store takes an entry when it is dispatched and frees it when it is written into the cache, after it retires. The bar shows how full it is; F: full (dispatch waits).', { n: resource.capacity })
-          : resource.cacheLineIndex !== undefined
-          ? t('Cache line {i}: C clean, D dirty, r/w loading; loading blocks also appear in a fill buffer', { i: resource.cacheLineIndex })
-          : resource.bufferType === 'fill'
-            ? t('Fill buffer {i}: holds one distinct block fill; misses to the same block share the entry', { i: resource.bufferIndex })
-          : resource.bufferType === 'write'
-            ? t('Write buffer {i}: holds an evicted dirty block until its MM write completes', { i: resource.bufferIndex })
-          : resource.port === null
-            ? t('MM: {r} reads, {w} writes ({p}% busy)', { r: mmReadTransfers, w: mmWriteTransfers, p: usagePercent.toFixed(1) })
-          : t('{label}: {used}/{visible} cycles used ({p}%)', { label: resource.label, used: usedCycleCount, visible: visibleCycleCount, p: usagePercent })
+        ...summaryCell(rowSummary(resource)),
       })
 
       for (let cycle = 0; cycle < totalCycles; cycle++) {
@@ -1666,8 +1724,14 @@
   function focusCellOn(cell) {
     resetSharedHighlights()
     const col = cell.colIdx, row = cell.rowIdx
-    if (cell.cellType === 'resource-label' || cell.cellType === 'resource-summary-label') {
+    if (['resource-label', 'resource-summary-label', 'corner'].includes(cell.cellType)) {
       hoverInfo.value = { state: cell.tooltip }
+      if (cell.cellType !== 'corner') {
+        const ports = resourceLayout[cell.resourceIndex]?.summary === 'ports'
+          ? (timeline.value?.resourcePortIds ?? []).map(String)
+          : [resourceLayout[cell.resourceIndex]?.port].filter(p => p !== undefined && p !== null).map(String)
+        if (ports.length) simState.highlightedPorts = ports        // its port(s) in the Processor panel
+      }
       drawHoverOverlay(null, null, null, null, null, null)
       return
     }
@@ -1816,6 +1880,10 @@
     }
   }
   function buildDetails(cell) {
+    if (cell.explain !== undefined) {        // the first column of the resources, and the corner
+      return { title: cell.title, cycle: null, state: '', text: cell.explain,
+               lines: (cell.stats ?? []).map(s => [{ text: s, kind: 'perf' }]), info: [] }
+    }
     if (cell.cellType || cell.rowIdx === -1) {
       return { title: hoverInfo.value?.state ?? '', cycle: null, text: '', lines: [], info: [] }
     }
@@ -1896,17 +1964,16 @@
   // from the first row of the resources goes to it
   function moveResourceSelection(cur, key) {
     const find = (ri, col) => ri < 0
-      ? interactiveCells.find(c => c.cellType === 'cycle-header' && c.colIdx === col)
+      ? interactiveCells.find(c => c.cellType === (col < 0 ? 'corner' : 'cycle-header') && c.colIdx === col)
       : interactiveCells.find(c => c.rowIdx === -2 && c.resourceIndex === ri &&
-          (col < 0 ? c.cellType === 'resource-label' : c.cellType === 'resource-cycle' && c.colIdx === col))
+          (col < 0 ? ['resource-label', 'resource-summary-label'].includes(c.cellType) : c.cellType === 'resource-cycle' && c.colIdx === col))
     const lastCol = totalCycles - 1
-    let ri = cur.cellType === 'cycle-header' ? -1 : cur.resourceIndex, col = cur.colIdx
+    let ri = ['cycle-header', 'corner'].includes(cur.cellType) ? -1 : cur.resourceIndex, col = cur.colIdx
     if (key === 'ArrowLeft') col = col > 0 ? col - 1 : (find(ri, -1) ? -1 : col)
     else if (key === 'ArrowRight') col = Math.min(lastCol, col + 1)
     else {
       ri += key === 'ArrowDown' ? 1 : -1
       if (ri < -1 || ri >= resourceRowCount) return true
-      if (col < 0 && !find(ri, -1)) return true     // the cycles and a folded group have no label to pin
     }
     const next = find(ri, col)
     if (next && next !== cur) { keepSelectionInView = true; pinCell(next); present() }
@@ -1918,7 +1985,7 @@
   // moves to show it. Without anything pinned (or a cycle or a resource pinned): false
   function moveSelection(key) {
     const cur = pinned.value?.cell
-    if (cur && ['resource-cycle', 'resource-label', 'cycle-header'].includes(cur.cellType)) return moveResourceSelection(cur, key)
+    if (cur && ['resource-cycle', 'resource-label', 'resource-summary-label', 'cycle-header', 'corner'].includes(cur.cellType)) return moveResourceSelection(cur, key)
     if (!cur || cur.cellType || cur.rowIdx < 0) return false
     const header = (r) => interactiveCells.find(c => !c.cellType && c.rowIdx === r && c.colIdx === -1)
     const cellsOf = (r) => rowCells(r).filter(c => c.char && c.char !== ' ').sort((a, b) => a.colIdx - b.colIdx)
