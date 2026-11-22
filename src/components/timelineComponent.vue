@@ -796,6 +796,7 @@
     }
     resourceRowCount = resourceRows.length
     resourceLayout   = resourceRows
+    resourceDetail   = detailedRows
     cacheLinesByCycle = cacheStatesByCycle
 
 
@@ -934,6 +935,7 @@
     // The first column of the rows of the resources (and the corner): a summary of the whole row
     // (title and brief statistics, for the status line) and what the row shows (panel of details)
     const C = totalCycles
+    const rowId = (r) => (instructions[r] ? `[${instructions[r][0]},${instructions[r][1]}]` : `#${r}`)
     const pctOf = (n, d = C) => `${(d > 0 ? 100 * n / d : 0).toFixed(1)}%`
     const countCycles = (f) => { let n = 0; for (let c = 0; c < C; c++) if (f(c)) n++; return n }
     const blocksIn = (address) => {          // blocks that enter: a valid address that changes
@@ -1205,7 +1207,7 @@
             : resource.bufferType === 'fill'
               ? t('Fill block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
                 `${bufferEntry.ready_cycle == null ? '' : '; ' + t('ready at cycle {c}', { c: bufferEntry.ready_cycle })}` +
-                `; ${t('waiting instructions {list}', { list: bufferEntry.instruction_indices.map(index => index + 1).join(', ') })})`
+                `; ${t('waiting instructions {list}', { list: bufferEntry.instruction_indices.map(rowId).join(', ') })})`
             : resource.bufferType === 'write'
               ? t('Write dirty block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
                 `${bufferEntry.ready_cycle == null ? '' : '; ' + t('available at cycle {c}', { c: bufferEntry.ready_cycle })})`
@@ -1227,12 +1229,12 @@
             : !memoryRequests.length
             ? t('MM: no transfer')
             : memoryRequests
-                .map(({ operation, address }) => {
-                  if (operation === 'read_for_write')
-                    return t('Read block for writing at addr {a}', { a: address })
+                .map(({ operation, address, instruction_index: own, instruction_indices: waiting }) => {
                   if (operation === 'write')
                     return t('Write dirty block at addr {a}', { a: address })
-                  return t('Read block at addr {a}', { a: address })
+                  const who = [...new Set([own, ...(waiting ?? [])].filter(r => Number.isInteger(r) && r >= 0))]
+                  return t(operation === 'read_for_write' ? 'Read block for writing at addr {a}' : 'Read block at addr {a}', { a: address }) +
+                         (who.length ? ' (' + t('for {list}', { list: who.map(rowId).join(', ') }) + ')' : '')
                 })
                 .join('\n')
         })
@@ -1338,11 +1340,19 @@
           })
         }
 
-        ctx.fillStyle   = rowBg;
+        // a mispredicted branch is resolved in its W: a very visible cell
+        const mispredictedW = ch === 'W' && !!flags?.mispredicted
+        ctx.fillStyle   = mispredictedW ? '#ffd600' : rowBg;
         ctx.strokeStyle = "#bbb";
         ctx.lineWidth   = 1;
         ctx.fillRect    (x, y, cellW, cellH);
         ctx.strokeRect  (x, y, cellW, cellH);
+        if (mispredictedW) {
+          ctx.strokeStyle = '#e65100'
+          ctx.lineWidth   = 3
+          ctx.strokeRect(x + 1.5, y + 1.5, cellW - 3, cellH - 3)
+          ctx.lineWidth   = 1
+        }
         ctx.fillStyle = currColor;
         ctx.fillText    (ch === '.' ? '·' : ch, x + fontXOffset, y + fontYOffset);
 
@@ -1437,6 +1447,7 @@
   // panel of details. A second click on it, a click outside the cells or Esc release it.
   const pinned  = ref(null)          // details of the pinned cell
   let resourceLayout    = []         // resource rows of the last drawing (ports, MM, cache lines, buffers, SB)
+  let resourceDetail    = []         // all the detailed rows of the resources (also the folded ones)
   let cacheLinesByCycle = []         // lines of the cache in each cycle
   let focusedCell = null
   const COLORS = {
@@ -1465,10 +1476,76 @@
   }
   const memoryText = (m) => (m.store ? 'STORE' : 'LOAD') + ' ' +
     t('addr {a}, block {b}', { a: m.addr, b: m.block }) + ': ' +
-    (m.result === 'hit' ? t('hit') : m.result === 'primary' ? t('primary miss (it requests the block)') : t('secondary miss (the block is already coming)'))
+    (m.store   // a STORE accesses the cache from the store buffer, after it retires
+      ? (m.result === 'hit' ? t('its block is in the cache when it is written') : t('write miss: its block is requested when it is written, after it retires'))
+      : m.result === 'hit' ? t('hit') : m.result === 'primary' ? t('primary miss (it requests the block)') : t('secondary miss (the block is already coming)'))
+  // ---- The rows of the resources that a block or an instruction uses ----
+  // the row (in resourceLayout) where a detailed resource row is shown: itself, or its folded
+  // group; -1 when it is hidden (the memory folded)
+  function shownRowOf(res) {
+    const i = resourceLayout.indexOf(res)
+    return i >= 0 ? i : resourceLayout.findIndex(r => r.members?.includes(res))
+  }
+  function markResCell(ctx, res, col, kind = 'memory') {
+    const ri = res ? shownRowOf(res) : -1
+    if (ri < 0 || col < 0 || col >= totalCycles) return
+    markRect(ctx, padX + labelW + col * cellW, padY + (ri + 1) * cellH, cellW, kind)
+  }
+  const mmRes      = () => resourceDetail.find(r => r.port === null && r.label === 'MM')
+  const mmAt       = (col) => (mmRes()?.requests ?? []).filter(q => col >= q.cycle && col < q.cycle + q.duration)
+  const lineHolds  = (res, col, block) => { const l = cacheLinesByCycle[col]?.[res.cacheLineIndex]; return !!l?.valid && l.address === block }
+  const slotOf     = (res, col) => res.bufferStates?.[col]?.[res.bufferIndex]
+  const bufHolds   = (res, col, block) => { const e = slotOf(res, col); return !!e?.valid && e.address === block }
+  // the cells of a block in a cycle: the lines of the cache, the fill / write buffers and the
+  // transfers of MM (read / write) that hold it; and the instructions that wait for it in a fill
+  function markBlockAt(ctx, block, col, { cache = false, fill = false, write = false, mm = null, waiting = false } = {}) {
+    for (const res of resourceDetail) {
+      if (cache && res.cacheLineIndex !== undefined && lineHolds(res, col, block)) markResCell(ctx, res, col)
+      if (fill && res.bufferType === 'fill' && bufHolds(res, col, block)) markResCell(ctx, res, col)
+      if (write && res.bufferType === 'write' && bufHolds(res, col, block)) markResCell(ctx, res, col)
+      if (waiting && res.bufferType === 'fill' && bufHolds(res, col, block))
+        for (const r of slotOf(res, col).instruction_indices ?? []) markCell(ctx, r, col, 'memory')
+    }
+    if (mm && mmAt(col).some(q => q.address === block && (mm === 'any' || (q.operation === 'write') === (mm === 'write'))))
+      markResCell(ctx, mmRes(), col)
+  }
+  // A cell of a row of the resources: the cells related to it in the same cycle
+  function markResourceRelations(ctx, cell) {
+    const res = resourceLayout[cell.resourceIndex], col = cell.colIdx
+    if (!res) return false
+    if (res.cacheLineIndex !== undefined) {
+      const line = cacheLinesByCycle[col]?.[res.cacheLineIndex]
+      if (!line?.valid) return true
+      if (line.loading) markBlockAt(ctx, line.address, col, { fill: true, mm: 'read', waiting: true })
+      else for (const c of interactiveCells)          // the accesses to the block in this cycle (hits)
+        if (!c.cellType && c.colIdx === col && c.char === 'E' && execCycleOf(c) === 1 && memoryInfo(c.rowIdx)?.block === line.address)
+          markCell(ctx, c.rowIdx, col, 'memory')
+      return true
+    }
+    if (res.bufferType) {
+      const e = slotOf(res, col)
+      if (!e?.valid) return true
+      if (res.bufferType === 'fill') markBlockAt(ctx, e.address, col, { cache: true, mm: 'read', waiting: true })
+      else markBlockAt(ctx, e.address, col, { mm: 'write' })
+      return true
+    }
+    if (res.port === null) {                            // a transfer of MM: its buffer, line and instructions
+      for (const q of mmAt(col)) {
+        if (q.operation === 'write') markBlockAt(ctx, q.address, col, { write: true })
+        else {
+          markBlockAt(ctx, q.address, col, { fill: true, cache: true, waiting: true })
+          if (Number.isInteger(q.instruction_index)) markCell(ctx, q.instruction_index, col, 'memory')
+        }
+      }
+      return true
+    }
+    return false
+  }
+
   // the resources of a memory instruction: the main memory transfers of its block, its fill
-  // buffer, the line of the cache while it is in flight, and (a STORE) the store buffer
-  function markMemory(ctx, row) {
+  // buffer, the line of the cache while it is in flight, and (a STORE) the store buffer. With a
+  // cycle (onlyCol), only the cells of that cycle
+  function markMemory(ctx, row, onlyCol = null) {
     const m = memoryInfo(row)
     if (!m) return null
     const cells = rowCells(row)
@@ -1490,21 +1567,18 @@
       }
       return false
     }
+    const cols = onlyCol === null ? [...Array(totalCycles).keys()] : [onlyCol]
     for (const [ri, res] of resourceLayout.entries()) {
       const y = padY + (ri + 1) * cellH
-      for (let col = 0; col < totalCycles; col++) {
+      for (const col of cols) {
         let on = false
         if (res.summary === 'cache' || res.summary === 'fill')
           on = res.members.some(member => busy(member, col))
         else if (res.port === null && res.label === 'MM')
           on = requests.some(q => col >= q.cycle && col < q.cycle + q.duration)
-        else if (res.cacheLineIndex !== undefined) {
-          const line = cacheLinesByCycle[col]?.[res.cacheLineIndex]
-          on = col >= first && col <= sbLast && !!line?.valid && line.address === m.block
-        } else if (res.bufferType === 'fill') {
-          const slot = res.bufferStates[col]?.[res.bufferIndex]
-          on = !!slot?.valid && slot.address === m.block && (slot.instruction_indices ?? []).includes(row)
-        } else if (res.storeBuffer && m.store) {
+        else if (res.cacheLineIndex !== undefined || res.bufferType === 'fill')
+          on = busy(res, col)
+        else if (res.storeBuffer && m.store) {
           const snap = res.snapshots[col]
           on = (col >= first && col <= last) || !!snap?.retired?.includes(row)
         }
@@ -1513,7 +1587,18 @@
     }
     return m
   }
-
+  // A STORE: the cycle in which it is written from the store buffer into the cache (null: not in
+  // the timeline). It is written in the cycle after the last one in which it waits in the store
+  // buffer (or in its retire cycle, if its block is in the cache)
+  function storeWriteCycle(row) {
+    const sb = resourceDetail.find(r => r.storeBuffer)
+    const retire = rowCells(row).find(c => c.char === 'R')?.colIdx
+    if (!sb || retire === undefined) return null
+    let lastWait = -1
+    sb.snapshots.forEach((snap, col) => { if (snap?.retired?.includes(row)) lastWait = col })
+    const w = lastWait >= 0 ? lastWait + 1 : retire
+    return w < totalCycles ? w : null
+  }
   // ---- Data dependences between rows (RVCAT: producers of each row) ----
   const producersOf = (row) => timeline.value?.producers?.[row] ?? []
   const consumersByRow = computed(() => {
@@ -1738,9 +1823,16 @@
     if (cell.cellType === 'resource-cycle') {
       hoverInfo.value = cell.tooltip ? { state: cell.tooltip, cycle: col } : null
       if (cell.ports?.length) simState.highlightedPorts = cell.ports      // its port(s) in the Processor panel
-      drawHoverOverlay(null, null, null, null, null, null, cell.linkedInstructionRows, col, cell.linkedResourceRows)
+      // a row of the memory (MM, a line of the cache, a buffer): the cells related in this cycle
+      const res = resourceLayout[cell.resourceIndex]
+      const memoryRow = !!res && (res.cacheLineIndex !== undefined || !!res.bufferType || res.port === null)
+      drawHoverOverlay(null, null, null, null, null, null,
+                       memoryRow ? null : cell.linkedInstructionRows, col, memoryRow ? null : cell.linkedResourceRows)
       const ctx = overlayContext()
-      if (ctx) markCycle(ctx, col)
+      if (ctx) {
+        markCycle(ctx, col)
+        if (memoryRow) markResourceRelations(ctx, cell)
+      }
       return
     }
     if (row === -1) {                      // the header: a cycle, and the instructions in it
@@ -1777,7 +1869,17 @@
     markCycle(ctx, col)
 
     const detail = cell.waitDetail
-    if ((cell.char === 'E' && execCycleOf(cell) === 1) || ['!', '2', ':', '@', 'W'].includes(cell.char)) markMemory(ctx, row)
+    // the memory, only in this cycle: a LOAD, when it accesses the cache and while it waits for
+    // its block; a STORE, its entry of the store buffer (D: taken; W: written; R: it is written into
+    // the cache, if its block is there)
+    const kind = instrKind(cell.instrIdx)
+    if (kind === 'load' && ((cell.char === 'E' && execCycleOf(cell) === 1) || ['!', '2', ':', '@'].includes(cell.char)))
+      markMemory(ctx, row, col)
+    if (kind === 'store' && ['D', 'W', 'R'].includes(cell.char) && cacheEnabled.value) {
+      markResCell(ctx, resourceDetail.find(r => r.storeBuffer), col)
+      const m = memoryInfo(row)
+      if (cell.char === 'R' && m && storeWriteCycle(row) === col) markBlockAt(ctx, m.block, col, { cache: true })
+    }
     if ((cell.char === '.' && detail?.reason === 'data') || (cell.char === '*' && detail?.reason === 'ports')) {
       // the instructions it waits for, the variables, and the ports it needs
       const dep = simState.dependenceHighlight
@@ -1838,16 +1940,33 @@
     for (let c = cell.colIdx - 1; instrCell(cell.rowIdx, c)?.char === 'E'; c--) k++
     return k
   }
+  // A STORE / BRANCH: D, W and R do other things than for the instructions with a result
+  const isMispredicted = (row) => !!rowHeaderCell(row)?.mispredicted
+  function storeWriteText(row) {
+    const w = storeWriteCycle(row)
+    return w === null ? t('it is written into the cache after the cycles shown')
+         : w === instrCellCol(row, 'R') ? t('it is written into the cache in this cycle')
+         : t('it is written into the cache in cycle {c}', { c: w })
+  }
+  const instrCellCol = (row, ch) => rowCells(row).find(c => c.char === ch)?.colIdx
   function cellStatus(cell) {
     const p = simState.simulatedProcess ?? {}
+    const kind = instrKind(cell.instrIdx)
+    const sb = kind === 'store' && cacheEnabled.value
     switch (cell.char) {
-      case 'D': return t('Dispatch (up to {n} per cycle)', { n: p.dispatch })
-      case 'R': return t('Retire (up to {n} per cycle)', { n: p.retire })
-      case 'W': return t('Writes its result')
+      case 'D': return t('Dispatch (up to {n} per cycle)', { n: p.dispatch }) + (sb ? ` · ${t('takes an entry of the store buffer')}` : '')
+      case 'R':
+        if (sb) return t('Retire: the STORE leaves the ROB') + ` · ${storeWriteText(cell.rowIdx)}`
+        if (kind === 'branch') return t('Retire: the branch leaves the ROB')
+        return t('Retire (up to {n} per cycle)', { n: p.retire })
+      case 'W':
+        if (kind === 'store') return sb ? t('Writes its address and data into its entry of the store buffer') : t('Has its address and data')
+        if (kind === 'branch') return isMispredicted(cell.rowIdx) ? t('The branch is resolved: MISPREDICTED') : t('The branch is resolved: the prediction was correct')
+        return t('Writes its result')
       case 'E': {
         const lat = Number(instrAt(cell.instrIdx)?.latency) || null
         const k = execCycleOf(cell)
-        const mem = k === 1 ? memoryInfo(cell.rowIdx) : null
+        const mem = k === 1 && kind === 'load' ? memoryInfo(cell.rowIdx) : null
         return k === 1
           ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '') +
             (mem ? ` · ${memoryText(mem)}` : '')
@@ -1864,25 +1983,48 @@
   function cellExplanation(cell) {
     const p = simState.simulatedProcess ?? {}
     const d = cell.waitDetail
+    const kind = instrKind(cell.instrIdx)
+    const sb = kind === 'store' && cacheEnabled.value
     switch (cell.char) {
-      case 'D': return t('Dispatch: the instruction enters the ROB and the waiting buffer, in program order (up to {n} per cycle).', { n: p.dispatch })
+      case 'D': return t('Dispatch: the instruction enters the ROB and the waiting buffer, in program order (up to {n} per cycle).', { n: p.dispatch }) +
+        (sb ? ' ' + t('A STORE also takes an entry of the store buffer: if it is full, the dispatch waits.') : '')
       case 'E': return execCycleOf(cell) === 1
-        ? t('It starts to execute in port P{p}: its operands are ready and the port is free. It takes {l} cycle(s) (latency).', { p: cell.port, l: instrAt(cell.instrIdx)?.latency ?? '?' })
+        ? t('It starts to execute in port P{p}: its operands are ready and the port is free. It takes {l} cycle(s) (latency).', { p: cell.port, l: instrAt(cell.instrIdx)?.latency ?? '?' }) +
+          (kind === 'load' && cacheEnabled.value ? ' ' + t('A LOAD accesses the cache: if its block is there (a hit), it has its data at the end of its latency; if not (a miss), after its latency it waits for the block (! : @).') : '') +
+          (kind === 'store' ? ' ' + t('A STORE computes its address: it does not access the cache until it retires.') : '')
         : t('It is executing: cycle {k} of {l} of its latency.', { k: execCycleOf(cell), l: instrAt(cell.instrIdx)?.latency ?? '?' })
-      case 'W': return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.')
-      case 'R': return t('Retire: the instruction leaves the ROB, in program order, and its result updates the registers (up to {n} per cycle).', { n: p.retire })
+      case 'W':
+        if (kind === 'store') return sb
+          ? t('The STORE writes its address and its data into its entry of the store buffer. It has no result: it writes nothing into the ROB or the registers, and no instruction waits for it. The cache is written after it retires.')
+          : t('The STORE has its address and its data. It has no result: it writes nothing into the ROB or the registers, and no instruction waits for it.')
+        if (kind === 'branch') return isMispredicted(cell.rowIdx)
+          ? t('The branch has evaluated its condition, and the prediction was WRONG: the instructions dispatched after it (the wrong path, in grey) are squashed, and the instructions of the right path are dispatched after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' })
+          : t('The branch has evaluated its condition, and the prediction was correct: the instructions dispatched after it go on. A branch has no result for the registers.')
+        return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.')
+      case 'R':
+        if (sb) return t('Retire: the STORE leaves the ROB, in program order. Now it can change the memory: its entry of the store buffer is written into the cache, in program order, when its block is in the cache, and then the entry is freed; {when}.', { when: storeWriteText(cell.rowIdx) })
+        if (kind === 'store') return t('Retire: the STORE leaves the ROB, in program order, and changes the memory.')
+        if (kind === 'branch') return t('Retire: the branch leaves the ROB, in program order. It has no result for the registers.')
+        return t('Retire: the instruction leaves the ROB, in program order, and its result updates the registers (up to {n} per cycle).', { n: p.retire })
       case '-': return t('It has finished, but it waits to retire: the instructions retire in program order, so it waits for the older ones.')
       case '.': return t('It waits for the data of an older instruction (in blue). It can start to execute in the cycle after the last cycle of that instruction (bypass).')
       case '*': return d?.reason === 'issue-bandwidth'
         ? t('Its operands are ready, but the issue width is full in this cycle.')
         : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
+      case '!': return t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), by age; while it waits, its cells show !. Then it waits for the block (:).')
+      case '2': return t('Secondary miss: its block is not in the cache, but an older miss is already bringing it; it shares its fill buffer and waits for that block.')
+      case ':': return t('Its block is coming from the main memory (it has a fill buffer): it waits until the block arrives.')
+      case '@': return t('Its block has arrived, but the return throughput of the cache limits how many waiting LOAD instructions receive their data per cycle: it waits its turn, by age.')
       default: return formatProcessingTooltip(cell)
     }
-  }
-  function buildDetails(cell) {
+  }  function buildDetails(cell) {
     if (cell.explain !== undefined) {        // the first column of the resources, and the corner
       return { title: cell.title, cycle: null, state: '', text: cell.explain,
                lines: (cell.stats ?? []).map(s => [{ text: s, kind: 'perf' }]), info: [] }
+    }
+    if (cell.cellType === 'resource-cycle') {  // a cycle of a resource: what it holds, and what the row shows
+      const label = interactiveCells.find(c => c.colIdx === -1 && c.rowIdx === -2 && c.resourceIndex === cell.resourceIndex)
+      return { title: label?.title ?? '', cycle: cell.colIdx, state: cell.tooltip ?? '', text: label?.explain ?? '', lines: [], info: [] }
     }
     if (cell.cellType || cell.rowIdx === -1) {
       return { title: hoverInfo.value?.state ?? '', cycle: null, text: '', lines: [], info: [] }
@@ -2065,7 +2207,7 @@
 
   function formatProcessingTooltip(cell) {
     const detail = cell.waitDetail
-    if (cell.char === '!' && detail?.reason === 'cache')
+    if (cell.char === '!' && detail?.reason === 'cache' && !['queued_fill', 'queued_write', 'queued_line', 'waiting_mm', 'waiting_writeback'].includes(detail.buffer_state))
       return t('Cache MISS: block addr {a}', { a: detail.block_address })
     if (cell.char === '2' && detail?.reason === 'cache')
       return t('2ary MISS: block addr {a}', { a: detail.block_address })
@@ -2157,6 +2299,12 @@
 
   // (as lines of parts { text, kind }: each kind has its own colour, see .tt-* below)
   // The instruction of a row: of the loop body, or (index >= its length) of the block after each call
+  // the kind of an instruction of the program: 'load', 'store', 'branch' or 'other'
+  function instrKind(i) {
+    const ins = instrAt(i)
+    if (/MEM/.test(ins?.type ?? '')) return ins.oper === 'LOAD' ? 'load' : 'store'
+    return ins?.type === 'BRANCH' ? 'branch' : 'other'
+  }
   function instrAt(i) {
     const p = simState.simulatedProcess
     const n = p?.instruction_list?.length ?? 0
