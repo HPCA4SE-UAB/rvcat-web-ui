@@ -1052,7 +1052,7 @@
           ctx.strokeRect(cx, resourceY, cellW, cellH)
           const n = resource.counts[col] ?? 0
           if (n > 0) {
-            const h = Math.max(2, Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
+            const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
             ctx.fillStyle = SUMMARY_COLORS[resource.summary]
             ctx.fillRect(cx + 1, resourceY + cellH - 1 - h, cellW - 2, h)
           }
@@ -1133,7 +1133,7 @@
         const sbSnap = resource.storeBuffer ? resource.snapshots[cycle] : null
         const sbUsed = sbSnap ? sbSnap.stores + sbSnap.retired.length : 0
         if (sbUsed > 0) {           // occupancy of the store buffer: a bar from the bottom of the cell
-          const h = Math.max(2, Math.round((cellH - 2) * Math.min(1, sbUsed / resource.capacity)))
+          const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, sbUsed / resource.capacity)))
           ctx.fillStyle = sbUsed >= resource.capacity ? '#e57373' : '#90b4e0'
           ctx.fillRect(resourceX + 1, resourceY + cellH - 1 - h, cellW - 2, h)
         }
@@ -1587,6 +1587,14 @@
     }
     return m
   }
+  // A LOAD waiting for a fill: the cycle in which its block arrives (its fill buffer knows it)
+  function blockReadyCycle(row, col, block) {
+    for (const res of resourceDetail) {
+      const e = res.bufferType === 'fill' ? slotOf(res, col) : null
+      if (e?.valid && e.address === block && (e.instruction_indices ?? []).includes(row) && Number.isInteger(e.ready_cycle)) return e.ready_cycle
+    }
+    return null
+  }
   // A STORE: the cycle in which it is written from the store buffer into the cache (null: not in
   // the timeline). It is written in the cycle after the last one in which it waits in the store
   // buffer (or in its retire cycle, if its block is in the cache)
@@ -1969,7 +1977,7 @@
         const mem = k === 1 && kind === 'load' ? memoryInfo(cell.rowIdx) : null
         return k === 1
           ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '') +
-            (mem ? ` · ${memoryText(mem)}` : '')
+            (mem ? ` · ${t('after its latency')}: ${memoryText(mem)}` : '')
           : t('Executes: cycle {k} of {l}', { k, l: lat ?? '?' })
       }
       case '-': {
@@ -1998,7 +2006,9 @@
           ? t('The STORE writes its address and its data into its entry of the store buffer. It has no result: it writes nothing into the ROB or the registers, and no instruction waits for it. The cache is written after it retires.')
           : t('The STORE has its address and its data. It has no result: it writes nothing into the ROB or the registers, and no instruction waits for it.')
         if (kind === 'branch') return isMispredicted(cell.rowIdx)
-          ? t('The branch has evaluated its condition, and the prediction was WRONG: the instructions dispatched after it (the wrong path, in grey) are squashed, and the instructions of the right path are dispatched after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' })
+          ? (simState.simulationSettings?.speculation === 'wrong-path'
+              ? t('The branch has evaluated its condition, and the prediction was WRONG: the instructions dispatched after it (the wrong path, in grey) are squashed, and the instructions of the right path are dispatched after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' })
+              : t('The branch has evaluated its condition, and the prediction was WRONG. With the option stall, the simulator does not dispatch the wrong path: the dispatch has stopped after the branch, and it resumes with the right path after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' }))
           : t('The branch has evaluated its condition, and the prediction was correct: the instructions dispatched after it go on. A branch has no result for the registers.')
         return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.')
       case 'R':
@@ -2007,7 +2017,8 @@
         if (kind === 'branch') return t('Retire: the branch leaves the ROB, in program order. It has no result for the registers.')
         return t('Retire: the instruction leaves the ROB, in program order, and its result updates the registers (up to {n} per cycle).', { n: p.retire })
       case '-': return t('It has finished, but it waits to retire: the instructions retire in program order, so it waits for the older ones.')
-      case '.': return t('It waits for the data of an older instruction (in blue). It can start to execute in the cycle after the last cycle of that instruction (bypass).')
+      case '.': return t('It waits for the data of an older instruction (in blue). It can start to execute in the cycle after the last cycle of that instruction (bypass).') +
+        (kind === 'store' ? ' ' + t('In RVCAT a STORE waits for its address and its data before it executes. A real processor handles them separately (STA and STD): it computes the address as soon as its operands are ready, and the data can arrive later.') : '')
       case '*': return d?.reason === 'issue-bandwidth'
         ? t('Its operands are ready, but the issue width is full in this cycle.')
         : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
@@ -2238,7 +2249,8 @@
         return t('Wait for MM issue slot for block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'waiting_writeback')
         return t('Wait for dirty writeback before filling block at addr {a}', { a: detail.block_address })
-      return t('Wait for block at addr {a}', { a: detail.block_address })
+      const ready = blockReadyCycle(cell.rowIdx, cell.colIdx, detail.block_address)
+      return t('Wait for block at addr {a}', { a: detail.block_address }) + (ready !== null ? ` (${t('it arrives in cycle {c}', { c: ready })})` : '')
     }
     return charToProcessingState(
       cell.char,
