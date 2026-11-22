@@ -509,7 +509,7 @@
     let scrollX = startCycle * cellW
     // a pinned cell stays in view (it is moved with the arrows)
     const sel = selectedCell.value
-    if (keepSelectionInView && sel && sel.colIdx >= 0 && (sel.cellType === 'resource-cycle' || (!sel.cellType &&
+    if (keepSelectionInView && sel && sel.colIdx >= 0 && (['resource-cycle', 'cycle-header'].includes(sel.cellType) || (!sel.cellType &&
         sel.rowIdx >= scrollRow.value && sel.rowIdx < scrollRow.value + visibleRowCount()))) {
       const bodyW = w - (padX + labelW)
       const x0 = sel.colIdx * cellW, x1 = x0 + cellW
@@ -792,30 +792,14 @@
     resourceLayout   = resourceRows
     cacheLinesByCycle = cacheStatesByCycle
 
-    if (newCycles != oldCycles && newCycles != 0 ) {
-      if (newCycles > cycles) newCycles = cycles
-
-      // change timeline size (cycles) and recompute totalInstr
-      totalCycles = newCycles
-
-      // Compute last instruction processed before newCycles
-      let first_cycle = instructions[totalInstr-1][2]
-      if (totalCycles > first_cycle) { // included & find more
-        while (totalCycles > first_cycle && totalInstr < instructions.length) {
-          totalInstr++
-          first_cycle = instructions[totalInstr-1][2]
-        }
-        if (totalCycles <= first_cycle)
-          totalInstr--
-      } else { // not included & find less
-        do {
-          totalInstr--
-          first_cycle = instructions[totalInstr-1][2]
-        } while (totalCycles <= first_cycle && totalInstr > 0)
-      }
-      timelineOptions.instructions = totalInstr
-      timelineOptions.cycles= newCycles
-    }
+    // The cycles shown (never more than the timeline has) and the instructions dispatched in them.
+    // Always computed from this timeline: the previous one (other processor, cache…) may be longer
+    if (newCycles != oldCycles && newCycles != 0) totalCycles = newCycles
+    totalCycles = Math.max(1, Math.min(totalCycles, cycles))
+    totalInstr = 0
+    while (totalInstr < instructions.length && instructions[totalInstr][2] < totalCycles) totalInstr++
+    timelineOptions.instructions = totalInstr
+    timelineOptions.cycles = totalCycles
 
     const graph = timeline.value.critical_path_graph
     let visibleCriticalCycles = timeline.value.computedCriticalCycles
@@ -920,9 +904,10 @@
       let initRow   = 0
       while (initRow < totalInstr && (instructions[initRow][2] + instructions[initRow][4].length <= i))
         initRow++
-      let lengthRow = 1
-      let ROBused = 1
-      if (instructions[initRow][2] + instructions[initRow][4].length === i+1) {
+      // no instruction in flight (e.g. cycles in which only the memory works): an empty ROB
+      let lengthRow = initRow < totalInstr ? 1 : 0
+      let ROBused = lengthRow
+      if (lengthRow && instructions[initRow][2] + instructions[initRow][4].length === i+1) {
         ROBused = 0
       }
       while (initRow+lengthRow < totalInstr && instructions[initRow+lengthRow][2] <= i) {
@@ -1907,17 +1892,21 @@
   // A cell of the rows of the resources: the arrows move inside these rows (the border with the
   // rows of the instructions is not crossed). ← from the first cycle: its label (if it is not a
   // folded group); → from the label: the first cycle
+  // The row of the cycles (ri = -1) belongs to this zone: ↓ from it goes to the resources, and ↑
+  // from the first row of the resources goes to it
   function moveResourceSelection(cur, key) {
-    const find = (ri, col) => interactiveCells.find(c => c.rowIdx === -2 && c.resourceIndex === ri &&
-      (col < 0 ? c.cellType === 'resource-label' : c.cellType === 'resource-cycle' && c.colIdx === col))
-    const lastCol = Math.max(...interactiveCells.filter(c => c.cellType === 'resource-cycle').map(c => c.colIdx))
-    let ri = cur.resourceIndex, col = cur.colIdx
+    const find = (ri, col) => ri < 0
+      ? interactiveCells.find(c => c.cellType === 'cycle-header' && c.colIdx === col)
+      : interactiveCells.find(c => c.rowIdx === -2 && c.resourceIndex === ri &&
+          (col < 0 ? c.cellType === 'resource-label' : c.cellType === 'resource-cycle' && c.colIdx === col))
+    const lastCol = totalCycles - 1
+    let ri = cur.cellType === 'cycle-header' ? -1 : cur.resourceIndex, col = cur.colIdx
     if (key === 'ArrowLeft') col = col > 0 ? col - 1 : (find(ri, -1) ? -1 : col)
     else if (key === 'ArrowRight') col = Math.min(lastCol, col + 1)
     else {
       ri += key === 'ArrowDown' ? 1 : -1
-      if (ri < 0 || ri >= resourceRowCount) return true
-      if (col < 0 && !find(ri, -1)) return true     // a folded group has no label to pin
+      if (ri < -1 || ri >= resourceRowCount) return true
+      if (col < 0 && !find(ri, -1)) return true     // the cycles and a folded group have no label to pin
     }
     const next = find(ri, col)
     if (next && next !== cur) { keepSelectionInView = true; pinCell(next); present() }
@@ -1929,7 +1918,7 @@
   // moves to show it. Without anything pinned (or a cycle or a resource pinned): false
   function moveSelection(key) {
     const cur = pinned.value?.cell
-    if (cur && (cur.cellType === 'resource-cycle' || cur.cellType === 'resource-label')) return moveResourceSelection(cur, key)
+    if (cur && ['resource-cycle', 'resource-label', 'cycle-header'].includes(cur.cellType)) return moveResourceSelection(cur, key)
     if (!cur || cur.cellType || cur.rowIdx < 0) return false
     const header = (r) => interactiveCells.find(c => !c.cellType && c.rowIdx === r && c.colIdx === -1)
     const cellsOf = (r) => rowCells(r).filter(c => c.char && c.char !== ' ').sort((a, b) => a.colIdx - b.colIdx)
@@ -1940,7 +1929,8 @@
       if (cur.colIdx < 0) next = key === 'ArrowRight' ? cells[0] : cells[cells.length - 1]
       else {
         const i = cells.findIndex(c => c.colIdx === cur.colIdx)
-        next = key === 'ArrowRight' ? cells[i + 1] : (i > 0 ? cells[i - 1] : header(cur.rowIdx))
+        // → from the last cell (R) and ← from the first one: the instruction (its first column)
+        next = key === 'ArrowRight' ? (cells[i + 1] ?? header(cur.rowIdx)) : (i > 0 ? cells[i - 1] : header(cur.rowIdx))
       }
     } else {
       const r = cur.rowIdx + (key === 'ArrowDown' ? 1 : -1)
