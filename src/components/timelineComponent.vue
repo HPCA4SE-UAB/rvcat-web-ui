@@ -66,13 +66,18 @@
   // The width of the cells of the compact view (1 to 5 px) adapts to the timeline: the rows that
   // fit in the height of the window fit also in its width (see compactCellWidth)
   let compactCellW = null
-  const compactMaxCellW = (k) => Math.max(3, Math.round(5 * k))
+  const compactMaxCellW = (k) => Math.max(4, Math.round(8 * k))
+  // cells of the compact view: 18 px high; the first column, as wide as "Memory" (the numbers of
+  // the instructions are centred)
+  function compactBase(k) {
+    const font = Math.round(13 * k)
+    return { font, cellH: Math.round(18 * k), labelW: Math.round(font * 0.62 * 6) + Math.round(10 * k) }
+  }
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     if (isCompact()) {
-      const font = Math.round(11 * k)
-      return { k, font, cellW: compactCellW ?? compactMaxCellW(k), cellH: Math.round(12 * k),
-               labelW: Math.round(font * 0.62 * 8) + Math.round(8 * k) }
+      const { font, cellH, labelW } = compactBase(k)
+      return { k, font, cellW: compactCellW ?? compactMaxCellW(k), cellH, labelW }
     }
     const font = Math.round(14 * k)
     let chars = 8                  // the names of the summary rows of the resources ("▸ Memory")
@@ -118,10 +123,8 @@
     const slope = Math.max(0, last[2] - first[2]) / (shownRows.length - 1)
     const lengths = shownRows.map(r => instructions[r][4].length).sort((a, b) => a - b)
     const rowLength = lengths[Math.floor(lengths.length * 0.75)] ?? 10
-    const cellHeight = Math.round(12 * k)
+    const { cellH: cellHeight, labelW: labelWidth } = compactBase(k)
     const visible = Math.max(5, Math.floor((wrapper.clientHeight - 20) / cellHeight) - resourceRowCount - 1)
-    const font = Math.round(11 * k)
-    const labelWidth = Math.round(font * 0.62 * 8) + Math.round(8 * k)
     const available = Math.max(100, wrapper.clientWidth - MINIMAP_W - 20 - labelWidth)
     return Math.max(1, Math.min(maxW, Math.floor(available / Math.max(1, slope * visible + rowLength))))
   }
@@ -238,6 +241,7 @@
     scrollRow.value = 0
     clearTimelineView()            // the other view simulates another number of instructions
     requestTimeline()
+    nextTick(() => window.dispatchEvent(new Event('resize')))     // (the panel of details is shown or hidden)
   })
   // The instructions of the compact view: the user's choice is forgotten with another program
   watch(() => [simState.simulatedProcess?.name, (simState.simulatedProcess?.instruction_list ?? []).length,
@@ -851,7 +855,7 @@
     for (const r of detailedRows) {
       if (r.port === null && r.label === 'MM') {         // the memory: folded, only the use of the MM bus
         Object.assign(r, memoryOpen ? { foldLabel: '▾ MM', foldOption: 'expandMemory', noLetters: false }
-                                    : { foldLabel: `▸ ${t('Memory')}`, foldOption: 'expandMemory', noLetters: true })
+                                    : { foldLabel: isCompact() ? t('Memory') : `▸ ${t('Memory')}`, foldOption: 'expandMemory', noLetters: true })
         resourceRows.push(r)
         continue
       }
@@ -1172,7 +1176,8 @@
         ctx.fillRect(padX, resourceY, labelW, cellH)
         ctx.strokeRect(padX, resourceY, labelW, cellH)
         ctx.fillStyle = '#0b2e5c'
-        ctx.fillText(`${expanded(resource.option) ? '▾' : '▸'} ${resource.name}`, padX + fontXOffset, resourceY + fontYOffset)
+        // (the compact view cannot unfold them: no triangle)
+        ctx.fillText(isCompact() ? resource.name : `${expanded(resource.option) ? '▾' : '▸'} ${resource.name}`, padX + fontXOffset, resourceY + fontYOffset)
         interactiveCells.push({
           x: padX, y: resourceY, width: labelW, colIdx: -1, rowIdx: -2,
           cellType: 'resource-summary-label', resourceIndex: resourceRowIndex, option: resource.option,
@@ -1432,7 +1437,11 @@
       ctx.fillRect    (x, y, labelW, cellH);
       ctx.strokeRect  (x, y, labelW, cellH);
       ctx.fillStyle = wrongPath ? "#777" : "#000"
-      ctx.fillText    (labelText(instrIdx, instr?.text), x + fontXOffset, y + fontYOffset)
+      if (compact) {                 // the compact view: only the number, centred
+        ctx.textAlign = 'center'
+        ctx.fillText(labelText(instrIdx, instr?.text), x + labelW / 2, y + fontYOffset)
+        ctx.textAlign = 'left'
+      } else ctx.fillText(labelText(instrIdx, instr?.text), x + fontXOffset, y + fontYOffset)
 
       // a new call of the loop (repetitions): a line above its first row
       if (rowIdx > 0 && Number.isFinite(flags?.rep) && flags.rep !== instructions[rowIdx - 1]?.[7]?.rep) {
@@ -2593,6 +2602,14 @@
     <!-- What the pointer shows (or the pinned cell): one line -->
     <div class="timeline-status" id="timeline-status" :class="{ pinned: !!pinned }">
       <span v-if="statusText">{{ pinned ? '📌 ' : '' }}{{ statusText }}</span>
+      <span v-else-if="simState.timelineView === 'compact'" class="status-hint compact-legend">
+        <span class="cl" style="background:#555"></span>{{ t('execution (E)') }}
+        <span class="cl" style="background:#d32f2f"></span>{{ t('critical') }}
+        <template v-if="cacheEnabled"><span class="cl" style="background:#c9a0dc"></span>{{ t('memory waits') }}
+          <span class="cl" style="background:#7b1fa2"></span>{{ t('critical') }}</template>
+        <span class="cl" style="background:#ffd600"></span>{{ t('mispredicted branch') }}
+        <span class="dbl">· {{ t('double click: detailed view') }}</span>
+      </span>
       <span v-else class="status-hint">{{ t('Point at a cell to see its relations; click it to pin it and see its explanation.') }}</span>
     </div>
     <div class="timeline-body">
@@ -2604,9 +2621,10 @@
                 :title="t('The whole timeline: click or drag to move the window. Wheel: one row; Page Up / Page Down: one iteration')"
                 @mousedown.stop="onMinimapDown" @mousemove.stop="onMinimapMove"></canvas>
       </div>
-      <button v-if="!detailsOpen" class="details-strip" id="timeline-details-open" @click="detailsOpen = true"
+      <button v-if="!detailsOpen && simState.timelineView !== 'compact'" class="details-strip" id="timeline-details-open" @click="detailsOpen = true"
               :title="t('Open the panel of details')">» <span>{{ t('Details') }}</span></button>
-      <aside v-if="detailsOpen" class="timeline-details" id="timeline-details">
+      <!-- (the compact view has no panel of details: it keeps its state for the detailed view) -->
+      <aside v-if="detailsOpen && simState.timelineView !== 'compact'" class="timeline-details" id="timeline-details">
         <div class="details-head">
           <b>{{ t('Details') }}</b>
           <button class="details-close" @click="foldDetails" :title="t('Fold the panel of details')">«</button>
@@ -2630,14 +2648,7 @@
         <div v-else class="details-general">
           <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click or Esc release it; the arrows select the neighbouring cell.') }}</p>
           <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
-          <div v-if="simState.timelineView === 'compact'" class="details-legend compact-legend">
-            <div><span class="cl" style="background:#555"></span>{{ t('execution (E)') }} · <span class="cl" style="background:#d32f2f"></span>{{ t('on the critical path') }}</div>
-            <div v-if="cacheEnabled"><span class="cl" style="background:#c9a0dc"></span>{{ t('waits for the memory (! 2 : @)') }} · <span class="cl" style="background:#7b1fa2"></span>{{ t('critical') }}</div>
-            <div><span class="cl cl-line"></span>{{ t('the rest of the life of the instruction, from D to R (red: critical)') }}</div>
-            <div><span class="cl" style="background:#ffd600"></span>{{ t('W of a mispredicted branch') }}</div>
-            <div>{{ t('Only the instructions ticked in the Program panel. A double click on a cell shows it in the detailed view.') }}</div>
-          </div>
-          <div v-else class="details-legend">
+          <div class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
             <div>{{ t('waits:') }} <b class="lt">·</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
             <div v-if="cacheEnabled"><b class="lt">! 2 : @</b> {{ t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
@@ -2743,9 +2754,10 @@
     flex-wrap: nowrap;
   }
   .compact-legend .cl {
-    display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 2px; vertical-align: middle; border-radius: 2px;
+    display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 12px; vertical-align: middle; border-radius: 2px;
   }
-  .compact-legend .cl-line { height: 2px; background: #a8a8a8; }
+  .compact-legend .cl:first-child { margin-left: 0; }
+  .compact-legend .dbl { margin-left: 12px; }
   .timeline-loading {
     position: absolute; top: 40%; left: 0; right: 0; text-align: center; z-index: 3;
     font-size: 1.1rem; color: #1a4fb3; pointer-events: none;
