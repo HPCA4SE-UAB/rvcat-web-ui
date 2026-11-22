@@ -14,7 +14,7 @@ export const TUTORIAL_ACTIONS = [
   ['clickChain:VAR',           'select the latency bound of variable VAR (opens the dependence graph)'],
   ['openGraph',                'open the dependence graph window'],
   ['closeGraph',               'close the dependence graph window'],
-  ['timeline:critical=on|off', 'what the timeline shows in the lesson: critical, ports, cache, cacheRows (unfold the cache lines) (on/off), cycles=NUMBER (only the first cycles; all: every cycle), or width=FRACTION (the timeline ends at that fraction of the window width)'],
+  ['timeline:critical=on|off', 'what the timeline shows in the lesson: critical, ports, cache, cacheRows (unfold the cache lines) (on/off), cycles=NUMBER (only the first cycles; all: every cycle), or width=FRACTION (the timeline ends at that fraction of the window width); view=compact|detailed (the view of the timeline)'],
   ['expandPorts',              'show the operation types of the processor ports'],
   ['collapsePorts',            'hide the operation types of the processor ports'],
   ['setLatency:TYPE.OPER=N',   'change a latency of the current processor (all ports)'],
@@ -148,6 +148,11 @@ export function createActionRunner(ctx) {
     async timeline(a) {
       // the timeline has no buttons: the lesson sets what it shows (simState.timelineLesson)
       if (!$('#canvas-container')) await switchPanel('timelineComponent')
+      if (a.key === 'view') {             // timeline:view=compact|detailed
+        simState.timelineView = a.value === 'compact' ? 'compact' : 'detailed'
+        await sleep(600)
+        return
+      }
       const value = a.key === 'cycles' || a.key === 'width' ? Number(a.value) || null : a.value !== 'off'
       simState.timelineLesson = { ...(simState.timelineLesson ?? {}), [a.key]: value }
       await sleep(250)

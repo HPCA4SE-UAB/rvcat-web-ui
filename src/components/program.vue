@@ -533,6 +533,17 @@
     return getCriticalityStyle(percentage)
   }
 
+  // The compact timeline shows only some instructions: a check box for each one (in the first column)
+  const compactTimeline = computed(() => props.activeView === 'timelineComponent' && simState.timelineView === 'compact')
+  const shownInTimeline = (i) => (simState.timelineShownNow ?? []).includes(i)
+  function toggleShown(i, event) {
+    const now = new Set(simState.timelineShown ?? simState.timelineShownNow ?? [])
+    if (now.has(i)) now.delete(i)
+    else now.add(i)
+    if (!now.size) { event.target.checked = true; return }      // at least one instruction
+    simState.timelineShown = [...now].sort((a, b) => a - b)
+  }
+
   function getCriticalPercentage(index) {
     if (simState.lesson?.hidden?.includes('programCritical'))    // not explained yet by the lesson
       return null
@@ -658,6 +669,9 @@
                     ? t('Percentage of visible critical-path cycles attributed to each instruction')
                     : t('Percentage of the time of the critical path attributed to each instruction (last simulation)')">
                 {{ t('% crit.') }}
+                <button v-if="compactTimeline && simState.timelineShown" class="tl-auto" id="timeline-shown-auto"
+                        @click="simState.timelineShown = null"
+                        :title="t('Compact timeline: show again the instructions with at least 5% of the critical path')">auto</button>
               </th>
               <th v-else style="width: 100px;" :title="t('Instruction Number')">  #    </th>
               <th style="width: 600px;" class="program-source-header" id="program-source-header" data-pin-code
@@ -689,10 +703,12 @@
                   :title="activeView === 'timelineComponent'
                     ? t('Percentage of visible critical-path cycles attributed to this instruction')
                     : t('Percentage of time aggregated to in critical path')">
-                {{ getCriticalPercentage(index).toFixed(0) }}%
+                <input v-if="compactTimeline" type="checkbox" class="tl-show" :checked="shownInTimeline(index)" @click.stop
+                       @change="toggleShown(index, $event)" :title="t('Show this instruction in the compact timeline')">{{ getCriticalPercentage(index).toFixed(0) }}%
               </td>
               <td v-else :title="t('Instruction Number')">
-                {{ index }}
+                <input v-if="compactTimeline" type="checkbox" class="tl-show" :checked="shownInTimeline(index)" @click.stop
+                       @change="toggleShown(index, $event)" :title="t('Show this instruction in the compact timeline')">{{ index }}
               </td>
               <td :title="instructionSummary(simState.simulatedProcess.instruction_list, index) +
                           (blockDepth[index] ? ' ' + t('Conditional: skipped when the branch above is taken.') : '')"
@@ -732,9 +748,12 @@
                   :class="{ highlighted: bodyCount + j === simState.instrHighlightedIdx }"
                   :data-instr="bodyCount + j">
                 <td v-if="getCriticalPercentage(bodyCount + j) != null" class="critical-cell">
-                  {{ getCriticalPercentage(bodyCount + j).toFixed(0) }}%
+                  <input v-if="compactTimeline" type="checkbox" class="tl-show" :checked="shownInTimeline(bodyCount + j)" @click.stop
+                         @change="toggleShown(bodyCount + j, $event)" :title="t('Show this instruction in the compact timeline')">{{ getCriticalPercentage(bodyCount + j).toFixed(0) }}%
                 </td>
-                <td v-else :title="t('Instruction Number')">{{ bodyCount + j }}</td>
+                <td v-else :title="t('Instruction Number')"><input v-if="compactTimeline" type="checkbox" class="tl-show"
+                    :checked="shownInTimeline(bodyCount + j)" @click.stop @change="toggleShown(bodyCount + j, $event)"
+                    :title="t('Show this instruction in the compact timeline')">{{ bodyCount + j }}</td>
                 <td :title="instructionSummary(epilogue, j)">{{ inst.text }}</td>
                 <td class="type-col" v-if="shownView === 0">{{ inst.type }}</td>
                 <td class="type-col" v-if="shownView === 0">{{ inst.oper }}</td>
@@ -776,6 +795,11 @@
   }
 
   /* type | perf: two options, the selected one filled */
+  .tl-show { margin: 0 4px 0 0; vertical-align: middle; cursor: pointer; }
+  .tl-auto {
+    margin-left: 4px; padding: 0 4px; font-size: 0.75rem; border: 1px solid #7aa2e3;
+    border-radius: 4px; background: white; color: #1a4fb3; cursor: pointer;
+  }
   .column-switch {
     display:       inline-flex;
     border:        1px solid #7aa2e3;

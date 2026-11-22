@@ -26,7 +26,9 @@
    * Timeline options (persistent in localStorage)
    * ------------------------------------------------------------------ */
   const STORAGE_KEY = 'timelineOptions'
-  const TIMELINE_RETIRE_LIMIT = 200
+  const TIMELINE_RETIRE_LIMIT = 200          // detailed view
+  const COMPACT_RETIRE_LIMIT  = 1000         // compact view: many iterations
+  const COMPACT_CRITICAL_MIN  = 5            // compact view: instructions shown by default (% of the critical path)
 
   const defaultOptions = {
     instructions:  20,
@@ -58,8 +60,16 @@
   // Sizes of the cells (px): 14 × 20 at the base size of the text (16 px), scaled with the text of
   // the page (A−/A+). The first column shows the number of the instruction and, with Text, its text.
   const TEXT_CHARS = 16          // longest instruction text shown (longer ones are cut with …)
+  // The compact view: cells of 5 × 12, no letters; the first column gives only the number of the
+  // instruction (and the names of the resources)
+  const isCompact = () => simState.timelineView === 'compact'
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
+    if (isCompact()) {
+      const font = Math.round(11 * k)
+      return { k, font, cellW: Math.max(3, Math.round(5 * k)), cellH: Math.round(12 * k),
+               labelW: Math.round(font * 0.62 * 8) + Math.round(8 * k) }
+    }
     const font = Math.round(14 * k)
     let chars = 8                  // the names of the summary rows of the resources ("▸ Memory")
     if (timelineOptions.showText) {
@@ -74,6 +84,7 @@
     }
   }
   const labelText = (instrIdx, text) => {
+    if (isCompact()) return String(instrIdx)
     if (!timelineOptions.showText) return String(instrIdx % 10)
     const s = String(text ?? '')
     return `${instrIdx % 10} ${s.length > TEXT_CHARS ? s.slice(0, TEXT_CHARS - 1) + '…' : s}`
@@ -94,6 +105,7 @@
   // the canvases of the world cannot be wider than about 32,000 pixels: very long timelines
   // (e.g. a tiny cache that misses all the time) show their first cycles
   const MAX_WORLD_PX = 30000
+  const MAX_WORLD_AREA = 200e6
   function maxCycles() {
     const g = timelineGeometry()
     return Math.max(10, Math.floor((MAX_WORLD_PX - 2 * 10 - g.labelW) / g.cellW))
@@ -147,6 +159,7 @@
 
   const timeline       = ref(null)
   const timelineError  = ref('')
+  const timelineLoading = ref(false)    // a timeline is being simulated (the compact view takes longer)
   const timelineCanvas = ref(null)
   const overlayCanvas  = ref(null)
   const cacheEnabled   = computed(() => Number(simState.simulatedProcess?.nBlocks) > 0)
@@ -195,6 +208,22 @@
     { flush: 'sync' }
   )
 
+  // The view (detailed / compact): remembered; the compact view simulates more instructions
+  watch(() => simState.timelineView, (view) => {
+    try { localStorage.setItem('timelineView', view) } catch { /* ignore */ }
+    releasePin()
+    scrollRow.value = 0
+    clearTimelineView()            // the other view simulates another number of instructions
+    requestTimeline()
+  })
+  // The instructions of the compact view: the user's choice is forgotten with another program
+  watch(() => [simState.simulatedProcess?.name, (simState.simulatedProcess?.instruction_list ?? []).length,
+               (simState.simulatedProcess?.epilogue ?? []).length],
+        () => { simState.timelineShown = null })
+  watch(() => (simState.timelineShown ?? []).join(','), () => {
+    if (timeline.value && timelineCanvas.value) scheduleDraw(timelineOptions.cycles, timelineOptions.cycles)
+  })
+
   function requestTimeline() {
     if (simState.state >= 3) {
       const process = simState.simulatedProcess
@@ -231,6 +260,7 @@
         return  // skip request if previous request is still pending
       }
       timelinePending = true
+      timelineLoading.value = true
       console.log('📈🔄 Request timeline from RVCAT')
       const { name, ROBsize, dispatch, retire,
               blkSize, nBlocks, mPenalty, mIssueTime,
@@ -245,7 +275,7 @@
                                     rThru: rThru ?? 1,
                                     ...repetitionFields(toRaw(process)),
                                     instruction_list: toRaw(instruction_list)}, null, 2),
-                  TIMELINE_RETIRE_LIMIT)
+                  isCompact() ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT)
         .catch(error => {
           console.error('📈❌Failed to request timeline:', error)
           finishTimelineRequest()
@@ -292,6 +322,7 @@
 
   function finishTimelineRequest() {
     timelinePending = false
+    timelineLoading.value = lastPending
     if (lastPending) {
       lastPending = false
       requestTimeline()
@@ -423,6 +454,7 @@
 
     const canvas = timelineCanvas.value
     canvas.addEventListener("click", onClick)
+    canvas.addEventListener("dblclick", onDoubleClick)
     wrapper.addEventListener("mousedown", (e) => { downX = e.clientX; downY = e.clientY })
     wrapper.addEventListener("mousemove", onMouseMove)
     wrapper.addEventListener("mouseleave", onMouseLeave)
@@ -459,11 +491,13 @@
 
     requestAnimationFrame(() => {
       rafPending = false
+      if (!timeline.value) return          // cleared meanwhile (another view: a new timeline is coming)
       try {
         drawTimeline(cycles, oldCycles)
         drawSelectedCell()
         present()
         refocusPinned()
+        applyPendingFocus()
       } catch (e) {
         console.error('📈❌ Failed to draw the timeline:', e)
         timelineError.value = t('The timeline could not be drawn: {e}', { e: e.message })
@@ -479,12 +513,17 @@
   const worldCanvas  = document.createElement('canvas')
   const worldOverlay = document.createElement('canvas')
   const minimapCanvas = ref(null)
-  const scrollRow = ref(0)            // first visible row of instructions
+  const scrollRow = ref(0)            // first visible row of instructions (a position in shownRows)
+  // The rows of instructions drawn, in order (the compact view shows only some instructions of the
+  // program), and the position of each row among them (-1: not drawn)
+  let shownRows = []
+  let slotOfRow = []
+  const rowTop = (row) => (slotOfRow[row] >= 0 ? padY + (slotOfRow[row] + resourceRowCount + 1) * cellH : null)
   let view = { scrollX: 0, scrollY: 0, topH: 0, leftW: 0, w: 0, h: 0 }
 
   const visibleRowCount = () => Math.max(1, Math.floor((view.h - view.topH) / cellH))
   function maxScrollRow() {
-    return Math.max(0, totalInstr - visibleRowCount() + 1)
+    return Math.max(0, shownRows.length - visibleRowCount() + 1)
   }
   function present() {
     const canvas = timelineCanvas.value, overlay = overlayCanvas.value
@@ -503,14 +542,14 @@
     scrollRow.value = Math.min(Math.max(0, scrollRow.value), maxScrollRow())
     view.scrollY = scrollRow.value * cellH
     // the cycles follow the rows: the first visible row is dispatched near the left border
-    const first = timeline.value.instructions?.[scrollRow.value]
+    const first = timeline.value.instructions?.[shownRows[scrollRow.value]]
     const worldW = worldCanvas.width
     const startCycle = first ? Math.max(0, first[2] - 2) : 0
     let scrollX = startCycle * cellW
     // a pinned cell stays in view (it is moved with the arrows)
     const sel = selectedCell.value
     if (keepSelectionInView && sel && sel.colIdx >= 0 && (['resource-cycle', 'cycle-header'].includes(sel.cellType) || (!sel.cellType &&
-        sel.rowIdx >= scrollRow.value && sel.rowIdx < scrollRow.value + visibleRowCount()))) {
+        slotOfRow[sel.rowIdx] >= scrollRow.value && slotOfRow[sel.rowIdx] < scrollRow.value + visibleRowCount()))) {
       const bodyW = w - (padX + labelW)
       const x0 = sel.colIdx * cellW, x1 = x0 + cellW
       if (x0 < scrollX) scrollX = Math.max(0, x0 - 2 * cellW)
@@ -570,10 +609,10 @@
   function iterationStep(direction) {
     const rows = timeline.value?.instructions ?? []
     let r = scrollRow.value
-    const iterOf = (i) => rows[i]?.[0]
+    const iterOf = (i) => rows[shownRows[i]]?.[0]
     if (direction > 0) {
       const it = iterOf(r)
-      while (r < totalInstr - 1 && iterOf(r) === it) r++
+      while (r < shownRows.length - 1 && iterOf(r) === it) r++
     } else {
       if (r > 0) r--
       const it = iterOf(r)
@@ -604,7 +643,8 @@
     c.clearRect(0, 0, w, h)
     c.fillStyle = '#f6f8fb'
     c.fillRect(0, 0, w, h)
-    const rows = (timeline.value.instructions ?? []).slice(0, totalInstr)
+    // (a new timeline may arrive before it is drawn: the rows of the last drawing that it has)
+    const rows = shownRows.map(r => timeline.value.instructions?.[r]).filter(Boolean)
     if (!rows.length || !totalCycles) return
     const sy = h / rows.length, sx = w / totalCycles
     const lineH = Math.max(1, Math.min(4, sy - 0.5))
@@ -622,9 +662,9 @@
   let minimapDrag = false
   function minimapJump(e) {
     const canvas = minimapCanvas.value
-    if (!canvas || !totalInstr) return
+    if (!canvas || !shownRows.length) return
     const y = e.clientY - canvas.getBoundingClientRect().top
-    scrollTo((y / view.h) * totalInstr - visibleRowCount() / 2)
+    scrollTo((y / view.h) * shownRows.length - visibleRowCount() / 2)
   }
   function onMinimapDown(e) { minimapDrag = true; minimapJump(e) }
   function onMinimapMove(e) { if (minimapDrag) minimapJump(e) }
@@ -656,8 +696,25 @@
     // Always computed from this timeline: the previous one (other processor, cache…) may be longer
     totalCycles = newCycles != oldCycles && newCycles != 0 ? newCycles : timelineOptions.cycles
     totalCycles = Math.max(1, Math.min(totalCycles, cycles))
-    totalInstr = 0
-    while (totalInstr < instructions.length && instructions[totalInstr][2] < totalCycles) totalInstr++
+    const countInstr = () => {
+      totalInstr = 0
+      while (totalInstr < instructions.length && instructions[totalInstr][2] < totalCycles) totalInstr++
+    }
+    countInstr()
+    // The canvases of the world have a maximum area (Chrome: about 268 million pixels; beyond it they
+    // stay blank): fewer cycles if needed. The rows are estimated from the instructions shown in the
+    // last drawing (the compact view shows only some of them)
+    {
+      const g = timelineGeometry()
+      const staticN = Math.max(1, (simState.simulatedProcess.instruction_list?.length ?? 0) + (simState.simulatedProcess.epilogue?.length ?? 0))
+      const fraction = isCompact() ? Math.min(1, Math.max(1, simState.timelineShownNow?.length ?? staticN) / staticN) : 1
+      for (let k = 0; k < 6; k++) {
+        const area = (2 * 10 + g.labelW + totalCycles * g.cellW) * (2 * 10 + (totalInstr * fraction + 16) * g.cellH)
+        if (area <= MAX_WORLD_AREA) break
+        totalCycles = Math.max(10, Math.floor(totalCycles * MAX_WORLD_AREA / area * 0.95))
+        countInstr()
+      }
+    }
     timelineOptions.instructions = totalInstr
     timelineOptions.cycles = totalCycles
     const cacheState = timeline.value.resource_usage?.cache_state
@@ -765,7 +822,9 @@
       { key: 'write', option: 'expandWrite', name: 'Write',    test: r => r.bufferType === 'write' },
     ]
     const detailedRows = resourceRows.splice(0)
-    const memoryOpen = !!timelineOptions.expandMemory
+    // (the compact view shows only the summary rows: the ports and the use of the MM bus)
+    const expanded = (option) => !isCompact() && !!timelineOptions[option]
+    const memoryOpen = expanded('expandMemory')
     for (const r of detailedRows) {
       if (r.port === null && r.label === 'MM') {         // the memory: folded, only the use of the MM bus
         Object.assign(r, memoryOpen ? { foldLabel: '▾ MM', foldOption: 'expandMemory', noLetters: false }
@@ -782,7 +841,7 @@
         resourceRows.push(summary)
       }
       summary.members.push(r)
-      if (timelineOptions[g.option]) resourceRows.push(r)
+      if (expanded(g.option)) resourceRows.push(r)
     }
     for (const summary of resourceRows.filter(r => r.summary)) {
       summary.capacity = summary.members.length
@@ -833,6 +892,24 @@
     simState.timelineCriticalPathPercentages = criticalPercentages
     simState.timelineCriticalPathEnabled = criticalPercentages !== null
 
+    // The rows drawn: all of them, or (compact view) the instructions chosen by the user, or else
+    // the ones with at least COMPACT_CRITICAL_MIN % of the critical path (all, without it)
+    const staticCount = (simState.simulatedProcess.instruction_list?.length ?? 0) + (simState.simulatedProcess.epilogue?.length ?? 0)
+    let shownInstr = null
+    if (isCompact()) {
+      shownInstr = simState.timelineShown
+        ?? (criticalPercentages
+              ? [...Array(staticCount).keys()].filter(i => (criticalPercentages[i] ?? 0) >= COMPACT_CRITICAL_MIN)
+              : [...Array(staticCount).keys()])
+      if (!shownInstr.length) shownInstr = [...Array(staticCount).keys()]
+    }
+    simState.timelineShownNow = shownInstr ?? [...Array(staticCount).keys()]
+    const shownSet = shownInstr ? new Set(shownInstr) : null
+    shownRows = []
+    slotOfRow = new Array(totalInstr).fill(-1)
+    for (let r = 0; r < totalInstr; r++)
+      if (!shownSet || shownSet.has(instructions[r][1])) { slotOfRow[r] = shownRows.length; shownRows.push(r) }
+
     // sizes in pixels, scaled with the text of the page (the A−/A+ control of the header)
     const g = timelineGeometry(), k = g.k
     cellW = g.cellW
@@ -842,7 +919,7 @@
     padY  = 10
     fontSize   = g.font
     fontXOffset = Math.round(2 * k)
-    fontYOffset = Math.round(3 * k)
+    fontYOffset = isCompact() ? Math.max(0, Math.round((cellH - fontSize) / 2) - 1) : Math.round(3 * k)
     hoverInfo.value = null
     focusedCell = null
     if (oldCycles === 0) scrollRow.value = 0
@@ -851,7 +928,11 @@
     // window of it (see present)
     void viewportWidth; void viewportHeight
     const canvasWidth  = Math.ceil(padX*2 + labelW + totalCycles*cellW)
-    const canvasHeight = Math.ceil(padY*2 + (totalInstr+resourceRowCount+1)*cellH)
+    // (the last safety of the maximum area: the last rows are not drawn)
+    const maxRows = Math.floor((MAX_WORLD_AREA / canvasWidth - padY * 2) / cellH) - resourceRowCount - 1
+    if (shownRows.length > maxRows)
+      for (const r of shownRows.splice(Math.max(0, maxRows))) slotOfRow[r] = -1
+    const canvasHeight = Math.ceil(padY*2 + (shownRows.length+resourceRowCount+1)*cellH)
     for (const canvas of [worldCanvas, worldOverlay]) {
       canvas.width  = canvasWidth
       canvas.height = canvasHeight
@@ -889,15 +970,29 @@
     x += labelW
 
     for (let i = 0; i < totalCycles; ) {
-      let ch          = String(i % 10)
-      ctx.fillStyle   = "#ffffff"
-      ctx.strokeStyle = "#bbb"
-      ctx.lineWidth   = 1
-      ctx.fillRect    (x, y, cellW, cellH)
-      ctx.strokeRect  (x, y, cellW, cellH)
+      if (isCompact()) {
+        // compact view: the cells are too narrow for a digit; the number of every 10th cycle
+        if (i === 0) {
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(x, y, totalCycles * cellW, cellH)
+        }
+        if (i % 10 === 0) {
+          ctx.fillStyle = '#b8c4d6'
+          ctx.fillRect(x, y, 1, cellH)
+          ctx.fillStyle = '#000'
+          ctx.fillText(String(i), x + 2, y + fontYOffset)
+        }
+      } else {
+        let ch          = String(i % 10)
+        ctx.fillStyle   = "#ffffff"
+        ctx.strokeStyle = "#bbb"
+        ctx.lineWidth   = 1
+        ctx.fillRect    (x, y, cellW, cellH)
+        ctx.strokeRect  (x, y, cellW, cellH)
 
-      ctx.fillStyle = "#000"
-      ctx.fillText    (ch, x + fontXOffset, y + fontYOffset)
+        ctx.fillStyle = "#000"
+        ctx.fillText    (ch, x + fontXOffset, y + fontYOffset)
+      }
 
       // calculate column init and column length for this cycle i
       let initRow   = 0
@@ -960,7 +1055,7 @@
       if (resource.port === null) {          // the main memory: the use of its bus
         const active = (c, write) => resource.requests.some(r => (r.operation === 'write') === write && c >= r.cycle && c < r.cycle + r.duration)
         const n = (write) => resource.requests.filter(r => (r.operation === 'write') === write && r.cycle < C).length
-        const folded = !timelineOptions.expandMemory
+        const folded = isCompact() || !timelineOptions.expandMemory
         return { title: folded ? t('Memory') : 'MM',
                  explain: (folded ? t('All the rows of the memory, folded: only the use of the bus, a colour per block. Its name shows the rows of the memory (MM, cache lines, buffers and store buffer).') + ' ' : '') +
                           t('MM: the bus between the processor and the main memory. R: a block read from MM (a fill, after a miss); W: a dirty block written into MM (an update, after it is evicted). Each transfer keeps the bus busy during the memory issue time.'),
@@ -1016,6 +1111,8 @@
       }
       const stats = [t('{c} cycles', { c: C }), t('{n} instructions retired', { n: retired }),
                      t('IPC {ipc}', { ipc: lastRetire >= 0 ? (retired / (lastRetire + 1)).toFixed(2) : '0.00' })]
+      const compactView = isCompact()
+      if (compactView) stats.push(t('{n} of {m} instructions of the program shown', { n: simState.timelineShownNow.length, m: staticCount }))
       if (criticalPercentages) {
         const top = criticalPercentages.map((p, i) => ({ p, i })).filter(x => x.p > 0).sort((a, b) => b.p - a.p).slice(0, 3)
         if (top.length)
@@ -1024,7 +1121,8 @@
       interactiveCells.push({
         x: padX, y: padY, width: labelW, colIdx: -1, rowIdx: -1, cellType: 'corner',
         ...summaryCell({ title: t('Timeline'), stats,
-          explain: t('The whole timeline: the simulation of the first instructions of the program (at most 200 retired). IPC: instructions retired per cycle, up to the last one retired. The critical path ends at the last instruction retired; the percentages are the fraction of its cycles attributed to each instruction of the program (as in the Program panel).') }),
+          explain: t('The whole timeline: the simulation of the first instructions of the program (at most {n} retired). IPC: instructions retired per cycle, up to the last one retired. The critical path ends at the last instruction retired; the percentages are the fraction of its cycles attributed to each instruction of the program (as in the Program panel).', { n: compactView ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT }) +
+            (compactView ? ' ' + t('Compact view: only the instructions ticked in the Program panel are shown (by default, the ones with at least {p}% of the critical path).', { p: COMPACT_CRITICAL_MIN }) : '') }),
       })
     }
 
@@ -1038,7 +1136,7 @@
         ctx.fillRect(padX, resourceY, labelW, cellH)
         ctx.strokeRect(padX, resourceY, labelW, cellH)
         ctx.fillStyle = '#0b2e5c'
-        ctx.fillText(`${timelineOptions[resource.option] ? '▾' : '▸'} ${resource.name}`, padX + fontXOffset, resourceY + fontYOffset)
+        ctx.fillText(`${expanded(resource.option) ? '▾' : '▸'} ${resource.name}`, padX + fontXOffset, resourceY + fontYOffset)
         interactiveCells.push({
           x: padX, y: resourceY, width: labelW, colIdx: -1, rowIdx: -2,
           cellType: 'resource-summary-label', resourceIndex: resourceRowIndex, option: resource.option,
@@ -1244,9 +1342,11 @@
     // ************************************************************************************
     //   for each inst. & for each cycle, write cell into canvas and push interactive cells
     // ************************************************************************************
+    const compact = isCompact()
+    let prevShownIter = null
     for (const [rowIdx, [iter, instrIdx, startCycle, port, states, pythonCriticalCycles, addr, flags]] of instructions.entries())
     {
-      if (rowIdx >= totalInstr) return
+      if (rowIdx >= totalInstr) break
 
       // Compute background color based on iteration number (wrong-path instructions in grey)
       const wrongPath = !!flags?.wrong
@@ -1258,21 +1358,13 @@
         ? (instr.oper === 'STORE' ? 'Store to' : instr.oper === 'LOAD' ? 'Load from' : null)
         : null
 
-      //  Draw line starting on (x,y)
+      // a row not drawn (compact view): only its first cell is kept (far away), for the texts
+      const drawn = slotOfRow[rowIdx] >= 0
       let   x = padX;
-      const y = padY + (rowIdx + resourceRowCount + 1) * cellH;
+      const y = drawn ? rowTop(rowIdx) : -1e6
 
       let initCol   = startCycle
       let lengthCol = states.length
-
-      // First cell is instruction number
-      ctx.fillStyle   = flags?.mispredicted ? "#ffb870" : rowBg;   // mispredicted branch: orange label
-      ctx.strokeStyle = "#bbb";
-      ctx.lineWidth   = 1;
-      ctx.fillRect    (x, y, labelW, cellH);
-      ctx.strokeRect  (x, y, labelW, cellH);
-      ctx.fillStyle = wrongPath ? "#777" : "#000"
-      ctx.fillText    (labelText(instrIdx, instr?.text), x + fontXOffset, y + fontYOffset)
 
       interactiveCells.push({
         x, y,
@@ -1294,6 +1386,17 @@
         critical: criticalCycles.length > 0,
         criticalCycles: criticalCycles.length
       })
+      if (!drawn) continue
+
+      // First cell is instruction number (compact view: the iterations alternate two light backgrounds)
+      const compactBg = wrongPath ? '#ececec' : (iter % 2 ? '#eef2f7' : '#ffffff')
+      ctx.fillStyle   = flags?.mispredicted ? "#ffb870" : compact ? compactBg : rowBg;   // mispredicted branch: orange label
+      ctx.strokeStyle = "#bbb";
+      ctx.lineWidth   = 1;
+      ctx.fillRect    (x, y, labelW, cellH);
+      ctx.strokeRect  (x, y, labelW, cellH);
+      ctx.fillStyle = wrongPath ? "#777" : "#000"
+      ctx.fillText    (labelText(instrIdx, instr?.text), x + fontXOffset, y + fontYOffset)
 
       // a new call of the loop (repetitions): a line above its first row
       if (rowIdx > 0 && Number.isFinite(flags?.rep) && flags.rep !== instructions[rowIdx - 1]?.[7]?.rep) {
@@ -1308,6 +1411,57 @@
       }
 
       x += labelW
+      const cellOf = (i, ch) => ({
+        x: padX + labelW + i * cellW, y,
+        colIdx: i,
+        rowIdx,
+        initCol, lengthCol,
+        initRow: initRowList[i],
+        lengthRow: lengthRowList[i],
+        char: ch,
+        first_exec_stage: ch === 'E' && states[i - startCycle - 1] !== 'E',
+        critical: criticalCycles.includes(i - startCycle),
+        port: portByInstructionCycle.get(`${rowIdx}:${i}`) ?? port,
+        instrIdx,
+        addr,
+        memoryOperation,
+        waitDetail: waitDetails.get(`${rowIdx}:${i}`)
+      })
+
+      if (compact) {
+        // Compact view: colours by meaning, no letters. E: dark grey (critical: red); the waits for
+        // the memory: purple (critical: dark purple); the rest of the life of the instruction (D to
+        // R): a thin line (critical: red); the W of a mispredicted branch: yellow
+        ctx.fillStyle = compactBg
+        ctx.fillRect(x, y, totalCycles * cellW, cellH)
+        if (prevShownIter !== null && iter !== prevShownIter) {     // a new iteration: a thin line above
+          ctx.fillStyle = '#b8c4d6'
+          ctx.fillRect(padX, y, labelW + totalCycles * cellW, 1)
+        }
+        prevShownIter = iter
+        const mid = y + Math.floor(cellH / 2)
+        for (let k = 0; k < states.length && startCycle + k < totalCycles; k++) {
+          const i = startCycle + k, ch = states[k]
+          const cell = cellOf(i, ch)
+          interactiveCells.push(cell)
+          const crit = cell.critical && timelineOptions.critical
+          const cx = cell.x
+          if (ch === 'E') {
+            ctx.fillStyle = crit ? '#d32f2f' : '#555'
+            ctx.fillRect(cx, y + 2, cellW, cellH - 4)
+          } else if (['!', '2', ':', '@'].includes(ch)) {
+            ctx.fillStyle = crit ? '#7b1fa2' : '#c9a0dc'
+            ctx.fillRect(cx, y + 3, cellW, cellH - 6)
+          } else if (ch === 'W' && flags?.mispredicted) {
+            ctx.fillStyle = '#ffd600'
+            ctx.fillRect(cx, y, cellW, cellH)
+          } else {
+            ctx.fillStyle = crit ? '#d32f2f' : '#a8a8a8'
+            ctx.fillRect(cx, crit ? mid - 1 : mid, cellW, crit ? 2 : 1)
+          }
+        }
+        continue
+      }
 
       for (let i = 0; i < totalCycles; ) {
         let ch        = ' '
@@ -1316,28 +1470,9 @@
         // register interactive cell & check critical
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
-          const previousState = states[i-startCycle-1]
-          const first_exec_stage =
-            ch === 'E' && previousState !== 'E'
-          let critical = criticalCycles.includes(i - startCycle)
-          if (critical && timelineOptions.critical) currColor = "red"
-
-          interactiveCells.push({
-            x, y,
-            colIdx: i,
-            rowIdx,
-            initCol, lengthCol,
-            initRow: initRowList[i],
-            lengthRow: lengthRowList[i],
-            char: ch,
-            first_exec_stage,
-            critical,
-            port: portByInstructionCycle.get(`${rowIdx}:${i}`) ?? port,
-            instrIdx,
-            addr,
-            memoryOperation,
-            waitDetail: waitDetails.get(`${rowIdx}:${i}`)
-          })
+          const cell = cellOf(i, ch)
+          if (cell.critical && timelineOptions.critical) currColor = "red"
+          interactiveCells.push(cell)
         }
 
         // a mispredicted branch is resolved in its W: a very visible cell
@@ -1359,8 +1494,7 @@
         i++;
         x += cellW;
       }
-    }
-    drawSelectedCell()
+    }    drawSelectedCell()
   }
 
   function drawSelectedCell() {
@@ -1400,9 +1534,9 @@
     // Highlight the corresponding instruction cells when hovering a resource row.
     if (linkedInstructionRows) {
       for (const linkedRow of linkedInstructionRows) {
-        if (linkedRow < 0 || linkedRow >= totalInstr) continue
+        if (linkedRow < 0 || linkedRow >= totalInstr || slotOfRow[linkedRow] < 0) continue
         const x = padX + labelW + linkedCycle * cellW
-        const y = padY + (linkedRow + resourceRowCount + 1) * cellH
+        const y = rowTop(linkedRow)
         ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'
         ctx.fillRect(x, y, cellW, cellH)
         ctx.strokeRect(x, y, cellW, cellH)
@@ -1419,22 +1553,20 @@
     }
 
     // highlight column (cycle): only when the header of a cycle is pointed
-    if (col !== null) {
-      let length = Math.min(lengthRow, totalInstr-initRow)
-      ctx.strokeRect(
-        padX + labelW + col*cellW,
-        padY + (initRow+resourceRowCount+1)*cellH,
-        cellW,
-        length*cellH
-      )
+    if (col !== null) {             // the rows drawn among initRow .. initRow + lengthRow - 1
+      const inRange = shownRows.filter(r => r >= initRow && r < initRow + lengthRow)
+      if (inRange.length) {
+        const top = rowTop(inRange[0])
+        ctx.strokeRect(padX + labelW + col*cellW, top, cellW, rowTop(inRange[inRange.length - 1]) + cellH - top)
+      }
     }
 
     // highlight row (instruction)
-    if (row !== null) {
+    if (row !== null && slotOfRow[row] >= 0) {
       let length = Math.min(lengthCol, totalCycles-initCol)
       ctx.strokeRect(
         padX + labelW + initCol*cellW,
-        padY + (row+resourceRowCount+1)*cellH,
+        rowTop(row),
         length*cellW,
         cellH
       )
@@ -1750,13 +1882,13 @@
   }
   // the first column (label) of an instruction row
   function markRowLabel(ctx, row, kind) {
-    if (row < 0 || row >= totalInstr) return
-    markRect(ctx, padX, padY + (row + resourceRowCount + 1) * cellH, labelW, kind)
+    if (row < 0 || row >= totalInstr || slotOfRow[row] < 0) return
+    markRect(ctx, padX, rowTop(row), labelW, kind)
   }
   // a cell of an instruction row
   function markCell(ctx, row, col, kind) {
-    if (row < 0 || row >= totalInstr || col < 0 || col >= totalCycles) return
-    markRect(ctx, padX + labelW + col * cellW, padY + (row + resourceRowCount + 1) * cellH, cellW, kind)
+    if (row < 0 || row >= totalInstr || col < 0 || col >= totalCycles || slotOfRow[row] < 0) return
+    markRect(ctx, padX + labelW + col * cellW, rowTop(row), cellW, kind)
   }
   // the row of a port (Ports shown) in a cycle
   function markPortRow(ctx, port, col, kind) {
@@ -2153,8 +2285,9 @@
         next = key === 'ArrowRight' ? (cells[i + 1] ?? header(cur.rowIdx)) : (i > 0 ? cells[i - 1] : header(cur.rowIdx))
       }
     } else {
-      const r = cur.rowIdx + (key === 'ArrowDown' ? 1 : -1)
-      if (r < 0 || r >= totalInstr) return true
+      const slot = slotOfRow[cur.rowIdx] + (key === 'ArrowDown' ? 1 : -1)     // the row drawn above / below
+      if (slot < 0 || slot >= shownRows.length) return true
+      const r = shownRows[slot]
       if (cur.colIdx < 0) next = header(r)
       else {
         const cells = cellsOf(r)
@@ -2165,8 +2298,9 @@
     if (!next) return true
     // the row in the window (the cycles follow the rows; present() keeps the cell in view)
     const visible = Math.max(1, visibleRowCount() - 1)
-    if (next.rowIdx < scrollRow.value) scrollRow.value = next.rowIdx
-    else if (next.rowIdx >= scrollRow.value + visible) scrollRow.value = Math.min(maxScrollRow(), next.rowIdx - visible + 1)
+    const slot = slotOfRow[next.rowIdx]
+    if (slot < scrollRow.value) scrollRow.value = slot
+    else if (slot >= scrollRow.value + visible) scrollRow.value = Math.min(maxScrollRow(), slot - visible + 1)
     keepSelectionInView = true
     pinCell(next)
     present()
@@ -2341,10 +2475,31 @@
   }
 
   let downX = 0, downY = 0
+  // Compact view: a double click on a cell of an instruction goes to the detailed view, at that cell
+  let pendingFocus = null
+  function onDoubleClick(e) {
+    if (!isCompact()) return
+    const cell = cellAtEvent(e)
+    if (!cell || cell.cellType || cell.rowIdx < 0) return
+    pendingFocus = { rowIdx: cell.rowIdx, colIdx: cell.colIdx }
+    simState.timelineView = 'detailed'
+  }
+  function applyPendingFocus() {
+    if (!pendingFocus || isCompact() || !timeline.value) return
+    const { rowIdx, colIdx } = pendingFocus
+    pendingFocus = null
+    const cell = interactiveCells.find(c => !c.cellType && c.rowIdx === rowIdx && c.colIdx === colIdx) ??
+                 interactiveCells.find(c => !c.cellType && c.rowIdx === rowIdx && c.colIdx === -1)
+    if (!cell || slotOfRow[rowIdx] < 0) return
+    scrollRow.value = Math.min(maxScrollRow(), Math.max(0, slotOfRow[rowIdx] - 3))
+    keepSelectionInView = true
+    pinCell(cell)
+    present()
+  }
   function onClick(e) {
     if (Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) return   // a drag
     const cell = cellAtEvent(e)
-    if (cell?.cellType === 'resource-summary-label') {
+    if (cell?.cellType === 'resource-summary-label' && !isCompact()) {
       timelineOptions[cell.option] = !timelineOptions[cell.option]
       return
     }
@@ -2377,6 +2532,14 @@
         </span>
         <span class="header-title">{{ t('Timeline: {program} on {processor}', { program: simState.simulatedProcess.name, processor: simState.processorName }) }}</span>
       </div>
+      <!-- The view: detailed (letters, the first instructions) or compact (colours, many iterations) -->
+      <span class="view-switch" id="timeline-view" role="radiogroup"
+            :title="t('Detailed: every instruction, with letters. Compact: colours only, many iterations, only the instructions ticked in the Program panel')">
+        <button :class="{ on: simState.timelineView !== 'compact' }" role="radio" :aria-checked="simState.timelineView !== 'compact'"
+                id="timeline-view-detailed" @click="simState.timelineView = 'detailed'">{{ t('Detailed') }}</button>
+        <button :class="{ on: simState.timelineView === 'compact' }" role="radio" :aria-checked="simState.timelineView === 'compact'"
+                id="timeline-view-compact" @click="simState.timelineView = 'compact'">{{ t('Compact') }}</button>
+      </span>
     </div>
 
     <div v-if="timelineError" class="execution-validation-error" role="alert">
@@ -2390,6 +2553,7 @@
     <div class="timeline-body">
       <div class="output-block-wrapper" id="canvas-container">
         <canvas ref="timelineCanvas"></canvas>
+        <div v-if="timelineLoading" class="timeline-loading" id="timeline-loading">{{ t('Simulating the timeline…') }}</div>
         <canvas ref="overlayCanvas" class="timeline-overlay"></canvas>
         <canvas ref="minimapCanvas" class="timeline-minimap" id="timeline-minimap"
                 :title="t('The whole timeline: click or drag to move the window. Wheel: one row; Page Up / Page Down: one iteration')"
@@ -2421,7 +2585,14 @@
         <div v-else class="details-general">
           <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click or Esc release it; the arrows select the neighbouring cell.') }}</p>
           <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
-          <div class="details-legend">
+          <div v-if="simState.timelineView === 'compact'" class="details-legend compact-legend">
+            <div><span class="cl" style="background:#555"></span>{{ t('execution (E)') }} · <span class="cl" style="background:#d32f2f"></span>{{ t('on the critical path') }}</div>
+            <div v-if="cacheEnabled"><span class="cl" style="background:#c9a0dc"></span>{{ t('waits for the memory (! 2 : @)') }} · <span class="cl" style="background:#7b1fa2"></span>{{ t('critical') }}</div>
+            <div><span class="cl cl-line"></span>{{ t('the rest of the life of the instruction, from D to R (red: critical)') }}</div>
+            <div><span class="cl" style="background:#ffd600"></span>{{ t('W of a mispredicted branch') }}</div>
+            <div>{{ t('Only the instructions ticked in the Program panel. A double click on a cell shows it in the detailed view.') }}</div>
+          </div>
+          <div v-else class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
             <div>{{ t('waits:') }} <b class="lt">·</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
             <div v-if="cacheEnabled"><b class="lt">! 2 : @</b> {{ t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
@@ -2526,6 +2697,32 @@
     min-width: 0;
     flex-wrap: nowrap;
   }
+  .compact-legend .cl {
+    display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 2px; vertical-align: middle; border-radius: 2px;
+  }
+  .compact-legend .cl-line { height: 2px; background: #a8a8a8; }
+  .timeline-loading {
+    position: absolute; top: 40%; left: 0; right: 0; text-align: center; z-index: 3;
+    font-size: 1.1rem; color: #1a4fb3; pointer-events: none;
+  }
+  .view-switch {
+    display:       inline-flex;
+    border:        1px solid #7aa2e3;
+    border-radius: 6px;
+    overflow:      hidden;
+    flex-shrink:   0;
+    margin-right:  6px;
+  }
+  .view-switch button {
+    border:      none;
+    background:  white;
+    color:       #1a4fb3;
+    font-weight: 600;
+    font-size:   0.875rem;
+    padding:     2px 8px;
+    cursor:      pointer;
+  }
+  .view-switch button.on { background: #1a4fb3; color: white; }
   .header-title {
     min-width: 0;
     overflow: hidden;

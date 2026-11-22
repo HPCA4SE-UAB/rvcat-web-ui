@@ -13,6 +13,11 @@ function loadSimulationSettings() {
   return settings
 }
 
+// The view of the timeline, remembered between sessions
+function loadTimelineView() {
+  try { return localStorage.getItem('timelineView') === 'compact' ? 'compact' : 'detailed' } catch { return 'detailed' }
+}
+
 // Create reactive state: data shared between components; changes provoke reactions
 const SimulationState = reactive({
   // 0: uninitialized, 1: RVCAT imported, 2: processor-loaded, 3: program-loaded, 4: tutorials-loaded, 5: new-tutorial edited
@@ -27,6 +32,9 @@ const SimulationState = reactive({
   timelineCriticalPathEnabled: false,
   timelineFit:         null,
   timelineLesson:      {},        // a lesson limits the timeline: { cycles, critical, ports, cache, width } (actions timeline:...)
+  timelineView:        loadTimelineView(),  // 'detailed' | 'compact' (colours only, many iterations, some instructions)
+  timelineShown:       null,      // compact view: the instructions of the program shown, chosen by the user (null: automatic)
+  timelineShownNow:    [],        // compact view: the instructions shown now (the user's, or the ones with at least 5% of the critical path)
   dependenceHighlight: null,      // { producers, vars }: instructions and variables a waiting instruction needs (timeline)      // { width, nonce }: zoom of the timeline asked by a tutorial card
   timelineCriticalPathPercentages: null,
   simulatedProcess:    {},

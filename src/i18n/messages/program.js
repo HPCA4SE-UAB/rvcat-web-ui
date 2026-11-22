@@ -86,4 +86,6 @@ export default {
   "Percentage of visible critical-path cycles attributed to each instruction": { es: "Porcentaje de los ciclos visibles del camino crítico atribuidos a cada instrucción", ca: "Percentatge dels cicles visibles del camí crític atribuïts a cada instrucció" },
   "Percentage of the time of the critical path attributed to each instruction (last simulation)": { es: "Porcentaje del tiempo del camino crítico atribuido a cada instrucción (última simulación)", ca: "Percentatge del temps del camí crític atribuït a cada instrucció (última simulació)" },
   "% crit.": { es: "% crít.", ca: "% crít." },
+  "Show this instruction in the compact timeline": { es: "Mostrar esta instrucción en el timeline compacto", ca: "Mostrar aquesta instrucció al timeline compacte" },
+  "Compact timeline: show again the instructions with at least 5% of the critical path": { es: "Timeline compacto: volver a mostrar las instrucciones con al menos un 5% del camino crítico", ca: "Timeline compacte: tornar a mostrar les instruccions amb almenys un 5% del camí crític" },
 }

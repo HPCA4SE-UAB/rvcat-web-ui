@@ -118,6 +118,9 @@
       processorConfig: processorDraftFrom(simState.simulatedProcess),
     }
     const student = lesson.completion ? studentId.value.trim() : ''
+    // the cards speak of the letters of the timeline: the detailed view (a card can ask for the
+    // compact one with the action timeline:view=compact)
+    simState.timelineView = 'detailed'
     simState.lesson = {
       id, title: lesson.title, studentId: student, idLabel: label,
       programs:   res.programs.map(r => r.name),
