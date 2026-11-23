@@ -11,8 +11,7 @@
   ],
   "tutorial": [],
   "lesson": [
-    "L0-intro",
-    "L1-cache"
+    "L0-intro"
   ],
   "defaults": {
     "processor": "B4",
