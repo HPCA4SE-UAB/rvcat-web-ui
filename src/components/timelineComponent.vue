@@ -18,6 +18,7 @@
     computeInstructionCriticalPercentages,
     findLastRetiredInstructionIndex
   } from '@/criticalPath'
+  import { criticalCauses, criticalOffsets } from '@/criticalCauses'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -979,10 +980,14 @@
         visibleCriticalPath = { graph, target: null, cycles: visibleCriticalCycles }
       } else {
         if (visibleCriticalPath?.graph !== graph || visibleCriticalPath.target !== visibleRetiredIndex) {
+          // the critical path from the causes that RVCAT records (who held each instruction back);
+          // an older RVCAT, without them: the longest path of its graph
+          const causes = Array.isArray(timeline.value.dispatch_stalls) ? criticalCauses(timeline.value, visibleRetiredIndex) : null
           visibleCriticalPath = {
             graph,
             target: visibleRetiredIndex,
-            cycles: computeCriticalCycles(graph, instructions, visibleRetiredIndex)
+            causes,
+            cycles: causes ? criticalOffsets(timeline.value, causes) : computeCriticalCycles(graph, instructions, visibleRetiredIndex)
           }
         }
         visibleCriticalCycles = visibleCriticalPath.cycles
@@ -1020,15 +1025,12 @@
     if (criticalOnlyView() && graph && Number.isInteger(visibleCriticalPath?.target)) {
       // Compact view, critical path only: its rows in order; before a row that waits for an entry of
       // the ROB, a band says how many instructions are between them (they are not shown)
-      if (!visibleCriticalPath.steps) {
-        visibleCriticalPath.steps = computeCriticalSteps(graph, instructions, visibleCriticalPath.target)
-        visibleCriticalPath.links = criticalLinks(visibleCriticalPath.steps)
-      }
+      if (!visibleCriticalPath.links) pathLinksOf(visibleCriticalPath, instructions)
       criticalLinksOfRow = visibleCriticalPath.links
-      const rows = [...new Set(visibleCriticalPath.steps.map(st => st.row))].filter(r => r < totalInstr).sort((a, b) => a - b)
+      const rows = visibleCriticalPath.rows.filter(r => r < totalInstr)
       for (const r of rows) {
         const link = criticalLinksOfRow.get(r)
-        if (link?.kind === 'rob' && r - link.from > 1) { gapBands.set(shownRows.length, r - link.from - 1); shownRows.push(-1) }
+        if (link?.kind === 'rob' && r - link.from.row > 1) { gapBands.set(shownRows.length, r - link.from.row - 1); shownRows.push(-1) }
         slotOfRow[r] = shownRows.length
         shownRows.push(r)
       }
@@ -1688,7 +1690,10 @@
   }
 
   // ---- Critical path only (compact view): the links between its rows, and the bands of the ROB ----
-  const LINK_COLORS = { data: '#1565c0', dispatch: '#2e7d32', retire: '#616161', rob: '#e65100', other: '#616161' }
+  // link: { kind, from: { row, col }, to: { row, col } }: the cell of the instruction that held the
+  // other one back, and the cell of the one held back
+  const LINK_COLORS = { data: '#1565c0', port: '#ad1457', block: '#7b1fa2', fill: '#7b1fa2', dispatch: '#2e7d32',
+                        retire: '#616161', rob: '#e65100', sb: '#795548', branch: '#f9a825', other: '#616161' }
   // the cycle of a stage of a row: D, its first E, R; the result of a row: the cycle before its W
   function stageCol(row, stage) {
     const [, , start, , states] = timeline.value.instructions[row]
@@ -1699,6 +1704,22 @@
     const [, , start, , states] = timeline.value.instructions[row]
     const w = states.indexOf('W')
     return start + (w > 0 ? w - 1 : states.lastIndexOf('E'))
+  }
+  // the rows of the path and the link into each one: from the causes (RVCAT records them), or from
+  // the graph of an older RVCAT (the stages of the link give its cells)
+  function pathLinksOf(vcp, instructions) {
+    const links = new Map()
+    if (vcp.causes) {
+      for (const l of vcp.causes.links) if (!links.has(l.to.row)) links.set(l.to.row, l)
+      vcp.rows = [...vcp.causes.cells.keys()].sort((a, b) => a - b)
+    } else {
+      const steps = computeCriticalSteps(vcp.graph, instructions, vcp.target)
+      for (const [row, l] of criticalLinks(steps))
+        links.set(row, { kind: l.kind, from: { row: l.from, col: l.kind === 'data' ? resultCol(l.from) : stageCol(l.from, l.fromStage) },
+                         to: { row, col: stageCol(row, l.toStage) } })
+      vcp.rows = [...new Set(steps.map(st => st.row))].sort((a, b) => a - b)
+    }
+    vcp.links = links
   }
   function drawCriticalLinks(ctx) {
     const colX = (col) => padX + labelW + col * cellW
@@ -1716,13 +1737,13 @@
       ctx.fillStyle = '#b34700'
       ctx.fillText(text, x, y + Math.max(0, Math.round((cellH - fontSize) / 2)))
     }
-    // the links: from the stage of the previous row of the path to the stage of the row
+    // the links: from the cell of the one that held back to the cell of the one held back
     for (const [row, link] of criticalLinksOfRow) {
-      if (!(slotOfRow[row] >= 0) || !(slotOfRow[link.from] >= 0)) continue
-      const data = link.kind === 'data'
-      const x1 = data ? colX(resultCol(link.from)) + cellW : colX(stageCol(link.from, link.fromStage)) + cellW / 2
-      const x2 = data ? colX(stageCol(row, 1)) : colX(stageCol(row, link.toStage)) + cellW / 2
-      const y1 = rowTop(link.from) + cellH / 2, y2 = rowTop(row) + cellH / 2
+      if (!(slotOfRow[row] >= 0) || !(slotOfRow[link.from.row] >= 0)) continue
+      const forward = link.from.col < link.to.col
+      const x1 = colX(link.from.col) + (forward ? cellW : cellW / 2)
+      const x2 = colX(link.to.col) + (forward ? 0 : cellW / 2)
+      const y1 = rowTop(link.from.row) + cellH / 2, y2 = rowTop(row) + cellH / 2
       const color = LINK_COLORS[link.kind] ?? LINK_COLORS.other
       ctx.strokeStyle = color
       ctx.fillStyle = color
@@ -1742,21 +1763,27 @@
     }
     ctx.restore()
   }
-  // the link of a row of the critical path with the previous one, explained
+  // the link of a row of the critical path with the instruction that held it back, explained
   function criticalLinkText(row) {
     const link = criticalOnlyView() ? criticalLinksOfRow?.get(row) : null
     if (!link) return ''
-    const a = instrId(link.from), p = simState.simulatedProcess ?? {}
+    const from = link.from.row
+    const a = instrId(from), p = simState.simulatedProcess ?? {}
     switch (link.kind) {
       case 'data': {
-        const from = timeline.value.instructions[link.from]
-        const waits = [...String(from[4])].filter(ch => '!2:@'.includes(ch)).length
-        return t('critical path: it uses the result of {a} (latency {l})', { a, l: instrAt(from[1])?.latency ?? '?' }) +
+        const r = timeline.value.instructions[from]
+        const waits = [...String(r[4])].filter(ch => '!2:@'.includes(ch)).length
+        return t('critical path: it uses the result of {a} (latency {l})', { a, l: instrAt(r[1])?.latency ?? '?' }) +
                (waits ? ' · ' + t('{a} waited {n} cycles for the memory', { a, n: waits }) : '')
       }
+      case 'port':     return t('critical path: it waits for a port that {a} uses in that cycle', { a })
+      case 'block':    return t('critical path: a secondary miss: its block is brought by the miss of {a}', { a })
+      case 'fill':     return t('critical path: no fill buffer was free: it gets one when {a} receives its data and frees it', { a })
       case 'dispatch': return t('critical path: it is dispatched in program order after {a} (up to {w} per cycle)', { a, w: p.dispatch })
       case 'retire':   return t('critical path: it retires in program order after {a} (up to {w} per cycle)', { a, w: p.retire })
       case 'rob':      return t('critical path: the ROB is full ({n} entries): it is dispatched when {a}, the oldest instruction, retires and frees its entry', { a, n: p.ROBsize })
+      case 'sb':       return t('critical path: the store buffer is full: it is dispatched when {a}, the oldest store, leaves it', { a })
+      case 'branch':   return t('critical path: it waits for the mispredicted branch {a} and its penalty ({n} cycles)', { a, n: p.bPenalty ?? '?' })
       default:         return t('critical path: it follows {a}', { a })
     }
   }
@@ -2950,6 +2977,8 @@
         <span class="cl" style="background:#555"></span>{{ t('execution (E)') }}
         <span class="cl cl-half" style="background:#9e9e9e"></span>{{ t('other phase of the path') }}
         <span class="lk" style="color:#1565c0">→</span>{{ t('data') }}
+        <span class="lk" style="color:#ad1457">→</span>{{ t('port') }}
+        <span v-if="cacheEnabled" class="lk" style="color:#7b1fa2">→</span><template v-if="cacheEnabled">{{ t('memory') }}</template>
         <span class="lk" style="color:#2e7d32">→</span>{{ t('dispatch in order') }}
         <span class="lk" style="color:#616161">→</span>{{ t('retire in order') }}
         <span class="lk" style="color:#e65100">⇢</span>{{ t('full ROB') }}
