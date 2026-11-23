@@ -109,6 +109,28 @@ export function computeInstructionCriticalPercentages(
   return counts.map(count => 100 * count / totalCriticalCycles)
 }
 
+// The critical path as steps, in order: { row, stage } (stage 0 dispatch, 1 execute, 2 retire). Two
+// consecutive steps of different rows are a link between them; the stages tell its kind:
+// execute -> execute data, dispatch -> dispatch dispatch order, retire -> retire retire order,
+// retire -> dispatch the ROB (the second row waits for an entry that the first one frees)
+export function computeCriticalSteps(graph, instructionRows, targetInstructionIndex = instructionRows.length - 1) {
+  validateGraph(graph, instructionRows)
+  const path = getLongestPath(graph, (targetInstructionIndex + 1) * GRAPH_STAGES.length - 1)
+  return path.map(([node]) => ({ row: Math.floor(node / GRAPH_STAGES.length), stage: node % GRAPH_STAGES.length }))
+             .sort((a, b) => a.row * 3 + a.stage - (b.row * 3 + b.stage))
+}
+const LINK_KINDS = { '1-1': 'data', '0-0': 'dispatch', '2-2': 'retire', '2-0': 'rob' }
+// the link into each row of the path from the previous row of the path: { from, kind, fromStage, toStage }
+export function criticalLinks(steps) {
+  const links = new Map()
+  for (let i = 1; i < steps.length; i++) {
+    const a = steps[i - 1], b = steps[i]
+    if (a.row === b.row || links.has(b.row)) continue
+    links.set(b.row, { from: a.row, kind: LINK_KINDS[`${a.stage}-${b.stage}`] ?? 'other', fromStage: a.stage, toStage: b.stage })
+  }
+  return links
+}
+
 export function computeCriticalCycles(graph, instructionRows, targetInstructionIndex = instructionRows.length - 1) {
   validateGraph(graph, instructionRows)
   if (!Number.isInteger(targetInstructionIndex)

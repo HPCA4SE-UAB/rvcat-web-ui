@@ -534,7 +534,8 @@
   }
 
   // The compact timeline shows only some instructions: a check box for each one (in the first column)
-  const compactTimeline = computed(() => props.activeView === 'timelineComponent' && simState.timelineView === 'compact')
+  // (not with the critical path only: its rows are the ones of the path)
+  const compactTimeline = computed(() => props.activeView === 'timelineComponent' && simState.timelineView === 'compact' && !simState.timelineCriticalOnly)
   const shownInTimeline = (i) => (simState.timelineShownNow ?? []).includes(i)
   function toggleShown(i, event) {
     const now = new Set(simState.timelineShown ?? simState.timelineShownNow ?? [])

@@ -13,6 +13,8 @@
   } from '@/common'
   import {
     computeCriticalCycles,
+    computeCriticalSteps,
+    criticalLinks,
     computeInstructionCriticalPercentages,
     findLastRetiredInstructionIndex
   } from '@/criticalPath'
@@ -120,10 +122,11 @@
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     const maxW = compactMaxCellW(k)
     const wrapper = timelineCanvas.value?.parentElement
-    if (!wrapper || shownRows.length < 2) return maxW
-    const first = instructions[shownRows[0]], last = instructions[shownRows[shownRows.length - 1]]
+    const real = shownRows.filter(r => r >= 0)
+    if (!wrapper || real.length < 2) return maxW
+    const first = instructions[real[0]], last = instructions[real[real.length - 1]]
     const slope = Math.max(0, last[2] - first[2]) / (shownRows.length - 1)
-    const lengths = shownRows.map(r => instructions[r][4].length).sort((a, b) => a - b)
+    const lengths = real.map(r => instructions[r][4].length).sort((a, b) => a - b)
     const rowLength = lengths[Math.floor(lengths.length * 0.75)] ?? 10
     const { cellH: cellHeight, labelW: labelWidth } = compactBase(k)
     const visible = Math.max(5, Math.floor((wrapper.clientHeight - 20) / cellHeight) - resourceRowCount - 1)
@@ -247,6 +250,13 @@
     clearTimelineView()            // the other view simulates another number of instructions
     requestTimeline()
     nextTick(() => window.dispatchEvent(new Event('resize')))     // (the panel of details is shown or hidden)
+  })
+  // Critical path only (compact view): remembered; the timeline is drawn again
+  watch(() => simState.timelineCriticalOnly, (on) => {
+    try { localStorage.setItem('timelineCriticalOnly', String(!!on)) } catch { /* ignore */ }
+    releasePin()
+    scrollRow.value = 0
+    if (timeline.value && timelineCanvas.value) scheduleDraw(timelineOptions.cycles, timelineOptions.cycles)
   })
   // The instructions of the compact view: the user's choice is forgotten with another program
   watch(() => [simState.simulatedProcess?.name, (simState.simulatedProcess?.instruction_list ?? []).length,
@@ -555,8 +565,11 @@
   const scrollRow = ref(0)            // first visible row of instructions (a position in shownRows)
   // The rows of instructions drawn, in order (the compact view shows only some instructions of the
   // program), and the position of each row among them (-1: not drawn)
-  let shownRows = []
+  let shownRows = []                 // (-1: a band of the ROB, critical path only: see gapBands)
   let slotOfRow = []
+  let criticalLinksOfRow = null       // critical path only: the link into each row (see criticalLinks)
+  let gapBands = new Map()            // critical path only: slot -> instructions between two rows (ROB)
+  const criticalOnlyView = () => isCompact() && !!simState.timelineCriticalOnly
   const rowTop = (row) => (slotOfRow[row] >= 0 ? padY + (slotOfRow[row] + resourceRowCount + 1) * cellH : null)
   let view = { scrollX: 0, scrollY: 0, topH: 0, leftW: 0, w: 0, h: 0, gap: 0 }   // gap: see present
 
@@ -581,7 +594,7 @@
     scrollRow.value = Math.min(Math.max(0, scrollRow.value), maxScrollRow())
     view.scrollY = scrollRow.value * cellH
     // the cycles follow the rows: the first visible row is dispatched near the left border
-    const first = timeline.value.instructions?.[shownRows[scrollRow.value]]
+    const first = timeline.value.instructions?.[shownRows.slice(scrollRow.value).find(r => r >= 0)]
     const worldW = worldCanvas.width
     const startCycle = first ? Math.max(0, first[2] - 2) : 0
     let scrollX = startCycle * cellW
@@ -727,11 +740,13 @@
     c.fillStyle = '#f6f8fb'
     c.fillRect(0, 0, w, h)
     // (a new timeline may arrive before it is drawn: the rows of the last drawing that it has)
-    const rows = shownRows.map(r => timeline.value.instructions?.[r]).filter(Boolean)
-    if (!rows.length || !totalCycles) return
+    const rows = shownRows.map(r => timeline.value.instructions?.[r])      // (undefined: a band)
+    if (!rows.some(Boolean) || !totalCycles) return
     const sy = h / rows.length, sx = w / totalCycles
     const lineH = Math.max(1, Math.min(4, sy - 0.5))
-    for (const [i, [iter, , start, , states, , , flags]] of rows.entries()) {
+    for (const [i, row] of rows.entries()) {
+      if (!row) continue
+      const [iter, , start, , states, , , flags] = row
       c.fillStyle = flags?.wrong ? '#bdbdbd' : `hsl(${(iter * 80) % 360}, 55%, 55%)`
       c.fillRect(start * sx, i * sy, Math.max(1, states.length * sx), lineH)
     }
@@ -1000,8 +1015,27 @@
     const shownSet = shownInstr ? new Set(shownInstr) : null
     shownRows = []
     slotOfRow = new Array(totalInstr).fill(-1)
-    for (let r = 0; r < totalInstr; r++)
-      if (!shownSet || shownSet.has(instructions[r][1])) { slotOfRow[r] = shownRows.length; shownRows.push(r) }
+    criticalLinksOfRow = null
+    gapBands = new Map()
+    if (criticalOnlyView() && graph && Number.isInteger(visibleCriticalPath?.target)) {
+      // Compact view, critical path only: its rows in order; before a row that waits for an entry of
+      // the ROB, a band says how many instructions are between them (they are not shown)
+      if (!visibleCriticalPath.steps) {
+        visibleCriticalPath.steps = computeCriticalSteps(graph, instructions, visibleCriticalPath.target)
+        visibleCriticalPath.links = criticalLinks(visibleCriticalPath.steps)
+      }
+      criticalLinksOfRow = visibleCriticalPath.links
+      const rows = [...new Set(visibleCriticalPath.steps.map(st => st.row))].filter(r => r < totalInstr).sort((a, b) => a - b)
+      for (const r of rows) {
+        const link = criticalLinksOfRow.get(r)
+        if (link?.kind === 'rob' && r - link.from > 1) { gapBands.set(shownRows.length, r - link.from - 1); shownRows.push(-1) }
+        slotOfRow[r] = shownRows.length
+        shownRows.push(r)
+      }
+    } else {
+      for (let r = 0; r < totalInstr; r++)
+        if (!shownSet || shownSet.has(instructions[r][1])) { slotOfRow[r] = shownRows.length; shownRows.push(r) }
+    }
 
     // Compact view: the width of the cells for these rows (a new width changes the cycles that fit)
     if (isCompact()) {
@@ -1234,7 +1268,8 @@
                      t('IPC {ipc}', { ipc: lastRetire >= 0 ? (retired / (lastRetire + 1)).toFixed(2) : '0.00' })]
       if (iterations) stats.push(t('{c} cycles/iteration', { c: ((iterationsEnd + 1) / iterations).toFixed(2) }))
       const compactView = isCompact()
-      if (compactView) stats.push(t('{n} of {m} instr. shown', { n: simState.timelineShownNow.length, m: staticCount }))
+      if (criticalOnlyView() && criticalLinksOfRow) stats.push(t('critical path: {n} instructions', { n: shownRows.filter(r => r >= 0).length }))
+      else if (compactView) stats.push(t('{n} of {m} instr. shown', { n: simState.timelineShownNow.length, m: staticCount }))
       interactiveCells.push({
         x: padX, y: padY, width: labelW, colIdx: -1, rowIdx: -1, cellType: 'corner',
         ...summaryCell({ title: t('Timeline'), stats,
@@ -1637,9 +1672,84 @@
         i++;
         x += cellW;
       }
-    }    drawSelectedCell()
+    }
+    if (criticalOnlyView() && criticalLinksOfRow) drawCriticalLinks(ctx)
+    drawSelectedCell()
   }
 
+  // ---- Critical path only (compact view): the links between its rows, and the bands of the ROB ----
+  const LINK_COLORS = { data: '#1565c0', dispatch: '#2e7d32', retire: '#616161', rob: '#e65100', other: '#616161' }
+  // the cycle of a stage of a row: D, its first E, R; the result of a row: the cycle before its W
+  function stageCol(row, stage) {
+    const [, , start, , states] = timeline.value.instructions[row]
+    const k = stage === 0 ? 0 : states.indexOf(stage === 1 ? 'E' : 'R')
+    return start + (k >= 0 ? k : states.length - 1)
+  }
+  function resultCol(row) {
+    const [, , start, , states] = timeline.value.instructions[row]
+    const w = states.indexOf('W')
+    return start + (w > 0 ? w - 1 : states.lastIndexOf('E'))
+  }
+  function drawCriticalLinks(ctx) {
+    const colX = (col) => padX + labelW + col * cellW
+    ctx.save()
+    // the bands: the instructions between two rows linked by the ROB
+    ctx.font = `${fontSize}px sans-serif`
+    ctx.textBaseline = 'top'
+    for (const [slot, n] of gapBands) {
+      const y = padY + (slot + resourceRowCount + 1) * cellH
+      ctx.fillStyle = '#fff3e0'
+      ctx.fillRect(padX, y, labelW + totalCycles * cellW, cellH)
+      const next = shownRows[slot + 1]
+      const text = t('··· {n} instructions in the ROB ···', { n })
+      const x = Math.max(padX + labelW + 4, colX(next >= 0 ? stageCol(next, 0) : 0) - ctx.measureText(text).width - 8)
+      ctx.fillStyle = '#b34700'
+      ctx.fillText(text, x, y + Math.max(0, Math.round((cellH - fontSize) / 2)))
+    }
+    // the links: from the stage of the previous row of the path to the stage of the row
+    for (const [row, link] of criticalLinksOfRow) {
+      if (!(slotOfRow[row] >= 0) || !(slotOfRow[link.from] >= 0)) continue
+      const data = link.kind === 'data'
+      const x1 = data ? colX(resultCol(link.from)) + cellW : colX(stageCol(link.from, link.fromStage)) + cellW / 2
+      const x2 = data ? colX(stageCol(row, 1)) : colX(stageCol(row, link.toStage)) + cellW / 2
+      const y1 = rowTop(link.from) + cellH / 2, y2 = rowTop(row) + cellH / 2
+      const color = LINK_COLORS[link.kind] ?? LINK_COLORS.other
+      ctx.strokeStyle = color
+      ctx.fillStyle = color
+      ctx.lineWidth = 1.5
+      ctx.setLineDash(link.kind === 'rob' ? [5, 3] : [])
+      ctx.beginPath()
+      ctx.moveTo(x1, y1)
+      ctx.bezierCurveTo(x1 + Math.max(6, (x2 - x1) / 2), y1, x2 - Math.max(6, (x2 - x1) / 2), y2, x2, y2)
+      ctx.stroke()
+      ctx.setLineDash([])
+      ctx.beginPath()                       // the head of the arrow
+      ctx.moveTo(x2, y2)
+      ctx.lineTo(x2 - 6, y2 - 3.5)
+      ctx.lineTo(x2 - 6, y2 + 3.5)
+      ctx.closePath()
+      ctx.fill()
+    }
+    ctx.restore()
+  }
+  // the link of a row of the critical path with the previous one, explained
+  function criticalLinkText(row) {
+    const link = criticalOnlyView() ? criticalLinksOfRow?.get(row) : null
+    if (!link) return ''
+    const a = instrId(link.from), p = simState.simulatedProcess ?? {}
+    switch (link.kind) {
+      case 'data': {
+        const from = timeline.value.instructions[link.from]
+        const waits = [...String(from[4])].filter(ch => '!2:@'.includes(ch)).length
+        return t('critical path: it uses the result of {a} (latency {l})', { a, l: instrAt(from[1])?.latency ?? '?' }) +
+               (waits ? ' · ' + t('{a} waited {n} cycles for the memory', { a, n: waits }) : '')
+      }
+      case 'dispatch': return t('critical path: it is dispatched in program order after {a} (up to {w} per cycle)', { a, w: p.dispatch })
+      case 'retire':   return t('critical path: it retires in program order after {a} (up to {w} per cycle)', { a, w: p.retire })
+      case 'rob':      return t('critical path: the ROB is full ({n} entries): it is dispatched when {a}, the oldest instruction, retires and frees its entry', { a, n: p.ROBsize })
+      default:         return t('critical path: it follows {a}', { a })
+    }
+  }
   function drawSelectedCell() {
     const cell = selectedCell.value
     if (!cell) return
@@ -2170,7 +2280,8 @@
       cell,
       cycle: rowHeader ? null : col,
       // (an instruction: its port, latency and address; its name is in the first column)
-      state: rowHeader ? instructionTooltipLines(cell).filter(line => !line.ident).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
+      state: [rowHeader ? instructionTooltipLines(cell).filter(line => !line.ident).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
+              criticalLinkText(row)].filter(Boolean).join(' · '),     // (critical path only: its link with the previous row)
     }
     drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
     showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
@@ -2379,6 +2490,8 @@
       lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf', chip: 'blocker' }, { text: rowName(b.rowIdx), kind: 'instr' }]
                    : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
     }
+    const link = criticalLinkText(cell.rowIdx)
+    if (link) lines.push([{ text: link, kind: 'perf', chip: 'producer' }])
     const mem = memoryInfo(cell.rowIdx)
     if (mem) lines.push([{ text: memoryText(mem, cell.colIdx, cell.rowIdx), kind: 'mem', chip: 'memory' }])
     if (cell.critical && timelineOptions.critical) lines.push([{ text: t('On the critical path'), kind: 'note' }])
@@ -2517,7 +2630,8 @@
         next = key === 'ArrowRight' ? (cells[i + 1] ?? header(cur.rowIdx)) : (i > 0 ? cells[i - 1] : header(cur.rowIdx))
       }
     } else {
-      const slot = slotOfRow[cur.rowIdx] + (key === 'ArrowDown' ? 1 : -1)     // the row drawn above / below
+      let slot = slotOfRow[cur.rowIdx] + (key === 'ArrowDown' ? 1 : -1)     // the row drawn above / below
+      while (shownRows[slot] === -1) slot += key === 'ArrowDown' ? 1 : -1      // (not a band of the ROB)
       if (slot < 0 || slot >= shownRows.length) return true
       const r = shownRows[slot]
       if (cur.colIdx < 0) next = header(r)
@@ -2729,7 +2843,7 @@
       ident([{ text: `${instrId(cell.rowIdx)} `, kind: 'id' },
              { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' }]),
       [{ text: t('Port: {p}', { p: port }), kind: 'perf' }],
-      [{ text: t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
+      [{ text: lat === 1 ? t('Latency: 1 cycle') : t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
     ]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
       lines.push([{ text: `${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`, kind: 'mem' }])
@@ -2804,6 +2918,12 @@
         <button :class="{ on: simState.timelineView === 'compact' }" role="radio" :aria-checked="simState.timelineView === 'compact'"
                 id="timeline-view-compact" @click="simState.timelineView = 'compact'">{{ t('Compact') }}</button>
       </span>
+      <!-- compact view: only the instructions of the critical path, and the links between them -->
+      <span v-if="simState.timelineView === 'compact'" class="view-switch">
+        <button :class="{ on: simState.timelineCriticalOnly }" id="timeline-critical-only" :aria-pressed="!!simState.timelineCriticalOnly"
+                @click="simState.timelineCriticalOnly = !simState.timelineCriticalOnly"
+                :title="t('Only the instructions of the critical path, and the links between them (data, the order of dispatch or retire, a full ROB)')">{{ t('Critical path') }}</button>
+      </span>
     </div>
 
     <div v-if="timelineError" class="execution-validation-error" role="alert">
@@ -2812,6 +2932,15 @@
     <!-- What the pointer shows (or the pinned cell): one line -->
     <div class="timeline-status" id="timeline-status" :class="{ pinned: !!pinned }">
       <span v-if="statusText">{{ pinned ? '📌 ' : '' }}{{ statusText }}</span>
+      <!-- critical path only: the colours of the links -->
+      <span v-else-if="simState.timelineView === 'compact' && simState.timelineCriticalOnly" class="status-hint compact-legend">
+        <span class="cl" style="background:#d32f2f"></span>{{ t('critical') }}
+        <span class="lk" style="color:#1565c0">→</span>{{ t('data') }}
+        <span class="lk" style="color:#2e7d32">→</span>{{ t('dispatch in order') }}
+        <span class="lk" style="color:#616161">→</span>{{ t('retire in order') }}
+        <span class="lk" style="color:#e65100">⇢</span>{{ t('full ROB') }}
+        <span class="dbl">· {{ t('point at a row: its link') }}</span>
+      </span>
       <span v-else-if="simState.timelineView === 'compact'" class="status-hint compact-legend">
         <span class="cl" style="background:#555"></span>{{ t('execution (E)') }}
         <span class="cl" style="background:#d32f2f"></span>{{ t('critical') }}
@@ -2979,6 +3108,7 @@
     display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 12px; vertical-align: middle; border-radius: 2px;
   }
   .compact-legend .cl:first-child { margin-left: 0; }
+  .compact-legend .lk { margin: 0 3px 0 12px; font-weight: bold; }
   .compact-legend .dbl { margin-left: 12px; }
   .timeline-loading {
     position: absolute; top: 40%; left: 0; right: 0; text-align: center; z-index: 3;

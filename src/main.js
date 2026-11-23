@@ -34,6 +34,8 @@ const SimulationState = reactive({
   timelineLesson:      {},        // a lesson limits the timeline: { cycles, critical, ports, cache, width } (actions timeline:...)
   helpRequest:         null,      // { topic: 'cache', nonce }: open a help (the timeline asks for the help of the cache)
   timelineView:        loadTimelineView(),  // 'detailed' | 'compact' (colours only, many iterations, some instructions)
+  timelineCriticalOnly: (() => { try { return localStorage.getItem('timelineCriticalOnly') === 'true' } catch { return false } })(),
+                                  // compact view: only the instructions of the critical path, and their links
   timelineShown:       null,      // compact view: the instructions of the program shown, chosen by the user (null: automatic)
   timelineShownNow:    [],        // compact view: the instructions shown now (the user's, or the ones with at least 5% of the critical path)
   dependenceHighlight: null,      // { producers, vars }: instructions and variables a waiting instruction needs (timeline)      // { width, nonce }: zoom of the timeline asked by a tutorial card

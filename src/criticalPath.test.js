@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   computeCriticalCycles,
+  criticalLinks,
   computeInstructionCriticalPercentages,
   findLastRetiredInstructionIndex
 } from './criticalPath'
@@ -105,5 +106,23 @@ describe('critical path graph', () => {
     expect(earlierPath[1]).toEqual([])
     expect(fullPath[0]).toEqual([])
     expect(fullPath[1]).not.toEqual([])
+  })
+})
+
+describe('links of the critical path', () => {
+  it('tells the kind of each link from the stages it joins', () => {
+    const steps = [
+      { row: 0, stage: 0 }, { row: 0, stage: 1 },     // dispatch, execute
+      { row: 1, stage: 1 },                           // data: execute -> execute
+      { row: 1, stage: 2 }, { row: 2, stage: 2 },     // retire order
+      { row: 66, stage: 0 },                          // the ROB: retire -> dispatch
+      { row: 67, stage: 0 }, { row: 67, stage: 1 },   // dispatch order
+    ]
+    const links = criticalLinks(steps)
+    expect(links.get(1)).toMatchObject({ from: 0, kind: 'data' })
+    expect(links.get(2)).toMatchObject({ from: 1, kind: 'retire' })
+    expect(links.get(66)).toMatchObject({ from: 2, kind: 'rob' })
+    expect(links.get(67)).toMatchObject({ from: 66, kind: 'dispatch' })
+    expect(links.has(0)).toBe(false)
   })
 })
