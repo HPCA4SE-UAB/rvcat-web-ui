@@ -835,6 +835,17 @@
 
   function openHelp()   { nextTick(() => { showHelp.value = true }) }
   function closeHelp()  { showHelp.value  = false }
+  // another panel asks for the help of the cache (the timeline): it opens at its section
+  watch(() => simState.helpRequest?.nonce, () => {
+    if (simState.helpRequest?.topic !== 'cache') return
+    openHelp()
+    setTimeout(() => {
+      const section = document.getElementById('help-cache')
+      if (!section) return
+      section.open = true
+      section.scrollIntoView({ block: 'start' })
+    }, 200)
+  })
 
 /* ------------------------------------------------------------------
  * Button Support: press & hold

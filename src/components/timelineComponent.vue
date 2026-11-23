@@ -1395,16 +1395,20 @@
             : !memoryRequests.length
             ? t('MM: no transfer')
             : memoryRequests
-                .map(({ operation, address, instruction_index: own, instruction_indices: waiting }) => {
+                .map(({ operation, address, instruction_index: own, instruction_indices: waiting, cycle: start, duration }) => {
+                  const busCycle = ` · ${t('bus cycle {k} of {d}', { k: cycle - start + 1, d: duration })}`
                   if (operation === 'write')
-                    return t('Write dirty block at addr {a}', { a: address })
+                    return t('Write dirty block at addr {a}', { a: address }) + busCycle
                   // (only the instructions that have already missed: the next ones join it later)
                   const who = [...new Set([own, ...(waiting ?? [])].filter(r => Number.isInteger(r) && r >= 0 &&
                                 (waitingAt(r, cycle) || (r === own && operation === 'read_for_write'))))]
                   return t(operation === 'read_for_write' ? 'Read block for writing at addr {a}' : 'Read block at addr {a}', { a: address }) +
-                         (who.length ? ' (' + t('for {list}', { list: who.map(rowId).join(', ') }) + ')' : '')
+                         (who.length ? ' (' + t('for {list}', { list: who.map(rowId).join(', ') }) + ')' : '') + busCycle
                 })
-                .join('\n')
+                .join('\n') +
+              // why the bus is busy m cycles, and why the data is not there at the end of them
+              ' · ' + t('the bus is busy {m} cycles with each block (memory issue time); a block reaches its fill buffer {p} cycles after its request (miss penalty)',
+                        { m: simState.simulatedProcess?.mIssueTime, p: simState.simulatedProcess?.mPenalty })
         })
       }
     }
@@ -2708,6 +2712,10 @@
         <span class="dbl">· {{ t('double click: detailed view') }}</span>
       </span>
       <span v-else class="status-hint">{{ t('Point at a cell to see its relations; click it to pin it and see its explanation.') }}</span>
+      <!-- the model of the cache: the help of the Processor panel, at its section -->
+      <a v-if="cacheEnabled" href="#" class="cache-help-link" id="timeline-cache-help"
+         @click.prevent="simState.helpRequest = { topic: 'cache', nonce: Date.now() }"
+         :title="t('Open the help of the cache (Processor panel): issue time, miss penalty, buffers')">{{ t('cache model') }}</a>
     </div>
     <div class="timeline-body">
       <div class="output-block-wrapper" id="canvas-container">
@@ -2773,6 +2781,9 @@
 
 <style scoped>
   .timeline-status {
+    display:     flex;
+    align-items: center;
+    gap:         12px;
     min-height:  1.6em;
     padding:     2px 8px;
     font-size:   0.9375rem;
@@ -2849,6 +2860,10 @@
     flex: 1;
     min-width: 0;
     flex-wrap: nowrap;
+  }
+  .timeline-status > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .cache-help-link {
+    flex: none; font-size: 0.875rem; color: #1a4fb3; text-decoration: underline; cursor: pointer;
   }
   .compact-legend .cl {
     display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 12px; vertical-align: middle; border-radius: 2px;

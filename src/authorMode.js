@@ -23,10 +23,11 @@ watch(authorMode, (on) => {
 }, { immediate: true })
 
 // What only the author can do. Students can still change the main parameters of the processor
-// (widths, ROB, cache, branch penalty) and load program, processor and lesson files.
+// (widths, ROB, cache, branch penalty), save and remove configurations (a lesson can lock them),
+// and load program, processor and lesson files.
 export const AUTHOR_ONLY = new Set([
   'programEditor', 'tutorialEditor', 'loopTransforms',
-  'processor.ports', 'processor.latencies', 'processorSave', 'remove', 'lessonExport',
+  'processor.ports', 'processor.latencies', 'lessonExport',
 ])
 
 export function authorLocked(what, author = authorMode.value) {

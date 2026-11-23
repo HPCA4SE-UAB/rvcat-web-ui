@@ -72,6 +72,8 @@ const { importRVCAT }               = useRVCAT_Api();
   const SIDE_KEY = 'sidePanelCollapsed'
   const sideCollapsed = ref(false)
   try { sideCollapsed.value = localStorage.getItem(SIDE_KEY) === 'true' } catch { /* default */ }
+  // a help of the processor panel is asked from another panel: the side panel is shown
+  watch(() => simState.helpRequest?.nonce, () => { if (simState.helpRequest) sideCollapsed.value = false })
   watch(sideCollapsed, (v) => {
     try { localStorage.setItem(SIDE_KEY, String(v)) } catch { /* ignore */ }
     // The right panel changed width: let width-dependent views (timeline) adapt

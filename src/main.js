@@ -32,6 +32,7 @@ const SimulationState = reactive({
   timelineCriticalPathEnabled: false,
   timelineFit:         null,
   timelineLesson:      {},        // a lesson limits the timeline: { cycles, critical, ports, cache, width } (actions timeline:...)
+  helpRequest:         null,      // { topic: 'cache', nonce }: open a help (the timeline asks for the help of the cache)
   timelineView:        loadTimelineView(),  // 'detailed' | 'compact' (colours only, many iterations, some instructions)
   timelineShown:       null,      // compact view: the instructions of the program shown, chosen by the user (null: automatic)
   timelineShownNow:    [],        // compact view: the instructions shown now (the user's, or the ones with at least 5% of the critical path)
