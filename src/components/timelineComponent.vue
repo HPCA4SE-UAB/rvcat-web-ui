@@ -1479,6 +1479,10 @@
         initRow: initRowList[i],
         lengthRow: lengthRowList[i],
         char: ch,
+        // the character shown: after the first ! of a miss, the cycles in which it waits for a free
+        // fill buffer show f (RVCAT gives ! for all of them)
+        shown: ch === '!' && states[i - startCycle - 1] === '!' &&
+               waitDetails.get(`${rowIdx}:${i}`)?.buffer_state === 'queued_fill' ? 'f' : ch,
         first_exec_stage: ch === 'E' && states[i - startCycle - 1] !== 'E',
         critical: criticalCycles.includes(i - startCycle),
         port: portByInstructionCycle.get(`${rowIdx}:${i}`) ?? port,
@@ -1528,9 +1532,11 @@
         let currColor = wrongPath ? "#777" : "#000"
 
         // register interactive cell & check critical
+        let shownCh = ' '
         if (i >= startCycle && i < startCycle+lengthCol) {
           ch  = states[i-startCycle];
           const cell = cellOf(i, ch)
+          shownCh = cell.shown
           if (cell.critical && timelineOptions.critical) currColor = "red"
           interactiveCells.push(cell)
         }
@@ -1549,7 +1555,7 @@
           ctx.lineWidth   = 1
         }
         ctx.fillStyle = currColor;
-        ctx.fillText    (ch === '.' ? '·' : ch, x + fontXOffset, y + fontYOffset);
+        ctx.fillText    (shownCh === '.' ? '·' : shownCh, x + fontXOffset, y + fontYOffset);
 
         i++;
         x += cellW;
@@ -1666,11 +1672,37 @@
                                             slots[res.bufferIndex].address === block))) result = 'secondary'
     return { store: header.memoryOperation === 'Store to', addr: header.addr, block, result }
   }
-  const memoryText = (m) => (m.store ? 'STORE' : 'LOAD') + ' ' +
-    t('addr {a}, block {b}', { a: m.addr, b: m.block }) + ': ' +
-    (m.store   // a STORE accesses the cache from the store buffer, after it retires
+  // The address and the block; the hit or the miss only from the cycle in which it happens (col;
+  // -1: the instruction as a whole). A LOAD: its first ! or 2, or (a hit) its last E; a STORE: the
+  // cycle in which it is written from the store buffer into the cache
+  function memoryText(m, col = -1, row = null) {
+    const where = (m.store ? 'STORE' : 'LOAD') + ' ' + t('addr {a}, block {b}', { a: m.addr, b: m.block })
+    const when = row === null ? null : memoryResultCycle(row, m)
+    if (col >= 0 && (when === null || col < when)) return where
+    return where + ': ' + (m.store   // a STORE accesses the cache from the store buffer, after it retires
       ? (m.result === 'hit' ? t('its block is in the cache when it is written') : t('write miss: its block is requested when it is written, after it retires'))
       : m.result === 'hit' ? t('hit') : m.result === 'primary' ? t('primary miss (it requests the block)') : t('secondary miss (the block is already coming)'))
+  }
+  function memoryResultCycle(row, m) {
+    if (m.store) return storeWriteCycle(row)
+    const cells = rowCells(row).sort((a, b) => a.colIdx - b.colIdx)
+    const miss = cells.find(c => c.char === '!' || c.char === '2')
+    if (miss) return miss.colIdx
+    const execs = cells.filter(c => c.char === 'E')
+    return execs.length ? execs[execs.length - 1].colIdx : null
+  }
+  // The fill buffer and the line of the cache that hold a block in a cycle ('F1', 'C3'; null: none, or
+  // the lines are not known: the compact view does not ask for them)
+  function fillOf(block, col, row = null) {
+    const res = resourceDetail.find(r => r.bufferType === 'fill' && bufHolds(r, col, block) &&
+                                         (row === null || (slotOf(r, col).instruction_indices ?? []).includes(row)))
+              ?? resourceDetail.find(r => r.bufferType === 'fill' && bufHolds(r, col, block))
+    return res ? `F${res.bufferIndex}` : null
+  }
+  function lineOf(block, col) {
+    const res = resourceDetail.find(r => r.cacheLineIndex !== undefined && lineHolds(r, col, block))
+    return res ? `C${res.cacheLineIndex}` : null
+  }
   // ---- The rows of the resources that a block or an instruction uses ----
   // the row (in resourceLayout) where a detailed resource row is shown: itself, or its folded
   // group; -1 when it is hidden (the memory folded)
@@ -2152,10 +2184,10 @@
   // A STORE / BRANCH: D, W and R do other things than for the instructions with a result
   const isMispredicted = (row) => !!rowHeaderCell(row)?.mispredicted
   function storeWriteText(row) {
-    const w = storeWriteCycle(row)
-    return w === null ? t('it is written into the cache after the cycles shown')
-         : w === instrCellCol(row, 'R') ? t('it is written into the cache in this cycle')
-         : t('it is written into the cache in cycle {c}', { c: w })
+    // (what happens in this cycle, not when it will be written)
+    return storeWriteCycle(row) === instrCellCol(row, 'R')
+      ? t('it is written into the cache in this cycle')
+      : t('it waits in the store buffer to be written into the cache, in program order')
   }
   const instrCellCol = (row, ch) => rowCells(row).find(c => c.char === ch)?.colIdx
   function cellStatus(cell) {
@@ -2171,6 +2203,10 @@
       case 'W':
         if (kind === 'store') return sb ? t('Writes its address and data into its entry of the store buffer') : t('Has its address and data')
         if (kind === 'branch') return isMispredicted(cell.rowIdx) ? t('The branch is resolved: MISPREDICTED') : t('The branch is resolved: the prediction was correct')
+        if (kind === 'load' && cacheEnabled.value) {
+          const source = loadDataSource(cell)
+          if (source) return t('Writes its result') + ' · ' + source
+        }
         return t('Writes its result')
       case 'E': {
         const lat = Number(instrAt(cell.instrIdx)?.latency) || null
@@ -2178,7 +2214,7 @@
         const mem = k === 1 && kind === 'load' ? memoryInfo(cell.rowIdx) : null
         return k === 1
           ? t('Starts executing in P{p}', { p: cell.port }) + (lat ? ` · ${t('latency {l}', { l: lat })}` : '') +
-            (mem ? ` · ${t('after its latency')}: ${memoryText(mem)}` : '')
+            (mem ? ` · ${memoryText(mem, cell.colIdx, cell.rowIdx)}` : '')
           : t('Executes: cycle {k} of {l}', { k, l: lat ?? '?' })
       }
       case '-': {
@@ -2211,7 +2247,8 @@
               ? t('The branch has evaluated its condition, and the prediction was WRONG: the instructions dispatched after it (the wrong path, in grey) are squashed, and the instructions of the right path are dispatched after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' })
               : t('The branch has evaluated its condition, and the prediction was WRONG. With the option stall, the simulator does not dispatch the wrong path: the dispatch has stopped after the branch, and it resumes with the right path after the branch penalty ({n} cycles).', { n: p.bPenalty ?? '?' }))
           : t('The branch has evaluated its condition, and the prediction was correct: the instructions dispatched after it go on. A branch has no result for the registers.')
-        return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.')
+        return t('It writes its result into the ROB. The instructions that wait for it receive it by the bypass, and can execute in the next cycle.') +
+          (kind === 'load' && cacheEnabled.value ? ' ' + t('A LOAD gets its data from the line of the cache (a hit) or from the fill buffer that brought the block (a miss).') : '')
       case 'R':
         if (sb) return t('Retire: the STORE leaves the ROB, in program order. Now it can change the memory: its entry of the store buffer is written into the cache, in program order, when its block is in the cache, and then the entry is freed; {when}.', { when: storeWriteText(cell.rowIdx) })
         if (kind === 'store') return t('Retire: the STORE leaves the ROB, in program order, and changes the memory.')
@@ -2223,7 +2260,9 @@
       case '*': return d?.reason === 'issue-bandwidth'
         ? t('Its operands are ready, but the issue width is full in this cycle.')
         : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
-      case '!': return t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), by age; while it waits, its cells show !. Then it waits for the block (:).')
+      case '!': return cell.shown === 'f'
+        ? t('No fill buffer is free: the miss cannot request its block yet. The LOAD waits (it keeps its entries of the ROB and of the load queue, and the dispatch goes on); the misses get a fill buffer by age, when one is freed.')
+        : t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), by age; while it waits for a fill buffer, its cells show f (for the other resources, !). Then it waits for the block (:).')
       case '2': return t('Secondary miss: its block is not in the cache, but an older miss to the same block has already been detected; it will share its fill buffer and waits for that block (! while that miss waits to be admitted, : while the block is coming).')
       case ':': return t('Its block is coming from the main memory (it has a fill buffer): it waits until the block arrives.')
       case '@': return t('Its block has arrived, but the return throughput of the cache limits how many waiting LOAD instructions receive their data per cycle: it waits its turn, by age.')
@@ -2261,7 +2300,7 @@
                    : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
     }
     const mem = memoryInfo(cell.rowIdx)
-    if (mem) lines.push([{ text: memoryText(mem), kind: 'mem', chip: 'memory' }])
+    if (mem) lines.push([{ text: memoryText(mem, cell.colIdx, cell.rowIdx), kind: 'mem', chip: 'memory' }])
     if (cell.critical && timelineOptions.critical) lines.push([{ text: t('On the critical path'), kind: 'note' }])
     return {
       title: rowName(cell.rowIdx),
@@ -2419,12 +2458,53 @@
     ctx.restore()
   }
 
+  // A LOAD in its W: where its data comes from (the cycle before): the fill buffer that brought the
+  // block (it missed) or the line of the cache (a hit)
+  function loadDataSource(cell) {
+    const m = memoryInfo(cell.rowIdx)
+    if (!m) return null
+    const col = cell.colIdx - 1
+    if (rowCells(cell.rowIdx).some(c => '!2:@'.includes(c.char))) {
+      const f = fillOf(m.block, col, cell.rowIdx)
+      return f ? t('the data comes from fill buffer {f}', { f }) : t('the data comes from a fill buffer')
+    }
+    const l = lineOf(m.block, col)
+    return l ? t('the data comes from cache line {l}', { l }) : t('the data comes from the cache')
+  }
+  // A wait for the memory (! after the first one, :): what it waits for, in this cycle
+  function cacheWaitText(detail, col = null) {
+    const a = detail.block_address
+    switch (detail.buffer_state) {
+      case 'queued_fill':       return t('Wait for fill-buffer slot for block at addr {a}', { a })
+      case 'queued_write':      return t('Wait for write-buffer slot before filling block at addr {a}', { a })
+      case 'queued_line':       return t('Wait for a cache line before filling block at addr {a}', { a })
+      case 'waiting_mm':        return t('Wait for MM issue slot for block at addr {a}', { a })
+      case 'waiting_writeback': return t('Wait for dirty writeback before filling block at addr {a}', { a })
+    }
+    // (what has already happened: the cycle in which the block was requested from MM)
+    const asked = col === null ? null : blockRequestCycle(col, a)
+    return t('Wait for block at addr {a}', { a }) + (asked !== null ? ` (${t('requested from MM in cycle {c}', { c: asked })})` : '')
+  }
   function formatProcessingTooltip(cell) {
     const detail = cell.waitDetail
-    if (cell.char === '!' && detail?.reason === 'cache' && !['queued_fill', 'queued_write', 'queued_line', 'waiting_mm', 'waiting_writeback'].includes(detail.buffer_state))
-      return t('Cache MISS: block addr {a}', { a: detail.block_address })
-    if (cell.char === '2' && detail?.reason === 'cache')
-      return t('2ary MISS: block addr {a}', { a: detail.block_address })
+    if ((cell.char === '!' || cell.char === '2') && detail?.reason === 'cache') {
+      // the miss: the fill buffer and the line assigned to bring the block (in this cycle)
+      const a = detail.block_address, col = cell.colIdx
+      const f = fillOf(a, col, cell.rowIdx), l = lineOf(a, col)
+      if (cell.char === '2')
+        return t('2ary MISS: block addr {a}', { a }) +
+               (f ? ' · ' + t('it shares fill buffer {f}', { f }) + (l ? ` (${t('cache line {l}', { l })})` : '') : '')
+      if (cell.shown === 'f') return t('Waits for a free fill buffer: block addr {a}', { a })
+      const assigned = f && l ? t('fill buffer {f} and cache line {l} assigned', { f, l })
+                     : f ? t('fill buffer {f} assigned', { f }) : ''
+      const firstMiss = instrCell(cell.rowIdx, col - 1)?.char !== '!'
+      if (firstMiss && detail.buffer_state === 'queued_fill')
+        return t('Cache MISS: block addr {a}', { a }) + ' · ' + t('no fill buffer is free: it waits for one (f)')
+      if (!detail.buffer_state || detail.buffer_state === 'reading')
+        return (firstMiss ? t('Cache MISS: block addr {a}', { a }) : t('The miss is admitted: block addr {a}', { a })) +
+               (assigned ? ' · ' + assigned : '')
+      if (firstMiss) return t('Cache MISS: block addr {a}', { a }) + ' · ' + cacheWaitText(detail)
+    }
     if (cell.char === '@' && detail?.reason === 'cache-return')
       return t('Wait for cache return: block addr {a}', { a: detail.block_address })
     if (cell.char === '.' && detail?.reason === 'data') {
@@ -2441,21 +2521,7 @@
     if (cell.char === '*' && detail?.reason === 'issue-bandwidth') {
       return t('Wait: issue width full')
     }
-    if (detail?.reason === 'cache') {
-      if (detail.buffer_state === 'queued_fill')
-        return t('Wait for fill-buffer slot for block at addr {a}', { a: detail.block_address })
-      if (detail.buffer_state === 'queued_write')
-        return t('Wait for write-buffer slot before filling block at addr {a}', { a: detail.block_address })
-      if (detail.buffer_state === 'queued_line')
-        return t('Wait for a cache line before filling block at addr {a}', { a: detail.block_address })
-      if (detail.buffer_state === 'waiting_mm')
-        return t('Wait for MM issue slot for block at addr {a}', { a: detail.block_address })
-      if (detail.buffer_state === 'waiting_writeback')
-        return t('Wait for dirty writeback before filling block at addr {a}', { a: detail.block_address })
-      // (what has already happened: the cycle in which the block was requested from MM)
-      const asked = blockRequestCycle(cell.colIdx, detail.block_address)
-      return t('Wait for block at addr {a}', { a: detail.block_address }) + (asked !== null ? ` (${t('requested from MM in cycle {c}', { c: asked })})` : '')
-    }
+    if (detail?.reason === 'cache') return cacheWaitText(detail, cell.colIdx)
     return charToProcessingState(
       cell.char,
       cell.first_exec_stage ? cell.port : null,
@@ -2667,7 +2733,7 @@
           <div class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
             <div>{{ t('waits:') }} <b class="lt">·</b> {{ t('for data') }} · <b class="lt">*</b> {{ t('for a port') }} · <b class="lt">-</b> {{ t('to retire in order') }}</div>
-            <div v-if="cacheEnabled"><b class="lt">! 2 : @</b> {{ t('! cache miss · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
+            <div v-if="cacheEnabled"><b class="lt">! f 2 : @</b> {{ t('! cache miss · f waiting for a free fill buffer · 2 miss to a block already loading · : waiting for a fill · @ waiting in the cache return queue') }}</div>
             <div class="critical-note"><b class="lt crit">E</b> {{ t('red letters: the critical path') }}</div>
           </div>
           <div class="details-legend">
