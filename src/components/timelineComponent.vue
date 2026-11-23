@@ -554,7 +554,7 @@
   let shownRows = []
   let slotOfRow = []
   const rowTop = (row) => (slotOfRow[row] >= 0 ? padY + (slotOfRow[row] + resourceRowCount + 1) * cellH : null)
-  let view = { scrollX: 0, scrollY: 0, topH: 0, leftW: 0, w: 0, h: 0 }
+  let view = { scrollX: 0, scrollY: 0, topH: 0, leftW: 0, w: 0, h: 0, gap: 0 }   // gap: see present
 
   const visibleRowCount = () => Math.max(1, Math.floor((view.h - view.topH) / cellH))
   function maxScrollRow() {
@@ -590,7 +590,23 @@
       if (x0 < scrollX) scrollX = Math.max(0, x0 - 2 * cellW)
       else if (x1 > scrollX + bodyW) scrollX = x1 - bodyW + 2 * cellW
     }
-    view.scrollX = Math.max(0, Math.min(scrollX, worldW - w))
+    scrollX = Math.max(0, Math.min(scrollX, worldW - w))
+    // the enlarged first cell of the instruction pointed (drawLabelFocus) must not hide its first
+    // cells: the cycles move to the right, and if they cannot (the first cycles), a gap opens between
+    // the first column and the cycles
+    view.gap = 0
+    const focusSlot = labelFocusRow === null ? -1 : (slotOfRow[labelFocusRow] ?? -1)
+    if (focusSlot >= scrollRow.value && focusSlot < scrollRow.value + visibleRowCount()) {
+      const m = canvas.getContext('2d')
+      m.font = `bold ${fontSize}px monospace`
+      const labelEnd = padX + Math.max(labelW, m.measureText(rowLabelText(labelFocusRow)).width + 8) + 4
+      const startX = timeline.value.instructions[labelFocusRow][2] * cellW     // its D, in the world
+      if (view.leftW + startX - scrollX < labelEnd) {
+        scrollX = Math.max(0, startX - (labelEnd - view.leftW))
+        view.gap = Math.max(0, labelEnd - (view.leftW + startX - scrollX))
+      }
+    }
+    view.scrollX = scrollX
     for (const [target, source] of [[canvas, worldCanvas], [overlay, worldOverlay]]) {
       if (target.width !== w || target.height !== h) {
         target.width = w
@@ -602,15 +618,15 @@
       c.setTransform(1, 0, 0, 1, 0, 0)
       c.clearRect(0, 0, w, h)
       if (!source.width || !source.height) continue
-      const { scrollX, scrollY, topH, leftW } = view
+      const { scrollX, scrollY, topH, leftW, gap } = view
       const blit = (sx, sy, sw, sh, dx, dy) => {
         sw = Math.min(sw, source.width - sx)
         sh = Math.min(sh, source.height - sy)
         if (sw > 0 && sh > 0) c.drawImage(source, sx, sy, sw, sh, dx, dy, sw, sh)
       }
-      blit(leftW + scrollX, topH + scrollY, w - leftW, h - topH, leftW, topH)   // instructions × cycles
-      blit(0, topH + scrollY, leftW, h - topH, 0, topH)                        // first column
-      blit(leftW + scrollX, 0, w - leftW, topH, leftW, 0)                     // cycles and resources
+      blit(leftW + scrollX, topH + scrollY, w - leftW - gap, h - topH, leftW + gap, topH)   // instructions × cycles
+      blit(0, topH + scrollY, leftW, h - topH, 0, topH)                                    // first column
+      blit(leftW + scrollX, 0, w - leftW - gap, topH, leftW + gap, 0)                     // cycles and resources
       blit(0, 0, leftW, topH, 0, 0)                                            // corner
       if (target === canvas) {         // the borders of the fixed parts
         c.strokeStyle = '#7a8aa3'
@@ -655,7 +671,7 @@
 
   // screen point (in the visible canvas) -> point of the world
   function toWorld(sx, sy) {
-    return { x: sx < view.leftW ? sx : sx + view.scrollX,
+    return { x: sx < view.leftW ? sx : sx - (view.gap ?? 0) + view.scrollX,
              y: sy < view.topH  ? sy : sy + view.scrollY }
   }
 
@@ -2140,7 +2156,7 @@
       cell,
       cycle: rowHeader ? null : col,
       // (an instruction: its port, latency and address; its name is in the first column)
-      state: rowHeader ? instructionTooltipLines(cell).slice(1).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
+      state: rowHeader ? instructionTooltipLines(cell).filter(line => !line.ident).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
     }
     drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
     showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
@@ -2374,19 +2390,36 @@
 
   // A pinned cell that waits for other instructions (data, a port, an older one to retire): the
   // timeline moves so that they are seen too, if they fit with it (the cell itself always stays)
+  // the rows it depends on (before: data, a port, an older one to retire) and the rows that depend on
+  // it (after: they receive its result)
   function relatedRows(cell) {
-    if (cell.cellType || cell.rowIdx < 0 || cell.colIdx < 0) return []
-    if (cell.char === '.' && cell.waitDetail?.reason === 'data') return [...new Set(cell.waitDetail.dependencies ?? [])]
-    if (cell.char === '-') { const b = retireBlocker(cell); return b ? [b.rowIdx] : [] }
-    if (cell.char === '*' && cell.waitDetail?.reason === 'ports') return portConflict(cell).conflicts.map(c => c.row)
-    return []
+    const none = { before: [], after: [] }
+    if (cell.cellType || cell.rowIdx < 0) return none
+    if (cell.colIdx < 0) return { before: producersOf(cell.rowIdx), after: consumersOf(cell.rowIdx) }
+    if (cell.char === '.' && cell.waitDetail?.reason === 'data') return { before: [...new Set(cell.waitDetail.dependencies ?? [])], after: [] }
+    if (cell.char === '-') { const b = retireBlocker(cell); return { before: b ? [b.rowIdx] : [], after: [] } }
+    if (cell.char === '*' && cell.waitDetail?.reason === 'ports') return { before: portConflict(cell).conflicts.map(c => c.row), after: [] }
+    if (cell.char === 'E' && execCycleOf(cell) === 1) return { before: producersOf(cell.rowIdx), after: [] }
+    if (cell.char === 'W') return { before: [], after: consumersOf(cell.rowIdx) }
+    return none
   }
+  // the window of rows: all of them if they fit; else its own row first, then the rows it depends
+  // on (the oldest that fit), then the rows that depend on it
   function showRelatedRows(cell) {
-    const slots = [cell.rowIdx, ...relatedRows(cell)].map(r => slotOfRow[r]).filter(s => s >= 0)
-    if (slots.length < 2) return
-    const top = Math.min(...slots), own = slotOfRow[cell.rowIdx], visible = Math.max(1, visibleRowCount() - 1)
-    let first = Math.min(scrollRow.value, top)
-    if (own >= first + visible) first = own - visible + 1
+    const { before, after } = relatedRows(cell)
+    const slotsOf = (rows) => rows.map(r => slotOfRow[r]).filter(s => s !== undefined && s >= 0)
+    const own = slotOfRow[cell.rowIdx]
+    const up = slotsOf(before), down = slotsOf(after)
+    if (own === undefined || own < 0 || (!up.length && !down.length)) return
+    const visible = Math.max(1, visibleRowCount() - 1)
+    const top = Math.min(own, ...up), bottom = Math.max(own, ...down)
+    let first = scrollRow.value
+    if (bottom - top < visible) {                 // everything fits: the least movement
+      if (top < first) first = top
+      if (bottom >= first + visible) first = bottom - visible + 1
+    } else {                                      // its own row and the rows it depends on (as many as fit)
+      first = Math.max(top, own - visible + 1)
+    }
     first = Math.max(0, Math.min(first, maxScrollRow()))
     if (first !== scrollRow.value) {
       scrollRow.value = first
@@ -2669,12 +2702,16 @@
   function instructionTooltipLines(cell) {
     const port = cell.port !== null && cell.port !== undefined ? `P${cell.port}` : '–'
     const lat  = Number.isFinite(cell.latency) ? cell.latency : '–'
+    // one line per item (the panel of details); the identification of the instruction is marked
+    // (ident): the status line does not repeat it, the first column shows it
+    const ident = (line) => Object.assign(line, { ident: true })
     const lines = [
-      [{ text: `[${cell.iter},${cell.instrIdx}] `, kind: 'id' },
-       { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' },
-       ...(Number.isFinite(cell.rep) && (simState.simulatedProcess?.rep ?? 1) > 1
-         ? [{ text: ` · ${t('call {k}', { k: cell.rep + 1 })}`, kind: 'id' }] : [])],
-      [{ text: t('Port: {p}', { p: port }) + ' · ' + t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
+      ident([{ text: `[${cell.iter},${cell.instrIdx}] `, kind: 'id' },
+             { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' }]),
+      ...(Number.isFinite(cell.rep) && (simState.simulatedProcess?.rep ?? 1) > 1
+        ? [ident([{ text: t('call {k}', { k: cell.rep + 1 }), kind: 'id' }])] : []),
+      [{ text: t('Port: {p}', { p: port }), kind: 'perf' }],
+      [{ text: t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
     ]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
       lines.push([{ text: `${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`, kind: 'mem' }])
@@ -2790,7 +2827,9 @@
         </div>
         <template v-if="pinned">
           <div class="details-title">{{ pinned.title }}</div>
-          <div v-if="pinned.cycle !== null" class="details-cycle">{{ t('Cycle {c}', { c: pinned.cycle }) }}<span v-if="pinned.state"> · {{ pinned.state }}</span></div>
+          <!-- (one line per part: the parts of the status line are separated by ' · ') -->
+          <div v-if="pinned.cycle !== null" class="details-cycle">{{ t('Cycle {c}', { c: pinned.cycle }) }}</div>
+          <div v-for="(part, i) in String(pinned.state ?? '').split(' · ').filter(Boolean)" :key="'state' + i" class="details-cycle">{{ part }}</div>
           <p v-if="pinned.text" class="details-text">{{ pinned.text }}</p>
           <div v-if="pinned.lines.length" class="details-lines">
             <div v-for="(line, i) in pinned.lines" :key="i">
