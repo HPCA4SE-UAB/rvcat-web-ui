@@ -41,7 +41,16 @@ export function criticalCauses(timeline, targetRow) {
 
   const cells = new Map()
   const links = []
-  const mark = (r, col) => { if (!cells.has(r)) cells.set(r, new Set()); cells.get(r).add(col) }
+  // the steps of the walk, backwards: { row, col, next } (next: the kind of the link from this cell
+  // to the later one; null: the later one is the next cell of the same row)
+  const steps = []
+  let nextKind = null
+  const mark = (r, col) => {
+    if (!cells.has(r)) cells.set(r, new Set())
+    cells.get(r).add(col)
+    steps.push({ row: r, col, next: nextKind })
+    nextKind = null
+  }
   let gaps = 0
   let row = targetRow, col = colOf(targetRow, 'R')
   if (col === null) return null
@@ -49,6 +58,7 @@ export function criticalCauses(timeline, targetRow) {
     if (r === null || r === undefined || r < 0 || r >= rows.length || c === null || c === undefined) return false
     if (c > col || (c === col && r >= row)) return false            // (only backwards: it must end)
     links.push({ from: { row: r, col: c }, to: { row, col }, kind })
+    nextKind = kind
     if (c < col - 1) gaps += col - 1 - c
     row = r
     col = c
@@ -113,7 +123,45 @@ export function criticalCauses(timeline, targetRow) {
     if (col <= start(row)) break             // (nothing before: the path cannot go on)
     inRow()
   }
-  return { cells, links, gaps }
+  return { cells, links, gaps, steps }
+}
+
+// What the time of the critical path goes to: each cycle that the path advances, from a cell to the
+// next one (forwards), is due to the execution of an instruction (its E, and the cycle after the
+// result of a producer: a chain of data is the execution of its instructions), to the memory (the
+// waits ! 2 : @, a freed fill buffer, the miss of a block), to a port, or to the dispatch, the retire,
+// the ROB, the store buffer or a branch. Returns { total, groups: [{ kind, cycles, parts: [{ key, cycles }] }] }
+// (parts: by instruction of the program for execution and memory, by port for port), largest first.
+const LINK_GROUP = { port: 'port', fill: 'memory', block: 'memory', dispatch: 'dispatch', retire: 'retire',
+                     rob: 'rob', sb: 'sb', branch: 'branch' }
+export function criticalSummary(timeline, path) {
+  const rows = timeline?.instructions ?? []
+  const steps = path?.steps ?? []
+  const groups = new Map()
+  let total = 0
+  const add = (kind, key, cycles) => {
+    if (!groups.has(kind)) groups.set(kind, { kind, cycles: 0, parts: new Map() })
+    const g = groups.get(kind)
+    g.cycles += cycles
+    g.parts.set(key, (g.parts.get(key) ?? 0) + cycles)
+    total += cycles
+  }
+  for (let i = steps.length - 1; i > 0; i--) {          // forwards: from steps[i] to steps[i - 1]
+    const from = steps[i], to = steps[i - 1]
+    const cycles = to.col - from.col
+    if (cycles <= 0) continue
+    const row = rows[to.row]
+    const ch = row[4][to.col - row[2]] ?? ' '
+    const kind = from.next && from.next !== 'data' ? LINK_GROUP[from.next] ?? 'other'
+               : WAITS_MEMORY.includes(ch) ? 'memory'
+               : ch === 'R' ? 'retire'
+               : ch === 'D' ? 'dispatch'
+               : 'execution'
+    add(kind, kind === 'port' ? row[3] : kind === 'execution' || kind === 'memory' ? row[1] : '', cycles)
+  }
+  const list = [...groups.values()].sort((a, b) => b.cycles - a.cycles)
+  for (const g of list) g.parts = [...g.parts].map(([key, cycles]) => ({ key, cycles })).sort((a, b) => b.cycles - a.cycles)
+  return { total, groups: list }
 }
 
 // The critical cells of each row, as offsets from its dispatch (the format of the timeline)

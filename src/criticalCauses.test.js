@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { criticalCauses } from './criticalCauses'
+import { criticalCauses, criticalSummary } from './criticalCauses'
 import { findLastRetiredInstructionIndex } from './criticalPath'
 import latency from './fixtures/timeline-latency.json'
 import ports from './fixtures/timeline-ports.json'
@@ -36,5 +36,29 @@ describe('critical path from the causes', () => {
       const k = kinds(path(data))
       expect(k.has('fill') || k.has('rob') || k.has('block')).toBe(true)
     }
+  })
+})
+
+describe('what the time of the critical path goes to', () => {
+  const summary = (data) => criticalSummary(data.timeline, path(data))
+  const top = (data) => summary(data).groups[0]
+  for (const [name, data] of Object.entries({ latency, ports, memory, dynamic })) {
+    it(`${name}: all the cycles, up to the last retire`, () => {
+      const t = data.timeline
+      const last = findLastRetiredInstructionIndex(t.instructions, t.cycles)
+      const [, , start, , states] = t.instructions[last]
+      expect(summary(data).total).toBe(start + states.indexOf('R'))
+    })
+  }
+  it('the recurrence of a sum: the execution of the sums', () => {
+    const g = top(latency)
+    expect(g.kind).toBe('execution')
+    expect([1, 3]).toContain(g.parts[0].key)          // sum = sum + t0 / t1
+  })
+  it('one load port: the port', () => {
+    expect(top(ports).kind).toBe('port')
+  })
+  it('misses: the memory', () => {
+    expect(top(memory).kind).toBe('memory')
   })
 })

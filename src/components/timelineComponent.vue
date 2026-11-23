@@ -18,7 +18,7 @@
     computeInstructionCriticalPercentages,
     findLastRetiredInstructionIndex
   } from '@/criticalPath'
-  import { criticalCauses, criticalOffsets } from '@/criticalCauses'
+  import { criticalCauses, criticalOffsets, criticalSummary } from '@/criticalCauses'
   import { useRVCAT_Api }                                     from '@/rvcatAPI'
 
   const { getTimeline }     = useRVCAT_Api()
@@ -1272,12 +1272,31 @@
       const compactView = isCompact()
       if (criticalOnlyView() && criticalLinksOfRow) stats.push(t('critical path: {n} instructions', { n: shownRows.filter(r => r >= 0).length }))
       else if (compactView) stats.push(t('{n} of {m} instr. shown', { n: simState.timelineShownNow.length, m: staticCount }))
+      // what the time of the critical path goes to (from the causes): brief in the status line, in
+      // detail (per iteration, by instruction or port) in the panel of details
+      const pathLines = []
+      const summary = visibleCriticalPath?.causes ? criticalSummary(timeline.value, visibleCriticalPath.causes) : null
+      if (summary?.total) {
+        const pct = (c) => Math.round(100 * c / summary.total)
+        const main = summary.groups.filter(g => pct(g.cycles) >= 5).slice(0, 3)
+        stats.push(t('path: {list}', { list: main.map(g => `${pathGroupName(g.kind)} ${pct(g.cycles)}%`).join(', ') }))
+        // (the parts add up to the cycles per iteration of the corner: the same fraction of them)
+        const perIteration = (c) => (iterations ? ` (${t('{c} cycles/iteration', { c: (c / summary.total * (iterationsEnd + 1) / iterations).toFixed(2) })})` : '')
+        pathLines.push([{ text: t('The critical path ({c} cycles) goes to:', { c: summary.total }), kind: 'note' }])
+        for (const g of summary.groups.filter(x => pct(x.cycles) >= 1)) {
+          pathLines.push([{ text: `${pathGroupName(g.kind)}: ${pct(g.cycles)}%${perIteration(g.cycles)}`, kind: 'perf', chip: PATH_CHIPS[g.kind] ?? 'blocker' }])
+          if (['execution', 'memory', 'port'].includes(g.kind))
+            for (const part of g.parts.filter(x => pct(x.cycles) >= 3).slice(0, 4))
+              pathLines.push([{ text: `   ${g.kind === 'port' ? `P${part.key}` : `${part.key} ${instrAt(part.key)?.text ?? ''}`}: ${pct(part.cycles)}%${perIteration(part.cycles)}`, kind: 'instr' }])
+        }
+      }
       interactiveCells.push({
         x: padX, y: padY, width: labelW, colIdx: -1, rowIdx: -1, cellType: 'corner',
         ...summaryCell({ title: t('Timeline'), stats,
           explain: t('The whole timeline: the simulation of the first instructions of the program (at most {n} retired). IPC: instructions retired per cycle, up to the last one retired. Cycles per iteration: up to the last iteration retired, over the iterations retired (the first ones include the time to fill the pipeline).', { n: compactView ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT }) +
             (compactView ? ' ' + t('Compact view: only the instructions ticked in the Program panel are shown (by default, the ones with at least {p}% of the critical path).', { p: COMPACT_CRITICAL_MIN }) : '') }),
         tooltip: stats.join(' · '),        // (the status line: only the statistics)
+        pathLines,
       })
     }
     // the oldest store of the store buffer: what it waits for (head_state of RVCAT)
@@ -1689,6 +1708,13 @@
     drawSelectedCell()
   }
 
+  // the kinds of time of the critical path (criticalSummary), and the colour of their chips
+  const PATH_CHIPS = { execution: 'producer', memory: 'memory', port: 'port', dispatch: 'consumer', retire: 'blocker',
+                       rob: 'blocker', sb: 'blocker', branch: 'blocker' }
+  function pathGroupName(kind) {
+    return { execution: t('execution'), memory: t('memory'), port: t('ports'), dispatch: t('dispatch'), retire: t('retire'),
+             rob: 'ROB', sb: t('store buffer'), branch: t('branches') }[kind] ?? kind
+  }
   // ---- Critical path only (compact view): the links between its rows, and the bands of the ROB ----
   // link: { kind, from: { row, col }, to: { row, col } }: the cell of the instruction that held the
   // other one back, and the cell of the one held back
@@ -2499,7 +2525,8 @@
   }  function buildDetails(cell) {
     if (cell.explain !== undefined) {        // the first column of the resources, and the corner
       return { title: cell.title, cycle: null, state: '', text: cell.explain,
-               lines: (cell.stats ?? []).map(s => [{ text: s, kind: 'perf' }]), info: [] }
+               lines: [...(cell.stats ?? []).filter(s => !s.startsWith(t('path: {list}', { list: '' }))).map(s => [{ text: s, kind: 'perf' }]),
+                       ...(cell.pathLines ?? [])], info: [] }
     }
     if (cell.cellType === 'resource-cycle') {  // a cycle of a resource: what it holds, and what the row shows
       const label = interactiveCells.find(c => c.colIdx === -1 && c.rowIdx === -2 && c.resourceIndex === cell.resourceIndex)
