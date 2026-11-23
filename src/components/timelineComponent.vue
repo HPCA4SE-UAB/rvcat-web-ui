@@ -66,16 +66,18 @@
   // The width of the cells of the compact view (1 to 5 px) adapts to the timeline: the rows that
   // fit in the height of the window fit also in its width (see compactCellWidth)
   let compactCellW = null
+  let compactIdChars = 6           // the longest identifier of an instruction (the first column)
   const compactMaxCellW = (k) => Math.max(4, Math.round(8 * k))
-  // cells of the compact view: 18 px high; the first column, as wide as "Memory" (the numbers of
-  // the instructions are centred)
+  // cells of the compact view: 18 px high; the first column, as wide as the longest identifier of an
+  // instruction or "Memory"
   function compactBase(k) {
     const font = Math.round(13 * k)
-    return { font, cellH: Math.round(18 * k), labelW: Math.round(font * 0.62 * 6) + Math.round(10 * k) }
+    return { font, cellH: Math.round(18 * k), labelW: Math.round(font * 0.62 * compactIdChars) + Math.round(10 * k) }
   }
   function timelineGeometry() {
     const k = Math.max(0.75, (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16)
     if (isCompact()) {
+      // (the first column: the names of the resources and the identifiers of the instructions)
       const { font, cellH, labelW } = compactBase(k)
       return { k, font, cellW: compactCellW ?? compactMaxCellW(k), cellH, labelW }
     }
@@ -591,21 +593,7 @@
       else if (x1 > scrollX + bodyW) scrollX = x1 - bodyW + 2 * cellW
     }
     scrollX = Math.max(0, Math.min(scrollX, worldW - w))
-    // the enlarged first cell of the instruction pointed (drawLabelFocus) must not hide its first
-    // cells: the cycles move to the right, and if they cannot (the first cycles), a gap opens between
-    // the first column and the cycles
     view.gap = 0
-    const focusSlot = labelFocusRow === null ? -1 : (slotOfRow[labelFocusRow] ?? -1)
-    if (focusSlot >= scrollRow.value && focusSlot < scrollRow.value + visibleRowCount()) {
-      const m = canvas.getContext('2d')
-      m.font = `bold ${fontSize}px monospace`
-      const labelEnd = padX + Math.max(labelW, m.measureText(rowLabelText(labelFocusRow)).width + 8) + 4
-      const startX = timeline.value.instructions[labelFocusRow][2] * cellW     // its D, in the world
-      if (view.leftW + startX - scrollX < labelEnd) {
-        scrollX = Math.max(0, startX - (labelEnd - view.leftW))
-        view.gap = Math.max(0, labelEnd - (view.leftW + startX - scrollX))
-      }
-    }
     view.scrollX = scrollX
     for (const [target, source] of [[canvas, worldCanvas], [overlay, worldOverlay]]) {
       if (target.width !== w || target.height !== h) {
@@ -644,11 +632,21 @@
   // header), with the iteration, the call of the loop (repetitions) and the text. It is drawn on the
   // visible canvas: it can be wider than the first column
   let labelFocusRow = null
+  // The identifier of a row: [iteration,instruction](repetition), the iteration counted in its call
+  // of the loop (from 0 in each repetition); the repetition, only with repetitions (from 0)
+  let localIterOfRow = []
+  function instrId(row) {
+    const r = timeline.value?.instructions?.[row]
+    if (!r) return `#${row}`
+    const rep = r[7]?.rep
+    const call = Number.isFinite(rep) && (simState.simulatedProcess?.rep ?? 1) > 1 ? `(${rep})` : ''
+    return `[${localIterOfRow[row] ?? r[0]},${r[1]}]${call}`
+  }
+  // the enlarged first cell: the text of the instruction (detailed view) or its identifier (compact
+  // view); the other one goes at the start of the status line
   function rowLabelText(row) {
-    const h = interactiveCells.find(c => !c.cellType && c.rowIdx === row && c.colIdx === -1)
-    if (!h) return ''
-    const call = Number.isFinite(h.rep) && (simState.simulatedProcess?.rep ?? 1) > 1 ? `(${h.rep + 1})` : ''
-    return `[${h.iter},${h.instrIdx}]${call} ${h.instructionText ?? ''}`.trim()
+    if (isCompact()) return instrId(row)
+    return interactiveCells.find(c => !c.cellType && c.rowIdx === row && c.colIdx === -1)?.instructionText ?? ''
   }
   function drawLabelFocus(c) {
     if (labelFocusRow === null || slotOfRow[labelFocusRow] === undefined || slotOfRow[labelFocusRow] < 0) return
@@ -658,14 +656,17 @@
     c.save()
     c.font = `bold ${fontSize}px monospace`
     c.textBaseline = 'top'
-    const w = Math.max(labelW, c.measureText(text).width + 8)
+    // (as wide as the first column: the timeline does not move; a long text is cut with …)
+    const w = labelW
+    let shown = text
+    while (shown.length > 1 && c.measureText(shown).width > w - 8) shown = shown.slice(0, -2) + '…'
     c.fillStyle = '#fff3c4'
     c.strokeStyle = '#c79100'
     c.lineWidth = 1.5
     c.fillRect(padX, y, w, cellH)
     c.strokeRect(padX, y, w, cellH)
     c.fillStyle = '#000'
-    c.fillText(text, padX + 4, y + fontYOffset)
+    c.fillText(shown, padX + 4, y + fontYOffset)
     c.restore()
   }
 
@@ -759,6 +760,16 @@
     const viewportHeight = wrapper.clientHeight
 
     const { cycles, instructions, portUsageInstr, portUsageInstrByPort } = timeline.value
+    // the iteration of each row in its call of the loop (repetitions): from 0 in each one
+    {
+      const firstIter = new Map()
+      for (const [it, , , , , , , flags] of instructions) {
+        const k = flags?.rep ?? 0
+        if (it >= 0 && (!firstIter.has(k) || it < firstIter.get(k))) firstIter.set(k, it)
+      }
+      localIterOfRow = instructions.map(([it, , , , , , , flags]) => (it >= 0 ? it - (firstIter.get(flags?.rep ?? 0) ?? 0) : it))
+      compactIdChars = Math.max(6, ...instructions.map((_, r) => instrId(r).length))
+    }
     const portByInstructionCycle = new Map()
     for (const [port, cycleRows] of Object.entries(portUsageInstrByPort ?? {})) {
       cycleRows.forEach((rows, cycle) => {
@@ -1123,7 +1134,7 @@
     // The first column of the rows of the resources (and the corner): a summary of the whole row
     // (title and brief statistics, for the status line) and what the row shows (panel of details)
     const C = totalCycles
-    const rowId = (r) => (instructions[r] ? `[${instructions[r][0]},${instructions[r][1]}]` : `#${r}`)
+    const rowId = (r) => instrId(r)
     // a row that waits for its block in a cycle (! 2 : @): the lists of waiting instructions give only
     // the ones that have already missed (not the ones that will miss later); a STORE that has retired
     // waits in the store buffer
@@ -1435,13 +1446,13 @@
             : resource.port !== null && resource.port !== undefined
             ? linkedInstructionRows.length
               ? t('P{p}: used by {list}', { p: resource.port,
-                  list: linkedInstructionRows.map(row => `[${instructions[row]?.[0]},${instructions[row]?.[1]}]`).join(', ') })
+                  list: linkedInstructionRows.map(row => instrId(row)).join(', ') })
               : t('P{p}: free', { p: resource.port })
             : !memoryRequests.length
             ? t('MM: no transfer')
             : memoryRequests
                 .map(({ operation, address, instruction_index: own, instruction_indices: waiting, cycle: start, duration }) => {
-                  const busCycle = ` · ${t('bus cycle {k} of {d}', { k: cycle - start + 1, d: duration })}`
+                  const busCycle = ` · ${t('bus cycle {k} of {d} (memory issue time)', { k: cycle - start + 1, d: duration })}`
                   if (operation === 'write')
                     return t('Write dirty block at addr {a}', { a: address }) + busCycle
                   // (only the instructions that have already missed: the next ones join it later)
@@ -1451,9 +1462,8 @@
                          (who.length ? ' (' + t('for {list}', { list: who.map(rowId).join(', ') }) + ')' : '') + busCycle
                 })
                 .join('\n') +
-              // why the bus is busy m cycles, and why the data is not there at the end of them
-              ' · ' + t('the bus is busy {m} cycles with each block (memory issue time); a block reaches its fill buffer {p} cycles after its request (miss penalty)',
-                        { m: simState.simulatedProcess?.mIssueTime, p: simState.simulatedProcess?.mPenalty })
+              // why the data is not there at the end of the m cycles of the bus
+              '; ' + t('minimum time-to-use is {p} cycles (miss penalty)', { p: simState.simulatedProcess?.mPenalty })
         })
       }
     }
@@ -2240,7 +2250,7 @@
   // ---- Texts: a line for the status bar, and the explanation of the panel of details ----
   const rowName = (row) => {
     const h = interactiveCells.find(c => c.rowIdx === row && c.colIdx === -1)
-    return h ? `[${h.iter},${h.instrIdx}] ${h.instructionText ?? ''}`.trim() : `#${row}`
+    return h ? `${instrId(row)} ${h.instructionText ?? ''}`.trim() : `#${row}`
   }
   function execCycleOf(cell) {
     let k = 1
@@ -2383,9 +2393,15 @@
   const statusText = computed(() => {
     // (the cycle and the instruction are not repeated: the header and the first column show them;
     // the parts are separated by a semicolon with spaces, the middle dot is a symbol of the timeline)
+    // An instruction (its first cell or another one): first its identifier (detailed view: the first
+    // column shows its text) or its text (compact view: the first column shows its identifier)
     const h = hoverInfo.value
     if (!h?.state) return ''
-    return String(h.state).split(' · ').join(STATUS_SEPARATOR)
+    const parts = String(h.state).split(' · ')
+    const c = h.cell
+    if (c && !c.cellType && c.rowIdx >= 0)
+      parts.unshift(isCompact() ? (c.instructionText ?? instrAt(c.instrIdx)?.text ?? '') : instrId(c.rowIdx))
+    return parts.filter(Boolean).join(STATUS_SEPARATOR)
   })
 
   // A pinned cell that waits for other instructions (data, a port, an older one to retire): the
@@ -2649,7 +2665,7 @@
     const conflicts = (cell.waitDetail?.ports ?? []).flatMap(p => owners(p).map(row => ({ port: p, row })))
     return { c, conflicts }
   }
-  const label = (row) => { const h = rowHeaderCell(row); return h ? `[${h.iter},${h.instrIdx}]` : `#${row}` }
+  const label = (row) => instrId(row)
   function portConflictLines(cell) {
     if (cell?.char !== '*' || cell.waitDetail?.reason !== 'ports') return null
     const { conflicts } = portConflict(cell)
@@ -2706,10 +2722,8 @@
     // (ident): the status line does not repeat it, the first column shows it
     const ident = (line) => Object.assign(line, { ident: true })
     const lines = [
-      ident([{ text: `[${cell.iter},${cell.instrIdx}] `, kind: 'id' },
+      ident([{ text: `${instrId(cell.rowIdx)} `, kind: 'id' },
              { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' }]),
-      ...(Number.isFinite(cell.rep) && (simState.simulatedProcess?.rep ?? 1) > 1
-        ? [ident([{ text: t('call {k}', { k: cell.rep + 1 }), kind: 'id' }])] : []),
       [{ text: t('Port: {p}', { p: port }), kind: 'perf' }],
       [{ text: t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
     ]

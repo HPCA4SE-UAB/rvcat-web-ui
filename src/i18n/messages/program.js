@@ -69,7 +69,6 @@ export default {
   "Primary misses of each call: {list}": { es: "Fallos primarios de cada llamada: {list}", ca: "Fallades primàries de cada crida: {list}" },
   "1st": { es: "1.ª", ca: "1a" },
   "next": { es: "siguientes", ca: "següents" },
-  "call {k}": { es: "llamada {k}", ca: "crida {k}" },
   "Instruction {j} of the block has no type": { es: "La instrucción {j} del bloque no tiene tipo", ca: "La instrucció {j} del bloc no té tipus" },
   "Run the whole loop several times (calls of the function), and a block of instructions after each call. help: Repetitions": { es: "Ejecutar todo el bucle varias veces (llamadas de la función), y un bloque de instrucciones después de cada llamada. Ayuda: Repeticiones", ca: "Executar tot el bucle diverses vegades (crides de la funció), i un bloc d'instruccions després de cada crida. Ajuda: Repeticions" },
   "Repetitions of the loop and block after each call": { es: "Repeticiones del bucle y bloque después de cada llamada", ca: "Repeticions del bucle i bloc després de cada crida" },
