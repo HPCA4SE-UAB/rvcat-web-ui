@@ -987,6 +987,8 @@
             graph,
             target: visibleRetiredIndex,
             causes,
+            // (the other views: the link that reaches each cell of the path, see causeOfCell)
+            linkAt: causes ? new Map(causes.links.map(l => [`${l.to.row}:${l.to.col}`, l])) : null,
             cycles: causes ? criticalOffsets(timeline.value, causes) : computeCriticalCycles(graph, instructions, visibleRetiredIndex)
           }
         }
@@ -1764,35 +1766,49 @@
       ctx.fillText(text, x, y + Math.max(0, Math.round((cellH - fontSize) / 2)))
     }
     // the links: from the cell of the one that held back to the cell of the one held back
-    for (const [row, link] of criticalLinksOfRow) {
-      if (!(slotOfRow[row] >= 0) || !(slotOfRow[link.from.row] >= 0)) continue
-      const forward = link.from.col < link.to.col
-      const x1 = colX(link.from.col) + (forward ? cellW : cellW / 2)
-      const x2 = colX(link.to.col) + (forward ? 0 : cellW / 2)
-      const y1 = rowTop(link.from.row) + cellH / 2, y2 = rowTop(row) + cellH / 2
-      const color = LINK_COLORS[link.kind] ?? LINK_COLORS.other
-      ctx.strokeStyle = color
-      ctx.fillStyle = color
-      ctx.lineWidth = 1.5
-      ctx.setLineDash(link.kind === 'rob' ? [5, 3] : [])
-      ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.bezierCurveTo(x1 + Math.max(6, (x2 - x1) / 2), y1, x2 - Math.max(6, (x2 - x1) / 2), y2, x2, y2)
-      ctx.stroke()
-      ctx.setLineDash([])
-      ctx.beginPath()                       // the head of the arrow
-      ctx.moveTo(x2, y2)
-      ctx.lineTo(x2 - 6, y2 - 3.5)
-      ctx.lineTo(x2 - 6, y2 + 3.5)
-      ctx.closePath()
-      ctx.fill()
-    }
+    for (const link of criticalLinksOfRow.values()) drawLinkArrow(ctx, link)
+    ctx.restore()
+  }
+  // an arrow from the cell that held back to the cell held back (the colour of its kind)
+  function drawLinkArrow(ctx, link) {
+    const colX = (col) => padX + labelW + col * cellW
+    const row = link.to.row
+    if (!(slotOfRow[row] >= 0) || !(slotOfRow[link.from.row] >= 0)) return
+    const forward = link.from.col < link.to.col
+    const x1 = colX(link.from.col) + (forward ? cellW : cellW / 2)
+    const x2 = colX(link.to.col) + (forward ? 0 : cellW / 2)
+    const y1 = rowTop(link.from.row) + cellH / 2, y2 = rowTop(row) + cellH / 2
+    const color = LINK_COLORS[link.kind] ?? LINK_COLORS.other
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    ctx.lineWidth = 1.5
+    ctx.setLineDash(link.kind === 'rob' ? [5, 3] : [])
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.bezierCurveTo(x1 + Math.max(6, (x2 - x1) / 2), y1, x2 - Math.max(6, (x2 - x1) / 2), y2, x2, y2)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.beginPath()                       // the head of the arrow
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(x2 - 6, y2 - 3.5)
+    ctx.lineTo(x2 - 6, y2 + 3.5)
+    ctx.closePath()
+    ctx.fill()
     ctx.restore()
   }
   // the link of a row of the critical path with the instruction that held it back, explained
   function criticalLinkText(row) {
     const link = criticalOnlyView() ? criticalLinksOfRow?.get(row) : null
-    if (!link) return ''
+    return link ? linkText(link) : ''
+  }
+  // The other views (V2): a cell of the critical path reached from another instruction (the one
+  // that held it back): its link (null: it follows its own instruction, or it is not critical)
+  function causeOfCell(cell) {
+    if (criticalOnlyView() || !cell || cell.cellType || cell.colIdx < 0 || !cell.critical) return null
+    return visibleCriticalPath?.linkAt?.get(`${cell.rowIdx}:${cell.colIdx}`) ?? null
+  }
+  function linkText(link) {
     const from = link.from.row
     const a = instrId(from), p = simState.simulatedProcess ?? {}
     switch (link.kind) {
@@ -2344,13 +2360,20 @@
       cycle: rowHeader ? null : col,
       // (an instruction: its port, latency and address; its name is in the first column)
       state: [rowHeader ? instructionTooltipLines(cell).filter(line => !line.ident).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
-              criticalLinkText(row)].filter(Boolean).join(' · '),     // (critical path only: its link with the previous row)
+              criticalLinkText(row),                // (critical path only: its link with the previous row)
+              causeOfCell(cell) ? linkText(causeOfCell(cell)) : ''].filter(Boolean).join(' · '),   // (other views: a cell of the path)
     }
     drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
     showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
     const ctx = overlayContext()
     if (!ctx) return
     markRowLabel(ctx, row, 'self')
+    // a cell of the critical path held back by another instruction: the arrow from the cell of that one
+    const cause = causeOfCell(cell)
+    if (cause) {
+      drawLinkArrow(ctx, cause)
+      markRect(ctx, padX + labelW + cause.from.col * cellW, rowTop(cause.from.row), cellW, 'producer')
+    }
     if (rowHeader) {                       // the instruction: where its data come from, and where its result goes
       markMemory(ctx, row)
       const names = markProducers(ctx, row)
@@ -2554,7 +2577,7 @@
       lines.push(b ? [{ text: t('blocked by') + ' ', kind: 'perf', chip: 'blocker' }, { text: rowName(b.rowIdx), kind: 'instr' }]
                    : [{ text: t('retire width: {n} per cycle', { n: simState.simulatedProcess?.retire }), kind: 'perf' }])
     }
-    const link = criticalLinkText(cell.rowIdx)
+    const link = criticalLinkText(cell.rowIdx) || (causeOfCell(cell) ? linkText(causeOfCell(cell)) : '')
     if (link) lines.push([{ text: link, kind: 'perf', chip: 'producer' }])
     const mem = memoryInfo(cell.rowIdx)
     if (mem) lines.push([{ text: memoryText(mem, cell.colIdx, cell.rowIdx), kind: 'mem', chip: 'memory' }])
