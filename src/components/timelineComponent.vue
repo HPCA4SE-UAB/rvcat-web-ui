@@ -1149,7 +1149,7 @@
         let sum = 0, max = 0
         for (let c = 0; c < C; c++) { sum += used(c); max = Math.max(max, used(c)) }
         return { title: 'SB',
-                 explain: t('The store buffer ({n} entries): each STORE takes an entry when it is dispatched and frees it when its data is written into the cache, after it retires (in program order). The bar shows how full it is; F: full, and the dispatch waits.', { n: resource.capacity }),
+                 explain: t('The store buffer ({n} entries): each STORE takes an entry when it is dispatched and frees it when its data is written into the cache, after it retires (in program order). The bar shows how full it is. The letter tells what the oldest store waits for: f a free fill buffer, ! another resource (a line, a write buffer, the MM bus), : its block, coming from MM; F: full, and the dispatch of a STORE waits.', { n: resource.capacity }),
                  stats: [t('{a} of {m} entries on average', { a: (C ? sum / C : 0).toFixed(1), m: resource.capacity }),
                          t('at most {n}', { n: max }),
                          t('full {p}', { p: pctOf(countCycles(c => used(c) >= resource.capacity)) })] }
@@ -1183,6 +1183,16 @@
       })
     }
 
+    // the oldest store of the store buffer: what it waits for (head_state of RVCAT)
+    const SB_HEAD_MARK = { queued_fill: 'f', queued_line: '!', queued_write: '!', waiting_writeback: '!', waiting_mm: '!', reading: ':' }
+    const SB_HEAD_TEXT = {
+      queued_fill:       'the oldest store {s} waits for a free fill buffer',
+      queued_line:       'the oldest store {s} waits for a free line of the cache',
+      queued_write:      'the oldest store {s} waits for a free write buffer',
+      waiting_writeback: 'the oldest store {s} waits until a dirty block is written into MM',
+      waiting_mm:        'the oldest store {s} waits for the MM bus',
+      reading:           'the block of the oldest store {s} is coming from MM',
+    }
     const inset = isCompact() ? 0 : 1          // (the compact view: cells of 1 to 5 px, no margin)
     const SUMMARY_COLORS = { ports: '#f0a35e', cache: '#9fb4d6', fill: '#c9a0dc', write: '#e79a9a' }
     for (const [resourceRowIndex, resource] of resourceRows.entries()) {
@@ -1295,7 +1305,9 @@
           ctx.fillRect(resourceX + inset, resourceY + cellH - 1 - h, cellW - 2 * inset, h)
         }
         if (resource.storeBuffer) {
-          if (sbUsed >= resource.capacity) marker = 'F'
+          // what the oldest store waits for to be written into the cache (f: a free fill buffer; !:
+          // another resource; :: its block is coming); else F: full
+          marker = SB_HEAD_MARK[sbSnap?.head_state] ?? (sbUsed >= resource.capacity ? 'F' : '')
         } else if (resource.bufferType === 'fill' && bufferEntry?.valid) {
           marker = 'R'
         } else if (resource.bufferType === 'write' && bufferEntry?.valid) {
@@ -1358,7 +1370,9 @@
           linkedResourceRows,
           tooltip: resource.storeBuffer
             ? t('Store buffer: {u} of {n} entries ({s} stores in the ROB, {r} retired waiting to be written into the cache)',
-                { u: sbUsed, n: resource.capacity, s: sbSnap?.stores ?? 0, r: sbSnap?.retired.length ?? 0 })
+                { u: sbUsed, n: resource.capacity, s: sbSnap?.stores ?? 0, r: sbSnap?.retired.length ?? 0 }) +
+              (sbSnap?.head_state && SB_HEAD_TEXT[sbSnap.head_state]
+                ? ' · ' + t(SB_HEAD_TEXT[sbSnap.head_state], { s: rowId(sbSnap.retired[0]) }) : '')
             : resource.bufferType && !bufferEntry?.valid
             ? t(resource.bufferType === 'fill' ? 'Fill buffer {i}: empty' : 'Write buffer {i}: empty', { i: resource.bufferIndex })
             : resource.bufferType === 'fill'
@@ -2261,8 +2275,8 @@
         ? t('Its operands are ready, but the issue width is full in this cycle.')
         : t('Its operands are ready, but every port that can execute it is busy in this cycle: the older instructions have priority (in orange, the ones that use them).')
       case '!': return cell.shown === 'f'
-        ? t('No fill buffer is free: the miss cannot request its block yet. The LOAD waits (it keeps its entries of the ROB and of the load queue, and the dispatch goes on); the misses get a fill buffer by age, when one is freed.')
-        : t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), by age; while it waits for a fill buffer, its cells show f (for the other resources, !). Then it waits for the block (:).')
+        ? t('No fill buffer is free: the miss cannot request its block yet. The LOAD waits (it keeps its entries of the ROB and of the load queue, and the dispatch goes on); the misses get a fill buffer in the order in which they were detected (the stores of the store buffer too), when one is freed.')
+        : t('Cache miss: its block is not in the cache. The miss is admitted when there are a free fill buffer and a free line of the cache (if the line holds a dirty block, a free write buffer too), in the order in which the misses were detected; while it waits for a fill buffer, its cells show f (for the other resources, !). Then it waits for the block (:).')
       case '2': return t('Secondary miss: its block is not in the cache, but an older miss to the same block has already been detected; it will share its fill buffer and waits for that block (! while that miss waits to be admitted, : while the block is coming).')
       case ':': return t('Its block is coming from the main memory (it has a fill buffer): it waits until the block arrives.')
       case '@': return t('Its block has arrived, but the return throughput of the cache limits how many waiting LOAD instructions receive their data per cycle: it waits its turn, by age.')
@@ -2506,7 +2520,8 @@
       if (firstMiss) return t('Cache MISS: block addr {a}', { a }) + ' · ' + cacheWaitText(detail)
     }
     if (cell.char === '@' && detail?.reason === 'cache-return')
-      return t('Wait for cache return: block addr {a}', { a: detail.block_address })
+      return t('Wait for the cache return (up to {n} per cycle from the fill buffers): block addr {a}',
+               { a: detail.block_address, n: simState.simulatedProcess?.rThru ?? 1 })
     if (cell.char === '.' && detail?.reason === 'data') {
       const dependencies = [...new Set(detail.dependencies ?? [])]
         .filter(index => timeline.value.instructions[index])
