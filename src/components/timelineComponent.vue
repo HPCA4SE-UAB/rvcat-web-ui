@@ -1616,24 +1616,34 @@
         }
         prevShownIter = iter
         const mid = y + Math.floor(cellH / 2)
+        // (no red: the critical path has its own view. In it, only the cells of the path are drawn
+        // and can be selected; the line from D to R stays)
+        const pathOnly = criticalOnlyView()
         for (let k = 0; k < states.length && startCycle + k < totalCycles; k++) {
           const i = startCycle + k, ch = states[k]
           const cell = cellOf(i, ch)
-          interactiveCells.push(cell)
-          const crit = cell.critical && timelineOptions.critical
           const cx = cell.x
+          if (pathOnly && !cell.critical) {
+            ctx.fillStyle = '#a8a8a8'
+            ctx.fillRect(cx, mid, cellW, 1)
+            continue
+          }
+          interactiveCells.push(cell)
           if (ch === 'E') {
-            ctx.fillStyle = crit ? '#d32f2f' : '#555'
+            ctx.fillStyle = '#555'
             ctx.fillRect(cx, y + 2, cellW, cellH - 4)
           } else if (['!', '2', ':', '@'].includes(ch)) {
-            ctx.fillStyle = crit ? '#7b1fa2' : '#c9a0dc'
+            ctx.fillStyle = '#c9a0dc'
             ctx.fillRect(cx, y + 3, cellW, cellH - 6)
           } else if (ch === 'W' && flags?.mispredicted) {
             ctx.fillStyle = '#ffd600'
             ctx.fillRect(cx, y, cellW, cellH)
+          } else if (pathOnly) {                 // a cell of the path that is not executing (D, R, a wait)
+            ctx.fillStyle = '#9e9e9e'
+            ctx.fillRect(cx, y + Math.round(cellH / 3), cellW, Math.max(2, Math.round(cellH / 3)))
           } else {
-            ctx.fillStyle = crit ? '#d32f2f' : '#a8a8a8'
-            ctx.fillRect(cx, crit ? mid - 1 : mid, cellW, crit ? 2 : 1)
+            ctx.fillStyle = '#a8a8a8'
+            ctx.fillRect(cx, mid, cellW, 1)
           }
         }
         continue
@@ -2514,8 +2524,11 @@
     // column shows its text) or its text (compact view: the first column shows its identifier)
     const h = hoverInfo.value
     if (!h?.state) return ''
-    const parts = String(h.state).split(' · ')
     const c = h.cell
+    if (criticalOnlyView() && c && !c.cellType && c.rowIdx >= 0)      // critical path: the instruction and its link
+      return [c.instructionText ?? instrAt(c.instrIdx)?.text ?? '', ...criticalLinkText(c.rowIdx).split(' · ')]
+        .filter(Boolean).join(STATUS_SEPARATOR)
+    const parts = String(h.state).split(' · ')
     if (c && !c.cellType && c.rowIdx >= 0)
       parts.unshift(isCompact() ? (c.instructionText ?? instrAt(c.instrIdx)?.text ?? '') : instrId(c.rowIdx))
     return parts.filter(Boolean).join(STATUS_SEPARATOR)
@@ -2934,7 +2947,8 @@
       <span v-if="statusText">{{ pinned ? '📌 ' : '' }}{{ statusText }}</span>
       <!-- critical path only: the colours of the links -->
       <span v-else-if="simState.timelineView === 'compact' && simState.timelineCriticalOnly" class="status-hint compact-legend">
-        <span class="cl" style="background:#d32f2f"></span>{{ t('critical') }}
+        <span class="cl" style="background:#555"></span>{{ t('execution (E)') }}
+        <span class="cl cl-half" style="background:#9e9e9e"></span>{{ t('other phase of the path') }}
         <span class="lk" style="color:#1565c0">→</span>{{ t('data') }}
         <span class="lk" style="color:#2e7d32">→</span>{{ t('dispatch in order') }}
         <span class="lk" style="color:#616161">→</span>{{ t('retire in order') }}
@@ -2943,9 +2957,7 @@
       </span>
       <span v-else-if="simState.timelineView === 'compact'" class="status-hint compact-legend">
         <span class="cl" style="background:#555"></span>{{ t('execution (E)') }}
-        <span class="cl" style="background:#d32f2f"></span>{{ t('critical') }}
-        <template v-if="cacheEnabled"><span class="cl" style="background:#c9a0dc"></span>{{ t('memory waits') }}
-          <span class="cl" style="background:#7b1fa2"></span>{{ t('critical') }}</template>
+        <template v-if="cacheEnabled"><span class="cl" style="background:#c9a0dc"></span>{{ t('memory waits') }}</template>
         <span class="cl" style="background:#ffd600"></span>{{ t('mispredicted branch') }}
         <span class="dbl">· {{ t('double click: detailed view') }}</span>
       </span>
@@ -3108,6 +3120,7 @@
     display: inline-block; width: 14px; height: 10px; margin: 0 4px 0 12px; vertical-align: middle; border-radius: 2px;
   }
   .compact-legend .cl:first-child { margin-left: 0; }
+  .compact-legend .cl-half { height: 5px; }
   .compact-legend .lk { margin: 0 3px 0 12px; font-weight: bold; }
   .compact-legend .dbl { margin-left: 12px; }
   .timeline-loading {
