@@ -620,8 +620,37 @@
         c.moveTo(leftW, 0); c.lineTo(leftW, h)
         c.stroke()
       }
+      if (target === overlay) drawLabelFocus(c)
     }
     drawMinimap()
+  }
+  // The instruction of the row pointed or pinned: its first cell, enlarged (like the cycle of the
+  // header), with the iteration, the call of the loop (repetitions) and the text. It is drawn on the
+  // visible canvas: it can be wider than the first column
+  let labelFocusRow = null
+  function rowLabelText(row) {
+    const h = interactiveCells.find(c => !c.cellType && c.rowIdx === row && c.colIdx === -1)
+    if (!h) return ''
+    const call = Number.isFinite(h.rep) && (simState.simulatedProcess?.rep ?? 1) > 1 ? `(${h.rep + 1})` : ''
+    return `[${h.iter},${h.instrIdx}]${call} ${h.instructionText ?? ''}`.trim()
+  }
+  function drawLabelFocus(c) {
+    if (labelFocusRow === null || slotOfRow[labelFocusRow] === undefined || slotOfRow[labelFocusRow] < 0) return
+    const y = rowTop(labelFocusRow) - view.scrollY
+    if (y < view.topH || y > view.h - cellH) return
+    const text = rowLabelText(labelFocusRow)
+    c.save()
+    c.font = `bold ${fontSize}px monospace`
+    c.textBaseline = 'top'
+    const w = Math.max(labelW, c.measureText(text).width + 8)
+    c.fillStyle = '#fff3c4'
+    c.strokeStyle = '#c79100'
+    c.lineWidth = 1.5
+    c.fillRect(padX, y, w, cellH)
+    c.strokeRect(padX, y, w, cellH)
+    c.fillStyle = '#000'
+    c.fillText(text, padX + 4, y + fontYOffset)
+    c.restore()
   }
 
   // screen point (in the visible canvas) -> point of the world
@@ -1958,6 +1987,7 @@
   }
 
   function resetSharedHighlights() {
+    labelFocusRow = null
     simState.instrHighlightedIdx = -1
     simState.dependenceHighlight = null
     simState.highlightedPort     = -1
@@ -2103,12 +2133,14 @@
     }
 
     const rowHeader = col === -1
+    labelFocusRow = row               // its first cell, enlarged (see drawLabelFocus)
     simState.instrHighlightedIdx = cell.instrIdx
     if (cell.char === 'E') simState.highlightedPort = cell.port
     hoverInfo.value = {
       cell,
       cycle: rowHeader ? null : col,
-      state: rowHeader ? instructionTooltipLines(cell).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
+      // (an instruction: its port, latency and address; its name is in the first column)
+      state: rowHeader ? instructionTooltipLines(cell).slice(1).map(line => line.map(part => part.text).join('')).join(' · ') : cellStatus(cell),
     }
     drawHoverOverlay(row, null, rowHeader ? row : cell.initRow, rowHeader ? 1 : cell.lengthRow, cell.initCol, cell.lengthCol)
     showDataDependences(rowHeader ? null : cell)      // '.' and '*': producers / port conflict
@@ -2237,7 +2269,7 @@
       }
       case '-': {
         const b = retireBlocker(cell)
-        return b ? t('Waits to retire: {who} has not finished', { who: rowName(b.rowIdx) })
+        return b ? t('Waits to retire: {who} has not finished', { who: label(b.rowIdx) })
                  : t('Waits to retire: the older instructions retire first (retire width {n})', { n: p.retire })
       }
       default: return formatProcessingTooltip(cell)
@@ -2331,19 +2363,40 @@
   }
 
   // status line: what the pointer (or the pinned cell) shows
+  const STATUS_SEPARATOR = '   ;   '
   const statusText = computed(() => {
+    // (the cycle and the instruction are not repeated: the header and the first column show them;
+    // the parts are separated by a semicolon with spaces, the middle dot is a symbol of the timeline)
     const h = hoverInfo.value
-    if (!h) return ''
-    const parts = []
-    if (h.cycle !== null && h.cycle !== undefined) parts.push(t('Cycle {c}', { c: h.cycle }))
-    if (h.cell && h.cell.colIdx >= 0) parts.push(rowName(h.cell.rowIdx))
-    if (h.state) parts.push(h.state)
-    return parts.join(' · ')
+    if (!h?.state) return ''
+    return String(h.state).split(' · ').join(STATUS_SEPARATOR)
   })
 
+  // A pinned cell that waits for other instructions (data, a port, an older one to retire): the
+  // timeline moves so that they are seen too, if they fit with it (the cell itself always stays)
+  function relatedRows(cell) {
+    if (cell.cellType || cell.rowIdx < 0 || cell.colIdx < 0) return []
+    if (cell.char === '.' && cell.waitDetail?.reason === 'data') return [...new Set(cell.waitDetail.dependencies ?? [])]
+    if (cell.char === '-') { const b = retireBlocker(cell); return b ? [b.rowIdx] : [] }
+    if (cell.char === '*' && cell.waitDetail?.reason === 'ports') return portConflict(cell).conflicts.map(c => c.row)
+    return []
+  }
+  function showRelatedRows(cell) {
+    const slots = [cell.rowIdx, ...relatedRows(cell)].map(r => slotOfRow[r]).filter(s => s >= 0)
+    if (slots.length < 2) return
+    const top = Math.min(...slots), own = slotOfRow[cell.rowIdx], visible = Math.max(1, visibleRowCount() - 1)
+    let first = Math.min(scrollRow.value, top)
+    if (own >= first + visible) first = own - visible + 1
+    first = Math.max(0, Math.min(first, maxScrollRow()))
+    if (first !== scrollRow.value) {
+      scrollRow.value = first
+      keepSelectionInView = true
+    }
+  }
   function pinCell(cell) {
     selectedCell.value = cell
     focusedCell = cell
+    showRelatedRows(cell)
     focusCell(cell)
     pinned.value = { cell, ...buildDetails(cell) }
     drawSelectedCell()
@@ -2529,9 +2582,10 @@
     if (cell.char === '.' && detail?.reason === 'data') {
       const dependencies = [...new Set(detail.dependencies ?? [])]
         .filter(index => timeline.value.instructions[index])
-        .map(index => rowName(index))
+        .map(index => label(index))
+      // (the instructions are emphasized in the timeline: only their identifiers)
       if (dependencies.length)
-        return t('Wait for data from {list}', { list: dependencies.join(', ') })
+        return t('Wait for data from the previous emphasized instructions ({list})', { list: dependencies.join(' & ') })
     }
     if (cell.char === '*' && detail?.reason === 'ports') {
       const ports = detail.ports.map(port => `P${port}`).join(', ')
@@ -2620,7 +2674,7 @@
        { text: cell.instructionText || t('Instruction description unavailable'), kind: 'instr' },
        ...(Number.isFinite(cell.rep) && (simState.simulatedProcess?.rep ?? 1) > 1
          ? [{ text: ` · ${t('call {k}', { k: cell.rep + 1 })}`, kind: 'id' }] : [])],
-      [{ text: `Port: ${port}; Lat: ${lat} c.`, kind: 'perf' }],
+      [{ text: t('Port: {p}', { p: port }) + ' · ' + t('Latency: {l} cycles', { l: lat }), kind: 'perf' }],
     ]
     if (cell.memoryOperation && Number.isFinite(cell.addr) && cell.addr >= 0)
       lines.push([{ text: `${cell.memoryOperation === 'Store to' ? 'STORE' : 'LOAD'} MEMORY address: ${cell.addr}`, kind: 'mem' }])
@@ -2748,10 +2802,9 @@
               <span v-for="(part, j) in line" :key="j" :class="`tt-${part.kind}`">{{ part.text }}</span>
             </div>
           </div>
-          <button class="details-release" @click="releasePin" :title="t('Release the pinned cell (also with Esc)')">{{ t('Release') }}</button>
         </template>
         <div v-else class="details-general">
-          <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click or Esc release it; the arrows select the neighbouring cell.') }}</p>
+          <p class="details-hint">{{ t('Point at a cell to see its relations; click it to pin it and read here what it means and what it depends on. A second click, a click outside the cells or Esc release it; the arrows select the neighbouring cell.') }}</p>
           <p class="details-hint">{{ t('Wheel: one row. Page Up / Page Down: one iteration. Minimap (right): the whole timeline. Click the name of a group of resources (Ports, Cache…) to show or hide its rows.') }}</p>
           <div class="details-legend">
             <div><b class="lt">D</b> {{ t('dispatch') }} · <b class="lt">E</b> {{ t('execute') }} · <b class="lt">W</b> {{ t('write the result') }} · <b class="lt">R</b> {{ t('retire') }}</div>
