@@ -1079,6 +1079,15 @@
     // (title and brief statistics, for the status line) and what the row shows (panel of details)
     const C = totalCycles
     const rowId = (r) => (instructions[r] ? `[${instructions[r][0]},${instructions[r][1]}]` : `#${r}`)
+    // a row that waits for its block in a cycle (! 2 : @): the lists of waiting instructions give only
+    // the ones that have already missed (not the ones that will miss later); a STORE that has retired
+    // waits in the store buffer
+    const waitingAt = (r, c) => {
+      const row = instructions[r]
+      if (!row) return false
+      const k = c - row[2]
+      return k >= 0 && (k >= row[4].length ? instrKind(row[1]) === 'store' : '!2:@'.includes(row[4][k]))
+    }
     const pctOf = (n, d = C) => `${(d > 0 ? 100 * n / d : 0).toFixed(1)}%`
     const countCycles = (f) => { let n = 0; for (let c = 0; c < C; c++) if (f(c)) n++; return n }
     const blocksIn = (address) => {          // blocks that enter: a valid address that changes
@@ -1354,20 +1363,15 @@
             ? t(resource.bufferType === 'fill' ? 'Fill buffer {i}: empty' : 'Write buffer {i}: empty', { i: resource.bufferIndex })
             : resource.bufferType === 'fill'
               ? t('Fill block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
-                `${bufferEntry.ready_cycle == null ? '' : '; ' + t('ready at cycle {c}', { c: bufferEntry.ready_cycle })}` +
-                `; ${t('waiting instructions {list}', { list: bufferEntry.instruction_indices.map(rowId).join(', ') })})`
+                ((list) => (list.length ? `; ${t('waiting instructions {list}', { list: list.map(rowId).join(', ') })}` : ''))(
+                  (bufferEntry.instruction_indices ?? []).filter(r => waitingAt(r, cycle))) + ')'
             : resource.bufferType === 'write'
-              ? t('Write dirty block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state}` +
-                `${bufferEntry.ready_cycle == null ? '' : '; ' + t('available at cycle {c}', { c: bufferEntry.ready_cycle })})`
+              ? t('Write dirty block at addr {a}', { a: bufferEntry.address }) + ` (${bufferEntry.state})`
             : resource.cacheLineIndex !== undefined
             ? !cacheLine?.valid
               ? t('Cache line {i}: empty', { i: resource.cacheLineIndex })
               : t('Block at addr {a}', { a: cacheLine.address }) + ` (${cacheLine.dirty ? t('dirty') : t('clean')}; ` +
-              `${cacheLine.loading
-                ? cacheLine.ready_cycle == null
-                  ? t('loading')
-                  : t('loading, ready at cycle {c}', { c: cacheLine.ready_cycle })
-                : t('ready')}; ` +
+              `${cacheLine.loading ? t('loading') : t('ready')}; ` +
                 `${t('LRU rank {r}', { r: cacheLine.lru })})`
             : resource.port !== null && resource.port !== undefined
             ? linkedInstructionRows.length
@@ -1380,7 +1384,9 @@
                 .map(({ operation, address, instruction_index: own, instruction_indices: waiting }) => {
                   if (operation === 'write')
                     return t('Write dirty block at addr {a}', { a: address })
-                  const who = [...new Set([own, ...(waiting ?? [])].filter(r => Number.isInteger(r) && r >= 0))]
+                  // (only the instructions that have already missed: the next ones join it later)
+                  const who = [...new Set([own, ...(waiting ?? [])].filter(r => Number.isInteger(r) && r >= 0 &&
+                                (waitingAt(r, cycle) || (r === own && operation === 'read_for_write'))))]
                   return t(operation === 'read_for_write' ? 'Read block for writing at addr {a}' : 'Read block at addr {a}', { a: address }) +
                          (who.length ? ' (' + t('for {list}', { list: who.map(rowId).join(', ') }) + ')' : '')
                 })
@@ -1773,13 +1779,13 @@
     }
     return m
   }
-  // A LOAD waiting for a fill: the cycle in which its block arrives (its fill buffer knows it)
-  function blockReadyCycle(row, col, block) {
-    for (const res of resourceDetail) {
-      const e = res.bufferType === 'fill' ? slotOf(res, col) : null
-      if (e?.valid && e.address === block && (e.instruction_indices ?? []).includes(row) && Number.isInteger(e.ready_cycle)) return e.ready_cycle
-    }
-    return null
+  // A LOAD waiting for a fill: the last cycle, up to this one, in which its block was requested from
+  // MM (null: not requested yet)
+  function blockRequestCycle(col, block) {
+    let last = null
+    for (const q of timeline.value?.resource_usage?.mm_requests ?? [])
+      if (q.operation !== 'write' && q.address === block && q.cycle <= col && (last === null || q.cycle > last)) last = q.cycle
+    return last
   }
   // A STORE: the cycle in which it is written from the store buffer into the cache (null: not in
   // the timeline). It is written in the cycle after the last one in which it waits in the store
@@ -2446,8 +2452,9 @@
         return t('Wait for MM issue slot for block at addr {a}', { a: detail.block_address })
       if (detail.buffer_state === 'waiting_writeback')
         return t('Wait for dirty writeback before filling block at addr {a}', { a: detail.block_address })
-      const ready = blockReadyCycle(cell.rowIdx, cell.colIdx, detail.block_address)
-      return t('Wait for block at addr {a}', { a: detail.block_address }) + (ready !== null ? ` (${t('it arrives in cycle {c}', { c: ready })})` : '')
+      // (what has already happened: the cycle in which the block was requested from MM)
+      const asked = blockRequestCycle(cell.colIdx, detail.block_address)
+      return t('Wait for block at addr {a}', { a: detail.block_address }) + (asked !== null ? ` (${t('requested from MM in cycle {c}', { c: asked })})` : '')
     }
     return charToProcessingState(
       cell.char,
