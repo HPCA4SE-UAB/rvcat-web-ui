@@ -217,7 +217,9 @@
         process.nFillBuffers,
         process.nWriteBuffers,
         process.nStoreBuffers,
-        process.instruction_list
+        process.instruction_list,
+        // the repetitions of the loop (Rep, independent calls, strides between calls, the block after it)
+        JSON.stringify(repetitionFields(process))     // (not toRaw: the watch must track them)
       ]
     },
     requestTimeline,
@@ -1215,30 +1217,32 @@
     const summaryCell = (s) => ({ title: s.title, explain: s.explain, stats: s.stats,
                                   tooltip: [s.title, ...s.stats].join(' · ') })
 
-    // The corner: statistics of the whole timeline
+    // The corner: statistics of the whole timeline. Cycles per iteration: the cycle in which the last
+    // complete iteration retires (its last instruction of the loop body), over the iterations retired
     {
-      let retired = 0, lastRetire = -1
+      const bodyLast = (simState.simulatedProcess.instruction_list?.length ?? 0) - 1
+      let retired = 0, lastRetire = -1, iterations = 0, iterationsEnd = -1
       for (let r = 0; r < totalInstr; r++) {
         const k = String(instructions[r][4] ?? '').indexOf('R')
-        if (k >= 0 && instructions[r][2] + k < C) { retired++; lastRetire = Math.max(lastRetire, instructions[r][2] + k) }
+        const at = instructions[r][2] + k
+        if (k < 0 || at >= C) continue
+        retired++
+        lastRetire = Math.max(lastRetire, at)
+        if (instructions[r][1] === bodyLast && !instructions[r][7]?.wrong) { iterations++; iterationsEnd = Math.max(iterationsEnd, at) }
       }
       const stats = [t('{c} cycles', { c: C }), t('{n} instructions retired', { n: retired }),
                      t('IPC {ipc}', { ipc: lastRetire >= 0 ? (retired / (lastRetire + 1)).toFixed(2) : '0.00' })]
+      if (iterations) stats.push(t('{c} cycles/iteration', { c: ((iterationsEnd + 1) / iterations).toFixed(2) }))
       const compactView = isCompact()
-      if (compactView) stats.push(t('{n} of {m} instructions of the program shown', { n: simState.timelineShownNow.length, m: staticCount }))
-      if (criticalPercentages) {
-        const top = criticalPercentages.map((p, i) => ({ p, i })).filter(x => x.p > 0).sort((a, b) => b.p - a.p).slice(0, 3)
-        if (top.length)
-          stats.push(t('critical: {list}', { list: top.map(x => `${x.i} ${instrAt(x.i)?.text ?? ''} ${x.p.toFixed(1)}%`).join(', ') }))
-      }
+      if (compactView) stats.push(t('{n} of {m} instr. shown', { n: simState.timelineShownNow.length, m: staticCount }))
       interactiveCells.push({
         x: padX, y: padY, width: labelW, colIdx: -1, rowIdx: -1, cellType: 'corner',
         ...summaryCell({ title: t('Timeline'), stats,
-          explain: t('The whole timeline: the simulation of the first instructions of the program (at most {n} retired). IPC: instructions retired per cycle, up to the last one retired. The critical path ends at the last instruction retired; the percentages are the fraction of its cycles attributed to each instruction of the program (as in the Program panel).', { n: compactView ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT }) +
+          explain: t('The whole timeline: the simulation of the first instructions of the program (at most {n} retired). IPC: instructions retired per cycle, up to the last one retired. Cycles per iteration: up to the last iteration retired, over the iterations retired (the first ones include the time to fill the pipeline).', { n: compactView ? COMPACT_RETIRE_LIMIT : TIMELINE_RETIRE_LIMIT }) +
             (compactView ? ' ' + t('Compact view: only the instructions ticked in the Program panel are shown (by default, the ones with at least {p}% of the critical path).', { p: COMPACT_CRITICAL_MIN }) : '') }),
+        tooltip: stats.join(' · '),        // (the status line: only the statistics)
       })
     }
-
     // the oldest store of the store buffer: what it waits for (head_state of RVCAT)
     const SB_HEAD_MARK = { queued_fill: 'f', queued_line: '!', queued_write: '!', waiting_writeback: '!', waiting_mm: '!', reading: ':' }
     const SB_HEAD_TEXT = {
