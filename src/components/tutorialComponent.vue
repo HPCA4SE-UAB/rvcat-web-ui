@@ -157,7 +157,7 @@
                 <label :for="`tutorial-numeric-answer-${k}`" class="numeric-label" v-html="rt(field.label)"></label>
                 <input v-model="numericAnswers[k]" type="text" inputmode="decimal" :id="`tutorial-numeric-answer-${k}`"
                        :disabled="questionAnswered" @keyup.enter="submitAnswer" :placeholder="t('your answer')" />
-                <span v-if="field.unit" class="numeric-unit">{{ field.unit }}</span>
+                <span v-if="field.unit" class="numeric-unit">{{ localized(field.unit) }}</span>
                 <span v-if="questionAnswered && !currentStep.predictOnly" class="answer-indicator"
                       :class="fieldCorrect(k) ? 'correct' : 'wrong'">{{ fieldCorrect(k) ? '✓' : '✗' }}</span>
               </div>
@@ -2982,7 +2982,7 @@ onUnmounted(() => {
   .numeric-field { margin-bottom: 0.6em; }
   .numeric-field-row { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
   .numeric-label { min-width: 7em; font-weight: 600; color: #333; }
-  .numeric-field-row .numeric-unit { margin-left: 0; }
+  .numeric-field-row .numeric-unit { margin-left: 0; white-space: nowrap; }
   .numeric-field-row input { width: 6em; }
   .numeric-field-row .answer-indicator { position: static; font-weight: bold; }
   .numeric-field-row .answer-indicator.correct { color: #2e7d32; }
