@@ -1064,6 +1064,8 @@ const questionStyle = computed(() => {
   const width = l.w ?? (step?.position === 'right' ? step?.wWidth ?? 440 : 800)
   const style = { width: `${width}px` }
   if (l.h) style.height = `${l.h}px`
+  // "wTop": a question at the right starts that many pixels lower (e.g. to leave Run Simulation free)
+  if (step?.position === 'right' && step?.wTop) style.marginTop = `${step.wTop}px`
   if (questionPlaced.value) {
     Object.assign(style, { position: 'fixed', left: `${l.x}px`, top: `${l.y}px`, margin: 0,
                            maxHeight: `calc(100vh - ${l.y + VIEWPORT_MARGIN}px)` })
@@ -1183,7 +1185,7 @@ function checkTaskAfterSimulation() {
 }
 
 // While a card is shown, the lesson allows what the card lists (e.g. "processor.rob"), and the
-// dependence graph window opens where the card says ("graphWindow": "top-right")
+// dependence graph window opens where the card says ("graphWindow": "top-right" or "bottom-left")
 watch(() => [isActive.value, currentStep.value], () => {
   const step = currentStep.value
   simState.graphWindowPlace = isActive.value ? (step?.graphWindow ?? '') : ''
@@ -1230,6 +1232,10 @@ function extraValidation(v) {
     case 'chain_selected':  return simState.analysisView?.chain === v.value
     case 'graph_open':      return !!simState.analysisView?.graphOpen
     case 'timeline_option': return v.value === 'critical' ? !!simState.timelineCriticalPathEnabled : true
+    case 'results_stored':  {        // a stored result of each program of the list
+      const stored = simState.storedResultPrograms ?? []
+      return [].concat(v.value ?? []).every(p => stored.includes(p))
+    }
     default:                return true
   }
 }
@@ -1243,6 +1249,13 @@ const clearHighlights = () => {
 // A question answered before: its answer is shown again (answered)
 function restoreAnswer() {
   const answer = taskState.value.answer
+  // "prefillFrom": the numbers answered in another question (e.g. a prediction) are written in the
+  // inputs of this one, still to be checked and submitted
+  const from = currentStep.value?.prefillFrom
+  if ((answer === undefined || !taskState.value.solved) && from && isMultiNumeric.value && !numericAnswers.value.length) {
+    const given = taskStates.value[from]?.answer
+    if (Array.isArray(given)) numericAnswers.value = given.map(v => (v === null || v === undefined ? '' : String(v)))
+  }
   if (answer === undefined || !taskState.value.solved) return
   if (isMultiNumeric.value) {
     numericAnswers.value = (Array.isArray(answer) ? answer : []).map(String)

@@ -335,6 +335,9 @@
         }
       }
     }
+    // the programs of the stored results, seen by the tutorials (validation "results_stored")
+    simState.storedResultPrograms = Object.values(showResultsInfo.value)
+      .map(r => r?.context?.program?.name).filter(Boolean)
   }
 
   const handleOptionsChange = () => {
@@ -781,7 +784,7 @@
 </script>
 
 <template>
-  <div class="main">
+  <div class="main simulation-root">
     <div class="header sim-header">
       <div class="section-title-and-info">
         <span ref="helpIcon1" class="info-icon" @click="openHelp1" :title="t('Show help')">

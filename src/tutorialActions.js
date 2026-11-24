@@ -9,10 +9,12 @@ export const TUTORIAL_ACTIONS = [
   ['selectProgram:NAME',       'select a program of the list'],
   ['selectProcessor:NAME',     'select a processor of the list'],
   ['setN:NUMBER',              'set N (algorithmic operations)'],
+  ['setRep:NUMBER',            'set Rep (calls of the loop) in the Program panel'],
   ['setOption:KEY=VALUE',      'simulation option: sched=optimal|greedy, speculation=stall|wrong-path'],
   ['runSimulation',            'run the simulation and wait for the results'],
   ['clickChain:VAR',           'select the latency bound of variable VAR (opens the dependence graph)'],
   ['openGraph',                'open the dependence graph window'],
+  ['graphOption:KEY=VALUE',    'option of the dependence graph: iters=1..7, nonCyclic, latencies, text (whole instruction text), inputs (constants and inputs) = on|off'],
   ['closeGraph',               'close the dependence graph window'],
   ['timeline:critical=on|off', 'what the timeline shows in the lesson: critical, ports, cache, cacheRows (unfold the cache lines) (on/off), cycles=NUMBER (only the first cycles; all: every cycle), or width=FRACTION (the timeline ends at that fraction of the window width); view=compact|critical|detailed (the view of the timeline; critical: compact, only the critical path)'],
   ['expandPorts',              'show the operation types of the processor ports'],
@@ -119,6 +121,13 @@ export function createActionRunner(ctx) {
       await sleep(200)
     },
     async setN(a)            { await setInput('#program-iterations', a.arg) },
+    async setRep(a) {
+      const el = $('#program-rep')
+      if (!el) return
+      el.value = String(Math.max(1, Math.round(Number(a.arg)) || 1))
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+      await sleep(200)
+    },
     async setOption(a) {
       if (simState.simulationSettings && a.key in simState.simulationSettings) simState.simulationSettings[a.key] = a.value
     },
@@ -141,6 +150,16 @@ export function createActionRunner(ctx) {
       if (!simState.analysisView?.graphOpen && await waitUntil(() => $('#open-dependence-graph')))
         clickElement($('#open-dependence-graph'))
       await sleep(600)
+    },
+    async graphOption(a) {
+      // applied by the Static Analysis panel when it is shown (simState.graphOptionsRequest)
+      const KEYS = { iters: 'iters', nonCyclic: 'showIntern', latencies: 'showLaten', text: 'showSmall', inputs: 'showFull' }
+      const key = KEYS[a.key]
+      if (!key) return
+      const value = key === 'iters' ? Math.min(7, Math.max(1, Math.round(Number(a.value)) || 1))
+                  : key === 'showSmall' ? a.value === 'off' : a.value !== 'off'
+      simState.graphOptionsRequest = { ...(simState.graphOptionsRequest ?? {}), [key]: value }
+      await sleep(100)
     },
     async closeGraph() {
       if (simState.analysisView?.graphOpen && $('#open-dependence-graph')) clickElement($('#open-dependence-graph'))

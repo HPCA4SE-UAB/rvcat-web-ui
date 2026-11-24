@@ -413,6 +413,7 @@
 <style>
   /* Parts of the simulator hidden by the lesson in progress (lesson "hidden", actions reveal/hide) */
   .lesson-hide-timeline #timeline-button,
+  .lesson-hide-timelineCritical #timeline-critical-only,
   .lesson-hide-simulation #simulation-button,
   .lesson-hide-analysis #analysis-button,
   .lesson-hide-processor .processor-part,
@@ -427,5 +428,6 @@
   .lesson-hide-criticalPattern #critical-path-pattern,
   .lesson-hide-programPorts .ports-col,
   .lesson-hide-programRep .rep-part,
-  .lesson-hide-storedResults .stored-results-part { display: none !important; }
+  .lesson-hide-storedResults .stored-results-part,
+  .lesson-hide-simulationPanel .simulation-root { display: none !important; }
 </style>

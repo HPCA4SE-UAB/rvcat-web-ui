@@ -99,7 +99,8 @@ The cards can use everything of the tutorials: `actions` (run when the card is s
 Several numbers in one question: `"answerMode": "numbers"` with `numericFields`, one input each, checked
 one by one (each field has its own `correct` / `wrong` text). With `"predictOnly": true` the numbers are
 only saved, as a prediction (no answer is right or wrong): `savedText` is shown, and a **Change** button lets
-the student correct them later. The texts of any card can show the K-th number answered in a question with
+the student correct them later. With `"prefillFrom": "ID"` the inputs of a question start with the numbers answered in the question ID
+(e.g. a prediction checked in the next card); the student can change them before submitting. The texts of any card can show the K-th number answered in a question with
 `{{answer.ID.K}}`, and with `{{answerCheck.ID.K}}` the number and the label of its field, e.g. "2 (Base)", in bold,
 green when it is right and red when it is wrong (e.g. the predictions, next to the right answers).
 
@@ -168,7 +169,13 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 - `graphWindow`: `top-right` opens the dependence graph window at the top right while the card is shown (so that the card does not cover it).
   In a question, `"position": "right"` shows it as a panel at the right that does not cover the simulator.
 - `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
+- `wTop`: a question with `"position": "right"` starts that many pixels lower (e.g. to leave the button Run Simulation free).
 - `doneDescription`: second part of the text, shown when the validation of the card is met.
+- validation `{ "type": "results_stored", "value": ["P1", "P2"] }`: met when the stored results include a result of each program of the list.
+- `graphWindow`: `"bottom-left"` also places the dependence graph window at the bottom left, narrow enough to leave free a question panel at the right.
+- action `setRep:NUMBER`: Rep (calls of the loop) in the Program panel.
+- action `graphOption:KEY=VALUE`: an option of the dependence graph (`iters=1..7`, `nonCyclic`, `latencies`, `text`, `inputs` = `on|off`), applied when the Static Analysis panel is shown; then the student can change it.
+- hidden part `simulationPanel`: the contents of the Simulation panel (to show only the Program panel in the first cards).
 - validation `{ "type": "element_closed", "selector": ".pinned-detail" }`: met once that element is closed (e.g. a window opened by the card).
 - `predictGood`, `predictFar`: comments shown after a good or a far prediction.
 - `resultDescription`: text shown after the result of the prediction, whatever it was (e.g. to explain the result).

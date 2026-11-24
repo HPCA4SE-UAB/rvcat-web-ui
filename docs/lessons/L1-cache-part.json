@@ -1,0 +1,437 @@
+{
+  "note": "Cache cards of L1 version 6 (GC-16), removed in version 7 to be rewritten for GC-base",
+  "steps": [
+    {
+      "id": "cache",
+      "type": "step",
+      "title": {
+        "en": "The cache and the trace of blocks",
+        "es": "La cache y la traza de bloques",
+        "ca": "La cache i la traça de blocs"
+      },
+      "selector": "#process-panel .processor-container",
+      "anchor": "#right-panel",
+      "position": "inside-top-left",
+      "wWidth": 700,
+      "description": {
+        "en": "<p>The processor <b>GC-16</b> is configured like a Golden Cove core (6 instructions dispatched and 8 retired per cycle, a ROB of 200 entries (512 in the real core; 200 is the maximum of RVCAT), 10 execution ports: 3 for loads and 2 for stores), but its <b><span style=\"color:#c62828\">cache</span></b> is very small, so that its effect is easy to see: <b>16 blocks of 64 bytes</b> (1 KB), instead of the 768 blocks (48 KB) of the L1 cache of the practical.</p><p>As in the practical, V[0] is at address 0: <b>block 0</b> = addresses 0 to 63, <b>block 1</b> = 64 to 127… A block holds <b>8 doubles</b>, so the trace of blocks is: 8 × read 0, 8 × read 1, 8 × read 2…</p><p>With N = 1,000, V takes <b>125 blocks</b>. The cache starts empty: the first access to each block is a <b><span style=\"color:#c62828\">cache miss</span></b> (the block comes from the main memory), and the other 7 accesses find it in the cache, or on its way from the main memory (next cards). One call has <b>125 primary misses</b>: 1 every 8 elements. With 16 blocks, a second call would miss again in every block, like N = 10,000 with the 768 blocks of the practical (optional: check it with Rep = 2 in the Program panel, and set Rep back to 1).</p>",
+        "es": "<p>El procesador <b>GC-16</b> está configurado como un núcleo Golden Cove (6 instrucciones despachadas y 8 retiradas por ciclo, un ROB de 200 entradas (512 en el núcleo real; 200 es el máximo de RVCAT), 10 puertos de ejecución: 3 para loads y 2 para stores), pero su <b><span style=\"color:#c62828\">cache</span></b> es muy pequeña, para que su efecto se vea fácilmente: <b>16 bloques de 64 bytes</b> (1 KB), en lugar de los 768 bloques (48 KB) de la cache L1 de la práctica.</p><p>Como en la práctica, V[0] está en la dirección 0: <b>bloque 0</b> = direcciones 0 a 63, <b>bloque 1</b> = 64 a 127… Un bloque contiene <b>8 doubles</b>, así que la traza de bloques es: 8 × lectura 0, 8 × lectura 1, 8 × lectura 2…</p><p>Con N = 1.000, V ocupa <b>125 bloques</b>. La cache empieza vacía: el primer acceso a cada bloque es un <b><span style=\"color:#c62828\">fallo de cache</span></b> (el bloque viene de la memoria principal), y los otros 7 accesos lo encuentran en la cache, o de camino desde la memoria principal (tarjetas siguientes). Una llamada tiene <b>125 fallos primarios</b>: 1 cada 8 elementos. Con 16 bloques, una segunda llamada volvería a fallar en todos los bloques, como N = 10.000 con los 768 bloques de la práctica (opcional: compruébalo con Rep = 2 en el panel del programa, y vuelve a poner Rep a 1).</p>",
+        "ca": "<p>El processador <b>GC-16</b> està configurat com un nucli Golden Cove (6 instruccions despatxades i 8 retirades per cicle, un ROB de 200 entrades (512 al nucli real; 200 és el màxim de RVCAT), 10 ports d'execució: 3 per a loads i 2 per a stores), però la seva <b><span style=\"color:#c62828\">cache</span></b> és molt petita, perquè el seu efecte es vegi fàcilment: <b>16 blocs de 64 bytes</b> (1 KB), en lloc dels 768 blocs (48 KB) de la cache L1 de la pràctica.</p><p>Com a la pràctica, V[0] és a l'adreça 0: <b>bloc 0</b> = adreces 0 a 63, <b>bloc 1</b> = 64 a 127… Un bloc conté <b>8 doubles</b>, així que la traça de blocs és: 8 × lectura 0, 8 × lectura 1, 8 × lectura 2…</p><p>Amb N = 1.000, V ocupa <b>125 blocs</b>. La cache comença buida: el primer accés a cada bloc és una <b><span style=\"color:#c62828\">fallada de cache</span></b> (el bloc ve de la memòria principal), i els altres 7 accessos el troben a la cache, o de camí des de la memòria principal (targetes següents). Una crida té <b>125 fallades primàries</b>: 1 cada 8 elements. Amb 16 blocs, una segona crida tornaria a fallar a tots els blocs, com N = 10.000 amb els 768 blocs de la pràctica (opcional: comprova-ho amb Rep = 2 al panell del programa, i torna a posar Rep a 1).</p>"
+      },
+      "actions": [
+        "reveal:processor",
+        "sidePanel:show",
+        "switchTo:simulationComponent",
+        "programView:type"
+      ],
+      "next": [
+        "q-blocks"
+      ]
+    },
+    {
+      "id": "q-blocks",
+      "type": "question",
+      "title": {
+        "en": "Iterations per cache block",
+        "es": "Iteraciones por bloque de cache",
+        "ca": "Iteracions per bloc de cache"
+      },
+      "position": "right",
+      "wWidth": 440,
+      "questionText": {
+        "en": "<p>A cache block holds 8 doubles. How many <b>iterations</b> of each loop read the elements of one block of V?</p>",
+        "es": "<p>Un bloque de cache contiene 8 doubles. ¿Cuántas <b>iteraciones</b> de cada bucle leen los elementos de un bloque de V?</p>",
+        "ca": "<p>Un bloc de cache conté 8 doubles. Quantes <b>iteracions</b> de cada bucle llegeixen els elements d'un bloc de V?</p>"
+      },
+      "answerMode": "numbers",
+      "answers": [],
+      "numericFields": [
+        {
+          "label": "SUM-scalar",
+          "value": 4,
+          "tolerance": 0.01,
+          "unit": {
+            "en": "iterations",
+            "es": "iteraciones",
+            "ca": "iteracions"
+          },
+          "correct": {
+            "en": "Right: 2 elements per iteration, 8 / 2 = 4 iterations per block.",
+            "es": "Correcto: 2 elementos por iteración, 8 / 2 = 4 iteraciones por bloque.",
+            "ca": "Correcte: 2 elements per iteració, 8 / 2 = 4 iteracions per bloc."
+          },
+          "wrong": {
+            "en": "SUM-scalar adds 2 elements per iteration.",
+            "es": "SUM-scalar suma 2 elementos por iteración.",
+            "ca": "SUM-scalar suma 2 elements per iteració."
+          }
+        },
+        {
+          "label": "SUM-simd",
+          "value": 2,
+          "tolerance": 0.01,
+          "unit": {
+            "en": "iterations",
+            "es": "iteraciones",
+            "ca": "iteracions"
+          },
+          "correct": {
+            "en": "Right: 4 elements per iteration, 8 / 4 = 2 iterations per block.",
+            "es": "Correcto: 4 elementos por iteración, 8 / 4 = 2 iteraciones por bloque.",
+            "ca": "Correcte: 4 elements per iteració, 8 / 4 = 2 iteracions per bloc."
+          },
+          "wrong": {
+            "en": "SUM-simd adds 4 elements per iteration.",
+            "es": "SUM-simd suma 4 elementos por iteración.",
+            "ca": "SUM-simd suma 4 elements per iteració."
+          }
+        },
+        {
+          "label": "SUM-scalar4",
+          "value": 2,
+          "tolerance": 0.01,
+          "unit": {
+            "en": "iterations",
+            "es": "iteraciones",
+            "ca": "iteracions"
+          },
+          "correct": {
+            "en": "Right: 4 elements per iteration, 8 / 4 = 2 iterations per block.",
+            "es": "Correcto: 4 elementos por iteración, 8 / 4 = 2 iteraciones por bloque.",
+            "ca": "Correcte: 4 elements per iteració, 8 / 4 = 2 iteracions per bloc."
+          },
+          "wrong": {
+            "en": "SUM-scalar4 adds 4 elements per iteration.",
+            "es": "SUM-scalar4 suma 4 elementos por iteración.",
+            "ca": "SUM-scalar4 suma 4 elements per iteració."
+          }
+        },
+        {
+          "label": "SUM-simd4",
+          "value": 0.5,
+          "tolerance": 0.01,
+          "unit": {
+            "en": "iterations",
+            "es": "iteraciones",
+            "ca": "iteracions"
+          },
+          "correct": {
+            "en": "Right: 16 elements per iteration, 8 / 16 = 0.5: each iteration reads 2 blocks.",
+            "es": "Correcto: 16 elementos por iteración, 8 / 16 = 0,5: cada iteración lee 2 bloques.",
+            "ca": "Correcte: 16 elements per iteració, 8 / 16 = 0,5: cada iteració llegeix 2 blocs."
+          },
+          "wrong": {
+            "en": "SUM-simd4 adds 16 elements per iteration: more than a block.",
+            "es": "SUM-simd4 suma 16 elementos por iteración: más de un bloque.",
+            "ca": "SUM-simd4 suma 16 elements per iteració: més d'un bloc."
+          }
+        }
+      ],
+      "next": [
+        "misses"
+      ]
+    },
+    {
+      "id": "misses",
+      "type": "step",
+      "title": {
+        "en": "Primary and secondary misses",
+        "es": "Fallos primarios y secundarios",
+        "ca": "Fallades primàries i secundàries"
+      },
+      "anchor": "#right-panel",
+      "position": "inside-right",
+      "wWidth": 460,
+      "explore": true,
+      "exploreActions": [
+        "timeline:width=0.97"
+      ],
+      "exploreEndActions": [
+        "timeline:width=0.67"
+      ],
+      "exploreHint": {
+        "en": "<p>When you are done exploring, click <b>Continue</b> to go back to the lesson.</p>",
+        "es": "<p>Cuando acabes de explorar, pulsa <b>Continuar</b> para volver a la lección.</p>",
+        "ca": "<p>Quan acabis d'explorar, prem <b>Continua</b> per tornar a la lliçó.</p>"
+      },
+      "description": {
+        "en": "<p>The Simulation panel separates two kinds of misses:</p><p>&bull; <b>Primary misses</b>: the first access to a block, which asks the main memory for it. 125 in every version (124 in SUM-simd4, which reads 992 elements).<br>&bull; <b>Secondary misses</b>: accesses to a block that is <b>still coming</b> from the main memory. The out-of-order engine executes the loads of the next iterations early, so they find the block on its way and wait for it, instead of finding it in the cache.</p><p>The timeline shows it, with the rows of the memory unfolded here: the row <b>▾ MM</b> gives the main memory (R: a block read), and the rows <b>▾ Cache</b> the 16 blocks of the cache (<b>r</b>: the block is arriving, <b>C</b>: it is in the cache). In the rows of the instructions, <b>!</b> is a primary miss, <b>2</b> a secondary miss, <b>:</b> a load that waits for its block, and <b>@</b> a load whose block has arrived but that waits its turn (the cache returns the data of 2 loads per cycle). <b>Explore</b> it (optional).</p>",
+        "es": "<p>El panel de Simulación separa dos tipos de fallos:</p><p>&bull; <b>Fallos primarios</b>: el primer acceso a un bloque, que lo pide a la memoria principal. 125 en todas las versiones (124 en SUM-simd4, que lee 992 elementos).<br>&bull; <b>Fallos secundarios</b>: accesos a un bloque que <b>todavía está llegando</b> desde la memoria principal. El motor fuera de orden ejecuta pronto los loads de las iteraciones siguientes, así que encuentran el bloque de camino y lo esperan, en lugar de encontrarlo en la cache.</p><p>El timeline lo muestra, con las filas de la memoria desplegadas aquí: la fila <b>▾ MM</b> da la memoria principal (R: lectura de un bloque), y las filas <b>▾ Cache</b> los 16 bloques de la cache (<b>r</b>: el bloque está llegando, <b>C</b>: está en la cache). En las filas de las instrucciones, <b>!</b> es un fallo primario, <b>2</b> un fallo secundario, <b>:</b> un load que espera su bloque, y <b>@</b> un load cuyo bloque ya ha llegado pero que espera su turno (la cache devuelve los datos de 2 loads por ciclo). <b>Explóralo</b> (opcional).</p>",
+        "ca": "<p>El panell de Simulació separa dos tipus de fallades:</p><p>&bull; <b>Fallades primàries</b>: el primer accés a un bloc, que el demana a la memòria principal. 125 a totes les versions (124 a SUM-simd4, que llegeix 992 elements).<br>&bull; <b>Fallades secundàries</b>: accessos a un bloc que <b>encara està arribant</b> des de la memòria principal. El motor fora d'ordre executa aviat els loads de les iteracions següents, així que troben el bloc de camí i l'esperen, en lloc de trobar-lo a la cache.</p><p>El timeline ho mostra, amb les files de la memòria desplegades aquí: la fila <b>▾ MM</b> dona la memòria principal (R: lectura d'un bloc), i les files <b>▾ Cache</b> els 16 blocs de la cache (<b>r</b>: el bloc està arribant, <b>C</b>: és a la cache). A les files de les instruccions, <b>!</b> és una fallada primària, <b>2</b> una fallada secundària, <b>:</b> un load que espera el seu bloc, i <b>@</b> un load el bloc del qual ja ha arribat però que espera el seu torn (la cache retorna les dades de 2 loads per cicle). <b>Explora'l</b> (opcional).</p>"
+      },
+      "actions": [
+        "selectProgram:SUM-scalar",
+        "reveal:timeline,timelineResources,timelineCache",
+        "sidePanel:show",
+        "switchTo:timelineComponent",
+        "timeline:cacheRows=on",
+        "timeline:cycles=40",
+        "timeline:width=0.67"
+      ],
+      "next": [
+        "q-misses"
+      ]
+    },
+    {
+      "id": "q-misses",
+      "type": "question",
+      "title": {
+        "en": "Loads and misses",
+        "es": "Loads y fallos",
+        "ca": "Loads i fallades"
+      },
+      "position": "right",
+      "wWidth": 440,
+      "questionText": {
+        "en": "<p>For N = 1,000 (one call): how many <b>loads</b> do SUM-scalar and SUM-simd execute? And how many <b>primary misses</b> does each version have?</p>",
+        "es": "<p>Para N = 1.000 (una llamada): ¿cuántos <b>loads</b> ejecutan SUM-scalar y SUM-simd? ¿Y cuántos <b>fallos primarios</b> tiene cada versión?</p>",
+        "ca": "<p>Per a N = 1.000 (una crida): quants <b>loads</b> executen SUM-scalar i SUM-simd? I quantes <b>fallades primàries</b> té cada versió?</p>"
+      },
+      "answerMode": "numbers",
+      "answers": [],
+      "numericFields": [
+        {
+          "label": {
+            "en": "Loads, SUM-scalar",
+            "es": "Loads, SUM-scalar",
+            "ca": "Loads, SUM-scalar"
+          },
+          "value": 1000,
+          "tolerance": 0.5,
+          "unit": {
+            "en": "loads",
+            "es": "loads",
+            "ca": "loads"
+          },
+          "correct": {
+            "en": "Right: one load per element.",
+            "es": "Correcto: un load por elemento.",
+            "ca": "Correcte: un load per element."
+          },
+          "wrong": {
+            "en": "One load per element of V.",
+            "es": "Un load por elemento de V.",
+            "ca": "Un load per element de V."
+          }
+        },
+        {
+          "label": {
+            "en": "Loads, SUM-simd",
+            "es": "Loads, SUM-simd",
+            "ca": "Loads, SUM-simd"
+          },
+          "value": 250,
+          "tolerance": 0.5,
+          "unit": {
+            "en": "loads",
+            "es": "loads",
+            "ca": "loads"
+          },
+          "correct": {
+            "en": "Right: one vector load per 4 elements.",
+            "es": "Correcto: un load vectorial por cada 4 elementos.",
+            "ca": "Correcte: un load vectorial per cada 4 elements."
+          },
+          "wrong": {
+            "en": "A vector load reads 4 elements.",
+            "es": "Un load vectorial lee 4 elementos.",
+            "ca": "Un load vectorial llegeix 4 elements."
+          }
+        },
+        {
+          "label": {
+            "en": "Primary misses",
+            "es": "Fallos primarios",
+            "ca": "Fallades primàries"
+          },
+          "value": 125,
+          "tolerance": 0.5,
+          "unit": {
+            "en": "misses",
+            "es": "fallos",
+            "ca": "fallades"
+          },
+          "correct": {
+            "en": "Right: one per block of V, in every version (124 in SUM-simd4).",
+            "es": "Correcto: uno por bloque de V, en todas las versiones (124 en SUM-simd4).",
+            "ca": "Correcte: una per bloc de V, a totes les versions (124 a SUM-simd4)."
+          },
+          "wrong": {
+            "en": "1,000 elements in blocks of 8 elements.",
+            "es": "1.000 elementos en bloques de 8 elementos.",
+            "ca": "1.000 elements en blocs de 8 elements."
+          }
+        }
+      ],
+      "actions": [
+        "switchTo:simulationComponent"
+      ],
+      "next": [
+        "bandwidth"
+      ]
+    },
+    {
+      "id": "bandwidth",
+      "type": "step",
+      "title": {
+        "en": "The bandwidth of the main memory",
+        "es": "El ancho de banda de la memoria principal",
+        "ca": "L'amplada de banda de la memòria principal"
+      },
+      "anchor": "#right-panel",
+      "position": "inside-top-left",
+      "wWidth": 700,
+      "description": {
+        "en": "<p>In RVCAT, the main memory delivers <b>one block every Issue Time</b> (m) cycles: at most 64 / m bytes per cycle. GC-16 has m = 1: 64 bytes per cycle.</p><p>At its bound (0.125 cycles per sum), SUM-simd4 would need 8 bytes every 0.125 cycles: <b>64 bytes per cycle</b>, all the bandwidth. That is why the memory is busy 85% of the time and SUM-simd4 stays above its bound: it starts to be <b><span style=\"color:#c62828\">bandwidth-bound</span></b>. The other versions need 4 (SUM-scalar) or 16 bytes per cycle.</p><p>The real main memory (DRAM) is much slower: about 31 GB/s for one core, some <b>7 bytes per cycle</b>; and the L3 cache gives about 15 bytes per cycle. With m = 8 (8 bytes per cycle), GC-16 behaves like the DRAM of the practical, and with m = 4 (16 bytes per cycle), like its L3.</p>",
+        "es": "<p>En RVCAT, la memoria principal entrega <b>un bloque cada Issue Time</b> (m) ciclos: como máximo 64 / m bytes por ciclo. GC-16 tiene m = 1: 64 bytes por ciclo.</p><p>En su cota (0,125 ciclos por suma), SUM-simd4 necesitaría 8 bytes cada 0,125 ciclos: <b>64 bytes por ciclo</b>, todo el ancho de banda. Por eso la memoria está ocupada el 85% del tiempo y SUM-simd4 se queda por encima de su cota: empieza a estar <b><span style=\"color:#c62828\">limitado por el ancho de banda</span></b>. Las otras versiones necesitan 4 (SUM-scalar) o 16 bytes por ciclo.</p><p>La memoria principal real (DRAM) es mucho más lenta: unos 31 GB/s para un núcleo, unos <b>7 bytes por ciclo</b>; y la cache L3 da unos 15 bytes por ciclo. Con m = 8 (8 bytes por ciclo), GC-16 se comporta como la DRAM de la práctica, y con m = 4 (16 bytes por ciclo), como su L3.</p>",
+        "ca": "<p>A RVCAT, la memòria principal lliura <b>un bloc cada Issue Time</b> (m) cicles: com a màxim 64 / m bytes per cicle. GC-16 té m = 1: 64 bytes per cicle.</p><p>A la seva cota (0,125 cicles per suma), SUM-simd4 necessitaria 8 bytes cada 0,125 cicles: <b>64 bytes per cicle</b>, tota l'amplada de banda. Per això la memòria està ocupada el 85% del temps i SUM-simd4 es queda per sobre de la seva cota: comença a estar <b><span style=\"color:#c62828\">limitat per l'amplada de banda</span></b>. Les altres versions necessiten 4 (SUM-scalar) o 16 bytes per cicle.</p><p>La memòria principal real (DRAM) és molt més lenta: uns 31 GB/s per a un nucli, uns <b>7 bytes per cicle</b>; i la cache L3 dona uns 15 bytes per cicle. Amb m = 8 (8 bytes per cicle), GC-16 es comporta com la DRAM de la pràctica, i amb m = 4 (16 bytes per cicle), com la seva L3.</p>"
+      },
+      "actions": [
+        "switchTo:simulationComponent"
+      ],
+      "next": [
+        "q-bw"
+      ]
+    },
+    {
+      "id": "q-bw",
+      "type": "question",
+      "title": {
+        "en": "Predict: a slower memory",
+        "es": "Predice: una memoria más lenta",
+        "ca": "Prediu: una memòria més lenta"
+      },
+      "position": "right",
+      "wWidth": 440,
+      "questionText": {
+        "en": "<p>If the main memory gave only <b>8 bytes per cycle</b> (Issue Time m = 8), how many <b>cycles per sum</b> would each version take?</p>",
+        "es": "<p>Si la memoria principal diera solo <b>8 bytes por ciclo</b> (Issue Time m = 8), ¿cuántos <b>ciclos por suma</b> tardaría cada versión?</p>",
+        "ca": "<p>Si la memòria principal donés només <b>8 bytes per cicle</b> (Issue Time m = 8), quants <b>cicles per suma</b> trigaria cada versió?</p>"
+      },
+      "answerMode": "numbers",
+      "answers": [],
+      "numericFields": [
+        {
+          "label": "SUM-scalar",
+          "value": 2,
+          "tolerance": 0.15,
+          "unit": {
+            "en": "cycles/sum",
+            "es": "ciclos/suma",
+            "ca": "cicles/suma"
+          }
+        },
+        {
+          "label": "SUM-simd",
+          "value": 1,
+          "tolerance": 0.15,
+          "unit": {
+            "en": "cycles/sum",
+            "es": "ciclos/suma",
+            "ca": "cicles/suma"
+          }
+        },
+        {
+          "label": "SUM-scalar4",
+          "value": 1,
+          "tolerance": 0.15,
+          "unit": {
+            "en": "cycles/sum",
+            "es": "ciclos/suma",
+            "ca": "cicles/suma"
+          }
+        },
+        {
+          "label": "SUM-simd4",
+          "value": 1,
+          "tolerance": 0.15,
+          "unit": {
+            "en": "cycles/sum",
+            "es": "ciclos/suma",
+            "ca": "cicles/suma"
+          }
+        }
+      ],
+      "predictOnly": true,
+      "savedText": {
+        "en": "<p>Prediction saved. Next, you will check it with the simulator.</p>",
+        "es": "<p>Predicción guardada. A continuación la comprobarás con el simulador.</p>",
+        "ca": "<p>Predicció desada. A continuació la comprovaràs amb el simulador.</p>"
+      },
+      "next": [
+        "bw-explore"
+      ]
+    },
+    {
+      "id": "bw-explore",
+      "type": "step",
+      "title": {
+        "en": "Experiment: a slower memory",
+        "es": "Experimento: una memoria más lenta",
+        "ca": "Experiment: una memòria més lenta"
+      },
+      "selector": ".processor-part",
+      "anchor": "#right-panel",
+      "position": "inside-top-left",
+      "wWidth": 700,
+      "allow": [
+        "processor.cache"
+      ],
+      "explore": "auto",
+      "exploreHint": {
+        "en": "<p>Click the <b>Cache</b> row of the Processor panel, change the <b>Memory issue time</b> to <b>8</b> and press <b>Apply</b>; then simulate the four versions. When you are done, click <b>Continue</b>.</p>",
+        "es": "<p>Haz clic en la fila <b>Cache</b> del panel del procesador, cambia el <b>Tiempo entre accesos a memoria</b> a <b>8</b> y pulsa <b>Aplicar</b>; después simula las cuatro versiones. Cuando acabes, pulsa <b>Continuar</b>.</p>",
+        "ca": "<p>Fes clic a la fila <b>Cache</b> del panell del processador, canvia el <b>Temps entre accessos a memòria</b> a <b>8</b> i prem <b>Aplica</b>; després simula les quatre versions. Quan acabis, prem <b>Continua</b>.</p>"
+      },
+      "nextLabels": [
+        {
+          "en": "1. Change my predictions",
+          "es": "1. Cambiar mis predicciones",
+          "ca": "1. Canviar les meves prediccions"
+        },
+        {
+          "en": "2. Check my predictions",
+          "es": "2. Comprobar mis predicciones",
+          "ca": "2. Comprovar les meves prediccions"
+        }
+      ],
+      "description": {
+        "en": "<p>In the Processor panel, click the <b>Cache</b> row: in its window, change the <b>Memory issue time</b> to <b>8</b> and press <b>Apply</b>. Then simulate the four versions (Store Results to compare them). You can also try m = 4.</p><p>You can explore again, or choose: <b>1.</b> change your predictions, or <b>2.</b> check them.</p>",
+        "es": "<p>En el panel del procesador, haz clic en la fila <b>Cache</b>: en su ventana, cambia el <b>Tiempo entre accesos a memoria</b> a <b>8</b> y pulsa <b>Aplicar</b>. Después simula las cuatro versiones (Guardar resultados para compararlas). También puedes probar m = 4.</p><p>Puedes volver a explorar, o elegir: <b>1.</b> cambiar tus predicciones, o <b>2.</b> comprobarlas.</p>",
+        "ca": "<p>Al panell del processador, fes clic a la fila <b>Cache</b>: a la seva finestra, canvia el <b>Temps entre accessos a memòria</b> a <b>8</b> i prem <b>Aplica</b>. Després simula les quatre versions (Desa els resultats per comparar-les). També pots provar m = 4.</p><p>Pots tornar a explorar, o triar: <b>1.</b> canviar les teves prediccions, o <b>2.</b> comprovar-les.</p>"
+      },
+      "actions": [
+        "sidePanel:show",
+        "switchTo:simulationComponent"
+      ],
+      "next": [
+        "q-bw",
+        "bw-check"
+      ]
+    },
+    {
+      "id": "bw-check",
+      "type": "step",
+      "title": {
+        "en": "A slower memory: the answers",
+        "es": "Una memoria más lenta: las respuestas",
+        "ca": "Una memòria més lenta: les respostes"
+      },
+      "anchor": "#right-panel",
+      "position": "inside-top-left",
+      "wWidth": 700,
+      "description": {
+        "en": "<p>Issue Time 8 (8 bytes per cycle). Your predictions: {{answerCheck.q-bw.0}}, {{answerCheck.q-bw.1}}, {{answerCheck.q-bw.2}}, {{answerCheck.q-bw.3}} cycles/sum.</p><p>&bull; <b>SUM-scalar: 2 cycles/sum</b>, unchanged. It needs only 4 bytes per cycle: it is still latency-bound (in the practical, 2.11 with the data in DRAM).</p><p>&bull; <b>SUM-simd, SUM-scalar4 and SUM-simd4: 1 cycle/sum</b>. Each sum needs 8 bytes, and the memory gives 8 bytes per cycle: all of them are <b>bandwidth-bound</b>, and SIMD or more chains no longer help (in the practical, 1.12 to 1.38 in DRAM).</p><p>With m = 4 (16 bytes per cycle) the limit is 0.5 cycles/sum: SUM-simd4 falls to the time of SUM-simd and SUM-scalar4, as in the L3 of the practical (0.52).</p><p>The processor is back to its original configuration (m = 1).</p>",
+        "es": "<p>Issue Time 8 (8 bytes por ciclo). Tus predicciones: {{answerCheck.q-bw.0}}, {{answerCheck.q-bw.1}}, {{answerCheck.q-bw.2}}, {{answerCheck.q-bw.3}} ciclos/suma.</p><p>&bull; <b>SUM-scalar: 2 ciclos/suma</b>, sin cambios. Solo necesita 4 bytes por ciclo: sigue limitado por la latencia (en la práctica, 2,11 con los datos en DRAM).</p><p>&bull; <b>SUM-simd, SUM-scalar4 y SUM-simd4: 1 ciclo/suma</b>. Cada suma necesita 8 bytes, y la memoria da 8 bytes por ciclo: todos están <b>limitados por el ancho de banda</b>, y SIMD o más cadenas ya no ayudan (en la práctica, de 1,12 a 1,38 en DRAM).</p><p>Con m = 4 (16 bytes por ciclo) el límite es 0,5 ciclos/suma: SUM-simd4 baja al tiempo de SUM-simd y SUM-scalar4, como en la L3 de la práctica (0,52).</p><p>El procesador vuelve a su configuración original (m = 1).</p>",
+        "ca": "<p>Issue Time 8 (8 bytes per cicle). Les teves prediccions: {{answerCheck.q-bw.0}}, {{answerCheck.q-bw.1}}, {{answerCheck.q-bw.2}}, {{answerCheck.q-bw.3}} cicles/suma.</p><p>&bull; <b>SUM-scalar: 2 cicles/suma</b>, sense canvis. Només necessita 4 bytes per cicle: continua limitat per la latència (a la pràctica, 2,11 amb les dades a la DRAM).</p><p>&bull; <b>SUM-simd, SUM-scalar4 i SUM-simd4: 1 cicle/suma</b>. Cada suma necessita 8 bytes, i la memòria dona 8 bytes per cicle: tots estan <b>limitats per l'amplada de banda</b>, i SIMD o més cadenes ja no ajuden (a la pràctica, d'1,12 a 1,38 a la DRAM).</p><p>Amb m = 4 (16 bytes per cicle) el límit és 0,5 cicles/suma: SUM-simd4 baixa al temps de SUM-simd i SUM-scalar4, com a la L3 de la pràctica (0,52).</p><p>El processador torna a la seva configuració original (m = 1).</p>"
+      },
+      "actions": [
+        "revertProcessor",
+        "switchTo:simulationComponent"
+      ],
+      "next": [
+        "summary"
+      ]
+    }
+  ]
+}

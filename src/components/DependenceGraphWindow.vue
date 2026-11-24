@@ -45,10 +45,18 @@
   // ("graphWindow": "top-right"): the window goes there when it opens while that card is shown
   const simState = inject('simulationState', null)
   const TOP_FREE = 90             // the header of the page and the bar of the lesson
+  // "bottom-left": at the bottom left, narrow enough to leave free the question panel at the right
+  const QUESTION_W = 460
   function placeForTutorial() {
-    if (simState?.graphWindowPlace !== 'top-right') return
-    geometry.x = window.innerWidth - geometry.w - 2 * MARGIN
-    geometry.y = TOP_FREE
+    const place = simState?.graphWindowPlace
+    if (place === 'top-right') {
+      geometry.x = window.innerWidth - geometry.w - 2 * MARGIN
+      geometry.y = TOP_FREE
+    } else if (place === 'bottom-left') {
+      geometry.x = 40
+      geometry.w = Math.max(MIN_W, Math.min(geometry.w, window.innerWidth - QUESTION_W - geometry.x - 2 * MARGIN))
+      geometry.y = window.innerHeight - geometry.h - BOTTOM_FREE
+    } else return
     keepInWindow()
   }
   placeForTutorial()

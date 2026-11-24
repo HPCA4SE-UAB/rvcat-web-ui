@@ -26,6 +26,15 @@
   }
 
   const dependenceGraphOptions = reactive(defaultOptions)
+  // options asked by a tutorial card (action graphOption)
+  // (applied once: then the student can change them)
+  function applyGraphRequest() {
+    const request = simState.graphOptionsRequest
+    if (!request) return
+    Object.assign(dependenceGraphOptions, request)
+    simState.graphOptionsRequest = null
+  }
+  watch(() => simState.graphOptionsRequest, applyGraphRequest, { deep: true })
   const dependenceGraphSvg     = ref('')
 
   // Floating window with the dependence graph (open/closed is remembered)
@@ -166,6 +175,7 @@
     cleanupHandleGraph    = registerHandler('get_dependence_graph',     handleGraph);
     cleanupHandleAnalysis = registerHandler('get_performance_analysis', handleAnalysis);
     loadOptions() // load options or store it if not present (first run)
+    applyGraphRequest()
     getAnalysis() // load performance data for current process if it exists
     nextTick(() => {
       unwatch = watch(dependenceGraphOptions, () => {
