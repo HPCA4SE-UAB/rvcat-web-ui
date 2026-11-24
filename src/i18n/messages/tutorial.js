@@ -71,4 +71,5 @@ export default {
   "Explore the simulator freely. When you are done, click here to continue the lesson.": { es: "Explora el simulador libremente. Cuando acabes, haz clic aquí para continuar la lección.", ca: "Explora el simulador lliurement. Quan acabis, fes clic aquí per continuar la lliçó." },
   "Show the tutorial card again": { es: "Volver a mostrar la tarjeta del tutorial", ca: "Torna a mostrar la targeta del tutorial" },
   "First save your prediction (tutorial card)": { es: "Primero guarda tu predicción (tarjeta del tutorial)", ca: "Primer desa la teva predicció (targeta del tutorial)" },
+  "Drag to move the window": { es: "Arrastra para mover la ventana", ca: "Arrossega per moure la finestra" },
 }

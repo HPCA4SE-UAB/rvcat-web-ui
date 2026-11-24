@@ -115,10 +115,10 @@
          (e.g. to answer it looking at the timeline); otherwise it is a dialog over a dark background -->
     <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay"
          :class="{ 'question-side': currentStep?.position === 'right' }">
-      <div class="question-panel" :style="currentStep?.position === 'right' && currentStep?.wWidth ? { maxWidth: `${currentStep.wWidth}px` } : undefined">
+      <div class="question-panel" ref="questionPanelRef" :style="questionStyle" @pointerdown="pinQuestionToResize">
         <button @click="closeTutorial" class="question-close">&times;</button>
 
-        <div class="question-header">
+        <div class="question-header" @pointerdown="startQuestionDrag" :title="t('Drag to move the window')">
           <span class="question-badge">{{ t('Question {n}', { n: stepIndex + 1 }) }}</span>
           <span v-if="previewMode" class="preview-badge">PREVIEW</span>
           <h2 v-html="rt(currentStep?.title)"></h2>
@@ -1045,6 +1045,99 @@ function loadCardStates(id, resuming) {
 }
 const taskState  = computed(() => taskStates.value[currentStep.value?.id] ?? {})
 const setTask    = (id, data) => { taskStates.value = { ...taskStates.value, [id]: { ...(taskStates.value[id] ?? {}), ...data } } }
+
+// ============================================================================
+// The window of a question can be moved (by its header) and resized (by its bottom right
+// corner), like the cards; its place and size are kept with the state of the question (layout)
+// ============================================================================
+const questionPanelRef = ref(null)
+const questionLayout   = ref({})        // { x, y, w, h } (px) of the current question
+watch(currentStep, (step) => {
+  questionLayout.value = step && isQuestionStep.value ? { ...(taskStates.value[step.id]?.layout ?? {}) } : {}
+}, { immediate: true })
+
+const questionPlaced = computed(() => Number.isFinite(questionLayout.value.x) && Number.isFinite(questionLayout.value.y))
+// The width is always given (the size of the file, or the one given by the student): Vue sets
+// the keys of the style at every redraw, so a manual resize is first copied into questionLayout
+const questionStyle = computed(() => {
+  const step = currentStep.value, l = questionLayout.value
+  const width = l.w ?? (step?.position === 'right' ? step?.wWidth ?? 440 : 800)
+  const style = { width: `${width}px` }
+  if (l.h) style.height = `${l.h}px`
+  if (questionPlaced.value) {
+    Object.assign(style, { position: 'fixed', left: `${l.x}px`, top: `${l.y}px`, margin: 0,
+                           maxHeight: `calc(100vh - ${l.y + VIEWPORT_MARGIN}px)` })
+  }
+  return style
+})
+
+function saveQuestionLayout() {
+  const step = currentStep.value
+  if (!step || !isQuestionStep.value) return
+  const { x, y, w, h } = questionLayout.value
+  const layout = {}
+  if (Number.isFinite(x) && Number.isFinite(y)) { layout.x = Math.round(x); layout.y = Math.round(y) }
+  if (w) layout.w = Math.round(w)
+  if (h) layout.h = Math.round(h)
+  setTask(step.id, { layout })
+}
+
+// The window keeps its place on the screen while it is resized (it is centred, or at the right)
+function pinQuestion() {
+  const el = questionPanelRef.value
+  if (!el || questionPlaced.value) return
+  const r = el.getBoundingClientRect()
+  questionLayout.value = { ...questionLayout.value, x: r.left, y: r.top }
+}
+function pinQuestionToResize(e) {
+  const r = questionPanelRef.value?.getBoundingClientRect()
+  if (r && e.clientX > r.right - 24 && e.clientY > r.bottom - 24) pinQuestion()
+}
+
+function startQuestionDrag(e) {
+  const el = questionPanelRef.value
+  if (!el || e.button !== 0 || e.target.closest('button, a, input')) return
+  e.preventDefault()
+  const r = el.getBoundingClientRect()
+  const dx = e.clientX - r.left, dy = e.clientY - r.top
+  const move = (ev) => {
+    questionLayout.value = { ...questionLayout.value,
+      x: clamp(ev.clientX - dx, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, window.innerWidth - r.width - VIEWPORT_MARGIN)),
+      y: clamp(ev.clientY - dy, HEADER_HEIGHT, Math.max(HEADER_HEIGHT, window.innerHeight - HEADER_HEIGHT - VIEWPORT_MARGIN)) }
+  }
+  const up = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+    saveQuestionLayout()
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
+}
+
+// A size given by the student with the corner of the window (the browser writes it in its style)
+let questionSaveTimer = null
+useResizeObserver(questionPanelRef, () => {
+  const el = questionPanelRef.value
+  if (!el) return
+  const bound = questionStyle.value, changed = {}
+  if (el.style.width && el.style.width !== bound.width) changed.w = parseFloat(el.style.width)
+  if (el.style.height && el.style.height !== (bound.height ?? '')) changed.h = parseFloat(el.style.height)
+  if (!Object.keys(changed).length) return
+  questionLayout.value = { ...questionLayout.value, ...changed }
+  clearTimeout(questionSaveTimer)
+  questionSaveTimer = setTimeout(saveQuestionLayout, 300)
+})
+
+// A smaller browser window: the question stays inside it
+function keepQuestionInside() {
+  if (!questionPlaced.value) return
+  const el = questionPanelRef.value, l = questionLayout.value
+  const w = el?.getBoundingClientRect().width ?? l.w ?? 0
+  questionLayout.value = { ...l,
+    x: clamp(l.x, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, window.innerWidth - w - VIEWPORT_MARGIN)),
+    y: clamp(l.y, HEADER_HEIGHT, Math.max(HEADER_HEIGHT, window.innerHeight - HEADER_HEIGHT - VIEWPORT_MARGIN)) }
+}
+window.addEventListener('resize', keepQuestionInside)
 const formatNumber = (v) => (typeof v === 'number' ? Number(v.toFixed(3)).toLocaleString('en-US') : String(v ?? '…'))
 
 function markTask(id, data = {}) {
@@ -1998,6 +2091,8 @@ onUnmounted(() => {
   console.log('👨‍🎓🧹 Tutorial Engine unmounted')
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleWindowResize)
+  window.removeEventListener('resize', keepQuestionInside)
+  clearTimeout(questionSaveTimer)
   contentObserver?.disconnect()
   clearTimeout(replaceTimer)
   cardObserver.disconnect()
@@ -2022,7 +2117,7 @@ onUnmounted(() => {
     padding: 96px 16px 0 0; box-sizing: border-box;
   }
   .tutorial-system .question-overlay.question-side .question-panel {
-    pointer-events: auto; max-width: 440px; max-height: calc(100vh - 112px);
+    pointer-events: auto; max-height: calc(100vh - 112px);
   }
   .tutorial-tooltip.tooltip-hidden * { visibility: hidden !important; transition: none !important; }
   /* exploration mode: the button that brings the card back, at the bottom right */
@@ -2547,15 +2642,18 @@ onUnmounted(() => {
 .question-panel {
   background:     white;
   border-radius:  15px;
-  width:          100%;
-  max-width:      800px;
+  max-width:      calc(100vw - 32px);
   max-height:     calc(100vh - 10px);
+  min-width:      260px;
+  min-height:     140px;
+  box-sizing:     border-box;
   display:        flex;
   flex-direction: column;
   box-shadow:     0 16px 48px rgba(0, 0, 0, 0.3);
   animation:      slideUp 0.4s ease-out;
   position:       relative;
   overflow:       hidden;
+  resize:         both;      /* by its bottom right corner, like the cards */
 }
 
 @keyframes slideUp {
@@ -2596,6 +2694,10 @@ onUnmounted(() => {
   align-items:   center;
   gap:           12px;
   width:         100%;
+  box-sizing:    border-box;
+  cursor:        move;
+  user-select:   none;
+  touch-action:  none;
 }
 
 .question-badge {
