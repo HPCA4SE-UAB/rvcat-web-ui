@@ -1,7 +1,9 @@
 <script setup>
-  import { t } from '@/i18n'
+  import { t, localized } from '@/i18n'
   import { ref, onMounted, onUnmounted, nextTick, inject, reactive, watch, computed } from "vue"
   import HelpComponent                                     from '@/components/helpComponent.vue'
+  import ProgramSource                                     from '@/components/ProgramSource.vue'
+  import { instrLines }                                    from '@/programSource'
   import { uploadJSON, initResource, saveToLocalStorage, removeFromLocalStorage,
            updateProcess, MAX_LOGICAL_ELEMENT_COUNT, MAX_REP_INSTRUCTIONS, maxRepetitions,
            normalizeProgramDefaults }                                     from '@/common'
@@ -27,6 +29,22 @@
   const props = defineProps({
     activeView: String
   })
+
+  // Relation source code <-> instructions (cLine): lines pointed in the source, or the lines of the
+  // instruction pointed in the table
+  const cHover = reactive({ from: null, lines: [] })
+  const hoverSource = (lines) => Object.assign(cHover, { from: lines.length ? 'source' : null, lines })
+  const hoverRow = (inst) => {
+    const lines = instrLines(inst)
+    Object.assign(cHover, { from: lines.length ? 'row' : null, lines })
+  }
+  const leaveRow = () => { if (cHover.from === 'row') Object.assign(cHover, { from: null, lines: [] }) }
+  const cLinked = (inst) => cHover.from === 'source' && instrLines(inst).some(n => cHover.lines.includes(n))
+  const markedLines = computed(() => cHover.from === 'row' ? cHover.lines : [])
+  // how each program was compiled (sourceNote): tooltip of its name in the list
+  const programNote = (name) => {
+    try { return localized(JSON.parse(localStorage.getItem(`program.${name}`))?.sourceNote) || '' } catch { return '' }
+  }
 
 // ============================================================================
 // Program options & localStorage
@@ -573,7 +591,7 @@
         <select v-model="programOptions.currentProgram" class="form-select"
             id="programs-list" :title="t('Select Program')">
           <option value="" disabled>{{ t('Select') }}</option>
-          <option v-for="program in visiblePrograms" :key="program" :value="program">
+          <option v-for="program in visiblePrograms" :key="program" :value="program" :title="programNote(program)">
             {{ program }}
           </option>
            <option v-if="!locked('upload')" value="_add_new_">{{ t('Add new') }}</option>
@@ -660,6 +678,8 @@
       </div>
     </div>
 
+    <ProgramSource :process="simState.simulatedProcess" :marked="markedLines" @hover="hoverSource" />
+
     <section class="program-container">
       <div class="table-container">
         <table class="instructions-table">
@@ -675,13 +695,7 @@
                         :title="t('Compact timeline: show again the instructions with at least 5% of the critical path')">auto</button>
               </th>
               <th v-else style="width: 100px;" :title="t('Instruction Number')">  #    </th>
-              <th style="width: 600px;" class="program-source-header" id="program-source-header" data-pin-code
-                  :title="simState.simulatedProcess?.description
-                          ? simState.simulatedProcess.description
-                          : t('No source code for this program: write it in the Program Editor (Source code)')">
-                {{ t('Program') }}
-                <span v-if="simState.simulatedProcess?.description" class="source-mark">{ } C</span>
-              </th>
+              <th style="width: 600px;"> {{ t('Program') }} </th>
               <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Type') }} </th>
               <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Oper') }} </th>
               <th class="type-col" v-if="shownView === 0"  style="width: 100px;"> {{ t('Size') }} </th>
@@ -694,7 +708,8 @@
               v-for="(inst, index) in simState.simulatedProcess.instruction_list"
               :key="index"
               :style="rowStyle(index)"
-              :class="{ highlighted: index === simState.instrHighlightedIdx,
+              @mouseenter="hoverRow(inst)" @mouseleave="leaveRow"
+              :class="{ highlighted: index === simState.instrHighlightedIdx, 'c-linked': cLinked(inst),
                         'dep-producer': simState.dependenceHighlight?.kind !== 'port' && simState.dependenceHighlight?.producers?.includes(index),
                         'dep-consumer': simState.dependenceHighlight?.consumers?.includes(index),
                         'port-conflict': simState.dependenceHighlight?.kind === 'port' && simState.dependenceHighlight?.producers?.includes(index) }"
@@ -746,7 +761,8 @@
               </tr>
               <tr v-for="(inst, j) in epilogue" :key="'e' + j" class="epilogue-row"
                   :style="rowStyle(bodyCount + j)"
-                  :class="{ highlighted: bodyCount + j === simState.instrHighlightedIdx }"
+                  @mouseenter="hoverRow(inst)" @mouseleave="leaveRow"
+                  :class="{ highlighted: bodyCount + j === simState.instrHighlightedIdx, 'c-linked': cLinked(inst) }"
                   :data-instr="bodyCount + j">
                 <td v-if="getCriticalPercentage(bodyCount + j) != null" class="critical-cell">
                   <input v-if="compactTimeline" type="checkbox" class="tl-show" :checked="shownInTimeline(bodyCount + j)" @click.stop
@@ -778,7 +794,9 @@
 </template>
 
 <style scoped>
-  .program-source-header { cursor: help; }
+  /* the instructions that implement the line of source code pointed above the table */
+  tr.c-linked td { background: #fff3c4; }
+  tr.c-linked td:first-child { box-shadow: inset 3px 0 0 #e0a800; }
   /* the instructions a waiting instruction depends on (hovering a '.' cell of the timeline) */
   tr.dep-producer td { background: #e7f0fb; }
   tr.port-conflict td { background: #fff0e0; }
@@ -786,14 +804,6 @@
   .dep-var { background: #cfe0f7; color: #0d47a1; border-radius: 3px; padding: 0 2px; font-weight: 600; }
   .instructions-table td.cell-focus { outline: 3px solid #e65100; outline-offset: -3px; background: #ffe0b2 !important; font-weight: 700; }
   .instructions-table td.conditional-instr { text-align: left; border-left: 3px dashed #9aa7b8; }
-  .program-source-header .source-mark {
-    margin-left: 0.4em;
-    padding:     0 4px;
-    border-radius: 3px;
-    background:  rgba(255, 255, 255, 0.25);
-    font-family: monospace;
-    font-size:   0.875rem;
-  }
 
   /* type | perf: two options, the selected one filled */
   .tl-show { margin: 0 4px 0 0; vertical-align: middle; cursor: pointer; }

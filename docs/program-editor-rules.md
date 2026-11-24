@@ -232,7 +232,14 @@ Examples that move data across blocks:
 
 ## Source code
 
-The **Source code** section of the editor keeps the code (usually C) of the loop from which the program was generated. It is saved in the program JSON as `description` (a string) and shown in the Program panel: the header of the instruction table reads *Program { }*, and hovering or clicking it shows the code (monospace, keeping its indentation).
+The **Source code** section of the editor keeps the code (usually C) of the loop from which the program was generated, and how it was compiled. Fields of the program JSON:
+
+- `description`: the source code (a string; only the code, its lines are numbered from 1).
+- `sourceNote`: how the compiler turned it into this program, in one sentence (a string, or `{ "en", "es", "ca" }`; the editor only edits a string).
+- `compile`: the command that compiled it (e.g. `gcc -O3 -march=native sum.c`).
+- `cLine` in each instruction (also in the block after each call): the line, or list of lines, of the source code that it implements. Edited in the JSON file.
+
+The Program panel shows it in a strip above the table of instructions (**▸ C**): folded, the lines that the instructions implement and the `sourceNote`; unfolded, the whole code, the note and the command (folded). Pointing a line of the code marks the instructions that implement it, and pointing an instruction marks its line. Tutorial cards fold or unfold it with the action `sourceCode:open|close`.
 
 ## N and the memory trace
 

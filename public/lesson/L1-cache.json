@@ -10,11 +10,11 @@
     "es": "<p>Cuatro versiones de un bucle que suma los elementos de un vector (escalar, SIMD y desenrollado con varios acumuladores) en un núcleo Golden Cove con una cache pequeña: latencia, throughput y ancho de banda de la memoria.</p>",
     "ca": "<p>Quatre versions d'un bucle que suma els elements d'un vector (escalar, SIMD i desenrotllat amb diversos acumuladors) en un nucli Golden Cove amb una cache petita: latència, throughput i amplada de banda de la memòria.</p>"
   },
-  "version": 5,
+  "version": 6,
   "programs": [
     {
       "name": "SUM-scalar",
-      "description": "// scalar, unrolled 2 times by gcc: 2 elements per iteration, one accumulator sum\n// gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "description": "double my_sum ( double V[], int N ) {\n  double sum = 0;\n  for ( int i = 0; i < N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
       "N": 1000,
       "declarations": [
         {
@@ -72,7 +72,8 @@
           "source3": "",
           "constant": "",
           "stride": 2,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum = sum + t0",
@@ -83,7 +84,8 @@
           "source1": "sum",
           "source2": "t0",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "t1 = V[i+1]",
@@ -96,7 +98,8 @@
           "source3": "",
           "constant": "1",
           "stride": 2,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum = sum + t1",
@@ -107,7 +110,8 @@
           "source1": "sum",
           "source2": "t1",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "i = i + 2",
@@ -118,7 +122,8 @@
           "source1": "i",
           "source2": "",
           "source3": "",
-          "constant": "2"
+          "constant": "2",
+          "cLine": 3
         },
         {
           "text": "c = i != N",
@@ -129,7 +134,8 @@
           "source1": "i",
           "source2": "N",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 3
         },
         {
           "text": "if c go back",
@@ -141,13 +147,20 @@
           "source2": "",
           "source3": "",
           "constant": "",
-          "stride": 2
+          "stride": 2,
+          "cLine": 3
         }
-      ]
+      ],
+      "sourceNote": {
+        "en": "scalar; gcc unrolled the loop 2 times: 2 elements per iteration, one accumulator (sum)",
+        "es": "escalar; gcc ha desenrollado el bucle 2 veces: 2 elementos por iteración y un solo acumulador (sum)",
+        "ca": "escalar; gcc ha desenrotllat el bucle 2 vegades: 2 elements per iteració i un sol acumulador (sum)"
+      },
+      "compile": "gcc -Ofast -fno-tree-vectorize -march=native SUM.c -o SUM-scalar"
     },
     {
       "name": "SUM-simd",
-      "description": "// vectorized by gcc (AVX2, 4 doubles per 256-bit register): 4 elements per iteration\n// gcc -Ofast -march=native SUM.c -o SUM-simd\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "description": "double my_sum ( double V[], int N ) {\n  double sum = 0;\n  for ( int i = 0; i < N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
       "N": 1000,
       "vlen": 32,
       "declarations": [
@@ -202,7 +215,8 @@
           "source3": "",
           "constant": "",
           "stride": 1,
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "sum[0:3] = sum[0:3] + t0[0:3]",
@@ -214,7 +228,8 @@
           "source2": "t0",
           "source3": "",
           "constant": "",
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "i = i + 4",
@@ -225,7 +240,8 @@
           "source1": "i",
           "source2": "",
           "source3": "",
-          "constant": "4"
+          "constant": "4",
+          "cLine": 3
         },
         {
           "text": "c = i != N",
@@ -236,7 +252,8 @@
           "source1": "i",
           "source2": "N",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 3
         },
         {
           "text": "if c go back",
@@ -248,13 +265,20 @@
           "source2": "",
           "source3": "",
           "constant": "",
-          "stride": 4
+          "stride": 4,
+          "cLine": 3
         }
-      ]
+      ],
+      "sourceNote": {
+        "en": "vectorized by gcc (AVX2: 4 doubles per 256-bit register): 4 elements per iteration",
+        "es": "vectorizado por gcc (AVX2: 4 doubles por registro de 256 bits): 4 elementos por iteración",
+        "ca": "vectoritzat per gcc (AVX2: 4 doubles per registre de 256 bits): 4 elements per iteració"
+      },
+      "compile": "gcc -Ofast -march=native SUM.c -o SUM-simd"
     },
     {
       "name": "SUM-scalar4",
-      "description": "// scalar, unrolled 4 times with 4 accumulators (variable expansion): 4 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "description": "double my_sum ( double V[], int N ) {\n  double sum = 0;\n  for ( int i = 0; i < N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
       "N": 1000,
       "declarations": [
         {
@@ -342,7 +366,8 @@
           "source3": "",
           "constant": "",
           "stride": 4,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum0 = sum0 + t0",
@@ -353,7 +378,8 @@
           "source1": "sum0",
           "source2": "t0",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "t1 = V[i+1]",
@@ -366,7 +392,8 @@
           "source3": "",
           "constant": "1",
           "stride": 4,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum1 = sum1 + t1",
@@ -377,7 +404,8 @@
           "source1": "sum1",
           "source2": "t1",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "t2 = V[i+2]",
@@ -390,7 +418,8 @@
           "source3": "",
           "constant": "2",
           "stride": 4,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum2 = sum2 + t2",
@@ -401,7 +430,8 @@
           "source1": "sum2",
           "source2": "t2",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "t3 = V[i+3]",
@@ -414,7 +444,8 @@
           "source3": "",
           "constant": "3",
           "stride": 4,
-          "lanes": 1
+          "lanes": 1,
+          "cLine": 4
         },
         {
           "text": "sum3 = sum3 + t3",
@@ -425,7 +456,8 @@
           "source1": "sum3",
           "source2": "t3",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 4
         },
         {
           "text": "i = i + 4",
@@ -436,7 +468,8 @@
           "source1": "i",
           "source2": "",
           "source3": "",
-          "constant": "4"
+          "constant": "4",
+          "cLine": 3
         },
         {
           "text": "c = i != N",
@@ -447,7 +480,8 @@
           "source1": "i",
           "source2": "N",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 3
         },
         {
           "text": "if c go back",
@@ -459,13 +493,20 @@
           "source2": "",
           "source3": "",
           "constant": "",
-          "stride": 4
+          "stride": 4,
+          "cLine": 3
         }
-      ]
+      ],
+      "sourceNote": {
+        "en": "scalar, unrolled 4 times with 4 accumulators (sum0 … sum3): 4 elements per iteration",
+        "es": "escalar, desenrollado 4 veces con 4 acumuladores (sum0 … sum3): 4 elementos por iteración",
+        "ca": "escalar, desenrotllat 4 vegades amb 4 acumuladors (sum0 … sum3): 4 elements per iteració"
+      },
+      "compile": "gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3 --param max-unroll-times=4 -fno-tree-vectorize -march=native SUM.c -o SUM-scalar4"
     },
     {
       "name": "SUM-simd4",
-      "description": "// vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration\n// gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3\n//     --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4\ndouble my_sum ( double V[], int N ) {\n  double sum=0;\n  for ( int i=0; i<N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
+      "description": "double my_sum ( double V[], int N ) {\n  double sum = 0;\n  for ( int i = 0; i < N; i++ )\n     sum = sum + V[i];\n  return sum;\n}",
       "N": 1000,
       "vlen": 32,
       "declarations": [
@@ -562,7 +603,8 @@
           "source3": "",
           "constant": "",
           "stride": 4,
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "sum0[0:3] = sum0[0:3] + t0[0:3]",
@@ -574,7 +616,8 @@
           "source2": "t0",
           "source3": "",
           "constant": "",
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "t1[0:3] = V[i+4:i+7]",
@@ -587,7 +630,8 @@
           "source3": "",
           "constant": "4",
           "stride": 4,
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "sum1[0:3] = sum1[0:3] + t1[0:3]",
@@ -599,7 +643,8 @@
           "source2": "t1",
           "source3": "",
           "constant": "",
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "t2[0:3] = V[i+8:i+11]",
@@ -612,7 +657,8 @@
           "source3": "",
           "constant": "8",
           "stride": 4,
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "sum2[0:3] = sum2[0:3] + t2[0:3]",
@@ -624,7 +670,8 @@
           "source2": "t2",
           "source3": "",
           "constant": "",
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "t3[0:3] = V[i+12:i+15]",
@@ -637,7 +684,8 @@
           "source3": "",
           "constant": "12",
           "stride": 4,
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "sum3[0:3] = sum3[0:3] + t3[0:3]",
@@ -649,7 +697,8 @@
           "source2": "t3",
           "source3": "",
           "constant": "",
-          "lanes": 4
+          "lanes": 4,
+          "cLine": 4
         },
         {
           "text": "i = i + 16",
@@ -660,7 +709,8 @@
           "source1": "i",
           "source2": "",
           "source3": "",
-          "constant": "16"
+          "constant": "16",
+          "cLine": 3
         },
         {
           "text": "c = i != N",
@@ -671,7 +721,8 @@
           "source1": "i",
           "source2": "N",
           "source3": "",
-          "constant": ""
+          "constant": "",
+          "cLine": 3
         },
         {
           "text": "if c go back",
@@ -683,12 +734,144 @@
           "source2": "",
           "source3": "",
           "constant": "",
-          "stride": 16
+          "stride": 16,
+          "cLine": 3
         }
-      ]
+      ],
+      "sourceNote": {
+        "en": "vectorized (4 doubles) and unrolled 4 times with 4 vector accumulators: 16 elements per iteration",
+        "es": "vectorizado (4 doubles) y desenrollado 4 veces con 4 acumuladores vectoriales: 16 elementos por iteración",
+        "ca": "vectoritzat (4 doubles) i desenrotllat 4 vegades amb 4 acumuladors vectorials: 16 elements per iteració"
+      },
+      "compile": "gcc -Ofast -funroll-loops -fvariable-expansion-in-unroller --param max-variable-expansions-in-unroller=3 --param max-unroll-times=4 -march=native SUM.c -o SUM-simd4"
     }
   ],
   "processors": [
+    {
+      "name": "GC-base",
+      "dispatch": 6,
+      "retire": 6,
+      "ROBsize": 64,
+      "bPenalty": 17,
+      "nBlocks": 0,
+      "blkSize": 64,
+      "mPenalty": 12,
+      "mIssueTime": 1,
+      "nFillBuffers": 2,
+      "nWriteBuffers": 2,
+      "nStoreBuffers": 2,
+      "rThru": 2,
+      "latencies": {
+        "INT": 1,
+        "INT.ARITH": 1,
+        "INT.LOGIC": 1,
+        "INT.SHIFT": 1,
+        "INT.CVT": 6,
+        "VINT": 1,
+        "VINT.ARITH": 1,
+        "VINT.LOGIC": 1,
+        "VINT.SHIFT": 1,
+        "VINT.CVT": 4,
+        "VINT.SHUFFLE": 1,
+        "VINT.PERMUTE": 3,
+        "MEM.STORE": 1,
+        "MEM.LOAD": 5,
+        "VMEM.STORE": 1,
+        "VMEM.LOAD": 6,
+        "FLOAT.ADD": 2,
+        "FLOAT.MUL": 4,
+        "FLOAT.FMA": 4,
+        "FLOAT.DIV": 11,
+        "FLOAT.DIV.double": 14,
+        "FLOAT.SQRT": 12,
+        "FLOAT.SQRT.double": 16,
+        "FLOAT.CVT": 4,
+        "FLOAT.CVT.single": 5,
+        "VFLOAT.ADD": 2,
+        "VFLOAT.MUL": 4,
+        "VFLOAT.FMA": 4,
+        "VFLOAT.DIV": 11,
+        "VFLOAT.DIV.double": 14,
+        "VFLOAT.SQRT": 12,
+        "VFLOAT.SQRT.double": 16,
+        "VFLOAT.CVT": 4,
+        "VFLOAT.CVT.single": 5,
+        "VFLOAT.SHUFFLE": 1,
+        "VFLOAT.PERMUTE": 3,
+        "BRANCH": 1
+      },
+      "ports": {
+        "0": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.SHIFT",
+          "INT.CVT",
+          "FLOAT.MUL",
+          "FLOAT.FMA",
+          "FLOAT.DIV",
+          "FLOAT.SQRT",
+          "FLOAT.CVT",
+          "VFLOAT.MUL",
+          "VFLOAT.FMA",
+          "VFLOAT.DIV",
+          "VFLOAT.SQRT",
+          "VFLOAT.CVT",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHIFT",
+          "VINT.CVT"
+        ],
+        "1": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.CVT",
+          "FLOAT.ADD",
+          "FLOAT.MUL",
+          "FLOAT.FMA",
+          "FLOAT.CVT",
+          "VFLOAT.ADD",
+          "VFLOAT.MUL",
+          "VFLOAT.FMA",
+          "VFLOAT.CVT",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHIFT",
+          "VINT.CVT",
+          "VINT.SHUFFLE",
+          "VFLOAT.SHUFFLE"
+        ],
+        "2": [
+          "MEM.LOAD",
+          "VMEM.LOAD"
+        ],
+        "3": [
+          "MEM.LOAD",
+          "VMEM.LOAD"
+        ],
+        "5": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "FLOAT.ADD",
+          "VFLOAT.ADD",
+          "VINT.ARITH",
+          "VINT.LOGIC",
+          "VINT.SHUFFLE",
+          "VINT.PERMUTE",
+          "VFLOAT.SHUFFLE",
+          "VFLOAT.PERMUTE"
+        ],
+        "6": [
+          "INT.ARITH",
+          "INT.LOGIC",
+          "INT.SHIFT",
+          "BRANCH"
+        ],
+        "7": [
+          "MEM.STORE",
+          "VMEM.STORE"
+        ]
+      }
+    },
     {
       "name": "GC-16",
       "dispatch": 6,
@@ -867,29 +1050,30 @@
           "es": "Lección 1: la cache y la suma de un vector",
           "ca": "Lliçó 1: la cache i la suma d'un vector"
         },
-        "selector": "#program-source-header",
+        "selector": "#program-source",
         "anchor": "#right-panel",
         "position": "inside-top-left",
         "wWidth": 700,
         "validation": {
           "type": "button_clicked",
-          "selector": "#program-source-header",
+          "selector": "#program-source-toggle",
           "message": {
-            "en": "Click the header of the table to see the C code",
-            "es": "Haz clic en la cabecera de la tabla para ver el código C",
-            "ca": "Fes clic a la capçalera de la taula per veure el codi C"
+            "en": "Click ▸ C, above the table, to see the C code",
+            "es": "Haz clic en ▸ C, encima de la tabla, para ver el código C",
+            "ca": "Fes clic a ▸ C, damunt de la taula, per veure el codi C"
           }
         },
         "description": {
-          "en": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles. It complements the practical <i>Rendimiento de la Memoria Cache</i>, where the same programs run on a real Intel i5-12400 (Golden Cove).</p><p>The same C code, compiled with <b>gcc 13</b> with four sets of options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson.</p><p><b>Click the table header to see the C code</b> (needed to continue).</p>",
-          "es": "<p>Esta lección analiza cómo afecta la <b>memoria cache</b> al rendimiento de un bucle muy sencillo: la función <b>my_sum</b> suma los N elementos de un vector V de doubles. Complementa la práctica <i>Rendimiento de la Memoria Cache</i>, donde los mismos programas se ejecutan en un Intel i5-12400 real (Golden Cove).</p><p>El mismo código C, compilado con <b>gcc 13</b> con cuatro conjuntos de opciones, da <b>cuatro bucles distintos</b> de instrucciones máquina: los cuatro programas de esta lección.</p><p><b>Haz clic en la cabecera de la tabla para ver el código C</b> (necesario para continuar).</p>",
-          "ca": "<p>Aquesta lliçó analitza com afecta la <b>memòria cache</b> al rendiment d'un bucle molt senzill: la funció <b>my_sum</b> suma els N elements d'un vector V de doubles. Complementa la pràctica <i>Rendimiento de la Memoria Cache</i>, on els mateixos programes s'executen en un Intel i5-12400 real (Golden Cove).</p><p>El mateix codi C, compilat amb <b>gcc 13</b> amb quatre conjunts d'opcions, dona <b>quatre bucles diferents</b> d'instruccions màquina: els quatre programes d'aquesta lliçó.</p><p><b>Fes clic a la capçalera de la taula per veure el codi C</b> (necessari per continuar).</p>"
+          "en": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles. It complements the practical <i>Rendimiento de la Memoria Cache</i>, where the same programs run on a real Intel i5-12400 (Golden Cove).</p><p>The same C code, compiled with <b>gcc 13</b> with four sets of options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson.</p><p><b>Click ▸ C, above the table of instructions, to see the C code of the loop</b> (needed to continue).</p>",
+          "es": "<p>Esta lección analiza cómo afecta la <b>memoria cache</b> al rendimiento de un bucle muy sencillo: la función <b>my_sum</b> suma los N elementos de un vector V de doubles. Complementa la práctica <i>Rendimiento de la Memoria Cache</i>, donde los mismos programas se ejecutan en un Intel i5-12400 real (Golden Cove).</p><p>El mismo código C, compilado con <b>gcc 13</b> con cuatro conjuntos de opciones, da <b>cuatro bucles distintos</b> de instrucciones máquina: los cuatro programas de esta lección.</p><p><b>Haz clic en ▸ C, encima de la tabla de instrucciones, para ver el código C del bucle</b> (necesario para continuar).</p>",
+          "ca": "<p>Aquesta lliçó analitza com afecta la <b>memòria cache</b> al rendiment d'un bucle molt senzill: la funció <b>my_sum</b> suma els N elements d'un vector V de doubles. Complementa la pràctica <i>Rendimiento de la Memoria Cache</i>, on els mateixos programes s'executen en un Intel i5-12400 real (Golden Cove).</p><p>El mateix codi C, compilat amb <b>gcc 13</b> amb quatre conjunts d'opcions, dona <b>quatre bucles diferents</b> d'instruccions màquina: els quatre programes d'aquesta lliçó.</p><p><b>Fes clic a ▸ C, damunt de la taula d'instruccions, per veure el codi C del bucle</b> (necessari per continuar).</p>"
         },
         "actions": [
           "selectProgram:SUM-scalar",
           "sidePanel:show",
           "switchTo:simulationComponent",
-          "programView:type"
+          "programView:type",
+          "sourceCode:close"
         ],
         "next": [
           "compile"

@@ -7,7 +7,7 @@ import { actionList, parseAction } from '@/tutorialActions'
 
 export function cardState(steps, index, initialHidden = []) {
   const hidden = new Set(initialHidden)
-  const st = { program: null, processor: null, overrides: {}, sidePanel: null, programView: null, timeline: {} }
+  const st = { program: null, processor: null, overrides: {}, sidePanel: null, programView: null, sourceCode: null, timeline: {} }
   for (const step of (steps ?? []).slice(0, Math.max(0, index))) {
     for (const text of actionList(step.actions)) {
       const a = parseAction(text)
@@ -21,6 +21,7 @@ export function cardState(steps, index, initialHidden = []) {
         case 'setProcessor':    if (a.key && Number.isFinite(Number(a.value))) st.overrides[a.key] = Number(a.value); break
         case 'sidePanel':       st.sidePanel = a.arg; break
         case 'programView':     st.programView = a.arg; break
+        case 'sourceCode':      st.sourceCode = a.arg; break
         case 'timeline':        if (a.key) st.timeline[a.key] = a.value; break
       }
     }
@@ -45,6 +46,7 @@ export function restoreActions(state, simState, storedProcessor) {
   }
   if (state.sidePanel)   acts.push(`sidePanel:${state.sidePanel}`)
   if (state.programView) acts.push(`programView:${state.programView}`)
+  if (state.sourceCode)  acts.push(`sourceCode:${state.sourceCode}`)
   return acts
 }
 

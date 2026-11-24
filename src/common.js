@@ -1,5 +1,6 @@
 
 import { t } from '@/i18n'
+import { sourceFieldErrors } from '@/programSource'
 
 export const RVCAT_VERSION = '1.17';
 
@@ -248,6 +249,7 @@ export function validateProgram(program, options = {}) {
   if (program.description !== undefined && typeof program.description !== 'string') {
     addError(t('Program description (source code of the loop) must be a string.'))
   }
+  sourceFieldErrors(program, t).forEach(addError)
 
   if (program.vlen !== undefined && ![8, 16, 32, 64].includes(program.vlen)) {
     addError(t('Program vlen (vector register width) must be 8, 16, 32 or 64 bytes.'))

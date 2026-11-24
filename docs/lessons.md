@@ -169,7 +169,7 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
   In a question, `"position": "right"` shows it as a panel at the right that does not cover the simulator.
 - `wWidth`, `wHeight`: fixed size of the card (it grows with its content instead of showing scroll bars).
 - `doneDescription`: second part of the text, shown when the validation of the card is met.
-- validation `{ "type": "element_closed", "selector": ".pinned-detail" }`: met once that element is closed (e.g. the window with the C code).
+- validation `{ "type": "element_closed", "selector": ".pinned-detail" }`: met once that element is closed (e.g. a window opened by the card).
 - `predictGood`, `predictFar`: comments shown after a good or a far prediction.
 - `resultDescription`: text shown after the result of the prediction, whatever it was (e.g. to explain the result).
 - `explore`: `true`, `"required"` or `"auto"` (required, and started by itself when the card is shown): an **Explore** button hides the card so that the student can explore the

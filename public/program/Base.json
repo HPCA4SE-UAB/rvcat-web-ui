@@ -13,6 +13,7 @@
   "instruction_list": [
     {
       "text": "tmp = V[i]",
+      "cLine": 5,
       "type": "MEM",
       "oper": "LOAD",
       "size": "word",
@@ -26,6 +27,7 @@
     },
     {
       "text": "sum = sum + tmp",
+      "cLine": 5,
       "type": "FLOAT",
       "oper": "ADD",
       "size": "single",
@@ -37,6 +39,7 @@
     },
     {
       "text": "tmp = W[i]",
+      "cLine": 5,
       "type": "MEM",
       "oper": "LOAD",
       "size": "word",
@@ -50,6 +53,7 @@
     },
     {
       "text": "sum = sum + tmp",
+      "cLine": 5,
       "type": "FLOAT",
       "oper": "ADD",
       "size": "single",
@@ -61,6 +65,7 @@
     },
     {
       "text": "i = i + 1",
+      "cLine": 4,
       "type": "INT",
       "oper": "ARITH",
       "size": "word",
@@ -73,6 +78,7 @@
     },
     {
       "text": "c = i != N",
+      "cLine": 4,
       "type": "INT",
       "oper": "ARITH",
       "size": "word",
@@ -85,6 +91,7 @@
     },
     {
       "text": "if c go back",
+      "cLine": 4,
       "type": "BRANCH",
       "oper": "",
       "size": "",

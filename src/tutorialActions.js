@@ -28,6 +28,7 @@ export const TUTORIAL_ACTIONS = [
   ['setProcessor:FIELD=VALUE', 'change a parameter of the current processor: dispatch, retire, ROBsize, bPenalty, nBlocks...'],
   ['sidePanel:hide|show',      'hide or show the side panel (processor and program), to give room to the right panel'],
   ['programView:type|perf',    'columns of the Program panel: type (type, operation, size) or perf (latency, ports)'],
+  ['sourceCode:open|close',    'unfold or fold the source code (C) of the program, above the table of instructions'],
 ]
 
 // "type:argument" -> { type, arg, key, value } (key=value arguments are split)
@@ -172,6 +173,13 @@ export function createActionRunner(ctx) {
       if (!group) return
       const option = [...group.querySelectorAll('button')].find(b => b.textContent.trim() === a.arg)
       if (option && !option.classList.contains('on')) { clickElement(option); await sleep(200) }
+    },
+    async sourceCode(a) {
+      // the strip ▸ C of the Program panel: its button is clicked unless it is already as asked
+      const strip = $('#program-source')
+      if (strip && (a.arg === 'open') !== strip.classList.contains('open')) {
+        clickElement($('#program-source-toggle')); await sleep(200)
+      }
     },
     async expandPorts()   { await togglePorts(true) },
     async collapsePorts() { await togglePorts(false) },

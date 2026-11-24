@@ -160,6 +160,8 @@ const declarations = ref([])
 const editedVlen = ref(null)
 // Source code (e.g. C) of the loop, saved with the program
 const editedDescription = ref('')
+const editedSourceNote  = ref('')    // string or { en, es, ca } (programSource.js)
+const editedCompile     = ref('')
 // Repetitions of the loop (calls of the function): how many, whether they are independent (they can
 // overlap), the elements that each array advances in each call, and the block of instructions
 // executed after each call (e.g. y[j] = sum)
@@ -203,6 +205,8 @@ function loadEditedProgram() {
     editedN.value = validN(data.N) ?? panelN()
     editedVlen.value = VECTOR_WIDTHS.includes(data.vlen) ? data.vlen : null
     editedDescription.value = typeof data.description === 'string' ? data.description : ''
+    editedSourceNote.value = data.sourceNote ?? ''
+    editedCompile.value = typeof data.compile === 'string' ? data.compile : ''
     editedRep.value = Math.max(1, Math.round(Number(data.rep) || 1))
     editedRepIndependent.value = data.repIndependent !== false
     editedRepStrides.value = { ...(data.repStrides ?? {}) }
@@ -215,7 +219,8 @@ function loadEditedProgram() {
         source2: inst.source2 || '', source3: inst.source3 || '',  constant: inst.constant || '',
         stride:  inst.stride  ?? 1,  lanes:   inst.lanes   ?? 1,
         prob:    inst.prob ?? (inst.type === 'BRANCH' ? 0.5 : ''), mispredict: inst.mispredict ?? '',
-        mask:    inst.mask ?? ''
+        mask:    inst.mask ?? '',
+        ...(inst.cLine !== undefined ? { cLine: inst.cLine } : {})
       };
     }).map((inst, index, all) => index === all.length - 1 ? inst : enforceStructure(inst));
     console.log('📄Edited Program Reloaded from local storage')
@@ -343,6 +348,7 @@ function normalizeInstruction(inst) {
     constant: (inst.constant || '').trim(),
     stride:   inst.stride ?? 1,
     lanes:    inst.lanes  ?? 1,
+    ...(inst.cLine !== undefined && inst.cLine !== '' ? { cLine: inst.cLine } : {}),
     ...(String(inst.mask ?? '').trim() ? { mask: String(inst.mask).trim() } : {}),
     // conditional branch ("if c skip k"): probability of being taken, misprediction rate (empty: predictor)
     ...(inst.type === 'BRANCH' ? { prob: fraction(inst.prob) ?? 0.5,
@@ -508,7 +514,8 @@ function applyTransform() {
     text:    inst.text    ?? '', type:    inst.type    ?? '', oper:     inst.oper     ?? '',
     size:    inst.size    ?? '', destin:  inst.destin  ?? '', source1:  inst.source1  ?? '',
     source2: inst.source2 ?? '', source3: inst.source3 ?? '', constant: String(inst.constant ?? ''),
-    stride:  Number(inst.stride ?? 1), lanes: Number(inst.lanes ?? 1)
+    stride:  Number(inst.stride ?? 1), lanes: Number(inst.lanes ?? 1),
+    ...(inst.cLine !== undefined ? { cLine: inst.cLine } : {})
   }))
   undoVlen = editedVlen.value
   if (result.vlen) editedVlen.value = result.vlen
@@ -536,6 +543,8 @@ function snapshotProgram() {
   return {
     name:             'programTemp',
     ...(editedDescription.value.trim() ? { description: editedDescription.value } : {}),
+    ...(typeof editedSourceNote.value === 'object' || editedSourceNote.value.trim() ? { sourceNote: editedSourceNote.value } : {}),
+    ...(editedCompile.value.trim() ? { compile: editedCompile.value.trim() } : {}),
     N:                editedN.value,
     ...(editedVlen.value ? { vlen: editedVlen.value } : {}),
     declarations:     declarationsFromAnalysis(textAnalysis.value),
@@ -642,6 +651,8 @@ function snapshotProgram() {
     declarations.value = []
     editedVlen.value = null
     editedDescription.value = ''
+    editedSourceNote.value = ''
+    editedCompile.value = ''
     editedRep.value = 1
     editedRepIndependent.value = true
     editedRepStrides.value = {}
@@ -1034,7 +1045,7 @@ function snapshotProgram() {
         </button>
         <div v-for="(issue, k) in epilogueIssues" :key="'ep' + k" class="coherence-error">✖ {{ issue }}</div>
       </details>
-      <ProgramDescription v-model="editedDescription" />
+      <ProgramDescription v-model="editedDescription" v-model:note="editedSourceNote" v-model:compile="editedCompile" />
       <DeclarationsTable :variables="textAnalysis.variables" @declare="onDeclare"
                          @highlight="tracedRows = $event" />
       <MemoryTrace :program="editedProgram" :N="editedN" :rep="editedRep" :repStrides="editedRepStrides" :epilogue="editedEpilogue" :rowIssues="rowIssues"

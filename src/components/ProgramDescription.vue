@@ -1,10 +1,19 @@
 <script setup>
-  import { t } from '@/i18n'
+  import { t, localized } from '@/i18n'
   // Source code of the loop (usually C) from which the program was generated. It is saved in the
   // program JSON ("description") and shown in the header of the Program panel.
-  import { reactive, watch } from 'vue'
+  // Also how the compiler turned it into the program (note: a string, or { en, es, ca } that is kept
+  // and only shown here) and the command that compiled it (src/programSource.js)
+  import { computed, reactive, watch } from 'vue'
 
-  const model = defineModel({ type: String, default: '' })
+  const model   = defineModel({ type: String, default: '' })
+  const note    = defineModel('note', { type: [String, Object], default: '' })
+  const compile = defineModel('compile', { type: String, default: '' })
+  const noteIsLocalized = computed(() => note.value !== null && typeof note.value === 'object')
+  const noteText = computed({
+    get: () => localized(note.value) ?? '',
+    set: (v) => { if (!noteIsLocalized.value) note.value = v },
+  })
 
   const STORAGE_KEY = 'programDescriptionOptions'
   const options = reactive({ open: false })
@@ -28,6 +37,22 @@
     <textarea v-if="options.open" v-model="model" id="program-description-text" spellcheck="false"
               rows="7" placeholder="for (int i = 0; i < N; i++)&#10;  sum += V[i] + W[i];"
               :title="t('Source code of the loop (e.g. C), saved with the program')"></textarea>
+    <template v-if="options.open">
+      <label class="desc-field">
+        <span>{{ t('Compiled as') }}</span>
+        <input v-model="noteText" id="program-source-note-input" :disabled="noteIsLocalized"
+               :placeholder="t('e.g. unrolled 4 times with 4 accumulators')"
+               :title="noteIsLocalized ? t('Text in several languages: edit it in the JSON file of the program')
+                                       : t('How the compiler turned the source code into this program (one sentence)')">
+      </label>
+      <label class="desc-field">
+        <span>{{ t('Command') }}</span>
+        <input v-model="compile" id="program-source-compile-input" spellcheck="false" class="mono"
+               placeholder="gcc -O3 -march=native sum.c"
+               :title="t('Command that compiled the source code into this program')">
+      </label>
+      <div class="desc-hint">{{ t('Each instruction can name the line of source code it implements (cLine, in the JSON file of the program).') }}</div>
+    </template>
   </div>
 </template>
 
@@ -63,6 +88,11 @@
     overflow:      hidden;
     text-overflow: ellipsis;
   }
+  .desc-field { display: flex; align-items: center; gap: 0.6em; margin: 0 6px 4px; }
+  .desc-field span { flex: 0 0 7em; color: #555; }
+  .desc-field input { flex: 1 1 auto; min-width: 0; font-size: 0.875rem; }
+  .desc-field input.mono { font-family: monospace; }
+  .desc-hint { margin: 0 6px 6px; color: #777; font-size: 0.8rem; }
   textarea {
     display:     block;
     width:       calc(100% - 12px);

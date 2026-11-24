@@ -32,15 +32,15 @@
       },
       {
         "id": "f0", "type": "step", "title": "The scalar loop f0",
-        "selector": "#program-source-header", "position": "right",
-        "description": "<b>f0 computes C[x] = A[x] + L·B[x]</b> (hover the header to see the C code).<br>Each iteration processes <b>one element</b> with 8 instructions. Simulate it (▶ Show me) and look at<br>the port usage: <b>P0</b> executes every load and store, 3 memory accesses per element,<br>so f0 cannot go below <b>3 cycles per element</b>. Now: {{cyclesPerAlgOp}} cycles per element.",
+        "selector": "#program-source", "position": "right",
+        "description": "<b>f0 computes C[x] = A[x] + L·B[x]</b> (▸ C, above the table, shows the C code).<br>Each iteration processes <b>one element</b> with 8 instructions. Simulate it (▶ Show me) and look at<br>the port usage: <b>P0</b> executes every load and store, 3 memory accesses per element,<br>so f0 cannot go below <b>3 cycles per element</b>. Now: {{cyclesPerAlgOp}} cycles per element.",
         "actions": ["selectProgram:f0", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],
         "next": ["predict-f0"]
       },
       {
         "id": "predict-f0", "type": "predict", "title": "Task 1: predict f0-SIMD",
-        "selector": "#program-source-header", "position": "right",
+        "selector": "#program-source", "position": "right",
         "description": "<b>f0-SIMD is the same loop vectorized with 4 lanes</b>: two vector loads, a vector multiply,<br>a vector add and a vector store per iteration, and <b>x = x + 4</b>: each iteration does<br>4 algorithmic operations (S = {{stride}}, shown next to N).<br>It has the same number of instructions per iteration as f0.<br><b>Predict its cycles per algorithmic operation</b> (cycles per element), save it, and simulate.",
         "predictValue": "cyclesPerAlgOp", "predictUnit": "cycles/element", "tolerance": 0.15,
         "actions": ["selectProgram:f0-SIMD", "switchTo:simulationComponent"],
@@ -89,7 +89,7 @@
       },
       {
         "id": "f3", "type": "step", "title": "f3: mixed data sizes",
-        "selector": "#program-source-header", "position": "right",
+        "selector": "#program-source", "position": "right",
         "description": "<b>f3 computes C[x] = A[x] + L·B[x] with L double</b>: each float is converted to double,<br>operated, and converted back to float.<br>A 16-byte register holds 4 floats but only <b>2 doubles</b>: f3-SIMD works in halves of 2 lanes,<br>with conversions, a shuffle, and even stores and loads through the stack (STK) to move the upper half.<br>It needs 23 instructions per iteration of 4 elements. Simulate it (▶ Show me).",
         "actions": ["selectProgram:f3-SIMD", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],
@@ -109,7 +109,7 @@
       },
       {
         "id": "f4", "type": "step", "title": "f4: dependent iterations",
-        "selector": "#program-source-header", "position": "right",
+        "selector": "#program-source", "position": "right",
         "description": "<b>f4 computes C[x+1] = C[x] + A[x]·B[x]</b>: each result needs the previous one (a prefix sum).<br>In the program, the running value is kept in <b>s</b>: s = s + a is a <b>cyclic chain</b> across iterations<br>(Static Analysis: chain s → s). The 4 lanes would need 4 consecutive results at once,<br>but each one depends on the previous: a compiler cannot vectorize it like f0, and there is no f4-SIMD.",
         "actions": ["selectProgram:f4", "switchTo:staticAnalysisComponent", "waitFor:#latency-bounds [data-chain=\"s\"]"],
         "showMe": ["clickChain:s"],
@@ -129,7 +129,7 @@
       },
       {
         "id": "base", "type": "step", "title": "Exercise: vectorize Base by hand",
-        "selector": "#program-source-header", "position": "right",
+        "selector": "#program-source", "position": "right",
         "description": "<b>Base adds all the elements of V and W into sum</b>. Like f4, sum depends on the previous iteration,<br>but only the <b>final</b> value is needed: it is a <b>reduction</b>, and the additions can be regrouped.<br>Use a vector accumulator <b>sum[0:3]</b> with 4 partial sums (one per lane), added together after the loop:<br><code>tmp[0:3] = V[i:i+3]</code> · <code>sum[0:3] = sum[0:3] + tmp[0:3]</code> · (the same with W) ·<br><code>i = i + 4</code> · <code>c = i != N</code> · <code>if c go back</code>, with <b>Alg opers/iter (S) = 4</b>.<br>Simulate scalar Base (▶ Show me): {{cyclesPerAlgOp}} cycles per element.",
         "actions": ["selectProgram:Base", "switchTo:simulationComponent"],
         "showMe": ["runSimulation"],

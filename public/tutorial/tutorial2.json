@@ -27,9 +27,9 @@
       "id": "program",
       "type": "step",
       "title": "The loop: {{program}}",
-      "selector": "#program-source-header",
+      "selector": "#program-source",
       "position": "right",
-      "description": "<b>Hover the header of the table to see the C code:</b> the loop adds<br>the elements of two vectors, V and W, into <b>sum</b>.<br>One iteration is written as 7 simple machine instructions:<br>&bull; two loads: <i>{{instr.0}}</i> and <i>{{instr.2}}</i><br>&bull; two floating-point additions: <i>{{instr.1}}</i> (twice)<br>&bull; the loop control: <i>{{instr.4}}</i>, <i>{{instr.5}}</i>, <i>{{instr.6}}</i>.",
+      "description": "<b>Click ▸ C, above the table, to see the C code:</b> the loop adds<br>the elements of two vectors, V and W, into <b>sum</b>.<br>One iteration is written as 7 simple machine instructions:<br>&bull; two loads: <i>{{instr.0}}</i> and <i>{{instr.2}}</i><br>&bull; two floating-point additions: <i>{{instr.1}}</i> (twice)<br>&bull; the loop control: <i>{{instr.4}}</i>, <i>{{instr.5}}</i>, <i>{{instr.6}}</i>.",
       "next": [
         "sums",
         "program-more"
@@ -43,9 +43,9 @@
       "id": "program-more",
       "type": "step",
       "title": "In depth: the program",
-      "selector": "#program-source-header",
+      "selector": "#program-source",
       "position": "right",
-      "description": "&bull; The <b>type</b> button switches the columns: type, operation and size,<br>&nbsp;&nbsp;&nbsp;or latency and eligible ports.<br>&bull; Hover an instruction to see what it does (memory access, operands).<br>&bull; Hover the header to see the C code of the loop.<br>&bull; Not modeled: registers and memory ordering. Conditional branches<br>&nbsp;&nbsp;&nbsp;(<i>if c skip k</i>) are taken and mispredicted with given probabilities.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
+      "description": "&bull; The <b>type</b> button switches the columns: type, operation and size,<br>&nbsp;&nbsp;&nbsp;or latency and eligible ports.<br>&bull; Hover an instruction to see what it does (memory access, operands).<br>&bull; ▸ C, above the table, shows the C code of the loop; pointing a line of C<br>&nbsp;&nbsp;&nbsp;marks the instructions that implement it.<br>&bull; Not modeled: registers and memory ordering. Conditional branches<br>&nbsp;&nbsp;&nbsp;(<i>if c skip k</i>) are taken and mispredicted with given probabilities.<br>&bull; After a simulation, the first column shows how much each<br>&nbsp;&nbsp;&nbsp;instruction contributes to the critical path.",
       "next": [
         "sums"
       ],
@@ -318,7 +318,7 @@
       "id": "critical",
       "type": "step",
       "title": "The critical path",
-      "selector": ".critical-cell, #program-source-header",
+      "selector": ".critical-cell, #program-source",
       "position": "right",
       "description": "<b>After the simulation, the first column shows each instruction's share of the critical path.</b><br>The two additions take {{critical.1}}% and {{critical.3}}% of it.<br>From iteration {{patternFrom}} to {{patternTo}} the critical path repeats the same pattern:<br><b>{{patternCycles}} critical cycles per iteration</b>, the two additions of {{latency.FLOAT.ADD}} cycles.",
       "next": [

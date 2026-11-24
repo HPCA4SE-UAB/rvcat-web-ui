@@ -31,4 +31,11 @@ describe('state of the simulator at a card', () => {
     expect(restoreActions(state, other, stored)).toEqual(['selectProgram:Base', 'revertProcessor',
       'setProcessor:ROBsize=1', 'setProcessor:dispatch=1', 'sidePanel:hide'])
   })
+
+  it('keeps the source code strip as the cards left it', () => {
+    const cards = [{ id: 'x', actions: ['sourceCode:close'] }, { id: 'y', actions: ['sourceCode:open'] }, { id: 'z' }]
+    expect(cardState(cards, 1).sourceCode).toBe('close')
+    expect(cardState(cards, 2).sourceCode).toBe('open')
+    expect(restoreActions(cardState(cards, 2), {}, null)).toEqual(['sourceCode:open'])
+  })
 })
