@@ -2,7 +2,7 @@
 import { t } from '@/i18n'
 import { sourceFieldErrors } from '@/programSource'
 
-export const RVCAT_VERSION = '1.17';
+export const RVCAT_VERSION = '1.18';
 
 export const instructionTypes = ['INT', 'VINT', 'MEM', 'VMEM', 'FLOAT', 'VFLOAT','BRANCH'];
 export const MAX_LOGICAL_ELEMENT_COUNT = 5000;
