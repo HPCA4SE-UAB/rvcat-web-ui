@@ -896,6 +896,17 @@
         </div>
         <!-- branch statistics (programs with conditional branches) -->
         <div v-if="simState.executionResults?.branch" class="row">
+          <!-- the mispredicted branches: the conditional branches inside the loop, and the final
+               branch when it leaves the loop (at the end of each call) -->
+          <div class="simulation-inline-item stat-branch" id="mispredicted-branches-item">
+            <label>{{ t('Mispredicted branches:') }}</label>
+            <span id="mispredicted-branches-output"
+                  :title="t('Mispredicted branches: the conditional branches inside the loop, and the final branch when it leaves the loop (once at the end of each call)')">
+              {{ simState.executionResults.branch.mispredictions.toLocaleString('en-US') }}
+              ({{ t('inside the loop') }} {{ (simState.executionResults.branch.mispredictions - (simState.executionResults.branch.exit_mispredictions ?? 0)).toLocaleString('en-US') }} ·
+              {{ t('exit of the loop') }} {{ (simState.executionResults.branch.exit_mispredictions ?? 0).toLocaleString('en-US') }})
+            </span>
+          </div>
           <div class="simulation-inline-item stat-branch">
             <label>{{ t('Mispredictions/iter:') }}</label>
             <span id="mispredictions-output"

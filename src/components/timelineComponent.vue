@@ -145,6 +145,12 @@
 
   // The timeline shows everything (the text, the critical path, the ports, the cache, all the
   // cycles); a lesson can limit it: its hidden parts and its actions (simState.timelineLesson)
+  // A program without STOREs never uses the write buffers or the store buffer: their rows are not shown
+  const programHasStores = computed(() => {
+    const p = simState.simulatedProcess
+    return [...(p?.instruction_list ?? []), ...(p?.epilogue ?? [])].some(i => i?.oper === 'STORE')
+  })
+
   function applyShownParts() {
     const lesson = simState.lesson ? (simState.timelineLesson ?? {}) : {}
     const hidden = simState.lesson?.hidden ?? []
@@ -405,7 +411,7 @@
       if (timelineOptions.autoFitCycles) fitCycles()
       unwatch = watch(
         () => [timelineOptions.instructions, timelineOptions.cycles, timelineOptions.critical,
-               timelineOptions.showPorts, timelineOptions.showCache, timelineOptions.showText,
+               timelineOptions.showPorts, timelineOptions.showCache, programHasStores.value, timelineOptions.showText,
                timelineOptions.expandPorts, timelineOptions.expandCache, timelineOptions.expandFill, timelineOptions.expandWrite,
                timelineOptions.expandMemory,
                timelineOptions.canvasScale, timelineOptions.canvasOffsetX, timelineOptions.canvasOffsetY ],
@@ -904,7 +910,8 @@
             bufferStates: fillBuffersByCycle
           }))
         : []),
-      ...(timelineOptions.showCache && cacheEnabled.value && writeBufferState
+      // (the write buffers and the store buffer only matter to programs with STOREs)
+      ...(timelineOptions.showCache && programHasStores.value && cacheEnabled.value && writeBufferState
         ? Array.from({ length: writeBufferState.capacity }, (_, bufferIndex) => ({
             label: `W${bufferIndex}`,
             bufferType: 'write',
@@ -913,7 +920,7 @@
             bufferStates: writeBuffersByCycle
           }))
         : []),
-      ...(timelineOptions.showCache && cacheEnabled.value && storeBufferState
+      ...(timelineOptions.showCache && programHasStores.value && cacheEnabled.value && storeBufferState
         ? [{
             label: 'SB',
             storeBuffer: true,

@@ -10,7 +10,7 @@
     "es": "<p>Cuatro versiones de un bucle que suma los elementos de un vector (escalar, SIMD y desenrollado con varios acumuladores) en un procesador como el núcleo Golden Cove: latencia y throughput.</p>",
     "ca": "<p>Quatre versions d'un bucle que suma els elements d'un vector (escalar, SIMD i desenrotllat amb diversos acumuladors) en un processador com el nucli Golden Cove: latència i throughput.</p>"
   },
-  "version": 13,
+  "version": 14,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -1731,22 +1731,22 @@
           "Rep"
         ],
         "title": {
-          "en": "A cache of 16 blocks, in order",
-          "es": "Una cache de 16 bloques, en orden",
-          "ca": "Una cache de 16 blocs, en ordre"
+          "en": "A cache of 4 blocks, in order",
+          "es": "Una cache de 4 bloques, en orden",
+          "ca": "Una cache de 4 blocs, en ordre"
         },
         "description": {
-          "en": "<p>The processor now has a <b>cache of 16 blocks of 32 bytes</b> (4 doubles each): 512 bytes, room for <b>64 elements</b> of V. A miss brings its block from MM in 12 cycles. Look at the <b>Cache</b> row of the Processor panel.</p><p>And the <b>ROB has 1 entry</b>: an instruction is dispatched only when the previous one has retired. The execution is <b>in order and without overlap</b>: each miss adds the time to bring its block from MM.</p><p>V has N = 64 elements (512 bytes, 16 blocks), and my_sum is called once (Rep = 1). The cache starts empty.</p>",
-          "es": "<p>El procesador tiene ahora una <b>cache de 16 bloques de 32 bytes</b> (4 doubles cada uno): 512 bytes, sitio para <b>64 elementos</b> de V. Un fallo trae su bloque de la MM en 12 ciclos. Mira la fila <b>Cache</b> del panel del procesador.</p><p>Y el <b>ROB tiene 1 entrada</b>: una instrucción solo hace el dispatch cuando la anterior se ha retirado. La ejecución es <b>en orden y sin solapamiento</b>: cada fallo añade el tiempo de traer su bloque de la MM.</p><p>V tiene N = 64 elementos (512 bytes, 16 bloques), y my_sum se llama una vez (Rep = 1). La cache empieza vacía.</p>",
-          "ca": "<p>El processador té ara una <b>cache de 16 blocs de 32 bytes</b> (4 doubles cadascun): 512 bytes, lloc per a <b>64 elements</b> de V. Una fallada porta el seu bloc de la MM en 12 cicles. Mira la fila <b>Cache</b> del panell del processador.</p><p>I el <b>ROB té 1 entrada</b>: una instrucció només fa el dispatch quan l'anterior s'ha retirat. L'execució és <b>en ordre i sense solapament</b>: cada fallada afegeix el temps de portar el seu bloc de la MM.</p><p>V té N = 64 elements (512 bytes, 16 blocs), i my_sum es crida una vegada (Rep = 1). La cache comença buida.</p>"
+          "en": "<p>The processor now has a <b>cache of 4 blocks of 32 bytes</b> (4 doubles each): 128 bytes, room for <b>16 elements</b> of V. A miss brings its block from MM in 12 cycles. Look at the <b>Cache</b> row of the Processor panel.</p><p>And the <b>ROB has 1 entry</b>: an instruction is dispatched only when the previous one has retired. The execution is <b>in order and without overlap</b>: each miss adds the time to bring its block from MM.</p><p>V has N = 16 elements (128 bytes, 4 blocks), and my_sum is called once (Rep = 1). The cache starts empty.</p>",
+          "es": "<p>El procesador tiene ahora una <b>cache de 4 bloques de 32 bytes</b> (4 doubles cada uno): 128 bytes, sitio para <b>16 elementos</b> de V. Un fallo trae su bloque de la MM en 12 ciclos. Mira la fila <b>Cache</b> del panel del procesador.</p><p>Y el <b>ROB tiene 1 entrada</b>: una instrucción solo hace el dispatch cuando la anterior se ha retirado. La ejecución es <b>en orden y sin solapamiento</b>: cada fallo añade el tiempo de traer su bloque de la MM.</p><p>V tiene N = 16 elementos (128 bytes, 4 bloques), y my_sum se llama una vez (Rep = 1). La cache empieza vacía.</p>",
+          "ca": "<p>El processador té ara una <b>cache de 4 blocs de 32 bytes</b> (4 doubles cadascun): 128 bytes, lloc per a <b>16 elements</b> de V. Una fallada porta el seu bloc de la MM en 12 cicles. Mira la fila <b>Cache</b> del panell del processador.</p><p>I el <b>ROB té 1 entrada</b>: una instrucció només fa el dispatch quan l'anterior s'ha retirat. L'execució és <b>en ordre i sense solapament</b>: cada fallada afegeix el temps de portar el seu bloc de la MM.</p><p>V té N = 16 elements (128 bytes, 4 blocs), i my_sum es crida una vegada (Rep = 1). La cache comença buida.</p>"
         },
         "actions": [
           "revertProcessor",
-          "setProcessor:nBlocks=16",
+          "setProcessor:nBlocks=4",
           "setProcessor:blkSize=32",
           "setProcessor:ROBsize=1",
           "selectProgram:SUM-scalar",
-          "setN:64",
+          "setN:16",
           "setRep:1",
           "reveal:simulation,simulationPanel",
           "sidePanel:show",
@@ -1775,9 +1775,9 @@
           "ca": "Fallades en fred"
         },
         "questionText": {
-          "en": "<p>SUM-scalar with N = 64 and Rep = 1 (already set). <b>First answer</b>: how many <b>misses</b> are there, and what is the time per sum? Think: how many consecutive accesses to V go to the same block? And, with ROB = 1, how long does each instruction take?</p><p>Then <b>check it</b> by simulating (<b>Run Simulation</b>): the misses are <b>Primary Misses</b>, and the time per sum is <b>Cycles/iter</b>.</p>",
-          "es": "<p>SUM-scalar con N = 64 y Rep = 1 (ya puestos). <b>Primero responde</b>: ¿cuántos <b>fallos</b> hay, y cuál es el tiempo por suma? Piensa: ¿cuántos accesos consecutivos a V van al mismo bloque? Y, con ROB = 1, ¿cuánto tarda cada instrucción?</p><p>Después <b>compruébalo</b> simulando (<b>Simular</b>): los fallos son <b>Fallos primarios</b>, y el tiempo por suma es <b>Cycles/iter</b>.</p>",
-          "ca": "<p>SUM-scalar amb N = 64 i Rep = 1 (ja posats). <b>Primer respon</b>: quantes <b>fallades</b> hi ha, i quin és el temps per suma? Pensa: quants accessos consecutius a V van al mateix bloc? I, amb ROB = 1, quant triga cada instrucció?</p><p>Després <b>comprova-ho</b> simulant (<b>Simula</b>): les fallades són <b>Fallades primàries</b>, i el temps per suma és <b>Cycles/iter</b>.</p>"
+          "en": "<p>SUM-scalar with N = 16 and Rep = 1 (already set). <b>First answer</b>: how many <b>misses</b> are there, and what is the time per sum? Think: how many consecutive accesses to V go to the same block? And, with ROB = 1, how long does each instruction take?</p><p>Then <b>check it</b> by simulating (<b>Run Simulation</b>): the misses are <b>Primary Misses</b>, and the time per sum is <b>Cycles/iter</b>.</p>",
+          "es": "<p>SUM-scalar con N = 16 y Rep = 1 (ya puestos). <b>Primero responde</b>: ¿cuántos <b>fallos</b> hay, y cuál es el tiempo por suma? Piensa: ¿cuántos accesos consecutivos a V van al mismo bloque? Y, con ROB = 1, ¿cuánto tarda cada instrucción?</p><p>Después <b>compruébalo</b> simulando (<b>Simular</b>): los fallos son <b>Fallos primarios</b>, y el tiempo por suma es <b>Cycles/iter</b>.</p>",
+          "ca": "<p>SUM-scalar amb N = 16 i Rep = 1 (ja posats). <b>Primer respon</b>: quantes <b>fallades</b> hi ha, i quin és el temps per suma? Pensa: quants accessos consecutius a V van al mateix bloc? I, amb ROB = 1, quant triga cada instrucció?</p><p>Després <b>comprova-ho</b> simulant (<b>Simula</b>): les fallades són <b>Fallades primàries</b>, i el temps per suma és <b>Cycles/iter</b>.</p>"
         },
         "numericFields": [
           {
@@ -1786,7 +1786,7 @@
               "es": "Fallos",
               "ca": "Fallades"
             },
-            "value": 16,
+            "value": 4,
             "tolerance": 0,
             "unit": {
               "en": "misses",
@@ -1794,9 +1794,9 @@
               "ca": "fallades"
             },
             "correct": {
-              "en": "Right: V occupies 16 blocks, and the first access to each block misses: <b>cold misses</b>, because the cache starts empty. The next 3 accesses to the block hit.",
-              "es": "Correcto: V ocupa 16 bloques, y el primer acceso a cada bloque falla: <b>fallos en frío</b>, porque la cache empieza vacía. Los 3 accesos siguientes al bloque aciertan.",
-              "ca": "Correcte: V ocupa 16 blocs, i el primer accés a cada bloc falla: <b>fallades en fred</b>, perquè la cache comença buida. Els 3 accessos següents al bloc encerten."
+              "en": "Right: V occupies 4 blocks, and the first access to each block misses: <b>cold misses</b>, because the cache starts empty. The next 3 accesses to the block hit.",
+              "es": "Correcto: V ocupa 4 bloques, y el primer acceso a cada bloque falla: <b>fallos en frío</b>, porque la cache empieza vacía. Los 3 accesos siguientes al bloque aciertan.",
+              "ca": "Correcte: V ocupa 4 blocs, i el primer accés a cada bloc falla: <b>fallades en fred</b>, perquè la cache comença buida. Els 3 accessos següents al bloc encerten."
             },
             "wrong": {
               "en": "Simulate, and read Primary Misses in the Simulation panel.",
@@ -1810,17 +1810,17 @@
               "es": "Tiempo por suma",
               "ca": "Temps per suma"
             },
-            "value": 23.02,
-            "tolerance": 0.05,
+            "value": 23.06,
+            "tolerance": 0.07,
             "unit": {
               "en": "cycles/sum",
               "es": "ciclos/suma",
               "ca": "cicles/suma"
             },
             "correct": {
-              "en": "Right. With ROB = 1, each instruction takes its latency plus 2 cycles (its dispatch D and its write W; the next one is dispatched in the cycle of its retire R): the LOAD 5 + 2 = 7, the addition 2 + 2 = 4, and the other three 1 + 2 = 3 each: 20 cycles per iteration when the LOAD hits. A miss adds 12 cycles (! and :), once every 4 iterations: 20 + 12 / 4 = 23.",
-              "es": "Correcto. Con ROB = 1, cada instrucción tarda su latencia más 2 ciclos (su dispatch D y su escritura W; la siguiente hace el dispatch en el ciclo de su retire R): el LOAD 5 + 2 = 7, la suma 2 + 2 = 4, y las otras tres 1 + 2 = 3 cada una: 20 ciclos por iteración cuando el LOAD acierta. Un fallo añade 12 ciclos (! y :), una vez cada 4 iteraciones: 20 + 12 / 4 = 23.",
-              "ca": "Correcte. Amb ROB = 1, cada instrucció triga la seva latència més 2 cicles (el seu dispatch D i la seva escriptura W; la següent fa el dispatch al cicle del seu retire R): el LOAD 5 + 2 = 7, la suma 2 + 2 = 4, i les altres tres 1 + 2 = 3 cadascuna: 20 cicles per iteració quan el LOAD encerta. Una fallada afegeix 12 cicles (! i :), una vegada cada 4 iteracions: 20 + 12 / 4 = 23."
+              "en": "Right. With ROB = 1, each instruction takes its latency plus 2 cycles (its dispatch D and its write W; the next one is dispatched in the cycle of its retire R): the LOAD 5 + 2 = 7, the addition 2 + 2 = 4, and the other three 1 + 2 = 3 each: 20 cycles per iteration when the LOAD hits. A miss adds 12 cycles, once every 4 iterations: 20 + 12 / 4 = 23.",
+              "es": "Correcto. Con ROB = 1, cada instrucción tarda su latencia más 2 ciclos (su dispatch D y su escritura W; la siguiente hace el dispatch en el ciclo de su retire R): el LOAD 5 + 2 = 7, la suma 2 + 2 = 4, y las otras tres 1 + 2 = 3 cada una: 20 ciclos por iteración cuando el LOAD acierta. Un fallo añade 12 ciclos, una vez cada 4 iteraciones: 20 + 12 / 4 = 23.",
+              "ca": "Correcte. Amb ROB = 1, cada instrucció triga la seva latència més 2 cicles (el seu dispatch D i la seva escriptura W; la següent fa el dispatch al cicle del seu retire R): el LOAD 5 + 2 = 7, la suma 2 + 2 = 4, i les altres tres 1 + 2 = 3 cadascuna: 20 cicles per iteració quan el LOAD encerta. Una fallada afegeix 12 cicles, una vegada cada 4 iteracions: 20 + 12 / 4 = 23."
             },
             "wrong": {
               "en": "With ROB = 1, each instruction takes its latency plus 2 cycles; a miss adds 12 cycles. Simulate and read Cycles/iter.",
@@ -1853,15 +1853,15 @@
           "ca": "Les fallades al timeline"
         },
         "description": {
-          "en": "<p>The <b>Timeline</b> shows the first 40 iterations. With ROB = 1 there is only one instruction in flight: each one starts when the previous one retires.</p><p>The LOAD <i>t0 = V[i]</i> of iteration 0 <b>misses</b>: after its 5 cycles of access, <b>!</b> (miss) and <b>:</b> (waiting for its block), 12 cycles more. The LOADs of iterations 1, 2 and 3 <b>hit</b>: their elements are in the same block, already in the cache. Iteration 4 reads a new block and misses again.</p>",
-          "es": "<p>El <b>Timeline</b> muestra las primeras 40 iteraciones. Con ROB = 1 solo hay una instrucción en curso: cada una empieza cuando la anterior se retira.</p><p>El LOAD <i>t0 = V[i]</i> de la iteración 0 <b>falla</b>: después de sus 5 ciclos de acceso, <b>!</b> (fallo) y <b>:</b> (esperando su bloque), 12 ciclos más. Los LOAD de las iteraciones 1, 2 y 3 <b>aciertan</b>: sus elementos están en el mismo bloque, ya en la cache. La iteración 4 lee un bloque nuevo y vuelve a fallar.</p>",
-          "ca": "<p>El <b>Timeline</b> mostra les primeres 40 iteracions. Amb ROB = 1 només hi ha una instrucció en curs: cadascuna comença quan l'anterior es retira.</p><p>El LOAD <i>t0 = V[i]</i> de la iteració 0 <b>falla</b>: després dels seus 5 cicles d'accés, <b>!</b> (fallada) i <b>:</b> (esperant el seu bloc), 12 cicles més. Els LOAD de les iteracions 1, 2 i 3 <b>encerten</b>: els seus elements són al mateix bloc, ja a la cache. La iteració 4 llegeix un bloc nou i torna a fallar.</p>"
+          "en": "<p>The <b>Timeline</b> shows the whole execution: 16 iterations. With ROB = 1 there is only one instruction in flight: each one starts when the previous one retires.</p><p>The LOAD <i>t0 = V[i]</i> of iteration 0 <b>misses</b>: after its 5 cycles of access, <b>!</b> (miss) and <b>:</b> (waiting for its block), 12 cycles more. The LOADs of iterations 1, 2 and 3 <b>hit</b>: their elements are in the same block, already in the cache. Iteration 4 reads a new block and misses again.</p><p>Unfold the rows of the memory: click <b>▸ Memory</b>, and then <b>▸ Cache</b> and <b>▸ Fill</b>. You will see the use of the bus to MM (<b>MM</b>), the lines of the cache (<b>C0</b> to <b>C3</b>) and the fill buffers (<b>F0</b>, <b>F1</b>). <span style=\"color:#888\">(The rows of the write buffers and of the store buffer are not shown: there are no STOREs.)</span></p>",
+          "es": "<p>El <b>Timeline</b> muestra toda la ejecución: 16 iteraciones. Con ROB = 1 solo hay una instrucción en curso: cada una empieza cuando la anterior se retira.</p><p>El LOAD <i>t0 = V[i]</i> de la iteración 0 <b>falla</b>: después de sus 5 ciclos de acceso, <b>!</b> (fallo) y <b>:</b> (esperando su bloque), 12 ciclos más. Los LOAD de las iteraciones 1, 2 y 3 <b>aciertan</b>: sus elementos están en el mismo bloque, ya en la cache. La iteración 4 lee un bloque nuevo y vuelve a fallar.</p><p>Despliega las filas de la memoria: haz clic en <b>▸ Memoria</b>, y después en <b>▸ Cache</b> y <b>▸ Fill</b>. Verás el uso del bus con la MM (<b>MM</b>), las líneas de la cache (<b>C0</b> a <b>C3</b>) y los fill buffers (<b>F0</b>, <b>F1</b>). <span style=\"color:#888\">(No se muestran las filas de los write buffers ni del store buffer: no hay STOREs.)</span></p>",
+          "ca": "<p>El <b>Timeline</b> mostra tota l'execució: 16 iteracions. Amb ROB = 1 només hi ha una instrucció en curs: cadascuna comença quan l'anterior es retira.</p><p>El LOAD <i>t0 = V[i]</i> de la iteració 0 <b>falla</b>: després dels seus 5 cicles d'accés, <b>!</b> (fallada) i <b>:</b> (esperant el seu bloc), 12 cicles més. Els LOAD de les iteracions 1, 2 i 3 <b>encerten</b>: els seus elements són al mateix bloc, ja a la cache. La iteració 4 llegeix un bloc nou i torna a fallar.</p><p>Desplega les files de la memòria: fes clic a <b>▸ Memòria</b>, i després a <b>▸ Cache</b> i <b>▸ Fill</b>. Veuràs l'ús del bus amb la MM (<b>MM</b>), les línies de la cache (<b>C0</b> a <b>C3</b>) i els fill buffers (<b>F0</b>, <b>F1</b>). <span style=\"color:#888\">(No es mostren les files dels write buffers ni del store buffer: no hi ha STOREs.)</span></p>"
         },
         "explore": true,
         "exploreHint": {
-          "en": "<p>Find the misses of the LOAD (<b>!</b> and <b>:</b>) in iterations 0, 4, 8… Click the cell <b>!</b> to pin it and read its details. When you are done, click here.</p>",
-          "es": "<p>Busca los fallos del LOAD (<b>!</b> y <b>:</b>) en las iteraciones 0, 4, 8… Haz clic en la celda <b>!</b> para fijarla y leer sus detalles. Cuando acabes, pulsa aquí.</p>",
-          "ca": "<p>Busca les fallades del LOAD (<b>!</b> i <b>:</b>) a les iteracions 0, 4, 8… Fes clic a la cel·la <b>!</b> per fixar-la i llegir-ne els detalls. Quan acabis, prem aquí.</p>"
+          "en": "<p>Unfold <b>▸ Memory</b>, <b>▸ Cache</b> and <b>▸ Fill</b>. Click the cells <b>!</b> and <b>:</b> of a LOAD that misses, and the cells of the rows <b>MM</b>, <b>C0</b> and <b>F0</b> in the same cycles, to read their details. The arrow keys (← → ↑ ↓) move along the timeline. When you are done, click here.</p>",
+          "es": "<p>Despliega <b>▸ Memoria</b>, <b>▸ Cache</b> y <b>▸ Fill</b>. Haz clic en las celdas <b>!</b> y <b>:</b> de un LOAD que falla, y en las celdas de las filas <b>MM</b>, <b>C0</b> y <b>F0</b> en los mismos ciclos, para leer sus detalles. Las flechas del teclado (← → ↑ ↓) mueven por el timeline. Cuando acabes, pulsa aquí.</p>",
+          "ca": "<p>Desplega <b>▸ Memòria</b>, <b>▸ Cache</b> i <b>▸ Fill</b>. Fes clic a les cel·les <b>!</b> i <b>:</b> d'un LOAD que falla, i a les cel·les de les files <b>MM</b>, <b>C0</b> i <b>F0</b> als mateixos cicles, per llegir-ne els detalls. Les fletxes del teclat (← → ↑ ↓) mouen pel timeline. Quan acabis, prem aquí.</p>"
         },
         "actions": [
           "reveal:timeline",
@@ -1893,9 +1893,9 @@
           "ca": "Tornar a cridar-la"
         },
         "questionText": {
-          "en": "<p>Now my_sum is called <b>twice</b> with the same vector (N = 64 and Rep = 2, already set). Simulate it. How many misses does the <b>second call</b> have (<b>Misses per call</b>: next), and what is the time per sum?</p>",
-          "es": "<p>Ahora my_sum se llama <b>dos veces</b> con el mismo vector (N = 64 y Rep = 2, ya puestos). Simúlalo. ¿Cuántos fallos tiene la <b>segunda llamada</b> (<b>Fallos por llamada</b>: siguientes), y cuál es el tiempo por suma?</p>",
-          "ca": "<p>Ara my_sum es crida <b>dues vegades</b> amb el mateix vector (N = 64 i Rep = 2, ja posats). Simula-ho. Quantes fallades té la <b>segona crida</b> (<b>Fallades per crida</b>: següents), i quin és el temps per suma?</p>"
+          "en": "<p>Now my_sum is called <b>twice</b> with the same vector (N = 16 and Rep = 2, already set). How many misses does the <b>second call</b> have, and what is the time per sum, <b>on average over the two calls</b> (the cycles of both calls divided by their 32 sums)? Answer, and then check it by simulating (<b>Misses per call</b>: next, and <b>Cycles/iter</b>).</p>",
+          "es": "<p>Ahora my_sum se llama <b>dos veces</b> con el mismo vector (N = 16 y Rep = 2, ya puestos). ¿Cuántos fallos tiene la <b>segunda llamada</b>, y cuál es el tiempo por suma, <b>en promedio en las dos llamadas</b> (los ciclos de las dos llamadas divididos por sus 32 sumas)? Responde, y después compruébalo simulando (<b>Fallos por llamada</b>: siguientes, y <b>Cycles/iter</b>).</p>",
+          "ca": "<p>Ara my_sum es crida <b>dues vegades</b> amb el mateix vector (N = 16 i Rep = 2, ja posats). Quantes fallades té la <b>segona crida</b>, i quin és el temps per suma, <b>de mitjana a les dues crides</b> (els cicles de les dues crides dividits per les seves 32 sumes)? Respon, i després comprova-ho simulant (<b>Fallades per crida</b>: següents, i <b>Cycles/iter</b>).</p>"
         },
         "numericFields": [
           {
@@ -1912,9 +1912,9 @@
               "ca": "fallades"
             },
             "correct": {
-              "en": "Right: the 16 blocks of V fit in the cache, so the second call finds all of them: only hits. The data are <b>reused</b>.",
-              "es": "Correcto: los 16 bloques de V caben en la cache, así que la segunda llamada los encuentra todos: solo aciertos. Los datos se <b>reutilizan</b>.",
-              "ca": "Correcte: els 16 blocs de V caben a la cache, així que la segona crida els troba tots: només encerts. Les dades es <b>reutilitzen</b>."
+              "en": "Right: the 4 blocks of V fit in the cache, so the second call finds all of them: only hits. The data are <b>reused</b>.",
+              "es": "Correcto: los 4 bloques de V caben en la cache, así que la segunda llamada los encuentra todos: solo aciertos. Los datos se <b>reutilizan</b>.",
+              "ca": "Correcte: els 4 blocs de V caben a la cache, així que la segona crida els troba tots: només encerts. Les dades es <b>reutilitzen</b>."
             },
             "wrong": {
               "en": "Simulate, and read Misses per call (1st · next) in the Simulation panel.",
@@ -1924,21 +1924,21 @@
           },
           {
             "label": {
-              "en": "Time per sum",
-              "es": "Tiempo por suma",
-              "ca": "Temps per suma"
+              "en": "Time per sum (average)",
+              "es": "Tiempo por suma (promedio)",
+              "ca": "Temps per suma (mitjana)"
             },
-            "value": 21.58,
-            "tolerance": 0.1,
+            "value": 21.66,
+            "tolerance": 0.17,
             "unit": {
               "en": "cycles/sum",
               "es": "ciclos/suma",
               "ca": "cicles/suma"
             },
             "correct": {
-              "en": "Right: the 16 misses of the first call are now shared by 128 sums: 20 + 16 × 12 / 128 = 21.5. The simulation gives a bit more, 21.58: the exit of the first call is a mispredicted branch (10 cycles).",
-              "es": "Correcto: los 16 fallos de la primera llamada se reparten ahora entre 128 sumas: 20 + 16 × 12 / 128 = 21,5. La simulación da un poco más, 21,58: la salida de la primera llamada es un salto mal predicho (10 ciclos).",
-              "ca": "Correcte: les 16 fallades de la primera crida es reparteixen ara entre 128 sumes: 20 + 16 × 12 / 128 = 21,5. La simulació dona una mica més, 21,58: la sortida de la primera crida és un salt mal predit (10 cicles)."
+              "en": "Right: the 4 misses of the first call are now shared by 32 sums: 20 + 4 × 12 / 32 = 21.5. The simulation gives a bit more, 21.81: the exit of the first call is a mispredicted branch (10 cycles, 10 / 32 = 0.31 per sum).",
+              "es": "Correcto: los 4 fallos de la primera llamada se reparten ahora entre 32 sumas: 20 + 4 × 12 / 32 = 21,5. La simulación da un poco más, 21,81: la salida de la primera llamada es un salto mal predicho (10 ciclos, 10 / 32 = 0,31 por suma).",
+              "ca": "Correcte: les 4 fallades de la primera crida es reparteixen ara entre 32 sumes: 20 + 4 × 12 / 32 = 21,5. La simulació dona una mica més, 21,81: la sortida de la primera crida és un salt mal predit (10 cicles, 10 / 32 = 0,31 per suma)."
             },
             "wrong": {
               "en": "Read Cycles/iter in the Simulation panel.",
@@ -1949,11 +1949,11 @@
         ],
         "actions": [
           "revertProcessor",
-          "setProcessor:nBlocks=16",
+          "setProcessor:nBlocks=4",
           "setProcessor:blkSize=32",
           "setProcessor:ROBsize=1",
           "selectProgram:SUM-scalar",
-          "setN:64",
+          "setN:16",
           "setRep:2",
           "sidePanel:show",
           "switchTo:simulationComponent"
@@ -1980,9 +1980,9 @@
           "ca": "El doble de la cache"
         },
         "questionText": {
-          "en": "<p>Now V has <b>N = 128</b> elements: 1,024 bytes, 32 blocks, twice the cache. my_sum is still called twice (Rep = 2). Simulate it. How many misses does each call have, and what is the time per sum?</p>",
-          "es": "<p>Ahora V tiene <b>N = 128</b> elementos: 1.024 bytes, 32 bloques, el doble de la cache. my_sum se sigue llamando dos veces (Rep = 2). Simúlalo. ¿Cuántos fallos tiene cada llamada, y cuál es el tiempo por suma?</p>",
-          "ca": "<p>Ara V té <b>N = 128</b> elements: 1.024 bytes, 32 blocs, el doble de la cache. my_sum es continua cridant dues vegades (Rep = 2). Simula-ho. Quantes fallades té cada crida, i quin és el temps per suma?</p>"
+          "en": "<p>Now V has <b>N = 32</b> elements: 256 bytes, 8 blocks, twice the cache. my_sum is still called twice (Rep = 2). How many misses does each call have, and what is the time per sum on average over the two calls? Answer, and then check it by simulating.</p>",
+          "es": "<p>Ahora V tiene <b>N = 32</b> elementos: 256 bytes, 8 bloques, el doble de la cache. my_sum se sigue llamando dos veces (Rep = 2). ¿Cuántos fallos tiene cada llamada, y cuál es el tiempo por suma en promedio en las dos llamadas? Responde, y después compruébalo simulando.</p>",
+          "ca": "<p>Ara V té <b>N = 32</b> elements: 256 bytes, 8 blocs, el doble de la cache. my_sum es continua cridant dues vegades (Rep = 2). Quantes fallades té cada crida, i quin és el temps per suma de mitjana a les dues crides? Respon, i després comprova-ho simulant.</p>"
         },
         "numericFields": [
           {
@@ -1991,7 +1991,7 @@
               "es": "Fallos de la 1.ª llamada",
               "ca": "Fallades de la 1a crida"
             },
-            "value": 32,
+            "value": 8,
             "tolerance": 0,
             "unit": {
               "en": "misses",
@@ -1999,9 +1999,9 @@
               "ca": "fallades"
             },
             "correct": {
-              "en": "Right: 32 blocks, 32 cold misses.",
-              "es": "Correcto: 32 bloques, 32 fallos en frío.",
-              "ca": "Correcte: 32 blocs, 32 fallades en fred."
+              "en": "Right: 8 blocks, 8 cold misses.",
+              "es": "Correcto: 8 bloques, 8 fallos en frío.",
+              "ca": "Correcte: 8 blocs, 8 fallades en fred."
             },
             "wrong": {
               "en": "Read Misses per call (1st) in the Simulation panel.",
@@ -2015,7 +2015,7 @@
               "es": "Fallos de la 2.ª llamada",
               "ca": "Fallades de la 2a crida"
             },
-            "value": 32,
+            "value": 8,
             "tolerance": 0,
             "unit": {
               "en": "misses",
@@ -2023,9 +2023,9 @@
               "ca": "fallades"
             },
             "correct": {
-              "en": "Right: when the first call reads V[64], the cache is full, and the block used longest ago (V[0..3]) is replaced; and so on, so that at the end the cache keeps the second half of V. The second call starts with V[0], which is no longer there, and again every block misses: <b>capacity misses</b>, the cache is too small for the data that are reused.",
-              "es": "Correcto: cuando la primera llamada lee V[64], la cache está llena, y se reemplaza el bloque usado hace más tiempo (V[0..3]); y así sucesivamente, de modo que al final la cache guarda la segunda mitad de V. La segunda llamada empieza por V[0], que ya no está, y otra vez falla cada bloque: <b>fallos de capacidad</b>, la cache es demasiado pequeña para los datos que se reutilizan.",
-              "ca": "Correcte: quan la primera crida llegeix V[64], la cache és plena, i es reemplaça el bloc usat fa més temps (V[0..3]); i així successivament, de manera que al final la cache guarda la segona meitat de V. La segona crida comença per V[0], que ja no hi és, i un altre cop falla cada bloc: <b>fallades de capacitat</b>, la cache és massa petita per a les dades que es reutilitzen."
+              "en": "Right: when the first call reads V[16], the cache is full, and the block used longest ago (V[0..3]) is replaced; and so on, so that at the end the cache keeps the second half of V. The second call starts with V[0], which is no longer there, and again every block misses: <b>capacity misses</b>, the cache is too small for the data that are reused.",
+              "es": "Correcto: cuando la primera llamada lee V[16], la cache está llena, y se reemplaza el bloque usado hace más tiempo (V[0..3]); y así sucesivamente, de modo que al final la cache guarda la segunda mitad de V. La segunda llamada empieza por V[0], que ya no está, y otra vez falla cada bloque: <b>fallos de capacidad</b>, la cache es demasiado pequeña para los datos que se reutilizan.",
+              "ca": "Correcte: quan la primera crida llegeix V[16], la cache és plena, i es reemplaça el bloc usat fa més temps (V[0..3]); i així successivament, de manera que al final la cache guarda la segona meitat de V. La segona crida comença per V[0], que ja no hi és, i un altre cop falla cada bloc: <b>fallades de capacitat</b>, la cache és massa petita per a les dades que es reutilitzen."
             },
             "wrong": {
               "en": "Read Misses per call (next) in the Simulation panel.",
@@ -2035,21 +2035,21 @@
           },
           {
             "label": {
-              "en": "Time per sum",
-              "es": "Tiempo por suma",
-              "ca": "Temps per suma"
+              "en": "Time per sum (average)",
+              "es": "Tiempo por suma (promedio)",
+              "ca": "Temps per suma (mitjana)"
             },
-            "value": 23.04,
-            "tolerance": 0.05,
+            "value": 23.08,
+            "tolerance": 0.09,
             "unit": {
               "en": "cycles/sum",
               "es": "ciclos/suma",
               "ca": "cicles/suma"
             },
             "correct": {
-              "en": "Right: the same as one call with cold misses (23): calling it again does not help.",
-              "es": "Correcto: lo mismo que una llamada con fallos en frío (23): volver a llamarla no ayuda.",
-              "ca": "Correcte: el mateix que una crida amb fallades en fred (23): tornar a cridar-la no ajuda."
+              "en": "Right: 23, as one call with cold misses: calling it again does not help. The simulation gives 23.16: the mispredicted exit of the first call adds 10 / 64 = 0.16 per sum.",
+              "es": "Correcto: 23, como una llamada con fallos en frío: volver a llamarla no ayuda. La simulación da 23,16: la salida mal predicha de la primera llamada añade 10 / 64 = 0,16 por suma.",
+              "ca": "Correcte: 23, com una crida amb fallades en fred: tornar a cridar-la no ajuda. La simulació dona 23,16: la sortida mal predita de la primera crida afegeix 10 / 64 = 0,16 per suma."
             },
             "wrong": {
               "en": "Read Cycles/iter in the Simulation panel.",
@@ -2060,11 +2060,11 @@
         ],
         "actions": [
           "revertProcessor",
-          "setProcessor:nBlocks=16",
+          "setProcessor:nBlocks=4",
           "setProcessor:blkSize=32",
           "setProcessor:ROBsize=1",
           "selectProgram:SUM-scalar",
-          "setN:128",
+          "setN:32",
           "setRep:2",
           "sidePanel:show",
           "switchTo:simulationComponent"
@@ -2091,9 +2091,9 @@
           "ca": "SUM-simd amb la cache"
         },
         "questionText": {
-          "en": "<p>Now <b>SUM-simd</b>, with N = 64 and Rep = 1 (already set). Each vector LOAD reads 4 doubles: 32 bytes, a whole block. Simulate it. How many misses are there, and what is the time per sum (<b>Cycles/Alg Oper</b>)?</p>",
-          "es": "<p>Ahora <b>SUM-simd</b>, con N = 64 y Rep = 1 (ya puestos). Cada LOAD vectorial lee 4 doubles: 32 bytes, un bloque entero. Simúlalo. ¿Cuántos fallos hay, y cuál es el tiempo por suma (<b>Cycles/Alg Oper</b>)?</p>",
-          "ca": "<p>Ara <b>SUM-simd</b>, amb N = 64 i Rep = 1 (ja posats). Cada LOAD vectorial llegeix 4 doubles: 32 bytes, un bloc sencer. Simula-ho. Quantes fallades hi ha, i quin és el temps per suma (<b>Cycles/Alg Oper</b>)?</p>"
+          "en": "<p>Now <b>SUM-simd</b>, with N = 16 and Rep = 1 (already set). Each vector LOAD reads 4 doubles: 32 bytes, a whole block. How many misses are there, and what is the time per sum (<b>Cycles/Alg Oper</b>)? Answer, and then check it by simulating.</p><p style=\"color:#888\">You can count the cycles of an iteration in the Timeline, and deduce the time per sum.</p>",
+          "es": "<p>Ahora <b>SUM-simd</b>, con N = 16 y Rep = 1 (ya puestos). Cada LOAD vectorial lee 4 doubles: 32 bytes, un bloque entero. ¿Cuántos fallos hay, y cuál es el tiempo por suma (<b>Cycles/Alg Oper</b>)? Responde, y después compruébalo simulando.</p><p style=\"color:#888\">Puedes contar los ciclos de una iteración en el Timeline, y deducir el tiempo por suma.</p>",
+          "ca": "<p>Ara <b>SUM-simd</b>, amb N = 16 i Rep = 1 (ja posats). Cada LOAD vectorial llegeix 4 doubles: 32 bytes, un bloc sencer. Quantes fallades hi ha, i quin és el temps per suma (<b>Cycles/Alg Oper</b>)? Respon, i després comprova-ho simulant.</p><p style=\"color:#888\">Pots comptar els cicles d'una iteració al Timeline, i deduir el temps per suma.</p>"
         },
         "numericFields": [
           {
@@ -2102,7 +2102,7 @@
               "es": "Fallos",
               "ca": "Fallades"
             },
-            "value": 16,
+            "value": 4,
             "tolerance": 0,
             "unit": {
               "en": "misses",
@@ -2110,9 +2110,9 @@
               "ca": "fallades"
             },
             "correct": {
-              "en": "Right: the same 16 blocks, the same 16 cold misses. But now <b>every LOAD misses</b>: there is one LOAD per block.",
-              "es": "Correcto: los mismos 16 bloques, los mismos 16 fallos en frío. Pero ahora <b>falla cada LOAD</b>: hay un LOAD por bloque.",
-              "ca": "Correcte: els mateixos 16 blocs, les mateixes 16 fallades en fred. Però ara <b>falla cada LOAD</b>: hi ha un LOAD per bloc."
+              "en": "Right: the same 4 blocks, the same 4 cold misses. But now <b>every LOAD misses</b>: there is one LOAD per block.",
+              "es": "Correcto: los mismos 4 bloques, los mismos 4 fallos en frío. Pero ahora <b>falla cada LOAD</b>: hay un LOAD por bloque.",
+              "ca": "Correcte: els mateixos 4 blocs, les mateixes 4 fallades en fred. Però ara <b>falla cada LOAD</b>: hi ha un LOAD per bloc."
             },
             "wrong": {
               "en": "Simulate, and read Primary Misses in the Simulation panel.",
@@ -2126,7 +2126,7 @@
               "es": "Tiempo por suma",
               "ca": "Temps per suma"
             },
-            "value": 8.27,
+            "value": 8.28,
             "tolerance": 0.05,
             "unit": {
               "en": "cycles/sum",
@@ -2134,9 +2134,9 @@
               "ca": "cicles/suma"
             },
             "correct": {
-              "en": "Right: in order, an iteration takes (6 + 2) + (2 + 2) + 3 × 3 = 21 cycles without the miss, and 33 with it, for 4 sums: 33 / 4 = 8.25. The miss adds the same per sum as in SUM-scalar (12 / 4 = 3 cycles), but the rest is 4 times faster.",
-              "es": "Correcto: en orden, una iteración tarda (6 + 2) + (2 + 2) + 3 × 3 = 21 ciclos sin el fallo, y 33 con él, para 4 sumas: 33 / 4 = 8,25. El fallo añade lo mismo por suma que en SUM-scalar (12 / 4 = 3 ciclos), pero el resto es 4 veces más rápido.",
-              "ca": "Correcte: en ordre, una iteració triga (6 + 2) + (2 + 2) + 3 × 3 = 21 cicles sense la fallada, i 33 amb ella, per a 4 sumes: 33 / 4 = 8,25. La fallada afegeix el mateix per suma que a SUM-scalar (12 / 4 = 3 cicles), però la resta és 4 vegades més ràpida."
+              "en": "Right: in order, an iteration takes (6 + 2) + (2 + 2) + 3 × 3 = 21 cycles without the miss, and 33 with it, for 4 sums: 33 / 4 = 8.25 (the simulation, 8.31: one cycle more at the end). The miss adds the same per sum as in SUM-scalar (12 / 4 = 3 cycles), but the rest is 4 times faster.",
+              "es": "Correcto: en orden, una iteración tarda (6 + 2) + (2 + 2) + 3 × 3 = 21 ciclos sin el fallo, y 33 con él, para 4 sumas: 33 / 4 = 8,25 (la simulación, 8,31: un ciclo más al final). El fallo añade lo mismo por suma que en SUM-scalar (12 / 4 = 3 ciclos), pero el resto es 4 veces más rápido.",
+              "ca": "Correcte: en ordre, una iteració triga (6 + 2) + (2 + 2) + 3 × 3 = 21 cicles sense la fallada, i 33 amb ella, per a 4 sumes: 33 / 4 = 8,25 (la simulació, 8,31: un cicle més al final). La fallada afegeix el mateix per suma que a SUM-scalar (12 / 4 = 3 cicles), però la resta és 4 vegades més ràpida."
             },
             "wrong": {
               "en": "Read Cycles/Alg Oper in the Simulation panel (S = 4).",
@@ -2147,11 +2147,11 @@
         ],
         "actions": [
           "revertProcessor",
-          "setProcessor:nBlocks=16",
+          "setProcessor:nBlocks=4",
           "setProcessor:blkSize=32",
           "setProcessor:ROBsize=1",
           "selectProgram:SUM-simd",
-          "setN:64",
+          "setN:16",
           "setRep:1",
           "sidePanel:show",
           "switchTo:simulationComponent"
@@ -2177,9 +2177,9 @@
           "ca": "Fallades en fred i de capacitat"
         },
         "description": {
-          "en": "<p>Executed in order, each miss adds the time to bring its block from MM (12 cycles here):</p><p>&bull; <b>Cold misses</b>: the first access to each block (1 of every 4 LOADs in SUM-scalar; every LOAD in SUM-simd).<br>&bull; <b>Reuse</b>: when the data fit in the cache (N ≤ 64 here), calling the function again finds them there: only hits.<br>&bull; <b>Capacity misses</b>: when the data do not fit (N = 128), their blocks are replaced before they are used again, and every call misses as much as the first one.</p><p>Vectorizing does not change the misses per sum (3 cycles per sum here), but it makes the rest faster, so the misses weigh more: SUM-simd goes from 5.27 to 8.27 cycles per sum (+57%), SUM-scalar from 20 to 23 (+15%).</p>",
-          "es": "<p>Con ejecución en orden, cada fallo añade el tiempo de traer su bloque de la MM (aquí 12 ciclos):</p><p>&bull; <b>Fallos en frío</b>: el primer acceso a cada bloque (1 de cada 4 LOAD en SUM-scalar; todos los LOAD en SUM-simd).<br>&bull; <b>Reutilización</b>: cuando los datos caben en la cache (aquí N ≤ 64), volver a llamar a la función los encuentra allí: solo aciertos.<br>&bull; <b>Fallos de capacidad</b>: cuando los datos no caben (N = 128), sus bloques se reemplazan antes de volver a usarlos, y cada llamada falla tanto como la primera.</p><p>Vectorizar no cambia los fallos por suma (aquí 3 ciclos por suma), pero hace más rápido el resto, así que los fallos pesan más: SUM-simd pasa de 5,27 a 8,27 ciclos por suma (+57%), SUM-scalar de 20 a 23 (+15%).</p>",
-          "ca": "<p>Amb execució en ordre, cada fallada afegeix el temps de portar el seu bloc de la MM (aquí 12 cicles):</p><p>&bull; <b>Fallades en fred</b>: el primer accés a cada bloc (1 de cada 4 LOAD a SUM-scalar; tots els LOAD a SUM-simd).<br>&bull; <b>Reutilització</b>: quan les dades caben a la cache (aquí N ≤ 64), tornar a cridar la funció les troba allà: només encerts.<br>&bull; <b>Fallades de capacitat</b>: quan les dades no hi caben (N = 128), els seus blocs es reemplacen abans de tornar-los a usar, i cada crida falla tant com la primera.</p><p>Vectoritzar no canvia les fallades per suma (aquí 3 cicles per suma), però fa més ràpida la resta, així que les fallades pesen més: SUM-simd passa de 5,27 a 8,27 cicles per suma (+57%), SUM-scalar de 20 a 23 (+15%).</p>"
+          "en": "<p>Executed in order, each miss adds the time to bring its block from MM (12 cycles here):</p><p>&bull; <b>Cold misses</b>: the first access to each block (1 of every 4 LOADs in SUM-scalar; every LOAD in SUM-simd).<br>&bull; <b>Reuse</b>: when the data fit in the cache (N ≤ 16 here), calling the function again finds them there: only hits.<br>&bull; <b>Capacity misses</b>: when the data do not fit (N = 32), their blocks are replaced before they are used again, and every call misses as much as the first one.</p><p>Vectorizing does not change the misses per sum (3 cycles per sum here), but it makes the rest faster, so the misses weigh more: SUM-simd goes from 5.3 to 8.3 cycles per sum (+56%), SUM-scalar from 20 to 23 (+15%).</p>",
+          "es": "<p>Con ejecución en orden, cada fallo añade el tiempo de traer su bloque de la MM (aquí 12 ciclos):</p><p>&bull; <b>Fallos en frío</b>: el primer acceso a cada bloque (1 de cada 4 LOAD en SUM-scalar; todos los LOAD en SUM-simd).<br>&bull; <b>Reutilización</b>: cuando los datos caben en la cache (aquí N ≤ 16), volver a llamar a la función los encuentra allí: solo aciertos.<br>&bull; <b>Fallos de capacidad</b>: cuando los datos no caben (N = 32), sus bloques se reemplazan antes de volver a usarlos, y cada llamada falla tanto como la primera.</p><p>Vectorizar no cambia los fallos por suma (aquí 3 ciclos por suma), pero hace más rápido el resto, así que los fallos pesan más: SUM-simd pasa de 5,3 a 8,3 ciclos por suma (+56%), SUM-scalar de 20 a 23 (+15%).</p>",
+          "ca": "<p>Amb execució en ordre, cada fallada afegeix el temps de portar el seu bloc de la MM (aquí 12 cicles):</p><p>&bull; <b>Fallades en fred</b>: el primer accés a cada bloc (1 de cada 4 LOAD a SUM-scalar; tots els LOAD a SUM-simd).<br>&bull; <b>Reutilització</b>: quan les dades caben a la cache (aquí N ≤ 16), tornar a cridar la funció les troba allà: només encerts.<br>&bull; <b>Fallades de capacitat</b>: quan les dades no hi caben (N = 32), els seus blocs es reemplacen abans de tornar-los a usar, i cada crida falla tant com la primera.</p><p>Vectoritzar no canvia les fallades per suma (aquí 3 cicles per suma), però fa més ràpida la resta, així que les fallades pesen més: SUM-simd passa de 5,3 a 8,3 cicles per suma (+56%), SUM-scalar de 20 a 23 (+15%).</p>"
         },
         "actions": [
           "sidePanel:show",
