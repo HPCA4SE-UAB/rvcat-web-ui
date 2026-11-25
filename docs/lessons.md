@@ -193,6 +193,10 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
   `exploreHint` (HTML) is shown next to the orange button until it is closed.
   `exploreActions` run when the exploration starts (e.g. `timeline:width=0.97`), `exploreEndActions` when it ends.
 
+## Reviewing a lesson (author mode)
+
+In author mode, the bar of the lesson has **Jump to:** with the cards of its tutorial (numbered as the cards show them). Choosing one goes to that card as if the cards before it, in the order of the file, had been done: questions answered with the right answers, predictions, goals and explorations done, validations met and tasks of the lesson completed; the simulator is put in the state of the card. **Previous** then goes through those cards. Simulations are not run: a card that reads stored results (e.g. a speedup) needs them to be simulated again.
+
 ## State of the simulator at each card
 
 The state of the simulator at a card is computed from the tutorial file, not stored: the parts hidden by the

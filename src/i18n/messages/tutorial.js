@@ -30,6 +30,7 @@ export default {
   "Finish": { es: "Terminar", ca: "Acaba" },
   "Question {n}": { es: "Pregunta {n}", ca: "Pregunta {n}" },
   "Takeaway": { es: "Idea clave", ca: "Idea clau" },
+  "Skipped by the author (Jump to)": { es: "Saltada por el autor (Saltar a)", ca: "Saltada per l'autor (Salta a)" },
   "Select ONE correct answer": { es: "Elige UNA respuesta correcta", ca: "Tria UNA resposta correcta" },
   "Write a number": { es: "Escribe un número", ca: "Escriu un nombre" },
   "Write the numbers": { es: "Escribe los números", ca: "Escriu els nombres" },

@@ -270,6 +270,20 @@
   function resumeTutorial() {
     simState.lessonTutorial = { id: lesson.value.tutorial, action: 'resume', nonce: Date.now() }
   }
+
+  // Author mode: "Jump to" a card of the lesson, as if the cards before it had been done
+  const jumpCards = computed(() => {
+    if (!authorMode.value || !lesson.value?.tutorial) return []
+    try {
+      const steps = JSON.parse(localStorage.getItem(`tutorial.${lesson.value.tutorial}`))?.steps ?? []
+      return steps.map((s, i) => ({ id: s.id, label: `${i + 1}. ${plainText(localized(s.title)).slice(0, 60)}` }))
+    } catch { return [] }
+  })
+  function jumpTo(event) {
+    const stepId = event.target.value
+    event.target.value = ''
+    if (stepId) simState.lessonTutorial = { id: lesson.value.tutorial, action: 'jump', stepId, nonce: Date.now() }
+  }
 </script>
 
 <template>
@@ -313,6 +327,14 @@
       </span>
       <span v-else-if="completed" class="lesson-code">{{ t('✔ Completed') }}</span>
       <button class="lesson-small" id="lesson-tutorial-button" :title="t('Show the tutorial of the lesson where you left it')" @click="resumeTutorial">▶ tutorial</button>
+      <label v-if="jumpCards.length" class="lesson-jump"
+             :title="t('Author mode: go to a card of the lesson, as if the cards before it had been done (questions answered, explorations and tasks done)')">
+        {{ t('Jump to:') }}
+        <select id="lesson-jump-select" @change="jumpTo">
+          <option value="">—</option>
+          <option v-for="c in jumpCards" :key="c.id" :value="c.id">{{ c.label }}</option>
+        </select>
+      </label>
       <button class="lesson-exit" id="lesson-exit-button" @click="askExit = true">{{ t('Exit lesson') }}</button>
     </div>
   </Teleport>
@@ -386,6 +408,9 @@
   .lesson-title { font-weight: 600; }
   .lesson-progress { color: #555; }
   .lesson-code { color: #1b5e20; }
+  .lesson-jump { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-size: 0.8rem; color: #555; }
+  .lesson-jump select { max-width: 16rem; font-size: 0.8rem; padding: 1px 4px; }
+  .lesson-jump + .lesson-exit { margin-left: 8px; }
   .lesson-exit {
     margin-left: auto; background: #fbe9e7; border: 1px solid #e57373; color: #b71c1c;
     border-radius: 4px; padding: 2px 10px; cursor: pointer; font-size: 0.875rem;

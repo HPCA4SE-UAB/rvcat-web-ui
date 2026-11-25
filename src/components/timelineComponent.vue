@@ -605,14 +605,24 @@
     const worldW = worldCanvas.width
     const startCycle = first ? Math.max(0, first[2] - 2) : 0
     let scrollX = startCycle * cellW
-    // a pinned cell stays in view (it is moved with the arrows)
+    // a pinned cell moved with the arrows stays in view: the cycles do not move while it is between
+    // the third visible column and the third from the end; beyond them, they move just enough to keep
+    // it there. Within these limits, they move to show the cells of the instructions related to it
     const sel = selectedCell.value
     if (keepSelectionInView && sel && sel.colIdx >= 0 && (['resource-cycle', 'cycle-header'].includes(sel.cellType) || (!sel.cellType &&
         slotOfRow[sel.rowIdx] >= scrollRow.value && slotOfRow[sel.rowIdx] < scrollRow.value + visibleRowCount()))) {
       const bodyW = w - (padX + labelW)
+      const MARGIN = 2 * cellW                                 // two columns before / after the cursor
       const x0 = sel.colIdx * cellW, x1 = x0 + cellW
-      if (x0 < scrollX) scrollX = Math.max(0, x0 - 2 * cellW)
-      else if (x1 > scrollX + bodyW) scrollX = x1 - bodyW + 2 * cellW
+      const minX = x1 + MARGIN - bodyW, maxX = x0 - MARGIN      // the positions that keep the cursor inside
+      scrollX = view.scrollX                                    // (the cycles stay where they were)
+      const cols = sel.cellType ? [] : relatedCols(sel)
+      if (cols.length) {                                        // the related cells, if they fit with the cursor
+        const lo = Math.min(...cols) * cellW, hi = (Math.max(...cols) + 1) * cellW
+        if (lo < scrollX) scrollX = lo - cellW
+        if (hi > scrollX + bodyW) scrollX = hi - bodyW + cellW
+      }
+      scrollX = Math.min(Math.max(scrollX, minX), maxX)
     }
     scrollX = Math.max(0, Math.min(scrollX, worldW - w))
     view.gap = 0
@@ -2635,6 +2645,16 @@
   }
   // the window of rows: all of them if they fit; else its own row first, then the rows it depends
   // on (the oldest that fit), then the rows that depend on it
+  // the columns of the cells of the related instructions shown with a pinned cell: the last execution
+  // cycle of the instructions it depends on, and the first one of those that depend on it
+  function relatedCols(cell) {
+    const { before, after } = relatedRows(cell)
+    const execCols = (r) => rowCells(r).filter(c => c.char === 'E').map(c => c.colIdx)
+    const cols = []
+    for (const r of before) { const e = execCols(r); if (e.length) cols.push(Math.max(...e)) }
+    for (const r of after)  { const e = execCols(r); if (e.length) cols.push(Math.min(...e)) }
+    return cols.filter(c => Number.isFinite(c) && c >= 0)
+  }
   function showRelatedRows(cell) {
     const { before, after } = relatedRows(cell)
     const slotsOf = (rows) => rows.map(r => slotOfRow[r]).filter(s => s !== undefined && s >= 0)

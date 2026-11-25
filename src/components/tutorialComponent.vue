@@ -46,7 +46,8 @@
             <div v-if="taskState.prediction !== undefined && !taskState.result" class="task-status">
               {{ t('Prediction {p} saved: now run the simulation.', { p: taskState.prediction }) }}
             </div>
-            <div v-if="taskState.result" class="task-status" :class="{ 'task-ok': taskState.result.good === true, 'task-far': taskState.result.good === false }">
+            <div v-if="taskState.result?.skipped" class="task-status">{{ t('Skipped by the author (Jump to)') }}</div>
+            <div v-else-if="taskState.result" class="task-status" :class="{ 'task-ok': taskState.result.good === true, 'task-far': taskState.result.good === false }">
               {{ t('Prediction {p} · simulated {a} (difference {d})', { p: taskState.prediction, a: formatNumber(taskState.result.actual), d: formatNumber(taskState.result.actual - taskState.prediction) }) }}{{
                 taskState.result.good === null ? '' : taskState.result.good ? ' · ' + t('good prediction') : ' · ' + t('far from the result') }}
             </div>
@@ -1231,6 +1232,13 @@ watch(() => simState.lessonTutorial?.nonce, async () => {
     return
   }
   const { id } = request
+  if (request.action === 'jump') {                 // author mode: go to a card of the lesson
+    if (currentTutorial.value?.id !== id) await startTutorial(id)
+    else if (!isActive.value) resumeTutorial()
+    await nextTick()
+    await jumpToCard(request.stepId)
+    return
+  }
   if (request.action === 'resume' && currentTutorial.value?.id === id) {
     if (!isActive.value) resumeTutorial()
     return
@@ -1770,6 +1778,37 @@ const nextStep = async (targetId) => {
   if (targetIndex === -1) return
   setTask(currentStep.value.id, { solved: true })
   await goToStep(targetIndex)
+}
+
+// Author mode ("Jump to" of the bar of the lesson): go to a card as if the cards before it (in
+// the order of the file) had been done: questions answered with the right answers, predictions,
+// goals and explorations done, validations met, tasks of the lesson completed. The state of the
+// simulator is the one of the card (as when going back). Previous goes through those cards.
+async function jumpToCard(stepId) {
+  const steps = currentTutorial.value?.steps ?? []
+  const target = steps.findIndex(s => s.id === stepId)
+  if (target < 0) return
+  rememberLayout()
+  for (const step of steps.slice(0, target)) {
+    const data = { solved: true, explored: true }
+    if (step.type === 'question') {
+      const answer = step.answerMode === 'numbers' ? (step.numericFields ?? []).map(f => tutorialNumber(f.value, simState))
+                   : step.answerMode === 'number'  ? tutorialNumber(step.numericValue, simState)
+                   : (step.answers ?? []).reduce((acc, a, i) => a.isCorrect ? [...acc, i] : acc, [])
+      data.answer = answer
+      markTask(step.id, { answer })
+    } else if (step.type === 'predict') {
+      Object.assign(data, { prediction: '—', result: { skipped: true, good: null } })
+      markTask(step.id, {})
+    } else if (step.type === 'goal') {
+      data.done = true
+      markTask(step.id, {})
+    }
+    setTask(step.id, data)
+  }
+  tutorialOptions.progressHistory = steps.slice(0, target).map(s => s.id)
+  restoring = true
+  await goToStep(target, { recordHistory: false })
 }
 
 const previousStep = async () => {

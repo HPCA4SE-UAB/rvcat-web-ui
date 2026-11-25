@@ -39,6 +39,12 @@ describe('state of the simulator at a card', () => {
     expect(restoreActions(cardState(cards, 2), {}, null)).toEqual(['sourceCode:open'])
   })
 
+  it('keeps N and Rep set by the cards (a program selected later brings its own ones)', () => {
+    const cards = [{ id: 'x', actions: ['selectProgram:A', 'setN:16', 'setRep:2'] }, { id: 'y', actions: ['selectProgram:B'] }, { id: 'z' }]
+    expect(restoreActions(cardState(cards, 1), {}, null)).toEqual(['selectProgram:A', 'setN:16', 'setRep:2'])
+    expect(restoreActions(cardState(cards, 2), {}, null)).toEqual(['selectProgram:B'])
+  })
+
   it('keeps the Processor panel folded or unfolded as the cards left it', () => {
     const cards = [{ id: 'x', actions: ['processorPanel:fold'] }, { id: 'y' }]
     expect(cardState(cards, 2).processorPanel).toBe('fold')

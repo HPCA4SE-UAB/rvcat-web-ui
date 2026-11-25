@@ -1,5 +1,7 @@
 // Translations: lesson (generated from the review texts; English text = key)
 export default {
+  "Jump to:": { es: "Saltar a:", ca: "Salta a:" },
+  "Author mode: go to a card of the lesson, as if the cards before it had been done (questions answered, explorations and tasks done)": { es: "Modo autor: ir a una tarjeta de la lección, como si se hubieran hecho las tarjetas anteriores (preguntas respondidas, exploraciones y tareas hechas)", ca: "Mode autor: anar a una targeta de la lliçó, com si s'haguessin fet les targetes anteriors (preguntes respostes, exploracions i tasques fetes)" },
   "{f} is not a JSON file": { es: "{f} no es un fichero JSON", ca: "{f} no és un fitxer JSON" },
   "{m} is not in this RVCAT (embed it in the lesson)": { es: "{m} no está en este RVCAT (inclúyelo en la lección)", ca: "{m} no és en aquest RVCAT (inclou-lo a la lliçó)" },
   "Lesson \"{title}\" loaded": { es: "Lección «{title}» cargada", ca: "Lliçó «{title}» carregada" },
