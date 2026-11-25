@@ -48,7 +48,10 @@ const SimulationState = reactive({
   lesson:              null,      // lesson in progress (LessonPanel): resources, locks, tasks, progress
   simulationBlocked:   '',        // reason why a tutorial card does not allow simulating now
   lessonAllow:         [],        // locks lifted by the goal card shown (e.g. "processor.rob")
-  lessonLock:          [],        // what the card shown does not let change: program, N, Rep
+  lessonLock:          [],        // what the card shown does not let change: program, N, Rep, processorPanel
+  processorFolded:     (() => { try { return localStorage.getItem('processorFolded') === '1' } catch { return false } })(),
+                                  // Processor panel folded to its header and a summary line (more room for the program)
+  clearResultsRequest: null,      // a tutorial card asks to empty the table of stored results
   lessonSimulation:    null,      // simulation options fixed by the card shown (e.g. { speculation })
   lessonTutorial:      null,      // { id, action: start|stop, nonce }: the lesson drives its tutorial
   lessonExitAsk:       0,         // changed when the tutorial of the lesson is finished: the lesson asks to exit

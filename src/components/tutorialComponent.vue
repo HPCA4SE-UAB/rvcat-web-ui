@@ -138,7 +138,8 @@
             <span class="image-hint">{{ t('Click to enlarge') }}</span>
           </div>
 
-          <div class="question-mode-info">
+          <!-- (not when the numbers are already written: copied from another question, prefillFrom) -->
+          <div v-if="!(isMultiNumeric && currentStep.prefillFrom)" class="question-mode-info">
             <span v-if="currentStep?.answerMode === 'single'">{{ t('Select ONE correct answer') }}</span>
             <span v-else-if="isNumericQuestion">{{ t('Write a number') }}</span>
             <span v-else-if="isMultiNumeric">{{ t('Write the numbers') }}</span>
@@ -1083,7 +1084,9 @@ const questionPlaced = computed(() => Number.isFinite(questionLayout.value.x) &&
 const sideQuestion = computed(() => ['right', 'left'].includes(currentStep.value?.position))
 const questionStyle = computed(() => {
   const step = currentStep.value, l = questionLayout.value
-  const width = l.w ?? (sideQuestion.value ? step?.wWidth ?? 440 : 800)
+  // "wWidth": "rightPanel": as wide as the right panel (e.g. a long question that would need a scroll bar)
+  const rightWidth = () => Math.max(440, (document.querySelector('#right-panel')?.getBoundingClientRect().width ?? 800) - 32)
+  const width = l.w ?? (step?.wWidth === 'rightPanel' ? rightWidth() : sideQuestion.value ? step?.wWidth ?? 440 : 800)
   const style = { width: `${width}px` }
   if (l.h) style.height = `${l.h}px`
   // "wTop": a question at the right starts that many pixels lower (e.g. to leave Run Simulation free)

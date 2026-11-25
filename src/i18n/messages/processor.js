@@ -1,5 +1,11 @@
 // Translations: processor (generated from the review texts; English text = key)
 export default {
+  "cache {n}×{b} B": { es: "cache {n}×{b} B", ca: "cache {n}×{b} B" },
+  "no cache": { es: "sin cache", ca: "sense cache" },
+  "branch penalty {n}": { es: "penalización de salto {n}", ca: "penalització de salt {n}" },
+  "Show the diagram of the processor": { es: "Mostrar el diagrama del procesador", ca: "Mostra el diagrama del processador" },
+  "Fold the processor to one line: more room for the program": { es: "Plegar el procesador en una línea: más espacio para el programa", ca: "Plega el processador en una línia: més espai per al programa" },
+  "Folded processor. Unfold it (▸) to see its diagram and, after a simulation, the usage of each resource": { es: "Procesador plegado. Despliégalo (▸) para ver su diagrama y, después de una simulación, el uso de cada recurso", ca: "Processador plegat. Desplega'l (▸) per veure'n el diagrama i, després d'una simulació, l'ús de cada recurs" },
   "Program must be a JSON object.": { es: "El programa debe ser un objeto JSON.", ca: "El programa ha de ser un objecte JSON." },
   "Program name must be a non-empty string.": { es: "El nombre del programa debe ser un texto no vacío.", ca: "El nom del programa ha de ser un text no buit." },
   "Program N (algorithmic operations) must be an integer between 1 and {1}.": { es: "La N del programa (operaciones algorítmicas) debe ser un entero entre 1 y {1}.", ca: "La N del programa (operacions algorísmiques) ha de ser un enter entre 1 i {1}." },

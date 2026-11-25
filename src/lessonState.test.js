@@ -38,4 +38,10 @@ describe('state of the simulator at a card', () => {
     expect(cardState(cards, 2).sourceCode).toBe('open')
     expect(restoreActions(cardState(cards, 2), {}, null)).toEqual(['sourceCode:open'])
   })
+
+  it('keeps the Processor panel folded or unfolded as the cards left it', () => {
+    const cards = [{ id: 'x', actions: ['processorPanel:fold'] }, { id: 'y' }]
+    expect(cardState(cards, 2).processorPanel).toBe('fold')
+    expect(restoreActions(cardState(cards, 2), {}, null)).toEqual(['processorPanel:fold'])
+  })
 })

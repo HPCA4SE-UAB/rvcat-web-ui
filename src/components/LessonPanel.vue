@@ -121,6 +121,7 @@
     // the cards speak of the letters of the timeline: the detailed view (a card can ask for the
     // compact one with the action timeline:view=compact)
     simState.timelineView = 'detailed'
+    simState.processorFolded = false      // the cards speak of the diagram of the processor
     simState.lesson = {
       id, title: lesson.title, studentId: student, idLabel: label,
       programs:   res.programs.map(r => r.name),

@@ -362,6 +362,19 @@
     updateResults()
   };
 
+  // A tutorial card asks to empty the table of stored results (action clearStoredResults)
+  function clearStoredResults () {
+    if (!simState.clearResultsRequest) return
+    simState.clearResultsRequest = null
+    for (const name of [...simulationOptions.availableResults])
+      removeFromLocalStorage('result', name, simulationOptions.availableResults)
+    simulationOptions.referenceResult = ''
+    simulationOptions.resultName = ''
+    updateShowResults()
+    saveOptions()
+  }
+  watch(() => simState.clearResultsRequest, clearStoredResults)
+
   function removeResult (index) {
     const name = simulationOptions.availableResults[index]
     if (name === undefined) return
@@ -391,7 +404,7 @@
     document.getElementById('simulation-running').style.display = 'none'
     loadOptions()
     loadResults()
-    initSimulation()
+    initSimulation().then(clearStoredResults)
     nextTick(() => {
       isComponentMounted = true;
       unwatch = watch(

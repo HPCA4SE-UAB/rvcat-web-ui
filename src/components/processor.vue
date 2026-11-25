@@ -34,6 +34,24 @@
 
   const processorOptions = reactive(defaultOptions)
   const simulatedSvg     = ref('')
+
+  // ---- The panel can be folded to its header and a summary line (more room for the program).
+  //      A card of a lesson can forbid unfolding it or folding it ("lock": ["processorPanel"]) ----
+  const foldLocked = computed(() => !!simState.lesson && (simState.lessonLock ?? []).includes('processorPanel'))
+  watch(() => simState.processorFolded, (v) => {
+    try { localStorage.setItem('processorFolded', v ? '1' : '0') } catch { /* storage not available */ }
+  })
+  const processorSummary = computed(() => {
+    const p = simState.simulatedProcess
+    if (!p) return ''
+    const parts = [
+      `dispatch ${p.dispatch}`, `retire ${p.retire}`, `ROB ${p.ROBsize}`,
+      t('{n} ports', { n: Object.keys(p.ports ?? {}).length }),
+      Number(p.nBlocks) > 0 ? t('cache {n}×{b} B', { n: p.nBlocks, b: p.blkSize }) : t('no cache'),
+      t('branch penalty {n}', { n: p.bPenalty ?? 5 }),
+    ]
+    return parts.join(' · ')
+  })
   let initializingProcessor = false
 
   const loadOptions = () => {
@@ -905,6 +923,10 @@
 <template>
   <div class="header processor-part">
       <div class="section-title-and-info">
+        <button v-if="!foldLocked" class="fold-toggle" id="processor-fold-toggle"
+                :aria-expanded="!simState.processorFolded"
+                :title="simState.processorFolded ? t('Show the diagram of the processor') : t('Fold the processor to one line: more room for the program')"
+                @click="simState.processorFolded = !simState.processorFolded">{{ simState.processorFolded ? '▸' : '▾' }}</button>
         <span ref="helpIcon" class="info-icon" @click="openHelp" :title="t('Show help')">
           <img src="/img/info.png" class="info-img">
         </span>
@@ -1008,7 +1030,11 @@
       </div>
   </div>
 
-  <div class="graph-section processor-part">
+  <div v-if="simState.processorFolded" class="processor-summary processor-part" id="processor-summary"
+       :title="t('Folded processor. Unfold it (▸) to see its diagram and, after a simulation, the usage of each resource')">
+    {{ processorSummary }}
+  </div>
+  <div v-show="!simState.processorFolded" class="graph-section processor-part">
     <div class="processor-container">
       <div class="simProcessor-img" data-pin-twice="a_toggleops a_addport" v-html="simulatedSvg" v-if="simulatedSvg"></div>
     </div>
@@ -1102,6 +1128,15 @@
     margin-top: 2px;
   }
 
+  .fold-toggle {
+    border: none; background: none; padding: 0 4px 0 0; margin: 0; cursor: pointer;
+    font-size: 0.9rem; color: #1a4fb3; line-height: 1;
+  }
+  .fold-toggle:hover { color: #0b2e5c; }
+  .processor-summary {
+    margin: 2px 4px 6px; padding: 3px 8px; border-radius: 4px; background: #eef2f7;
+    font-size: 0.8rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   .settings-container {
     display: flex;
     align-items: center;
