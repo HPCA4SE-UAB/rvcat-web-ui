@@ -20,6 +20,9 @@
     ? [...simState.lesson.programs, ...(simState.lesson.extraPrograms ?? [])]
     : programOptions.availablePrograms)
   const locked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
+  // a card of the lesson can fix the program, N or Rep while it is shown ("lock")
+  const cardLocked = (what) => !!simState.lesson && (simState.lessonLock ?? []).includes(what)
+  const lockTitle = computed(() => t('Fixed by the lesson in this card'))
   const nLimits = computed(() => {
     const n = simState.lesson?.locks?.N
     if (!n || (simState.lessonAllow ?? []).includes('N')) return null
@@ -572,6 +575,8 @@
       return simState.timelineCriticalPathPercentages?.[index]
     }
     if (props.activeView === 'simulationComponent') {
+      // not while the lesson hides the simulation (results of a simulation not run in the lesson)
+      if (['simulation', 'simulationPanel'].some(p => simState.lesson?.hidden?.includes(p))) return null
       return simState.executionResults?.critical_path?.instructions?.[index]?.percentage
     }
     return null
@@ -589,7 +594,8 @@
 
       <div class="program-header">
         <select v-model="programOptions.currentProgram" class="form-select"
-            id="programs-list" :title="t('Select Program')">
+            id="programs-list" :disabled="cardLocked('program')"
+            :title="cardLocked('program') ? lockTitle : t('Select Program')">
           <option value="" disabled>{{ t('Select') }}</option>
           <option v-for="program in visiblePrograms" :key="program" :value="program" :title="programNote(program)">
             {{ program }}
@@ -628,7 +634,7 @@
             pattern=   "[0-9]*"
             :placeholder="100"
             v-model=  "inputValue"
-            :disabled="nLimits?.min === nLimits?.max && !!nLimits"
+            :disabled="(nLimits?.min === nLimits?.max && !!nLimits) || cardLocked('N')"
             @blur=    "validateField"
             @keypress="handleKeyPress"
             @input=   "handleInput"
@@ -637,7 +643,7 @@
             :title=   "`Rang: 1 - ${MAX_N}`"
           />
           <button
-            class="blue-button small-btn"
+            class="blue-button small-btn" :disabled="cardLocked('N')"
             @mousedown="startHold(increaseN)"
             @mouseup="stopHold"
             @mouseleave="stopHold"
@@ -649,7 +655,7 @@
           </button>
 
           <button
-            class="blue-button small-btn"
+            class="blue-button small-btn" :disabled="cardLocked('N')"
             @mousedown="startHold(decreaseN )"
             @mouseup="stopHold"
             @mouseleave="stopHold"
@@ -672,8 +678,8 @@
             Rep:
           </span>
           <input type="number" min="1" :max="maxRep" step="1" v-model.lazy.number="repModel"
-                 class="rep-input rep-part" id="program-rep"
-                 :title="t('Calls of the loop (set in the program editor; here, for this session)')" />
+                 class="rep-input rep-part" id="program-rep" :disabled="cardLocked('Rep')"
+                 :title="cardLocked('Rep') ? lockTitle : t('Calls of the loop (set in the program editor; here, for this session)')" />
         </div>
       </div>
     </div>

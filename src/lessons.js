@@ -53,6 +53,7 @@ export const LESSON_PARTS = {
   programRep:        'Rep field (repetitions of the loop) of the Program panel',
   programCritical:   'percentage of critical-path time and colors of the rows of the Program panel',
   simulationPanel:   'contents of the Simulation panel (Run Simulation, results and stored results)',
+  processorRevert:   'button that discards the changes made to the processor (Processor panel)',
 }
 
 const ID_RE = /^[A-Za-z0-9-]{1,40}$/

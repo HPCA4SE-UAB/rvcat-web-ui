@@ -1,7 +1,8 @@
 <template>
   <div class="tutorial-system">
     <!-- Tutorial Overlay for Steps -->
-    <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay">
+    <div v-if="currentTutorial && isActive && !isQuestionStep" class="tutorial-overlay"
+         :class="{ 'overlay-takeaway': isTakeaway && !exploring }">
       <div v-if="exploring" class="explore-done">
         <div v-if="exploreHint" class="explore-hint">
           <button class="explore-hint-close" @click="exploreHint = false" :title="t('Close')">✕</button>
@@ -13,9 +14,11 @@
       </div>
       <div v-if="placing" class="tutorial-acting">⏳ {{ t('The tutorial is acting on the simulator…') }}</div>
       <!-- Tooltip -->
-      <div class="tutorial-tooltip" ref="contentRef" :class="{ 'tooltip-hidden': measuring || placing || exploring }"
+      <div class="tutorial-tooltip" ref="contentRef"
+        :class="{ 'tooltip-hidden': measuring || placing || exploring, 'card-takeaway': isTakeaway }"
         :style="tooltipStyle">
         <div class="tutorial-header" ref="headerRef">
+          <span v-if="isTakeaway" class="takeaway-badge">★ {{ t('Takeaway') }}</span>
           <h3 v-html="rt(currentStep?.title)"></h3>
           <span v-if="previewMode" class="preview-badge" :title="t('Preview from the tutorial editor: closing it returns to the editor')">PREVIEW</span>
           <button :title="previewMode ? t('End preview and return to the tutorial editor') : t('Close tutorial, but can be resumed later')"
@@ -23,6 +26,9 @@
         </div>
         <div class="tutorial-content">
           <div class="step-description" v-html="rt(currentStep?.description)"></div>
+          <!-- what the student must still do (e.g. click a button): only while the validation is not met -->
+          <div v-if="currentStep?.todoDescription && !validationMet && !taskState.solved" class="step-description step-todo-description"
+               v-html="rt(currentStep.todoDescription)"></div>
           <!-- second part of the card, shown when its validation is met (e.g. the results of the simulation) -->
           <div v-if="currentStep?.doneDescription && validationMet" class="step-description step-done-description"
                v-html="rt(currentStep.doneDescription)"></div>
@@ -114,7 +120,7 @@
     <!-- a question with "position": "right" is a panel at the right that does not cover the simulator
          (e.g. to answer it looking at the timeline); otherwise it is a dialog over a dark background -->
     <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay"
-         :class="{ 'question-side': currentStep?.position === 'right' }">
+         :class="{ 'question-side': sideQuestion, 'question-side-left': currentStep?.position === 'left' }">
       <div class="question-panel" ref="questionPanelRef" :style="questionStyle" @pointerdown="pinQuestionToResize">
         <button @click="closeTutorial" class="question-close">&times;</button>
 
@@ -816,6 +822,17 @@ const positionCurrentTooltip = async () => {
       return
     }
 
+    // "center": in the middle of the window; "bottom-center": at the bottom, centered ("xShift":
+    // a fraction of the width of the window to the right, e.g. 0.1)
+    if (step.position === 'center' || step.position === 'bottom-center') {
+      const shift = (Number(step.xShift) || 0) * window.innerWidth
+      x.value = clamp((window.innerWidth - tooltipRect.width) / 2 + shift, VIEWPORT_MARGIN, window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN)
+      y.value = step.position === 'center'
+        ? clamp((window.innerHeight - tooltipRect.height) / 2, HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+        : Math.max(HEADER_HEIGHT, window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN)
+      return
+    }
+
     const place = cardReference(step)
     if (place) {
       const position = placeInEmptyZone(place.refRect, tooltipRect.width, tooltipRect.height, place.preferred, place.avoidRect)
@@ -855,6 +872,7 @@ function replaceIfCovering() {
   const el = contentRef.value
   if (!step || !el || isQuestionStep.value || measuring.value || actionsRunning.value) return
   if (Number.isFinite(step.x_pos) && Number.isFinite(step.y_pos)) return
+  if (step.position === 'center' || step.position === 'bottom-center') return   // a fixed place in the window
   const place = cardReference(step)
   if (!place) return
   const r = el.getBoundingClientRect()
@@ -913,6 +931,8 @@ watch(contentRef, (el) => {
 
 // A card moved by the student (or placed in the tutorial file) appears directly at its place
 const measuring = ref(false)
+// "style": "takeaway": a card with a message to remember (centered, larger text, a dark background)
+const isTakeaway = computed(() => currentStep.value?.style === 'takeaway')
 // Style of the card: width and height only when the card fixes them. A key given as undefined
 // would be cleared by Vue at every redraw (e.g. while the card is moved), undoing a manual resize
 const tooltipStyle = computed(() => {
@@ -1059,13 +1079,15 @@ watch(currentStep, (step) => {
 const questionPlaced = computed(() => Number.isFinite(questionLayout.value.x) && Number.isFinite(questionLayout.value.y))
 // The width is always given (the size of the file, or the one given by the student): Vue sets
 // the keys of the style at every redraw, so a manual resize is first copied into questionLayout
+// a question with "position": "right" or "left" is a panel at that side, without a dark background
+const sideQuestion = computed(() => ['right', 'left'].includes(currentStep.value?.position))
 const questionStyle = computed(() => {
   const step = currentStep.value, l = questionLayout.value
-  const width = l.w ?? (step?.position === 'right' ? step?.wWidth ?? 440 : 800)
+  const width = l.w ?? (sideQuestion.value ? step?.wWidth ?? 440 : 800)
   const style = { width: `${width}px` }
   if (l.h) style.height = `${l.h}px`
   // "wTop": a question at the right starts that many pixels lower (e.g. to leave Run Simulation free)
-  if (step?.position === 'right' && step?.wTop) style.marginTop = `${step.wTop}px`
+  if (sideQuestion.value && step?.wTop) style.marginTop = `${step.wTop}px`
   if (questionPlaced.value) {
     Object.assign(style, { position: 'fixed', left: `${l.x}px`, top: `${l.y}px`, margin: 0,
                            maxHeight: `calc(100vh - ${l.y + VIEWPORT_MARGIN}px)` })
@@ -1190,6 +1212,10 @@ watch(() => [isActive.value, currentStep.value], () => {
   const step = currentStep.value
   simState.graphWindowPlace = isActive.value ? (step?.graphWindow ?? '') : ''
   simState.lessonAllow = isActive.value && step ? [...(step.allow ?? [])] : []
+  // "lock": what the card does not let the student change (program, N, Rep), and "simulation":
+  // options of the simulation fixed while the card is shown (e.g. { "speculation": "wrong-path" })
+  simState.lessonLock = isActive.value && step ? [...(step.lock ?? [])] : []
+  simState.lessonSimulation = isActive.value && step?.simulation ? { ...step.simulation } : null
   predictionInput.value = step ? String(taskStates.value[step.id]?.prediction ?? '') : ''
 })
 
@@ -2125,6 +2151,17 @@ onUnmounted(() => {
   /* a card being placed (or waiting for its actions): hidden with all its content at once
      (the buttons have transitions, which would keep them visible for a moment) */
   .tutorial-tooltip.tooltip-hidden { opacity: 0 !important; pointer-events: none !important; }
+  .tutorial-system .question-overlay.question-side.question-side-left { justify-content: flex-start; padding: 96px 0 0 16px; }
+  /* a takeaway card: what to remember of a part of the lesson */
+  .tutorial-overlay.overlay-takeaway { background: rgba(0, 0, 0, 0.45); transition: background 0.4s; }
+  .tutorial-tooltip.card-takeaway { border: 5px solid #f9a825; background: #fffbea; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
+  .tutorial-tooltip.card-takeaway .tutorial-header { background: #fff3c4; border-bottom: 2px solid #f9a825; }
+  .tutorial-tooltip.card-takeaway .tutorial-header { justify-content: flex-start; }
+  .tutorial-tooltip.card-takeaway .tutorial-header h3 { font-size: 1.25rem; flex: 1 1 auto; }
+  .tutorial-tooltip.card-takeaway .step-description { font-size: 1.08rem; color: #333; }
+  .tutorial-header span.takeaway-badge { flex: 0 0 auto; width: auto; margin-right: 12px; padding: 2px 10px; border-radius: 12px; background: #f9a825; color: #fff;
+                    font-weight: bold; font-size: 0.85rem; letter-spacing: 0.02em; }
+  .step-todo-description { color: #b35900; font-weight: 600; }
   .tutorial-system .question-overlay.question-side {
     background: transparent; pointer-events: none; justify-content: flex-end;
     padding: 96px 16px 0 0; box-sizing: border-box;

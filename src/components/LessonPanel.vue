@@ -246,6 +246,8 @@
     }
     simState.lesson = null
     simState.lessonAllow = []
+    simState.lessonLock = []
+    simState.lessonSimulation = null
     localStorage.removeItem(SESSION_KEY)
     await nextTick()
     simState.reloadNonce = Date.now()
@@ -429,5 +431,6 @@
   .lesson-hide-programPorts .ports-col,
   .lesson-hide-programRep .rep-part,
   .lesson-hide-storedResults .stored-results-part,
-  .lesson-hide-simulationPanel .simulation-root { display: none !important; }
+  .lesson-hide-simulationPanel .simulation-root,
+  .lesson-hide-processorRevert #revert-processor-button { display: none !important; }
 </style>

@@ -29,6 +29,7 @@ export default {
   "Finish tutorial; disabled if an action must be done first": { es: "Terminar el tutorial; desactivado si antes hay que hacer una acción", ca: "Acaba el tutorial; desactivat si abans cal fer una acció" },
   "Finish": { es: "Terminar", ca: "Acaba" },
   "Question {n}": { es: "Pregunta {n}", ca: "Pregunta {n}" },
+  "Takeaway": { es: "Idea clave", ca: "Idea clau" },
   "Select ONE correct answer": { es: "Elige UNA respuesta correcta", ca: "Tria UNA resposta correcta" },
   "Write a number": { es: "Escribe un número", ca: "Escriu un nombre" },
   "Write the numbers": { es: "Escribe los números", ca: "Escriu els nombres" },

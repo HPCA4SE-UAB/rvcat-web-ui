@@ -1,5 +1,6 @@
 // Translations: program (generated from the review texts; English text = key)
 export default {
+  "Fixed by the lesson in this card": { es: "Fijado por la lección en esta tarjeta", ca: "Fixat per la lliçó en aquesta targeta" },
   "Show/hide the source code (e.g. C) of the loop from which the program was generated. It is saved with the program and shown in the header of the Program panel": { es: "Mostrar/ocultar el código fuente (p. ej., C) del bucle del que se generó el programa. Se guarda con el programa y se muestra en la cabecera del panel Program", ca: "Mostra/amaga el codi font (p. ex., C) del bucle a partir del qual es va generar el programa. Es desa amb el programa i es mostra a la capçalera del panell Program" },
   "Source code of the loop (e.g. C), saved with the program": { es: "Código fuente del bucle (p. ej., C), guardado con el programa", ca: "Codi font del bucle (p. ex., C), desat amb el programa" },
   "Removing all programs forces to load the original programs provided in the distribution": { es: "Al quitar todos los programas se cargan los programas originales de la distribución", ca: "En treure tots els programes es carreguen els programes originals de la distribució" },

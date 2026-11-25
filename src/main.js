@@ -48,6 +48,8 @@ const SimulationState = reactive({
   lesson:              null,      // lesson in progress (LessonPanel): resources, locks, tasks, progress
   simulationBlocked:   '',        // reason why a tutorial card does not allow simulating now
   lessonAllow:         [],        // locks lifted by the goal card shown (e.g. "processor.rob")
+  lessonLock:          [],        // what the card shown does not let change: program, N, Rep
+  lessonSimulation:    null,      // simulation options fixed by the card shown (e.g. { speculation })
   lessonTutorial:      null,      // { id, action: start|stop, nonce }: the lesson drives its tutorial
   lessonExitAsk:       0,         // changed when the tutorial of the lesson is finished: the lesson asks to exit
   reloadNonce:         0,         // changed to reload the current program and processor from storage

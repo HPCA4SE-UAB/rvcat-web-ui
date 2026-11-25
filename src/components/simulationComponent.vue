@@ -213,7 +213,7 @@
 
   // Options fixed by a lesson (locks.simulation: { sched, speculation })
   const fixedOption = (key) => (simState.lessonAllow ?? []).includes(`simulation.${key}`)
-    ? null : simState.lesson?.locks?.simulation?.[key] ?? null
+    ? null : simState.lessonSimulation?.[key] ?? simState.lesson?.locks?.simulation?.[key] ?? null
   watch(() => [fixedOption('sched'), fixedOption('speculation'), settings.sched, settings.speculation], () => {
     for (const key of ['sched', 'speculation']) {
       const fixed = fixedOption(key)

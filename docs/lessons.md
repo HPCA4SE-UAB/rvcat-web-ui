@@ -176,6 +176,12 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 - action `setRep:NUMBER`: Rep (calls of the loop) in the Program panel.
 - action `graphOption:KEY=VALUE`: an option of the dependence graph (`iters=1..7`, `nonCyclic`, `latencies`, `text`, `inputs` = `on|off`), applied when the Static Analysis panel is shown; then the student can change it.
 - hidden part `simulationPanel`: the contents of the Simulation panel (to show only the Program panel in the first cards).
+- hidden part `processorRevert`: the button that discards the changes made to the processor (the action `revertProcessor` still works).
+- `todoDescription`: text shown only while the validation of the card is not met (e.g. "click ▸ C to continue"); a card already solved does not show it when the student comes back.
+- `lock`: `["program", "N", "Rep"]`, what the student cannot change while the card is shown (the actions of the cards still can).
+- `simulation`: options of the simulation fixed while the card is shown, e.g. `{ "speculation": "wrong-path" }` (over `locks.simulation`).
+- `style`: `"takeaway"`, a card with a message to remember: wider border, larger text, a badge and a dark background.
+- `position`: also `"center"` (the middle of the window) and `"bottom-center"` (the bottom of the window; `xShift`, a fraction of the width of the window, moves it to the right). A question with `"position": "left"` is a panel at the left.
 - validation `{ "type": "element_closed", "selector": ".pinned-detail" }`: met once that element is closed (e.g. a window opened by the card).
 - `predictGood`, `predictFar`: comments shown after a good or a far prediction.
 - `resultDescription`: text shown after the result of the prediction, whatever it was (e.g. to explain the result).

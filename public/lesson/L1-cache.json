@@ -10,7 +10,7 @@
     "es": "<p>Cuatro versiones de un bucle que suma los elementos de un vector (escalar, SIMD y desenrollado con varios acumuladores) en un procesador como el núcleo Golden Cove: latencia y throughput.</p>",
     "ca": "<p>Quatre versions d'un bucle que suma els elements d'un vector (escalar, SIMD i desenrotllat amb diversos acumuladors) en un processador com el nucli Golden Cove: latència i throughput.</p>"
   },
-  "version": 9,
+  "version": 10,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -720,7 +720,7 @@
       "dispatch": 6,
       "retire": 6,
       "ROBsize": 64,
-      "bPenalty": 17,
+      "bPenalty": 10,
       "nBlocks": 0,
       "blkSize": 64,
       "mPenalty": 12,
@@ -851,7 +851,8 @@
     "simulation",
     "simulationPanel",
     "analysis",
-    "timeline"
+    "timeline",
+    "processorRevert"
   ],
   "locks": {
     "programEditor": true,
@@ -901,9 +902,9 @@
           }
         },
         "description": {
-          "en": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles.</p><p>The same C code, compiled with different options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson, which exhibit different performance behaviours.</p><p><b>Click ▸ C, above the table of instructions, to see the C code of the loop</b> (needed to continue).</p>",
-          "es": "<p>Esta lección analiza cómo afecta la <b>memoria cache</b> al rendimiento de un bucle muy sencillo: la función <b>my_sum</b> suma los N elementos de un vector V de doubles.</p><p>El mismo código C, compilado con opciones distintas, da <b>cuatro bucles distintos</b> de instrucciones máquina: los cuatro programas de esta lección, que tienen comportamientos de rendimiento distintos.</p><p><b>Haz clic en ▸ C, encima de la tabla de instrucciones, para ver el código C del bucle</b> (necesario para continuar).</p>",
-          "ca": "<p>Aquesta lliçó analitza com afecta la <b>memòria cache</b> al rendiment d'un bucle molt senzill: la funció <b>my_sum</b> suma els N elements d'un vector V de doubles.</p><p>El mateix codi C, compilat amb opcions diferents, dona <b>quatre bucles diferents</b> d'instruccions màquina: els quatre programes d'aquesta lliçó, que tenen comportaments de rendiment diferents.</p><p><b>Fes clic a ▸ C, damunt de la taula d'instruccions, per veure el codi C del bucle</b> (necessari per continuar).</p>"
+          "en": "<p>This lesson analyses how the <b>cache memory</b> affects the performance of a very simple loop: the function <b>my_sum</b> adds the N elements of a vector V of doubles.</p><p>The same C code, compiled with different options, gives <b>four different loops</b> of machine instructions: the four programs of this lesson, which exhibit different performance behaviours.</p>",
+          "es": "<p>Esta lección analiza cómo afecta la <b>memoria cache</b> al rendimiento de un bucle muy sencillo: la función <b>my_sum</b> suma los N elementos de un vector V de doubles.</p><p>El mismo código C, compilado con opciones distintas, da <b>cuatro bucles distintos</b> de instrucciones máquina: los cuatro programas de esta lección, que tienen comportamientos de rendimiento distintos.</p>",
+          "ca": "<p>Aquesta lliçó analitza com afecta la <b>memòria cache</b> al rendiment d'un bucle molt senzill: la funció <b>my_sum</b> suma els N elements d'un vector V de doubles.</p><p>El mateix codi C, compilat amb opcions diferents, dona <b>quatre bucles diferents</b> d'instruccions màquina: els quatre programes d'aquesta lliçó, que tenen comportaments de rendiment diferents.</p>"
         },
         "actions": [
           "selectProgram:SUM-scalar",
@@ -914,7 +915,12 @@
         ],
         "next": [
           "compile"
-        ]
+        ],
+        "todoDescription": {
+          "en": "<p><b>Click ▸ C, above the table of instructions, to see the C code of the loop</b> (needed to continue).</p>",
+          "es": "<p><b>Haz clic en ▸ C, encima de la tabla de instrucciones, para ver el código C del bucle</b> (necesario para continuar).</p>",
+          "ca": "<p><b>Fes clic a ▸ C, damunt de la taula d'instruccions, per veure el codi C del bucle</b> (necessari per continuar).</p>"
+        }
       },
       {
         "id": "compile",
@@ -1055,9 +1061,9 @@
         "position": "right",
         "wWidth": 440,
         "questionText": {
-          "en": "<p>Click <b>perf</b> in the Program panel: the table shows the <b>latency</b> and the <b>execution ports</b> of each instruction.</p><p>With these data, estimate the <b>minimum time per sum</b> (cycles per algorithmic operation) of each version: per iteration, the time of the longest chain of dependent additions (latency) and the time that the busiest ports need (throughput); the larger one, divided by the elements per iteration (S).</p><p>It is a prediction: the next card checks it.</p>",
-          "es": "<p>Pulsa <b>perf</b> en el panel del programa: la tabla muestra la <b>latencia</b> y los <b>puertos de ejecución</b> de cada instrucción.</p><p>Con estos datos, estima el <b>tiempo mínimo por suma</b> (ciclos por operación algorítmica) de cada versión: por iteración, el tiempo de la cadena más larga de sumas dependientes (latencia) y el tiempo que necesitan los puertos más ocupados (throughput); el mayor de los dos, dividido por los elementos por iteración (S).</p><p>Es una predicción: la tarjeta siguiente la comprueba.</p>",
-          "ca": "<p>Prem <b>perf</b> al panell del programa: la taula mostra la <b>latència</b> i els <b>ports d'execució</b> de cada instrucció.</p><p>Amb aquestes dades, estima el <b>temps mínim per suma</b> (cicles per operació algorísmica) de cada versió: per iteració, el temps de la cadena més llarga de sumes dependents (latència) i el temps que necessiten els ports més ocupats (throughput); el més gran dels dos, dividit pels elements per iteració (S).</p><p>És una predicció: la targeta següent la comprova.</p>"
+          "en": "<p>Click <b>perf</b> in the Program panel: the table shows the <b>latency</b> and the <b>execution ports</b> of each instruction.</p><p>With these data, estimate the <b>minimum time per sum</b> (cycles per algorithmic operation) of each version: remember that performance can be <b>latency-bound</b> or <b>throughput-bound</b>, and take into account the elements processed per loop iteration (S).</p><p>It is a prediction: the next card checks it.</p>",
+          "es": "<p>Pulsa <b>perf</b> en el panel del programa: la tabla muestra la <b>latencia</b> y los <b>puertos de ejecución</b> de cada instrucción.</p><p>Con estos datos, estima el <b>tiempo mínimo por suma</b> (ciclos por operación algorítmica) de cada versión: recuerda que el rendimiento puede estar <b>limitado por la latencia</b> o <b>limitado por el throughput</b>, y ten en cuenta los elementos procesados por iteración del bucle (S).</p><p>Es una predicción: la tarjeta siguiente la comprueba.</p>",
+          "ca": "<p>Prem <b>perf</b> al panell del programa: la taula mostra la <b>latència</b> i els <b>ports d'execució</b> de cada instrucció.</p><p>Amb aquestes dades, estima el <b>temps mínim per suma</b> (cicles per operació algorísmica) de cada versió: recorda que el rendiment pot estar <b>limitat per la latència</b> o <b>limitat pel throughput</b>, i tingues en compte els elements processats per iteració del bucle (S).</p><p>És una predicció: la targeta següent la comprova.</p>"
         },
         "answerMode": "numbers",
         "answers": [],
@@ -1249,12 +1255,20 @@
         "position": "inside-top-left",
         "wWidth": 700,
         "description": {
-          "en": "<p>GC-base, like the Golden Cove core, adds doubles in <b>2 ports</b> (P1 and P5), with a <b>latency of 2 cycles</b>: up to 2 additions start per cycle, and each one takes 2 cycles.</p><p>&bull; <b>SUM-scalar</b> and <b>SUM-simd</b> have <b>one chain</b> of additions (one accumulator): each addition waits for the previous one. They are <b><span style=\"color:#c62828\">latency-bound</span></b>: 2 cycles per addition, and the two adders (P1, P5) are busy only 1/4 of the time.</p><p>&bull; <b>SUM-scalar4</b> and <b>SUM-simd4</b> have <b>4 independent chains</b>: 4 additions in flight, just what 2 ports × 2 cycles of latency admit (Little's law). They reach the <b><span style=\"color:#c62828\">throughput bound</span></b> of the ports: 4 times faster than one chain.</p><p>So the bounds predict: SUM-simd and SUM-scalar4 4 times faster than SUM-scalar, and SUM-simd4 <b>16 times</b> faster (4 for the vector × 4 for the chains).</p>",
-          "es": "<p>GC-base, como el núcleo Golden Cove, suma doubles en <b>2 puertos</b> (P1 y P5), con una <b>latencia de 2 ciclos</b>: empiezan hasta 2 sumas por ciclo, y cada una tarda 2 ciclos.</p><p>&bull; <b>SUM-scalar</b> y <b>SUM-simd</b> tienen <b>una cadena</b> de sumas (un acumulador): cada suma espera a la anterior. Están <b><span style=\"color:#c62828\">limitados por la latencia</span></b>: 2 ciclos por suma, y los dos sumadores (P1, P5) solo están ocupados 1/4 del tiempo.</p><p>&bull; <b>SUM-scalar4</b> y <b>SUM-simd4</b> tienen <b>4 cadenas independientes</b>: 4 sumas en curso, justo las que admiten 2 puertos × 2 ciclos de latencia (ley de Little). Alcanzan la <b><span style=\"color:#c62828\">cota de throughput</span></b> de los puertos: 4 veces más rápido que una cadena.</p><p>Así, las cotas predicen: SUM-simd y SUM-scalar4 4 veces más rápidos que SUM-scalar, y SUM-simd4 <b>16 veces</b> más rápido (4 por el vector × 4 por las cadenas).</p>",
-          "ca": "<p>GC-base, com el nucli Golden Cove, suma doubles en <b>2 ports</b> (P1 i P5), amb una <b>latència de 2 cicles</b>: comencen fins a 2 sumes per cicle, i cadascuna triga 2 cicles.</p><p>&bull; <b>SUM-scalar</b> i <b>SUM-simd</b> tenen <b>una cadena</b> de sumes (un acumulador): cada suma espera l'anterior. Estan <b><span style=\"color:#c62828\">limitats per la latència</span></b>: 2 cicles per suma, i els dos sumadors (P1, P5) només estan ocupats 1/4 del temps.</p><p>&bull; <b>SUM-scalar4</b> i <b>SUM-simd4</b> tenen <b>4 cadenes independents</b>: 4 sumes en curs, just les que admeten 2 ports × 2 cicles de latència (llei de Little). Arriben a la <b><span style=\"color:#c62828\">cota de throughput</span></b> dels ports: 4 vegades més ràpid que una cadena.</p><p>Així, les cotes prediuen: SUM-simd i SUM-scalar4 4 vegades més ràpids que SUM-scalar, i SUM-simd4 <b>16 vegades</b> més ràpid (4 pel vector × 4 per les cadenes).</p>"
+          "en": "<p>The simulated processor adds doubles in <b>2 ports</b> (P1 and P5), with a <b>latency of 2 cycles</b>: up to 2 additions start per cycle, and each one takes 2 cycles.</p><p>&bull; <b>SUM-scalar</b> and <b>SUM-simd</b> have <b>one chain</b> of additions (one accumulator): each addition waits for the previous one. They are <b><span style=\"color:#c62828\">latency-bound</span></b>: 2 cycles per addition, and the two adders (P1, P5) are busy only 1/4 of the time.</p><p>&bull; <b>SUM-scalar4</b> and <b>SUM-simd4</b> have <b>4 independent chains</b>: 4 additions in flight, just what 2 ports × 2 cycles of latency admit (Little's law). They reach the <b><span style=\"color:#c62828\">throughput bound</span></b> of the ports: 4 times faster than one chain.</p><p>So the bounds predict: SUM-simd and SUM-scalar4 4 times faster than SUM-scalar, and SUM-simd4 <b>16 times</b> faster (4 for the vector × 4 for the chains).</p>",
+          "es": "<p>El procesador simulado suma doubles en <b>2 puertos</b> (P1 y P5), con una <b>latencia de 2 ciclos</b>: empiezan hasta 2 sumas por ciclo, y cada una tarda 2 ciclos.</p><p>&bull; <b>SUM-scalar</b> y <b>SUM-simd</b> tienen <b>una cadena</b> de sumas (un acumulador): cada suma espera a la anterior. Están <b><span style=\"color:#c62828\">limitados por la latencia</span></b>: 2 ciclos por suma, y los dos sumadores (P1, P5) solo están ocupados 1/4 del tiempo.</p><p>&bull; <b>SUM-scalar4</b> y <b>SUM-simd4</b> tienen <b>4 cadenas independientes</b>: 4 sumas en curso, justo las que admiten 2 puertos × 2 ciclos de latencia (ley de Little). Alcanzan la <b><span style=\"color:#c62828\">cota de throughput</span></b> de los puertos: 4 veces más rápido que una cadena.</p><p>Así, las cotas predicen: SUM-simd y SUM-scalar4 4 veces más rápidos que SUM-scalar, y SUM-simd4 <b>16 veces</b> más rápido (4 por el vector × 4 por las cadenas).</p>",
+          "ca": "<p>El processador simulat suma doubles en <b>2 ports</b> (P1 i P5), amb una <b>latència de 2 cicles</b>: comencen fins a 2 sumes per cicle, i cadascuna triga 2 cicles.</p><p>&bull; <b>SUM-scalar</b> i <b>SUM-simd</b> tenen <b>una cadena</b> de sumes (un acumulador): cada suma espera l'anterior. Estan <b><span style=\"color:#c62828\">limitats per la latència</span></b>: 2 cicles per suma, i els dos sumadors (P1, P5) només estan ocupats 1/4 del temps.</p><p>&bull; <b>SUM-scalar4</b> i <b>SUM-simd4</b> tenen <b>4 cadenes independents</b>: 4 sumes en curs, just les que admeten 2 ports × 2 cicles de latència (llei de Little). Arriben a la <b><span style=\"color:#c62828\">cota de throughput</span></b> dels ports: 4 vegades més ràpid que una cadena.</p><p>Així, les cotes prediuen: SUM-simd i SUM-scalar4 4 vegades més ràpids que SUM-scalar, i SUM-simd4 <b>16 vegades</b> més ràpid (4 pel vector × 4 per les cadenes).</p>"
         },
         "next": [
           "check-ports"
+        ],
+        "actions": [
+          "closeGraph",
+          "switchTo:simulationComponent",
+          "hide:analysis",
+          "sidePanel:show",
+          "selectProgram:SUM-scalar",
+          "programView:type"
         ]
       },
       {
@@ -1269,9 +1283,9 @@
         "position": "inside-top-left",
         "wWidth": 700,
         "description": {
-          "en": "<p>The <b>Processor</b> panel is now shown: the configuration of GC-base (it cannot be changed in this lesson).</p><p>Click <b>Explore</b> and check that the latency and the ports of each instruction in the Program panel (columns <b>Latency</b> and <b>Ports</b>, with <b>perf</b>) are those of the processor: open <b>▼ show operation types</b> to see which ports execute each type of operation, and with which latency. For instance, the additions of doubles (FLOAT.ADD, VFLOAT.ADD) in P1 and P5, and the loads (MEM.LOAD, VMEM.LOAD) in P2 and P3.</p>",
-          "es": "<p>Ahora se muestra el panel del <b>procesador</b>: la configuración de GC-base (en esta lección no se puede cambiar).</p><p>Pulsa <b>Explorar</b> y comprueba que la latencia y los puertos de cada instrucción del panel del programa (columnas <b>Latency</b> y <b>Ports</b>, con <b>perf</b>) son los del procesador: abre <b>▼ show operation types</b> para ver qué puertos ejecutan cada tipo de operación, y con qué latencia. Por ejemplo, las sumas de doubles (FLOAT.ADD, VFLOAT.ADD) en P1 y P5, y los loads (MEM.LOAD, VMEM.LOAD) en P2 y P3.</p>",
-          "ca": "<p>Ara es mostra el panell del <b>processador</b>: la configuració de GC-base (en aquesta lliçó no es pot canviar).</p><p>Prem <b>Explora</b> i comprova que la latència i els ports de cada instrucció del panell del programa (columnes <b>Latency</b> i <b>Ports</b>, amb <b>perf</b>) són els del processador: obre <b>▼ show operation types</b> per veure quins ports executen cada tipus d'operació, i amb quina latència. Per exemple, les sumes de doubles (FLOAT.ADD, VFLOAT.ADD) a P1 i P5, i els loads (MEM.LOAD, VMEM.LOAD) a P2 i P3.</p>"
+          "en": "<p>The <b>Processor</b> panel is now shown on the top-left, with the name <b>GC-base</b> (it cannot be changed in this lesson).</p><p>Click <b>Explore</b> and check that the latency and the ports of each instruction in the Program panel (columns <b>Latency</b> and <b>Ports</b>, with <b>perf</b>) are those of the processor: open <b>▼ show operation types</b> to see which ports execute each type of operation, and with which latency. For instance, the additions of doubles (FLOAT.ADD, VFLOAT.ADD) in P1 and P5, and the loads (MEM.LOAD, VMEM.LOAD) in P2 and P3.</p>",
+          "es": "<p>Ahora se muestra el panel del <b>procesador</b> arriba a la izquierda, con el nombre <b>GC-base</b> (en esta lección no se puede cambiar).</p><p>Pulsa <b>Explorar</b> y comprueba que la latencia y los puertos de cada instrucción del panel del programa (columnas <b>Latency</b> y <b>Ports</b>, con <b>perf</b>) son los del procesador: abre <b>▼ show operation types</b> para ver qué puertos ejecutan cada tipo de operación, y con qué latencia. Por ejemplo, las sumas de doubles (FLOAT.ADD, VFLOAT.ADD) en P1 y P5, y los loads (MEM.LOAD, VMEM.LOAD) en P2 y P3.</p>",
+          "ca": "<p>Ara es mostra el panell del <b>processador</b> a dalt a l'esquerra, amb el nom <b>GC-base</b> (en aquesta lliçó no es pot canviar).</p><p>Prem <b>Explora</b> i comprova que la latència i els ports de cada instrucció del panell del programa (columnes <b>Latency</b> i <b>Ports</b>, amb <b>perf</b>) són els del processador: obre <b>▼ show operation types</b> per veure quins ports executen cada tipus d'operació, i amb quina latència. Per exemple, les sumes de doubles (FLOAT.ADD, VFLOAT.ADD) a P1 i P5, i els loads (MEM.LOAD, VMEM.LOAD) a P2 i P3.</p>"
         },
         "explore": "auto",
         "exploreHint": {
@@ -1280,9 +1294,9 @@
           "ca": "<p>El panell del <b>processador</b> mostra la configuració de GC-base (en aquesta lliçó no es pot canviar). Obre <b>▼ show operation types</b> i comprova que les columnes <b>Latency</b> i <b>Ports</b> del panell del programa (<b>perf</b>) hi coincideixen: p. ex., FLOAT.ADD i VFLOAT.ADD a P1 i P5, els loads a P2 i P3. Quan acabis, prem aquí.</p>"
         },
         "actions": [
-          "closeGraph",
           "reveal:processor",
           "sidePanel:show",
+          "switchTo:simulationComponent",
           "programView:perf"
         ],
         "next": [
@@ -1307,9 +1321,9 @@
           "ca": "<p>Simula els quatre programes i desa cada resultat (<b>Desa els resultats</b>). Quan acabis, prem <b>Continua</b>.</p>"
         },
         "description": {
-          "en": "<p><b>Explore:</b> simulate the four programs with N = 1,000 (choose each one with the selector of the Program panel, then <b>Run Simulation</b>). Click <b>Store Results</b> after each simulation to compare them in the table of results.</p><p>Compare the time per sum of each one with its bound.</p><p><b>Continue</b> is enabled when the results of the four programs are stored.</p>",
-          "es": "<p><b>Explora:</b> simula los cuatro programas con N = 1.000 (elige cada uno con el selector del panel del programa y pulsa <b>Simular</b>). Pulsa <b>Guardar resultados</b> después de cada simulación para compararlas en la tabla de resultados.</p><p>Compara el tiempo por suma de cada uno con su cota.</p><p><b>Continuar</b> se activa cuando los resultados de los cuatro programas están guardados.</p>",
-          "ca": "<p><b>Explora:</b> simula els quatre programes amb N = 1.000 (tria cadascun amb el selector del panell del programa i prem <b>Simula</b>). Prem <b>Desa els resultats</b> després de cada simulació per comparar-les a la taula de resultats.</p><p>Compara el temps per suma de cadascun amb la seva cota.</p><p><b>Continua</b> s'activa quan els resultats dels quatre programes estan desats.</p>"
+          "en": "<p><b>Explore:</b> simulate the four programs with N = 1,000 (choose each one with the selector of the Program panel, then <b>Run Simulation</b>). Click <b>Store Results</b> after each simulation to compare them in the table of results.</p><p>Compare the time per sum of each one with its bound. Look also at the <b>percentages of use of the resources</b> of the processor (the diagram of the Simulation panel) and at the <b>percentage of the critical path</b> of each instruction (the column at the right of the Program panel).</p><p><b>Continue</b> is enabled when the results of the four programs are stored.</p>",
+          "es": "<p><b>Explora:</b> simula los cuatro programas con N = 1.000 (elige cada uno con el selector del panel del programa y pulsa <b>Simular</b>). Pulsa <b>Guardar resultados</b> después de cada simulación para compararlas en la tabla de resultados.</p><p>Compara el tiempo por suma de cada uno con su cota. Fíjate también en los <b>porcentajes de uso de los recursos</b> del procesador (el diagrama del panel de simulación) y en el <b>porcentaje del camino crítico</b> de cada instrucción (la columna de la derecha del panel del programa).</p><p><b>Continuar</b> se activa cuando los resultados de los cuatro programas están guardados.</p>",
+          "ca": "<p><b>Explora:</b> simula els quatre programes amb N = 1.000 (tria cadascun amb el selector del panell del programa i prem <b>Simula</b>). Prem <b>Desa els resultats</b> després de cada simulació per comparar-les a la taula de resultats.</p><p>Compara el temps per suma de cadascun amb la seva cota. Fixa't també en els <b>percentatges d'ús dels recursos</b> del processador (el diagrama del panell de simulació) i en el <b>percentatge del camí crític</b> de cada instrucció (la columna de la dreta del panell del programa).</p><p><b>Continua</b> s'activa quan els resultats dels quatre programes estan desats.</p>"
         },
         "actions": [
           "reveal:simulation,simulationPanel",
@@ -1333,7 +1347,11 @@
             "es": "Simula los cuatro programas y guarda cada resultado (Guardar resultados)",
             "ca": "Simula els quatre programes i desa cada resultat (Desa els resultats)"
           }
-        }
+        },
+        "lock": [
+          "N",
+          "Rep"
+        ]
       },
       {
         "id": "q-speedup",
@@ -1343,7 +1361,7 @@
           "es": "Speedup de la mejor versión",
           "ca": "Speedup de la millor versió"
         },
-        "position": "right",
+        "position": "left",
         "wWidth": 440,
         "questionText": {
           "en": "<p>What <b>speedup</b> does the fastest version reach over SUM-scalar?</p><p>In the stored results, click <b>☆</b> in the <b>Speedup</b> column of the SUM-scalar row: it becomes the reference, and the column gives the speedup of each version over it.</p>",
@@ -1376,34 +1394,34 @@
         "id": "summary",
         "type": "step",
         "title": {
-          "en": "Summary: two limits",
-          "es": "Resumen: dos límites",
-          "ca": "Resum: dos límits"
+          "en": "Two limits of performance",
+          "es": "Dos límites del rendimiento",
+          "ca": "Dos límits del rendiment"
         },
-        "anchor": "#right-panel",
-        "position": "inside-top-left",
-        "wWidth": 700,
+        "position": "center",
+        "wWidth": 720,
         "description": {
-          "en": "<p>The same loop shows two limits of performance:</p><p>&bull; <b>Latency</b>: one chain of additions (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> of the execution ports: several chains (SUM-scalar4, SUM-simd4).</p><p>Breaking the dependence (×4) and vectorizing (×4) multiply: up to ×16 (almost ×15 here). So far the data were always in time: the cache had no effect.</p>",
-          "es": "<p>El mismo bucle muestra dos límites del rendimiento:</p><p>&bull; <b>Latencia</b>: una cadena de sumas (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> de los puertos de ejecución: varias cadenas (SUM-scalar4, SUM-simd4).</p><p>Romper la dependencia (×4) y vectorizar (×4) se multiplican: hasta ×16 (casi ×15 aquí). Hasta ahora los datos han llegado siempre a tiempo: la cache no ha tenido ningún efecto.</p>",
-          "ca": "<p>El mateix bucle mostra dos límits del rendiment:</p><p>&bull; <b>Latència</b>: una cadena de sumes (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> dels ports d'execució: diverses cadenes (SUM-scalar4, SUM-simd4).</p><p>Trencar la dependència (×4) i vectoritzar (×4) es multipliquen: fins a ×16 (gairebé ×15 aquí). Fins ara les dades han arribat sempre a temps: la cache no ha tingut cap efecte.</p>"
+          "en": "<p>The same original loop shows two limits of performance, depending on the transformations that the compiler is asked to do:</p><p>&bull; <b>Latency</b>: one chain of additions (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> of the execution ports: several chains (SUM-scalar4, SUM-simd4).</p><p>Breaking the dependence (×4) and vectorizing (×4) multiply: up to ×16 (almost ×15 here).</p><p>So far the data always arrived in time: now we will analyze the effect of a realistic memory hierarchy.</p>",
+          "es": "<p>El mismo bucle original muestra dos límites del rendimiento, según las transformaciones que se piden al compilador:</p><p>&bull; <b>Latencia</b>: una cadena de sumas (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> de los puertos de ejecución: varias cadenas (SUM-scalar4, SUM-simd4).</p><p>Romper la dependencia (×4) y vectorizar (×4) se multiplican: hasta ×16 (casi ×15 aquí).</p><p>Hasta ahora los datos han llegado siempre a tiempo: ahora analizaremos el efecto de una jerarquía de memoria realista.</p>",
+          "ca": "<p>El mateix bucle original mostra dos límits del rendiment, segons les transformacions que es demanen al compilador:</p><p>&bull; <b>Latència</b>: una cadena de sumes (SUM-scalar, SUM-simd).<br>&bull; <b>Throughput</b> dels ports d'execució: diverses cadenes (SUM-scalar4, SUM-simd4).</p><p>Trencar la dependència (×4) i vectoritzar (×4) es multipliquen: fins a ×16 (gairebé ×15 aquí).</p><p>Fins ara les dades han arribat sempre a temps: ara analitzarem l'efecte d'una jerarquia de memòria realista.</p>"
         },
         "next": [
-          "end",
+          "cache-intro",
           "real-time"
         ],
         "nextLabels": [
           {
-            "en": "Finish",
-            "es": "Terminar",
-            "ca": "Acaba"
+            "en": "Memory hierarchy: the cache",
+            "es": "Jerarquía de memoria: la cache",
+            "ca": "Jerarquia de memòria: la cache"
           },
           {
             "en": "In depth: the real time of SUM-scalar",
             "es": "En profundidad: el tiempo real de SUM-scalar",
             "ca": "En profunditat: el temps real de SUM-scalar"
           }
-        ]
+        ],
+        "style": "takeaway"
       },
       {
         "id": "real-time",
@@ -1417,24 +1435,34 @@
           "ca": "En profunditat: el temps real de SUM-scalar"
         },
         "description": {
-          "en": "<p>SUM-scalar was run on a real <b>Intel Core i5-12400</b> (a Golden Cove core) with N = 1,000, calling my_sum <b>Rep = 100,000,000 times</b> (10<sup>11</sup> sums):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Per sum: <b>1.86 cycles</b> and 4.02 instructions. And one mispredicted branch per call: the exit of the loop (the predictor guesses <i>go back</i> also the last time).</p><p><b>1.86 is below the latency bound of 2 cycles!</b> Each call starts with sum = 0: the chain of additions of one call does not depend on the previous call. The next cards look at it in RVCAT, with Rep (calls of the loop, in the Program panel) and a small N.</p>",
-          "es": "<p>SUM-scalar se ejecutó en un <b>Intel Core i5-12400</b> real (un núcleo Golden Cove) con N = 1.000, llamando a my_sum <b>Rep = 100.000.000 veces</b> (10<sup>11</sup> sumas):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Por suma: <b>1,86 ciclos</b> y 4,02 instrucciones. Y un salto mal predicho por llamada: la salida del bucle (el predictor apuesta por <i>go back</i> también la última vez).</p><p><b>¡1,86 está por debajo de la cota de latencia de 2 ciclos!</b> Cada llamada empieza con sum = 0: la cadena de sumas de una llamada no depende de la llamada anterior. Las tarjetas siguientes lo miran en RVCAT, con Rep (llamadas al bucle, en el panel del programa) y una N pequeña.</p>",
-          "ca": "<p>SUM-scalar es va executar en un <b>Intel Core i5-12400</b> real (un nucli Golden Cove) amb N = 1.000, cridant my_sum <b>Rep = 100.000.000 vegades</b> (10<sup>11</sup> sumes):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Per suma: <b>1,86 cicles</b> i 4,02 instruccions. I un salt mal predit per crida: la sortida del bucle (el predictor aposta per <i>go back</i> també l'última vegada).</p><p><b>1,86 és per sota de la cota de latència de 2 cicles!</b> Cada crida comença amb sum = 0: la cadena de sumes d'una crida no depèn de la crida anterior. Les targetes següents ho miren a RVCAT, amb Rep (crides al bucle, al panell del programa) i una N petita.</p>"
+          "en": "<p>SUM-scalar was run on a real <b>Intel Core i5-12400</b> (a Golden Cove core) with N = 1,000, calling my_sum <b>Rep = 100,000,000 times</b> (10<sup>11</sup> sums):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Per sum: <b>1.86 cycles</b> and 4.02 instructions. And one mispredicted branch per call: the exit of the loop (the predictor guesses <i>go back</i> also the last time).</p><p><b>1.86 is below the latency bound of 2 cycles!</b> How can it be? We will help you find the explanation by yourself. The next cards simulate it in RVCAT with <b>N = 20 and Rep = 2</b> (Rep: calls of my_sum), already set in the Program panel.</p>",
+          "es": "<p>SUM-scalar se ejecutó en un <b>Intel Core i5-12400</b> real (un núcleo Golden Cove) con N = 1.000, llamando a my_sum <b>Rep = 100.000.000 veces</b> (10<sup>11</sup> sumas):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Por suma: <b>1,86 ciclos</b> y 4,02 instrucciones. Y un salto mal predicho por llamada: la salida del bucle (el predictor apuesta por <i>go back</i> también la última vez).</p><p><b>¡1,86 está por debajo de la cota de latencia de 2 ciclos!</b> ¿Cómo puede ser? Te ayudaremos a encontrar la explicación por ti mismo. Las tarjetas siguientes lo simulan en RVCAT con <b>N = 20 y Rep = 2</b> (Rep: llamadas a my_sum), ya puestos en el panel del programa.</p>",
+          "ca": "<p>SUM-scalar es va executar en un <b>Intel Core i5-12400</b> real (un nucli Golden Cove) amb N = 1.000, cridant my_sum <b>Rep = 100.000.000 vegades</b> (10<sup>11</sup> sumes):</p><pre>$ perf stat SUM-scalar 1000 100000000\n  186,075,852,286   cycles\n  401,900,326,492   instructions\n  100,200,102,304   branches\n      100,031,691   branch-misses</pre><p>Per suma: <b>1,86 cicles</b> i 4,02 instruccions. I un salt mal predit per crida: la sortida del bucle (el predictor aposta per <i>go back</i> també l'última vegada).</p><p><b>1,86 és per sota de la cota de latència de 2 cicles!</b> Com pot ser? T'ajudarem a trobar l'explicació per tu mateix. Les targetes següents ho simulen a RVCAT amb <b>N = 20 i Rep = 2</b> (Rep: crides a my_sum), ja posats al panell del programa.</p>"
         },
         "actions": [
+          "revertProcessor",
           "selectProgram:SUM-scalar",
+          "setN:20",
+          "setRep:2",
           "sidePanel:show",
           "switchTo:simulationComponent"
         ],
         "next": [
           "calls-detailed"
-        ]
+        ],
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "simulation": {
+          "speculation": "wrong-path"
+        }
       },
       {
         "id": "calls-detailed",
         "type": "step",
-        "anchor": "#right-panel",
-        "position": "inside-top-left",
+        "position": "bottom-center",
         "wWidth": 700,
         "title": {
           "en": "Two calls in the timeline",
@@ -1442,15 +1470,15 @@
           "ca": "Dues crides al timeline"
         },
         "description": {
-          "en": "<p>The <b>Timeline</b> shows SUM-scalar with <b>N = 20 and Rep = 2</b>: two calls of 20 iterations. One call takes 48 cycles; the two calls, <b>90 cycles</b>: the second one adds 42.</p><p>Explore it: scroll down to the end of the first call. Its last <i>if c go back</i> is <b>mispredicted</b>: in RVCAT the processor stops dispatching until the branch executes, and then waits the <b>branch penalty</b> (17 cycles in GC-base) before dispatching the first instructions of the next call.</p><p>The branch only needs <i>i</i>, computed very soon, so it executes long before the last additions of sum. That is why the second call starts before the chain of the first one ends, but 17 cycles later than it could.</p>",
-          "es": "<p>El <b>Timeline</b> muestra SUM-scalar con <b>N = 20 y Rep = 2</b>: dos llamadas de 20 iteraciones. Una llamada tarda 48 ciclos; las dos llamadas, <b>90 ciclos</b>: la segunda añade 42.</p><p>Explóralo: baja hasta el final de la primera llamada. Su último <i>if c go back</i> está <b>mal predicho</b>: en RVCAT el procesador deja de hacer dispatch hasta que el salto se ejecuta, y después espera la <b>penalización del salto</b> (17 ciclos en GC-base) antes de hacer el dispatch de las primeras instrucciones de la llamada siguiente.</p><p>El salto solo necesita <i>i</i>, que se calcula muy pronto, así que se ejecuta mucho antes que las últimas sumas de sum. Por eso la segunda llamada empieza antes de que acabe la cadena de la primera, pero 17 ciclos más tarde de lo que podría.</p>",
-          "ca": "<p>El <b>Timeline</b> mostra SUM-scalar amb <b>N = 20 i Rep = 2</b>: dues crides de 20 iteracions. Una crida triga 48 cicles; les dues crides, <b>90 cicles</b>: la segona n'afegeix 42.</p><p>Explora'l: baixa fins al final de la primera crida. El seu últim <i>if c go back</i> està <b>mal predit</b>: a RVCAT el processador deixa de fer dispatch fins que el salt s'executa, i després espera la <b>penalització del salt</b> (17 cicles a GC-base) abans de fer el dispatch de les primeres instruccions de la crida següent.</p><p>El salt només necessita <i>i</i>, que es calcula molt aviat, així que s'executa molt abans que les últimes sumes de sum. Per això la segona crida comença abans que acabi la cadena de la primera, però 17 cicles més tard del que podria.</p>"
+          "en": "<p>The <b>Timeline</b> shows SUM-scalar with <b>N = 20 and Rep = 2</b>: two calls of 20 iterations. One call takes 48 cycles; the two calls, <b>83 cycles</b>: the second one adds 35.</p><p>Explore it: scroll down to the end of the first call. Its last <i>if c go back</i> is <b>mispredicted</b>: the processor goes on along the <b>wrong path</b>, one more iteration of the loop, whose instructions enter the execution engine. When the branch executes, they are <b>squashed</b> (x), and the processor waits the <b>branch penalty</b> (10 cycles) before dispatching the first instructions of the next call.</p><p>The branch only needs <i>i</i>, computed very soon, so it executes long before the last additions of sum. That is why the second call starts before the chain of the first one ends, but 10 cycles later than it could.</p>",
+          "es": "<p>El <b>Timeline</b> muestra SUM-scalar con <b>N = 20 y Rep = 2</b>: dos llamadas de 20 iteraciones. Una llamada tarda 48 ciclos; las dos llamadas, <b>83 ciclos</b>: la segunda añade 35.</p><p>Explóralo: baja hasta el final de la primera llamada. Su último <i>if c go back</i> está <b>mal predicho</b>: el procesador sigue por el <b>camino equivocado</b>, una iteración más del bucle, cuyas instrucciones entran en el motor de ejecución. Cuando el salto se ejecuta, se <b>descartan</b> (x), y el procesador espera la <b>penalización del salto</b> (10 ciclos) antes de hacer el dispatch de las primeras instrucciones de la llamada siguiente.</p><p>El salto solo necesita <i>i</i>, que se calcula muy pronto, así que se ejecuta mucho antes que las últimas sumas de sum. Por eso la segunda llamada empieza antes de que acabe la cadena de la primera, pero 10 ciclos más tarde de lo que podría.</p>",
+          "ca": "<p>El <b>Timeline</b> mostra SUM-scalar amb <b>N = 20 i Rep = 2</b>: dues crides de 20 iteracions. Una crida triga 48 cicles; les dues crides, <b>83 cicles</b>: la segona n'afegeix 35.</p><p>Explora'l: baixa fins al final de la primera crida. El seu últim <i>if c go back</i> està <b>mal predit</b>: el processador continua pel <b>camí equivocat</b>, una iteració més del bucle, les instruccions de la qual entren al motor d'execució. Quan el salt s'executa, es <b>descarten</b> (x), i el processador espera la <b>penalització del salt</b> (10 cicles) abans de fer el dispatch de les primeres instruccions de la crida següent.</p><p>El salt només necessita <i>i</i>, que es calcula molt aviat, així que s'executa molt abans que les últimes sumes de sum. Per això la segona crida comença abans que acabi la cadena de la primera, però 10 cicles més tard del que podria.</p>"
         },
         "explore": true,
         "exploreHint": {
-          "en": "<p>Scroll down (wheel, or Page Down) to the end of the first call: the last <i>if c go back</i> and the first instructions of the second call. When you are done, click here.</p>",
-          "es": "<p>Baja (rueda, o Av Pág) hasta el final de la primera llamada: el último <i>if c go back</i> y las primeras instrucciones de la segunda llamada. Cuando acabes, pulsa aquí.</p>",
-          "ca": "<p>Baixa (roda, o Av Pàg) fins al final de la primera crida: l'últim <i>if c go back</i> i les primeres instruccions de la segona crida. Quan acabis, prem aquí.</p>"
+          "en": "<p>Scroll down (wheel, or Page Down) to the end of the first call: the last <i>if c go back</i>, the instructions of the wrong path (x) and the first instructions of the second call. Click a cell, or an instruction (the first column), to pin it and read its details; the minimap (the strip at the right) shows the whole timeline: click it to go there. When you are done, click here.</p>",
+          "es": "<p>Baja (rueda, o Av Pág) hasta el final de la primera llamada: el último <i>if c go back</i>, las instrucciones del camino equivocado (x) y las primeras instrucciones de la segunda llamada. Haz clic en una celda, o en una instrucción (la primera columna), para fijarla y leer sus detalles; el minimapa (la franja de la derecha) muestra todo el timeline: haz clic en él para ir allí. Cuando acabes, pulsa aquí.</p>",
+          "ca": "<p>Baixa (roda, o Av Pàg) fins al final de la primera crida: l'últim <i>if c go back</i>, les instruccions del camí equivocat (x) i les primeres instruccions de la segona crida. Fes clic en una cel·la, o en una instrucció (la primera columna), per fixar-la i llegir-ne els detalls; el minimapa (la franja de la dreta) mostra tot el timeline: fes-hi clic per anar-hi. Quan acabis, prem aquí.</p>"
         },
         "actions": [
           "revertProcessor",
@@ -1459,19 +1487,28 @@
           "setRep:2",
           "reveal:timeline",
           "hide:timelineCritical",
+          "sidePanel:hide",
           "switchTo:timelineComponent",
           "timeline:view=detailed",
           "timeline:critical=off"
         ],
         "next": [
           "calls-no-penalty"
-        ]
+        ],
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "simulation": {
+          "speculation": "wrong-path"
+        },
+        "xShift": 0.12
       },
       {
         "id": "calls-no-penalty",
         "type": "step",
-        "anchor": "#right-panel",
-        "position": "inside-top-left",
+        "position": "bottom-center",
         "wWidth": 700,
         "title": {
           "en": "Without the branch penalty",
@@ -1479,9 +1516,9 @@
           "ca": "Sense la penalització del salt"
         },
         "description": {
-          "en": "<p>The same two calls with a <b>branch penalty of 0 cycles</b>: they take <b>73 cycles</b> instead of 90. The second call adds only 25 cycles: its chain of additions runs at the same time as the end of the chain of the first call, in the other adder.</p><p>Explore it and compare the end of the first call with the previous card.</p>",
-          "es": "<p>Las mismas dos llamadas con una <b>penalización del salto de 0 ciclos</b>: tardan <b>73 ciclos</b> en lugar de 90. La segunda llamada solo añade 25 ciclos: su cadena de sumas se ejecuta a la vez que el final de la cadena de la primera llamada, en el otro sumador.</p><p>Explóralo y compara el final de la primera llamada con la tarjeta anterior.</p>",
-          "ca": "<p>Les mateixes dues crides amb una <b>penalització del salt de 0 cicles</b>: triguen <b>73 cicles</b> en lloc de 90. La segona crida només n'afegeix 25: la seva cadena de sumes s'executa alhora que el final de la cadena de la primera crida, a l'altre sumador.</p><p>Explora'l i compara el final de la primera crida amb la targeta anterior.</p>"
+          "en": "<p>The same two calls with a <b>branch penalty of 0 cycles</b>: they take <b>73 cycles</b> instead of 83. The second call adds only 25 cycles: its chain of additions runs at the same time as the end of the chain of the first call, in the other adder.</p><p>Explore it and compare the end of the first call with the previous card.</p>",
+          "es": "<p>Las mismas dos llamadas con una <b>penalización del salto de 0 ciclos</b>: tardan <b>73 ciclos</b> en lugar de 83. La segunda llamada solo añade 25 ciclos: su cadena de sumas se ejecuta a la vez que el final de la cadena de la primera llamada, en el otro sumador.</p><p>Explóralo y compara el final de la primera llamada con la tarjeta anterior.</p>",
+          "ca": "<p>Les mateixes dues crides amb una <b>penalització del salt de 0 cicles</b>: triguen <b>73 cicles</b> en lloc de 83. La segona crida només n'afegeix 25: la seva cadena de sumes s'executa alhora que el final de la cadena de la primera crida, a l'altre sumador.</p><p>Explora'l i compara el final de la primera crida amb la targeta anterior.</p>"
         },
         "explore": true,
         "exploreHint": {
@@ -1491,101 +1528,28 @@
         },
         "actions": [
           "setProcessor:bPenalty=0",
+          "sidePanel:hide",
           "switchTo:timelineComponent",
           "timeline:view=detailed",
           "timeline:critical=off"
         ],
         "next": [
-          "q-calls"
-        ]
-      },
-      {
-        "id": "q-calls",
-        "type": "question",
-        "optional": true,
-        "position": "right",
-        "wWidth": 440,
-        "title": {
-          "en": "Many short calls",
-          "es": "Muchas llamadas cortas",
-          "ca": "Moltes crides curtes"
-        },
-        "questionText": {
-          "en": "<p>Simulate SUM-scalar with <b>N = 100 and Rep = 10</b> (already set), first with the branch penalty of GC-base, 17 cycles, and then with 0 cycles (change it with − in the <b>Branch penalty</b> row of the Processor panel). What time per sum (Cycles/iter) do you obtain?</p>",
-          "es": "<p>Simula SUM-scalar con <b>N = 100 y Rep = 10</b> (ya puestos), primero con la penalización del salto de GC-base, 17 ciclos, y después con 0 ciclos (cámbiala con − en la fila <b>Branch penalty</b> del panel del procesador). ¿Qué tiempo por suma (Cycles/iter) obtienes?</p>",
-          "ca": "<p>Simula SUM-scalar amb <b>N = 100 i Rep = 10</b> (ja posats), primer amb la penalització del salt de GC-base, 17 cicles, i després amb 0 cicles (canvia-la amb − a la fila <b>Branch penalty</b> del panell del processador). Quin temps per suma (Cycles/iter) obtens?</p>"
-        },
-        "answerMode": "numbers",
-        "answers": [],
-        "numericFields": [
-          {
-            "label": {
-              "en": "Penalty 17",
-              "es": "Penalización 17",
-              "ca": "Penalització 17"
-            },
-            "value": 2.03,
-            "tolerance": 0.02,
-            "unit": {
-              "en": "cycles/sum",
-              "es": "ciclos/suma",
-              "ca": "cicles/suma"
-            },
-            "correct": {
-              "en": "Right: above 2. Each call pays the startup of its chain and the 17 cycles of its mispredicted exit.",
-              "es": "Correcto: por encima de 2. Cada llamada paga el arranque de su cadena y los 17 ciclos de su salida mal predicha.",
-              "ca": "Correcte: per sobre de 2. Cada crida paga l'arrencada de la seva cadena i els 17 cicles de la seva sortida mal predita."
-            },
-            "wrong": {
-              "en": "Simulate with N = 100, Rep = 10 and the branch penalty of 17 cycles, and read Cycles/iter.",
-              "es": "Simula con N = 100, Rep = 10 y la penalización del salto de 17 ciclos, y lee Cycles/iter.",
-              "ca": "Simula amb N = 100, Rep = 10 i la penalització del salt de 17 cicles, i llegeix Cycles/iter."
-            }
-          },
-          {
-            "label": {
-              "en": "Penalty 0",
-              "es": "Penalización 0",
-              "ca": "Penalització 0"
-            },
-            "value": 1.87,
-            "tolerance": 0.02,
-            "unit": {
-              "en": "cycles/sum",
-              "es": "ciclos/suma",
-              "ca": "cicles/suma"
-            },
-            "correct": {
-              "en": "Right: below the latency bound of 2, as in the real processor: the calls overlap.",
-              "es": "Correcto: por debajo de la cota de latencia de 2, como en el procesador real: las llamadas se solapan.",
-              "ca": "Correcte: per sota de la cota de latència de 2, com al processador real: les crides se solapen."
-            },
-            "wrong": {
-              "en": "Set the branch penalty to 0 (− in the Processor panel), simulate again and read Cycles/iter.",
-              "es": "Pon la penalización del salto a 0 (− en el panel del procesador), vuelve a simular y lee Cycles/iter.",
-              "ca": "Posa la penalització del salt a 0 (− al panell del processador), torna a simular i llegeix Cycles/iter."
-            }
-          }
-        ],
-        "allow": [
-          "processor.bPenalty"
-        ],
-        "actions": [
-          "revertProcessor",
-          "setN:100",
-          "setRep:10",
-          "switchTo:simulationComponent"
-        ],
-        "next": [
           "calls-compact"
         ],
-        "wTop": 60
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "simulation": {
+          "speculation": "wrong-path"
+        },
+        "xShift": 0.12
       },
       {
         "id": "calls-compact",
         "type": "step",
-        "anchor": "#right-panel",
-        "position": "inside-top-left",
+        "position": "bottom-center",
         "wWidth": 700,
         "title": {
           "en": "The compact view of the timeline",
@@ -1593,9 +1557,9 @@
           "ca": "La vista compacta del timeline"
         },
         "description": {
-          "en": "<p>The <b>compact</b> view of the timeline shows many more iterations: no letters, only colours (dark grey: execution; a thin line: the rest of the life of the instruction). It shows the instructions ticked in the Program panel: here all of them.</p><p>Here N = 100, Rep = 2 and a branch penalty of 0: the compact view simulates up to 600 instructions (120 iterations), enough to see the end of the first call and the beginning of the second one. With N = 1,000 the first call alone would fill it.</p><p>Explore it: find where the additions of the second call start while those of the first call have not finished.</p>",
-          "es": "<p>La vista <b>compacta</b> del timeline muestra muchas más iteraciones: sin letras, solo colores (gris oscuro: ejecución; una línea fina: el resto de la vida de la instrucción). Muestra las instrucciones marcadas en el panel del programa: aquí todas.</p><p>Aquí N = 100, Rep = 2 y una penalización del salto de 0: la vista compacta simula hasta 600 instrucciones (120 iteraciones), lo justo para ver el final de la primera llamada y el principio de la segunda. Con N = 1.000 la primera llamada sola la llenaría.</p><p>Explórala: busca dónde empiezan las sumas de la segunda llamada cuando las de la primera todavía no han acabado.</p>",
-          "ca": "<p>La vista <b>compacta</b> del timeline mostra moltes més iteracions: sense lletres, només colors (gris fosc: execució; una línia fina: la resta de la vida de la instrucció). Mostra les instruccions marcades al panell del programa: aquí totes.</p><p>Aquí N = 100, Rep = 2 i una penalització del salt de 0: la vista compacta simula fins a 600 instruccions (120 iteracions), just per veure el final de la primera crida i el principi de la segona. Amb N = 1.000 la primera crida sola l'ompliria.</p><p>Explora-la: busca on comencen les sumes de la segona crida quan les de la primera encara no han acabat.</p>"
+          "en": "<p>The <b>compact</b> view of the timeline shows many more iterations: no letters, only colours (dark grey: execution; a thin line: the rest of the life of the instruction). It shows the instructions ticked in the Program panel: here all of them.</p><p>Here N = 100, Rep = 2 and a branch penalty of 0: the compact view simulates up to 600 instructions (120 iterations), enough to see the end of the first call and the beginning of the second one.</p><p>The first addition of the second call starts in cycle <b>191</b>, while the last addition of the first call starts in cycle <b>204</b>.</p><p>Explore it: find where the additions of the second call start while those of the first call have not finished.</p>",
+          "es": "<p>La vista <b>compacta</b> del timeline muestra muchas más iteraciones: sin letras, solo colores (gris oscuro: ejecución; una línea fina: el resto de la vida de la instrucción). Muestra las instrucciones marcadas en el panel del programa: aquí todas.</p><p>Aquí N = 100, Rep = 2 y una penalización del salto de 0: la vista compacta simula hasta 600 instrucciones (120 iteraciones), lo justo para ver el final de la primera llamada y el principio de la segunda.</p><p>La primera suma de la segunda llamada empieza en el ciclo <b>191</b>, mientras que la última suma de la primera llamada empieza en el ciclo <b>204</b>.</p><p>Explórala: busca dónde empiezan las sumas de la segunda llamada cuando las de la primera todavía no han acabado.</p>",
+          "ca": "<p>La vista <b>compacta</b> del timeline mostra moltes més iteracions: sense lletres, només colors (gris fosc: execució; una línia fina: la resta de la vida de la instrucció). Mostra les instruccions marcades al panell del programa: aquí totes.</p><p>Aquí N = 100, Rep = 2 i una penalització del salt de 0: la vista compacta simula fins a 600 instruccions (120 iteracions), just per veure el final de la primera crida i el principi de la segona.</p><p>La primera suma de la segona crida comença al cicle <b>191</b>, mentre que l'última suma de la primera crida comença al cicle <b>204</b>.</p><p>Explora-la: busca on comencen les sumes de la segona crida quan les de la primera encara no han acabat.</p>"
         },
         "explore": true,
         "exploreHint": {
@@ -1607,20 +1571,29 @@
           "setProcessor:bPenalty=0",
           "setN:100",
           "setRep:2",
+          "sidePanel:hide",
           "switchTo:timelineComponent",
           "timeline:view=compact",
           "timeline:critical=off"
         ],
         "next": [
           "calls-end"
-        ]
+        ],
+        "xShift": 0.12,
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "simulation": {
+          "speculation": "wrong-path"
+        }
       },
       {
         "id": "calls-end",
         "type": "step",
-        "anchor": "#right-panel",
-        "position": "inside-top-left",
-        "wWidth": 700,
+        "position": "center",
+        "wWidth": 720,
         "title": {
           "en": "Why 1.86 cycles per sum",
           "es": "Por qué 1,86 ciclos por suma",
@@ -1636,6 +1609,52 @@
           "setN:1000",
           "setRep:1",
           "timeline:view=detailed",
+          "hide:simulationPanel",
+          "sidePanel:show",
+          "switchTo:simulationComponent"
+        ],
+        "next": [
+          "cache-intro"
+        ],
+        "style": "takeaway",
+        "nextLabels": [
+          {
+            "en": "Memory hierarchy: the cache",
+            "es": "Jerarquía de memoria: la cache",
+            "ca": "Jerarquia de memòria: la cache"
+          }
+        ],
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "simulation": {
+          "speculation": "wrong-path"
+        }
+      },
+      {
+        "id": "cache-intro",
+        "type": "step",
+        "anchor": "#right-panel",
+        "position": "inside-top-left",
+        "wWidth": 760,
+        "title": {
+          "en": "Memory hierarchy: the cache",
+          "es": "Jerarquía de memoria: la cache",
+          "ca": "Jerarquia de memòria: la cache"
+        },
+        "description": {
+          "en": "<p>So far every LOAD got its data with the latency of its instruction, as if the data were always close to the processor. Now the data come from the <b>main memory</b> (MM), through a <b>cache</b>:</p><svg viewBox=\"0 0 860 230\" style=\"width:100%;height:auto;display:block;margin:6px 0 10px\" role=\"img\"><defs><marker id=\"l1c-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#4a5a73\"/></marker></defs><rect x=\"8\" y=\"50\" width=\"150\" height=\"150\" rx=\"8\" fill=\"#eef2f7\" stroke=\"#7a8aa3\" stroke-width=\"1.5\"/><text x=\"83\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Execution ports</text><rect x=\"30\" y=\"112\" width=\"106\" height=\"32\" rx=\"5\" fill=\"#fff\" stroke=\"#7a8aa3\"/><text x=\"83\" y=\"134\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">LOAD</text><rect x=\"330\" y=\"50\" width=\"140\" height=\"150\" rx=\"8\" fill=\"#e6f0ff\" stroke=\"#1a4fb3\" stroke-width=\"1.5\"/><text x=\"400\" y=\"72\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">L1 cache</text><text x=\"400\" y=\"190\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">blocks of 64 B</text><rect x=\"352\" y=\"92\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"111\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"130\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"149\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"540\" y=\"50\" width=\"110\" height=\"74\" rx=\"6\" fill=\"#fff3e0\" stroke=\"#c77700\" stroke-width=\"1.5\"/><text x=\"595\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Fill buffers</text><rect x=\"560\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"598\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"730\" y=\"50\" width=\"122\" height=\"150\" rx=\"8\" fill=\"#f1ecf8\" stroke=\"#5e35b1\" stroke-width=\"1.5\"/><text x=\"791\" y=\"80\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Main</text><text x=\"791\" y=\"100\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">memory (MM)</text><text x=\"791\" y=\"150\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">latency</text><line x1=\"136\" y1=\"120\" x2=\"328\" y2=\"120\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"112\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">LOAD: its block?</text><line x1=\"328\" y1=\"138\" x2=\"136\" y2=\"138\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"156\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">hit: data</text><line x1=\"470\" y1=\"68\" x2=\"538\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"504\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">miss</text><line x1=\"650\" y1=\"68\" x2=\"728\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">request</text><line x1=\"728\" y1=\"108\" x2=\"650\" y2=\"108\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"126\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">block</text><line x1=\"560\" y1=\"124\" x2=\"560\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\"/><line x1=\"560\" y1=\"160\" x2=\"472\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"560\" y=\"178\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">block installed</text><path d=\"M 630 50 L 630 22 L 83 22 L 83 48\" stroke-dasharray=\"6 3\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"356\" y=\"16\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">data to the waiting LOADs</text></svg><p>&bull; The memory is divided into <b>blocks</b> of 64 bytes (8 doubles), and the <b>L1 cache</b> keeps a copy of some of them. A LOAD whose block is in the cache (<b>hit</b>) gets its data with the latency of its instruction.<br>&bull; A LOAD whose block is not in the cache (<b>miss</b>) needs a <b>fill buffer</b>, which requests the block to MM and waits for it: the latency of MM and the time of the transfer. When the block arrives, it is installed in a line of the cache, and the LOADs that wait for it receive their data.<br>&bull; A miss to a block already requested waits in the same fill buffer. When all the fill buffers are busy, a new miss waits for a free one: the fill buffers limit how many blocks can be on the way at the same time.</p><p>The programs of this lesson have no STOREs: the write buffers and the store buffer of RVCAT have no effect on them.</p>",
+          "es": "<p>Hasta ahora cada LOAD ha obtenido su dato con la latencia de su instrucción, como si los datos estuvieran siempre cerca del procesador. Ahora los datos vienen de la <b>memoria principal</b> (MM), a través de una <b>cache</b>:</p><svg viewBox=\"0 0 860 230\" style=\"width:100%;height:auto;display:block;margin:6px 0 10px\" role=\"img\"><defs><marker id=\"l1c-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#4a5a73\"/></marker></defs><rect x=\"8\" y=\"50\" width=\"150\" height=\"150\" rx=\"8\" fill=\"#eef2f7\" stroke=\"#7a8aa3\" stroke-width=\"1.5\"/><text x=\"83\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Puertos de ejecución</text><rect x=\"30\" y=\"112\" width=\"106\" height=\"32\" rx=\"5\" fill=\"#fff\" stroke=\"#7a8aa3\"/><text x=\"83\" y=\"134\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">LOAD</text><rect x=\"330\" y=\"50\" width=\"140\" height=\"150\" rx=\"8\" fill=\"#e6f0ff\" stroke=\"#1a4fb3\" stroke-width=\"1.5\"/><text x=\"400\" y=\"72\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Cache L1</text><text x=\"400\" y=\"190\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">bloques de 64 B</text><rect x=\"352\" y=\"92\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"111\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"130\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"149\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"540\" y=\"50\" width=\"110\" height=\"74\" rx=\"6\" fill=\"#fff3e0\" stroke=\"#c77700\" stroke-width=\"1.5\"/><text x=\"595\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Fill buffers</text><rect x=\"560\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"598\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"730\" y=\"50\" width=\"122\" height=\"150\" rx=\"8\" fill=\"#f1ecf8\" stroke=\"#5e35b1\" stroke-width=\"1.5\"/><text x=\"791\" y=\"80\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Memoria</text><text x=\"791\" y=\"100\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">principal (MM)</text><text x=\"791\" y=\"150\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">latencia</text><line x1=\"136\" y1=\"120\" x2=\"328\" y2=\"120\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"112\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">LOAD: ¿su bloque?</text><line x1=\"328\" y1=\"138\" x2=\"136\" y2=\"138\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"156\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">acierto: dato</text><line x1=\"470\" y1=\"68\" x2=\"538\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"504\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">fallo</text><line x1=\"650\" y1=\"68\" x2=\"728\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">petición</text><line x1=\"728\" y1=\"108\" x2=\"650\" y2=\"108\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"126\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">bloque</text><line x1=\"560\" y1=\"124\" x2=\"560\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\"/><line x1=\"560\" y1=\"160\" x2=\"472\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"560\" y=\"178\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">bloque instalado</text><path d=\"M 630 50 L 630 22 L 83 22 L 83 48\" stroke-dasharray=\"6 3\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"356\" y=\"16\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">datos a los LOAD que esperan</text></svg><p>&bull; La memoria se divide en <b>bloques</b> de 64 bytes (8 doubles), y la <b>cache L1</b> guarda una copia de algunos. Un LOAD cuyo bloque está en la cache (<b>acierto</b>) obtiene su dato con la latencia de su instrucción.<br>&bull; Un LOAD cuyo bloque no está en la cache (<b>fallo</b>) necesita un <b>fill buffer</b>, que pide el bloque a la MM y lo espera: la latencia de la MM y el tiempo de la transferencia. Cuando el bloque llega, se instala en una línea de la cache, y los LOAD que lo esperan reciben su dato.<br>&bull; Un fallo a un bloque ya pedido espera en el mismo fill buffer. Cuando todos los fill buffers están ocupados, un fallo nuevo espera a que quede uno libre: los fill buffers limitan cuántos bloques pueden estar en camino a la vez.</p><p>Los programas de esta lección no tienen STOREs: los write buffers y el store buffer de RVCAT no les afectan.</p>",
+          "ca": "<p>Fins ara cada LOAD ha obtingut la seva dada amb la latència de la seva instrucció, com si les dades fossin sempre a prop del processador. Ara les dades vénen de la <b>memòria principal</b> (MM), a través d'una <b>cache</b>:</p><svg viewBox=\"0 0 860 230\" style=\"width:100%;height:auto;display:block;margin:6px 0 10px\" role=\"img\"><defs><marker id=\"l1c-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#4a5a73\"/></marker></defs><rect x=\"8\" y=\"50\" width=\"150\" height=\"150\" rx=\"8\" fill=\"#eef2f7\" stroke=\"#7a8aa3\" stroke-width=\"1.5\"/><text x=\"83\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Ports d'execució</text><rect x=\"30\" y=\"112\" width=\"106\" height=\"32\" rx=\"5\" fill=\"#fff\" stroke=\"#7a8aa3\"/><text x=\"83\" y=\"134\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">LOAD</text><rect x=\"330\" y=\"50\" width=\"140\" height=\"150\" rx=\"8\" fill=\"#e6f0ff\" stroke=\"#1a4fb3\" stroke-width=\"1.5\"/><text x=\"400\" y=\"72\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Cache L1</text><text x=\"400\" y=\"190\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">blocs de 64 B</text><rect x=\"352\" y=\"92\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"111\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"130\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"352\" y=\"149\" width=\"96\" height=\"12\" fill=\"#fff\" stroke=\"#9db7e3\"/><rect x=\"540\" y=\"50\" width=\"110\" height=\"74\" rx=\"6\" fill=\"#fff3e0\" stroke=\"#c77700\" stroke-width=\"1.5\"/><text x=\"595\" y=\"74\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Fill buffers</text><rect x=\"560\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"598\" y=\"88\" width=\"30\" height=\"22\" rx=\"3\" fill=\"#fff\" stroke=\"#c77700\"/><rect x=\"730\" y=\"50\" width=\"122\" height=\"150\" rx=\"8\" fill=\"#f1ecf8\" stroke=\"#5e35b1\" stroke-width=\"1.5\"/><text x=\"791\" y=\"80\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">Memòria</text><text x=\"791\" y=\"100\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:16px;font-weight:600\">principal (MM)</text><text x=\"791\" y=\"150\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">latència</text><line x1=\"136\" y1=\"120\" x2=\"328\" y2=\"120\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"112\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">LOAD: el seu bloc?</text><line x1=\"328\" y1=\"138\" x2=\"136\" y2=\"138\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"232\" y=\"156\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">encert: dada</text><line x1=\"470\" y1=\"68\" x2=\"538\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"504\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">fallada</text><line x1=\"650\" y1=\"68\" x2=\"728\" y2=\"68\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"60\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">petició</text><line x1=\"728\" y1=\"108\" x2=\"650\" y2=\"108\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"689\" y=\"126\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">bloc</text><line x1=\"560\" y1=\"124\" x2=\"560\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\"/><line x1=\"560\" y1=\"160\" x2=\"472\" y2=\"160\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"560\" y=\"178\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">bloc instal·lat</text><path d=\"M 630 50 L 630 22 L 83 22 L 83 48\" stroke-dasharray=\"6 3\" stroke=\"#4a5a73\" stroke-width=\"1.6\" fill=\"none\" marker-end=\"url(#l1c-arrow)\"/><text x=\"356\" y=\"16\" style=\"font-family:sans-serif;text-anchor:middle;fill:#1f2a3a;font-size:13.5px;fill:#333\">dades als LOAD que esperen</text></svg><p>&bull; La memòria es divideix en <b>blocs</b> de 64 bytes (8 doubles), i la <b>cache L1</b> en guarda una còpia d'alguns. Un LOAD el bloc del qual és a la cache (<b>encert</b>) obté la seva dada amb la latència de la seva instrucció.<br>&bull; Un LOAD el bloc del qual no és a la cache (<b>fallada</b>) necessita un <b>fill buffer</b>, que demana el bloc a la MM i l'espera: la latència de la MM i el temps de la transferència. Quan el bloc arriba, s'instal·la en una línia de la cache, i els LOAD que l'esperen reben la seva dada.<br>&bull; Una fallada a un bloc ja demanat espera al mateix fill buffer. Quan tots els fill buffers estan ocupats, una fallada nova espera que en quedi un de lliure: els fill buffers limiten quants blocs poden estar en camí alhora.</p><p>Els programes d'aquesta lliçó no tenen STOREs: els write buffers i el store buffer de RVCAT no els afecten.</p>"
+        },
+        "actions": [
+          "revertProcessor",
+          "setN:1000",
+          "setRep:1",
+          "hide:simulationPanel",
+          "sidePanel:show",
           "switchTo:simulationComponent"
         ],
         "next": []
