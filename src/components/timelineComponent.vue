@@ -973,7 +973,7 @@
       summary.capacity = summary.members.length
       for (let col = 0; col < totalCycles; col++) {
         const n = summary.members.filter(m => m.cacheLineIndex !== undefined
-          ? !!cacheStatesByCycle[col]?.[m.cacheLineIndex]?.loading      // blocks arriving
+          ? !!cacheStatesByCycle[col]?.[m.cacheLineIndex]?.valid        // lines with a block (or receiving one)
           : !!m.cycles[col]).length
         summary.counts.push(n)
         summary.cycles.push(n > 0)
@@ -1210,7 +1210,7 @@
     }
     const GROUP_EXPLAIN = {
       ports: t('The execution ports, folded: the bar of each cycle shows how many ports start to execute an instruction. Its name shows or hides one row per port.'),
-      cache: t('The lines of the cache, folded: the bar of each cycle shows how many lines are receiving a block from MM. Its name shows or hides one row per line.'),
+      cache: t('The lines of the cache, folded: the bar of each cycle shows how many lines hold a block (or are receiving one). Its name shows or hides one row per line.'),
       fill:  t('The fill buffers, folded: the bar of each cycle shows how many are busy. Its name shows or hides one row per buffer.'),
       write: t('The write buffers, folded: the bar of each cycle shows how many are busy. Its name shows or hides one row per buffer.'),
     }
@@ -1329,6 +1329,9 @@
       reading:           'the block of the oldest store {s} is coming from MM',
     }
     const inset = isCompact() ? 0 : 1          // (the compact view: cells of 1 to 5 px, no margin)
+    // the height of an occupancy bar: 5 levels (0, 25, 50, 75 and 100 %); a resource in use shows at least 25 %
+    const occupancyHeight = (n, capacity) => n <= 0 ? 0
+      : Math.round((cellH - 2) * Math.min(4, Math.ceil((4 * n) / Math.max(1, capacity))) / 4)
     const SUMMARY_COLORS = { ports: '#f0a35e', cache: '#9fb4d6', fill: '#c9a0dc', write: '#e79a9a' }
     for (const [resourceRowIndex, resource] of resourceRows.entries()) {
       const resourceY = padY + (resourceRowIndex + 1) * cellH
@@ -1354,7 +1357,7 @@
           if (!isCompact()) ctx.strokeRect(cx, resourceY, cellW, cellH)
           const n = resource.counts[col] ?? 0
           if (n > 0) {
-            const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, n / Math.max(1, resource.capacity))))
+            const h = occupancyHeight(n, resource.capacity)
             ctx.fillStyle = SUMMARY_COLORS[resource.summary]
             ctx.fillRect(cx + inset, resourceY + cellH - 1 - h, cellW - 2 * inset, h)
           }
@@ -1435,7 +1438,7 @@
         const sbSnap = resource.storeBuffer ? resource.snapshots[cycle] : null
         const sbUsed = sbSnap ? sbSnap.stores + sbSnap.retired.length : 0
         if (sbUsed > 0) {           // occupancy of the store buffer: a bar from the bottom of the cell
-          const h = Math.max(Math.round(cellH * 0.5), Math.round((cellH - 2) * Math.min(1, sbUsed / resource.capacity)))
+          const h = occupancyHeight(sbUsed, resource.capacity)
           ctx.fillStyle = sbUsed >= resource.capacity ? '#e57373' : '#90b4e0'
           ctx.fillRect(resourceX + inset, resourceY + cellH - 1 - h, cellW - 2 * inset, h)
         }
