@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { unassignedOperations, removePortFrom, get_processor_dot, MAX_PORTS } from './common'
+import { unassignedOperations, removePortFrom } from './common'
 import { processorSignature } from './editDrafts'
 
 describe('ports of the Processor panel', () => {
@@ -24,14 +24,6 @@ describe('ports of the Processor panel', () => {
     expect(after['0']).toEqual([...ports['0'], ...moved])
     expect(unassignedOperations(after)).toEqual([])
     expect(ports['1']).toHaveLength(6)                    // the original is not modified
-  })
-
-  it('warn in the diagram about operations without port, and limit the number of ports', () => {
-    const process = { ports: { 0: ['INT'] }, latencies: { INT: 1 } }
-    expect(get_processor_dot(process, true)).toMatch(/ID="unassigned".*operation types without port/)
-    expect(get_processor_dot(process, false)).not.toMatch(/unassigned/)
-    const many = Object.fromEntries([...Array(MAX_PORTS)].map((_, i) => [String(i), i ? [] : ['INT']]))
-    expect(get_processor_dot({ ports: many, latencies: {} }, true)).not.toMatch(/ID="addport"/)
   })
 })
 

@@ -122,7 +122,7 @@
       "title": "In depth: the processor",
       "selector": "#process-panel .processor-container",
       "position": "right",
-      "description": "&bull; The <b>−</b> and <b>+</b> buttons of the diagram change dispatch, retire, the ROB and the branch penalty;<br>&nbsp;&nbsp;&nbsp;click the <b>Cache</b> row to configure the cache in a window (ports and latencies: author mode).<br>&bull; A second click on a cell pins its explanation.<br>&bull; <b>💾</b> saves the modified processor with a name; <b>✱ ↶</b> discards the changes.<br>&bull; The <b>Scheduler</b> is an option of the simulation: <i>greedy</i> issues the oldest<br>&nbsp;&nbsp;&nbsp;ready instructions; <i>optimal</i> chooses the best combination of ports.",
+      "description": "&bull; A click on a box of the diagram opens a balloon with its explanation and its value: dispatch, retire, the ROB and the branch penalty;<br>&nbsp;&nbsp;&nbsp;the <b>Memory</b> box configures the cache in a window (ports and latencies: author mode).<br>&bull; <b>💾</b> saves the modified processor with a name; <b>✱ ↶</b> discards the changes.<br>&bull; The <b>Scheduler</b> is an option of the simulation: <i>greedy</i> issues the oldest<br>&nbsp;&nbsp;&nbsp;ready instructions; <i>optimal</i> chooses the best combination of ports.",
       "next": [
         "latency"
       ],

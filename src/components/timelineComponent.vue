@@ -2353,7 +2353,8 @@
       if (cell.ports?.length) simState.highlightedPorts = cell.ports      // its port(s) in the Processor panel
       // a row of the memory (MM, a line of the cache, a buffer): the cells related in this cycle
       const res = resourceLayout[cell.resourceIndex]
-      const memoryRow = !!res && (res.cacheLineIndex !== undefined || !!res.bufferType || res.port === null)
+      const memoryRow = !!res && (res.cacheLineIndex !== undefined || !!res.bufferType || res.port === null || !!res.storeBuffer)
+      if (memoryRow) simState.highlightedStage = 'memory'                 // the Memory box of the Processor panel
       drawHoverOverlay(null, null, null, null, null, null,
                        memoryRow ? null : cell.linkedInstructionRows, col, memoryRow ? null : cell.linkedResourceRows)
       const ctx = overlayContext()
@@ -2413,6 +2414,9 @@
     const kind = instrKind(cell.instrIdx)
     if (kind === 'load' && ((cell.char === 'E' && execCycleOf(cell) === 1) || ['!', '2', ':', '@'].includes(cell.char)))
       markMemory(ctx, row, col)
+    // a LOAD or a STORE waiting for the memory (! f 2 : @): the Memory box of the Processor panel
+    if ((kind === 'load' || kind === 'store') && ['!', '2', ':', '@'].includes(cell.char))
+      simState.highlightedStage = 'memory'
     if (kind === 'store' && ['D', 'W', 'R'].includes(cell.char) && cacheEnabled.value) {
       markResCell(ctx, resourceDetail.find(r => r.storeBuffer), col)
       const m = memoryInfo(row)
@@ -2830,7 +2834,7 @@
     return l ? t('the data comes from cache line {l}', { l }) : t('the data comes from the cache')
   }
   // A wait for the memory (! after the first one, :): what it waits for, in this cycle
-  function cacheWaitText(detail, col = null) {
+  function cacheWaitText(detail, col = null, row = null) {
     const a = detail.block_address
     switch (detail.buffer_state) {
       case 'queued_fill':       return t('Wait for fill-buffer slot for block at addr {a}', { a })
@@ -2841,7 +2845,10 @@
     }
     // (what has already happened: the cycle in which the block was requested from MM)
     const asked = col === null ? null : blockRequestCycle(col, a)
-    return t('Wait for block at addr {a}', { a }) + (asked !== null ? ` (${t('requested from MM in cycle {c}', { c: asked })})` : '')
+    // (and, briefly, the fill buffer and the line of the cache that receive the block)
+    const assigned = col === null ? [] : [fillOf(a, col, row), lineOf(a, col)].filter(Boolean)
+    return t('Wait for block at addr {a}', { a }) + (asked !== null ? ` (${t('requested from MM in cycle {c}', { c: asked })})` : '') +
+           (assigned.length ? ` · ${t('assigned: {list}', { list: assigned.join(', ') })}` : '')
   }
   function formatProcessingTooltip(cell) {
     const detail = cell.waitDetail
@@ -2881,7 +2888,7 @@
     if (cell.char === '*' && detail?.reason === 'issue-bandwidth') {
       return t('Wait: issue width full')
     }
-    if (detail?.reason === 'cache') return cacheWaitText(detail, cell.colIdx)
+    if (detail?.reason === 'cache') return cacheWaitText(detail, cell.colIdx, cell.rowIdx)
     return charToProcessingState(
       cell.char,
       cell.first_exec_stage ? cell.port : null,

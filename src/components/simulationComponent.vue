@@ -380,6 +380,20 @@
   }
   watch(() => simState.clearResultsRequest, clearStoredResults)
 
+  // The end of a lesson puts back the results of before it (stored ones and the last simulation)
+  watch(() => simState.reloadNonce, async () => {
+    simulationOptions.availableResults = []
+    simulationOptions.referenceResult = ''
+    loadOptions()
+    simResults = {}
+    simProcess = {}
+    loadResults()
+    await initResource('result', simulationOptions, 'resultName', 'availableResults')
+    updateShowResults()
+    simState.executionResults = null
+    updateResults()
+  })
+
   function removeResult (index) {
     const name = simulationOptions.availableResults[index]
     if (name === undefined) return

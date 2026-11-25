@@ -23,7 +23,7 @@
     {
       "type": "step",
       "title": "Processor description",
-      "description": "A table summarizes the processor pipeline's <b>microarchitecture</b>:<br>\n   (1) <em>Dispatch width</em> – max instructions issued to the Execution Engine per cycle;<br>\n   (2) <em>Operation types</em> – latency and eligible ports of each type of instruction;<br>\n   (3) <em>Execution ports</em> (P0–Px) – each handles one instruction per cycle from a specific subset of types;<br>\n   (4) <em>ROB size</em> – max instructions in the Execution Engine;<br>\n   (5) <em>Cache config</em> – blocks, block size, miss penalty, and issue time;<br>\n   (6) <em>Branch penalty</em> – cycles lost after a mispredicted branch;<br>\n   (7) <em>Retire width</em> – max instructions retired from the Execution Engine per cycle.",
+      "description": "A diagram shows the <b>execution engine</b> of the processor, from top to bottom:<br>\n   (1) <em>Dispatch width</em> – max instructions issued to the Execution Engine per cycle, with the <em>branch penalty</em> (cycles lost after a mispredicted branch);<br>\n   (2) <em>ROB size</em> – max instructions in the Execution Engine;<br>\n   (3) <em>Execution ports</em> (P0–Px) – each one starts one instruction per cycle, of the operation types shown in its box;<br>\n   (4) <em>Memory</em> – joined to the ports of loads and stores: the cache and the main memory;<br>\n   (5) <em>Retire width</em> – max instructions retired from the Execution Engine per cycle.<br>\nA click on a box explains it.",
       "selector": ".processor-container",
       "position": "right",
       "action": "switchTo:aboutComponent"
@@ -65,7 +65,7 @@
     {
       "type": "step",
       "title": "Processor Settings",
-      "description": "Use the − and + buttons of the processor diagram to change the widths, the ROB and the branch penalty, and click the Cache row to configure the cache (ports, operation types and latencies: author mode).<br>\nThe <b>💾</b> button saves the modified processor with a name.",
+      "description": "Click a box of the processor diagram (Dispatch, the branch penalty, ROB, Retire) to change its value in a balloon, and the Memory box to configure the cache (ports, operation types and latencies: author mode).<br>\nThe <b>💾</b> button saves the modified processor with a name.",
       "selector": ".processor-container",
       "position": "right",
       "action": "switchTo:aboutComponent"

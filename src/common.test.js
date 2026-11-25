@@ -6,7 +6,6 @@ import {
   getAllowedCacheBlockSizes,
   getLargestMemoryAccessSize,
   getUnsupportedInstructions,
-  get_processor_dot,
   getLogicalElementCount,
   initResource,
   migrateTutorialFlow,
@@ -298,52 +297,6 @@ describe('logical element count', () => {
 
   it('defaults the loop stride to one when there is no non-unit branch stride', () => {
     expect(getLogicalElementCount([{ type: 'BRANCH' }], 100)).toBe(100)
-  })
-})
-
-describe('processor graph markup', () => {
-  it('wraps editable cache settings across two lines in the same row', () => {
-    const dot = get_processor_dot({
-      ports: { 0: ['MEM.LOAD'] },
-      latencies: { 'MEM.LOAD': 4 },
-      nBlocks: 2,
-      blkSize: 16,
-      mPenalty: 12,
-      mIssueTime: 8,
-      nFillBuffers: 3,
-      nWriteBuffers: 4,
-      rThru: 2
-    }, true)
-
-    expect(dot).toContain('Penalty: 12<BR ALIGN="LEFT"/>IssueTime: 8')
-    expect(dot).toContain('FillBuff: 3')
-    expect(dot).toContain('WrtBuff: 4')
-    expect(dot).toContain('RetThru: 2')
-  })
-
-  it('shows a bare type in a port as the whole type', () => {
-    const dot = get_processor_dot({
-      ports: { 1: ['INT', 'BRANCH'], 2: ['MEM'] },
-      latencies: { INT: 1, BRANCH: 1, MEM: 4 },
-      ROBsize: 20,
-      sched: 'optimal'
-    }, false)
-
-    expect(dot).toContain('ID="op:1:0:INT"')
-    expect(dot).toContain('ID="op:1:1:BRANCH"')
-    expect(dot).toContain('ID="op:2:0:MEM"')
-  })
-
-  it('escapes operation data before inserting it into Graphviz HTML labels', () => {
-    const dot = get_processor_dot({
-      ports: { 0: ['INT.<"\'&'] },
-      latencies: { 'INT.<"\'&': 2 },
-      ROBsize: 20,
-      sched: 'optimal'
-    }, false)
-
-    expect(dot).toContain('ID="op:0:0:INT.&lt;&quot;&#39;&amp;"')
-    expect(dot).toContain('INT.&lt;&quot;&#39;&amp;</FONT>')
   })
 })
 

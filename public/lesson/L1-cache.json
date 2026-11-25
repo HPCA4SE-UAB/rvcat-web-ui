@@ -10,7 +10,7 @@
     "es": "<p>Cuatro versiones de un bucle que suma los elementos de un vector (escalar, SIMD y desenrollado con varios acumuladores) en un procesador como el núcleo Golden Cove: latencia y throughput.</p>",
     "ca": "<p>Quatre versions d'un bucle que suma els elements d'un vector (escalar, SIMD i desenrotllat amb diversos acumuladors) en un processador com el nucli Golden Cove: latència i throughput.</p>"
   },
-  "version": 16,
+  "version": 18,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -1322,15 +1322,15 @@
         "position": "inside-top-left",
         "wWidth": 700,
         "description": {
-          "en": "<p>The <b>Processor</b> panel is now shown on the top-left, with the name <b>GC-base</b> (it cannot be changed in this lesson).</p><p>Click <b>Explore</b> and check that the latency and the ports of each instruction in the Program panel (columns <b>Latency</b> and <b>Ports</b>, with <b>perf</b>) are those of the processor: open <b>▼ show operation types</b> to see which ports execute each type of operation, and with which latency. For instance, the additions of doubles (FLOAT.ADD, VFLOAT.ADD) in P1 and P5, and the loads (MEM.LOAD, VMEM.LOAD) in P2 and P3.</p>",
-          "es": "<p>Ahora se muestra el panel del <b>procesador</b> arriba a la izquierda, con el nombre <b>GC-base</b> (en esta lección no se puede cambiar).</p><p>Pulsa <b>Explorar</b> y comprueba que la latencia y los puertos de cada instrucción del panel del programa (columnas <b>Latencia</b> y <b>Puertos</b>, con <b>perf</b>) son los del procesador: abre <b>▼ mostrar tipos de operación</b> para ver qué puertos ejecutan cada tipo de operación, y con qué latencia. Por ejemplo, las sumas de doubles (FLOAT.ADD, VFLOAT.ADD) en P1 y P5, y los loads (MEM.LOAD, VMEM.LOAD) en P2 y P3.</p>",
-          "ca": "<p>Ara es mostra el panell del <b>processador</b> a dalt a l'esquerra, amb el nom <b>GC-base</b> (en aquesta lliçó no es pot canviar).</p><p>Prem <b>Explora</b> i comprova que la latència i els ports de cada instrucció del panell del programa (columnes <b>Latència</b> i <b>Ports</b>, amb <b>perf</b>) són els del processador: obre <b>▼ mostra els tipus d'operació</b> per veure quins ports executen cada tipus d'operació, i amb quina latència. Per exemple, les sumes de doubles (FLOAT.ADD, VFLOAT.ADD) a P1 i P5, i els loads (MEM.LOAD, VMEM.LOAD) a P2 i P3.</p>"
+          "en": "<p>The <b>Processor</b> panel is now shown on the top-left, with the name <b>GC-base</b> (it cannot be changed in this lesson).</p><p>Click <b>Explore</b> and check that the latency and the ports of each instruction in the Program panel (columns <b>Latency</b> and <b>Ports</b>, with <b>perf</b>) are those of the processor: each port shows in its box the types of operations that it executes (<b>FP +</b>: the additions of doubles; <b>MEM LD</b>: the loads), and a click on a port shows their latencies. For instance, the additions of doubles (FLOAT.ADD, VFLOAT.ADD) in P1 and P5, and the loads (MEM.LOAD, VMEM.LOAD) in P2 and P3.</p>",
+          "es": "<p>Ahora se muestra el panel del <b>procesador</b> arriba a la izquierda, con el nombre <b>GC-base</b> (en esta lección no se puede cambiar).</p><p>Pulsa <b>Explorar</b> y comprueba que la latencia y los puertos de cada instrucción del panel del programa (columnas <b>Latencia</b> y <b>Puertos</b>, con <b>perf</b>) son los del procesador: cada puerto muestra en su caja los tipos de operación que ejecuta (<b>FP +</b>: las sumas de doubles; <b>MEM LD</b>: los loads), y un clic en un puerto muestra sus latencias. Por ejemplo, las sumas de doubles (FLOAT.ADD, VFLOAT.ADD) en P1 y P5, y los loads (MEM.LOAD, VMEM.LOAD) en P2 y P3.</p>",
+          "ca": "<p>Ara es mostra el panell del <b>processador</b> a dalt a l'esquerra, amb el nom <b>GC-base</b> (en aquesta lliçó no es pot canviar).</p><p>Prem <b>Explora</b> i comprova que la latència i els ports de cada instrucció del panell del programa (columnes <b>Latència</b> i <b>Ports</b>, amb <b>perf</b>) són els del processador: cada port mostra a la seva caixa els tipus d'operació que executa (<b>FP +</b>: les sumes de doubles; <b>MEM LD</b>: els loads), i un clic en un port en mostra les latències. Per exemple, les sumes de doubles (FLOAT.ADD, VFLOAT.ADD) a P1 i P5, i els loads (MEM.LOAD, VMEM.LOAD) a P2 i P3.</p>"
         },
         "explore": "required",
         "exploreHint": {
-          "en": "<p>The <b>Processor</b> panel shows the configuration of GC-base (it cannot be changed in this lesson). Open <b>▼ show operation types</b> and check that the columns <b>Latency</b> and <b>Ports</b> of the Program panel (<b>perf</b>) match it: e.g. FLOAT.ADD and VFLOAT.ADD in P1 and P5, the loads in P2 and P3. When you are done, click here.</p>",
-          "es": "<p>El panel del <b>procesador</b> muestra la configuración de GC-base (en esta lección no se puede cambiar). Abre <b>▼ mostrar tipos de operación</b> y comprueba que las columnas <b>Latencia</b> y <b>Puertos</b> del panel del programa (<b>perf</b>) coinciden con ella: p. ej., FLOAT.ADD y VFLOAT.ADD en P1 y P5, los loads en P2 y P3. Cuando acabes, pulsa aquí.</p>",
-          "ca": "<p>El panell del <b>processador</b> mostra la configuració de GC-base (en aquesta lliçó no es pot canviar). Obre <b>▼ mostra els tipus d'operació</b> i comprova que les columnes <b>Latència</b> i <b>Ports</b> del panell del programa (<b>perf</b>) hi coincideixen: p. ex., FLOAT.ADD i VFLOAT.ADD a P1 i P5, els loads a P2 i P3. Quan acabis, prem aquí.</p>"
+          "en": "<p>The <b>Processor</b> panel shows the configuration of GC-base (it cannot be changed in this lesson). Each port shows its types of operations (a click on it, their latencies): check that the columns <b>Latency</b> and <b>Ports</b> of the Program panel (<b>perf</b>) match it: e.g. FLOAT.ADD and VFLOAT.ADD in P1 and P5, the loads in P2 and P3. When you are done, click here.</p>",
+          "es": "<p>El panel del <b>procesador</b> muestra la configuración de GC-base (en esta lección no se puede cambiar). Cada puerto muestra sus tipos de operación (un clic en él, sus latencias): comprueba que las columnas <b>Latencia</b> y <b>Puertos</b> del panel del programa (<b>perf</b>) coinciden con ella: p. ej., FLOAT.ADD y VFLOAT.ADD en P1 y P5, los loads en P2 y P3. Cuando acabes, pulsa aquí.</p>",
+          "ca": "<p>El panell del <b>processador</b> mostra la configuració de GC-base (en aquesta lliçó no es pot canviar). Cada port mostra els seus tipus d'operació (un clic a sobre, les seves latències): comprova que les columnes <b>Latència</b> i <b>Ports</b> del panell del programa (<b>perf</b>) hi coincideixen: p. ex., FLOAT.ADD i VFLOAT.ADD a P1 i P5, els loads a P2 i P3. Quan acabis, prem aquí.</p>"
         },
         "actions": [
           "reveal:processor",
@@ -1736,9 +1736,9 @@
           "ca": "Una cache de 4 blocs, en ordre"
         },
         "description": {
-          "en": "<p>The processor now has a <b>cache of 4 blocks of 32 bytes</b> (4 doubles each): 128 bytes, room for <b>16 elements</b> of V. A miss brings its block from MM in 12 cycles. Look at the <b>Cache</b> row of the Processor panel.</p><p>And the <b>ROB has 1 entry</b>: an instruction is dispatched only when the previous one has retired. The execution is <b>in order and without overlap</b>: each miss adds the time to bring its block from MM.</p><p>V has N = 16 elements (128 bytes, 4 blocks), and my_sum is called once (Rep = 1). The cache starts empty.</p>",
-          "es": "<p>El procesador tiene ahora una <b>cache de 4 bloques de 32 bytes</b> (4 doubles cada uno): 128 bytes, sitio para <b>16 elementos</b> de V. Un fallo trae su bloque de la MM en 12 ciclos. Mira la fila <b>Cache</b> del panel del procesador.</p><p>Y el <b>ROB tiene 1 entrada</b>: una instrucción solo hace el dispatch cuando la anterior se ha retirado. La ejecución es <b>en orden y sin solapamiento</b>: cada fallo añade el tiempo de traer su bloque de la MM.</p><p>V tiene N = 16 elementos (128 bytes, 4 bloques), y my_sum se llama una vez (Rep = 1). La cache empieza vacía.</p>",
-          "ca": "<p>El processador té ara una <b>cache de 4 blocs de 32 bytes</b> (4 doubles cadascun): 128 bytes, lloc per a <b>16 elements</b> de V. Una fallada porta el seu bloc de la MM en 12 cicles. Mira la fila <b>Cache</b> del panell del processador.</p><p>I el <b>ROB té 1 entrada</b>: una instrucció només fa el dispatch quan l'anterior s'ha retirat. L'execució és <b>en ordre i sense solapament</b>: cada fallada afegeix el temps de portar el seu bloc de la MM.</p><p>V té N = 16 elements (128 bytes, 4 blocs), i my_sum es crida una vegada (Rep = 1). La cache comença buida.</p>"
+          "en": "<p>The processor now has a <b>cache of 4 blocks of 32 bytes</b> (4 doubles each): 128 bytes, room for <b>16 elements</b> of V. A miss brings its block from MM in 12 cycles. Look at the <b>Memory</b> box of the Processor panel.</p><p>And the <b>ROB has 1 entry</b>: an instruction is dispatched only when the previous one has retired. The execution is <b>in order and without overlap</b>: each miss adds the time to bring its block from MM.</p><p>V has N = 16 elements (128 bytes, 4 blocks), and my_sum is called once (Rep = 1). The cache starts empty.</p>",
+          "es": "<p>El procesador tiene ahora una <b>cache de 4 bloques de 32 bytes</b> (4 doubles cada uno): 128 bytes, sitio para <b>16 elementos</b> de V. Un fallo trae su bloque de la MM en 12 ciclos. Mira la caja <b>Memoria</b> del panel del procesador.</p><p>Y el <b>ROB tiene 1 entrada</b>: una instrucción solo hace el dispatch cuando la anterior se ha retirado. La ejecución es <b>en orden y sin solapamiento</b>: cada fallo añade el tiempo de traer su bloque de la MM.</p><p>V tiene N = 16 elementos (128 bytes, 4 bloques), y my_sum se llama una vez (Rep = 1). La cache empieza vacía.</p>",
+          "ca": "<p>El processador té ara una <b>cache de 4 blocs de 32 bytes</b> (4 doubles cadascun): 128 bytes, lloc per a <b>16 elements</b> de V. Una fallada porta el seu bloc de la MM en 12 cicles. Mira la caixa <b>Memòria</b> del panell del processador.</p><p>I el <b>ROB té 1 entrada</b>: una instrucció només fa el dispatch quan l'anterior s'ha retirat. L'execució és <b>en ordre i sense solapament</b>: cada fallada afegeix el temps de portar el seu bloc de la MM.</p><p>V té N = 16 elements (128 bytes, 4 blocs), i my_sum es crida una vegada (Rep = 1). La cache comença buida.</p>"
         },
         "actions": [
           "revertProcessor",
@@ -2797,7 +2797,7 @@
       {
         "id": "q-simd-fill",
         "type": "question",
-        "position": "left",
+        "position": "bottom-right",
         "wWidth": 440,
         "lock": [
           "program",
@@ -2815,9 +2815,9 @@
           "ca": "Més fill buffers"
         },
         "questionText": {
-          "en": "<p>Increase the number of <b>fill buffers</b> (click the <b>Cache</b> row of the Processor panel) and simulate. What time per sum do you obtain with 3 and with 4 fill buffers?</p>",
-          "es": "<p>Aumenta el número de <b>fill buffers</b> (haz clic en la fila <b>Cache</b> del panel del procesador) y simula. ¿Qué tiempo por suma obtienes con 3 y con 4 fill buffers?</p>",
-          "ca": "<p>Augmenta el nombre de <b>fill buffers</b> (fes clic a la fila <b>Cache</b> del panell del processador) i simula. Quin temps per suma obtens amb 3 i amb 4 fill buffers?</p>"
+          "en": "<p>Increase the number of <b>fill buffers</b> (click the <b>Memory</b> box of the Processor panel, and then <i>Configure the cache…</i>) and simulate. What time per sum do you obtain with 3 and with 4 fill buffers?</p>",
+          "es": "<p>Aumenta el número de <b>fill buffers</b> (haz clic en la caja <b>Memoria</b> del panel del procesador, y después en <i>Configurar la cache…</i>) y simula. ¿Qué tiempo por suma obtienes con 3 y con 4 fill buffers?</p>",
+          "ca": "<p>Augmenta el nombre de <b>fill buffers</b> (fes clic a la caixa <b>Memòria</b> del panell del processador, i després a <i>Configura la cache…</i>) i simula. Quin temps per suma obtens amb 3 i amb 4 fill buffers?</p>"
         },
         "numericFields": [
           {
@@ -2880,6 +2880,245 @@
           "switchTo:simulationComponent"
         ],
         "next": [
+          "lines-intro"
+        ]
+      },
+      {
+        "id": "lines-intro",
+        "type": "step",
+        "position": "bottom-center",
+        "xShift": 0.12,
+        "wWidth": 700,
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "explore": "required",
+        "title": {
+          "en": "The lines of the cache",
+          "es": "Las líneas de la cache",
+          "ca": "Les línies de la cache"
+        },
+        "description": {
+          "en": "<p>With 4 or more fill buffers SUM-simd stays at 0.83 cycles per sum. A miss needs also a <b>line of the cache</b>, where its block is written when it arrives: the line is busy (<b>r</b>) while the block is on the way.</p><p>The processor has now <b>8 fill buffers</b>. Explore the <b>Timeline</b>: unfold <b>▸ Memory</b>, <b>▸ Cache</b> and <b>▸ Fill</b>.</p><p>&bull; How many fill buffers are busy, and how many lines are receiving a block?<br>&bull; What do the LOADs wait for now (<b>!</b>)?<br>&bull; How often does a line receive a new block?</p>",
+          "es": "<p>Con 4 fill buffers o más, SUM-simd se queda en 0,83 ciclos por suma. Un fallo también necesita una <b>línea de la cache</b>, donde se escribe su bloque cuando llega: la línea está ocupada (<b>r</b>) mientras el bloque está en camino.</p><p>El procesador tiene ahora <b>8 fill buffers</b>. Explora el <b>Timeline</b>: despliega <b>▸ Memoria</b>, <b>▸ Cache</b> y <b>▸ Fill</b>.</p><p>&bull; ¿Cuántos fill buffers están ocupados, y cuántas líneas están recibiendo un bloque?<br>&bull; ¿A qué esperan ahora los LOAD (<b>!</b>)?<br>&bull; ¿Cada cuánto recibe una línea un bloque nuevo?</p>",
+          "ca": "<p>Amb 4 fill buffers o més, SUM-simd es queda a 0,83 cicles per suma. Una fallada també necessita una <b>línia de la cache</b>, on s'escriu el seu bloc quan arriba: la línia està ocupada (<b>r</b>) mentre el bloc està en camí.</p><p>El processador té ara <b>8 fill buffers</b>. Explora el <b>Timeline</b>: desplega <b>▸ Memòria</b>, <b>▸ Cache</b> i <b>▸ Fill</b>.</p><p>&bull; Quants fill buffers estan ocupats, i quantes línies estan rebent un bloc?<br>&bull; A què esperen ara els LOAD (<b>!</b>)?<br>&bull; Cada quant rep una línia un bloc nou?</p>"
+        },
+        "exploreHint": {
+          "en": "<p>Unfold <b>▸ Memory</b>, <b>▸ Cache</b> and <b>▸ Fill</b>. Click a cell <b>!</b> of a LOAD, and the cells of a line (<b>C0</b>) while it receives its block, to read their details; the arrow keys move along the row. When you are done, click here.</p>",
+          "es": "<p>Despliega <b>▸ Memoria</b>, <b>▸ Cache</b> y <b>▸ Fill</b>. Haz clic en una celda <b>!</b> de un LOAD, y en las celdas de una línea (<b>C0</b>) mientras recibe su bloque, para leer sus detalles; las flechas del teclado mueven por la fila. Cuando acabes, pulsa aquí.</p>",
+          "ca": "<p>Desplega <b>▸ Memòria</b>, <b>▸ Cache</b> i <b>▸ Fill</b>. Fes clic a una cel·la <b>!</b> d'un LOAD, i a les cel·les d'una línia (<b>C0</b>) mentre rep el seu bloc, per llegir-ne els detalls; les fletxes del teclat mouen per la fila. Quan acabis, prem aquí.</p>"
+        },
+        "actions": [
+          "revertProcessor",
+          "setProcessor:nBlocks=4",
+          "setProcessor:blkSize=32",
+          "setProcessor:nFillBuffers=8",
+          "selectProgram:SUM-simd",
+          "setN:1000",
+          "setRep:1",
+          "reveal:timeline",
+          "hide:timelineCritical",
+          "sidePanel:hide",
+          "switchTo:timelineComponent",
+          "timeline:view=detailed",
+          "timeline:critical=off"
+        ],
+        "next": [
+          "q-lines-rate"
+        ]
+      },
+      {
+        "id": "q-lines-rate",
+        "type": "question",
+        "position": "left",
+        "wWidth": 440,
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "answerMode": "numbers",
+        "answers": [],
+        "title": {
+          "en": "Blocks on the way and lines",
+          "es": "Bloques en camino y líneas",
+          "ca": "Blocs en camí i línies"
+        },
+        "questionText": {
+          "en": "<p>Each line receives a block for <b>12 cycles</b> and gets the next one a cycle later: a block every 13 cycles. With <b>4 lines</b>, how many cycles per iteration does the arrival of the blocks allow (one block per iteration), and how many cycles per sum?</p>",
+          "es": "<p>Cada línea recibe un bloque durante <b>12 ciclos</b> y empieza a recibir el siguiente un ciclo después: un bloque cada 13 ciclos. Con <b>4 líneas</b>, ¿cuántos ciclos por iteración permite la llegada de los bloques (un bloque por iteración), y cuántos ciclos por suma?</p>",
+          "ca": "<p>Cada línia rep un bloc durant <b>12 cicles</b> i comença a rebre el següent un cicle després: un bloc cada 13 cicles. Amb <b>4 línies</b>, quants cicles per iteració permet l'arribada dels blocs (un bloc per iteració), i quants cicles per suma?</p>"
+        },
+        "numericFields": [
+          {
+            "label": {
+              "en": "Time per iteration",
+              "es": "Tiempo por iteración",
+              "ca": "Temps per iteració"
+            },
+            "value": 3.27,
+            "tolerance": 0.06,
+            "unit": {
+              "en": "cycles/iteration",
+              "es": "ciclos/iteración",
+              "ca": "cicles/iteració"
+            },
+            "correct": {
+              "en": "Right: 4 lines, each one a block every 13 cycles: a block every 13 / 4 = 3.25 cycles.",
+              "es": "Correcto: 4 líneas, cada una un bloque cada 13 ciclos: un bloque cada 13 / 4 = 3,25 ciclos.",
+              "ca": "Correcte: 4 línies, cadascuna un bloc cada 13 cicles: un bloc cada 13 / 4 = 3,25 cicles."
+            },
+            "wrong": {
+              "en": "Lines ÷ cycles per block of each line = blocks per cycle.",
+              "es": "Líneas ÷ ciclos por bloque de cada línea = bloques por ciclo.",
+              "ca": "Línies ÷ cicles per bloc de cada línia = blocs per cicle."
+            }
+          },
+          {
+            "label": {
+              "en": "Time per sum",
+              "es": "Tiempo por suma",
+              "ca": "Temps per suma"
+            },
+            "value": 0.82,
+            "tolerance": 0.02,
+            "unit": {
+              "en": "cycles/sum",
+              "es": "ciclos/suma",
+              "ca": "cicles/suma"
+            },
+            "correct": {
+              "en": "Right: 3.25 / 4 = 0.81 cycles per sum (the simulation: 0.83). With 8 fill buffers, the lines of the cache limit the blocks on the way.",
+              "es": "Correcto: 3,25 / 4 = 0,81 ciclos por suma (la simulación: 0,83). Con 8 fill buffers, las líneas de la cache limitan los bloques en camino.",
+              "ca": "Correcte: 3,25 / 4 = 0,81 cicles per suma (la simulació: 0,83). Amb 8 fill buffers, les línies de la cache limiten els blocs en camí."
+            },
+            "wrong": {
+              "en": "Each iteration adds 4 elements.",
+              "es": "Cada iteración suma 4 elementos.",
+              "ca": "Cada iteració suma 4 elements."
+            }
+          }
+        ],
+        "actions": [
+          "switchTo:timelineComponent"
+        ],
+        "next": [
+          "q-lines-more"
+        ]
+      },
+      {
+        "id": "q-lines-more",
+        "type": "question",
+        "position": "bottom-right",
+        "wWidth": 440,
+        "lock": [
+          "program",
+          "N",
+          "Rep"
+        ],
+        "answerMode": "numbers",
+        "answers": [],
+        "allow": [
+          "processor.cache"
+        ],
+        "title": {
+          "en": "More lines",
+          "es": "Más líneas",
+          "ca": "Més línies"
+        },
+        "questionText": {
+          "en": "<p>With 8 fill buffers, increase the number of <b>blocks</b> of the cache (click the <b>Memory</b> box of the Processor panel, and then <i>Configure the cache…</i>) and simulate. What time per sum do you obtain with 5, 6 and 7 blocks?</p>",
+          "es": "<p>Con 8 fill buffers, aumenta el número de <b>bloques</b> de la cache (haz clic en la caja <b>Memoria</b> del panel del procesador, y después en <i>Configurar la cache…</i>) y simula. ¿Qué tiempo por suma obtienes con 5, 6 y 7 bloques?</p>",
+          "ca": "<p>Amb 8 fill buffers, augmenta el nombre de <b>blocs</b> de la cache (fes clic a la caixa <b>Memòria</b> del panell del processador, i després a <i>Configura la cache…</i>) i simula. Quin temps per suma obtens amb 5, 6 i 7 blocs?</p>"
+        },
+        "numericFields": [
+          {
+            "label": {
+              "en": "5 blocks",
+              "es": "5 bloques",
+              "ca": "5 blocs"
+            },
+            "value": 0.67,
+            "tolerance": 0.02,
+            "unit": {
+              "en": "cycles/sum",
+              "es": "ciclos/suma",
+              "ca": "cicles/suma"
+            },
+            "correct": {
+              "en": "Right: 13 / 5 = 2.6 cycles per block: 0.65 per sum (the simulation: 0.67).",
+              "es": "Correcto: 13 / 5 = 2,6 ciclos por bloque: 0,65 por suma (la simulación: 0,67).",
+              "ca": "Correcte: 13 / 5 = 2,6 cicles per bloc: 0,65 per suma (la simulació: 0,67)."
+            },
+            "wrong": {
+              "en": "Simulate, and read Cycles/Alg Oper in the Simulation panel.",
+              "es": "Simula, y lee Cycles/Alg Oper en el panel de simulación.",
+              "ca": "Simula, i llegeix Cycles/Alg Oper al panell de simulació."
+            }
+          },
+          {
+            "label": {
+              "en": "6 blocks",
+              "es": "6 bloques",
+              "ca": "6 blocs"
+            },
+            "value": 0.56,
+            "tolerance": 0.02,
+            "unit": {
+              "en": "cycles/sum",
+              "es": "ciclos/suma",
+              "ca": "cicles/suma"
+            },
+            "correct": {
+              "en": "Right: 13 / 6 = 2.2 cycles per block: 0.54 per sum (the simulation: 0.56).",
+              "es": "Correcto: 13 / 6 = 2,2 ciclos por bloque: 0,54 por suma (la simulación: 0,56).",
+              "ca": "Correcte: 13 / 6 = 2,2 cicles per bloc: 0,54 per suma (la simulació: 0,56)."
+            },
+            "wrong": {
+              "en": "Simulate, and read Cycles/Alg Oper in the Simulation panel.",
+              "es": "Simula, y lee Cycles/Alg Oper en el panel de simulación.",
+              "ca": "Simula, i llegeix Cycles/Alg Oper al panell de simulació."
+            }
+          },
+          {
+            "label": {
+              "en": "7 blocks",
+              "es": "7 bloques",
+              "ca": "7 blocs"
+            },
+            "value": 0.52,
+            "tolerance": 0.02,
+            "unit": {
+              "en": "cycles/sum",
+              "es": "ciclos/suma",
+              "ca": "cicles/suma"
+            },
+            "correct": {
+              "en": "Right: 13 / 7 = 1.9 cycles per block, less than the 2 cycles of each vector addition: the data arrive in time, and the chain of additions is the limit again (0.52, as without misses).",
+              "es": "Correcto: 13 / 7 = 1,9 ciclos por bloque, menos que los 2 ciclos de cada suma vectorial: los datos llegan a tiempo, y la cadena de sumas vuelve a ser el límite (0,52, como sin fallos).",
+              "ca": "Correcte: 13 / 7 = 1,9 cicles per bloc, menys que els 2 cicles de cada suma vectorial: les dades arriben a temps, i la cadena de sumes torna a ser el límit (0,52, com sense fallades)."
+            },
+            "wrong": {
+              "en": "Simulate, and read Cycles/Alg Oper in the Simulation panel.",
+              "es": "Simula, y lee Cycles/Alg Oper en el panel de simulación.",
+              "ca": "Simula, i llegeix Cycles/Alg Oper al panell de simulació."
+            }
+          }
+        ],
+        "actions": [
+          "revertProcessor",
+          "setProcessor:nBlocks=4",
+          "setProcessor:blkSize=32",
+          "setProcessor:nFillBuffers=8",
+          "selectProgram:SUM-simd",
+          "setN:1000",
+          "setRep:1",
+          "sidePanel:show",
+          "switchTo:simulationComponent"
+        ],
+        "next": [
           "ooo-summary"
         ]
       },
@@ -2900,9 +3139,9 @@
           "ca": "Fora d'ordre: amagar les fallades"
         },
         "description": {
-          "en": "<p>While a LOAD waits for its block, the processor goes on dispatching and executing the next iterations: up to 64 instructions in the ROB. In SUM-scalar the LOADs run ahead of the additions, and a miss ends before its addition needs its data: <b>the latency of the misses is hidden</b>, and the chain of additions (2 cycles per sum) is still the limit. With a smaller ROB the slack is shorter: with 32 entries, 2.9 cycles per sum; with 16, 5.5.</p><p>But hiding the latency is not enough when the data are needed faster than they arrive. SUM-simd needs a block every 2 cycles, and each fill buffer brings one every 12 cycles: with 2 fill buffers, a block every 6 cycles (1.51 cycles per sum instead of 0.51). <b>More blocks on the way at the same time</b> (more fill buffers) bring the data faster.</p>",
-          "es": "<p>Mientras un LOAD espera su bloque, el procesador sigue despachando y ejecutando las iteraciones siguientes: hasta 64 instrucciones en el ROB. En SUM-scalar los LOAD van por delante de las sumas, y un fallo acaba antes de que su suma necesite el dato: <b>la latencia de los fallos queda oculta</b>, y la cadena de sumas (2 ciclos por suma) sigue siendo el límite. Con un ROB más pequeño el margen es más corto: con 32 entradas, 2,9 ciclos por suma; con 16, 5,5.</p><p>Pero ocultar la latencia no basta cuando los datos se necesitan más deprisa de lo que llegan. SUM-simd necesita un bloque cada 2 ciclos, y cada fill buffer trae uno cada 12 ciclos: con 2 fill buffers, un bloque cada 6 ciclos (1,51 ciclos por suma en lugar de 0,51). <b>Más bloques en camino a la vez</b> (más fill buffers) traen los datos más deprisa.</p>",
-          "ca": "<p>Mentre un LOAD espera el seu bloc, el processador continua despatxant i executant les iteracions següents: fins a 64 instruccions al ROB. A SUM-scalar els LOAD van per davant de les sumes, i una fallada acaba abans que la seva suma necessiti la dada: <b>la latència de les fallades queda amagada</b>, i la cadena de sumes (2 cicles per suma) continua sent el límit. Amb un ROB més petit el marge és més curt: amb 32 entrades, 2,9 cicles per suma; amb 16, 5,5.</p><p>Però amagar la latència no és suficient quan les dades es necessiten més de pressa del que arriben. SUM-simd necessita un bloc cada 2 cicles, i cada fill buffer en porta un cada 12 cicles: amb 2 fill buffers, un bloc cada 6 cicles (1,51 cicles per suma en lloc de 0,51). <b>Més blocs en camí alhora</b> (més fill buffers) porten les dades més de pressa.</p>"
+          "en": "<p>While a LOAD waits for its block, the processor goes on dispatching and executing the next iterations: up to 64 instructions in the ROB. In SUM-scalar the LOADs run ahead of the additions, and a miss ends before its addition needs its data: <b>the latency of the misses is hidden</b>, and the chain of additions (2 cycles per sum) is still the limit. With a smaller ROB the slack is shorter: with 32 entries, 2.9 cycles per sum; with 16, 5.5.</p><p>But hiding the latency is not enough when the data are needed faster than they arrive. SUM-simd needs a block every 2 cycles, and each fill buffer brings one every 12 cycles: with 2 fill buffers, a block every 6 cycles (1.51 cycles per sum instead of 0.51). <b>More blocks on the way at the same time</b> (more fill buffers) bring the data faster. A miss needs also a line of the cache while its block arrives: the blocks on the way are limited by the fill buffers <b>and</b> by the lines. With 8 fill buffers and 7 lines, SUM-simd takes 0.52 cycles per sum, as without misses.</p>",
+          "es": "<p>Mientras un LOAD espera su bloque, el procesador sigue despachando y ejecutando las iteraciones siguientes: hasta 64 instrucciones en el ROB. En SUM-scalar los LOAD van por delante de las sumas, y un fallo acaba antes de que su suma necesite el dato: <b>la latencia de los fallos queda oculta</b>, y la cadena de sumas (2 ciclos por suma) sigue siendo el límite. Con un ROB más pequeño el margen es más corto: con 32 entradas, 2,9 ciclos por suma; con 16, 5,5.</p><p>Pero ocultar la latencia no basta cuando los datos se necesitan más deprisa de lo que llegan. SUM-simd necesita un bloque cada 2 ciclos, y cada fill buffer trae uno cada 12 ciclos: con 2 fill buffers, un bloque cada 6 ciclos (1,51 ciclos por suma en lugar de 0,51). <b>Más bloques en camino a la vez</b> (más fill buffers) traen los datos más deprisa. Un fallo también necesita una línea de la cache mientras llega su bloque: los bloques en camino están limitados por los fill buffers <b>y</b> por las líneas. Con 8 fill buffers y 7 líneas, SUM-simd tarda 0,52 ciclos por suma, como sin fallos.</p>",
+          "ca": "<p>Mentre un LOAD espera el seu bloc, el processador continua despatxant i executant les iteracions següents: fins a 64 instruccions al ROB. A SUM-scalar els LOAD van per davant de les sumes, i una fallada acaba abans que la seva suma necessiti la dada: <b>la latència de les fallades queda amagada</b>, i la cadena de sumes (2 cicles per suma) continua sent el límit. Amb un ROB més petit el marge és més curt: amb 32 entrades, 2,9 cicles per suma; amb 16, 5,5.</p><p>Però amagar la latència no és suficient quan les dades es necessiten més de pressa del que arriben. SUM-simd necessita un bloc cada 2 cicles, i cada fill buffer en porta un cada 12 cicles: amb 2 fill buffers, un bloc cada 6 cicles (1,51 cicles per suma en lloc de 0,51). <b>Més blocs en camí alhora</b> (més fill buffers) porten les dades més de pressa. Una fallada també necessita una línia de la cache mentre arriba el seu bloc: els blocs en camí estan limitats pels fill buffers <b>i</b> per les línies. Amb 8 fill buffers i 7 línies, SUM-simd triga 0,52 cicles per suma, com sense fallades.</p>"
         },
         "actions": [
           "revertProcessor",

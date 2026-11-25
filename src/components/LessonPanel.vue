@@ -108,11 +108,15 @@
     for (const r of res.processors) if (r.embedded) install('processor', r.name, r.data)
     const tutorialId = res.tutorial.name
     if (res.tutorial.embedded) install('tutorial', tutorialId, res.tutorial.data)
+    // the results of the simulations (stored and last one): the ones of before the lesson come back when it ends
+    for (const key of [...Object.keys(localStorage).filter(k => k.startsWith('results.')), 'simulationOptions', 'simResults', 'simProcess'])
+      if (!(key in backup)) backup[key] = localStorage.getItem(key)
 
     const snapshot = {
       program:   simState.simulatedProcess?.name ?? '',
       processor: simState.processorName ?? '',
       N:         document.querySelector('#program-iterations')?.value ?? '',
+      rep:       simState.simulatedProcess?.rep ?? 1,
       settings:  { ...simState.simulationSettings },
       view:      props.activeView,
       processorConfig: processorDraftFrom(simState.simulatedProcess),
@@ -241,6 +245,8 @@
     clearSnapshot()                                   // the lesson restores, not its tutorial
     simState.lessonTutorial = { action: 'stop', nonce: Date.now() }
     await sleep(500)
+    // the results stored during the lesson are removed (those of before it come back with the backup)
+    for (const key of Object.keys(localStorage).filter(k => k.startsWith('results.'))) localStorage.removeItem(key)
     for (const [key, value] of Object.entries(session.backup ?? {})) {
       if (value === null) localStorage.removeItem(key)
       else localStorage.setItem(key, value)
@@ -261,7 +267,7 @@
       delete config.name
       Object.assign(simState.simulatedProcess, config)
     }
-    await runActions([`selectProgram:${snap.program}`, ...(snap.N ? [`setN:${snap.N}`] : [])])
+    await runActions([`selectProgram:${snap.program}`, ...(snap.N ? [`setN:${snap.N}`] : []), `setRep:${snap.rep ?? 1}`])
     if (snap.settings) Object.assign(simState.simulationSettings, snap.settings)
     if (snap.view) emit('requestSwitchPanel', snap.view)
   }

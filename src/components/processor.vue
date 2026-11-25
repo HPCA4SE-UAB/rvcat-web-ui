@@ -1,22 +1,19 @@
 <script setup>
-  import { t, locale } from '@/i18n'
-  import { ref, watch, watchEffect, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
+  import { t } from '@/i18n'
+  import { ref, watch, onMounted, onUnmounted, nextTick, inject, computed, reactive } from 'vue'
   import HelpComponent                                                  from '@/components/helpComponent.vue'
   import CacheConfigWindow                                              from '@/components/CacheConfigWindow.vue'
+  import ProcessorDiagram                                               from '@/components/ProcessorDiagram.vue'
   import { uploadJSON, downloadJSON, saveToLocalStorage, removeFromLocalStorage, initResource,
-           createGraphVizGraph, get_processor_dot, resourceUsage, CACHE_BLOCK_SIZES,
-           getAllowedCacheBlockSizes, getLargestMemoryAccessSize, typeOperations, typeSizes,
-           allOperationNames, removePortFrom, MAX_PORTS }                                 from '@/common'
+           resourceUsage }                                                              from '@/common'
   import { processorDraftFrom, processorSignature }                                     from '@/editDrafts'
-  import { uiLocked, authorMode }                                                       from '@/authorMode'
+  import { uiLocked }                                                                   from '@/authorMode'
 
   const simState = inject('simulationState');
 
   // ---- Lessons: only the processors of the lesson, and its locks ----
   const visibleProcessors = computed(() => simState.lesson ? simState.lesson.processors : processorOptions.availableProcessors)
   const locked = (what) => uiLocked(simState.lesson, what, simState.lessonAllow ?? [])
-  // field of the processor edited by each cell of the diagram
-  const CELL_FIELD = { dispatch: 'dispatch', retire: 'retire', rob: 'rob', cache: 'cache', bpenalty: 'bPenalty', addport: 'ports' }
   const editLocked = computed(() => ['dispatch', 'retire', 'rob', 'cache', 'bPenalty', 'ports', 'latencies']
     .every(f => locked(`processor.${f}`)))
 
@@ -29,11 +26,9 @@
   const defaultOptions = {
     processorName:       '',
     availableProcessors: [],
-    opsCollapsed:        true      // operation types of the ports hidden in the diagram (when a processor is loaded)
   }
 
   const processorOptions = reactive(defaultOptions)
-  const simulatedSvg     = ref('')
 
   // ---- The panel can be folded to its header and a summary line (more room for the program).
   //      A card of a lesson can forbid unfolding it or folding it ("lock": ["processorPanel"]) ----
@@ -87,345 +82,6 @@
     }
   }
 
-  const activeField = ref("rob");
-  // The field of the header (to type a value) is shown after a click on the text of a cell of
-  // the diagram; the − / + buttons of the diagram do not need it
-  const fieldVisible = ref(false)
-  const fieldInput   = ref(null)
-  // shown: ready to type the value
-  watch(fieldVisible, (on) => { if (on) nextTick(() => { fieldInput.value?.focus(); fieldInput.value?.select() }) })
-  let hideTimer = null
-  // the value is checked and applied, and the field leaves the header (after showing for 2 s the
-  // message of a value that had to be corrected); the latency of an operation keeps its controls
-  function onFieldBlur() {
-    validateField()
-    if (activeField.value === 'op') return
-    clearTimeout(hideTimer)
-    if (isInvalid.value) hideTimer = setTimeout(() => { if (document.activeElement !== fieldInput.value) fieldVisible.value = false }, 2000)
-    else fieldVisible.value = false
-  }
-  // Esc: the value is not changed
-  function cancelField() {
-    inputValue.value = fieldValue()
-    isInvalid.value = false
-    validationMessage.value = ''
-    if (activeField.value !== 'op') { fieldVisible.value = false; return }
-    fieldInput.value?.blur()
-  }
-
-  const FIELD_CONFIG = {
-    rob: {
-      label: "ROB:",
-      title: "Number of ROB entries (1 to 200)",
-      min: 1,
-      max: 200,
-      model: "ROBsize"
-    },
-    dispatch: {
-      label: "Dispatch:",
-      title: "Dispatch width (1 to 9)",
-      min: 1,
-      max: 9,
-      model: "dispatch"
-    },
-    cache_nBlk: {
-      label: "nBlocks:",
-      title: "Number of Cache blocks (0 to 32)",
-      min: 0,
-      max: 32,
-      model: "nBlocks"
-    },
-    cache_BlkSz: {
-      label: "BlkSize:",
-      title: "Cache block size (8, 16, 32, 64, or 128 bytes)",
-      min: 8,
-      max: 128,
-      model: "blkSize"
-    },
-    cache_mPenalty: {
-      label: "Penalty:",
-      title: "Cache miss penalty (must be at least mIssueTime)",
-      min: 1,
-      max: 99,
-      model: "mPenalty"
-    },
-    cache_mIssueTime: {
-      label: "IssueTime:",
-      title: "Memory Issue Time (minimum time between memory accesses, 1 to 99)",
-      min: 1,
-      max: 99,
-      model: "mIssueTime"
-    },
-    cache_nFillBuffers: {
-      label: "FillBuff:",
-      title: "Number of fill buffers (1 to 32)",
-      min: 1,
-      max: 32,
-      model: "nFillBuffers"
-    },
-    cache_nWriteBuffers: {
-      label: "WrtBuff:",
-      title: "Number of write buffers (1 to 32)",
-      min: 1,
-      max: 32,
-      model: "nWriteBuffers"
-    },
-    cache_rThru: {
-      label: "RetThru:",
-      title: "Cache return throughput (1 to 32 instructions per cycle)",
-      min: 1,
-      max: 32,
-      model: "rThru"
-    },
-    bpenalty: {
-      label: "BrPenalty:",
-      title: "Branch penalty: cycles to refill the front-end after a mispredicted conditional branch resolves (0 to 99)",
-      min: 0,
-      max: 99,
-      model: "bPenalty"
-    },
-    retire: {
-      label: "Retire:",
-      title: "Retire width (1 to 9)",
-      min: 1,
-      max: 9,
-      model: "retire"
-    }
-  };
-
-  // Selected operation type (cell of a port) or port of the diagram
-  const selectedOp   = ref(null)    // { port, label }
-  const selectedPort = ref(null)    // port id (string)
-
-  // operations represented by a cell label: "FLOAT.ADD", or a whole type ("INT": all its operations)
-  const opsOfLabel = (label, list) => list.filter(op => op === label || op.startsWith(`${label}.`))
-  const latencyKeys = (label) => (label.includes('.') ? [label]
-    : [label, ...(typeOperations[label] ?? []).map(op => `${label}.${op}`)])
-
-  // data sizes with their own latency ("FLOAT.ADD.double"); only for one operation, not a whole type
-  const sizesOf = (label) => (label?.includes('.') ? typeSizes[label.split('.')[0]] ?? [] : [])
-  const selectedSize = ref('')      // '' = every size
-
-  function latencyOf(label, size = '') {
-    const lat = simState.simulatedProcess.latencies ?? {}
-    if (size && lat[`${label}.${size}`] !== undefined) return lat[`${label}.${size}`]
-    return lat[label] ?? lat[label.split('.')[0]] ?? 1
-  }
-  // without a size, the latency applies to every operation and size of the label
-  function setLatency(label, value, size = '') {
-    const lat = simState.simulatedProcess.latencies ??= {}
-    if (size) { lat[`${label}.${size}`] = value; return }
-    for (const key of latencyKeys(label)) lat[key] = value
-    for (const key of Object.keys(lat)) if (key.startsWith(`${label}.`)) lat[key] = value
-  }
-
-  const currentConfig = computed(() => {
-    if (activeField.value === 'op' && selectedOp.value) {
-      const { label } = selectedOp.value
-      const size = selectedSize.value
-      const name = size ? `${label}.${size}` : label
-      return { label: t('{name} latency:', { name }), min: 1, max: 99, get: () => latencyOf(label, size), set: (v) => setLatency(label, v, size),
-               title: size
-                 ? t('Latency of {op} on {size} data in cycles (1 to 99), in every port that executes {op}', { op: label, size })
-                 : t('Latency of {op} in cycles (1 to 99), for every data size and in every port that executes {op}', { op: label }) }
-    }
-    if (activeField.value === 'port' && selectedPort.value !== null)
-      return { label: `P${selectedPort.value}:`, min: 0, max: 0, get: () => '', port: true,
-               title: t('Port P{p}: insert an operation type, or remove the port', { p: selectedPort.value }) }
-    const config = FIELD_CONFIG[activeField.value] ?? FIELD_CONFIG.rob
-    return { ...config, label: t(config.label), title: t(config.title) }
-  });
-  const fieldValue = () => (currentConfig.value.get ? currentConfig.value.get() : simState.simulatedProcess[currentConfig.value.model])
-
-  // ---- Ports and operation types ----
-  const portIds = computed(() => Object.keys(simState.simulatedProcess.ports ?? {}))
-  const allOperations = computed(() => allOperationNames())
-  const insertableOps = computed(() => {
-    const list = simState.simulatedProcess.ports?.[selectedPort.value] ?? []
-    return allOperations.value.filter(op => !list.includes(op) && !list.includes(op.split('.')[0]))
-  })
-  const opToInsert = ref('')
-  const moveTarget = ref('')
-
-  function insertOperation() {
-    const list = simState.simulatedProcess.ports?.[selectedPort.value]
-    if (!list || !opToInsert.value) return
-    list.push(opToInsert.value)
-    if (!(opToInsert.value in (simState.simulatedProcess.latencies ?? {})))
-      setLatency(opToInsert.value, latencyOf(opToInsert.value))
-    opToInsert.value = ''
-  }
-  function removeOperation() {
-    const { port, label } = selectedOp.value ?? {}
-    const list = simState.simulatedProcess.ports?.[port]
-    if (!list) return
-    simState.simulatedProcess.ports[port] = list.filter(op => !opsOfLabel(label, [op]).length)
-    selectedOp.value = null
-    activeField.value = 'rob'
-  }
-  function moveOperation() {
-    const { port, label } = selectedOp.value ?? {}
-    const from = simState.simulatedProcess.ports?.[port], to = simState.simulatedProcess.ports?.[moveTarget.value]
-    if (!from || !to || moveTarget.value === port) return
-    const moved = opsOfLabel(label, from)
-    simState.simulatedProcess.ports[port] = from.filter(op => !moved.includes(op))
-    for (const op of moved) if (!to.includes(op)) to.push(op)
-    selectedOp.value = { port: moveTarget.value, label }
-    moveTarget.value = ''
-  }
-  function addPort() {
-    if (portIds.value.length >= MAX_PORTS) return showTemporaryError(t('At most {n} execution ports', { n: MAX_PORTS }))
-    const ids = portIds.value.map(Number)
-    const id = String(ids.length ? Math.max(...ids) + 1 : 0)
-    simState.simulatedProcess.ports = { ...simState.simulatedProcess.ports, [id]: [] }
-    selectedPort.value = id
-    activeField.value = 'port'
-  }
-  function removePort() {
-    const id = selectedPort.value
-    if (id === null || portIds.value.length <= 1) return
-    const ops = simState.simulatedProcess.ports[id] ?? []
-    if (ops.length && !confirm(t('Remove port P{p}? The operation types that only P{p} executes move to the first remaining port, and the ports are renumbered P0, P1, ...', { p: id })))
-      return
-    const { ports, moved } = removePortFrom(simState.simulatedProcess.ports, id)
-    simState.simulatedProcess.ports = ports
-    if (moved.length) showTemporaryError(t('Moved to P0: {ops}', { ops: moved.join(', ') }))   // P0 after renumbering
-    selectedPort.value = null
-    activeField.value = 'rob'
-  }
-  const largestMemoryAccessSize = computed(() =>
-    getLargestMemoryAccessSize(simState.simulatedProcess.instruction_list ?? [])
-  )
-  const allowedCacheBlockSizes = computed(() =>
-    getAllowedCacheBlockSizes(simState.simulatedProcess.instruction_list ?? [])
-  )
-  const minimumCacheBlockSize = computed(() => allowedCacheBlockSizes.value[0] ?? null)
-  const currentMinimum = computed(() =>
-    activeField.value === 'cache_BlkSz'
-      ? minimumCacheBlockSize.value ?? CACHE_BLOCK_SIZES[0]
-      : activeField.value === 'cache_mPenalty'
-        ? Math.max(Number(simState.simulatedProcess.mIssueTime) || 1, currentConfig.value.min)
-        : currentConfig.value.min
-  )
-  const currentTitle = computed(() => {
-    if (activeField.value === 'cache_mPenalty') {
-      return t('Cache miss penalty ({min} to 99; must be at least mIssueTime)', { min: currentMinimum.value })
-    }
-    if (activeField.value !== 'cache_BlkSz') return currentConfig.value.title
-    if (minimumCacheBlockSize.value === null) {
-      return t("No supported cache block can hold this program's largest {size}-byte memory access", { size: largestMemoryAccessSize.value })
-    }
-    return t('Cache block size ({sizes} bytes); minimum access size: {size} bytes',
-             { sizes: allowedCacheBlockSizes.value.join(', '), size: largestMemoryAccessSize.value })
-  })
-
-  const inputValue   = ref('');
-  const isInvalid    = ref(false);
-  const validationMessage = ref('')
-  let   errorTimeout = null;
-
-  const validateField = () => {
-    const min = currentMinimum.value;
-    const max = currentConfig.value.max;
-    let rawValue = inputValue.value;
-
-    if (errorTimeout) clearTimeout(errorTimeout);
-
-    if (rawValue === '' || rawValue === null || rawValue === undefined) {
-      const lastValidValue = fieldValue();
-      inputValue.value = lastValidValue ?? min;
-      isInvalid.value = false;
-      validationMessage.value = ''
-      return;
-    }
-
-    let numValue = Number(rawValue);
-
-    if (isNaN(numValue)) {
-      const lastValidValue = fieldValue();
-      inputValue.value = lastValidValue ?? min;
-      isInvalid.value = false;
-      validationMessage.value = ''
-      return;
-    }
-
-    if (activeField.value === 'cache_BlkSz') {
-      if (!allowedCacheBlockSizes.value.includes(numValue)) {
-        const lastValidValue = simState.simulatedProcess.blkSize
-        inputValue.value = lastValidValue
-        const requirement = minimumCacheBlockSize.value === null
-          ? t('This program needs a {size}-byte block, larger than the 128-byte maximum.', { size: largestMemoryAccessSize.value })
-          : t('Choose one of these cache block sizes (bytes): {sizes}.', { sizes: allowedCacheBlockSizes.value.join(', ') })
-        showTemporaryError(requirement)
-        return
-      }
-    }
-
-    if (numValue < min) {
-      numValue = min;
-      inputValue.value = numValue;
-      showTemporaryError(activeField.value === 'cache_mPenalty'
-        ? t('MissPenalty cannot be less than mIssueTime ({min})', { min })
-        : t('The minimum value is {min}', { min }))
-    } else if (numValue > max) {
-      numValue = max;
-      inputValue.value = numValue;
-      showTemporaryError(t('The maximum value is {max}', { max }));
-    }
-
-    setParameterValue(numValue)
-  }
-
-  function setParameterValue(value) {
-    if (activeField.value === 'op' && locked('processor.latencies')) return lockedMessage()
-    if (currentConfig.value.set) return currentConfig.value.set(value)
-    const model = currentConfig.value.model
-    simState.simulatedProcess[model] = value
-    if (model === 'mIssueTime' &&
-        Number(simState.simulatedProcess.mPenalty) < value) {
-      simState.simulatedProcess.mPenalty = value
-      showTemporaryError(t('MissPenalty raised to {value}; it cannot be below mIssueTime', { value }))
-    }
-  }
-
-  const showTemporaryError = (message) => {
-    isInvalid.value = true;
-    validationMessage.value = message
-    errorTimeout = setTimeout(() => {
-      isInvalid.value = false;
-      validationMessage.value = ''
-    }, 2000);
-    console.warn(message);
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      event.target.blur();
-    }
-  };
-
-  const handleInput = (event) => {
-    if (isInvalid.value) {
-      isInvalid.value = false;
-      validationMessage.value = ''
-    }
-    let value = event.target.value;
-    if (value !== '' && !/^\d*$/.test(value)) {
-      event.target.value = value.replace(/\D/g, '');
-      inputValue.value = event.target.value;
-    }
-  };
-
-  const labelHighlighted = ref(false);
-
-  const highlightLabel = () => {
-    labelHighlighted.value = true;
-
-    setTimeout(() => {
-      labelHighlighted.value = false;
-    }, 3000); // 3000ms
-  };
-
 // ============================================================================
 // WATCHES: processor, globalState
 // ============================================================================
@@ -441,8 +97,6 @@
       if (newName && simState.state > 1 && !initializingProcessor) {  // Processor already initialized
          if (newName !== simState.processorName) {
            console.log(`💻✅ Processor changed from "${oldName}" to "${newName}"`);
-           processorOptions.opsCollapsed = true
-           saveOptions()
            reloadProcessor()
          }
       }
@@ -467,65 +121,20 @@
     }
   )
 
-  watch( () => simState.highlightedPort, (newValue, oldValue) => {
-      if (newValue !== oldValue)
-        drawProcessor()
-    }
-  )
-  // ports and stage highlighted from the timeline
-  watch(() => [(simState.highlightedPorts ?? []).join(','), simState.highlightedStage], (now, before) => {
-    if (now[0] !== before[0] || now[1] !== before[1]) drawProcessor()
-  })
-
-  watchEffect(() => { // Dependences: re-evaluated when they change
-    const svg = simulatedSvg.value;
-    if (svg) { // available SVG
-      nextTick(() => {
-        addClickListenersToSvg()
-      })
-    }
-  })
-
-  watch(() => currentConfig.value?.label, (newLabel, oldLabel) => {
-    if (newLabel && newLabel !== oldLabel) {
-      highlightLabel()
-    }
-  })
-
-  watch(() => simState.simulatedProcess, () => {
-    if (simState.state > 1) {
-      drawProcessor()
-    }
-  },
-  { deep: true, immediate: true })
-
-  watch(() => fieldValue(),
-    (newVal) => {
-      if (String(inputValue.value) !== String(newVal)) {
-        inputValue.value = newVal ?? '';
-        isInvalid.value = false;
-      }
-    },
-    { immediate: true }
-  )
-
 // ============================================================================
 // LIFECYCLE:  Mount/unMount
 // ============================================================================
   onMounted(() => {
     loadOptions()
-    if (currentConfig.value?.label) highlightLabel()
     console.log('💻🎯 Processor Component mounted')
   });
 
   onUnmounted(() => {
     console.log('💻👋 Processor Component unmounted')
-    removeClickListeners()
   });
 
 // ============================================================================
 // PROCESSOR ACTIONS: initProcessor, reloadProcessor, editProcessor, removeProcessor,
-//     drawProcessor
 // ============================================================================
 
   const initProcessor = async () => {
@@ -539,7 +148,6 @@
   };
 
   const reloadProcessor = async () => {
-    fieldVisible.value = false
     console.log('💻🔄 Reloading processor with:', processorOptions.processorName);
     try {
       const jsonString = localStorage.getItem(`processor.${processorOptions.processorName}`)
@@ -554,10 +162,8 @@
       data.name = simState.simulatedProcess.name || 'unknown'
       Object.assign(simState.simulatedProcess, data)
       simState.processorName= processorOptions.processorName
-      drawProcessor()
     } catch (error) {
       console.error('💻❌ Failed to set processor:', error)
-      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
     }
   }
 
@@ -634,145 +240,9 @@
     }
   }
 
-  // While a drawing is in progress, the requests wait: only the last one is drawn afterwards (the
-  // timeline asks for many while the pointer moves)
-  let drawing = false, drawAgain = false
-  const drawProcessor = async () => {
-    if (drawing) { drawAgain = true; return }
-    drawing = true
-    try {
-      do {
-        drawAgain = false
-        await drawProcessorNow()
-      } while (drawAgain)
-    } finally {
-      drawing = false
-    }
-  }
-  const drawProcessorNow = async () => {
-    try {
-      const highlighted  = simState.highlightedPorts?.length ? simState.highlightedPorts : simState.highlightedPort
-      const dotCode      = get_processor_dot (simState.simulatedProcess, true, highlighted,
-                                              { collapsed: processorOptions.opsCollapsed, ports: !locked('processor.ports'),
-                                                usage: shownUsage(), steppers: stepperFields(),
-                                                stage: simState.highlightedStage })
-      const svg          = await createGraphVizGraph(dotCode);
-      simulatedSvg.value = svg.outerHTML;
-    } catch (error) {
-      console.error('💻❌ Failed to draw processor:', error)
-      simulatedSvg.value = `<div class="error">Failed to render graph</div>`;
-    }
-  }
-
-  let clickListeners = [];     // To clean listeners
-
-  const addClickListenersToSvg = () => {
-    nextTick(() => {
-      const svgElement = document.querySelector('.simProcessor-img svg');
-      if (!svgElement) return;
-
-      removeClickListeners()
-      console.log('💻Add click listeners to processor table');
-
-      svgElement.querySelectorAll('g').forEach(g => {
-        if (typeof g.id === 'string' && g.id.startsWith("a_")) {
-          const clickHandler = (e) => {
-            e.preventDefault()
-
-            const action = g.id.slice(2)
-            console.log("Action:", action)
-            if (action.startsWith('dec:') || action.startsWith('inc:')) return   // on pointerdown
-
-            // locked by the lesson: the cell only shows its explanation
-            const field = action.startsWith('op:') ? null : action.startsWith('port:') ? 'ports' : CELL_FIELD[action]
-            if (action.startsWith('op:') && locked('processor.latencies') && locked('processor.ports')) return lockedMessage()
-            if (field && locked(`processor.${field}`)) return lockedMessage()
-
-            if (action.startsWith('op:')) {       // op:<port>:<row>:<label>
-              const [, port, , label] = action.split(':')
-              selectedOp.value = { port, label }
-              selectedSize.value = ''
-              moveTarget.value = ''
-              activeField.value = 'op'
-              return
-            }
-            if (action.startsWith('port:')) {
-              selectedPort.value = action.slice(5)
-              opToInsert.value = ''
-              activeField.value = 'port'
-              return
-            }
-            switch (action) {
-              case 'toggleops':
-                processorOptions.opsCollapsed = !processorOptions.opsCollapsed
-                saveOptions()
-                drawProcessor()
-                break
-              case 'addport':
-                addPort()
-                break
-              case 'dispatch':
-              case 'rob':
-              case 'retire':
-              case 'bpenalty':
-                activeField.value = action
-                clearTimeout(hideTimer)
-                if (fieldVisible.value) nextTick(() => { fieldInput.value?.focus(); fieldInput.value?.select() })
-                fieldVisible.value = true
-                break
-
-              case 'port':
-                console.log('Port clicked:', g.id.slice(2))
-                break
-
-              case 'cache':
-                showCacheWindow.value = true
-                break
-
-              case 'op':
-                // const [_, __, p, row, label] = parts
-                // console.log('Op:', p, row, label)
-                break
-            }
-          }
-          // Guardar referencia para poder removerlo después
-          clickListeners.push({
-            node:    g,
-            handler: clickHandler
-          })
-
-          g.addEventListener('click', clickHandler)
-          const step = g.id.slice(2).match(/^(dec|inc):(\w+)$/)
-          if (step) {
-            const down = (e) => { e.preventDefault(); startStep(step[1], step[2]) }
-            g.addEventListener('pointerdown', down)
-            clickListeners.push({ node: g, handler: down, type: 'pointerdown' })
-          }
-        }
-      })
-    })
-  }
-
-  function lockedMessage() {
-    showTemporaryError(simState.lesson ? t('This parameter cannot be changed in this lesson')
-                                       : t('The structure of the processor (ports and latencies) is edited in author mode'))
-  }
-
-  // Parameters with − / + buttons on the diagram (those that the lesson does not lock)
-  const STEPPER_FIELDS = ['dispatch', 'retire', 'rob', 'bpenalty']
-  const stepperFields = () => new Set(STEPPER_FIELDS.filter(f => !locked(`processor.${CELL_FIELD[f]}`)))
-
-  // A − / + button of the diagram: one step, repeated while it is held down (the diagram is drawn
-  // again after each step, so the end of the press is caught on the window)
-  function startStep(kind, field) {
-    if (locked(`processor.${CELL_FIELD[field]}`)) return lockedMessage()
-    activeField.value = field
-    stopHold()
-    startHold(kind === 'inc' ? increaseParameter : decreaseParameter)
-    const end = () => { stopHold(); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end) }
-    window.addEventListener('pointerup', end)
-    window.addEventListener('pointercancel', end)
-  }
+  // ports pointed in the timeline: one port (highlightedPort) or a list (highlightedPorts)
+  const highlightedPorts = computed(() => (simState.highlightedPorts?.length ? simState.highlightedPorts
+    : [simState.highlightedPort].filter(x => x !== null && x !== undefined && x !== -1)).map(String))
 
   // ---- Window of the cache: every parameter, checked; the simulator waits until it is closed ----
   const showCacheWindow = ref(false)
@@ -789,30 +259,16 @@
 
   // Usage of the resources in the last simulation (valid for the current processor and program:
   // the results are cleared when something changes), unless the lesson hides it
-  const shownUsage = () => simState.lesson?.hidden?.includes('usage') ? null
-    : resourceUsage(simState.simulatedProcess, simState.executionResults)
-  watch(() => [simState.executionResults, simState.lesson?.hidden?.includes('usage')], () => {
-    if (simState.state > 1) drawProcessor()
-  })
-
-  // Author mode on/off: the diagram shows or hides the editing of the ports
-  watch(authorMode, () => { if (simState.state > 1) drawProcessor() })
-
-  // The diagram has texts: redrawn in the new language
-  watch(locale, () => { if (simState.state > 1) drawProcessor() })
+  // Usage of the resources in the last simulation (valid for the current processor and program:
+  // the results are cleared when something changes), unless the lesson hides it
+  const shownUsage = computed(() => simState.lesson?.hidden?.includes('usage') ? null
+    : resourceUsage(simState.simulatedProcess, simState.executionResults))
 
   // Reload the current processor (its stored version may have changed: lessons)
   // (a processor that is no longer stored, e.g. one of a lesson that ended, is selected again by the caller)
   watch(() => simState.reloadNonce, () => {
     if (simState.state > 1 && localStorage.getItem(`processor.${processorOptions.processorName}`)) reloadProcessor()
   })
-
-  const removeClickListeners = () => {
-    clickListeners.forEach(({ node, handler, type }) => {
-      node.removeEventListener(type ?? 'click', handler);
-    })
-    clickListeners = []
-  }
 
 // ============================================================================
 // uploadProcessor
@@ -831,8 +287,6 @@
         }
         saveToLocalStorage('processor', data.name, data, processorOptions.availableProcessors)
         savedSignature.value   = processorSignature(data)
-        processorOptions.opsCollapsed = true
-        saveOptions()
         simState.processorName = data.name
         processorOptions.processorName = data.name
         data.name = simState.simulatedProcess.name || 'unknown'
@@ -864,59 +318,6 @@
       section.scrollIntoView({ block: 'start' })
     }, 200)
   })
-
-/* ------------------------------------------------------------------
- * Button Support: press & hold
- * ------------------------------------------------------------------ */
-  let holdTimeout = null;
-  let holdInterval= null;
-
-  function startHold(action) {
-    const INITIAL_DELAY   = 400;   // tiempo hasta que empieza la repetición
-    const REPEAT_INTERVAL = 100;   // velocidad de repetición
-
-    action()    // first click
-
-    // wait until repetition
-    holdTimeout = setTimeout(() => {
-      holdInterval = setInterval(() => {
-        action();
-      }, REPEAT_INTERVAL);
-    }, INITIAL_DELAY);
-  }
-
-  function stopHold() {
-    clearTimeout(holdTimeout);
-    clearInterval(holdInterval);
-  }
-
-  function increaseParameter() {
-    if (activeField.value === 'cache_BlkSz') {
-      const currentValue = simState.simulatedProcess.blkSize
-      const nextValue = allowedCacheBlockSizes.value.find(size => size > currentValue)
-      if (nextValue !== undefined)
-        simState.simulatedProcess.blkSize = nextValue
-      return
-    }
-    const max    = currentConfig.value.max
-    let newValue = fieldValue()
-    setParameterValue(Math.min(newValue+1, max))
-  }
-
-  function decreaseParameter() {
-    if (activeField.value === 'cache_BlkSz') {
-      const values = allowedCacheBlockSizes.value
-      const currentValue = simState.simulatedProcess.blkSize
-      const previousValues = values.filter(size => size < currentValue)
-      simState.simulatedProcess.blkSize = previousValues.length
-        ? previousValues[previousValues.length - 1]
-        : values[0] ?? currentValue
-      return
-    }
-    const min    = currentMinimum.value
-    let newValue = fieldValue()
-    setParameterValue(Math.max(newValue-1, min))
-  }
 
 </script>
 
@@ -956,77 +357,6 @@
           :title="t('Remove processor configuration from list (and local storage)')">
         🗑
         </button>
-        <template v-if="currentConfig.port">
-          <span class="iters-label highlight-static" :title="currentConfig.title">{{ currentConfig.label }}</span>
-          <select v-model="opToInsert" id="port-insert-op" :title="t('Operation type to insert in this port')">
-            <option value="">{{ t('insert type…') }}</option>
-            <option v-for="op in insertableOps" :key="op" :value="op">{{ op }}</option>
-          </select>
-          <button class="blue-button small-btn" id="port-insert-button" :disabled="!opToInsert" @click="insertOperation"
-                  :title="t('Insert the selected operation type in this port')">＋</button>
-          <button class="blue-button small-btn" id="port-remove-button" :disabled="portIds.length <= 1" @click="removePort"
-                  :title="t('Remove this port')">✕ port</button>
-        </template>
-        <template v-else-if="fieldVisible || activeField === 'op'">
-        <div class="iters-group rob-group">
-          <span class="iters-label"
-            :class="{ 'highlight': labelHighlighted }"
-            :title="currentTitle">
-            {{ currentConfig.label }}
-          </span>
-          <input
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            :placeholder="currentMinimum.toString()"
-            v-model="inputValue"
-            ref="fieldInput"
-            @blur="onFieldBlur"
-            @keydown.esc.prevent="cancelField"
-            @keypress="handleKeyPress"
-            @input="handleInput"
-            :class="{ 'invalid': isInvalid }"
-            :title="validationMessage || currentTitle"
-            :aria-invalid="isInvalid"
-          />
-        </div>
-        <button v-if="activeField === 'op'"
-          class="blue-button small-btn"
-          @mousedown="startHold(increaseParameter)"
-          @mouseup="stopHold"
-          @mouseleave="stopHold"
-          @touchstart.prevent="startHold(increaseParameter)"
-          @touchend="stopHold"
-          :title="t('Increase parameter (press and hold for faster incrementing)')"
-        >
-          ▲
-        </button>
-        <button v-if="activeField === 'op'"
-          class="blue-button small-btn"
-          @mousedown="startHold(decreaseParameter)"
-          @mouseup="stopHold"
-          @mouseleave="stopHold"
-          @touchstart.prevent="startHold(decreaseParameter)"
-          @touchend="stopHold"
-          :title="t('Decrease parameter (press and hold for faster decrementing)')"
-        >
-          ▼
-        </button>
-        <template v-if="activeField === 'op' && selectedOp && !locked('processor.ports')">
-          <select v-if="sizesOf(selectedOp.label).length" v-model="selectedSize" id="op-size-select"
-                  :title="t('Edit the latency of {op} for every data size, or for one size only', { op: selectedOp.label })">
-            <option value="">{{ t('all sizes') }}</option>
-            <option v-for="s in sizesOf(selectedOp.label)" :key="s" :value="s">{{ s }}</option>
-          </select>
-          <select v-model="moveTarget" @change="moveOperation" id="op-move-select"
-                  :title="t('Move {op} from P{p} to another port', { op: selectedOp.label, p: selectedOp.port })">
-            <option value="">{{ t('move to…') }}</option>
-            <option v-for="p in portIds.filter(p => p !== selectedOp.port)" :key="p" :value="p">P{{ p }}</option>
-          </select>
-          <button class="blue-button small-btn" id="op-remove-button" @click="removeOperation"
-                  :title="t('Remove {op} from port P{p}', { op: selectedOp.label, p: selectedOp.port })">✕</button>
-        </template>
-        </template>
       </div>
   </div>
 
@@ -1036,7 +366,9 @@
   </div>
   <div v-show="!simState.processorFolded" class="graph-section processor-part">
     <div class="processor-container">
-      <div class="simProcessor-img" data-pin-twice="a_toggleops a_addport" v-html="simulatedSvg" v-if="simulatedSvg"></div>
+      <ProcessorDiagram v-if="simState.simulatedProcess?.ports" :process="simState.simulatedProcess" :usage="shownUsage"
+                        :highlight-ports="highlightedPorts" :stage="simState.highlightedStage ?? ''" :locked="locked"
+                        :in-lesson="!!simState.lesson" @open-cache="showCacheWindow = true" />
     </div>
   </div>
 

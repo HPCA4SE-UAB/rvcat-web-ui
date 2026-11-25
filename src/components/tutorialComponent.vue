@@ -121,7 +121,8 @@
     <!-- a question with "position": "right" is a panel at the right that does not cover the simulator
          (e.g. to answer it looking at the timeline); otherwise it is a dialog over a dark background -->
     <div v-if="currentTutorial && isActive && isQuestionStep" class="question-overlay"
-         :class="{ 'question-side': sideQuestion, 'question-side-left': currentStep?.position === 'left' }">
+         :class="{ 'question-side': sideQuestion, 'question-side-left': currentStep?.position === 'left',
+                   'question-side-bottom': currentStep?.position === 'bottom-right' }">
       <div class="question-panel" ref="questionPanelRef" :style="questionStyle" @pointerdown="pinQuestionToResize">
         <button @click="closeTutorial" class="question-close">&times;</button>
 
@@ -1082,7 +1083,8 @@ const questionPlaced = computed(() => Number.isFinite(questionLayout.value.x) &&
 // The width is always given (the size of the file, or the one given by the student): Vue sets
 // the keys of the style at every redraw, so a manual resize is first copied into questionLayout
 // a question with "position": "right" or "left" is a panel at that side, without a dark background
-const sideQuestion = computed(() => ['right', 'left'].includes(currentStep.value?.position))
+// ("bottom-right": at the right, at the bottom of the window)
+const sideQuestion = computed(() => ['right', 'left', 'bottom-right'].includes(currentStep.value?.position))
 const questionStyle = computed(() => {
   const step = currentStep.value, l = questionLayout.value
   // "wWidth": "rightPanel": as wide as the right panel (e.g. a long question that would need a scroll bar)
@@ -2194,6 +2196,7 @@ onUnmounted(() => {
      (the buttons have transitions, which would keep them visible for a moment) */
   .tutorial-tooltip.tooltip-hidden { opacity: 0 !important; pointer-events: none !important; }
   .tutorial-system .question-overlay.question-side.question-side-left { justify-content: flex-start; padding: 96px 0 0 16px; }
+  .tutorial-system .question-overlay.question-side.question-side-bottom { align-items: flex-end; padding: 96px 16px 16px 0; }
   /* a takeaway card: what to remember of a part of the lesson */
   .tutorial-overlay.overlay-takeaway { background: rgba(0, 0, 0, 0.45); transition: background 0.4s; }
   .tutorial-tooltip.card-takeaway { border: 5px solid #f9a825; background: #fffbea; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
