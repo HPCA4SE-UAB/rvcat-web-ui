@@ -249,6 +249,8 @@
     if (proc1.retire !== proc2.retire)     return false;
     if (proc1.sched !== proc2.sched)       return false;
     if (proc1.speculation !== proc2.speculation) return false;
+    // the repetitions (calls of the loop) change the results too
+    if (JSON.stringify(repetitionFields(proc1)) !== JSON.stringify(repetitionFields(proc2))) return false;
     if ((proc1.bPenalty ?? 5) !== (proc2.bPenalty ?? 5)) return false;
     if (proc1.ROBsize !== proc2.ROBsize)   return false;
     if (proc1.nBlocks !== proc2.nBlocks)   return false;
@@ -615,6 +617,7 @@
       retire:   process.retire,
       sched:    settings.sched,
       speculation: settings.speculation,
+      ...repetitionFields(process),
       bPenalty: process.bPenalty ?? 5,
       ROBsize:  process.ROBsize,
       nBlocks:  process.nBlocks,
