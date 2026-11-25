@@ -372,6 +372,11 @@
     simulationOptions.resultName = ''
     updateShowResults()
     saveOptions()
+    // and the results of the last simulation (also the ones kept to be shown again)
+    simResults = {}
+    simProcess = {}
+    saveResults()
+    simState.executionResults = null
   }
   watch(() => simState.clearResultsRequest, clearStoredResults)
 

@@ -179,7 +179,7 @@ who reads it can compute a valid code without doing the lesson. Use it for low-s
 - hidden part `processorRevert`: the button that discards the changes made to the processor (the action `revertProcessor` still works).
 - `todoDescription`: text shown only while the validation of the card is not met (e.g. "click ▸ C to continue"); a card already solved does not show it when the student comes back.
 - `lock`: `["program", "N", "Rep", "processorPanel"]`, what the student cannot change while the card is shown (the actions of the cards still can); `processorPanel`: the button that folds or unfolds the Processor panel is not shown.
-- action `clearStoredResults`: empties the table of stored results of the Simulation panel (e.g. to start a new part of a lesson).
+- action `clearStoredResults`: removes the results of the last simulation and empties the table of stored results of the Simulation panel (e.g. to start a new part of a lesson).
 - `wWidth`: `"rightPanel"` makes a question as wide as the right panel (a long question without a scroll bar). A question with `prefillFrom` does not show the hint "Write the numbers" (they are already written).
 - action `processorPanel:fold|unfold`: the Processor panel folded to one line with a summary (more room for the program), or with its diagram. A lesson starts with it unfolded.
 - `simulation`: options of the simulation fixed while the card is shown, e.g. `{ "speculation": "wrong-path" }` (over `locks.simulation`).

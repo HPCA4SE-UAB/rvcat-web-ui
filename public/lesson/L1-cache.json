@@ -10,7 +10,7 @@
     "es": "<p>Cuatro versiones de un bucle que suma los elementos de un vector (escalar, SIMD y desenrollado con varios acumuladores) en un procesador como el núcleo Golden Cove: latencia y throughput.</p>",
     "ca": "<p>Quatre versions d'un bucle que suma els elements d'un vector (escalar, SIMD i desenrotllat amb diversos acumuladors) en un processador com el nucli Golden Cove: latència i throughput.</p>"
   },
-  "version": 12,
+  "version": 13,
   "programs": [
     {
       "name": "SUM-scalar",
@@ -1472,6 +1472,9 @@
         "lock": [
           "N",
           "Rep"
+        ],
+        "actions": [
+          "clearStoredResults"
         ]
       },
       {
